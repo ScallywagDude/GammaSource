@@ -30,3 +30,6 @@ Modernization tooling and progress tracker for a historical Source-engine codeba
 ## Release strategy
 
 Complete Phase 7's weapon inventory, safe `impulse 101` handling, correct per-branch model and HUD references, and integrity checks first. Remaining rendering-API overhaul is the final phase.
+
+## AI DISCLOSURE
+Look, I'm ngl to you fam, ts is superrrr AI. I basically took the og source leak from 2003 and shoved that shit into Astra/Sol and were gonna see what happens with that, together.
