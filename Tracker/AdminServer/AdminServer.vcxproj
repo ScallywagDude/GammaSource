@@ -42,7 +42,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;ADMINSERVER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -70,7 +70,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\shared\\;..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;..\trackerui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\..\shared\\;..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;..\trackerui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;ADMINSERVER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -140,7 +140,7 @@
     <ClCompile Include="..\common\Socket.cpp" />
     <ClCompile Include="..\..\shared\TokenLine.cpp" />
     <ClCompile Include="..\common\util.cpp" />
-    <ClCompile Include="..\..\public\UtlBuffer.cpp" />
+    <ClCompile Include="..\..\public\utlbuffer.cpp" />
     <ClCompile Include=".\AdminServer.cpp" />
     <ClCompile Include=".\ConfigPanel.cpp" />
     <ClCompile Include=".\serverpage.cpp" />

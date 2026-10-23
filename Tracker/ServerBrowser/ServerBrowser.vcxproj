@@ -42,7 +42,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;SERVERBROWSER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -70,7 +70,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;SERVERBROWSER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -119,7 +119,7 @@
     <ClCompile Include="..\common\Socket.cpp" />
     <ClCompile Include=".\SpectateGames.cpp" />
     <ClCompile Include="..\common\util.cpp" />
-    <ClCompile Include="..\..\public\UtlBuffer.cpp" />
+    <ClCompile Include="..\..\public\utlbuffer.cpp" />
     <ClCompile Include="..\..\public\utlsymbol.cpp" />
   </ItemGroup>
   <ItemGroup>

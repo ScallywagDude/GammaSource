@@ -15,7 +15,7 @@
     <ClCompile Include="..\..\public\interface.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\MemPool.cpp">
+    <ClCompile Include="..\..\public\mempool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\MySqlDatabase.cpp">

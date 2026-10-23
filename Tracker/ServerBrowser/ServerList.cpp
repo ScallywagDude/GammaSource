@@ -1,3 +1,4 @@
+#include <assert.h>
 //========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose: 

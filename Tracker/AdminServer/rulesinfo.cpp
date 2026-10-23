@@ -1,3 +1,4 @@
+#include <assert.h>
 //========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
 //
 // Purpose: defines a RCon class used to send rcon commands to remote servers

@@ -21,7 +21,7 @@
     <ClCompile Include=".\LocalDebugConsole.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\MemPool.cpp">
+    <ClCompile Include="..\..\public\mempool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\TrackerNET\NetAddress.cpp">
@@ -30,7 +30,7 @@
     <ClCompile Include=".\PrecompHeader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\Random.cpp">
+    <ClCompile Include="..\..\common\GameUI\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\SessionManager.cpp">

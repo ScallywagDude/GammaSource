@@ -26,6 +26,8 @@ scripts.insert(scripts.index('validate.py'),'patch_follow_handles.py')
 scripts.insert(scripts.index('validate.py'),'patch_entity_compiler_compat.py')
 # Keep post-overlay compiler repairs after all source regenerators.
 scripts.insert(scripts.index('validate.py'),'fix_legacy_compiler_errors.py')
+# Restore archived Tracker prerequisites and legacy include spellings after DSP conversion.
+scripts.insert(scripts.index('validate.py'),'repair_tracker_source_paths.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]

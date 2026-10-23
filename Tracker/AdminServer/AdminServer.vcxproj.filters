@@ -174,7 +174,7 @@
     <ClCompile Include="..\common\util.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\public\UtlBuffer.cpp">
+    <ClCompile Include="..\..\public\utlbuffer.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
     <ClCompile Include=".\AdminServer.cpp">

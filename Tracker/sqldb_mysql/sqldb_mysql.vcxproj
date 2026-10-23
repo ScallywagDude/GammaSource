@@ -42,7 +42,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\common;..\..\common;..\public;..\..\public;..\..\utils\mysql\include;..\..\utils\mysql\mysql\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\common;..\..\common;..\public;..\..\public;..\..\utils\mysql\include;..\..\utils\mysql\mysql\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;SQLDB_MYSQL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
@@ -69,7 +69,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\common;..\..\common;..\public;..\..\public;..\..\utils\mysql\include;..\..\utils\mysql\mysql\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\common;..\..\common;..\public;..\..\public;..\..\utils\mysql\include;..\..\utils\mysql\mysql\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;SQLDB_MYSQL_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
@@ -93,7 +93,7 @@
   <ItemGroup>
     <ClCompile Include="..\common\CompletionEvent.cpp" />
     <ClCompile Include="..\..\public\interface.cpp" />
-    <ClCompile Include="..\..\common\MemPool.cpp" />
+    <ClCompile Include="..\..\public\mempool.cpp" />
     <ClCompile Include=".\MySqlDatabase.cpp" />
     <ClCompile Include=".\MySqlDistroDatabase.cpp" />
     <ClCompile Include=".\MySqlUserDatabase.cpp" />

@@ -1,3 +1,4 @@
+#include <assert.h>
 //=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.

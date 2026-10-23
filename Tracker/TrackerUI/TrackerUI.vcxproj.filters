@@ -57,7 +57,7 @@
     <ClCompile Include=".\PanelValveLogo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\common\Random.cpp">
+    <ClCompile Include="..\..\common\GameUI\Random.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include=".\ServerSession.cpp">
