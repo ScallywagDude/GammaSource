@@ -46,6 +46,7 @@ public:
 	virtual serveritem_t &GetServer(unsigned int serverID);
 
 	virtual void SetRefreshing(bool state);
+	virtual int GetInvalidServerListID();
 
 protected:
 	virtual void OnTick();

@@ -24,6 +24,7 @@
 #include <vgui_controls/ListPanel.h>
 
 #include <stdio.h>
+#include <vgui_controls/Controls.h>
 
 using namespace vgui;
 

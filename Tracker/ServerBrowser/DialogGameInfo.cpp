@@ -26,6 +26,7 @@
 #include <vgui_controls/RadioButton.h>
 
 #include <stdio.h>
+#include <vgui_controls/Controls.h>
 
 using namespace vgui;
 

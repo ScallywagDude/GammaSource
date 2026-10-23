@@ -138,6 +138,14 @@ serveritem_t &CBaseGamesPage::GetServer(unsigned int serverID)
 
 
 //-----------------------------------------------------------------------------
+// Purpose: Implement the mandatory IGameList invalid-item sentinel.
+//-----------------------------------------------------------------------------
+int CBaseGamesPage::GetInvalidServerListID()
+{
+	return m_pGameList ? m_pGameList->InvalidItemID() : -1;
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: call to let the UI now whether the game list is currently refreshing
 //-----------------------------------------------------------------------------
 void CBaseGamesPage::SetRefreshing(bool state)

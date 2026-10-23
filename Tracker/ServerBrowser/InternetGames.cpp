@@ -26,6 +26,7 @@
 #include <KeyValues.h>
 
 #include <vgui_controls/Menu.h>
+#include <vgui_controls/Controls.h>
 
 using namespace vgui;
 

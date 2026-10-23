@@ -11,6 +11,7 @@
 #include <vgui/IPanel.h>
 #include <vgui/ISurface.h>
 #include <KeyValues.h>
+#include <vgui_controls/Controls.h>
 
 using namespace vgui;
 

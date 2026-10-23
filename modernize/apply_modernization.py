@@ -36,6 +36,7 @@ scripts.insert(scripts.index('validate.py'),'repair_tracker_vgui2_followup.py')
 scripts.insert(scripts.index('validate.py'),'repair_qhtm_win32.py')
 scripts.insert(scripts.index('validate.py'),'repair_tfstats_templates.py')
 scripts.insert(scripts.index('validate.py'),'repair_tracker_controls_accessors.py')
+scripts.insert(scripts.index('validate.py'),'repair_tracker_win32_accessors_round6.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]
