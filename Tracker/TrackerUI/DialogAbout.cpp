@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "DialogAbout.h"
 #include "TrackerDoc.h"
 

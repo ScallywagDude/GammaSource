@@ -204,7 +204,7 @@ CPrefab::pfiletype_t CPrefab::CheckFileType(LPCTSTR pszFilename)
 			return pftScript;
 	}
 
-	fstream file(pszFilename, ios::in | ios::binary | ios::nocreate);
+	fstream file(pszFilename, ios::in | ios::binary);
 
 	// read first 16 bytes of file
 	char szBuf[255];
@@ -558,7 +558,7 @@ int CPrefabLibraryRMF::Load(LPCTSTR pszFilename)
 	m_eType = LibType_HalfLife;
 
 	// open file
-	m_file.open(pszFilename, ios::in | ios::binary | ios::nocreate);
+	m_file.open(pszFilename, ios::in | ios::binary);
 	m_strOpenFileName = pszFilename;
 	
 	if(!m_file.is_open())
@@ -687,7 +687,7 @@ int CPrefabLibraryRMF::Save(LPCTSTR pszFilename, BOOL bIndexOnly)
 		file.close();
 
 		// re-open
-		m_file.open(m_strOpenFileName, ios::in | ios::binary | ios::nocreate);
+		m_file.open(m_strOpenFileName, ios::in | ios::binary);
 		return 1;
 	}
 
@@ -803,7 +803,7 @@ int CPrefabLibraryRMF::Save(LPCTSTR pszFilename, BOOL bIndexOnly)
 	int iRvl = rename(strTempFileName, m_strOpenFileName);
 	
 	// reopen original
-	m_file.open(m_strOpenFileName, ios::in | ios::binary | ios::nocreate);
+	m_file.open(m_strOpenFileName, ios::in | ios::binary);
 
 	return 1;
 }
@@ -841,7 +841,7 @@ int CPrefabLibraryRMF::SetName(LPCTSTR pszName)
 	// rename and reopen
 	rename(m_strOpenFileName, szNewFilename);
 	m_strOpenFileName = szNewFilename;
-	m_file.open(m_strOpenFileName, ios::in | ios::binary | ios::nocreate);
+	m_file.open(m_strOpenFileName, ios::in | ios::binary);
 
 	return 1;
 }

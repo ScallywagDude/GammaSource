@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "BaseGamesPage.h"
 #include "ServerListCompare.h"
 #include "util.h"

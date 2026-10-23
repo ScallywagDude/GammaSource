@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "RulesContextMenu.h"
 
 #include <VGUI_Controls.h>

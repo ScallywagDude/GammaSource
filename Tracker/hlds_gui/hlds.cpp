@@ -1,3 +1,4 @@
+#include <vgui/VGUI.h>
 #include <windows.h> 
 #include "hlds.h"
 #include <VGUI_ISystem.h>

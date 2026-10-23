@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "Buddy.h"
 #include "DialogRemoveUser.h"
 #include "Tracker.h"

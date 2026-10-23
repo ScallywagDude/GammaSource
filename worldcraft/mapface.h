@@ -10,7 +10,7 @@
 #pragma once
 
 
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 #include "worldcraft_mathlib.h"
 #include "MapAtom.h"
 #include "DispManager.h"

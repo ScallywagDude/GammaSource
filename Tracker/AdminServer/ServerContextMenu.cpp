@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "ServerContextMenu.h"
 
 #include <VGUI_Controls.h>

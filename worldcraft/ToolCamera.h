@@ -13,7 +13,7 @@
 #include "Tool3D.h"
 #include "ToolInterface.h"
 #include "afxtempl.h"
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 
 
 class CChunkFile;

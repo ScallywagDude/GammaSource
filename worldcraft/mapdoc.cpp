@@ -1917,7 +1917,7 @@ BOOL CMapDoc::OnOpenDocument(LPCTSTR lpszPathName)
 
 	if ((bRMF) || (bMAP))
 	{
-		fstream file(lpszPathName, ios::in | ios::binary | ios::nocreate);
+		fstream file(lpszPathName, ios::in | ios::binary);
 		if (!file.is_open())
 		{
 			return(FALSE);

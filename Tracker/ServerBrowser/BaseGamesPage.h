@@ -105,6 +105,7 @@ private:
 	enum { MAX_FILTERSTRING = 512 };
 	char m_szMasterServerFilterString[MAX_FILTERSTRING];
 
+	protected: // Derived panel maps require access to the base map.
 	DECLARE_PANELMAP();
 	typedef vgui::PropertyPage BaseClass;
 };

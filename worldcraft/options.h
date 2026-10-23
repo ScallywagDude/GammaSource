@@ -10,7 +10,7 @@
 #pragma once
 
 
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 #include <afxtempl.h>
 #include "GameData.h"
 

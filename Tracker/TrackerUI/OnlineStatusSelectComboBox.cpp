@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "OnlineStatus.h"
 #include "OnlineStatusSelectComboBox.h"
 #include "TrackerDoc.h"

@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include <VGUI_Controls.h>
 #include <VGUI_Cursor.h>
 #include <VGUI_IScheme.h>

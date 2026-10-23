@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "ServerBrowser.h"
 #include "ServerBrowserDialog.h"
 #include "IRunGameEngine.h"

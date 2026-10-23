@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "Buddy.h"
 #include "DialogUserInfo.h"
 #include "OnlineStatus.h"

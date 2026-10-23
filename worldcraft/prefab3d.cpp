@@ -333,7 +333,7 @@ int CPrefabRMF::Load(DWORD dwFlags)
 //-----------------------------------------------------------------------------
 int CPrefabRMF::Init(LPCTSTR pszFilename, BOOL bLoadNow, DWORD dwFlags)
 {
-	fstream file(pszFilename, ios::in | ios::binary | ios::nocreate);
+	fstream file(pszFilename, ios::in | ios::binary);
 
 	// ensure we're named
 	memset(szName, 0, sizeof szName);

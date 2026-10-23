@@ -37,6 +37,10 @@ scripts.insert(scripts.index('validate.py'),'repair_qhtm_win32.py')
 scripts.insert(scripts.index('validate.py'),'repair_tfstats_templates.py')
 scripts.insert(scripts.index('validate.py'),'repair_tracker_controls_accessors.py')
 scripts.insert(scripts.index('validate.py'),'repair_tracker_win32_accessors_round6.py')
+# Ensure Tracker controls accessors are declared in the same vgui2 namespace
+# expected by VGUI.h, regardless of legacy header include order.
+scripts.insert(scripts.index('validate.py'),'repair_tracker_vgui_namespace_round7.py')
+scripts.insert(scripts.index('validate.py'),'repair_win32_round8.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]

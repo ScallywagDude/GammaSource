@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "GamePalette.h"
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 
 #pragma warning(disable:4244)
 
@@ -55,7 +55,7 @@ BOOL CGamePalette::Create(LPCTSTR pszFile)
 		return FALSE;	// not exist
 
 	// open file & read palette
-	ifstream file(strFile, ios::binary | ios::nocreate);
+	ifstream file(strFile, ios::binary);
 
 	if(!file.is_open())
 		return FALSE;

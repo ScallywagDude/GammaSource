@@ -58,7 +58,7 @@
     </ResourceCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vgui_surfacelib.lib;gdi32.lib;user32.lib;..\vstdlib\build\Release\vstdlib.lib;..\vgui2\vgui_surfacelib\build\Release\vgui_surfacelib.lib;..\vgui2\controls\build\Release\vgui_controls.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdi32.lib;user32.lib;..\vstdlib\build\Release\vstdlib.lib;..\vgui2\vgui_surfacelib\build\Release\vgui_surfacelib.lib;..\vgui2\controls\build\Release\vgui_controls.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common\\;..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
@@ -86,7 +86,7 @@
     </ResourceCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vgui_surfacelib.lib;gdi32.lib;user32.lib;..\vstdlib\build\Debug\vstdlib.lib;..\vgui2\vgui_surfacelib\build\Debug\vgui_surfacelib.lib;..\vgui2\controls\build\Debug\vgui_controls.lib;..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gdi32.lib;user32.lib;..\vstdlib\build\Debug\vstdlib.lib;..\vgui2\vgui_surfacelib\build\Debug\vgui_surfacelib.lib;..\vgui2\controls\build\Debug\vgui_controls.lib;..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common\\;..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>

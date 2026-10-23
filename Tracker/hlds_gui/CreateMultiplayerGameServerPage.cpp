@@ -4,6 +4,7 @@
 //
 // $NoKeywords: $
 //=============================================================================
+#include <vgui/VGUI.h>
 #include <stdio.h>
 
 #include "CreateMultiplayerGameServerPage.h"

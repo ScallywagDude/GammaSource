@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "ServerInfoPanel.h"
 #include "ServerList.h"
 

@@ -15,6 +15,7 @@
 //
 // $NoKeywords: $
 //=============================================================================
+#include <vgui/VGUI.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>

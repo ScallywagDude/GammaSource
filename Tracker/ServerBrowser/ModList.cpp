@@ -7,6 +7,7 @@
 
 #define PROTECTED_THINGS_DISABLE
 
+#include <vgui/VGUI.h>
 #include "..\common\winlite.h"
 #include <stdio.h>
 

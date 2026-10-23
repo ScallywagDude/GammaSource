@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "SubPanelOptionsConnection.h"
 
 #include <VGUI_ComboBox.h>

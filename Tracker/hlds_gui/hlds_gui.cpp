@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "vinternetdlg.h"
 #include "hlds_gui.h"
 

@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include <stdio.h>
 #include "winsock.h" // this BUGGER defines PropertySheet to PropertySheetA ....
 #include "tokenline.h"

@@ -17,6 +17,7 @@
 //=============================================================================
 
 // base vgui interfaces
+#include <vgui/VGUI.h>
 #include <VGUI_Controls.h>
 #include <VGUI_ISurface.h>
 

@@ -13,7 +13,7 @@
 #include <afxtempl.h>
 
 
-class fstream;
+#include "../public/legacy_fstream_compat.h"
 
 
 #define KEYVALUE_MAX_KEY_LENGTH			80

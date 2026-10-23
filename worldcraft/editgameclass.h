@@ -9,7 +9,7 @@
 #define EDITGAMECLASS_H
 #pragma once
 
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 #include "BlockArray.h"
 #include "EntityDefs.h"
 #include "GameData.h"

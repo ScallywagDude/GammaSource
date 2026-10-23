@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Opt in ONLY for legacy Win32 archives whose object files lack SAFESEH tables. -->
+  <!-- /SAFESEH:NO reduces exploit mitigation; use source rebuilds with /safeseh when possible. -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32' and '$(HL2ModernLegacyUnsafeSEH)'=='true'">
+    <Link>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

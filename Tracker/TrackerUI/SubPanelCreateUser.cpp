@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "SubPanelCreateUser.h"
 #include "SubPanelError.h"
 #include "Tracker.h"

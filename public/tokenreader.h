@@ -12,7 +12,7 @@
 #endif
 
 
-#include "fstream.h"
+#include "legacy_fstream_compat.h"
 
 
 typedef enum

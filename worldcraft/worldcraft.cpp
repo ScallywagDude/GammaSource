@@ -1027,8 +1027,7 @@ BOOL CWorldcraft::PreTranslateMessage(MSG* pMsg)
 //-----------------------------------------------------------------------------
 void CWorldcraft::LoadSequences(void)
 {
-	ifstream file("CmdSeq.wc", ios::in | ios::binary | 
-		ios::nocreate);
+	ifstream file("CmdSeq.wc", ios::in | ios::binary);
 	
 	if(!file.is_open())
 		return;	// none to load

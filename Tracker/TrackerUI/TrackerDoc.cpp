@@ -8,6 +8,7 @@
 // Purpose: Maintains the tracker document
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "../TrackerNET/TrackerNET_Interface.h"
 #include "Buddy.h"
 #include "OnlineStatus.h"

@@ -14,5 +14,11 @@ if "%~1"=="" (
   echo   modernize\build_windows.cmd Release
   exit /b 0
 )
+rem Fail once for a missing Perl prerequisite, not hundreds of times per shader.
+py -3 modernize\run_shader_tool.py --probe
+if errorlevel 1 (
+  echo Legacy shader generation requires Perl 5. Set HL2_MODERN_PERL or add perl.exe to PATH.
+  exit /b 2
+)
 call build_hl2_vs2026.cmd "%~1"
 exit /b %errorlevel%

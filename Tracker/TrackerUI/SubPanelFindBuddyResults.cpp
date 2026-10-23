@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "SubPanelFindBuddyResults.h"
 #include "ServerSession.h"
 #include "Tracker.h"

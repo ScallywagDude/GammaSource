@@ -32,7 +32,7 @@ TokenReader::TokenReader(void)
 //-----------------------------------------------------------------------------
 bool TokenReader::Open(const char *pszFilename)
 {
-	open(pszFilename, ios::in | ios::binary | ios::nocreate);
+	open(pszFilename, ios::in | ios::binary);
 	strcpy(m_szFilename, pszFilename);
 	m_nLine = 1;
 	m_nErrorCount = 0;

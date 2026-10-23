@@ -8,6 +8,7 @@
 // Purpose: 
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "BuddyButton.h"
 #include "TrackerDoc.h"
 #include "Buddy.h"

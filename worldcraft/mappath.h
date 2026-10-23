@@ -19,7 +19,7 @@
 #pragma once
 
 #include <afxtempl.h>
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 #include "Axes2.h"
 #include "KeyValues.h"
 #include "vector.h"

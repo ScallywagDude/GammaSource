@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "FavoriteGames.h"
 
 #include "proto_oob.h"

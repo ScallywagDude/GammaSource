@@ -1,3 +1,4 @@
+#include <vgui/VGUI.h>
 #include <assert.h>
 //=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
 //

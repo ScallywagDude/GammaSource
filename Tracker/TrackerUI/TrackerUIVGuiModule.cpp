@@ -4,6 +4,7 @@
 //
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "IVGuiModule.h"
 
 #include <VGUI.h>

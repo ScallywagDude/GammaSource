@@ -1,0 +1,169 @@
+{
+  "baseline_file": "GammaSource_Win32_Build_Repairs_Round7_Full.zip",
+  "baseline_sha256": "483f5267d3d9aaedce28ebf8152088a0d3cddbd30e21499a43b5118a0879cea2",
+  "change_count": 32,
+  "changed": {
+    "GammaSource-main/BUILD_ERROR_REPAIRS_ROUND8_20261023.md": {
+      "after": "37db00ad9c132df7176561bb0387e8e2a889fd69d9dcba405c4299d0074eb7b6",
+      "before": null,
+      "size": 3336
+    },
+    "GammaSource-main/Directory.Build.targets": {
+      "after": "fc6fc451d00199f12739503c374af147f95e82fecbf9ca1357a5b7191dda8936",
+      "before": null,
+      "size": 533
+    },
+    "GammaSource-main/ROUND8_PATCH_MANIFEST.json": {
+      "after": "80fb54e8e8e2fc131151eb6cd0252c3c0d92842995b7516d3d46aee507562fc1",
+      "before": null,
+      "size": 88502
+    },
+    "GammaSource-main/Tracker/ServerBrowser/BaseGamesPage.h": {
+      "after": "e38414505e1bf6921300986ce2351ac58d6557344637cd7706ae83d74ee132ea",
+      "before": "c8e5d45a7b40d2f987c7742171cebd613d66a63509a1bee734dc08ef51f3f27f",
+      "size": 3212
+    },
+    "GammaSource-main/modernize/apply_modernization.py": {
+      "after": "9da766c3de6a69fc8f5fe1dc664c9fc1ed4a4fbc7af76117eac328313bfec796",
+      "before": "08a325112cf9f74dad6962a854f0d42d5bc6bdb1d1c956e27e8e0e439a46ee89",
+      "size": 4376
+    },
+    "GammaSource-main/modernize/build_windows.cmd": {
+      "after": "557079895159b514a3c929c0e4ca5dd7ceceb1def9d8a18d92bcef5191174a2d",
+      "before": "e003140facbadc3b440941b21776fcd9d6df92d0b58f8458d8610770ee1129e1",
+      "size": 721
+    },
+    "GammaSource-main/modernize/convert_dsp.py": {
+      "after": "d10839eb5ea8298d4c59ed9536c4f4f159e8c66980537b91c521ecc9f190e0e8",
+      "before": "5e273644da402552abf3a1eaefad8c63ceff5b93d2b7cf04a14d5082748c1908",
+      "size": 34329
+    },
+    "GammaSource-main/modernize/repair_win32_round8.py": {
+      "after": "1440ebd80cdb422a1532433fde0b6636c31255adcee4678d980ec0c10858308e",
+      "before": null,
+      "size": 5110
+    },
+    "GammaSource-main/modernize/tests/test_win32_round8.py": {
+      "after": "057fcb7d09c235707d92c3138edeea0f524068576b34a018f5d2f8bc42361d01",
+      "before": null,
+      "size": 3439
+    },
+    "GammaSource-main/public/legacy_fstream_compat.h": {
+      "after": "d6e29ad58d632083896ea10fa554c4a3ba5b173790be7edcd1241e3f0a0127e9",
+      "before": null,
+      "size": 251
+    },
+    "GammaSource-main/public/tokenreader.cpp": {
+      "after": "0ffb47a9470e40d916dda7ecd5df0267741196e58d5072518d3d869990292f2b",
+      "before": "e6e36c2726e287ec110e4669ef46ee01aa6db07d214c64c431da7db6a61349ea",
+      "size": 9427
+    },
+    "GammaSource-main/public/tokenreader.h": {
+      "after": "8b561c3f3d3f4da42c1b0f3fd2f681079262aa90f517d065bff68a8eca313ebb",
+      "before": "5437f376cdf9f534713c656794acf11051eb6247749f4995efaf5a80019de7d3",
+      "size": 1624
+    },
+    "GammaSource-main/vguimatsurface/vguimatsurface.vcxproj": {
+      "after": "7fd32991ec9af5355a7e9d8455d4803849c527066d4b36e46785911e1140ec9f",
+      "before": "c9f59d54368efa1d38f2f44953fbf9d2a360c00af0199a29b3d5fb27bc16a8ba",
+      "size": 9466
+    },
+    "GammaSource-main/worldcraft/ToolCamera.h": {
+      "after": "63cb4d1fadeb698759835966749140dcec54cea648217792fd627867ad5c5cbf",
+      "before": "476ae721a8672382d81717e5b485785599feb5dd0d7c59e55f30854791100809",
+      "size": 3159
+    },
+    "GammaSource-main/worldcraft/editgameclass.h": {
+      "after": "943848c84a7face4d85a5ad8a2c733d3a7566d670039fbdb179b5676410d540d",
+      "before": "a63c02027d2609a74922c1e28f55df91d16bef6b4466390c3623d6a7fa4e6889",
+      "size": 6627
+    },
+    "GammaSource-main/worldcraft/gamedata.h": {
+      "after": "0e4a97b55949ad536578a505985ac4ee343da733cda4b20eb674eb7b4e0771e6",
+      "before": "bac0344738b9933be45064d2458eb505636799b1abcb05268f09620ede102c2e",
+      "size": 6268
+    },
+    "GammaSource-main/worldcraft/gamepalette.cpp": {
+      "after": "a95fdb629529727ed5437a3e177123aa752bb56024367afe4acd6df3e01caefe",
+      "before": "d35e036a1a062724c165b00a27ce9c410b4673986eb50acbaaa3b9eb227d3834",
+      "size": 2756
+    },
+    "GammaSource-main/worldcraft/keyvalues.h": {
+      "after": "7d97fabfba4ca3006085730ebcf13f9d58ff5be49456363ebc0b7b16b98b0533",
+      "before": "c436c9fec91d211b9c996765dc39ef92aa7b458ff5e17b0041a53fd49c520e16",
+      "size": 5951
+    },
+    "GammaSource-main/worldcraft/mainfrm.cpp": {
+      "after": "6207301863e7e8c34a72c9c10763017b0f787eb334e9934a27cae1c8218ca50c",
+      "before": "c6901d349f37b8142544208816e12e6469d876a22eff3fc7cf6b74857335a2e5",
+      "size": 46899
+    },
+    "GammaSource-main/worldcraft/mapclass.h": {
+      "after": "bfcbfeb37cfb400791022edc8d449e7a822cd3196b67f2c3bc43631ab0205fd1",
+      "before": "adf78045499428f1ff25eb7f00567c2770ca23d12957189b984741654c2a0606",
+      "size": 12385
+    },
+    "GammaSource-main/worldcraft/mapdisp.h": {
+      "after": "d6f0eb69ac841262c82e92e8d1e3430e1dac43242ce5132360e3c56a9c0b2d70",
+      "before": "ad33e6d9a147fb903182ca754be9f772a85846a28bb08ba22a3df36078d1a59b",
+      "size": 32397
+    },
+    "GammaSource-main/worldcraft/mapdoc.cpp": {
+      "after": "b772bc153a220a94cc187c8b693c3ecc9896bbc05a74fb352cf0b75227e3c2cf",
+      "before": "768a52b6453cfeab2114be7d03694f1d703c968dbe9d8548331a60e87269cb63",
+      "size": 218962
+    },
+    "GammaSource-main/worldcraft/mapface.h": {
+      "after": "67d12ea783a23de6c9b5e62822192b5bdf31527ed09ea22782e76faff694b0a9",
+      "before": "8ad98320ec4ab354ae3e2bbaf6195aa1e3784c91742fb0bd85d4f9e5229ff201",
+      "size": 16626
+    },
+    "GammaSource-main/worldcraft/mappath.h": {
+      "after": "adb12eb8866df672cb430ab112620e71cefe2e7fd763cb824261e44baf0a5b69",
+      "before": "fa72821bbe6ae495017371da9c02528bcf4052678ff07601e1adba31e38175b8",
+      "size": 2601
+    },
+    "GammaSource-main/worldcraft/options.cpp": {
+      "after": "a41d52a1bd8bf89860a2ecfb109548a33ef12f727c231ff2697dc12faf6390c0",
+      "before": "245c86b764b4ff99727fb660016fc464a602bcf2278346bb4b695137abf8e7b8",
+      "size": 28059
+    },
+    "GammaSource-main/worldcraft/options.h": {
+      "after": "057be05958e033eeaa74b70cfeaf686245b1886d7ec036f497d913b393f1ad71",
+      "before": "23e4f92b786e8a8cb0d1bf621cd26e33a0429993ce10d8b5a5dba05d83023176",
+      "size": 5029
+    },
+    "GammaSource-main/worldcraft/prefab3d.cpp": {
+      "after": "8645cc0d5ef7ba3e297e9f3b31dcdb4af174a5b9b3d7988f1ed87e015a3ef6b7",
+      "before": "99209bed801a9a3bd801bb95aef2691a9f35d9a59e80f95ddcebb4c2040fdf76",
+      "size": 13783
+    },
+    "GammaSource-main/worldcraft/prefabs.cpp": {
+      "after": "f6576956175b16af99e30709b5c915c6bb8ea070a564009b4f09734f00febb0f",
+      "before": "deef3244faccbb6dcb452708863963c01bb4043d0479f2f7b30170c3e18ba5e3",
+      "size": 23882
+    },
+    "GammaSource-main/worldcraft/prefabs.h": {
+      "after": "7f9a859f787a866dbd2e55c33569db66da05698f34d68b0425c5866cebc85160",
+      "before": "25d2113bc29014e50bd00f8576f1d21253b96023c701e87e362bbe4ee8694df7",
+      "size": 4767
+    },
+    "GammaSource-main/worldcraft/stocksolids.h": {
+      "after": "1a4f2a95b93a6d3d12aaa6388c874355db8d47d4ecd817219f056464c2dcb888",
+      "before": "fe4c0e07d9428f6b00b702132e8f785d67ccbf3c60d53512f4c149c99c2ae8b6",
+      "size": 2644
+    },
+    "GammaSource-main/worldcraft/texturewindow.cpp": {
+      "after": "3e1735d3ec190121afe4693e8eaff5b1c509e6331b24a9b71d95da2c3c9f423d",
+      "before": "c3e5a4eab769c9c68d6e2b5e3bfa8271da7b950e0748c522e58e319369d37a78",
+      "size": 21664
+    },
+    "GammaSource-main/worldcraft/worldcraft.cpp": {
+      "after": "260e5cbc550c6302bde7aa665a4ffb43aca3313ea6c0f314951fa09bb4ea3c32",
+      "before": "560437f6834ac4e7a6c6773bbfb915406e5f79658972b6c12f4ce1b135363cca",
+      "size": 33506
+    }
+  },
+  "notes": "Win32-only source fixes; no MSVC compilation performed; Phase7 and AMD64 unchanged",
+  "removed": []
+}

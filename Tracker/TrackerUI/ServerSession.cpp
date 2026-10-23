@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "../TrackerNET/TrackerNET_Interface.h"
 #include "../TrackerNET/Threads.h"
 #include "../TrackerNET/NetAddress.h"

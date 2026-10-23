@@ -1201,7 +1201,7 @@ void CMainFrame::SaveWindowStates(fstream *pFile)
 //-----------------------------------------------------------------------------
 void CMainFrame::LoadWindowStates(fstream *pFile)
 {
-	fstream file("winstate.wc", ios::in | ios::nocreate | ios::binary);
+	fstream file("winstate.wc", ios::in | ios::binary);
 
 	if (!file.is_open())
 	{

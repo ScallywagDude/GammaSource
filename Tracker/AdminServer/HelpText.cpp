@@ -6,6 +6,7 @@
 //=============================================================================
 
 
+#include <vgui/VGUI.h>
 #include <stdio.h>
 
 #include <VGUI_Controls.h>

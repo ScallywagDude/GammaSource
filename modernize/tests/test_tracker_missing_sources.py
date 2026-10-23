@@ -16,8 +16,15 @@ class TrackerMissingSources(unittest.TestCase):
         for f in wrappers:
             s = f.read_text()
             includes = re.findall(r'#include <([^>]+)>', s)
-            self.assertEqual(len(includes), 1)
-            self.assertTrue((ROOT / 'public' / includes[0]).exists(), str(f))
+            if f.name == 'VGUI_Controls.h':
+                # This wrapper deliberately includes the VGUI2 namespace
+                # mapping and enum definitions before Controls.h.
+                self.assertEqual(includes, ['vgui/VGUI.h', 'vgui/KeyCode.h',
+                                            'vgui/MouseCode.h', 'vgui_controls/Controls.h'])
+            else:
+                self.assertEqual(len(includes), 1)
+            for included in includes:
+                self.assertTrue((ROOT / 'public' / included).exists(), str(f))
             self.assertNotIn('class ', s)
 
     def test_projects_include_compat_directory(self):

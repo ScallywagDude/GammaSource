@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "DialogAuthRequest.h"
 #include "TrackerDoc.h"
 #include "ServerSession.h"

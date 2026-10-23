@@ -11,7 +11,7 @@
 
 
 #include <afxtempl.h>
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 
 
 class BoundBox;

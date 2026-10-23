@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "MainDialog.h"
 #include "ServersPage.h"
 #include "UsersPage.h"

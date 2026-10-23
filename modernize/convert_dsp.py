@@ -357,6 +357,11 @@ def gen_project(p, report):
             node(lk,'GenerateDebugInformation','true' if '/debug' in flags['LINK32'].lower() else 'false')
         libs=linfo['libraries']
         libs=list(dict.fromkeys(libs+vstdlib_linkage(p,cfg)))
+        # vguimatsurface's DSP names the staged font archive AND the same
+        # in-tree vgui_surfacelib build output. Link it only once.
+        if p['path'].stem.casefold()=='vguimatsurface' and any(
+                'vgui_surfacelib' in item.casefold() and '\\' in item for item in libs):
+            libs=[item for item in libs if item.casefold()!='vgui_surfacelib.lib']
         if libs: node(lk,'AdditionalDependencies',';'.join(libs)+';%(AdditionalDependencies)')
         if p['kind']!='StaticLibrary':
             # VC6 /ML libraries request LIBC/LIBCD, retired in modern MSVC.

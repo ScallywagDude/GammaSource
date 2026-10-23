@@ -5,6 +5,7 @@
 // $NoKeywords: $
 //=============================================================================
 
+#include <vgui/VGUI.h>
 #include "INetApi.h"
 #include "InternetGames.h"
 #include "MasterMsgHandler.h"

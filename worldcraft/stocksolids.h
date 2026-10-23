@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <fstream.h>
+#include "../public/legacy_fstream_compat.h"
 #include "Vector.h"
 
 
