@@ -52,6 +52,40 @@ class WeaponAssetV23Tests(unittest.TestCase):
             icon['640']['width']='15';icon['640']['file']='../escape'
             self.assertEqual(v23.check_icon([game],'weapon',icon)['status'],'invalid_material_path')
 
+    def test_legacy_bare_sprite_names_use_sprites_directory(self):
+        with tempfile.TemporaryDirectory() as td:
+            game=Path(td);(game/'materials/sprites').mkdir(parents=True)
+            (game/'materials/sprites/crosshairs.vmt').write_text('"UnlitGeneric" { "$basetexture" "sprites/crosshairs" }')
+            (game/'materials/sprites/crosshairs.vtf').write_bytes(self._vtf_header(128,128))
+            for layout in ('640','320'):
+                with self.subTest(layout=layout):
+                    spec={layout:{'file':'crosshairs','x':0,'y':48,'width':24,'height':24}}
+                    result=v23.check_icon([game],'crosshair',spec)
+                    self.assertEqual(result['status'],'rectangle_verified')
+                    self.assertEqual(result['layout'],layout)
+                    self.assertEqual(result['material'],'materials/sprites/crosshairs.vmt')
+                    self.assertFalse(result['runtime_verified'])
+
+    def test_direct_bare_sprite_names_keep_material_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            game=Path(td);(game/'materials/sprites').mkdir(parents=True)
+            (game/'materials/crosshairs.vmt').write_text('"UnlitGeneric" { "$basetexture" "direct" }')
+            (game/'materials/direct.vtf').write_bytes(self._vtf_header(64,64))
+            (game/'materials/sprites/crosshairs.vmt').write_text('"UnlitGeneric" { "$basetexture" "sprites/legacy" }')
+            (game/'materials/sprites/legacy.vtf').write_bytes(self._vtf_header(128,128))
+            spec={'file':'crosshairs','width':24,'height':24,'640':{'file':'crosshairs','width':24,'height':24}}
+            result=v23.check_icon([game],'crosshair',spec)
+            self.assertEqual(result['status'],'rectangle_verified')
+            self.assertEqual(result['layout'],'direct')
+            self.assertEqual(result['material'],'materials/crosshairs.vmt')
+            self.assertEqual(result['dimensions'],[64,64])
+
+    def test_legacy_sprite_normalization_rejects_unsafe_paths(self):
+        for raw in ('..','.','../escape','sprites/../../escape','..\\escape','C:\\escape','/escape'):
+            with self.subTest(raw=raw):
+                result=v23.check_icon([],'crosshair',{'640':{'file':raw,'width':24,'height':24}})
+                self.assertEqual(result['status'],'invalid_material_path')
+
     def test_patch_material_inheritance_and_overrides(self):
         with tempfile.TemporaryDirectory() as td:
             game=Path(td)

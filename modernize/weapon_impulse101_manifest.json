@@ -161,7 +161,6 @@
       "weapon_drainbeam",
       "weapon_flame_thrower",
       "weapon_gas_can",
-      "weapon_grenade_rocket",
       "weapon_harpoon",
       "weapon_infiltrator",
       "weapon_laserdesignator",
@@ -190,6 +189,7 @@
       "weapon_combat_grenade": "TF2 grenade base without a concrete projectile",
       "weapon_combat_plasmarifle_base": "TF2 plasma rifle base class",
       "weapon_combat_usedwithshieldbase": "TF2 shield combination base class",
+      "weapon_grenade_rocket": "internal rocket projectile derived from CBaseAnimating, not an equipable combat weapon",
       "weapon_objectselection": "internal builder selection entry; requires an initialized object subtype",
       "weapon_twohandedcontainer": "internal class-loadout support container; requires initialized compatible child weapons"
     },
@@ -208,7 +208,6 @@
       "weapon_drainbeam",
       "weapon_flame_thrower",
       "weapon_gas_can",
-      "weapon_grenade_rocket",
       "weapon_harpoon",
       "weapon_limpetmine",
       "weapon_minigun",

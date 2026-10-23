@@ -233,13 +233,14 @@ CBaseEntity *CWeaponRepairGun::CheckVehicleTargets( CBaseEntity *pCurHealing )
 			CBaseTFPlayer *pPlayer = (CBaseTFPlayer *)pTargetVehicle->GetPassenger(i);
 			if ( pPlayer )
 			{
+				// HL2MODERN_REPAIRGUN_PRIORITY: heal injured passengers first.
 				if ( pPlayer->GetHealth() < pPlayer->GetMaxHealth() )
 				{
-					pUnhurtPlayer = pPlayer;
+					pHurtPlayer = pPlayer;
 				}
 				else
 				{
-					pHurtPlayer = pPlayer;
+					pUnhurtPlayer = pPlayer;
 				}
 			}
 		}

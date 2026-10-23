@@ -121,7 +121,13 @@ def check_icon(roots,name,spec):
     source,layout=select_sprite(spec)
     item={'role':name,'layout':layout,'runtime_verified':False}
     if source is None:item['status']='missing_raster';return item
-    path=legacy.clean_asset_path(source.get('file',''),'materials','.vmt')
+    material=source.get('file','')
+    # Match HL2ModernHud::SpriteMaterialName: only bare names inside legacy
+    # resolution blocks gain sprites/. Explicit paths and direct names keep
+    # their spelling; the shared path validator still rejects traversal.
+    if layout!='direct' and isinstance(material,str) and not any(c in material for c in '/\\:'):
+        material='sprites/'+material
+    path=legacy.clean_asset_path(material,'materials','.vmt')
     if path is None:item['status']='invalid_material_path';return item
     item['material']=path
     try:x,y,w,h=[int(source.get(k,0)) for k in ('x','y','width','height')]

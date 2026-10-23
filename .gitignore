@@ -1,0 +1,4 @@
+__pycache__/
+*.py[cod]
+.modern_build_logs/
+**/build/

@@ -392,6 +392,8 @@ void CGrenadeHopWire::Detonate( void )
 CBaseGrenade *HopWire_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer )
 {
 	CGrenadeHopWire *pGrenade = (CGrenadeHopWire *) CBaseEntity::Create( "npc_grenade_hopwire", position, angles, pOwner );
+	// HL2MODERN_HOPWIRE_SPAWN: an exhausted entity factory cannot supply a grenade.
+	if ( !pGrenade ) return NULL;
 	
 	pGrenade->SetTimer( timer );
 	pGrenade->SetVelocity( velocity, angVelocity );

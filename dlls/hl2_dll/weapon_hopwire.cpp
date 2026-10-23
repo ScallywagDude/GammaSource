@@ -36,9 +36,9 @@ public:
 
 private:
 	
-	void	ThrowGrenade( CBasePlayer *pPlayer );
-	void	RollGrenade( CBasePlayer *pPlayer );
-	void	LobGrenade( CBasePlayer *pPlayer );
+	bool	ThrowGrenade( CBasePlayer *pPlayer );
+	bool	RollGrenade( CBasePlayer *pPlayer );
+	bool	LobGrenade( CBasePlayer *pPlayer );
 
 	bool	m_bRedraw;	//Draw the weapon again after throwing a grenade
 
@@ -105,18 +105,18 @@ void CWeaponHopWire::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseCombatC
 	switch( pEvent->event )
 	{
 		case EVENT_WEAPON_THROW:
-			ThrowGrenade( pOwner );
-			DecrementAmmo( pOwner );
+			if ( pOwner && pOwner->GetAmmoCount(m_iPrimaryAmmoType)>0 &&
+				 ThrowGrenade( pOwner ) ) DecrementAmmo( pOwner );
 			break;
 
 		case EVENT_WEAPON_THROW2:
-			RollGrenade( pOwner );
-			DecrementAmmo( pOwner );
+			if ( pOwner && pOwner->GetAmmoCount(m_iPrimaryAmmoType)>0 &&
+				 RollGrenade( pOwner ) ) DecrementAmmo( pOwner );
 			break;
 
 		case EVENT_WEAPON_THROW3:
-			LobGrenade( pOwner );
-			DecrementAmmo( pOwner );
+			if ( pOwner && pOwner->GetAmmoCount(m_iPrimaryAmmoType)>0 &&
+				 LobGrenade( pOwner ) ) DecrementAmmo( pOwner );
 			break;
 
 		default:
@@ -237,7 +237,7 @@ void CWeaponHopWire::ItemPostFrame( void )
 // Purpose: 
 // Input  : *pPlayer - 
 //-----------------------------------------------------------------------------
-void CWeaponHopWire::ThrowGrenade( CBasePlayer *pPlayer )
+bool CWeaponHopWire::ThrowGrenade( CBasePlayer *pPlayer )
 {
 	Vector	vecSrc = pPlayer->EyePosition();
 	Vector	vForward, vRight;
@@ -248,16 +248,17 @@ void CWeaponHopWire::ThrowGrenade( CBasePlayer *pPlayer )
 	vForward[2] += 0.1f;
 
 	Vector vecThrow = vForward * 1200 + pPlayer->GetAbsVelocity();
-	HopWire_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(600,random->RandomInt(-1200,1200),0), pPlayer, GRENADE_TIMER );
+	if ( !HopWire_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(600,random->RandomInt(-1200,1200),0), pPlayer, GRENADE_TIMER ) ) return false;
 
 	m_bRedraw = true;
+	return true;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pPlayer - 
 //-----------------------------------------------------------------------------
-void CWeaponHopWire::LobGrenade( CBasePlayer *pPlayer )
+bool CWeaponHopWire::LobGrenade( CBasePlayer *pPlayer )
 {
 	Vector	vecSrc = pPlayer->EyePosition();
 	Vector	vForward, vRight;
@@ -266,19 +267,20 @@ void CWeaponHopWire::LobGrenade( CBasePlayer *pPlayer )
 	vecSrc += vForward * 18.0f + vRight * 8.0f + Vector( 0, 0, -8 );
 	
 	Vector vecThrow = vForward * 350 + pPlayer->GetAbsVelocity() + Vector( 0, 0, 50 );
-	HopWire_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(200,random->RandomInt(-600,600),0), pPlayer, GRENADE_TIMER );
+	if ( !HopWire_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(200,random->RandomInt(-600,600),0), pPlayer, GRENADE_TIMER ) ) return false;
 
 	// Play throw sound
 	EmitSound( "WeaponFrag.Throw" );
 
 	m_bRedraw = true;
+	return true;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pPlayer - 
 //-----------------------------------------------------------------------------
-void CWeaponHopWire::RollGrenade( CBasePlayer *pPlayer )
+bool CWeaponHopWire::RollGrenade( CBasePlayer *pPlayer )
 {
 	// BUGBUG: Hardcoded grenade width of 4 - better not change the model :)
 	Vector vecSrc( pPlayer->WorldSpaceCenter().x, pPlayer->WorldSpaceCenter().y, pPlayer->GetAbsMins().z + 4 );
@@ -301,11 +303,12 @@ void CWeaponHopWire::RollGrenade( CBasePlayer *pPlayer )
 	QAngle orientation(0,pPlayer->GetLocalAngles().y,-90);
 	// roll it
 	AngularImpulse rotSpeed(0,0,720);
-	HopWire_Create( vecSrc, orientation, vecThrow, rotSpeed, pPlayer, GRENADE_TIMER );
+	if ( !HopWire_Create( vecSrc, orientation, vecThrow, rotSpeed, pPlayer, GRENADE_TIMER ) ) return false;
 
 	// Play throw sound
 	EmitSound( "WeaponFrag.Roll" );
 
 	m_bRedraw = true;
+	return true;
 }
 

@@ -28,6 +28,7 @@ EXCLUDED={
  'weapon_combat_plasmarifle_base':'TF2 plasma rifle base class',
  'weapon_objectselection':'internal builder selection entry; requires an initialized object subtype',
  'weapon_twohandedcontainer':'internal class-loadout support container; requires initialized compatible child weapons',
+ 'weapon_grenade_rocket':'internal rocket projectile derived from CBaseAnimating, not an equipable combat weapon',
  'weapon_cubemap':'shared cubemap debugging tool, not a branch gameplay weapon',
  'weapon_manhack':'incomplete prototype: both attacks are empty and ItemPostFrame only idles',
 }

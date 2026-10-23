@@ -21,7 +21,7 @@
 #define	PISTOL_FASTEST_REFIRE_TIME		0.1f
 #define	PISTOL_FASTEST_DRY_REFIRE_TIME	0.2f
 
-static void LaunchStickyBomb( CBaseCombatCharacter *pOwner, const Vector &origin, const Vector &direction );
+static bool LaunchStickyBomb( CBaseCombatCharacter *pOwner, const Vector &origin, const Vector &direction );
 
 //-----------------------------------------------------------------------------
 // CWeaponStickyLauncher
@@ -163,8 +163,8 @@ void CWeaponStickyLauncher::Operator_HandleAnimEvent( animevent_t *pEvent, CBase
 				AngleVectors( pOperator->GetLocalAngles(), &vecShootDir );
 			}
 
+			if ( !LaunchStickyBomb( pOperator, vecShootOrigin, vecShootDir ) ) break;
 			WeaponSound( SINGLE_NPC );
-			LaunchStickyBomb( pOperator, vecShootOrigin, vecShootDir );
 			pOperator->m_fEffects |= EF_MUZZLEFLASH;
 			m_iClip1 = m_iClip1 - 1;
 		}
@@ -193,6 +193,11 @@ void CWeaponStickyLauncher::PrimaryAttack( void )
 
 	m_flNextPrimaryAttack = gpGlobals->curtime + GetFireRate();
 
+	Vector vecSrc = pPlayer->Weapon_ShootPosition( );
+	Vector vecAiming = pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
+	// HL2MODERN_STICKY_SPAWN: only a created projectile spends a round.
+	if ( !LaunchStickyBomb( pPlayer, vecSrc, vecAiming ) ) return;
+
 	WeaponSound(SINGLE);
 	pPlayer->m_fEffects |= EF_MUZZLEFLASH;
 
@@ -201,11 +206,7 @@ void CWeaponStickyLauncher::PrimaryAttack( void )
 	// player "shoot" animation
 	pPlayer->SetAnimation( PLAYER_ATTACK1 );
 
-	Vector vecSrc = pPlayer->Weapon_ShootPosition( );
-	Vector vecAiming = pPlayer->GetAutoaimVector( AUTOAIM_5DEGREES );
 	m_iClip1 = m_iClip1 - 1;
-
-	LaunchStickyBomb( pPlayer, vecSrc, vecAiming );
 	AddViewKick();
 }
 
@@ -434,8 +435,10 @@ void CStickyBomb::Touch( CBaseEntity *pOther )
 	}
 }
 
-void LaunchStickyBomb( CBaseCombatCharacter *pOwner, const Vector &origin, const Vector &direction )
+bool LaunchStickyBomb( CBaseCombatCharacter *pOwner, const Vector &origin, const Vector &direction )
 {
 	CStickyBomb *pGrenade = (CStickyBomb *)CBaseEntity::Create( "grenade_stickybomb", origin, vec3_angle, pOwner );
+	if ( !pGrenade ) return false;
 	pGrenade->SetVelocity( direction * 1200, vec3_origin );
+	return true;
 }

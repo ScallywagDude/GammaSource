@@ -1,6 +1,6 @@
 """Guarded v37-path integration checks: do not equate version acceptance with rendering."""
 from pathlib import Path
-import os, shutil, subprocess, tempfile, unittest
+import os, shutil, subprocess, sys, tempfile, unittest
 ROOT=Path(__file__).resolve().parents[2]
 def source(path): return (ROOT/path).read_bytes().decode('latin1')
 class StudioCompatibilityV21(unittest.TestCase):
@@ -41,7 +41,7 @@ class StudioCompatibilityV21(unittest.TestCase):
         watched=['public/studio.h','engine/l_studio.cpp','engine/gameui_modelpreview.cpp',
           'dlls/hl2_dll/hl2_player.cpp','dlls/player.cpp','modernize/model_preview_studio_validation.h']
         before={p:(ROOT/p).read_bytes() for p in watched}
-        result=subprocess.run([shutil.which('python3') or 'python3',str(ROOT/'modernize/patch_studio_v37_v21.py')],capture_output=True,text=True)
+        result=subprocess.run([sys.executable,str(ROOT/'modernize/patch_studio_v37_v21.py')],capture_output=True,text=True)
         self.assertEqual(result.returncode,0,result.stderr)
         self.assertEqual(before,{p:(ROOT/p).read_bytes() for p in watched})
 if __name__=='__main__':unittest.main()

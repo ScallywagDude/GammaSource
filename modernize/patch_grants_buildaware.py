@@ -10,6 +10,7 @@ import re
 from pathlib import Path
 from json_output_policy import write_json
 from weapon_build_audit import audit
+from weapon_branch_audit import EXCLUDED
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = {'hl2':'dlls/hl2_dll/hl2_player.cpp', 'cstrike':'dlls/cstrike/cs_player.cpp', 'tf2':'dlls/tf2_dll/tf_player.cpp'}
@@ -20,7 +21,14 @@ MANIFEST = json.loads((ROOT/'modernize/weapon_impulse101_manifest.json').read_te
 for branch, rel in SOURCE.items():
     row = next(x for x in MANIFEST if x['branch'] == ('cs' if branch == 'cstrike' else branch))
     mapped = {w['classname']: w for w in REPORT['branches'][branch]['weapons']}
-    requested = row['impulse101_extra']
+    # A weapon_ classname can identify an internal projectile or base class.
+    # Use the same exclusions as the authoritative branch inventory, even when
+    # refreshing a stale historical manifest whose source was server-compiled.
+    internal = {name: EXCLUDED[name] for name in row['impulse101_extra'] if name in EXCLUDED}
+    requested = [name for name in row['impulse101_extra'] if name not in EXCLUDED]
+    if internal:
+        row.setdefault('excluded_source_or_internal', {}).update(internal)
+    row['impulse101_extra'] = requested
     # Only emit grants for classes registered in the current branch's server DLL
     # under BOTH the Debug and Release configurations. The original cheat's
     # normal grant list remains untouched.

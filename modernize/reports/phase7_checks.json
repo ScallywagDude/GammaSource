@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "milestone": "v25",
+  "parent_commit": "09dd4edf98a354fa6846aec2036797278b1cf734",
+  "recorded_utc": "2026-10-23T01:50:40.390946+00:00",
+  "tests": {
+    "command": "python -m unittest discover -s modernize/tests -v",
+    "run": 217,
+    "passed": 216,
+    "skipped": 1,
+    "failed": 0,
+    "skip_reason": "Unix-only fake MSBuild test; actual Windows builds were attempted separately.",
+    "includes_compiled_cpp98_weapon_method_harnesses": true
+  },
+  "replay": {
+    "exit_code": 0,
+    "protected_files_before": 7072,
+    "protected_files_after": 7072,
+    "source_drift": [],
+    "command": "python modernize/apply_modernization.py"
+  },
+  "structure": {
+    "command": "python modernize/validate.py",
+    "exit_code": 0,
+    "projects": 153,
+    "configurations": 348
+  },
+  "inventory_gate": {
+    "command": "python phase7_manifest_check.py .",
+    "exit_code": 1,
+    "output": [
+      "Branch | Registered | Extra impulse 101 | Uncompiled excluded | Verified",
+      "hl2 | 32 | 21 | 1 | 0",
+      "cstrike | 28 | 25 | 0 | 0",
+      "tf2 | 38 | 24 | 6 | 0",
+      "hl1 | 15 | 15 | 0 | 0",
+      "Integrity PASS; completion evidence: 0/113"
+    ]
+  },
+  "windows_release": {
+    "command": "python modernize/build_driver.py Release",
+    "expected_steps": 61,
+    "steps": [
+      {
+        "step": 1,
+        "project": "tier0/tier0.vcxproj",
+        "configuration": "Release",
+        "status": "passed",
+        "exit_code": 0
+      },
+      {
+        "step": 2,
+        "project": "vstdlib/vstdlib.vcxproj",
+        "configuration": "Release",
+        "status": "passed",
+        "exit_code": 0
+      },
+      {
+        "step": 3,
+        "project": "unitlib/unitlib.vcxproj",
+        "configuration": "Release",
+        "status": "passed",
+        "exit_code": 0
+      },
+      {
+        "step": 4,
+        "project": "vtf/vtf.vcxproj",
+        "configuration": "Release",
+        "status": "passed",
+        "exit_code": 0
+      },
+      {
+        "step": 5,
+        "project": "shaderlib/shaderlib.vcxproj",
+        "configuration": "Release",
+        "status": "passed",
+        "exit_code": 0
+      },
+      {
+        "step": 6,
+        "project": "materialsystem/stdshaders/stdshader_dbg.vcxproj",
+        "configuration": "Release",
+        "status": "failed",
+        "exit_code": 1
+      }
+    ],
+    "full_build_verified": false,
+    "blocker": "Bundled Perl cannot start: Illegal System DLL Relocation; stdshader_dbg custom build exits 9020."
+  },
+  "windows_debug": {
+    "tier0": "build_passed",
+    "vstdlib": "compiled_link_failed",
+    "full_build_verified": false,
+    "blocker": "29 debug CRT/legacy allocator duplicate-symbol errors."
+  },
+  "hl2_server_release": {
+    "command": "msbuild dlls/hl.vcxproj /t:Build /p:Configuration=\"Release HL2\" /p:Platform=Win32",
+    "exit_code": 1,
+    "full_build_verified": false,
+    "blocker": "Legacy member-function pointers, network variable offsetof expressions and other compiler incompatibilities."
+  },
+  "local_asset_metadata": {
+    "cstrike": {
+      "metadata_candidates": 24,
+      "registered_entries": 28,
+      "gameplay_verified": 0
+    },
+    "hl1": {
+      "metadata_candidates": 15,
+      "registered_entries": 15,
+      "gameplay_verified": 0
+    },
+    "hl2": {
+      "metadata_candidates": 32,
+      "registered_entries": 32,
+      "gameplay_verified": 0
+    },
+    "tf2": {
+      "metadata_candidates": 25,
+      "registered_entries": 38,
+      "gameplay_verified": 0
+    }
+  },
+  "asset_limits": [
+    "Metadata candidates include internal entries and do not prove full model layout, correct identity, animations, rendering or gameplay.",
+    "The local TF2 alpha README says its weapon models were replaced with HL2 models.",
+    "CS and TF2 alpha assets/runtimes were found under Documents; no game assets are included in this commit."
+  ],
+  "phase7_complete": false,
+  "gameplay_verified": false,
+  "rendering_backends_complete": false,
+  "work_order": [
+    "Finish Phase 7",
+    "Phase 3: shaders and lighting",
+    "Remaining phases",
+    "Final: Vulkan/OpenGL/DX11/DX12"
+  ]
+}

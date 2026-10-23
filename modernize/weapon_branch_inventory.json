@@ -1567,7 +1567,7 @@
         "classname": "weapon_grenade_rocket",
         "implementation_file": "game_shared/tf2/weapon_grenade_rocket.cpp",
         "source_scope": "branch",
-        "grant_exclusion_reason": null,
+        "grant_exclusion_reason": "internal rocket projectile derived from CBaseAnimating, not an equipable combat weapon",
         "implementation_status": "source_present_runtime_unverified",
         "model_literals_in_same_file": [
           "models/weapons/w_missile.mdl"

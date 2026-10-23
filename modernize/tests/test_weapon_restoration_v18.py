@@ -58,6 +58,29 @@ class WeaponRestorationV18(unittest.TestCase):
             self.assertFalse(row['assets_verified'])
             self.assertNotIn('weapon_cubemap',row['compiled_impulse101_extra'])
 
+    def test_registered_rocket_projectile_is_not_an_inventory_weapon(self):
+        # Its misleading weapon_ registration names a flying CBaseAnimating
+        # projectile. Keep it registered and compiled for the real launcher,
+        # but never ask GiveCheatWeapon to equip or orphan that projectile.
+        header=inventory.strip_comments(source('game_shared/tf2/weapon_grenade_rocket.h'))
+        self.assertRegex(header,r'class\s+CWeaponGrenadeRocket\s*:\s*public\s+CBaseAnimating\b')
+        self.assertIn('DECLARE_CLASS( CWeaponGrenadeRocket, CBaseAnimating )',header)
+        row=next(r for r in inventory.audit()['branches']['tf2'] if r['classname']=='weapon_grenade_rocket')
+        self.assertIn('internal rocket projectile',row['grant_exclusion_reason'])
+        manifest=json.loads((ROOT/'modernize/weapon_impulse101_manifest.json').read_text())
+        tf2=next(r for r in manifest if r['branch']=='tf2')
+        self.assertIn('weapon_grenade_rocket',tf2['excluded_source_or_internal'])
+        for field in ('impulse101_extra','compiled_impulse101_extra','excluded_not_compiled','base_or_abstract_excluded'):
+            self.assertNotIn('weapon_grenade_rocket',tf2[field],field)
+        player=source('dlls/tf2_dll/tf_player.cpp')
+        grants=re.search(r'const char \*const weapons\[\] = \{(.*?)\};',player,re.S).group(1)
+        self.assertNotIn('"weapon_grenade_rocket"',grants)
+        self.assertIn('"weapon_rocket_launcher"',grants)
+        build=json.loads((ROOT/'modernize/weapon_build_report.json').read_text())
+        compiled=next(r for r in build['branches']['tf2']['weapons'] if r['classname']=='weapon_grenade_rocket')
+        self.assertTrue(compiled['server_compiled_all_configs'])
+        self.assertIn('CWeaponGrenadeRocket::Create(',source('game_shared/tf2/weapon_rocketlauncher.cpp'))
+
     def test_safe_spawn_checks_before_give_and_cleanup_after_touch(self):
         text=source('dlls/player.cpp')
         begin=text.index('CBaseCombatWeapon *CBasePlayer::GiveCheatWeapon(')

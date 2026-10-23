@@ -208,6 +208,48 @@ def get_flaginfo(flags):
             'pchuse':get_switch(flags, 'Yu'),
             'pchcreate':get_switch(flags, 'Yc')}
 
+
+def runtime_library(flags, configuration, legacy_default=False):
+    """Preserve explicit CRT choices; VC6's missing /M* meant static /ML.
+
+    Modern MSBuild defaults to /MD. Allocator-overriding modules cannot silently
+    inherit that change. /ML is unavailable today; /MT retains static linkage.
+    """
+    choices={'mt':'MultiThreaded', 'mtd':'MultiThreadedDebug',
+             'md':'MultiThreadedDLL', 'mdd':'MultiThreadedDebugDLL',
+             'ml':'MultiThreaded', 'mld':'MultiThreadedDebug'}
+    switches=re.findall(r'(?i)(?<!\S)/(MTd?|MDd?|MLd?)(?=\s|$)',flags)
+    if switches:return choices[switches[-1].lower()]
+    if legacy_default:
+        return 'MultiThreadedDebug' if configuration.lower().startswith('debug') else 'MultiThreaded'
+    return None
+
+
+def source_libraries(project, configuration):
+    """VC6 .lib SOURCE items are linker inputs with per-file exclusions."""
+    result=[]
+    for item in project['files']:
+        path=norm_path(item['path'])
+        if pathlib.PureWindowsPath(path).suffix.lower()!='.lib':continue
+        if item['excluded'].get(configuration,item['excluded'].get('*',False)):continue
+        if path.casefold() not in {p.casefold() for p in result}:result.append(path)
+    return result
+
+
+def vstdlib_linkage(project, configuration):
+    """Use newly built tier0 without overwriting the shipped VC6 import library.
+
+    Other projects retain their current conversion until their dependency and
+    allocator contracts have been build-tested. The ordered driver builds tier0
+    before vstdlib in both configurations.
+    """
+    result=[]
+    for path in source_libraries(project,configuration):
+        if pathlib.PureWindowsPath(path).name.casefold()=='tier0.lib':
+            path='..\\tier0\\build\\'+configuration+'\\tier0.lib'
+        result.append(path)
+    return result
+
 def write_xml(doc, output):
     ET.indent(doc, space='  ')
     output.write_bytes(b'<?xml version="1.0" encoding="utf-8"?>\r\n' + ET.tostring(doc, encoding='utf-8', xml_declaration=False))
@@ -274,7 +316,8 @@ def gen_project(p, report):
         if cinfo['pchuse']: node(cc,'PrecompiledHeaderFile',cinfo['pchuse'])
         if '/GR' in flags['CPP']: node(cc,'RuntimeTypeInfo','true')
         if '/EHsc' in flags['CPP'] or '/GX' in flags['CPP']: node(cc,'ExceptionHandling','Sync')
-        rt= next((kind for sw,kind in [('/MTd','MultiThreadedDebug'),('/MDd','MultiThreadedDebugDLL'),('/MT','MultiThreaded'),('/MD','MultiThreadedDLL')] if sw in flags['CPP']),None)
+        repair_vstdlib=relative_project_name(p['path']).casefold()=='vstdlib/vstdlib.dsp'
+        rt=runtime_library(flags['CPP'],cfg,legacy_default=repair_vstdlib)
         if rt: node(cc,'RuntimeLibrary',rt)
         if '/Gz' in flags['CPP']: node(cc,'CallingConvention','StdCall')
         if '/Gd' in flags['CPP']: node(cc,'CallingConvention','Cdecl')
@@ -287,6 +330,8 @@ def gen_project(p, report):
             if p['kind']=='Application': node(lk,'SubSystem',p['subsystem'])
             node(lk,'GenerateDebugInformation','true' if '/debug' in flags['LINK32'].lower() else 'false')
         libs=linfo['libraries']
+        if repair_vstdlib:
+            libs=list(dict.fromkeys(libs+vstdlib_linkage(p,cfg)))
         if libs: node(lk,'AdditionalDependencies',';'.join(libs)+';%(AdditionalDependencies)')
         if linfo['libpaths']: node(lk,'AdditionalLibraryDirectories',';'.join(linfo['libpaths'])+';%(AdditionalLibraryDirectories)')
         defs_file=get_switch(flags['LINK32'],'def:')

@@ -7,6 +7,7 @@ No game assets are invented or modified by this script.
 """
 from pathlib import Path
 import json,re
+from weapon_branch_audit import EXCLUDED
 root=Path(__file__).resolve().parents[1]
 read=lambda rel: (root/rel).read_bytes().decode('latin1')
 
@@ -28,7 +29,7 @@ for name,loc in [('hl2','dlls/hl2_dll'),('cs','game_shared/cstrike'),('tf2','gam
     regs[name]=mapping
 
 # The HL2 base cheat already grants nine weapons; don't give duplicates.
-extra={name: sorted(x for x in mapping if x not in bases and (name!='hl2' or x not in vanilla)) for name,mapping in regs.items()}
+extra={name: sorted(x for x in mapping if x not in EXCLUDED and (name!='hl2' or x not in vanilla)) for name,mapping in regs.items()}
 # Some of these are unusual prototypes and may fail without their assets.
 # No cross-game string appears in another branch's emitted grant loop.
 

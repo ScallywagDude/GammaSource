@@ -1433,7 +1433,6 @@ void CBaseTFPlayer::CheatImpulseCommands( int iImpulse )
 				"weapon_drainbeam",
 				"weapon_flame_thrower",
 				"weapon_gas_can",
-				"weapon_grenade_rocket",
 				"weapon_harpoon",
 				"weapon_limpetmine",
 				"weapon_minigun",

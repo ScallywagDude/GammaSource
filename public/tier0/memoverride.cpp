@@ -95,6 +95,14 @@ size_t _msize( void *pMem )
 	return g_pMemAlloc->GetSize(pMem);
 }
 
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+// HL2MODERN_UCRT_MSIZE_BASE: UCRT helpers use the allocator base entry too.
+size_t __cdecl _msize_base( void *pMem ) _CRT_NOEXCEPT
+{
+	return g_pMemAlloc->GetSize(pMem);
+}
+#endif
+
 size_t msize( void *pMem )
 {
 	return g_pMemAlloc->GetSize(pMem);
@@ -359,6 +367,14 @@ int _CrtSetDbgFlag( int nNewFlag )
 	return g_pMemAlloc->CrtSetDbgFlag( nNewFlag );
 }
 
+// Modern CRT headers expose these names as accessor macros.
+// Keep the legacy allocator globals as variables in this unit.
+#ifdef _crtBreakAlloc
+#undef _crtBreakAlloc
+#endif
+#ifdef _crtDbgFlag
+#undef _crtDbgFlag
+#endif
 long _crtBreakAlloc;      /* Break on this allocation */
 int _crtDbgFlag = _CRTDBG_ALLOC_MEM_DF;
 
