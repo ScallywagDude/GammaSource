@@ -131,8 +131,7 @@
   "rendering_backends_complete": false,
   "work_order": [
     "Finish Phase 7",
-    "Phase 3: shaders and lighting",
-    "Remaining phases",
-    "Final: Vulkan/OpenGL/DX11/DX12"
+    "Phase 3: Vulkan/OpenGL/DX11/DX12 rendering API modernization, shaders and lighting",
+    "Remaining phases"
   ]
 }

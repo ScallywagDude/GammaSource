@@ -4,14 +4,13 @@ Modernization of the historical 2003 Source-engine tree. The uploaded source, ge
 
 ## Current milestone and work order
 
-**Source milestone: v25 (published Phase 7 source fixes). Phase 7 is not complete.** Finish **Phase 7 — Weapon restoration**, then work on **Phase 3 — Shaders and lighting**, then continue the remaining phases. **Vulkan/OpenGL/DX11/DX12 modernization stays the final phase.**
+**Source milestone: v25 (published Phase 7 source fixes). Phase 7 is not complete.** Finish **Phase 7 — Weapon restoration**, then work on **Phase 3 — Rendering API modernization, shaders and lighting**, then continue the remaining phases. **Phase 3 includes Vulkan/OpenGL/DX11/DX12 modernization.**
 
 | Work | Status | Required verification |
 | --- | --- | --- |
 | Phase 7: weapon restoration | **Active; must finish first** | Windows builds, per-branch assets, weapon behavior, models, HUD, animations, pickups, ammo and `impulse 101` |
-| Phase 3: shaders and lighting | **Next, after Phase 7** | Shader builds and in-game visual checks |
+| Phase 3: Vulkan/OpenGL/DX11/DX12, shaders and lighting | **Next, after Phase 7** | Working backends, shader builds, GPU/runtime and in-game visual checks |
 | Remaining engine/gameplay, Steam/controller, cut-enemy and multiplayer work | Partial; follows the active priorities | Branch-specific build, runtime, network and asset tests |
-| Vulkan/OpenGL/DX11/DX12 | **Final phase**; infrastructure only | Working backends and GPU/runtime verification |
 
 Phase labels follow the current project roadmap; older documents retain historical numbering. No phase is complete solely because a source or metadata check passes.
 
@@ -36,4 +35,4 @@ Yeah so like don't sell this. This is Forcefully Open-Sourced (LEAKED PROPRIETAR
 
 ## Current Phase 7 verification
 
-The local four-branch asset audit reports 96/113 metadata candidates; **0 weapons are claimed gameplay-verified**. TF2 alpha content uses replacement HL2 weapon models, and several prototypes remain incomplete or uncompiled. The single [Phase 7 status](PHASE7_STATUS.md) records the source, art, build and runtime blockers. Phase 3 starts after Phase 7 is completed and tested.
+The local four-branch asset audit reports 96/113 metadata candidates; **0 weapons are claimed gameplay-verified**. TF2 alpha content uses replacement HL2 weapon models, and several prototypes remain incomplete or uncompiled. The single [Phase 7 status](PHASE7_STATUS.md) records the source, art, build and runtime blockers. Phase 3's rendering APIs, shaders and lighting start after Phase 7 is completed and tested.

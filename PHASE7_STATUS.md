@@ -1,6 +1,6 @@
 # Phase 7 — Weapon restoration
 
-**Latest GitHub source milestone: v25. Status: active, not complete or gameplay-verified.** This is the single living Phase 7 status file. Finish Phase 7 first, then Phase 3 (shaders and lighting), then continue the remaining phases. Vulkan/OpenGL/DX11/DX12 modernization remains the final phase.
+**Latest GitHub source milestone: v25. Status: active, not complete or gameplay-verified.** This is the single living Phase 7 status file. Finish Phase 7 first, then Phase 3 (Vulkan/OpenGL/DX11/DX12 rendering API modernization, shaders and lighting), then continue the remaining phases.
 
 ## Current branch inventory
 
