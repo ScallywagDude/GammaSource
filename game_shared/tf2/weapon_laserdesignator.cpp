@@ -5,25 +5,22 @@
 // $NoKeywords: $
 //=============================================================================
 #include "cbase.h"
+#include "beam_shared.h"
 #include "NPCEvent.h"
 #include "tf_basecombatweapon.h"
-#include "smoke_trail.h"
 #include "tf_player.h"
 #include "in_buttons.h"
 #include "tf_gamerules.h"
 #include "ammodef.h"
 #include "IEffects.h"
 #include "vstdlib/random.h"
-#include "effects.h"
-#include "baseviewmodel.h"
 #include "basegrenade_shared.h"
 #include "grenade_limpetmine.h"
 #include "tf_obj_sentrygun.h"
-#include "tf_obj_aerial_sentry_station.h"
 
 
 // Damage CVars
-ConVar	weapon_laserdesignator_range( "weapon_laserdesignator_range","1024", FCVAR_NONE, "Laser Designator maximum range" );
+extern ConVar weapon_laserdesignator_range;
 
 // ------------------------------------------------------------------------ //
 // CWeaponLaserDesignator
@@ -32,6 +29,12 @@ class CWeaponLaserDesignator : public CBaseTFCombatWeapon
 {
 	DECLARE_CLASS( CWeaponLaserDesignator, CBaseTFCombatWeapon );
 public:	
+	DECLARE_SERVERCLASS();
+	DECLARE_DATADESC();
+	CWeaponLaserDesignator():m_bDesignating(false) {}
+	void UpdateOnRemove(void) { StopDesignating(); BaseClass::UpdateOnRemove(); }
+	// HL2MODERN_DESIGNATOR_LIFECYCLE
+	void Drop(const Vector &velocity) { StopDesignating(); BaseClass::Drop(velocity); }
 	virtual void	Precache( void );
 	virtual float	GetFireRate( void );
 	virtual bool	Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
@@ -53,9 +56,15 @@ public:
 	bool	m_bDesignating;
 
 	// Beam
-	CBeam	*m_pBeam;
+	CHandle<CBeam> m_pBeam;
 };
 
+IMPLEMENT_SERVERCLASS_ST(CWeaponLaserDesignator,DT_WeaponLaserDesignator)
+END_SEND_TABLE()
+BEGIN_DATADESC(CWeaponLaserDesignator)
+    DEFINE_FIELD(CWeaponLaserDesignator,m_bDesignating,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponLaserDesignator,m_pBeam,FIELD_EHANDLE),
+END_DATADESC()
 LINK_ENTITY_TO_CLASS( weapon_laserdesignator, CWeaponLaserDesignator );
 PRECACHE_WEAPON_REGISTER(weapon_laserdesignator);
 
@@ -81,8 +90,9 @@ float CWeaponLaserDesignator::GetFireRate()
 //-----------------------------------------------------------------------------
 bool CWeaponLaserDesignator::Holster( CBaseCombatWeapon *pSwitchingTo )
 {
-	StopDesignating();
-	return BaseClass::Holster(pSwitchingTo);
+    if (!BaseClass::Holster(pSwitchingTo)) return false;
+    StopDesignating();
+    return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -105,9 +115,12 @@ bool CWeaponLaserDesignator::ComputeEMPFireState( void )
 //-----------------------------------------------------------------------------
 void CWeaponLaserDesignator::ItemPostFrame( void )
 {
-	CBasePlayer *pPlayer = GetOwner();
-	if (pPlayer == NULL)
+	CBasePlayer *pPlayer = ToBasePlayer(GetOwner());
+	if (!pPlayer || !pPlayer->IsAlive() || IsOwnerEMPed())
+	{
+		StopDesignating();
 		return;
+	}
 
 	// Are we already welding?
 	if ( m_bDesignating )
@@ -144,20 +157,19 @@ void CWeaponLaserDesignator::StartDesignating( void )
 
 	if ( !m_pBeam )
 	{
-		CBaseTFPlayer *pPlayer = ToBaseTFPlayer( m_hOwner );
-		if ( !pPlayer )
-			return;
-		int iIndex = pPlayer->entindex();
+		CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
+		if ( !pPlayer ) { StopDesignating(); return; }
 
 		m_pBeam = CBeam::BeamCreate( "sprites/laserbeam.vmt", 1 );
-		m_pBeam->PointEntInit( vec3_origin, iIndex );
+		if (!m_pBeam) { m_bDesignating=false; return; }
+		m_pBeam->PointEntInit( vec3_origin, pPlayer );
 		m_pBeam->SetEndAttachment( 1 );
 		m_pBeam->SetColor( 255, 32, 32 );
 		m_pBeam->SetBrightness( 255 );
 		m_pBeam->SetNoise( 0 );
 		m_pBeam->SetWidth( 2 );
 		m_pBeam->SetEndWidth( 1 );
-		m_pBeam->SetStartEntity( ENTINDEX(m_hOwner->edict()) );
+		m_pBeam->SetStartEntity( GetOwner() );
 	}
 }
 
@@ -179,7 +191,7 @@ void CWeaponLaserDesignator::StopDesignating( void )
 //-----------------------------------------------------------------------------
 void CWeaponLaserDesignator::PrimaryAttack( void )
 {
-	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( m_hOwner );
+	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
 	if ( !pPlayer )
 		return;
 	
@@ -198,14 +210,14 @@ void CWeaponLaserDesignator::PrimaryAttack( void )
 //-----------------------------------------------------------------------------
 void CWeaponLaserDesignator::UpdateBeam( void )
 {
-	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( m_hOwner );
+	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
 	if ( !pPlayer )
 		return;
 
-	ASSERT( m_pBeam );
+	if (!m_pBeam) { StopDesignating(); return; }
 
 	// "Fire" the designator beam
-	Vector vecSrc = pPlayer->Weapon_ShootPosition( pPlayer->GetOrigin() );
+	Vector vecSrc = pPlayer->Weapon_ShootPosition();
 	Vector vecAiming;
 	pPlayer->EyeVectors( &vecAiming );
 	Vector vecEnd = vecSrc + vecAiming * weapon_laserdesignator_range.GetFloat();
@@ -219,7 +231,7 @@ void CWeaponLaserDesignator::UpdateBeam( void )
 
 	// Perform designator functions
 	// Did we hit something?
-	CBaseEntity *pEntity = CBaseEntity::Instance( tr.u.ent );
+	CBaseEntity *pEntity = tr.m_pEnt;
 	if ( pEntity )
 	{
 		// TODO: We dynamic_cast the entity we choose twice. Fix it.
@@ -245,7 +257,7 @@ void CWeaponLaserDesignator::UpdateBeam( void )
 					continue;
 				if ( TargetIsInLock( pPlayer, pTarget, &bestdot ) == false )
 					continue;
-				if ( (pTarget->Center() - pPlayer->Center() ).Length() > weapon_laserdesignator_range.GetFloat() )
+				if ( (pTarget->WorldSpaceCenter() - pPlayer->WorldSpaceCenter() ).Length() > weapon_laserdesignator_range.GetFloat() )
 					continue;
 
 				// Can shoot at this one
@@ -292,7 +304,7 @@ void CWeaponLaserDesignator::UpdateBeam( void )
 
 			// Is it a limpet mine? If so, detonate it
 			CLimpetMine *pLimpet = dynamic_cast<CLimpetMine *>(pEntity);
-			if ( pLimpet && pLimpet->IsLive() && pLimpet->m_hOwner->pev == pPlayer->pev )
+			if ( pLimpet && pLimpet->IsLive() && pLimpet->GetOwner() == pPlayer )
 			{
 				pLimpet->Use( pPlayer, pPlayer, USE_ON, 0 );
 			}
@@ -310,7 +322,7 @@ bool CWeaponLaserDesignator::ValidDesignationTarget( CBaseEntity *pEntity )
 		return false;
 
 	// Ignore players on my team
-	if ( pEntity->IsPlayer() && pEntity->InSameTeam(m_hOwner) )
+	if ( pEntity->IsPlayer() && pEntity->InSameTeam(GetOwner()) )
 		return false;
 
 	// Is it a sentrygun? If so, tell it to toggle it's sunken state.
@@ -319,7 +331,7 @@ bool CWeaponLaserDesignator::ValidDesignationTarget( CBaseEntity *pEntity )
 
 	// My limpet mines are valid
 	CLimpetMine *pLimpet = dynamic_cast<CLimpetMine *>(pEntity);
-	if ( pLimpet && pLimpet->IsLive() && pLimpet->m_hOwner->pev == m_hOwner->pev )
+	if ( pLimpet && pLimpet->IsLive() && pLimpet->GetOwner() == GetOwner() )
 		return true;
 
 	// NPCs are valid
@@ -334,8 +346,8 @@ bool CWeaponLaserDesignator::ValidDesignationTarget( CBaseEntity *pEntity )
 //-----------------------------------------------------------------------------
 bool CWeaponLaserDesignator::TargetIsInLock( CBaseTFPlayer *pPlayer, CBaseEntity *pTarget, float *flMaxDot )
 {
-	Vector	center = pTarget->Center();
-	Vector	dir = center - pPlayer->Center();
+	Vector	center = pTarget->WorldSpaceCenter();
+	Vector	dir = center - pPlayer->WorldSpaceCenter();
 	float	length = VectorNormalize( dir );
 	Vector forward, right, up;
 	pPlayer->EyeVectors( &forward, &right, &up );
@@ -355,8 +367,8 @@ bool CWeaponLaserDesignator::TargetIsInLock( CBaseTFPlayer *pPlayer, CBaseEntity
 
 	// Open LOS?
 	trace_t tr;
-	UTIL_TraceLine( pPlayer->Center(), center, MASK_SHOT, edict(), COLLISION_GROUP_NONE, &tr );
-	if ( ( tr.fraction != 1.0f ) && ( tr.u.ent != pTarget->edict() ) )
+	UTIL_TraceLine( pPlayer->WorldSpaceCenter(), center, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
+	if ( ( tr.fraction != 1.0f ) && ( tr.m_pEnt != pTarget ) )
 		return false;
 
 	*flMaxDot = dot;
@@ -368,14 +380,14 @@ bool CWeaponLaserDesignator::TargetIsInLock( CBaseTFPlayer *pPlayer, CBaseEntity
 //-----------------------------------------------------------------------------
 void CWeaponLaserDesignator::DesignateSentriesToAttack( CBaseEntity *pEntity )
 {
-	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( m_hOwner );
+	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
 	if ( !pPlayer )
 		return;
 
 	// Tell all this player's sentryguns
-	for ( int i = 0; i < pPlayer->m_aObjects.Size(); i++ )
+	for ( int i = 0; i < pPlayer->GetObjectCount(); i++ )
 	{
-		CBaseObject *pObj = pPlayer->m_aObjects[i];
+		CBaseObject *pObj = pPlayer->GetObject(i);
 		if ( !pObj )
 			continue;
 
@@ -385,10 +397,5 @@ void CWeaponLaserDesignator::DesignateSentriesToAttack( CBaseEntity *pEntity )
 			pSentry->DesignateTarget( pEntity );
 		}
 
-		if ( pObj->GetType() == OBJ_AERIAL_SENTRY_STATION )
-		{
-			CObjectAerialSentryStation *pSentryStation = static_cast<CObjectAerialSentryStation *>(pObj);
-			pSentryStation->DesignateTarget( pEntity );
-		}
 	}
 }

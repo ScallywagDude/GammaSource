@@ -128,7 +128,7 @@ void CNPC_Barney::Spawn()
 	
 	NPCInit();
 	
-	SetUse( FollowerUse );
+	SetUse( &ThisClass::FollowerUse );
 }
 
 //=========================================================
@@ -855,7 +855,7 @@ void CNPC_DeadBarney :: Spawn( void )
 
 	NPCInit();
 	
-	SetThink( StartRagdoll );
+	SetThink( &ThisClass::StartRagdoll );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 

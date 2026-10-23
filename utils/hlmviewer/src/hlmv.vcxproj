@@ -38,7 +38,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>hlmv</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -50,9 +50,11 @@
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -60,13 +62,15 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;..\..\..\lib\common\mxtk.lib;..\..\..\lib\common\s3tc.lib;..\..\..\vstdlib\build\Release\vstdlib.lib;..\..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>hlmv</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -78,9 +82,11 @@
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -88,7 +94,9 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;..\..\..\lib\common\mxtk.lib;..\..\..\lib\common\s3tc.lib;..\..\..\vstdlib\build\Debug\vstdlib.lib;..\..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
       <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>

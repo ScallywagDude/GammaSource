@@ -14,11 +14,11 @@
 
 
 // Damage CVars
-ConVar	weapon_mortar_shell_damage( "weapon_mortar_shell_damage","0", FCVAR_NONE, "Mortar's standard shell maximum damage" );
-ConVar	weapon_mortar_shell_radius( "weapon_mortar_shell_radius","0", FCVAR_NONE, "Mortar's standard shell splash radius" );
-ConVar	weapon_mortar_starburst_damage( "weapon_mortar_starburst_damage","0", FCVAR_NONE, "Mortar's starburst maximum damage" );
-ConVar	weapon_mortar_starburst_radius( "weapon_mortar_starburst_radius","0", FCVAR_NONE, "Mortar's starburst splash radius" );
-ConVar	weapon_mortar_cluster_shells( "weapon_mortar_cluster_shells","0", FCVAR_NONE, "Number of shells a mortar cluster round bursts into" );
+ConVar	weapon_mortar_shell_damage( "weapon_mortar_shell_damage","100", FCVAR_NONE, "Mortar's standard shell maximum damage" );
+ConVar	weapon_mortar_shell_radius( "weapon_mortar_shell_radius","100", FCVAR_NONE, "Mortar's standard shell splash radius" );
+ConVar	weapon_mortar_starburst_damage( "weapon_mortar_starburst_damage","20", FCVAR_NONE, "Mortar's starburst maximum damage" );
+ConVar	weapon_mortar_starburst_radius( "weapon_mortar_starburst_radius","100", FCVAR_NONE, "Mortar's starburst splash radius" );
+ConVar	weapon_mortar_cluster_shells( "weapon_mortar_cluster_shells","5", FCVAR_NONE, "Number of shells a mortar cluster round bursts into" );
 
 //=====================================================================================================
 // MORTAR ROUND
@@ -62,7 +62,7 @@ void CMortarRound::Spawn( void )
 	SetModel( "models/weapons/w_grenade.mdl" );
 	UTIL_SetSize( this, vec3_origin, vec3_origin );
 
-	SetTouch( MissileTouch );
+	SetTouch( &ThisClass::MissileTouch );
 	SetCollisionGroup( TFCOLLISION_GROUP_WEAPON );
 
 	// Trail smoke
@@ -221,7 +221,7 @@ void CMortarRound::SetLauncher( CVehicleMortar *pLauncher )
 //-----------------------------------------------------------------------------
 void CMortarRound::SetFallTime( float flFallTime )
 {
-	SetThink( FallThink );
+	SetThink( &ThisClass::FallThink );
 	SetNextThink( gpGlobals->curtime + flFallTime );
 }
 
@@ -239,6 +239,7 @@ void CMortarRound::SetRoundType( int iRoundType )
 CMortarRound* CMortarRound::Create( const Vector &vecOrigin, const Vector &vecVelocity, edict_t *pentOwner = NULL )
 {
 	CMortarRound *pGrenade = (CMortarRound*)CreateEntityByName("mortar_round");
+	if (!pGrenade) return NULL;
 
 	UTIL_SetOrigin( pGrenade, vecOrigin );
 	pGrenade->SetOwnerEntity( Instance( pentOwner ) );

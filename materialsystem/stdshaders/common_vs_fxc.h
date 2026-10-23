@@ -295,7 +295,7 @@ float3 GammaToLinear( const float3 gamma )
 
 // FIXME: change this to half3 when ATI fixes their driver bug.
 // FIXME: Try to get this to generate a lit instruction
-float3 LinearToGamma( const float3 linear )
+float3 LinearToGamma( const float3 linearValue )
 {
 #if 0
 	// This is a good approx.
@@ -304,12 +304,12 @@ float3 LinearToGamma( const float3 linear )
 	static const float c = 3.116082349104176f;
 
 	float3 gamma, tmp;
-	tmp = a * linear + b;
-	tmp = tmp * linear + c;
-	gamma = tmp * linear;
+	tmp = a * linearValue + b;
+	tmp = tmp * linearValue + c;
+	gamma = tmp * linearValue;
 	return gamma;
 #else
-	return pow( linear, cOOGamma );
+	return pow( linearValue, cOOGamma );
 #endif
 }
 

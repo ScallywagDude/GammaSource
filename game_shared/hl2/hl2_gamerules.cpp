@@ -65,9 +65,9 @@ ConVar    sk_plr_dmg_grenade		( "sk_plr_dmg_grenade","0", FCVAR_REPLICATED);
 ConVar    sk_npc_dmg_grenade		( "sk_npc_dmg_grenade","0", FCVAR_REPLICATED);
 ConVar    sk_max_grenade			( "sk_max_grenade","0", FCVAR_REPLICATED);
 
-ConVar    sk_plr_dmg_brickbat		( "sk_plr_dmg_brickbat","0", FCVAR_REPLICATED);
-ConVar    sk_npc_dmg_brickbat		( "sk_npc_dmg_brickbat","0", FCVAR_REPLICATED);
-ConVar    sk_max_brickbat			( "sk_max_brickbat","0", FCVAR_REPLICATED);
+ConVar    sk_plr_dmg_brickbat		( "sk_plr_dmg_brickbat","10", FCVAR_REPLICATED);
+ConVar    sk_npc_dmg_brickbat		( "sk_npc_dmg_brickbat","10", FCVAR_REPLICATED);
+ConVar    sk_max_brickbat			( "sk_max_brickbat","9", FCVAR_REPLICATED);
 
 ConVar    sk_plr_dmg_ar2_grenade	( "sk_plr_dmg_ar2_grenade","0", FCVAR_REPLICATED);
 ConVar    sk_npc_dmg_ar2_grenade	( "sk_npc_dmg_ar2_grenade","0", FCVAR_REPLICATED);

@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "weapon_mortar.h"
 #include <stdarg.h>
 #include "player.h"
 #include "tf_player.h"
@@ -1422,6 +1423,7 @@ void CBaseTFPlayer::CheatImpulseCommands( int iImpulse )
 				"weapon_arcwelder",
 				"weapon_builder",
 				"weapon_combat_burstrifle",
+				"weapon_combat_chargeableplasma",
 				"weapon_combat_grenade_emp",
 				"weapon_combat_laserrifle",
 				"weapon_combat_plasmagrenadelauncher",
@@ -1434,10 +1436,15 @@ void CBaseTFPlayer::CheatImpulseCommands( int iImpulse )
 				"weapon_flame_thrower",
 				"weapon_gas_can",
 				"weapon_harpoon",
+				"weapon_infiltrator",
+				"weapon_laserdesignator",
+				"weapon_laserrifle",
 				"weapon_limpetmine",
 				"weapon_minigun",
+				"weapon_mortar",
 				"weapon_obj_empgenerator",
 				"weapon_obj_rallyflag",
+				"weapon_pistols",
 				"weapon_plasmarifle",
 				"weapon_repairgun",
 				"weapon_rocket_launcher",
@@ -1543,6 +1550,7 @@ CBaseEntity *FindEntityForward( CBasePlayer *pMe );
 //-----------------------------------------------------------------------------
 bool CBaseTFPlayer::ClientCommand(const char *cmd)
 {
+	if (HL2ModernMortarClientCommand(this,cmd)) return true;
 	if( HasClass() )
 	{
 		if ( GetPlayerClass()->ClientCommand(cmd) )

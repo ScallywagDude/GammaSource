@@ -203,6 +203,7 @@ private:
 
 	wchar_t	   _hotkey;		// the hotkey contained in the text
 
+protected: // Derived labels use the public panel behavior alias.
 	typedef vgui::Panel BaseClass;
 };
 

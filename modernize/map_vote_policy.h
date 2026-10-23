@@ -7,7 +7,7 @@ namespace HL2ModernVote
 {
     // Indexed by player slot, with index 0 reserved. The engine supports
     // player slots 1..64, so the arrays need 65 elements.
-    enum { MAX_PLAYERS = 64, MAX_VOTERS = MAX_PLAYERS + 1, MAX_MAP_NAME = 63 };
+    enum { MAX_VOTE_PLAYERS = 64, MAX_VOTERS = MAX_VOTE_PLAYERS + 1, MAX_MAP_NAME = 63 };
     enum Result { PENDING, PASSED, REJECTED, EXPIRED, NOT_ACTIVE };
     enum { NOT_VOTED = 0, YES = 1, NO = 2 };
 

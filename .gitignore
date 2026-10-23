@@ -2,3 +2,8 @@ __pycache__/
 *.py[cod]
 .modern_build_logs/
 **/build/
+/materialsystem/stdshaders/fxctmp*/
+/materialsystem/stdshaders/vshtmp*/
+/materialsystem/stdshaders/pshtmp*/
+/materialsystem/stdshaders/shit.txt
+/materialsystem/stdshaders/tmpshader.h

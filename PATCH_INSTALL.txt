@@ -1,0 +1,5 @@
+Extract the contents of this ZIP directly into your GammaSource source folder (the folder containing dlls, cl_dll and README.md), and replace matching files.
+Then review and push using your existing Git checkout. No Git history is included or replaced.
+
+This is the v26 source checkpoint based on 8035078db894b09a3f4cd40d3895d9e604ed108a. Phase 7 remains active; gameplay/art verification is incomplete. See PHASE7_STATUS.md and modernize/reports/phase7_checks.json for exact checks and blockers.
+Build tool prerequisites: modernize/LEGACY_SHADER_TOOLS.md.

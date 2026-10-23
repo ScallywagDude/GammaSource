@@ -12,6 +12,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../modernize/legacy_entity_compat.h"
 #include "gamestringpool.h"
 #include "entitymapdata.h"
 #include "game.h"
@@ -517,7 +518,7 @@ bool HL2Modern_HandleVoteClientCommand(CBasePlayer *player, const char *cmd)
             return true;
         }
         const char *map = engine->Cmd_Argv(2);
-        if (!HL2ModernVote::SafeMapName(map) || !engine->IsMapValid(map))
+        if (!HL2ModernVote::SafeMapName(map) || !HL2ModernEntityCompat::IsMapValid(engine,map))
         {
             ClientPrint(player, HUD_PRINTCONSOLE, "Invalid map name or map not installed.\n");
             return true;

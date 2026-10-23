@@ -667,9 +667,11 @@
   "outside_root": [
     {
       "project": "dlls/hl.dsp",
-      "count": 2,
+      "count": 4,
       "examples": [
+        "..\\..\\bin\\base.fgd",
         "..\\..\\bin\\halflife1.fgd",
+        "..\\..\\bin\\halflife2.fgd",
         "..\\..\\bin\\tf2.fgd"
       ]
     },

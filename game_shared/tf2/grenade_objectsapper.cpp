@@ -51,7 +51,7 @@ void CGrenadeObjectSapper::Spawn( void )
 	SetDamageRadius( 0 );
 
 	SetTouch( NULL );
-	SetThink( SapperThink );
+	SetThink( &ThisClass::SapperThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_bArmed = true;

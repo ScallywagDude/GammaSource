@@ -62,7 +62,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>havana_constraints</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -74,21 +74,23 @@
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Lib />
     <PostBuildEvent>
-      <Command>if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
+      <Command Condition="'$(HL2ModernStageLegacy)'=='true'">if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
 copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>havana_constraints_d</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -100,21 +102,23 @@ copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Lib />
     <PostBuildEvent>
-      <Command>if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
+      <Command Condition="'$(HL2ModernStageLegacy)'=='true'">if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
 copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>havana_constraints</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -126,9 +130,11 @@ copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -137,7 +143,7 @@ copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>havana_constraints_mt</TargetName>
     <TargetExt>.lib</TargetExt>
   </PropertyGroup>
@@ -149,6 +155,7 @@ copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ExceptionHandling>Sync</ExceptionHandling>

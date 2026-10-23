@@ -1,137 +1,188 @@
 {
-  "schema_version": 1,
-  "milestone": "v25",
-  "parent_commit": "09dd4edf98a354fa6846aec2036797278b1cf734",
-  "recorded_utc": "2026-10-23T01:50:40.390946+00:00",
-  "tests": {
-    "command": "python -m unittest discover -s modernize/tests -v",
-    "run": 217,
-    "passed": 216,
-    "skipped": 1,
-    "failed": 0,
-    "skip_reason": "Unix-only fake MSBuild test; actual Windows builds were attempted separately.",
-    "includes_compiled_cpp98_weapon_method_harnesses": true
-  },
-  "replay": {
-    "exit_code": 0,
-    "protected_files_before": 7072,
-    "protected_files_after": 7072,
-    "source_drift": [],
-    "command": "python modernize/apply_modernization.py"
-  },
-  "structure": {
-    "command": "python modernize/validate.py",
-    "exit_code": 0,
-    "projects": 153,
-    "configurations": 348
-  },
-  "inventory_gate": {
-    "command": "python phase7_manifest_check.py .",
-    "exit_code": 1,
-    "output": [
-      "Branch | Registered | Extra impulse 101 | Uncompiled excluded | Verified",
-      "hl2 | 32 | 21 | 1 | 0",
-      "cstrike | 28 | 25 | 0 | 0",
-      "tf2 | 38 | 24 | 6 | 0",
-      "hl1 | 15 | 15 | 0 | 0",
-      "Integrity PASS; completion evidence: 0/113"
-    ]
-  },
-  "windows_release": {
-    "command": "python modernize/build_driver.py Release",
-    "expected_steps": 61,
-    "steps": [
-      {
-        "step": 1,
-        "project": "tier0/tier0.vcxproj",
-        "configuration": "Release",
-        "status": "passed",
-        "exit_code": 0
-      },
-      {
-        "step": 2,
-        "project": "vstdlib/vstdlib.vcxproj",
-        "configuration": "Release",
-        "status": "passed",
-        "exit_code": 0
-      },
-      {
-        "step": 3,
-        "project": "unitlib/unitlib.vcxproj",
-        "configuration": "Release",
-        "status": "passed",
-        "exit_code": 0
-      },
-      {
-        "step": 4,
-        "project": "vtf/vtf.vcxproj",
-        "configuration": "Release",
-        "status": "passed",
-        "exit_code": 0
-      },
-      {
-        "step": 5,
-        "project": "shaderlib/shaderlib.vcxproj",
-        "configuration": "Release",
-        "status": "passed",
-        "exit_code": 0
-      },
-      {
-        "step": 6,
-        "project": "materialsystem/stdshaders/stdshader_dbg.vcxproj",
-        "configuration": "Release",
-        "status": "failed",
-        "exit_code": 1
-      }
-    ],
-    "full_build_verified": false,
-    "blocker": "Bundled Perl cannot start: Illegal System DLL Relocation; stdshader_dbg custom build exits 9020."
-  },
-  "windows_debug": {
-    "tier0": "build_passed",
-    "vstdlib": "compiled_link_failed",
-    "full_build_verified": false,
-    "blocker": "29 debug CRT/legacy allocator duplicate-symbol errors."
-  },
-  "hl2_server_release": {
-    "command": "msbuild dlls/hl.vcxproj /t:Build /p:Configuration=\"Release HL2\" /p:Platform=Win32",
-    "exit_code": 1,
-    "full_build_verified": false,
-    "blocker": "Legacy member-function pointers, network variable offsetof expressions and other compiler incompatibilities."
-  },
-  "local_asset_metadata": {
-    "cstrike": {
-      "metadata_candidates": 24,
-      "registered_entries": 28,
-      "gameplay_verified": 0
-    },
-    "hl1": {
-      "metadata_candidates": 15,
-      "registered_entries": 15,
-      "gameplay_verified": 0
-    },
-    "hl2": {
-      "metadata_candidates": 32,
-      "registered_entries": 32,
-      "gameplay_verified": 0
-    },
-    "tf2": {
-      "metadata_candidates": 25,
-      "registered_entries": 38,
-      "gameplay_verified": 0
-    }
-  },
-  "asset_limits": [
-    "Metadata candidates include internal entries and do not prove full model layout, correct identity, animations, rendering or gameplay.",
-    "The local TF2 alpha README says its weapon models were replaced with HL2 models.",
-    "CS and TF2 alpha assets/runtimes were found under Documents; no game assets are included in this commit."
-  ],
+  "schema_version": 2,
+  "milestone": "v26",
+  "parent_commit": "8035078db894b09a3f4cd40d3895d9e604ed108a",
+  "recorded_utc": "2026-10-23T03:49:21.654332+00:00",
   "phase7_complete": false,
   "gameplay_verified": false,
   "rendering_backends_complete": false,
   "work_order": [
-    "Finish Phase 7",
+    "Finish Phase 7 including requested HUD and weapon art",
     "Phase 3: Vulkan/OpenGL/DX11/DX12 rendering API modernization, shaders and lighting",
     "Remaining phases"
-  ]
+  ],
+  "tests": {
+    "command": "python -m unittest discover -s modernize/tests -v",
+    "run": 265,
+    "passed": 262,
+    "skipped": 3,
+    "failed": 0,
+    "success": true,
+    "skip_reasons": [
+      "Unix-only fake compiler test",
+      "Original sound assembly execution requires separate x86 Native Tools run",
+      "Optional legacy DirectX compiler not selected in the aggregate suite"
+    ],
+    "additional_native_checks": {
+      "original_sound_assembly_x86_tests": 4,
+      "shader_tests_with_selected_legacy_compiler": 13,
+      "teeth_vs20_permutations": 352
+    }
+  },
+  "structure": {
+    "command": "python modernize/validate.py",
+    "projects": 153,
+    "configurations": 348,
+    "exit_code": 0
+  },
+  "native_hud_builds": [
+    {
+      "branch": "hl2",
+      "configuration": "release",
+      "status": "passed",
+      "log_sha256": "074428de8b5b61975595e3e9ad4fe73440c7cfcaad3ff1f21613dd507b252856"
+    },
+    {
+      "branch": "hl1",
+      "configuration": "release",
+      "status": "passed",
+      "log_sha256": "26d12d0cfee5d860eab80a0b2b234925fd519d42113d34a01ae88165dc825f26"
+    },
+    {
+      "branch": "counterstrike",
+      "configuration": "release",
+      "status": "passed",
+      "log_sha256": "3fe14521c7af4c021c125b8b46efeabd8acf100a9e614e66277173219a628084"
+    },
+    {
+      "branch": "tf2",
+      "configuration": "release",
+      "status": "passed",
+      "log_sha256": "e53361ea4a3f9da4037d55bd7d61fbb993b16847b18423ed1ee289e0a0cdb505"
+    },
+    {
+      "branch": "hl2",
+      "configuration": "debug",
+      "status": "passed",
+      "log_sha256": "01307a7710968dbe45209c6ecf933ad9fe0d92d438417f2d6e24af1eeb2188c0"
+    },
+    {
+      "branch": "hl1",
+      "configuration": "debug",
+      "status": "passed",
+      "log_sha256": "d805f1e6d20d1b254d9e5d06d78c9bc979b312bd1d4886fc46777cf292e66dcd"
+    },
+    {
+      "branch": "counterstrike",
+      "configuration": "debug",
+      "status": "passed",
+      "log_sha256": "bb64ab98b8ac590d64095096c226627cf4e43665217df2c5090f8ddbf4f656c3"
+    },
+    {
+      "branch": "tf2",
+      "configuration": "debug",
+      "status": "passed",
+      "log_sha256": "68720a64a43867137ed24498e062de9ce0d920fb15a53200943c017af3aeeb97"
+    }
+  ],
+  "gameui_builds": {
+    "release": "passed",
+    "debug": "passed"
+  },
+  "native_build_checkpoints": {
+    "all_four_release_servers": "passed; latest TF2 Release relink passed",
+    "all_four_debug_servers": "passed; latest TF2 Debug relink passed",
+    "release_engine": "passed",
+    "release_filesystem_stdio": "passed",
+    "release_launcher": "passed",
+    "release_materialsystem": "passed",
+    "release_studiorender": "passed",
+    "legacy_shader_dlls": {
+      "dx6": "passed",
+      "dx7": "passed",
+      "debug": "passed",
+      "dx9": "passed"
+    },
+    "all_original_teeth_vs20_permutations": 352,
+    "vphysics": "compile passes; legacy Havok link compatibility remains unresolved",
+    "ordered_full_builds_complete": false,
+    "shader_api": "compiler passed; link blocked by legacy d3dx9.lib SafeSEH metadata"
+  },
+  "native_allocator": {
+    "debug": "compile/link/runtime_passed",
+    "release": "compile/link/runtime_passed",
+    "command": "python modernize/run_allocator_smoke.py Both"
+  },
+  "native_module_loading": {
+    "hl2_release_server": "passed",
+    "cstrike_release_server": "passed",
+    "hl2_release_client": "passed",
+    "gameplay_verified": false
+  },
+  "native_model_layout_audit": {
+    "cstrike": {
+      "unique_models_tested": 50,
+      "exit_code": 1,
+      "results": {
+        "layout_rejected": 50
+      },
+      "visual_or_gameplay_verified": false
+    },
+    "hl1": {
+      "unique_models_tested": 28,
+      "exit_code": 1,
+      "results": {
+        "layout_rejected": 28
+      },
+      "visual_or_gameplay_verified": false
+    },
+    "hl2": {
+      "unique_models_tested": 55,
+      "exit_code": 1,
+      "results": {
+        "layout_rejected": 55
+      },
+      "visual_or_gameplay_verified": false
+    },
+    "tf2": {
+      "unique_models_tested": 23,
+      "exit_code": 1,
+      "results": {
+        "layout_matches_loader": 22,
+        "layout_rejected": 1
+      },
+      "visual_or_gameplay_verified": false
+    }
+  },
+  "runtime": {
+    "isolated": true,
+    "installed_game_overwritten": false,
+    "gameplay_verified": false,
+    "latest": "Rebuilt engine, filesystem, launcher, materialsystem and studiorender advance startup. Remaining mixed shaderapidx9.dll crashes in ShaderSystem::Init. Matching shader API compiles but cannot yet link with bundled d3dx9.lib SafeSEH metadata."
+  },
+  "remaining_blockers": [
+    "Matching native dependency startup and map/gameplay testing",
+    "Real installed v37 weapon model layouts are incompatible with the engine v36 loader",
+    "TF2 installed weapon models are documented HL2 replacements; original identity/art and missing scripts still need restoration",
+    "Final visual checks of 2002 HUD, every weapon icon and color Options tab",
+    "Full ordered Debug/Release builds including VPhysics legacy Havok dependencies"
+  ],
+  "replay": {
+    "exit_code": 0,
+    "protected_files_before": 7118,
+    "protected_files_after": 7118,
+    "source_drift": []
+  },
+  "inventory_gate": {
+    "exit_code": 1,
+    "output": [
+      "Branch | Registered | Extra impulse 101 | Uncompiled excluded | Verified | Required gameplay",
+      "hl2 | 33 | 23 | 0 | 0 | 32",
+      "cstrike | 28 | 25 | 0 | 0 | 25",
+      "tf2 | 38 | 30 | 0 | 0 | 30",
+      "hl1 | 15 | 15 | 0 | 0 | 15",
+      "Integrity PASS; completion evidence: 0/102"
+    ]
+  },
+  "delivery": "Source overlay ZIP for user to extract and push; no Git metadata, installed game assets or built binaries included."
 }

@@ -36,56 +36,66 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
   <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="ModernShaderTools">
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'=='' and '$(HL2_MODERN_PERL)'!=''">$(HL2_MODERN_PERL)</HL2ModernPerl>
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'==''">perl</HL2ModernPerl>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>shaderapidx8</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\common;..\..\public;..\..\dx8sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WindowsSDK_IncludePath);..\..\common;..\..\public;..\..\dx8sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>NDEBUG;IHVTEST;_WIN32;IMAGE_LOADER_NO_DXTC;_WINDOWS;_MBCS;_USRDLL;SHADER_DLL_EXPORT;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;..\..\vstdlib\build\Release\vstdlib.lib;..\..\DX8SDK\lib\d3dx8.lib;..\..\DX8SDK\lib\d3d8.lib;..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>shaderapidx8</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\common;..\..\public;..\..\dx8sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(WindowsSDK_IncludePath);..\..\common;..\..\public;..\..\dx8sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;IHVTEST;_WIN32;IMAGE_LOADER_NO_DXTC;_WINDOWS;_MBCS;_USRDLL;SHADER_DLL_EXPORT;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ResourceCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;..\..\vstdlib\build\Debug\vstdlib.lib;..\..\DX8SDK\lib\d3dx8.lib;..\..\DX8SDK\lib\d3d8.lib;..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -118,596 +128,596 @@
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include=".\basetimeslightmapwet.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\bumpmappedenvmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\bumpmappedlightmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\cable.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\colorstreamtest.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\debugfbtexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\debugtangentspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\eyes.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\fillrate.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\glowwarp.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\hotspotglow.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\jellyfish.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightingonly.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_basetexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_bumpmappedenvmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_bumpmappedenvmap_ps14.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_bumpmappedlightmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_detail.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_detailvertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmapcameraspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmapcameraspacevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmapsphere.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmapspherevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_envmapvertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_lightingonly.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedgeneric_vertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\lightmappedtranslucenttexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;lightmappedgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\localspecular.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\particlesphere.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\predator.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\predator_envmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\predator_envmaptimesenvmapmask.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\shadowmodel.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\teeth.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detail.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmapcameraspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmapcameraspacevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmapsphere.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmapspherevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailenvmapvertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_detailvertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmapcameraspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmapcameraspacevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmapsphere.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmapspherevertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_envmapvertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_lightingonly.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_lightingonlyworld.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\unlitgeneric_vertexcolor.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;unlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitenvmappedtexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitenvmappedtexture_cameraspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitenvmappedtexture_spheremap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_detail.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_detailenvmap.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_detailenvmapcameraspace.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_detailenvmapsphere.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_diffbumptimesbase.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_envmappedbumpmap_nolighting.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmap_NoLighting_ps14.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\..\devtools\bin\vsh_prep.pl;macros.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_envmappedbumpmap_vertlit.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlitgeneric_selfillumonly.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\vertexlittexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;vertexlitgeneric_inc.vsh;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\waterwarp.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\worldtexture.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\worldvertexalpha.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\worldvertextransition.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\writeenvmapmasktoalphabuffer.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\writezwithheightclipplane.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
     <CustomBuild Include=".\writezwithheightclipplane_world.vsh">
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\perl ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl %(Filename).vsh</Command>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp\%(Filename).inc</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>

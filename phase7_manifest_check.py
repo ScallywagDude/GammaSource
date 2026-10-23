@@ -11,6 +11,15 @@ FILES = ("modernize/weapon_branch_inventory.json",
          "modernize/weapon_build_report.json")
 BRANCH = {"hl2":"hl2","hl1":"hl1","cs":"cstrike","tf2":"tf2"}
 EVIDENCE = ("runtime_verified","viewmodel_verified","hud_image_verified","texture_scale_verified")
+# Classification is explicit: an unfinished concrete weapon cannot opt out by
+# acquiring an arbitrary grant-exclusion reason in a generated report.
+NON_GAMEPLAY = {
+    'hl2': {'weapon_cubemap'}, 'hl1': set(),
+    'cstrike': {'weapon_basecsgrenade','weapon_cs_base','weapon_csbase_gun'},
+    'tf2': {'weapon_basecombatobject','weapon_combat_basegrenade','weapon_combat_grenade',
+            'weapon_combat_plasmarifle_base','weapon_combat_usedwithshieldbase',
+            'weapon_grenade_rocket','weapon_objectselection','weapon_twohandedcontainer'},
+}
 
 
 def mapping(value, label):
@@ -77,6 +86,7 @@ def validate(data):
             raise ValueError(b+": expected source exclusion reasons")
         internal = set(reasons) | names(entry.get("base_or_abstract_excluded", []), b+": internal exclusions")
         declared_internal = {name for name, w in weapons.items() if w.get("grant_exclusion_reason")}
+        required = known - (internal & NON_GAMEPLAY[b])
         if declared_internal != internal:
             problems.append(b+": inventory/source exclusions mismatch")
         build_rows = weapon_rows(build_report["weapons"], b+": build report")
@@ -139,9 +149,9 @@ def validate(data):
                 problems.append(b+": "+name+" runtime evidence disagrees with asset report")
             # Project membership alone cannot establish a successful Windows build.
             # Boolean evidence is reported evidence; this gate does not run gameplay.
-            if all(branch_evidence) and name not in omitted and name in build_rows and all(checks) and asset_runtime and asset_ready:
+            if name in required and all(branch_evidence) and name not in omitted and name in build_rows and all(checks) and asset_runtime and asset_ready:
                 verified += 1
-        rows.append((b,len(weapons),len(grant),len(excluded),verified))
+        rows.append((b,len(weapons),len(grant),len(excluded),verified,len(required)))
     return problems,rows
 
 def main():
@@ -153,12 +163,12 @@ def main():
     except (OSError,KeyError,TypeError,ValueError,zipfile.BadZipFile) as e:
         print("Report error:",e,file=sys.stderr)
         return 2
-    print("Branch | Registered | Extra impulse 101 | Uncompiled excluded | Verified")
+    print("Branch | Registered | Extra impulse 101 | Uncompiled excluded | Verified | Required gameplay")
     for row in rows: print(" | ".join(map(str,row)))
     if problems:
         print("Integrity FAIL:","; ".join(problems))
         return 2
-    total=sum(row[1] for row in rows); done=sum(row[4] for row in rows)
+    total=sum(row[5] for row in rows); done=sum(row[4] for row in rows)
     print("Integrity PASS; completion evidence: %d/%d"%(done,total))
     return 0 if done==total else 1
 

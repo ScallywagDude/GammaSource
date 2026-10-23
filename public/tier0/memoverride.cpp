@@ -463,10 +463,12 @@ _CRT_REPORT_HOOK __cdecl _CrtSetReportHook( _CRT_REPORT_HOOK pfnNewHook )
 int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
         int nLine, const char * szModule, const char * szFormat, ... )
 {
-	static char output[1024];
+	char output[1024];
+	output[0] = 0;
 	va_list args;
 	va_start( args, szFormat );
-	vsprintf( output, szFormat, args );
+	_vsnprintf( output, sizeof(output)-1, szFormat ? szFormat : "", args );
+	output[sizeof(output)-1] = 0;
 	va_end( args );
 
 	return g_pMemAlloc->CrtDbgReport( nRptType, szFile, nLine, szModule, output );
@@ -475,6 +477,10 @@ int __cdecl _CrtDbgReport( int nRptType, const char * szFile,
 	
 } // end extern "C"
 #endif // _WIN32
+
+#if defined(_MSC_VER) && _MSC_VER >= 1900
+#include "../../modernize/ucrt_allocator_compat.h"
+#endif
 
 // Most files include this file, so when it's used it adds an extra .ValveDbg section,
 // to help identify debug binaries.

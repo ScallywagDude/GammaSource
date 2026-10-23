@@ -52,6 +52,10 @@ public:
 	const Vector	&LastBlastPosition() { return m_vLastBlastPos; }
 	void			SetBlastPosition( const Vector &pos ) { m_vLastBlastPos = pos; }
 
+    // Original mortar weapon control link, alongside the existing panel.
+    CHandle<CWeaponMortar> m_hMortarWeapon;
+    void UpdateOnRemove(void);
+    void SetRoundType(int type) { if (type>=0 && type<MA_LASTAMMOTYPE) m_iRoundType=type; }
 private:
 	CNetworkVar( int, m_iRoundType );
 	CNetworkArray( int, m_iMortarRounds, MA_LASTAMMOTYPE );

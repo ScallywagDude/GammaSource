@@ -28,6 +28,7 @@
 //-----------------------------------------------------------------------------
 class CBasePanel : public vgui::Panel
 {
+protected: // Derived debug panels use the base behavior alias.
 	typedef vgui::Panel BaseClass;
 
 public:

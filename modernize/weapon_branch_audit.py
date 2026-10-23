@@ -30,7 +30,6 @@ EXCLUDED={
  'weapon_twohandedcontainer':'internal class-loadout support container; requires initialized compatible child weapons',
  'weapon_grenade_rocket':'internal rocket projectile derived from CBaseAnimating, not an equipable combat weapon',
  'weapon_cubemap':'shared cubemap debugging tool, not a branch gameplay weapon',
- 'weapon_manhack':'incomplete prototype: both attacks are empty and ItemPostFrame only idles',
 }
 LINK=re.compile(r'\bLINK_ENTITY_TO_CLASS\s*\(\s*(weapon_[a-zA-Z0-9_]+)\s*,')
 PATH=re.compile(r'"(models/[^"\n\\]+\.mdl)"',re.I)
@@ -68,7 +67,7 @@ def audit(asset_root=None):
                         'implementation_file':file.relative_to(ROOT).as_posix(),
                         'source_scope':'shared_project_member' if file.parent==ROOT/'dlls' else 'branch',
                         'grant_exclusion_reason':EXCLUDED.get(name),
-                        'implementation_status':'incomplete_source' if name=='weapon_manhack' else 'source_present_runtime_unverified',
+                        'implementation_status':'source_present_runtime_unverified',
                         'model_literals_in_same_file':paths,
                         'asset_checks':{'weapon_script':scripts,'explicit_models':resources},
                         'runtime_verified':False,'viewmodel_verified':False,

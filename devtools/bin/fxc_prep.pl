@@ -476,11 +476,11 @@ for( $i = 0; $i < $numCombos; $i++ )
 		if( $fxc_filename =~ /_vs/i )
 		{
 			#$cmd = "..\\..\\devtools\\bin\\oldfxc.exe ";
-			$cmd = "..\\..\\devtools\\bin\\fxc.exe ";
+			$cmd = ($ENV{"HL2_MODERN_FXC_COMMAND"} || "..\\..\\devtools\\bin\\fxc.exe") . " ";
 		}
 		else
 		{
-			$cmd = "..\\..\\devtools\\bin\\fxc.exe ";
+			$cmd = ($ENV{"HL2_MODERN_FXC_COMMAND"} || "..\\..\\devtools\\bin\\fxc.exe") . " ";
 		}
 		$cmd .= &BuildDefineOptions( $i );
 		$cmd .= &RenameMain( $fxc_filename, $i );
@@ -502,7 +502,9 @@ for( $i = 0; $i < $numCombos; $i++ )
 
 		# GROSS!!  Have to suppress stderr output by redirecting to a file. . has to be a better way.
 	#	@out = `$cmd 1<&2`;
+		unlink "tmpshader.h";
 		system "$cmd > shit.txt 2>&1";
+		if ( $? != 0 ) { die "shader compiler failed: " . `type shit.txt`; }
 		@out = `type shit.txt`;
 		print @out;
 		

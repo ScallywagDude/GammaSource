@@ -35,9 +35,9 @@
 #include "tier0/memdbgon.h"
 
 template<class Type>
-CUtlFixedLinkedList< CInterpolatedVar<Type>::CInterpolatedVarEntry >	CInterpolatedVar<Type>::m_VarHistory;
+CUtlFixedLinkedList< typename CInterpolatedVar<Type>::CInterpolatedVarEntry >	CInterpolatedVar<Type>::m_VarHistory;
 template<class Type, int COUNT>
-CUtlFixedLinkedList< CInterpolatedVarArray<Type,COUNT>::CInterpolatedVarEntry >	CInterpolatedVarArray<Type,COUNT>::m_VarHistory;
+CUtlFixedLinkedList< typename CInterpolatedVarArray<Type,COUNT>::CInterpolatedVarEntry >	CInterpolatedVarArray<Type,COUNT>::m_VarHistory;
 
 static ConVar  cl_interpolate( "cl_interpolate", "1.0", 0, "Interpolate entities on the client." );
 
@@ -3583,7 +3583,7 @@ C_BaseEntity *C_BaseEntity::Instance( int iEnt )
 }
 
 #pragma warning( push )
-#include <typeinfo.h>
+#include <typeinfo>
 #pragma warning( pop )
 
 //-----------------------------------------------------------------------------

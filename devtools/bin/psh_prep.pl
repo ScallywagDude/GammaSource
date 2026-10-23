@@ -74,19 +74,20 @@ for( $shaderCombo = 0; $shaderCombo < $numCombos; $shaderCombo++ )
 	if( $g_dx9 )
 	{
 		$pshtmp = "pshtmp9";
-		$cmd = "..\\..\\devtools\\bin\\psa9 /Zi /Fh /nologo " . &BuildDefineOptions( $shaderCombo ) . "$psh_filename";
+		$cmd = ($ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} || "..\\..\\devtools\\bin\\psa9") . " /Zi /Fh /nologo " . &BuildDefineOptions( $shaderCombo ) . "$psh_filename";
 	}
 	else
 	{
 		$pshtmp = "pshtmp8";
-		$cmd = "..\\..\\devtools\\bin\\psa8_1 -h -p " . &BuildDefineOptions( $shaderCombo ) . "$psh_filename";
+		$cmd = ($ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} ? $ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} . " --legacy-pixel8" : "..\\..\\devtools\\bin\\psa8_1") . " -h -p " . &BuildDefineOptions( $shaderCombo ) . "$psh_filename";
 	}
 	if( !stat $pshtmp )
 	{
 		mkdir $pshtmp, 0777 || die $!;
 	}
 	print $cmd . "\n";
-	system $cmd || die $!;
+	system $cmd;
+	if ( $? != 0 ) { die "pixel shader assembler failed: $cmd\n"; }
 
 	$hdrname = $psh_filename;
 

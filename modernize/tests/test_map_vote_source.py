@@ -6,7 +6,7 @@ class MapVoteSourceTests(unittest.TestCase):
     def test_server_command_bridge_and_lifecycle(self):
         src=(ROOT/'dlls/gameinterface.cpp').read_bytes().decode('latin-1')
         self.assertEqual(src.count('HL2MODERN_MAP_VOTE_BRIDGE'),1)
-        self.assertIn('engine->IsMapValid(map)',src)
+        self.assertIn('HL2ModernEntityCompat::IsMapValid(engine,map)',src)
         self.assertIn('engine->IsMapValid(g_HL2ModernMapVote.map)',src)
         self.assertIn('HL2ModernVote::SafeMapName(map)',src)
         self.assertEqual(src.count('else if (result == HL2ModernVote::REJECTED)'),1)

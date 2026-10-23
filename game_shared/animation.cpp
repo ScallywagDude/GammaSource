@@ -19,7 +19,9 @@
 #include "ai_activity.h"
 #include "animation.h"
 #include "bone_setup.h"
+#if !defined(CLIENT_DLL)
 #include "util.h"
+#endif
 #include "scriptevent.h"
 #include "npcevent.h"
 

@@ -52,9 +52,9 @@ void CGrenadeSpit::Spawn( void )
 	SetRenderColor( 255, 255, 255, 255 );
 	m_nRenderFX		= kRenderFxNone;
 
-	SetThink( SpitThink );
-	SetUse( DetonateUse );
-	SetTouch( GrenadeSpitTouch );
+	SetThink( &ThisClass::SpitThink );
+	SetUse( &ThisClass::DetonateUse );
+	SetTouch( &ThisClass::GrenadeSpitTouch );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_flDamage		= sk_dmg_spit_grenade.GetFloat();

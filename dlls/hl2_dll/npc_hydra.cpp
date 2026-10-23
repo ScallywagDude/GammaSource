@@ -1701,7 +1701,7 @@ IPhysicsConstraint *CHydraImpale::CreateConstraint( CNPC_Hydra *pHydra, IPhysics
 		m_pConstraint->SetGameData( (void *)this );
 	}
 
-	SetThink( ImpaleThink );
+	SetThink( &ThisClass::ImpaleThink );
 	SetNextThink( gpGlobals->curtime );
 	return m_pConstraint;
 }

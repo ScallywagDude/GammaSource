@@ -1021,6 +1021,7 @@ void CHL2_Player::CheatImpulseCommands( int iImpulse )
 			const char *const weapons[] = {
 				"weapon_ar1",
 				"weapon_binoculars",
+				"weapon_brickbat",
 				"weapon_bugbait",
 				"weapon_cguard",
 				"weapon_extinguisher",
@@ -1030,6 +1031,7 @@ void CHL2_Player::CheatImpulseCommands( int iImpulse )
 				"weapon_iceaxe",
 				"weapon_immolator",
 				"weapon_irifle",
+				"weapon_manhack",
 				"weapon_molotov",
 				"weapon_physgun",
 				"weapon_rollerwand",

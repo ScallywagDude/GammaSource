@@ -40,10 +40,43 @@ def fixture(verified=False):
 
 
 class Phase7ManifestTests(unittest.TestCase):
+    def add_excluded(self, data, name, reason):
+        weapon=copy.deepcopy(data[0]['branches']['hl2'][0])
+        weapon.update(classname=name, grant_exclusion_reason=reason,
+                      **{key:False for key in gate.EVIDENCE})
+        data[0]['branches']['hl2'].append(weapon)
+        build=copy.deepcopy(data[3]['branches']['hl2']['weapons'][0])
+        build['classname']=name
+        data[3]['branches']['hl2']['weapons'].append(build)
+        data[3]['branches']['hl2']['registered']=2
+        asset=copy.deepcopy(data[2]['branches']['hl2']['weapons'][0])
+        asset.update(classname=name,runtime_verified=False,
+                     status='unverified_no_asset_directory',issues=['no gameplay art'])
+        data[2]['branches']['hl2']['weapons'].append(asset)
+        data[1][0]['registered']=2
+        data[1][0]['excluded_source_or_internal'][name]=reason
+
+    def test_non_gameplay_classification_does_not_fabricate_runtime_evidence(self):
+        data=fixture(True)
+        self.add_excluded(data,'weapon_cubemap','shared debugging tool')
+        problems,rows=gate.validate(data)
+        self.assertEqual(problems,[])
+        self.assertEqual(sum(row[1] for row in rows),5)
+        self.assertEqual(sum(row[5] for row in rows),4)
+        self.assertEqual(sum(row[4] for row in rows),4)
+
+    def test_concrete_unfinished_weapon_cannot_hide_behind_an_exclusion(self):
+        data=fixture(True)
+        self.add_excluded(data,'weapon_manhack','unfinished prototype')
+        problems,rows=gate.validate(data)
+        self.assertEqual(problems,[])
+        self.assertEqual(sum(row[5] for row in rows),5)
+        self.assertEqual(sum(row[4] for row in rows),4)
+
     def test_published_reports_remain_incomplete(self):
         problems, rows = gate.validate(gate.read(ROOT))
         self.assertEqual(problems, [])
-        self.assertEqual(sum(row[1] for row in rows), 113)
+        self.assertEqual(sum(row[1] for row in rows), 114)
         self.assertEqual(sum(row[4] for row in rows), 0)
 
     def test_build_rows_and_counts_must_cover_inventory(self):

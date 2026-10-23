@@ -351,7 +351,7 @@ void CNPC_CombineCamera::Spawn()
 	// Do we start active?
 	if (m_bEnabled)
 	{
-		SetThink(AutoSearchThink);
+		SetThink(&ThisClass::AutoSearchThink);
 		SetEyeState(CAMERA_EYE_DORMANT);
 		Deploy();
 	}
@@ -387,7 +387,7 @@ void CNPC_CombineCamera::Activate()
 		{
 			m_bActive = true;
 			Deploy();
-			SetThink(IdleThink);
+			SetThink(&ThisClass::IdleThink);
 		}
 	}
 }
@@ -447,7 +447,7 @@ int CNPC_CombineCamera::OnTakeDamage(const CTakeDamageInfo &inputInfo)
 		// FIXME: This needs to throw a ragdoll gib or something other than animating the retraction -- jdw
 
 		ExplosionCreate(GetAbsOrigin(), GetLocalAngles(), this, 100, 100, false);
-		SetThink(DeathThink);
+		SetThink(&ThisClass::DeathThink);
 
 		StopSound("Alert");
 
@@ -477,7 +477,7 @@ void CNPC_CombineCamera::Deploy()
 	SetHeight(COMBINE_CAMERA_DEPLOY_HEIGHT);
 	SetActivity((Activity) ACT_COMBINE_CAMERA_OPEN_IDLE);
 	m_flPlaybackRate = 0;
-	SetThink(SearchThink);
+	SetThink(&ThisClass::SearchThink);
 
 	EmitSound("NPC_CombineCamera.Move");
 
@@ -708,7 +708,7 @@ void CNPC_CombineCamera::ActiveThink()
 			EmitSound("NPC_CombineCamera.BecomeIdle");
 			SetAngry(false);
 			SetEyeState(CAMERA_EYE_IDLE);
-			SetThink(IdleThink);
+			SetThink(&ThisClass::IdleThink);
 			SetNextThink( gpGlobals->curtime );
 			return;
 		}
@@ -843,7 +843,7 @@ void CNPC_CombineCamera::IdleThink()
 	else
 	{
 		m_hEnemyTarget = NULL;
-		SetThink(ActiveThink);
+		SetThink(&ThisClass::ActiveThink);
 		SetNextThink( gpGlobals->curtime );
 	}
 }
@@ -881,11 +881,11 @@ void CNPC_CombineCamera::SearchThink()
 		m_flLastSight = 0;
 		if (m_hDefaultTarget)
 		{
-			SetThink(IdleThink);
+			SetThink(&ThisClass::IdleThink);
 		}
 		else
 		{
-			SetThink(AutoSearchThink);
+			SetThink(&ThisClass::AutoSearchThink);
 		}
 		return;
 	}
@@ -1081,7 +1081,7 @@ void CNPC_CombineCamera::Toggle()
 void CNPC_CombineCamera::Enable()
 {
 	m_bEnabled = true;
-	SetThink(Deploy);
+	SetThink(&ThisClass::Deploy);
 	SetNextThink( gpGlobals->curtime + 0.05f );
 }
 
@@ -1185,7 +1185,7 @@ void CNPC_CombineCamera::InputSetTargetEntity(inputdata_t &inputdata)
 			EmitSound("NPC_CombineCamera.BecomeIdle");
 			SetEyeState(CAMERA_EYE_IDLE);
 			SetAngry(false);
-			SetThink(IdleThink);
+			SetThink(&ThisClass::IdleThink);
 		}
 	}
 	else if (m_hScriptedTarget != pPrevTarget)
@@ -1193,7 +1193,7 @@ void CNPC_CombineCamera::InputSetTargetEntity(inputdata_t &inputdata)
 		// Start tracking the new target.
 		EmitSound("NPC_CombineCamera.Active");
 		SetEyeState(CAMERA_EYE_FOUND_TARGET);
-		SetThink(ActiveThink);
+		SetThink(&ThisClass::ActiveThink);
 	}
 }
 

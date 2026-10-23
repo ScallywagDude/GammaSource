@@ -7,34 +7,37 @@
 #include "cbase.h"
 #include "tf_player.h"
 #include "tf_basecombatweapon.h"
-#include "tf_defines.h"
+#include "tf_shareddefs.h"
 #include "in_buttons.h"
 #include "gamerules.h"
 #include "ammodef.h"
 #include "tf_obj.h"
 #include "weapon_mortar.h"
-#include "smoke_trail.h"
 #include "tf_shareddefs.h"
-#include "terrainmodmgr.h"
 #include "tf_team.h"
 #include "tf_gamerules.h"
-#include "tf_obj_antimortar.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 
 extern short	g_sModelIndexFireball;
 
 // Damage CVars
-ConVar	weapon_mortar_shell_damage( "weapon_mortar_shell_damage","0", FCVAR_NONE, "Mortar's standard shell maximum damage" );
-ConVar	weapon_mortar_shell_radius( "weapon_mortar_shell_radius","0", FCVAR_NONE, "Mortar's standard shell splash radius" );
-ConVar	weapon_mortar_starburst_damage( "weapon_mortar_starburst_damage","0", FCVAR_NONE, "Mortar's starburst maximum damage" );
-ConVar	weapon_mortar_starburst_radius( "weapon_mortar_starburst_radius","0", FCVAR_NONE, "Mortar's starburst splash radius" );
-ConVar	weapon_mortar_cluster_shells( "weapon_mortar_cluster_shells","0", FCVAR_NONE, "Number of shells a mortar cluster round bursts into" );
 
 
 //=====================================================================================================
 // MORTAR WEAPON
 //=====================================================================================================
+BEGIN_DATADESC(CWeaponMortar)
+    DEFINE_FIELD(CWeaponMortar,m_bCarried,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponMortar,m_bMortarReloading,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponMortar,m_hDeployedMortar,FIELD_EHANDLE),
+    DEFINE_FIELD(CWeaponMortar,m_vecMortarOrigin,FIELD_POSITION_VECTOR),
+    DEFINE_FIELD(CWeaponMortar,m_vecMortarAngles,FIELD_VECTOR),
+    DEFINE_FIELD(CWeaponMortar,m_bRangeUpgraded,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponMortar,m_bAccuracyUpgraded,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponMortar,m_flFiringPower,FIELD_FLOAT),
+    DEFINE_FIELD(CWeaponMortar,m_flFiringAccuracy,FIELD_FLOAT),
+END_DATADESC()
 LINK_ENTITY_TO_CLASS( weapon_mortar, CWeaponMortar );
 PRECACHE_WEAPON_REGISTER(weapon_mortar);
 
@@ -44,7 +47,7 @@ IMPLEMENT_SERVERCLASS_ST(CWeaponMortar, DT_WeaponMortar)
 	SendPropInt( SENDINFO( m_bCarried ), 2, SPROP_UNSIGNED ),
 	SendPropInt( SENDINFO( m_bMortarReloading ), 2, SPROP_UNSIGNED ),
 	SendPropVector( SENDINFO(m_vecMortarOrigin), -1, SPROP_COORD ),
-	SendPropVector( SENDINFO(m_vecMortarAngles), -1, SPROP_COORD ),
+	SendPropQAngles( SENDINFO(m_vecMortarAngles), 13 ),
 END_SEND_TABLE()
 
 //-----------------------------------------------------------------------------
@@ -62,6 +65,10 @@ CWeaponMortar::CWeaponMortar( void )
 	m_hDeployedMortar = NULL;
 	m_bRangeUpgraded = false;
 	m_bAccuracyUpgraded = false;
+	m_vecMortarOrigin.Init();
+	m_vecMortarAngles.Init();
+	m_flFiringPower=0;
+	m_flFiringAccuracy=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -131,7 +138,7 @@ bool CWeaponMortar::ComputeEMPFireState( void )
 void CWeaponMortar::PrimaryAttack( void )
 {
 	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
-	if ( !pPlayer )
+	if ( !pPlayer || !pPlayer->IsAlive() || m_flNextPrimaryAttack>gpGlobals->curtime )
 		return;
 	// Can't attack if taking EMP damage
 	if ( !ComputeEMPFireState() )
@@ -141,6 +148,7 @@ void CWeaponMortar::PrimaryAttack( void )
 	if ( m_hDeployedMortar == NULL )
 		return;
 
+	if (m_hDeployedMortar->GetBuilder()!=pPlayer) return;
 	if ( m_hDeployedMortar->FireMortar( m_flFiringPower, m_flFiringAccuracy, m_bRangeUpgraded, m_bAccuracyUpgraded ) )
 	{
 		WeaponSound( SINGLE );
@@ -225,7 +233,7 @@ void CWeaponMortar::SetYaw( float flYaw )
 //-----------------------------------------------------------------------------
 void CWeaponMortar::SetRoundType( int iRoundType )
 {
-	if ( m_hDeployedMortar == NULL )
+	if ( m_hDeployedMortar == NULL || iRoundType<0 || iRoundType>=MA_LASTAMMOTYPE )
 		return;
 
 	// Make sure we've got the technology for this round type
@@ -239,7 +247,7 @@ void CWeaponMortar::SetRoundType( int iRoundType )
 			return;
 	}
 
-	m_hDeployedMortar->m_iRoundType = iRoundType;
+	m_hDeployedMortar->SetRoundType(iRoundType);
 }
 
 //-----------------------------------------------------------------------------
@@ -267,17 +275,11 @@ void CWeaponMortar::MortarDestroyed( void )
 //-----------------------------------------------------------------------------
 void CWeaponMortar::AddAssociatedObject( CBaseObject *pObject )
 {
-	Assert( pObject );
-	
-	// Can't handle this object
-	CObjectMortar *mortar = dynamic_cast< CObjectMortar * >( pObject );
-	if ( !mortar )
-		return;
-
-	m_bCarried = false;
-	
-	m_hDeployedMortar = mortar;
-	mortar->m_hMortarWeapon = this;
+    CObjectMortar *mortar=dynamic_cast<CObjectMortar *>(pObject);
+    CBaseTFPlayer *player=ToBaseTFPlayer(GetOwner());
+    if (!mortar || !player || mortar->GetBuilder()!=player) return;
+    DeployMortar(mortar);
+    GainedNewTechnology(NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -358,4 +360,38 @@ void CWeaponMortar::MortarIsReloading( void )
 void CWeaponMortar::MortarFinishedReloading( void )
 {
 	m_bMortarReloading = false;
+}
+
+// HL2MODERN_MORTAR_CONTROL: complete the original client firing-panel command.
+bool CWeaponMortar::FireControlled(float power,float accuracy,float yaw)
+{
+    CBaseTFPlayer *player=ToBaseTFPlayer(GetOwner());
+    if (!player || !player->IsAlive() || player->GetActiveWeapon()!=this ||
+        !m_hDeployedMortar || m_hDeployedMortar->GetBuilder()!=player ||
+        m_hDeployedMortar->IsReloading() || m_flNextPrimaryAttack>gpGlobals->curtime ||
+        !(power>=0.0f && power<=1.0f) || !(accuracy>=-0.25f && accuracy<=0.25f) ||
+        !(yaw>=-36000.0f && yaw<=36000.0f)) return false;
+    SetYaw(AngleNormalize(yaw));
+    Fire(power,accuracy);
+    return true;
+}
+
+bool HL2ModernMortarClientCommand(CBaseTFPlayer *player,const char *command)
+{
+    if (!command || Q_stricmp(command,"mortar")) return false;
+    if (!player || engine->Cmd_Argc()!=4) return true;
+    CWeaponMortar *weapon=dynamic_cast<CWeaponMortar *>(player->GetActiveWeapon());
+    if (!weapon) return true;
+    float values[3];
+    for (int i=0;i<3;++i)
+    {
+        const char *argument=engine->Cmd_Argv(i+1);
+        char *end=NULL;
+        double value=strtod(argument,&end);
+        if (!argument[0] || !end || end==argument || end[0] ||
+            !(value>=-36000.0 && value<=36000.0)) return true;
+        values[i]=(float)value;
+    }
+    weapon->FireControlled(values[0],values[1],values[2]);
+    return true;
 }

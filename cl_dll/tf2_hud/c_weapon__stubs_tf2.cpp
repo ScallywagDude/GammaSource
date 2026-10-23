@@ -23,3 +23,6 @@ STUB_WEAPON_CLASS( weapon_plasmarifle, WeaponPlasmaRifle, C_TFMachineGun );
 STUB_WEAPON_CLASS( weapon_shotgun, WeaponShotgun, C_TFMachineGun );
 STUB_WEAPON_CLASS( weapon_sapper_shotgun, WeaponSapperShotgun, C_WeaponShotgun );
 STUB_WEAPON_CLASS( weapon_cubemap, WeaponCubemap, C_BaseCombatWeapon );
+STUB_WEAPON_CLASS( weapon_infiltrator, WeaponInfiltrator, C_BaseTFCombatWeapon );
+
+STUB_WEAPON_CLASS( weapon_pistols, WeaponPistols, C_TFMachineGun );

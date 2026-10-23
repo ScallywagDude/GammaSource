@@ -407,7 +407,7 @@ def main():
         registered=inventory['branches'][branch]
         requested=sorted(r['classname'] for r in registered if not r['grant_exclusion_reason'] and (branch!='hl2' or r['classname'] not in vanilla))
         # Retain the disabled brickbat as an explicit candidate, never an active registration.
-        if branch=='hl2':requested=sorted(requested+['weapon_brickbat'])
+        if branch=='hl2' and 'weapon_brickbat' not in requested:requested=sorted(requested+['weapon_brickbat'])
         compiled={r['classname'] for r in builds['branches'][branch]['weapons'] if r['server_compiled_all_configs']}
         row={'branch':label,'schema_version':18,'registered':len(registered),'impulse101_extra':requested,
              'base_or_abstract_excluded':sorted(r['classname'] for r in registered if r['grant_exclusion_reason'] and 'base class' in r['grant_exclusion_reason']),

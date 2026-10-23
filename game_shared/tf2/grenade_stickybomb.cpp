@@ -13,8 +13,8 @@
 
 
 // Damage CVars
-ConVar	grenade_stickybomb_damage( "grenade_stickybomb_damage","0", 0, "Recon's stickybomb maximum damage" );
-ConVar	grenade_stickybomb_radius( "grenade_stickybomb_radius","0", 0, "Recon's stickybomb splash radius" );
+ConVar	grenade_stickybomb_damage( "grenade_stickybomb_damage","100", 0, "Recon's stickybomb maximum damage" );
+ConVar	grenade_stickybomb_radius( "grenade_stickybomb_radius","100", 0, "Recon's stickybomb splash radius" );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -30,16 +30,18 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	void SetTimer( float timer );
+	void UpdateOnRemove(void);
 	void StickyTouch( CBaseEntity *pOther );
 	virtual void	Explode( trace_t *pTrace, int bitsDamageType );
 	virtual int		GetDamageType() const { return DMG_BLAST; }
 
 private:
-	CSprite		*m_pLiveSprite;
+	CHandle<CSprite> m_pLiveSprite;
 };
 
 // Global Savedata for friction modifier
 BEGIN_DATADESC( CGrenadeStickyBomb )
+	DEFINE_FIELD(CGrenadeStickyBomb,m_pLiveSprite,FIELD_EHANDLE),
 
 	// Function Pointers
 	DEFINE_FUNCTION( CGrenadeStickyBomb, StickyTouch ),
@@ -52,6 +54,7 @@ PRECACHE_WEAPON_REGISTER(grenade_stickybomb);
 
 CGrenadeStickyBomb::CGrenadeStickyBomb()
 {
+	m_pLiveSprite=NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -59,7 +62,9 @@ CGrenadeStickyBomb::CGrenadeStickyBomb()
 //-----------------------------------------------------------------------------
 void CGrenadeStickyBomb::Precache( void )
 {
+	BaseClass::Precache();
 	engine->PrecacheModel( "models/weapons/w_grenade.mdl" );
+	engine->PrecacheModel( "sprites/redglow1.vmt" );
 }
 
 //-----------------------------------------------------------------------------
@@ -75,15 +80,18 @@ void CGrenadeStickyBomb::Spawn( void )
 	SetFriction( 1.0 );
 	SetModel( "models/weapons/w_grenade.mdl");
 	UTIL_SetSize(this, Vector( -4, -4, -4), Vector(4, 4, 4));
-	SetTouch( StickyTouch );
+	SetTouch( &ThisClass::StickyTouch );
 	SetCollisionGroup( TFCOLLISION_GROUP_WEAPON );
 
 	// Create a red light
 	m_pLiveSprite = CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false );
+	if (m_pLiveSprite)
+	{
 	m_pLiveSprite->SetTransparency( kRenderGlow, 255, 200, 200, 255, kRenderFxNoDissipation );
 	m_pLiveSprite->SetBrightness( 255 );
 	m_pLiveSprite->SetScale( 0.3 );
 	m_pLiveSprite->SetAttachment( this, 0 );
+	}
 
 	// Set my damages to the cvar values
 	SetDamage( grenade_stickybomb_damage.GetFloat() );
@@ -97,7 +105,7 @@ void CGrenadeStickyBomb::Spawn( void )
 //-----------------------------------------------------------------------------
 void CGrenadeStickyBomb::SetTimer( float timer )
 {
-	SetThink( Detonate );
+	SetThink( &ThisClass::Detonate );
 	SetNextThink( gpGlobals->curtime + timer );
 }
 
@@ -106,7 +114,7 @@ void CGrenadeStickyBomb::SetTimer( float timer )
 //-----------------------------------------------------------------------------
 void CGrenadeStickyBomb::StickyTouch( CBaseEntity *pOther )
 {
-	if ( pOther->IsBSPModel() == false )
+	if (!pOther || pOther==GetOwnerEntity() || pOther->IsBSPModel() == false)
 		return;
 
 	BounceSound();
@@ -126,4 +134,11 @@ void CGrenadeStickyBomb::Explode( trace_t *pTrace, int bitsDamageType )
 	}
 
 	BaseClass::Explode( pTrace, bitsDamageType );
+}
+
+// HL2MODERN_RECON_STICKY_LIFECYCLE: glow must also leave on non-explosive removal.
+void CGrenadeStickyBomb::UpdateOnRemove(void)
+{
+    if (m_pLiveSprite) { UTIL_Remove(m_pLiveSprite); m_pLiveSprite=NULL; }
+    BaseClass::UpdateOnRemove();
 }

@@ -2,6 +2,7 @@ import shutil
 import sys
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 import enable_tf2_prototype_weapon_sources as m
@@ -11,6 +12,14 @@ class PrototypeCompileTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/'hl.vcxproj'
             shutil.copyfile(ROOT/'dlls/hl.vcxproj',p)
+            # Reconstruct the historical omitted inputs in a private project.
+            namespace={'m':'http://schemas.microsoft.com/developer/msbuild/2003'}
+            tree=ET.parse(p)
+            for group in tree.getroot().findall('m:ItemGroup',namespace):
+                for item in list(group):
+                    stem=Path(item.get('Include','').replace('\\','/')).stem
+                    if stem in m.PROTOTYPES:group.remove(item)
+            tree.write(p,encoding='utf-8',xml_declaration=True)
             # The optional tool only needs a project whose relative path is meaningful.
             # Supply a path under dlls through the worktree for source refs, but
             # test a copy and compare the XML item names/config exclusions.
@@ -32,6 +41,7 @@ class PrototypeCompileTests(unittest.TestCase):
     def test_source_paths_remain_valid(self):
         report=m.audit(ROOT)['branches']['tf2']
         for weapon in report['weapons']:
-            if not weapon['server_compiled_all_configs']:
+            if weapon['classname'] in m.PROTOTYPES:
+                self.assertTrue(weapon['server_compiled_all_configs'])
                 self.assertTrue((ROOT/weapon['source']).is_file(),weapon['classname'])
 if __name__=='__main__':unittest.main()

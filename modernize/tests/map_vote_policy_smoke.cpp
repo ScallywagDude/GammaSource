@@ -1,3 +1,4 @@
+#define MAX_PLAYERS 32 // The original shareddefs.h macro must coexist with this header.
 #include "../map_vote_policy.h"
 #include <cassert>
 #include <cstring>
@@ -5,6 +6,7 @@
 int main()
 {
     using namespace HL2ModernVote;
+    assert(MAX_PLAYERS == 32 && MAX_VOTE_PLAYERS == 64 && MAX_VOTERS == 65);
     assert(SafeMapName("d1_trainstation_01"));
     assert(SafeMapName("mp_modern_test"));
     assert(!SafeMapName("../autoexec.cfg"));
@@ -46,7 +48,7 @@ int main()
 
     // Regression: all 64 engine player slots must remain addressable.
     int full[MAX_VOTERS] = {0};
-    for (int i=1; i<=MAX_PLAYERS; ++i) full[i] = 1000+i;
+    for (int i=1; i<=MAX_VOTE_PLAYERS; ++i) full[i] = 1000+i;
     assert(v.Start("mp_full", 20.0f, 30.0f, 0.0f));
     assert(v.Cast(64, 1064, YES, 21.0f));
     assert(v.Tally(full).eligible == 64);

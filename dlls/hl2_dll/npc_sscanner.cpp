@@ -892,7 +892,7 @@ void CNPC_SScanner::MoveExecute_Alive(float flInterval)
 	// If I'm right over the ground limit my banking so my blades
 	// don't sink into the floor
 	float floorZ = GetFloorZ(GetLocalOrigin());
-	if (abs(GetLocalOrigin().z - floorZ) < 36)
+	if (fabs(GetLocalOrigin().z - floorZ) < 36)
 	{
 		QAngle angles = GetLocalAngles();
 		if (angles.x < -20) angles.x = -20;

@@ -12,6 +12,7 @@
 //=============================================================================
 
 #include "quakedef.h"
+#include <ctype.h>
 #include "conprint.h"
 #include <stdlib.h>
 #include "filesystem.h"

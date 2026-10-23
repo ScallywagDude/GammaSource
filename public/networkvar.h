@@ -42,16 +42,23 @@ inline int InternalCheckDeclareClass( const char *pClassName, const char *pClass
 }
 
 
+// HL2MODERN_DEBUG_CLASS_BRIDGE: grant only the registration check access.
+template <typename T> inline int HL2ModernCheckBaseClass(const char *name)
+{
+    return T::CheckDeclareClass(name);
+}
+
 #ifdef _DEBUG
 
 	#define DECLARE_CLASS( className, baseClassName ) \
 		typedef baseClassName BaseClass; \
 		typedef className ThisClass; \
 		template <typename T> friend int CheckDeclareClass_Access(T *); \
+		template <typename T> friend int HL2ModernCheckBaseClass(const char *); \
 		static int CheckDeclareClass( const char *pShouldBe ) \
 		{ \
 			InternalCheckDeclareClass( pShouldBe, #className, (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
-			return BaseClass::CheckDeclareClass( #baseClassName ); \
+			return HL2ModernCheckBaseClass<BaseClass>( #baseClassName ); \
 		}
 
 	// Use this macro when you have a base class, but it's part of a library that doesn't use network vars
@@ -60,6 +67,7 @@ inline int InternalCheckDeclareClass( const char *pClassName, const char *pClass
 		typedef baseClassName BaseClass; \
 		typedef className ThisClass; \
 		template <typename T> friend int CheckDeclareClass_Access(T *); \
+		template <typename T> friend int HL2ModernCheckBaseClass(const char *); \
 		static int CheckDeclareClass( const char *pShouldBe ) \
 		{ \
 			return InternalCheckDeclareClass( pShouldBe, #className, (ThisClass*)0xFFFFF, (BaseClass*)(ThisClass*)0xFFFFF ); \
@@ -80,6 +88,7 @@ inline int InternalCheckDeclareClass( const char *pClassName, const char *pClass
 	#define DECLARE_CLASS_NOBASE( className ) \
 		typedef className ThisClass; \
 		template <typename T> friend int CheckDeclareClass_Access(T *); \
+		template <typename T> friend int HL2ModernCheckBaseClass(const char *); \
 		static int CheckDeclareClass( const char *pShouldBe ) \
 		{ \
 			return InternalCheckDeclareClass( pShouldBe, #className, 0, 0 ); \

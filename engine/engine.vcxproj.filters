@@ -1906,15 +1906,25 @@
     <ClInclude Include="..\modernize\model_preview_studio_validation.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".\math.s">
+    <CustomBuild Include=".\math.s">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include=".\sys_wina.s">
+    </CustomBuild>
+    <CustomBuild Include=".\sys_wina.s">
       <Filter>Source Files</Filter>
-    </None>
-    <None Include=".\worlda.s">
+    </CustomBuild>
+    <CustomBuild Include=".\worlda.s">
       <Filter>Source Files</Filter>
-    </None>
+    </CustomBuild>
+    <CustomBuild Include=".\audio\private\snd_mixa.s">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\halflife.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
     <None Include=".\ICON1.ICO">
       <Filter>Resource Files</Filter>
     </None>
@@ -1924,9 +1934,6 @@
     <None Include=".\valve.ico">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include=".\audio\private\snd_mixa.s">
-      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
-    </None>
     <None Include="..\lib\public\vgui_controls.lib" />
     <None Include="..\lib\public\vstdlib.lib" />
     <None Include="..\lib\common\s3tc.lib" />
@@ -1934,10 +1941,5 @@
     <None Include="..\DX8SDK\lib\dxguid.lib" />
     <None Include="..\lib\public\tier0.lib" />
     <None Include="..\lib\public\vtf.lib" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include=".\halflife.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
 </Project>

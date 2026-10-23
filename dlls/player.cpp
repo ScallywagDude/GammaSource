@@ -5,6 +5,9 @@
 //=============================================================================
 
 #include "cbase.h"
+#ifdef HL2_DLL
+#include "hl2_dll/player_manhack.h"
+#endif
 #include "const.h"
 #include "baseplayer_shared.h"
 #include "trains.h"
@@ -2511,6 +2514,9 @@ void CBasePlayer::PlayerRunCommand(CUserCmd *ucmd, IMoveHelper *moveHelper)
 		VectorCopy ( pl.v_angle, ucmd->viewangles );
 	}
 
+#ifdef HL2_DLL
+	HL2ModernManhackPlayerCommand(this, ucmd);
+#endif
 	PlayerMove()->RunCommand(this, ucmd, moveHelper);
 }
 
@@ -2749,7 +2755,7 @@ void CBasePlayer::CheckTimeBasedDamage()
 		return;
 
 	// only check for time based damage approx. every 2 seconds
-	if (abs(gpGlobals->curtime - m_tbdPrev) < 2.0)
+	if (fabs(gpGlobals->curtime - m_tbdPrev) < 2.0)
 		return;
 	
 	m_tbdPrev = gpGlobals->curtime;

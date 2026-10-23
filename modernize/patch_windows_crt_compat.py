@@ -16,6 +16,15 @@ def patch(root=ROOT):
             ('return strstr( s1, search );', 'return const_cast<char *>(strstr( s1, search ));'),
         ],
         'public/tier0/memoverride.cpp': [
+            ('// Most files include this file, so when it\'s used it adds an extra .ValveDbg section,',
+             '#if defined(_MSC_VER) && _MSC_VER >= 1900\n'
+             '#include "../../modernize/ucrt_allocator_compat.h"\n'
+             '#endif\n\n'
+             '// Most files include this file, so when it\'s used it adds an extra .ValveDbg section,'),
+            ('static char output[1024];', 'char output[1024];\n\toutput[0] = 0;'),
+            ('vsprintf( output, szFormat, args );',
+             '_vsnprintf( output, sizeof(output)-1, szFormat ? szFormat : "", args );\n'
+             '\toutput[sizeof(output)-1] = 0;'),
             ('size_t _msize( void *pMem )\n{\n\treturn g_pMemAlloc->GetSize(pMem);\n}',
              'size_t _msize( void *pMem )\n{\n\treturn g_pMemAlloc->GetSize(pMem);\n}\n\n'
              '#if defined(_MSC_VER) && _MSC_VER >= 1900\n'

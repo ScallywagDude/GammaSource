@@ -251,15 +251,15 @@ inline bool RecvTable::IsInMainList() const
 	}
 
 
-#define RECVINFO(varName)						#varName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_NAME(varName, remoteVarName)	#remoteVarName, offsetof(currentRecvDTClass, varName), sizeof(((currentRecvDTClass*)0)->varName)
-#define RECVINFO_STRING(varName)				#varName, offsetof(currentRecvDTClass, varName), STRINGBUFSIZE(currentRecvDTClass, varName)
+#define RECVINFO(varName)						#varName, ((size_t)&(((currentRecvDTClass*)0)->varName)), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_NAME(varName, remoteVarName)	#remoteVarName, ((size_t)&(((currentRecvDTClass*)0)->varName)), sizeof(((currentRecvDTClass*)0)->varName)
+#define RECVINFO_STRING(varName)				#varName, ((size_t)&(((currentRecvDTClass*)0)->varName)), STRINGBUFSIZE(currentRecvDTClass, varName)
 #define RECVINFO_BASECLASS(tableName)			RecvPropDataTable("this", 0, 0, &REFERENCE_RECV_TABLE(tableName))
 
 // Just specify the name and offset. Used for strings and data tables.
-#define RECVINFO_NOSIZE(varName)				#varName, offsetof(currentRecvDTClass, varName)
+#define RECVINFO_NOSIZE(varName)				#varName, ((size_t)&(((currentRecvDTClass*)0)->varName))
 #define RECVINFO_DT(varName)					RECVINFO_NOSIZE(varName)
-#define RECVINFO_DTNAME(varName,remoteVarName)	#remoteVarName, offsetof(currentRecvDTClass, varName)
+#define RECVINFO_DTNAME(varName,remoteVarName)	#remoteVarName, ((size_t)&(((currentRecvDTClass*)0)->varName))
 
 
 void RecvProxy_FloatToFloat  ( const CRecvProxyData *pData, void *pStruct, void *pOut );

@@ -4,11 +4,11 @@ Modernization of the historical 2003 Source-engine tree. The uploaded source, ge
 
 ## Current milestone and work order
 
-**Source milestone: v25 (published Phase 7 source fixes). Phase 7 is not complete.** Finish **Phase 7 — Weapon restoration**, then work on **Phase 3 — Rendering API modernization, shaders and lighting**, then continue the remaining phases. **Phase 3 includes Vulkan/OpenGL/DX11/DX12 modernization.**
+**Source milestone: v26 (Phase 7 restoration and native Windows builds). Phase 7 is not complete.** Finish **Phase 7 — Weapon restoration**, then work on **Phase 3 — Rendering API modernization, shaders and lighting**, then continue the remaining phases. **Phase 3 includes Vulkan/OpenGL/DX11/DX12 modernization.**
 
 | Work | Status | Required verification |
 | --- | --- | --- |
-| Phase 7: weapon restoration | **Active; must finish first** | Windows builds, per-branch assets, weapon behavior, models, HUD, animations, pickups, ammo and `impulse 101` |
+| Phase 7: weapon restoration and HUD | **Active; must finish first** | Windows builds, per-branch assets, weapon behavior, 2002 HUD, HL1 weapon selection/icons, HUD color options, numeric Energy, animations, pickups, ammo and `impulse 101` |
 | Phase 3: Vulkan/OpenGL/DX11/DX12, shaders and lighting | **Next, after Phase 7** | Working backends, shader builds, GPU/runtime and in-game visual checks |
 | Remaining engine/gameplay, Steam/controller, cut-enemy and multiplayer work | Partial; follows the active priorities | Branch-specific build, runtime, network and asset tests |
 
@@ -16,7 +16,8 @@ Phase labels follow the current project roadmap; older documents retain historic
 
 ## Published code milestones
 
-- **v25 — Phase 7 weapon and build repairs:** sticky launcher and hopwire preserve ammunition on failed projectile creation; hopwire guards invalid owner/empty-ammo events; TF2 repair gun prioritizes injured passengers; internal rocket projectiles are excluded from weapon grants. Fixed legacy HUD sprite auditing, contradictory completion evidence, Windows test replay, and initial CRT/build linkage blockers. **217 tests run: 216 passed, 1 skipped, 0 failures.** Overlay replay preserves 7,072 protected files; all 153 projects pass structural checks. The first five Release build steps pass, but shader tools, debug linkage and server compiler errors still block a rebuilt game. See [PHASE7_STATUS.md](PHASE7_STATUS.md) and [recorded check results](modernize/reports/phase7_checks.json).
+- **v26 — Weapon restoration and native toolchain:** restored hopwire combat and the original remote-controlled manhack; reinstated six omitted TF2 weapons and their guidance/mortar dependencies; restored brickbat throwing and recovery. Fixed modern compiler compatibility, original assembly builds, static CRT/allocator linkage, dropped library dependencies, shader tooling and shared object-directory collisions. Added HL1-style weapon buckets with consistent icon sizing/tint, a HUD color tab in Options and an Energy counter beside Health and HEV Suit, keeping the 2002 amber style. All four legacy shader DLLs also build with the documented toolchain. **265 tests run: 262 passed, 3 skipped, 0 failures; replay preserves 7,118 files.** All four Release clients and servers and the Release engine have built successfully during this work; final checkpoint results and remaining runtime/art failures are recorded in [PHASE7_STATUS.md](PHASE7_STATUS.md) and [check results](modernize/reports/phase7_checks.json). New builds expose a startup crash and incompatible installed model layouts; no weapon is claimed gameplay-verified.
+- **v25 — Phase 7 weapon and build repairs:** sticky launcher and hopwire preserve ammunition on failed projectile creation; hopwire guards invalid owner/empty-ammo events; TF2 repair gun prioritizes injured passengers; internal rocket projectiles are excluded from weapon grants. Fixed legacy HUD sprite auditing, contradictory completion evidence, Windows test replay, and initial CRT/build linkage blockers. **217 tests run: 216 passed, 1 skipped, 0 failures.** Overlay replay preserves 7,072 protected files; all 153 projects pass structural checks. At v25, the first five Release build steps passed; shader tools, debug linkage and server compiler errors still blocked a rebuilt game. The v26 repairs and current blockers are recorded below. See [PHASE7_STATUS.md](PHASE7_STATUS.md) and [recorded check results](modernize/reports/phase7_checks.json).
 - **v24 — Layered VMT Patch/VTX diagnostics:** inherited material textures and independently located model companions; historical validation was 184 tests run, 183 passed, 1 skipped. The source is now uploaded; that earlier result does not certify the current checkout or gameplay.
 
 ## Publication and completion requirements
@@ -35,4 +36,4 @@ Yeah so like don't sell this. This is Forcefully Open-Sourced (LEAKED PROPRIETAR
 
 ## Current Phase 7 verification
 
-The local four-branch asset audit reports 96/113 metadata candidates; **0 weapons are claimed gameplay-verified**. TF2 alpha content uses replacement HL2 weapon models, and several prototypes remain incomplete or uncompiled. The single [Phase 7 status](PHASE7_STATUS.md) records the source, art, build and runtime blockers. Phase 3's rendering APIs, shaders and lighting start after Phase 7 is completed and tested.
+The source inventory now contains **114 registered entries and 102 gameplay candidates**. Native model-layout checks reject the installed HL2/HL1/CS weapon models that previously passed header checks; TF2 content also uses replacement HL2 weapon models. **0 weapons are claimed gameplay-verified.** The single [Phase 7 status](PHASE7_STATUS.md) records current build, art and runtime evidence. Phase 3's rendering APIs, shaders and lighting start after Phase 7 is completed and tested.

@@ -208,7 +208,7 @@ void CNPC_Launcher::Precache( void )
 //-----------------------------------------------------------------------------
 void CNPC_Launcher::LauncherTurnOn(void)
 {
-	SetThink(LauncherThink);
+	SetThink(&ThisClass::LauncherThink);
 	SetNextThink( gpGlobals->curtime );
 	m_flNextAttack = 0;
 }

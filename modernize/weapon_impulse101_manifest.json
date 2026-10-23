@@ -2,7 +2,7 @@
   {
     "branch": "hl2",
     "schema_version": 18,
-    "registered": 32,
+    "registered": 33,
     "impulse101_extra": [
       "weapon_ar1",
       "weapon_binoculars",
@@ -16,6 +16,7 @@
       "weapon_iceaxe",
       "weapon_immolator",
       "weapon_irifle",
+      "weapon_manhack",
       "weapon_molotov",
       "weapon_physgun",
       "weapon_rollerwand",
@@ -29,12 +30,12 @@
     ],
     "base_or_abstract_excluded": [],
     "excluded_source_or_internal": {
-      "weapon_cubemap": "shared cubemap debugging tool, not a branch gameplay weapon",
-      "weapon_manhack": "incomplete prototype: both attacks are empty and ItemPostFrame only idles"
+      "weapon_cubemap": "shared cubemap debugging tool, not a branch gameplay weapon"
     },
     "compiled_impulse101_extra": [
       "weapon_ar1",
       "weapon_binoculars",
+      "weapon_brickbat",
       "weapon_bugbait",
       "weapon_cguard",
       "weapon_extinguisher",
@@ -44,6 +45,7 @@
       "weapon_iceaxe",
       "weapon_immolator",
       "weapon_irifle",
+      "weapon_manhack",
       "weapon_molotov",
       "weapon_physgun",
       "weapon_rollerwand",
@@ -55,9 +57,7 @@
       "weapon_thumper",
       "weapon_tripwire"
     ],
-    "excluded_not_compiled": [
-      "weapon_brickbat"
-    ],
+    "excluded_not_compiled": [],
     "assets_verified": false,
     "viewmodels_verified": false,
     "hud_icons_verified": false,
@@ -197,6 +197,7 @@
       "weapon_arcwelder",
       "weapon_builder",
       "weapon_combat_burstrifle",
+      "weapon_combat_chargeableplasma",
       "weapon_combat_grenade_emp",
       "weapon_combat_laserrifle",
       "weapon_combat_plasmagrenadelauncher",
@@ -209,24 +210,22 @@
       "weapon_flame_thrower",
       "weapon_gas_can",
       "weapon_harpoon",
+      "weapon_infiltrator",
+      "weapon_laserdesignator",
+      "weapon_laserrifle",
       "weapon_limpetmine",
       "weapon_minigun",
+      "weapon_mortar",
       "weapon_obj_empgenerator",
       "weapon_obj_rallyflag",
+      "weapon_pistols",
       "weapon_plasmarifle",
       "weapon_repairgun",
       "weapon_rocket_launcher",
       "weapon_shield",
       "weapon_shield_grenade"
     ],
-    "excluded_not_compiled": [
-      "weapon_combat_chargeableplasma",
-      "weapon_infiltrator",
-      "weapon_laserdesignator",
-      "weapon_laserrifle",
-      "weapon_mortar",
-      "weapon_pistols"
-    ],
+    "excluded_not_compiled": [],
     "assets_verified": false,
     "viewmodels_verified": false,
     "hud_icons_verified": false,

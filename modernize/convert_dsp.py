@@ -137,6 +137,8 @@ def parse(path):
                 else: excluded['*']=True
             elif match:=OPT_RE.match(line):
                 settings.setdefault(current or '*',{})[match.group(1)] = match.group(2)
+            elif match:=re.match(r'^# SUBTRACT CPP\s+(.*)$',line):
+                settings.setdefault(current or '*',{})['CPP_SUBTRACT'] = match.group(1)
         # Preserve per-file shader/custom-build commands that VC6 encoded
         # inside source file sections, including distinct Debug/Release recipes.
         custom={}; current=None; collecting=False; custom_lines=[]; deps=[]
@@ -192,6 +194,10 @@ def parse_custom_block(block):
 
 
 def msbuild_custom(value):
+    # The shipped VC6 Perl loader cannot run reliably on current Windows.
+    # Keep the original shader script/arguments, but use a probed interpreter.
+    value = re.sub(r'(?im)^([ \t]*)\.\.[\\/]\.\.[\\/]devtools[\\/]bin[\\/]perl(?:\.exe)?(?=[ \t])',
+                   lambda match: match.group(1) + r'py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)"', value)
     # %(Filename) is the MSBuild item metadata equivalent of VC6 InputName.
     return (value.replace('$(InputName)', '%(Filename)')
                  .replace('$(InputPath)', '%(FullPath)')
@@ -237,16 +243,20 @@ def source_libraries(project, configuration):
 
 
 def vstdlib_linkage(project, configuration):
-    """Use newly built tier0 without overwriting the shipped VC6 import library.
-
-    Other projects retain their current conversion until their dependency and
-    allocator contracts have been build-tested. The ordered driver builds tier0
-    before vstdlib in both configurations.
-    """
+    """Restore .lib source inputs and resolve foundation DLLs to fresh builds."""
     result=[]
+    mode='Debug' if configuration.lower().startswith('debug') else 'Release'
     for path in source_libraries(project,configuration):
-        if pathlib.PureWindowsPath(path).name.casefold()=='tier0.lib':
-            path='..\\tier0\\build\\'+configuration+'\\tier0.lib'
+        name=pathlib.PureWindowsPath(path).name.casefold()
+        dependencies={'tier0.lib':'tier0', 'vstdlib.lib':'vstdlib',
+                      'vgui_controls.lib':'vgui2/controls',
+                      'game_controls.lib':'vgui2/game_controls',
+                      'shaderlib.lib':'shaderlib', 'vtf.lib':'vtf',
+                      'unitlib.lib':'unitlib', 'appframework.lib':'appframework',
+                      'vgui_surfacelib.lib':'vgui2/vgui_surfacelib'}
+        if name in dependencies:
+            target=ROOT/dependencies[name]/'build'/mode/name
+            path=os.path.relpath(target,project['path'].parent).replace('/', '\\')
         result.append(path)
     return result
 
@@ -275,7 +285,10 @@ def gen_project(p, report):
         condition=f"'$(Configuration)|$(Platform)'=='{cfg}|Win32'"
         props=info['props']
         g=node(root,'PropertyGroup',attrs={'Condition':condition,'Label':'Configuration'})
-        node(g,'ConfigurationType',p['kind'])
+        # Some original projects advertise an EXE target but explicitly link a
+        # DLL (notably launcher). The linker recipe is authoritative per config.
+        config_kind = ('DynamicLibrary' if re.search(r'(?:^|\s)/dll(?:\s|$)', info['flags']['LINK32'], re.I) else p['kind'])
+        node(g,'ConfigurationType',config_kind)
         node(g,'UseDebugLibraries','true' if 'debug' in cfg.lower() else 'false')
         node(g,'PlatformToolset','v145')
         node(g,'CharacterSet','MultiByte')
@@ -286,12 +299,18 @@ def gen_project(p, report):
     for cfg in keys:
         node(root,'ImportGroup',attrs={'Label':'PropertySheets','Condition':f"'$(Configuration)|$(Platform)'=='{cfg}|Win32'"})
     node(root,'PropertyGroup',attrs={'Label':'UserMacros'})
+    if any('run_shader_tool.py' in msbuild_custom(recipe['command'])
+           for file in p['files'] for recipe in file['custom'].values()):
+        tools=node(root,'PropertyGroup',attrs={'Label':'ModernShaderTools'})
+        node(tools,'HL2ModernPerl','$(HL2_MODERN_PERL)',
+             {'Condition':"'$(HL2ModernPerl)'=='' and '$(HL2_MODERN_PERL)'!=''"})
+        node(tools,'HL2ModernPerl','perl',{'Condition':"'$(HL2ModernPerl)'==''"})
     for cfg,info in p['configs'].items():
         condition=f"'$(Configuration)|$(Platform)'=='{cfg}|Win32'"
         pg=node(root,'PropertyGroup',attrs={'Condition':condition})
         # Isolate output artifacts from legacy builds and other configurations.
         node(pg,'OutDir','$(ProjectDir)build\\$(Configuration)\\')
-        node(pg,'IntDir','$(ProjectDir)build\\obj\\$(Configuration)\\')
+        node(pg,'IntDir','$(ProjectDir)build\\obj\\$(MSBuildProjectName)\\$(Configuration)\\')
         flags=info['flags']
         cinfo=get_flaginfo(flags['CPP']); linfo=get_flaginfo(flags['LINK32'] or flags['LIB32'])
         orig_out = linfo['out']
@@ -302,7 +321,13 @@ def gen_project(p, report):
         elif p['kind']=='StaticLibrary': node(pg,'TargetExt','.lib')
         idg=node(root,'ItemDefinitionGroup',attrs={'Condition':condition})
         cc=node(idg,'ClCompile')
-        if cinfo['includes']: node(cc,'AdditionalIncludeDirectories',';'.join(cinfo['includes'])+';%(AdditionalIncludeDirectories)')
+        if cinfo['includes']:
+            includes=list(cinfo['includes'])
+            # Current platform types must precede the bundled 2002 basetsd.h;
+            # the legacy DirectX SDK remains the fallback for D3DX headers.
+            if relative_project_name(p['path']).lower().startswith('materialsystem/shaderdx8/'):
+                includes.insert(0,'$(WindowsSDK_IncludePath)')
+            node(cc,'AdditionalIncludeDirectories',';'.join(includes)+';%(AdditionalIncludeDirectories)')
         defs=cinfo['defines']
         if '_MBCS' not in defs and 'UNICODE' not in defs and '_UNICODE' not in defs: defs.append('_MBCS')
         node(cc,'PreprocessorDefinitions',';'.join(defs)+';%(PreprocessorDefinitions)')
@@ -311,13 +336,14 @@ def gen_project(p, report):
         node(cc,'DebugInformationFormat','ProgramDatabase')
         # Many 2003 headers expect MSVC language/CRT behavior. C++17+ postponed until sources compile.
         node(cc,'ConformanceMode','false')
+        # VC6 kept a for-loop declaration visible in its enclosing scope.
+        node(cc,'ForceConformanceInForLoopScope','false')
         node(cc,'SDLCheck','false')
         node(cc,'PrecompiledHeader','Use' if cinfo['pchuse'] else 'NotUsing')
         if cinfo['pchuse']: node(cc,'PrecompiledHeaderFile',cinfo['pchuse'])
         if '/GR' in flags['CPP']: node(cc,'RuntimeTypeInfo','true')
         if '/EHsc' in flags['CPP'] or '/GX' in flags['CPP']: node(cc,'ExceptionHandling','Sync')
-        repair_vstdlib=relative_project_name(p['path']).casefold()=='vstdlib/vstdlib.dsp'
-        rt=runtime_library(flags['CPP'],cfg,legacy_default=repair_vstdlib)
+        rt=runtime_library(flags['CPP'],cfg,legacy_default=True)
         if rt: node(cc,'RuntimeLibrary',rt)
         if '/Gz' in flags['CPP']: node(cc,'CallingConvention','StdCall')
         if '/Gd' in flags['CPP']: node(cc,'CallingConvention','Cdecl')
@@ -330,9 +356,16 @@ def gen_project(p, report):
             if p['kind']=='Application': node(lk,'SubSystem',p['subsystem'])
             node(lk,'GenerateDebugInformation','true' if '/debug' in flags['LINK32'].lower() else 'false')
         libs=linfo['libraries']
-        if repair_vstdlib:
-            libs=list(dict.fromkeys(libs+vstdlib_linkage(p,cfg)))
+        libs=list(dict.fromkeys(libs+vstdlib_linkage(p,cfg)))
         if libs: node(lk,'AdditionalDependencies',';'.join(libs)+';%(AdditionalDependencies)')
+        if p['kind']!='StaticLibrary':
+            # VC6 /ML libraries request LIBC/LIBCD, retired in modern MSVC.
+            # Their C runtime references resolve against this module's selected CRT.
+            node(lk,'IgnoreSpecificDefaultLibraries','LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)')
+            if any(pathlib.PureWindowsPath(lib).name.casefold()=='s3tc.lib' for lib in libs):
+                # S3's supplied encoder archive predates SafeSEH; no source is present.
+                # Keep the historical x86 exception-table contract for its users.
+                node(lk,'ImageHasSafeExceptionHandlers','false')
         if linfo['libpaths']: node(lk,'AdditionalLibraryDirectories',';'.join(linfo['libpaths'])+';%(AdditionalLibraryDirectories)')
         defs_file=get_switch(flags['LINK32'],'def:')
         if defs_file and p['kind']!='StaticLibrary': node(lk,'ModuleDefinitionFile',norm_path(defs_file))
@@ -343,7 +376,7 @@ def gen_project(p, report):
             command=staging_command(p['path'].parent,old_dest)
             if command is None:continue
             post=node(idg,'PostBuildEvent')
-            node(post,'Command',command)
+            node(post,'Command',command,{'Condition':"'$(HL2ModernStageLegacy)'=='true'"})
             break
     groups=collections.defaultdict(list)
     missing=[];case_only=[]; outside=[]
@@ -356,7 +389,8 @@ def gen_project(p, report):
         ext=pathlib.PureWindowsPath(rel).suffix.lower()
         typ=('ClCompile' if ext in ('.cpp','.cxx','.cc','.c') else 'ClInclude' if ext in ('.h','.hpp','.hxx','.inl') else 'ResourceCompile' if ext=='.rc' else 'Midl' if ext=='.idl' else 'None')
         if f['custom'] and ext not in ('.cpp','.cxx','.cc','.c','.rc','.idl'):typ='CustomBuild'
-        if ext in ('.asm','.s'): typ='None'
+        if ext in ('.asm','.s'):
+            typ='CustomBuild' if ext=='.s' and relative_project_name(p['path']).casefold()=='engine/engine.dsp' else 'None'
         src=(p['path'].parent / f['path'].replace('\\','/')).resolve()
         if not src.exists():
             if str(src).lower() in EXISTING_LOWER:case_only.append(f['path'])
@@ -377,21 +411,40 @@ def gen_project(p, report):
                         # The build command is preserved, not replaced with a
                         # pretend modern HLSL compiler: some shader profiles
                         # still require the original fxc_prep.pl chain.
-                        node(fe,'Command',msbuild_custom(recipe['command']),{'Condition':condition})
-                        node(fe,'Outputs',msbuild_custom(recipe['output']),{'Condition':condition})
-                        if recipe['dependencies']:
-                            node(fe,'AdditionalInputs',';'.join(msbuild_custom(d) for d in recipe['dependencies'])+';%(AdditionalInputs)',{'Condition':condition})
+                        engine_asm=relative_project_name(p['path']).casefold()=='engine/engine.dsp' and pathlib.PureWindowsPath(f['path']).suffix.lower()=='.s'
+                        if engine_asm:
+                            node(fe,'Command',r'py -3 "$(ProjectDir)..\modernize\run_legacy_masm.py" --source "%(FullPath)" --output "$(IntDir)%(Filename).obj"',{'Condition':condition})
+                            node(fe,'Outputs',r'$(IntDir)%(Filename).obj',{'Condition':condition})
+                            node(fe,'LinkObjects','true',{'Condition':condition})
+                        else:
+                            node(fe,'Command',msbuild_custom(recipe['command']),{'Condition':condition})
+                            node(fe,'Outputs',msbuild_custom(recipe['output']),{'Condition':condition})
+                        dependencies=[msbuild_custom(d) for d in recipe['dependencies']]
+                        if engine_asm:
+                            dependencies += [r'..\modernize\run_legacy_masm.py',r'gas2masm\gas2masm.c',
+                                             r'asm_i386.h',r'quakeasm.h',r'audio\private\snd_asm_i386.h']
+                        if 'run_shader_tool.py' in msbuild_custom(recipe['command']):
+                            dependencies += [r'..\..\modernize\run_shader_tool.py',
+                                             r'..\..\modernize\legacy_shader_tool.py',
+                                             r'..\..\modernize\build_modern_shaders.py']
+                        if dependencies:
+                            node(fe,'AdditionalInputs',';'.join(dependencies)+';%(AdditionalInputs)',{'Condition':condition})
                     elif f['custom']:
                         node(fe,'ExcludedFromBuild','true',{'Condition':condition})
-                opts=f['settings'].get(cfg,f['settings'].get('*',{}))
+                opts=dict(f['settings'].get('*',{}))
+                opts.update(f['settings'].get(cfg,{}))
                 cpp=opts.get('CPP','')
+                removed_cpp=opts.get('CPP_SUBTRACT','')
+                removed_pch=bool(re.search(r'(?i)(?:^|\s)/(?:YX|Yc|Yu)(?=\s|$)',removed_cpp))
+                if removed_pch and not cpp:
+                    node(fe,'PrecompiledHeader','NotUsing',{'Condition':condition})
                 if cpp and typ=='ClCompile':
                     inf=get_flaginfo(cpp)
                     if inf['includes']: node(fe,'AdditionalIncludeDirectories',';'.join(inf['includes'])+';%(AdditionalIncludeDirectories)', {'Condition':condition})
                     if inf['defines']:node(fe,'PreprocessorDefinitions',';'.join(inf['defines'])+';%(PreprocessorDefinitions)',{'Condition':condition})
                     if inf['pchcreate']:node(fe,'PrecompiledHeader','Create',{'Condition':condition});node(fe,'PrecompiledHeaderFile',inf['pchcreate'],{'Condition':condition})
                     elif inf['pchuse']:node(fe,'PrecompiledHeader','Use',{'Condition':condition});node(fe,'PrecompiledHeaderFile',inf['pchuse'],{'Condition':condition})
-                    elif '/Y-' in cpp: node(fe,'PrecompiledHeader','NotUsing',{'Condition':condition})
+                    elif '/Y-' in cpp or removed_pch: node(fe,'PrecompiledHeader','NotUsing',{'Condition':condition})
     node(root,'Import',attrs={'Project':'$(VCTargetsPath)\\Microsoft.Cpp.targets'})
     node(root,'ImportGroup',attrs={'Label':'ExtensionTargets'})
     write_xml(root, fpath)

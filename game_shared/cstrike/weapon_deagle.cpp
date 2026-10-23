@@ -6,7 +6,9 @@
 
 #include "cbase.h" 
 #include "decals.h" 
-#include "util.h" 
+#if !defined(CLIENT_DLL)
+#include "util.h"
+#endif 
 #include "cbase.h" 
 #include "shake.h" 
 #include "weapon_csbase.h"

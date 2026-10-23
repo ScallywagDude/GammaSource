@@ -2,12 +2,13 @@
   "note": "Only server-source exclusion blocks server-side entity registration. Client inclusion of the same file is OPTIONAL and often intentionally absent. Project membership never proves compilation or runtime functionality.",
   "branches": {
     "hl2": {
-      "registered": 32,
+      "registered": 33,
       "server_excluded": [],
       "client_source_not_shared": [
         "weapon_ar1",
         "weapon_ar2",
         "weapon_binoculars",
+        "weapon_brickbat",
         "weapon_bugbait",
         "weapon_cguard",
         "weapon_crowbar",
@@ -70,6 +71,20 @@
         {
           "classname": "weapon_binoculars",
           "source": "dlls/hl2_dll/weapon_binoculars.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_brickbat",
+          "source": "dlls/hl2_dll/weapon_brickbat.cpp",
           "debug": {
             "server": true,
             "client": false
@@ -1123,14 +1138,7 @@
     },
     "tf2": {
       "registered": 38,
-      "server_excluded": [
-        "weapon_combat_chargeableplasma",
-        "weapon_infiltrator",
-        "weapon_laserdesignator",
-        "weapon_laserrifle",
-        "weapon_mortar",
-        "weapon_pistols"
-      ],
+      "server_excluded": [],
       "client_source_not_shared": [
         "weapon_builder",
         "weapon_combat_chargeableplasma",
@@ -1217,14 +1225,14 @@
           "classname": "weapon_combat_chargeableplasma",
           "source": "game_shared/tf2/weapon_combat_chargeableplasma.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {
@@ -1455,42 +1463,42 @@
           "classname": "weapon_infiltrator",
           "source": "game_shared/tf2/weapon_infiltrator.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {
           "classname": "weapon_laserdesignator",
           "source": "game_shared/tf2/weapon_laserdesignator.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {
           "classname": "weapon_laserrifle",
           "source": "game_shared/tf2/weapon_laserrifle.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {
@@ -1525,14 +1533,14 @@
           "classname": "weapon_mortar",
           "source": "game_shared/tf2/weapon_mortar.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {
@@ -1581,14 +1589,14 @@
           "classname": "weapon_pistols",
           "source": "game_shared/tf2/weapon_pistols.cpp",
           "debug": {
-            "server": false,
+            "server": true,
             "client": false
           },
           "release": {
-            "server": false,
+            "server": true,
             "client": false
           },
-          "server_compiled_all_configs": false,
+          "server_compiled_all_configs": true,
           "client_compiled_all_configs": false
         },
         {

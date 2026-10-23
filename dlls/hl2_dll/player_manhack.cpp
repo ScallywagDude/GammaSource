@@ -6,399 +6,296 @@
 //=============================================================================
 
 #include "cbase.h"
-
-#if 0
-#include "ai_basenpc.h"
-#include "basecombatweapon.h"	// For SpawnBlood
+#include "player_manhack.h"
+#include "player.h"
+#include "basecombatweapon.h"
+#include "baseviewmodel.h"
+#include "entitylist.h"
+#include "physics.h"
+#include "usercmd.h"
+#include "in_buttons.h"
 #include "soundent.h"
-#include "func_break.h"		// For materials
-#include "hl2_player.h"
-#include "ai_hull.h"
-#include "decals.h"
-#include "shake.h"
-#include "ndebugoverlay.h"
-#include "player_control.h"
-#include "IEffects.h"
-#include "engine/IEngineSound.h"
 
+// HL2MODERN_REMOTE_MANHACK: reactivate the original player_manhack concept
+// using its own body/camera, not the NPC implementation or player teleportation.
+IMPLEMENT_SERVERCLASS_ST(CPlayer_Manhack,DT_Player_Manhack)
+END_SEND_TABLE()
+LINK_ENTITY_TO_CLASS(player_manhack,CPlayer_Manhack);
 
-#define PMANHACK_OFFSET		Vector(0,0,-18)
-#define PMANHACK_HULL_MINS	Vector(-22,-22,-22)
-#define PMANHACK_HULL_MAXS	Vector(22,22,22)
-#define PMANHACK_MAX_SPEED	400
-#define PMANHACK_DECAY		6
-
-
-class CPlayer_Manhack : public CPlayer_Control
-{
-public:
-	DECLARE_CLASS( CPlayer_Manhack, CPlayer_Control );
-
-	void	Precache(void);
-	void	Spawn(void);
-	bool	CreateVPhysics( void );
-
-	// Inputs
-	void InputActivate( inputdata_t &inputdata );
-	void InputDeactivate( inputdata_t &inputdata );
-	void InputSetThrust( inputdata_t &inputdata );
-	void InputSetSideThrust( inputdata_t &inputdata );
-
-	void	FlyThink(void);
-	void	CheckBladeTrace(trace_t &tr);
-
-	DECLARE_DATADESC();
-};
-
-
-BEGIN_DATADESC( CPlayer_Manhack )
-
-	// Function Pointers
-	DEFINE_FUNCTION( CPlayer_Manhack, FlyThink ),
-
+BEGIN_DATADESC(CPlayer_Manhack)
+    DEFINE_FIELD(CPlayer_Manhack,m_hController,FIELD_EHANDLE),
+    DEFINE_FIELD(CPlayer_Manhack,m_hControlWeapon,FIELD_EHANDLE),
+    DEFINE_FIELD(CPlayer_Manhack,m_bActive,FIELD_BOOLEAN),
+    DEFINE_FIELD(CPlayer_Manhack,m_bSavedViewModelVisible,FIELD_BOOLEAN),
+    DEFINE_FIELD(CPlayer_Manhack,m_iSavedFOV,FIELD_INTEGER),
+    DEFINE_FIELD(CPlayer_Manhack,m_iSavedMoveType,FIELD_INTEGER),
+    DEFINE_FIELD(CPlayer_Manhack,m_iSavedMoveCollide,FIELD_INTEGER),
+    DEFINE_FIELD(CPlayer_Manhack,m_flExpireTime,FIELD_TIME),
+    DEFINE_FIELD(CPlayer_Manhack,m_flLastCommand,FIELD_TIME),
+    DEFINE_FIELD(CPlayer_Manhack,m_flNextBladeDamage,FIELD_TIME),
+    DEFINE_FIELD(CPlayer_Manhack,m_vecDesiredVelocity,FIELD_VECTOR),
+    DEFINE_FIELD(CPlayer_Manhack,m_angCommandView,FIELD_VECTOR),
+    DEFINE_FIELD(CPlayer_Manhack,m_angSavedPlayerView,FIELD_VECTOR),
+    DEFINE_FUNCTION(CPlayer_Manhack,FlyThink),
+    DEFINE_INPUTFUNC(CPlayer_Manhack,FIELD_VOID,"Activate",InputActivate),
+    DEFINE_INPUTFUNC(CPlayer_Manhack,FIELD_VOID,"Deactivate",InputDeactivate),
 END_DATADESC()
 
-LINK_ENTITY_TO_CLASS( player_manhack, CPlayer_Manhack );
-
-
-//------------------------------------------------------------------------------
-// Purpose :
-// Input   :
-// Output  :
-//------------------------------------------------------------------------------
-void CPlayer_Manhack::Precache( void )
+CPlayer_Manhack::CPlayer_Manhack()
 {
-	engine->PrecacheModel("models/manhack.mdl");
-	engine->PrecacheModel("models/manhack_sphere.mdl");
-
-	enginesound->PrecacheSound( "npc/manhack/grind1.wav");
-	enginesound->PrecacheSound( "npc/manhack/grind2.wav");
-	enginesound->PrecacheSound( "npc/manhack/grind3.wav");
-	enginesound->PrecacheSound( "npc/manhack/grind_flesh1.wav");
-	enginesound->PrecacheSound( "npc/manhack/grind_flesh2.wav");
-	enginesound->PrecacheSound( "npc/manhack/grind_flesh3.wav");
+    m_bActive=false;
+    m_bRestoreView=false;
+    m_bSavedViewModelVisible=false;
+    m_iSavedFOV=0;
+    m_iSavedMoveType=MOVETYPE_WALK;
+    m_iSavedMoveCollide=MOVECOLLIDE_DEFAULT;
+    m_flExpireTime=0;
+    m_flLastCommand=0;
+    m_flNextBladeDamage=0;
+    m_vecDesiredVelocity=vec3_origin;
+    m_angCommandView=vec3_angle;
+    m_angSavedPlayerView=vec3_angle;
 }
 
-//------------------------------------------------------------------------------
-// Purpose :
-// Input   :
-// Output  :
-//------------------------------------------------------------------------------
-void CPlayer_Manhack::Spawn( void )
+void CPlayer_Manhack::Precache(void)
 {
-	Precache();
-	m_flFriction = 0.55; // deading the bounce a bit
-	
-	SetModel( "models/manhack.mdl" );
-	UTIL_SetSize(this, PMANHACK_HULL_MINS, PMANHACK_HULL_MAXS);
-
-	m_bActive = false;
-
-	CreateVPhysics();
+    engine->PrecacheModel("models/manhack.mdl");
+    BaseClass::Precache();
 }
 
-//-----------------------------------------------------------------------------
-
-bool CPlayer_Manhack::CreateVPhysics( void )
+void CPlayer_Manhack::Spawn(void)
 {
-	// Create the object in the physics system
-	VPhysicsInitNormal( SOLID_BBOX, 0, false );
-
-	return true;
+    Precache();
+    SetModel("models/manhack.mdl");
+    SetMoveType(MOVETYPE_VPHYSICS);
+    SetSolid(SOLID_BBOX);
+    UTIL_SetSize(this,Vector(-22,-22,-22),Vector(22,22,22));
+    m_iHealth=25;
+    m_iMaxHealth=25;
+    m_lifeState=LIFE_ALIVE;
+    m_takedamage=DAMAGE_YES;
+    IPhysicsObject *physics=VPhysicsInitNormal(SOLID_BBOX,0,false);
+    if (!physics) { UTIL_Remove(this); return; }
+    physics->EnableGravity(false);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Input handler for turning on the manhack
-//-----------------------------------------------------------------------------
-void CPlayer_Manhack::InputActivate( inputdata_t &inputdata )
+CPlayer_Manhack *CPlayer_Manhack::FindForPlayer(CBasePlayer *player)
 {
-	BaseClass::InputActivate( inputdata );
-
-	SetThink(FlyThink);
-
-	// Switch to a bigger model (a sphere) that keeps the player's
-	// camera outside of walls
-	VPhysicsDestroyObject();
-	SetModel("models/manhack_sphere.mdl" );
-	VPhysicsInitNormal( GetSolid(), GetSolidFlags(), false );
-
-	CHL2_Player*	pPlayer		= (CHL2_Player*)UTIL_PlayerByIndex( 1 );
-
-	Assert( pPlayer );
-
-	pPlayer->SetFOV( 132 );
-	pPlayer->FollowEntity( this );
-	pPlayer->m_nControlClass	= CLASS_MANHACK;
-	pPlayer->GiveNamedItem( "weapon_manhack" );
+    if (!player) return NULL;
+    CBaseEntity *entity=NULL;
+    while ((entity=gEntList.FindEntityByClassname(entity,"player_manhack"))!=NULL)
+    {
+        CPlayer_Manhack *control=dynamic_cast<CPlayer_Manhack *>(entity);
+        if (control && !control->IsMarkedForDeletion() && control->IsControlledBy(player)) return control;
+    }
+    return NULL;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Input handler for turning off the manhack.
-//-----------------------------------------------------------------------------
-void CPlayer_Manhack::InputDeactivate( inputdata_t &inputdata )
+bool CPlayer_Manhack::IsControlledBy(CBasePlayer *player) const
 {
-	BaseClass::InputDeactivate( inputdata );
-
-	CHL2_Player*	pPlayer		= (CHL2_Player*)UTIL_PlayerByIndex( 1 );
-
-	Assert( pPlayer );
-
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind1.wav");
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind2.wav");
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind3.wav");
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind_flesh1.wav");
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind_flesh2.wav");
-	StopSound(pPlayer->entindex(), CHAN_ITEM, "npc/manhack/grind_flesh3.wav");
-	StopSound(pPlayer->entindex(), "Player_Manhack.ThrustLow" );
-	StopSound(pPlayer->entindex(), "Player_Manhack.ThrustHigh" );	
-
-	// Remove manhack blade weapon from player's inventory
-	CBaseEntity* pBlade = (CBaseEntity*)(pPlayer->GetActiveWeapon());
-	pPlayer->Weapon_Drop( GetActiveWeapon() );
-	if (m_pSaveWeapon)
-	{
-		pPlayer->Weapon_Switch( m_pSaveWeapon );
-	}
-	UTIL_RemoveImmediate(pBlade);
-	UTIL_Relink(pPlayer);
-
-	// Switch back to manhack model
-	VPhysicsDestroyObject();
-	SetModel("models/manhack.mdl" );
-	VPhysicsInitNormal( GetSolid(), GetSolidFlags(), false );
+    return m_bActive && m_hController.Get()==player;
 }
 
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CPlayer_Manhack::InputSetThrust( inputdata_t &inputdata )
+CBaseCombatWeapon *CPlayer_Manhack::GetControlWeapon(void) const
 {
-	if (!m_bActive)
-	{
-		return;
-	}
-
-	CBasePlayer*	pPlayer  = UTIL_PlayerByIndex( 1 );	
-
-	Assert( pPlayer );
-
-	if (inputdata.value.Float() == 0)
-	{
-		CPASAttenuationFilter filter( pPlayer, "Player_Manhack.ThrustLow" );
-		EmitSound( filter, pPlayer->entindex(), "Player_Manhack.ThrustLow" );
-		return;
-	}
-	CPASAttenuationFilter filter( pPlayer, "Player_Manhack.ThrustHigh" );
-	EmitSound( filter, pPlayer->entindex(), "Player_Manhack.ThrustHigh" );
-
-
-	Vector vForce; 
-	pPlayer->EyeVectors( &vForce );
-	vForce = vForce * inputdata.value.Float() * 600;
-
-	IPhysicsObject*	pPhysObj = VPhysicsGetObject();
-	pPhysObj->ApplyForceCenter( vForce );
+    return m_hControlWeapon.Get();
 }
 
-
-//------------------------------------------------------------------------------
-// Purpose:
-//------------------------------------------------------------------------------
-void CPlayer_Manhack::InputSetSideThrust( inputdata_t &inputdata )
+bool CPlayer_Manhack::StartControl(CBasePlayer *player,CBaseCombatWeapon *weapon)
 {
-	if (!m_bActive)
-	{
-		return;
-	}
-
-	CBasePlayer*	pPlayer  = UTIL_PlayerByIndex( 1 );	
-
-	Assert( pPlayer );
-
-	if (inputdata.value.Float() == 0)
-	{
-		CPASAttenuationFilter filter( pPlayer, "Player_Manhack.ThrustLow" );
-		EmitSound( filter, pPlayer->entindex(), "Player_Manhack.ThrustLow" );
-		return;
-	}
-	CPASAttenuationFilter filter( pPlayer, "Player_Manhack.ThrustHigh" );
-	EmitSound( filter, pPlayer->entindex(), "Player_Manhack.ThrustHigh" );
-
-
-	Vector vForce; 
-	pPlayer->EyeVectors( 0, &vForce, 0 );
-	vForce = vForce * inputdata.value.Float() * 600;
-
-	IPhysicsObject*	pPhysObj = VPhysicsGetObject();
-	pPhysObj->ApplyForceCenter( vForce );
+    if (m_bActive || !player || !player->IsAlive() || !weapon ||
+        weapon->GetOwner()!=player || player->GetActiveWeapon()!=weapon ||
+        !VPhysicsGetObject() || FindForPlayer(player)) return false;
+    m_hController=player;
+    m_hControlWeapon=weapon;
+    m_iSavedFOV=player->GetFOV();
+    m_iSavedMoveType=player->GetMoveType();
+    m_iSavedMoveCollide=player->GetMoveCollide();
+    CBaseViewModel *viewmodel=player->GetViewModel();
+    m_bSavedViewModelVisible=viewmodel && !(viewmodel->m_fEffects & EF_NODRAW);
+    m_bActive=true;
+    m_flExpireTime=gpGlobals->curtime+60.0f;
+    m_flLastCommand=gpGlobals->curtime;
+    m_flNextBladeDamage=gpGlobals->curtime;
+    m_angCommandView=player->EyeAngles();
+    m_angSavedPlayerView=m_angCommandView;
+    player->SetAbsVelocity(vec3_origin);
+    player->SetMoveType(MOVETYPE_NONE);
+    player->SetFOV(132);
+    player->ShowViewModel(true);
+    engine->SetView(player->edict(),edict());
+    EmitSound("Player_Manhack.ThrustLow");
+    SetThink(&CPlayer_Manhack::FlyThink);
+    SetNextThink(gpGlobals->curtime+0.02f);
+    return true;
 }
 
-
-//------------------------------------------------------------------------------
-// Purpose :
-// Input   :
-// Output  :
-//------------------------------------------------------------------------------
-void CPlayer_Manhack::CheckBladeTrace(trace_t &tr)
+void CPlayer_Manhack::StopControl(void)
 {
-	CBaseEntity* pHitEntity = NULL;
-	CBasePlayer*	pPlayer = UTIL_PlayerByIndex( 1 );
-
-	Assert( pPlayer );
-
-	if (tr.u.ent)
-	{
-		pHitEntity = CBaseEntity::Instance( tr.u.ent );
-
-		// Did I hit an entity that isn't a player?
-		if (pHitEntity && pHitEntity->Classify()!=CLASS_PLAYER)
-		{
-			CTakeDamageInfo info( this, this, 1, DMG_SLASH );
-			CalculateMeleeDamageForce( &info, (tr.endpos - tr.endpos), tr.endpos );
-			pHitEntity->TakeDamage( info );
-		}
-	}
-	if (tr.fraction != 1.0 || tr.startsolid)
-	{
-
-		CBaseCombatCharacter* pBCC = ToBaseCombatCharacter( pHitEntity );
-
-		if (pBCC)
-		{
-			// Spawn some extra blood in front of player to see
-			Vector vPlayerFacing;
-			pPlayer->EyeVectors( &vPlayerFacing );
-			Vector vBloodPos = pPlayer->Center() + vPlayerFacing*30;
-			SpawnBlood(vBloodPos, pBCC->BloodColor(), 1.0);
-
-			CPASAttenuationFilter filter( pPlayer, "Player_Manhack.GrindFlesh" );
-			EmitSound( filter, pPlayer->entindex(), "Player_Manhack.GrindFlesh" );
-		}
-		else
-		{
-			if (!(m_spawnflags	& SF_NPC_GAG))
-			{
-				CPASAttenuationFilter filter( pPlayer, "Player_Manhack.Grind" );
-				EmitSound( filter, pPlayer->entindex(), "Player_Manhack.Grind" );
-			}
-			// For decals and sparks we must trace a line in the direction of the surface norm
-			// that we hit.
-			Vector vCheck = GetAbsOrigin() - (tr.plane.normal * 24);
-
-			UTIL_TraceLine( GetAbsOrigin()+PMANHACK_OFFSET, vCheck+PMANHACK_OFFSET,MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
-			if (tr.fraction != 1.0)
-			{
-				g_pEffects->Sparks( tr.endpos );
-
-				CBroadcastRecipientFilter filter;
-				te->DynamicLight( filter, 0.0,
-					&tr.endpos, 255, 180, 100, 0, 10, 0.1, 0 );
-
-
-				// Leave decal only if colliding horizontally
-				if ((DotProduct(Vector(0,0,1),tr.plane.normal)<0.5) && (DotProduct(Vector(0,0,-1),tr.plane.normal)<0.5))
-				{
-					UTIL_DecalTrace( &tr, "ManhackCut" );
-				}
-			}
-		}
-	}
+    if (!m_bActive) return;
+    m_bActive=false;
+    CBasePlayer *player=m_hController.Get();
+    m_hController=NULL;
+    m_hControlWeapon=NULL;
+    m_vecDesiredVelocity=vec3_origin;
+    StopSound("Player_Manhack.ThrustLow");
+    StopSound("Player_Manhack.ThrustHigh");
+    StopSound("Player_Manhack.Grind");
+    StopSound("Player_Manhack.GrindFlesh");
+    if (player)
+    {
+        engine->SetView(player->edict(),player->edict());
+        if (player->IsAlive())
+        {
+            player->SetMoveType((MoveType_t)m_iSavedMoveType,(MoveCollide_t)m_iSavedMoveCollide);
+            player->SetAbsVelocity(vec3_origin);
+            player->SetFOV(m_iSavedFOV);
+            player->SnapEyeAngles(m_angSavedPlayerView);
+            player->ShowViewModel(m_bSavedViewModelVisible);
+        }
+        else player->SetFOV(0);
+    }
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Manhack is still dangerous when dead
-// Input  :
-// Output :
-//-----------------------------------------------------------------------------
-void CPlayer_Manhack::FlyThink()
+void CPlayer_Manhack::PlayerCommand(CUserCmd *command)
 {
-	SetNextThink( gpGlobals->curtime );
-
-	// Get physics object
-	IPhysicsObject*	pPhysObj = VPhysicsGetObject();
-	if (!pPhysObj) return;
-	Vector vPhysPos;
-	pPhysObj->GetPosition(&vPhysPos,NULL);
-
-	// Update the player's origin
-	CBasePlayer*	pPlayer  = UTIL_PlayerByIndex( 1 );	
-
-	Assert( pPlayer );
-
-	Vector vPlayerFacing;
-	pPlayer->EyeVectors( &vPlayerFacing );
-
-
-	UTIL_SetOrigin(pPlayer,vPhysPos);
-
-	float flBrightness;
-	if (random->RandomInt(0,1)==0)
-	{
-		flBrightness = 255;
-	}
-	else
-	{
-		flBrightness = 1;
-	}
-	color32 white = {flBrightness,flBrightness,flBrightness,20};
-	UTIL_ScreenFade( pPlayer, white, 0.01, 0.1, FFADE_MODULATE );
-
-	flBrightness = random->RandomInt(0,255);
-	NDebugOverlay::ScreenText( 0.4, 0.15, "...M A N H A C K     A C T I V A T E D...", 255, flBrightness, flBrightness, 255, 0.0);
-
-	// ----------------------------------------
-	//	Trace forward to see if I hit anything
-	// ----------------------------------------
-	trace_t			tr;
-	Vector vVelocity;
-	GetVelocity( &vVelocity, NULL );
-	vVelocity.z = 0;
-	Vector			vCheckPos = GetAbsOrigin() + (vVelocity*gpGlobals->frametime);
-
-	// Check in movement direction
-	UTIL_TraceHull( GetAbsOrigin()+PMANHACK_OFFSET, vCheckPos+PMANHACK_OFFSET, 
-			Vector(-22,-22,-1), Vector(22,22,1),
-			MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
-	CheckBladeTrace(tr);
-
-	// Check in facing direction
-	UTIL_TraceHull( GetAbsOrigin()+PMANHACK_OFFSET, GetAbsOrigin() + vPlayerFacing*14 + PMANHACK_OFFSET, 
-			Vector(-22,-22,-1), Vector(22,22,1),
-			MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
-	CheckBladeTrace(tr);
-
-	// ----------
-	// Add decay
-	// ----------
-	Vector vOldVelocity;
-	pPhysObj->GetVelocity(&vOldVelocity,NULL);
-	float flDecay = -PMANHACK_DECAY*gpGlobals->frametime;
-	if (flDecay < -1.0)
-	{
-		flDecay = -1.0;
-	}
-	pPhysObj->ApplyForceCenter( flDecay*vOldVelocity );
-
-	// -----------------------
-	// Hover noise
-	// -----------------------
-	float	flNoise1 = 1000*sin(4*gpGlobals->curtime);
-	float	flNoise = 12000+ flNoise1;
-
-	Vector vForce = Vector(0,0,flNoise*gpGlobals->frametime);
-	pPhysObj->ApplyForceCenter( vForce );
-
-	// -----------------------
-	//  Limit velocity
-	// -----------------------
-	pPhysObj->GetVelocity(&vOldVelocity,NULL);
-	if (vOldVelocity.Length() > PMANHACK_MAX_SPEED)
-	{
-		Vector vNewVelocity = vOldVelocity;
-		VectorNormalize(vNewVelocity);
-		vNewVelocity = vNewVelocity *PMANHACK_MAX_SPEED;
-		Vector vSubtract = vNewVelocity - vOldVelocity;
-		pPhysObj->AddVelocity(&vSubtract,NULL);
-	}
+    if (!command || !m_bActive) return;
+    // Reject nonfinite or out-of-range network movement before using physics.
+    float forward=command->forwardmove;
+    float side=command->sidemove;
+    float up=command->upmove;
+    if (!(forward>=-400.0f && forward<=400.0f)) forward=0;
+    if (!(side>=-400.0f && side<=400.0f)) side=0;
+    if (!(up>=-400.0f && up<=400.0f)) up=0;
+    if (command->buttons & IN_JUMP) up=400;
+    if (command->buttons & IN_DUCK) up=-400;
+    command->forwardmove=command->sidemove=command->upmove=0;
+    command->buttons &= ~(IN_JUMP|IN_DUCK);
+    for (int i=0;i<3;++i)
+        if (!(command->viewangles[i]>=-36000.0f && command->viewangles[i]<=36000.0f)) return;
+    m_angCommandView=command->viewangles;
+    m_angCommandView.x=max(-89.0f,min(89.0f,m_angCommandView.x));
+    m_angCommandView.z=0;
+    Vector direction,right;
+    AngleVectors(m_angCommandView,&direction,&right,NULL);
+    m_vecDesiredVelocity=direction*forward+right*side+Vector(0,0,up);
+    if (m_vecDesiredVelocity.Length()>400.0f)
+    { VectorNormalize(m_vecDesiredVelocity); m_vecDesiredVelocity*=400.0f; }
+    m_flLastCommand=gpGlobals->curtime;
 }
-#endif
+
+void HL2ModernManhackPlayerCommand(CBasePlayer *player,CUserCmd *command)
+{
+    CPlayer_Manhack *control=CPlayer_Manhack::FindForPlayer(player);
+    if (control) control->PlayerCommand(command);
+}
+
+void CPlayer_Manhack::FlyThink(void)
+{
+    CBasePlayer *player=m_hController.Get();
+    CBaseCombatWeapon *weapon=m_hControlWeapon.Get();
+    if (!m_bActive || !player || !player->IsAlive() || !weapon ||
+        weapon->GetOwner()!=player || player->GetActiveWeapon()!=weapon ||
+        gpGlobals->curtime>=m_flExpireTime ||
+        (GetAbsOrigin()-player->GetAbsOrigin()).Length()>1600.0f)
+    { StopControl(); UTIL_Remove(this); return; }
+    IPhysicsObject *physics=VPhysicsGetObject();
+    if (!physics) { StopControl(); UTIL_Remove(this); return; }
+    if (m_bRestoreView)
+    {
+        engine->SetView(player->edict(),edict());
+        player->SetMoveType(MOVETYPE_NONE);
+        player->SetFOV(132);
+        m_bRestoreView=false;
+    }
+    Vector velocity;
+    physics->GetVelocity(&velocity,NULL);
+    if (gpGlobals->curtime-m_flLastCommand>0.25f) m_vecDesiredVelocity=vec3_origin;
+    Vector nextVelocity=velocity+(m_vecDesiredVelocity-velocity)*0.12f;
+    if (nextVelocity.Length()>400.0f)
+    { VectorNormalize(nextVelocity); nextVelocity*=400.0f; }
+    Vector correction=nextVelocity-velocity;
+    physics->AddVelocity(&correction,NULL);
+    Vector physicsPosition;
+    physics->GetPosition(&physicsPosition,NULL);
+    physics->SetPosition(physicsPosition,m_angCommandView,true);
+    if (gpGlobals->curtime>=m_flNextBladeDamage)
+    {
+        CheckBladeTrace();
+        m_flNextBladeDamage=gpGlobals->curtime+0.1f;
+    }
+    SetNextThink(gpGlobals->curtime+0.02f);
+}
+
+void CPlayer_Manhack::CheckBladeTrace(void)
+{
+    CBasePlayer *player=m_hController.Get();
+    if (!player) return;
+    Vector facing;
+    AngleVectors(m_angCommandView,&facing);
+    const Vector start=GetAbsOrigin()+Vector(0,0,-18);
+    trace_t trace;
+    UTIL_TraceHull(start,start+facing*14,Vector(-22,-22,-1),Vector(22,22,1),
+                   MASK_SHOT,this,COLLISION_GROUP_NONE,&trace);
+    if (trace.fraction==1.0f && !trace.startsolid) return;
+    CBaseEntity *hit=trace.m_pEnt;
+    if (hit && hit!=player && hit->m_takedamage!=DAMAGE_NO)
+    {
+        CTakeDamageInfo info(this,player,1.0f,DMG_SLASH);
+        CalculateMeleeDamageForce(&info,facing,trace.endpos);
+        hit->TakeDamage(info);
+        EmitSound(ToBaseCombatCharacter(hit)?"Player_Manhack.GrindFlesh":"Player_Manhack.Grind");
+    }
+    else if (trace.DidHitWorld())
+    {
+        EmitSound("Player_Manhack.Grind");
+        UTIL_DecalTrace(&trace,"ManhackCut");
+    }
+}
+
+void CPlayer_Manhack::OnRestore(void)
+{
+    BaseClass::OnRestore();
+    m_bRestoreView=m_bActive;
+    if (m_bActive)
+    {
+        SetThink(&CPlayer_Manhack::FlyThink);
+        SetNextThink(gpGlobals->curtime+0.1f);
+    }
+}
+
+void CPlayer_Manhack::UpdateOnRemove(void)
+{
+    StopControl();
+    SetThink(NULL);
+    BaseClass::UpdateOnRemove();
+}
+
+void CPlayer_Manhack::Event_Killed(const CTakeDamageInfo &info)
+{
+    (void)info;
+    m_lifeState=LIFE_DEAD;
+    m_takedamage=DAMAGE_NO;
+    EmitSound("NPC_Manhack.Die");
+    UTIL_Remove(this);
+}
+
+void CPlayer_Manhack::InputActivate(inputdata_t &inputdata)
+{
+    CBasePlayer *player=ToBasePlayer(inputdata.pActivator);
+    if (!player) return;
+    CBaseCombatWeapon *weapon=player->Weapon_OwnsThisType("weapon_manhack");
+    if (!weapon)
+    {
+        player->GiveNamedItem("weapon_manhack");
+        weapon=player->Weapon_OwnsThisType("weapon_manhack");
+    }
+    if (weapon && player->Weapon_Switch(weapon)) StartControl(player,weapon);
+}
+
+void CPlayer_Manhack::InputDeactivate(inputdata_t &inputdata)
+{
+    (void)inputdata;
+    StopControl();
+    UTIL_Remove(this);
+}

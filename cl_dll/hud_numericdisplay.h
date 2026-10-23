@@ -32,6 +32,7 @@ public:
 protected:
 	// vgui overrides
 	virtual void PaintBackground( void );
+	virtual void ApplySchemeSettings(vgui::IScheme *scheme); // HL2MODERN_2002_FONTS
 	virtual void Paint();
 
 private:

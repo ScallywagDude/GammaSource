@@ -34,8 +34,8 @@ void CGrenade_Brickbat::Spawn( void )
 {
 	m_fEffects &= ~EF_NOINTERP;
 
-	SetTouch( BrickbatTouch );
-	SetThink( BrickbatThink );
+	SetTouch( &ThisClass::BrickbatTouch );
+	SetThink( &ThisClass::BrickbatThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_takedamage = DAMAGE_YES;
@@ -58,7 +58,13 @@ bool CGrenade_Brickbat::CreateVPhysics()
 		pPhysics->SetCallbackFlags( flags | CALLBACK_GLOBAL_TOUCH_STATIC );
 	}
 
-	return true;
+    if (!pPhysics)
+    {
+        SetMoveType(MOVETYPE_FLYGRAVITY);
+        SetSolid(SOLID_BBOX);
+        SetSize(Vector(-4,-4,-4),Vector(4,4,4));
+    }
+    return pPhysics!=NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -68,6 +74,7 @@ bool CGrenade_Brickbat::CreateVPhysics()
 //-----------------------------------------------------------------------------
 void CGrenade_Brickbat::BrickbatTouch( CBaseEntity *pOther )
 {
+	if (!pOther || pOther==GetOwnerEntity() || IsMarkedForDeletion()) return;
 	// -----------------------------------------------------------
 	// Might be physically simulated so get my velocity manually
 	// -----------------------------------------------------------
@@ -173,9 +180,9 @@ void CGrenade_Brickbat::BrickbatThink( void )
 				// Bounce me off 
 				// --------------------
 				Vector vNewVel;
-				vNewVel.y = 100;
+				vNewVel.z = 100;
 				vNewVel.x = random->RandomInt(-100,100);
-				vNewVel.z = random->RandomInt(-100,100);
+				vNewVel.y = random->RandomInt(-100,100);
 
 				// If physically simulated
 				IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
@@ -194,10 +201,13 @@ void CGrenade_Brickbat::BrickbatThink( void )
 		}
 	}
 
-	if (vVelocity.Length() < 0.01)
-	{
-		SpawnBrickbatWeapon();
-	}
+	// HL2MODERN_BRICKBAT_RECOVERY: only recover once the object has settled.
+    IPhysicsObject *physics=VPhysicsGetObject();
+    if ((physics && physics->IsAsleep()) || (!physics && (GetFlags()&FL_ONGROUND) && vVelocity.Length()<20))
+    {
+        SpawnBrickbatWeapon();
+        if (IsMarkedForDeletion()) return;
+    }
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 
@@ -212,6 +222,7 @@ public:
 	void Spawn(void)
 	{
 		m_nType = BRICKBAT_ROCK;
+		m_bExplodes=false;
 		SetModel( "models/props_junk/Rock001a.mdl" );
 		BaseClass::Spawn();
 	}

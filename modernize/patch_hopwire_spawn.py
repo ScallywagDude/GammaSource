@@ -37,6 +37,8 @@ def weapon(source):
 
 
 def grenade(source):
+    if 'HL2MODERN_HOPWIRE_COMBAT' in source:
+        return source
     return once(source,
                 '\tCGrenadeHopWire *pGrenade = (CGrenadeHopWire *) CBaseEntity::Create( "npc_grenade_hopwire", position, angles, pOwner );\n\t\n\tpGrenade->SetTimer( timer );',
                 '\tCGrenadeHopWire *pGrenade = (CGrenadeHopWire *) CBaseEntity::Create( "npc_grenade_hopwire", position, angles, pOwner );\n'

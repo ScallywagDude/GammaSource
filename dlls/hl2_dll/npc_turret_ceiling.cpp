@@ -278,7 +278,7 @@ void CNPC_CeilingTurret::Spawn( void )
 	//Do we start active?
 	if ( m_bAutoStart && m_bEnabled )
 	{
-		SetThink( AutoSearchThink );
+		SetThink( &ThisClass::AutoSearchThink );
 		SetEyeState( TURRET_EYE_DORMANT );
 	}
 	else
@@ -326,7 +326,7 @@ int CNPC_CeilingTurret::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		//FIXME: This needs to throw a ragdoll gib or something other than animating the retraction -- jdw
 
 		ExplosionCreate( GetAbsOrigin(), GetLocalAngles(), this, 100, 100, false );
-		SetThink( DeathThink );
+		SetThink( &ThisClass::DeathThink );
 
 		StopSound( "NPC_CeilingTurret.Alert" );
 
@@ -382,14 +382,14 @@ void CNPC_CeilingTurret::Retire( void )
 		//Go back to auto searching
 		if ( m_bAutoStart )
 		{
-			SetThink( AutoSearchThink );
+			SetThink( &ThisClass::AutoSearchThink );
 			SetNextThink( gpGlobals->curtime + 0.05f );
 		}
 		else
 		{
 			//Set our visible state to dormant
 			SetEyeState( TURRET_EYE_DISABLED );
-			SetThink( SUB_DoNothing );
+			SetThink( &ThisClass::SUB_DoNothing );
 		}
 	}
 }
@@ -430,7 +430,7 @@ void CNPC_CeilingTurret::Deploy( void )
 		m_flShotTime  = gpGlobals->curtime + 1.0f;
 
 		m_flPlaybackRate = 0;
-		SetThink( SearchThink );
+		SetThink( &ThisClass::SearchThink );
 
 		EmitSound( "NPC_CeilingTurret.Move" );
 	}
@@ -577,7 +577,7 @@ void CNPC_CeilingTurret::ActiveThink( void )
 	{
 		SetEnemy( NULL );
 		m_flLastSight = gpGlobals->curtime + CEILING_TURRET_MAX_WAIT;
-		SetThink( SearchThink );
+		SetThink( &ThisClass::SearchThink );
 		m_vecGoalAngles = GetAbsAngles();
 		return;
 	}
@@ -625,7 +625,7 @@ void CNPC_CeilingTurret::ActiveThink( void )
 			ClearEnemyMemory();
 			SetEnemy( NULL );
 			m_flLastSight = gpGlobals->curtime + CEILING_TURRET_MAX_WAIT;
-			SetThink( SearchThink );
+			SetThink( &ThisClass::SearchThink );
 			m_vecGoalAngles = GetAbsAngles();
 			
 			SpinDown();
@@ -710,7 +710,7 @@ void CNPC_CeilingTurret::SearchThink( void )
 		}
 
 		m_flLastSight = 0;
-		SetThink( ActiveThink );
+		SetThink( &ThisClass::ActiveThink );
 		SetEyeState( TURRET_EYE_SEE_TARGET );
 
 		SpinUp();
@@ -723,7 +723,7 @@ void CNPC_CeilingTurret::SearchThink( void )
 	{
 		//Before we retrace, make sure that we are spun down.
 		m_flLastSight = 0;
-		SetThink( Retire );
+		SetThink( &ThisClass::Retire );
 		return;
 	}
 	
@@ -764,7 +764,7 @@ void CNPC_CeilingTurret::AutoSearchThink( void )
 	//Deploy if we've got an active target
 	if ( GetEnemy() != NULL )
 	{
-		SetThink( Deploy );
+		SetThink( &ThisClass::Deploy );
 		EmitSound( "NPC_CeilingTurret.Alert" );
 	}
 }
@@ -904,7 +904,7 @@ void CNPC_CeilingTurret::Enable( void )
 		m_bAutoStart = true;
 	}
 
-	SetThink( Deploy );
+	SetThink( &ThisClass::Deploy );
 	SetNextThink( gpGlobals->curtime + 0.05f );
 }
 
@@ -917,7 +917,7 @@ void CNPC_CeilingTurret::Disable( void )
 	m_bAutoStart = false;
 
 	SetEnemy( NULL );
-	SetThink( Retire );
+	SetThink( &ThisClass::Retire );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 

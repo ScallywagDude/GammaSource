@@ -297,11 +297,11 @@ void CBaseTurret::Initialize(void)
 	if (m_iAutoStart)
 	{
 		m_flLastSight = gpGlobals->curtime + m_flMaxWait;
-		SetThink(AutoSearchThink);		
+		SetThink(&ThisClass::AutoSearchThink);		
 		SetNextThink( gpGlobals->curtime + .1 );
 	}
 	else
-		SetThink(SUB_DoNothing);
+		SetThink(&ThisClass::SUB_DoNothing);
 }
 
 
@@ -319,7 +319,7 @@ void CBaseTurret::InputToggle( inputdata_t &inputdata )
 		SetNextThink( gpGlobals->curtime + 0.1f );
 		m_iAutoStart = FALSE;// switching off a turret disables autostart
 		//!!!! this should spin down first!!BUGBUG
-		SetThink(Retire);
+		SetThink(&ThisClass::Retire);
 	}
 	else 
 	{
@@ -331,7 +331,7 @@ void CBaseTurret::InputToggle( inputdata_t &inputdata )
 			m_iAutoStart = TRUE;
 		}
 		
-		SetThink(Deploy);
+		SetThink(&ThisClass::Deploy);
 	}
 }
 
@@ -392,7 +392,7 @@ void CBaseTurret::ActiveThink(void)
 	{
 		SetEnemy( NULL );
 		m_flLastSight = gpGlobals->curtime + m_flMaxWait;
-		SetThink(SearchThink);
+		SetThink(&ThisClass::SearchThink);
 		return;
 	}
 	
@@ -409,7 +409,7 @@ void CBaseTurret::ActiveThink(void)
 			{	
 				SetEnemy( NULL );
 				m_flLastSight = gpGlobals->curtime + m_flMaxWait;
-				SetThink(SearchThink);
+				SetThink(&ThisClass::SearchThink);
 				return;
 			}
 		}
@@ -451,7 +451,7 @@ void CBaseTurret::ActiveThink(void)
 				ClearEnemyMemory();
 				SetEnemy( NULL );
 				m_flLastSight = gpGlobals->curtime + m_flMaxWait;
-				SetThink(SearchThink);
+				SetThink(&ThisClass::SearchThink);
 				return;
 			}
 		}
@@ -548,7 +548,7 @@ void CBaseTurret::Deploy(void)
 		SetActivity( (Activity)ACT_TURRET_OPEN_IDLE );
 
 		m_flPlaybackRate = 0;
-		SetThink(SearchThink);
+		SetThink(&ThisClass::SearchThink);
 	}
 
 	m_flLastSight = gpGlobals->curtime + m_flMaxWait;
@@ -596,12 +596,12 @@ void CBaseTurret::Retire(void)
 
 		if (m_iAutoStart)
 		{
-			SetThink(AutoSearchThink);		
+			SetThink(&ThisClass::AutoSearchThink);		
 			SetNextThink( gpGlobals->curtime + .1 );
 		}
 		else
 		{
-			SetThink(SUB_DoNothing);
+			SetThink(&ThisClass::SUB_DoNothing);
 		}
 	}
 }
@@ -640,7 +640,7 @@ void CBaseTurret::SearchThink(void)
 	if (GetEnemy() != NULL)
 	{
 		m_flLastSight = 0;
-		SetThink(ActiveThink);
+		SetThink(&ThisClass::ActiveThink);
 	}
 	else
 	{
@@ -649,7 +649,7 @@ void CBaseTurret::SearchThink(void)
 		{
 			//Before we retrace, make sure that we are spun down.
 			m_flLastSight = 0;
-			SetThink(Retire);
+			SetThink(&ThisClass::Retire);
 		}
 		
 		// generic hunt for new victims
@@ -690,7 +690,7 @@ void CBaseTurret::AutoSearchThink(void)
 
 	if (GetEnemy() != NULL)
 	{
-		SetThink(Deploy);
+		SetThink(&ThisClass::Deploy);
 		EmitSound( "NPC_Turret.Alert" );
 	}
 }
@@ -799,7 +799,7 @@ int CBaseTurret::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 		if (m_iOn && (1 || random->RandomInt(0, 0x7FFF) > 800))
 		{
 			m_fBeserk = 1;
-			SetThink(SearchThink);
+			SetThink(&ThisClass::SearchThink);
 		}
 	}
 
@@ -1084,7 +1084,7 @@ int CSentry::OnTakeDamage( const CTakeDamageInfo &info )
 
 	if (!m_iOn)
 	{
-		SetThink( Deploy );
+		SetThink( &ThisClass::Deploy );
 		SetNextThink( gpGlobals->curtime + 0.1f );
 	}
 

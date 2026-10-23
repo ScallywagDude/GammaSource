@@ -27,6 +27,7 @@ class CGrenade_Brickbat : public CBaseGrenade
 {
 public:
 	DECLARE_CLASS( CGrenade_Brickbat, CBaseGrenade );
+    CGrenade_Brickbat():m_nType((BrickbatAmmo_t)0),m_bExplodes(false),m_bBounceToFlat(false) {}
 
 	virtual void	Spawn( void );
 	virtual void	SpawnBrickbatWeapon( void );

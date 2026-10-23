@@ -7,7 +7,7 @@
 
 #include "cbase.h"
 #include "tf_player.h"
-#include "tf_defines.h"
+#include "tf_shareddefs.h"
 #include "in_buttons.h"
 #include "weapon_infiltrator.h"
 #include "gamerules.h"
@@ -79,7 +79,7 @@ void CWeaponInfiltrator::PrimaryAttack( void )
 	
 	WeaponSound( SINGLE );
 	PlayAttackAnimation( ACT_VM_PRIMARYATTACK );
-	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration( m_nSequence ) * 0.5;
+	m_flNextPrimaryAttack = gpGlobals->curtime + SequenceDuration() * 0.5;
 
 	// Instant kill
 	pTarget->TakeDamage( CTakeDamageInfo( this, GetOwner(), 500.0f, DMG_SLASH ) );

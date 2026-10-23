@@ -85,7 +85,7 @@ void CWalkerBase::SpawnWalker(
 	
 	EnableServerIK();
 
-	SetContextThink( WalkerThink, gpGlobals->curtime, "WalkerThink" );
+	SetContextThink( &ThisClass::WalkerThink, gpGlobals->curtime, "WalkerThink" );
 }
 
 void CWalkerBase::EnableWalkMode( bool bEnable )
@@ -208,7 +208,7 @@ void CWalkerBase::WalkerThink()
 
 	
 	// Get another think.
-	SetContextThink( WalkerThink, gpGlobals->curtime + dt, "WalkerThink" );
+	SetContextThink( &ThisClass::WalkerThink, gpGlobals->curtime + dt, "WalkerThink" );
 }
 
 

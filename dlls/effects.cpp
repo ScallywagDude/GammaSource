@@ -88,7 +88,7 @@ void CBubbling::Spawn( void )
 	Relink();
 
 	// HACKHACK!!! - Speed in rendercolor
-	int iSpeed = abs( m_flSpeed );
+	int iSpeed = fabs( m_flSpeed );
 	SetRenderColorR( iSpeed >> 8 );
 	SetRenderColorG( iSpeed & 255 );
 	SetRenderColorB( (m_flSpeed < 0) ? 1 : 0 );

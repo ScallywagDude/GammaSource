@@ -921,7 +921,7 @@ bool CWeapon_SLAM::Deploy( void )
 	m_bDetonatorArmed = AnyUndetonatedCharges();
 
 
-	SetThink( SLAMThink );
+	SetThink( &ThisClass::SLAMThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	SetModel( GetViewModel() );

@@ -210,7 +210,7 @@ void CVehicleTeleportStation::OnFinishedDeploy( void )
 		m_hTeleportCornerSprites[4]->SetScale( 0.1 );
 	}
 
-	SetContextThink( PostTeleportThink, gpGlobals->curtime + 0.1, TELEPORT_STATION_THINK_CONTEXT );
+	SetContextThink( &ThisClass::PostTeleportThink, gpGlobals->curtime + 0.1, TELEPORT_STATION_THINK_CONTEXT );
 
 	// Add ourselves to the list of deployed MCVs.
 	s_DeployedTeleportStations.AddToTail( this );
@@ -375,7 +375,7 @@ void CVehicleTeleportStation::DoTeleport( void )
 		}
 	}
 
-	SetContextThink( PostTeleportThink, gpGlobals->curtime + 0.1, TELEPORT_STATION_THINK_CONTEXT );
+	SetContextThink( &ThisClass::PostTeleportThink, gpGlobals->curtime + 0.1, TELEPORT_STATION_THINK_CONTEXT );
 }
 
 //-----------------------------------------------------------------------------

@@ -66,8 +66,8 @@ void CFallingRock::Spawn( void )
 	VPhysicsInitNormal( SOLID_BBOX, 0, false );
 	UTIL_SetSize( this, Vector(-4,-4,-4), Vector(4,4,4) );
 
-	SetTouch( RockTouch );
-	SetThink( SUB_Remove );
+	SetTouch( &ThisClass::RockTouch );
+	SetThink( &ThisClass::SUB_Remove );
 	SetNextThink( gpGlobals->curtime + random->RandomFloat( 20.0, 30.0 ) );
 }
 
@@ -160,7 +160,7 @@ LINK_ENTITY_TO_CLASS( env_fallingrocks, CEnv_FallingRocks );
 void CEnv_FallingRocks::Spawn( void )
 {
 	Precache();
-	SetThink( RockThink );
+	SetThink( &ThisClass::RockThink );
 	SetNextThink( gpGlobals->curtime + random->RandomFloat( m_flMinSpawnTime, m_flMaxSpawnTime ) );
 }
 

@@ -2204,7 +2204,7 @@ void CAI_NetworkBuilder::InitClimbNodePosition(CAI_Network *pNetwork, CAI_Node *
 		{
 			float floorZ = GetFloorZ(origin); // FIXME: don't use this
 
-			if (abs(pNode->m_vOrigin.z - floorZ) < 36)
+			if (fabs(pNode->m_vOrigin.z - floorZ) < 36)
 			{
 				CAI_Node *new_node		= pNetwork->AddNode( pNode->m_vOrigin, pNode->m_flYaw );
 				new_node->m_pHint			= NULL;

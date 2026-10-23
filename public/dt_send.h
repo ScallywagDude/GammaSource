@@ -517,17 +517,17 @@ inline void SendTable::SetNumDataTableProxies( int count )
 // there as a check to make sure all networked variables use the CNetworkXXXX macros in network_var.h.
 #define SENDINFO(varName)					#varName, offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName), sizeof(((currentSendDTClass*)0)->varName)
 #define SENDINFO_ARRAY(varName)				#varName, offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName), sizeof(((currentSendDTClass*)0)->varName[0])
-#define SENDINFO_ARRAYELEM(varName, i)		#varName "[" #i "]", offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName[i]), sizeof(((currentSendDTClass*)0)->varName[0])
-#define SENDINFO_NETWORKARRAYELEM(varName, i)#varName "[" #i "]", offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName.m_Value[i]), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
-#define SENDINFO_VECTORELEM(varName, i)		#varName "[" #i "]", offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName.m_Value[i]), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
+#define SENDINFO_ARRAYELEM(varName, i)		#varName "[" #i "]", (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (i) * sizeof(((currentSendDTClass*)0)->varName[0])), sizeof(((currentSendDTClass*)0)->varName[0])
+#define SENDINFO_NETWORKARRAYELEM(varName, i)#varName "[" #i "]", (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (i) * sizeof(((currentSendDTClass*)0)->varName.m_Value[0])), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
+#define SENDINFO_VECTORELEM(varName, i)		#varName "[" #i "]", (offsetof(currentSendDTClass::MakeANetworkVar_##varName, varName) + (i) * sizeof(((currentSendDTClass*)0)->varName.m_Value[0])), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
 #define SENDINFO_STRUCTELEM(varName)		#varName, offsetof(currentSendDTClass, varName), sizeof(((currentSendDTClass*)0)->varName.m_Value)
-#define SENDINFO_STRUCTARRAYELEM(varName, i)#varName "[" #i "]", offsetof(currentSendDTClass, varName.m_Value[i]), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
+#define SENDINFO_STRUCTARRAYELEM(varName, i)#varName "[" #i "]", (offsetof(currentSendDTClass, varName) + (i) * sizeof(((currentSendDTClass*)0)->varName.m_Value[0])), sizeof(((currentSendDTClass*)0)->varName.m_Value[0])
 
 // Use this when you're not using a CNetworkVar to represent the data you're sending.
-#define SENDINFO_NOCHECK(varName)	#varName, offsetof(currentSendDTClass, varName), sizeof(((currentSendDTClass*)0)->varName)
+#define SENDINFO_NOCHECK(varName)	#varName, ((size_t)&(((currentSendDTClass*)0)->varName)), sizeof(((currentSendDTClass*)0)->varName)
 #define SENDINFO_DT(varName)		#varName, offsetof(currentSendDTClass, varName)
 #define SENDINFO_DT_NAME(varName, remoteVarName)		#remoteVarName, offsetof(currentSendDTClass, varName)
-#define SENDINFO_NAME(varName,remoteVarName)			#remoteVarName, offsetof(currentSendDTClass, varName), sizeof(((currentSendDTClass*)0)->varName)
+#define SENDINFO_NAME(varName,remoteVarName)			#remoteVarName, ((size_t)&(((currentSendDTClass*)0)->varName)), sizeof(((currentSendDTClass*)0)->varName)
 
 
 

@@ -7,7 +7,7 @@
       "projects_with_missing_compilation_inputs": 0,
       "missing_compilation_inputs": 0,
       "missing_shaders": 0,
-      "missing_include_directories": 20,
+      "missing_include_directories": 18,
       "case_only_references": 0,
       "first_project_with_missing_inputs": null
     },
@@ -16,7 +16,7 @@
       "projects_with_missing_compilation_inputs": 0,
       "missing_compilation_inputs": 0,
       "missing_shaders": 0,
-      "missing_include_directories": 17,
+      "missing_include_directories": 15,
       "case_only_references": 0,
       "first_project_with_missing_inputs": null
     }
@@ -138,9 +138,7 @@
       "step": 10,
       "missing_project": false,
       "missing_inputs": [],
-      "missing_include_dirs": [
-        "fxctmp9"
-      ],
+      "missing_include_dirs": [],
       "out_of_tree": [],
       "case_only_references": 0
     },
@@ -152,9 +150,7 @@
       "step": 11,
       "missing_project": false,
       "missing_inputs": [],
-      "missing_include_dirs": [
-        "fxctmp9"
-      ],
+      "missing_include_dirs": [],
       "out_of_tree": [],
       "case_only_references": 0
     },
@@ -615,9 +611,7 @@
       "step": 40,
       "missing_project": false,
       "missing_inputs": [],
-      "missing_include_dirs": [
-        "fxctmp9"
-      ],
+      "missing_include_dirs": [],
       "out_of_tree": [],
       "case_only_references": 0
     },
@@ -629,9 +623,7 @@
       "step": 41,
       "missing_project": false,
       "missing_inputs": [],
-      "missing_include_dirs": [
-        "fxctmp9"
-      ],
+      "missing_include_dirs": [],
       "out_of_tree": [],
       "case_only_references": 0
     },

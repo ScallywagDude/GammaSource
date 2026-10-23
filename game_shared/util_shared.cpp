@@ -264,6 +264,7 @@ void UTIL_TraceModel( const Vector &vecStart, const Vector &vecEnd, const Vector
 //-----------------------------------------------------------------------------
 class CTraceFilterEntity : public CTraceFilterSimple
 {
+public: // Derived filters reference the base-class alias.
 	DECLARE_CLASS( CTraceFilterEntity, CTraceFilterSimple );
 
 public:

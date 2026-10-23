@@ -124,7 +124,7 @@ void CGrenadeBugBait::Spawn( void )
 	UTIL_SetSize( this, Vector( -2, -2, -2), Vector( 2, 2, 2 ) );
 	Relink();
 
-	SetTouch( BugBaitTouch );
+	SetTouch( &ThisClass::BugBaitTouch );
 
 	m_takedamage = DAMAGE_NO;
 

@@ -288,7 +288,7 @@ void CBaseObject::Spawn( void )
 	m_flHealth = m_iMaxHealth = m_iHealth;
 	m_iAmountPlayerPaidForMe = CalculateObjectCost( GetType(), 0, GetTeamNumber() );
 
-	SetContextThink( BaseObjectThink, gpGlobals->curtime + 0.1, OBJ_BASE_THINK_CONTEXT );
+	SetContextThink( &ThisClass::BaseObjectThink, gpGlobals->curtime + 0.1, OBJ_BASE_THINK_CONTEXT );
 	m_szAmmoName = NULL;
 	NetworkStateManualMode( true );
 
@@ -2804,7 +2804,7 @@ void CBaseObject::SetPowerPack( CObjectPowerPack *pPack )
 		// Lose power in a second, to give any nearby powerpacks time to connect to me and replace the power
 		if ( bHadPower )
 		{
-			SetContextThink( LostPowerThink, gpGlobals->curtime + 1.0, OBJ_LOSTPOWER_THINK_CONTEXT );
+			SetContextThink( &ThisClass::LostPowerThink, gpGlobals->curtime + 1.0, OBJ_LOSTPOWER_THINK_CONTEXT );
 			if ( GetTFTeam() )
 			{
 				// Dirty hack to make powerpack think I need power
@@ -3000,7 +3000,7 @@ void CBaseObject::AttachObjectToObject( const CBaseEntity *pEntity, int iPoint, 
 		}
 	}
 
-	Assert( m_hBuiltOnEntity == GetMoveParent() );
+	Assert( m_hBuiltOnEntity.Get() == GetMoveParent() );
 }
 
 //-----------------------------------------------------------------------------

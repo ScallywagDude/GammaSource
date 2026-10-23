@@ -23,6 +23,7 @@
 #include "OptionsSubVideo.h"
 #include "OptionsSubVoice.h"
 #include "OptionsSubAdvanced.h"
+#include "OptionsSubHUD.h" // HL2MODERN_HUD_OPTIONS
 #include "OptionsSubMultiplayer.h"
 #include "../modernize/hl2_playermodel_policy.h"
 #include "MultiplayerAdvancedDialog.h"
@@ -64,6 +65,8 @@ COptionsDialog::COptionsDialog(vgui::Panel *parent) : PropertyDialog(parent, "Op
 	AddPage(new COptionsSubVideo(this), "#GameUI_Video");
 	AddPage(new COptionsSubVoice(this), "#GameUI_Voice");
 	AddPage(new COptionsSubAdvanced(this), "#GameUI_Advanced");
+	if (HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory()))
+		AddPage(new COptionsSubHUD(this), "HUD");
 
 //	double s5 = system()->GetCurrentTime();
 //	ivgui()->DPrintf("COptionsDialog::COptionsDialog(): %.3fms\n", (float)(s5 - s4) * 1000.0f);

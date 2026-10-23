@@ -51,6 +51,28 @@
         "texture_scale_verified": false
       },
       {
+        "classname": "weapon_brickbat",
+        "implementation_file": "dlls/hl2_dll/weapon_brickbat.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/cremator_head.mdl",
+          "models/props_junk/Rock001a.mdl",
+          "models/weapons/v_bb_bottle.mdl",
+          "models/weapons/v_bb_crematorhead.mdl",
+          "models/weapons/w_bb_bottle.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
         "classname": "weapon_bugbait",
         "implementation_file": "dlls/hl2_dll/weapon_bugbait.cpp",
         "source_scope": "branch",
@@ -264,8 +286,8 @@
         "classname": "weapon_manhack",
         "implementation_file": "dlls/hl2_dll/weapon_manhack.cpp",
         "source_scope": "branch",
-        "grant_exclusion_reason": "incomplete prototype: both attacks are empty and ItemPostFrame only idles",
-        "implementation_status": "incomplete_source",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
         "model_literals_in_same_file": [],
         "asset_checks": {
           "weapon_script": [],
@@ -1858,14 +1880,7 @@
     ]
   },
   "unregistered_prototypes": {
-    "hl2": [
-      {
-        "classname": "weapon_brickbat",
-        "implementation_file": "dlls/hl2_dll/weapon_brickbat.cpp",
-        "status": "unregistered_commented_prototype",
-        "runtime_verified": false
-      }
-    ],
+    "hl2": [],
     "hl1": [],
     "cstrike": [],
     "tf2": []

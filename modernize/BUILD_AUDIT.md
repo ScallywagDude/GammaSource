@@ -5,8 +5,8 @@ Checks use Windows-style case-insensitive file matching. This does **not** verif
 
 | Configuration | Build steps | Projects lacking compiled source files | Missing compiled inputs | Missing shader source | Missing include directories |
 |---|---:|---:|---:|---:|---:|
-| Debug | 61 | 0 | 0 | 0 | 20 |
-| Release | 61 | 0 | 0 | 0 | 17 |
+| Debug | 61 | 0 | 0 | 0 | 18 |
+| Release | 61 | 0 | 0 | 0 | 15 |
 
 ## Repair queue (active missing compilation inputs)
 

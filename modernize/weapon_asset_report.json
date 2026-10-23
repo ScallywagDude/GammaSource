@@ -23,6 +23,12 @@
           "status": "unverified_no_asset_directory"
         },
         {
+          "classname": "weapon_brickbat",
+          "implementation_file": "dlls/hl2_dll/weapon_brickbat.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
           "classname": "weapon_bugbait",
           "implementation_file": "dlls/hl2_dll/weapon_bugbait.cpp",
           "runtime_verified": false,
@@ -198,8 +204,8 @@
         }
       ],
       "summary": {
-        "total": 32,
-        "unverified": 32,
+        "total": 33,
+        "unverified": 33,
         "issues": 0
       }
     },

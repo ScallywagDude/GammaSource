@@ -321,7 +321,7 @@ void C_WeaponCombat_ChargeablePlasma::DrawCrosshair( void )
 		if ( pEntity && pEntity->IsPlayer() && !pPlayer->InSameTeam( pEntity ) )
 		{
 			// Draw a reticle
-			vgui::Color clr = gHUD.m_clrYellowish;
+			Color clr = gHUD.m_clrYellowish;
 			clr[3] = 128;
 
 			// Calculate circle size

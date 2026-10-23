@@ -15,10 +15,8 @@ class WeaponBuildAndPreviewTests(unittest.TestCase):
         report=mod.audit()
         self.assertEqual(set(report['branches']),{'hl2','hl1','cstrike','tf2'})
         # Linux paths must compare case-insensitively against 2003 MSVC inputs.
-        for branch in ('hl2','hl1','cstrike'):
+        for branch in ('hl2','hl1','cstrike','tf2'):
             self.assertEqual(report['branches'][branch]['server_excluded'],[])
-        self.assertIn('weapon_infiltrator',report['branches']['tf2']['server_excluded'])
-        self.assertIn('weapon_mortar',report['branches']['tf2']['server_excluded'])
         self.assertNotIn('weapon_minigun',report['branches']['tf2']['server_excluded'])
     def test_both_build_modes_explicit(self):
         report=mod.audit()

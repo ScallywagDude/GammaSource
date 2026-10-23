@@ -1506,7 +1506,7 @@ void CFuncTrackTrain::SoundUpdate( void )
 		return;
 	}
 
-	float flpitch = TRAIN_STARTPITCH + (abs(m_flSpeed) * (TRAIN_MAXPITCH - TRAIN_STARTPITCH) / TRAIN_MAXSPEED);
+	float flpitch = TRAIN_STARTPITCH + (fabs(m_flSpeed) * (TRAIN_MAXPITCH - TRAIN_STARTPITCH) / TRAIN_MAXSPEED);
 
 	CPASAttenuationFilter filter( this );
 	CPASAttenuationFilter filterReliable( this );

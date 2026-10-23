@@ -39,8 +39,9 @@ struct CBaseEntity {
     static int creates;
     static Vector position, angles;
     static CBaseEntity *creator;
-    bool character;
-    CBaseEntity(): character(false) {}
+    bool character,marked;
+    CBaseEntity(): character(false),marked(false) {}
+    bool IsMarkedForDeletion() { return marked; }
     static CBaseEntity *Create(const char *name,const Vector &p,const QAngle &a,CBaseEntity *owner) {
         assert(strcmp(name,"npc_grenade_hopwire")==0);
         ++creates;position=p;angles=a;creator=owner;return result;
@@ -137,6 +138,13 @@ int main() {
 
         CGrenadeHopWire grenade;
         CBaseEntity::result=&grenade;
+        // Spawn can return an entity already rejected by its physics setup.
+        grenade.marked=true;
+        weapon.Operator_HandleAnimEvent(&animation,&player);
+        assert(player.ammo==3 && player.removals==0 && player.drops==0);
+        assert(!weapon.m_bRedraw && weapon.sounds==0 && grenade.timers==0 && grenade.velocities==0);
+        grenade.marked=false;
+        ++before;
         weapon.Operator_HandleAnimEvent(&animation,&player);
         assert(CBaseEntity::creates==before+2 && CBaseEntity::creator==&player);
         assert(player.ammo==2 && player.removals==1 && player.drops==0);

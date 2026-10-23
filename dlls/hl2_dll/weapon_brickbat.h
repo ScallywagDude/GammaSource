@@ -70,7 +70,7 @@ public:
 
 	bool				ObjectInWay( void );
 
-	void				ThrowBrickbat( Vector vecSrc, Vector vecVelocity, float damage);
+	bool				ThrowBrickbat( Vector vecSrc, Vector vecVelocity, float damage);
 	void				ItemPostFrame( void );
 	void				PrimaryAttack( void );
 	void				SecondaryAttack( void );
@@ -82,6 +82,14 @@ public:
 	DECLARE_ACTTABLE();
 
 	CWeaponBrickbat(void);
+    int ValidAmmoType() const { return m_iCurrentAmmoType>=0 && m_iCurrentAmmoType<NUM_BRICKBAT_AMMO_TYPES ? m_iCurrentAmmoType : BRICKBAT_ROCK; }
+    bool HasPrimaryAmmo(void);
+    bool HasAnyAmmo(void) { return HasPrimaryAmmo(); }
+    void SynchronizeAmmo(void);
+    void Equip(CBaseCombatCharacter *owner);
+    bool Holster(CBaseCombatWeapon *switchingTo=NULL);
+    void Drop(const Vector &velocity);
+
 };
 
 #endif	//WEAPON_BRICKBAT_H

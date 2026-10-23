@@ -80,7 +80,7 @@ void CHudBattery::Reset( void )
 	m_iGhostBat	= 0;
 	m_fFade		= 0;
 
-	SetLabelText(L"SUIT");
+	SetLabelText(L"HEV SUIT"); // HL2MODERN_HEV_LABEL
 	SetDisplayValue(m_iBat);
 }
 

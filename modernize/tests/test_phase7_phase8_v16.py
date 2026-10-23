@@ -30,13 +30,14 @@ class ScopedPhases(unittest.TestCase):
             self.assertNotIn('"'+cls+'"',array)
         for cls in tf2['compiled_impulse101_extra']:
             self.assertIn('"'+cls+'"',array)
-    def test_hl2_uncompiled_weapon_not_granted(self):
+    def test_hl2_restored_brickbat_is_granted(self):
         report=json.loads((ROOT/'modernize/weapon_impulse101_manifest.json').read_text())
         hl2=next(x for x in report if x['branch']=='hl2')
-        self.assertIn('weapon_brickbat',hl2['excluded_not_compiled'])
+        self.assertNotIn('weapon_brickbat',hl2['excluded_not_compiled'])
+        self.assertIn('weapon_brickbat',hl2['compiled_impulse101_extra'])
         data=(ROOT/'dlls/hl2_dll/hl2_player.cpp').read_bytes().decode('latin1')
         start=data.index('HL2MODERN_BRANCH_IMPULSE101_HL2')
-        self.assertNotIn('"weapon_brickbat"',data[start:data.index('};',start)])
+        self.assertIn('"weapon_brickbat"',data[start:data.index('};',start)])
     def test_weapon_hud_icon_label_when_missing(self):
         data=(ROOT/'cl_dll/hl2_hud/hud_weaponselection.cpp').read_bytes().decode('latin1')
         self.assertEqual(data.count('HL2MODERN_MISSING_WEAPON_ICON'),1)

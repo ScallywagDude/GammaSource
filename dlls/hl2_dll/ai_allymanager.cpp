@@ -83,7 +83,7 @@ END_DATADESC()
 //-----------------------------------------------------------------------------
 void CAI_AllyManager::Spawn()
 {
-	SetThink( WatchCounts );
+	SetThink( &ThisClass::WatchCounts );
 	SetNextThink( gpGlobals->curtime + 1.0 );
 }
 

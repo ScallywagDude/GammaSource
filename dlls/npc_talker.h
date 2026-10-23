@@ -255,6 +255,7 @@ protected:
 
 class CNPCSimpleTalker : public CAI_PlayerAlly
 {
+public: // Derived schedule and class metadata.
 	DECLARE_CLASS( CNPCSimpleTalker, CAI_PlayerAlly );
 public:
 	virtual void			StartFollowing( CBaseEntity *pLeader ) { m_FollowBehavior.SetFollowTarget( pLeader ); DeferSchedulingToBehavior( &m_FollowBehavior ); }
@@ -281,6 +282,7 @@ private:
 	CAI_FollowBehavior m_FollowBehavior;
 	float		m_useTime;						// Don't allow +USE until this time
 
+public: // Registration metadata; behavioral state above remains private.
 	DECLARE_DATADESC();
 	DEFINE_CUSTOM_AI;
 };

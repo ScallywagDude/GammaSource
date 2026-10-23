@@ -143,7 +143,7 @@ float MoveToward( float cur, float goal, float maxspeed )
 {
 	if( cur != goal )
 	{
-		if( abs( cur - goal ) > 180.0 )
+		if( fabs( cur - goal ) > 180.0 )
 		{
 			if( cur < goal )
 				cur += 360.0;
@@ -386,7 +386,7 @@ void CInput::CAM_Think( void )
 		if( camAngles[ PITCH ] - viewangles[ PITCH ] != cam_idealpitch.GetFloat() )
 			camAngles[ PITCH ] = MoveToward( camAngles[ PITCH ], cam_idealpitch.GetFloat() + viewangles[ PITCH ], CAM_ANGLE_SPEED );
 		
-		if( abs( camAngles[ 2 ] - cam_idealdist.GetFloat() ) < 2.0 )
+		if( fabs( camAngles[ 2 ] - cam_idealdist.GetFloat() ) < 2.0 )
 			camAngles[ 2 ] = cam_idealdist.GetFloat();
 		else
 			camAngles[ 2 ] += ( cam_idealdist.GetFloat() - camAngles[ 2 ] ) / 4.0;

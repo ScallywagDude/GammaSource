@@ -546,7 +546,7 @@ void Host_Disconnect_f (void)
 void Host_Version_f (void)
 {
 	Msg( "Exe version %s (protocol %i)\n", gpszVersionString, PROTOCOL_VERSION );
-	Msg ("Build: "__TIME__" "__DATE__" (%i)\n", build_number() );
+	Msg ("Build: " __TIME__ " " __DATE__ " (%i)\n", build_number() );
 }
 
 /*

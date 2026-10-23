@@ -66,7 +66,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>wc</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -78,6 +78,7 @@
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
@@ -91,13 +92,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;..\vstdlib\build\Release\vstdlib.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common;..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>wc</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -109,6 +111,7 @@
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
@@ -122,13 +125,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;..\vstdlib\build\Release\vstdlib.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common;..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>wc</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -140,6 +144,7 @@
       <Optimization>MaxSpeed</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
@@ -153,13 +158,14 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;opengl32.lib;glu32.lib;rpcrt4.lib;..\vstdlib\build\Release\vstdlib.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common;..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
-    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
     <TargetName>wc</TargetName>
     <TargetExt>.exe</TargetExt>
   </PropertyGroup>
@@ -171,6 +177,7 @@
       <Optimization>Disabled</Optimization>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
       <SDLCheck>false</SDLCheck>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
@@ -184,7 +191,8 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>winmm.lib;rpcrt4.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;rpcrt4.lib;..\vstdlib\build\Debug\vstdlib.lib;..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
       <AdditionalLibraryDirectories>..\lib\common;..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -236,11 +244,21 @@
     <ClCompile Include=".\ToolSelection.cpp" />
     <ClCompile Include=".\ToolSphere.cpp" />
     <ClCompile Include=".\DummyTexture.cpp" />
-    <ClCompile Include="..\Public\ImageLoader.cpp" />
+    <ClCompile Include="..\Public\ImageLoader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\Material.cpp" />
     <ClCompile Include=".\Texture.cpp" />
     <ClCompile Include=".\TextureSystem.cpp" />
-    <ClCompile Include="..\Public\TGALoader.cpp" />
+    <ClCompile Include="..\Public\TGALoader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\WADTexture.cpp" />
     <ClCompile Include=".\Shell.cpp" />
     <ClCompile Include=".\ShellMessageWnd.cpp" />
@@ -298,23 +316,57 @@
     <ClCompile Include=".\AngleBox.cpp" />
     <ClCompile Include=".\AutoSelCombo.cpp" />
     <ClCompile Include=".\Axes2.cpp" />
-    <ClCompile Include="..\game_shared\bone_setup.cpp" />
+    <ClCompile Include="..\game_shared\bone_setup.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\BoundBox.cpp" />
     <ClCompile Include=".\Brushops.cpp" />
     <ClCompile Include=".\bsplighting.cpp" />
     <ClCompile Include=".\bsplightingthread.cpp" />
-    <ClCompile Include="..\common\builddisp.cpp" />
-    <ClCompile Include=".\BuildNum.cpp" />
-    <ClCompile Include=".\Camera.cpp" />
+    <ClCompile Include="..\common\builddisp.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include=".\BuildNum.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include=".\Camera.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\ChildFrm.cpp" />
-    <ClCompile Include="..\Public\ChunkFile.cpp" />
+    <ClCompile Include="..\Public\ChunkFile.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\clipcode.cpp" />
     <ClCompile Include=".\Clock.cpp" />
-    <ClCompile Include="..\Public\CollisionUtils.cpp" />
+    <ClCompile Include="..\Public\CollisionUtils.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\CreateArch.cpp" />
     <ClCompile Include=".\CullTreeNode.cpp" />
-    <ClCompile Include="..\common\disp_common.cpp" />
-    <ClCompile Include="..\common\disp_powerinfo.cpp" />
+    <ClCompile Include="..\common\disp_common.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\common\disp_powerinfo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\DispManager.cpp" />
     <ClCompile Include=".\DispMapImageFilter.cpp" />
     <ClCompile Include=".\DispPaint.cpp" />
@@ -324,20 +376,40 @@
     <ClCompile Include=".\EditGameClass.cpp" />
     <ClCompile Include=".\EditGameConfigs.cpp" />
     <ClCompile Include=".\EntityConnection.cpp" />
-    <ClCompile Include=".\FileSystem_WC.cpp" />
+    <ClCompile Include=".\FileSystem_WC.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\GameData.cpp" />
     <ClCompile Include=".\GamePalette.cpp" />
     <ClCompile Include=".\GDClass.cpp" />
     <ClCompile Include=".\GDVar.cpp" />
     <ClCompile Include=".\Gizmo.cpp" />
     <ClCompile Include=".\GroupList.cpp" />
-    <ClCompile Include=".\HelperFactory.cpp" />
+    <ClCompile Include=".\HelperFactory.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\History.cpp" />
     <ClCompile Include=".\IconComboBox.cpp" />
     <ClCompile Include=".\InputOutput.cpp" />
-    <ClCompile Include="..\Public\interface.cpp" />
+    <ClCompile Include="..\Public\interface.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\Keyboard.cpp" />
-    <ClCompile Include="..\common\KeyFrame\keyframe.cpp" />
+    <ClCompile Include="..\common\KeyFrame\keyframe.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\KeyValues.cpp" />
     <ClCompile Include=".\ListBoxEx.cpp" />
     <ClCompile Include=".\LoadSave_MAP.cpp" />
@@ -350,7 +422,12 @@
     <ClCompile Include=".\MapView2D.cpp" />
     <ClCompile Include=".\MapView3D.cpp" />
     <ClCompile Include=".\materialproxyfactory_wc.cpp" />
-    <ClCompile Include="..\Public\Mathlib.cpp" />
+    <ClCompile Include="..\Public\Mathlib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\MDIClientWnd.cpp" />
     <ClCompile Include=".\MessageWnd.cpp" />
     <ClCompile Include=".\misc.cpp" />
@@ -362,15 +439,35 @@
     <ClCompile Include=".\Prefabs.cpp" />
     <ClCompile Include=".\ProcessWnd.cpp" />
     <ClCompile Include=".\Render2D.cpp" />
-    <ClCompile Include=".\Render3D.cpp" />
+    <ClCompile Include=".\Render3D.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\Render3DMS.cpp" />
     <ClCompile Include=".\RenderUtils.cpp" />
     <ClCompile Include=".\RichEditCtrlEx.cpp" />
-    <ClCompile Include="..\Public\rope_physics.cpp" />
+    <ClCompile Include="..\Public\rope_physics.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\RunCommands.cpp" />
     <ClCompile Include=".\RunMap.cpp" />
-    <ClCompile Include=".\SaveInfo.cpp" />
-    <ClCompile Include="..\Public\simple_physics.cpp" />
+    <ClCompile Include=".\SaveInfo.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Public\simple_physics.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\Splash.cpp" />
     <ClCompile Include=".\Sprite.cpp" />
     <ClCompile Include=".\SSolid.cpp" />
@@ -391,13 +488,38 @@
     <ClCompile Include=".\TextureConverter.cpp" />
     <ClCompile Include=".\TextureWindow.cpp" />
     <ClCompile Include=".\TitleWnd.cpp" />
-    <ClCompile Include="..\Public\TokenReader.cpp" />
-    <ClCompile Include="..\Public\UtlBuffer.cpp" />
-    <ClCompile Include=".\ViewerSettings.cpp" />
+    <ClCompile Include="..\Public\TokenReader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\Public\UtlBuffer.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include=".\ViewerSettings.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\VisGroup.cpp" />
-    <ClCompile Include="..\Public\vmatrix.cpp" />
+    <ClCompile Include="..\Public\vmatrix.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include=".\Worldcraft.cpp" />
-    <ClCompile Include=".\worldcraft_mathlib.cpp" />
+    <ClCompile Include=".\worldcraft_mathlib.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\MapAlignedBox.h" />

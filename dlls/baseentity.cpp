@@ -5,6 +5,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../modernize/legacy_entity_compat.h"
 #include "globalstate.h"
 #include "isaverestore.h"
 #include "client.h"
@@ -542,11 +543,9 @@ bool CBaseEntity::KeyValue( const char *szKeyName, const char *szValue )
 {
 	//!! temp hack, until worldcraft is fixed
 	// strip the # tokens from (duplicate) key names
-	char *s = strchr( szKeyName, '#' );
-	if ( s )
-	{
-		*s = '\0';
-	}
+	char keyName[256];
+	if (!HL2ModernEntityCompat::CopyKeyWithoutSuffix(szKeyName,keyName,sizeof(keyName))) return false;
+	szKeyName=keyName;
 
 	if ( szKeyName[0] == 'r' )
 	{

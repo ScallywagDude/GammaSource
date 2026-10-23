@@ -79,7 +79,7 @@ void CObjectSelfHeal::FinishedBuilding( void )
 {
 	BaseClass::FinishedBuilding();
 
-	SetContextThink( SelfHealThink, gpGlobals->curtime + obj_selfheal_rate.GetFloat(), SELFHEAL_THINK_CONTEXT );
+	SetContextThink( &ThisClass::SelfHealThink, gpGlobals->curtime + obj_selfheal_rate.GetFloat(), SELFHEAL_THINK_CONTEXT );
 }
 
 //-----------------------------------------------------------------------------

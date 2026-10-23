@@ -33,7 +33,7 @@ void CBaseHL1CombatWeapon::FallInit( void )
 
 	SetPickupTouch();
 	
-	SetThink( FallThink );
+	SetThink( &ThisClass::FallThink );
 
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }

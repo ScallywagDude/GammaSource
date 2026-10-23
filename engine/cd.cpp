@@ -562,7 +562,7 @@ void CCDAudio::_CDReset( int, int )
 //-----------------------------------------------------------------------------
 void CCDAudio::Reset( void )
 {
-	thread->AddThreadItem( _CDReset, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_CDReset, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -570,7 +570,7 @@ void CCDAudio::Reset( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::Stop( void )
 {
-	thread->AddThreadItem(  _Stop, 0, 0 );
+	thread->AddThreadItem(  &CCDAudio::_Stop, 0, 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -578,7 +578,7 @@ void CCDAudio::Stop( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::Pause( void )
 {
-	thread->AddThreadItem( _Pause, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_Pause, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -586,7 +586,7 @@ void CCDAudio::Pause( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::Eject( void )
 {
-	thread->AddThreadItem( _Eject, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_Eject, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -594,7 +594,7 @@ void CCDAudio::Eject( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::CloseDoor( void )
 {
-	thread->AddThreadItem( _CloseDoor, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_CloseDoor, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -602,7 +602,7 @@ void CCDAudio::CloseDoor( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::GetAudioDiskInfo( void )
 {
-	thread->AddThreadItem( _GetAudioDiskInfo, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_GetAudioDiskInfo, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -612,7 +612,7 @@ void CCDAudio::GetAudioDiskInfo( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::Play( int track, bool looping )
 {
-	thread->AddThreadItem( _Play, track, looping ? 1 : 0 );
+	thread->AddThreadItem( &CCDAudio::_Play, track, looping ? 1 : 0 );
 }
 
 //-----------------------------------------------------------------------------
@@ -620,7 +620,7 @@ void CCDAudio::Play( int track, bool looping )
 //-----------------------------------------------------------------------------
 void CCDAudio::Resume( void )
 {
-	thread->AddThreadItem( _Resume, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_Resume, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -628,7 +628,7 @@ void CCDAudio::Resume( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::SwitchToLauncher( void )
 {
-	thread->AddThreadItem( _SwitchToLauncher, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_SwitchToLauncher, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -636,7 +636,7 @@ void CCDAudio::SwitchToLauncher( void )
 //-----------------------------------------------------------------------------
 void CCDAudio::SwitchToEngine( void )
 {
-	thread->AddThreadItem( _SwitchToEngine, 0, 0);
+	thread->AddThreadItem( &CCDAudio::_SwitchToEngine, 0, 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -662,5 +662,5 @@ void CCDAudio::Frame( void )
 		bgmvolume.SetValue( m_flVolume );
 	}
 
-	thread->AddThreadItem( _CDUpdate, 0, 0 );
+	thread->AddThreadItem( &CCDAudio::_CDUpdate, 0, 0 );
 }

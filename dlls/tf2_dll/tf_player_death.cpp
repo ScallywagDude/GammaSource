@@ -99,7 +99,7 @@ void CBaseTFPlayer::Event_Killed( const CTakeDamageInfo &info )
 	// Setup for respawn
 	m_flTimeOfDeath = gpGlobals->curtime;
 
-	SetThink(TFPlayerDeathThink);
+	SetThink(&ThisClass::TFPlayerDeathThink);
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	SetPowerup(POWERUP_EMP,false);

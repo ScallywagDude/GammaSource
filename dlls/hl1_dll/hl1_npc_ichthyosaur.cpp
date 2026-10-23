@@ -223,7 +223,7 @@ void CNPC_Ichthyosaur::Spawn( void )
 	SetDistLook( 1024 );
 
 	
-	SetTouch( BiteTouch );
+	SetTouch( &ThisClass::BiteTouch );
 //	SetUse( CombatUse ); 
 
 	m_idealDist = 384;

@@ -276,7 +276,7 @@ void bf_write::WriteBitCoord (const float f)
 	MEASURECODE( "bf_write::WriteBitCoord" );
 #endif
 	int		signbit = (f <= -COORD_RESOLUTION);
-	int		intval = (int)abs(f);
+	int		intval = (int)fabs(f);
 	int		fractval = abs((int)(f*COORD_DENOMINATOR)) & (COORD_DENOMINATOR-1);
 
 

@@ -78,6 +78,7 @@ void CThermalMaterialProxy::OnBind( C_BaseEntity *pEntity )
 {
 // FIXME, enable this later
 return;
+#if 0 // Dormant implementation references the absent HueToRGB helper.
 
 	if( !m_ThermalVar )
 	{
@@ -100,6 +101,7 @@ return;
 	HueToRGB( 360.f * value, color );
 
 	m_ThermalVar->SetVecValue( color[0], color[1], color[2] );
+#endif
 }
 
 EXPOSE_INTERFACE( CThermalMaterialProxy, IMaterialProxy, "Thermal" IMATERIAL_PROXY_INTERFACE_VERSION );

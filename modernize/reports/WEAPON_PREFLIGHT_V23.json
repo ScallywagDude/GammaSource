@@ -232,7 +232,7 @@
     "hl2": {
       "metadata_candidates": 0,
       "roots": [],
-      "total": 32,
+      "total": 33,
       "weapons": [
         {
           "classname": "weapon_ar1",
@@ -246,6 +246,11 @@
         },
         {
           "classname": "weapon_binoculars",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_brickbat",
           "runtime_verified": false,
           "status": "unverified_no_assets"
         },

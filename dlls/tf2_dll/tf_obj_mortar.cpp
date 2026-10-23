@@ -27,6 +27,7 @@ IMPLEMENT_SERVERCLASS_ST(CObjectMortar, DT_ObjectMortar)
 END_SEND_TABLE();
 
 BEGIN_DATADESC( CObjectMortar )
+    DEFINE_FIELD(CObjectMortar,m_hMortarWeapon,FIELD_EHANDLE),
 
 	DEFINE_THINKFUNC( CObjectMortar, ReloadingThink ),
 
@@ -222,6 +223,7 @@ bool CObjectMortar::FireMortar( float flFiringPower, float flFiringAccuracy, boo
 
 	// Create the round
 	CMortarRound *pRound = CMortarRound::Create( GetLocalOrigin(), vecTargetVel, edict() );
+	if (!pRound) return false;
 	pRound->ChangeTeam( GetTeamNumber() );
 	pRound->SetFallTime( time1 * 0.5 );	// Start a falling sound just a bit before we begin to fall
 	pRound->SetRoundType( m_iRoundType );
@@ -252,7 +254,8 @@ bool CObjectMortar::FireMortar( float flFiringPower, float flFiringAccuracy, boo
 //-----------------------------------------------------------------------------
 void CObjectMortar::StartReloading( void )
 {
-	SetThink( ReloadingThink );
+	if (m_hMortarWeapon) m_hMortarWeapon->MortarIsReloading();
+	SetThink( &ThisClass::ReloadingThink );
 	SetNextThink( gpGlobals->curtime + MORTAR_RELOAD_TIME );
 }
 
@@ -264,5 +267,15 @@ void CObjectMortar::ReloadingThink( void )
 	SetThink( NULL );
 
 	m_iSalvoLeft = MORTAR_SALVO_SIZE;
+	if (m_hMortarWeapon) m_hMortarWeapon->MortarFinishedReloading();
 }
 
+
+// HL2MODERN_MORTAR_REMOVE: neither side retains a destroyed control object.
+void CObjectMortar::UpdateOnRemove(void)
+{
+    if (m_hMortarWeapon && !m_hMortarWeapon->IsMarkedForDeletion())
+        m_hMortarWeapon->MortarObjectRemoved();
+    m_hMortarWeapon=NULL;
+    BaseClass::UpdateOnRemove();
+}

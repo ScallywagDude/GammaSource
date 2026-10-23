@@ -81,10 +81,10 @@ void CRpgRocket::Spawn( void )
 	SetModel("models/rpgrocket.mdl");
 	UTIL_SetSize( this, -Vector(0,0,0), Vector(0,0,0) );
 
-	SetTouch( RocketTouch );
+	SetTouch( &ThisClass::RocketTouch );
 
 	SetMoveType( MOVETYPE_FLYGRAVITY, MOVECOLLIDE_FLY_BOUNCE );
-	SetThink( IgniteThink );
+	SetThink( &ThisClass::IgniteThink );
 	
 	SetNextThink( gpGlobals->curtime + 0.4f );
 
@@ -132,7 +132,7 @@ void CRpgRocket::IgniteThink( void )
 
 	EmitSound( "Weapon_RPG.RocketIgnite" );
 
-	SetThink( SeekThink );
+	SetThink( &ThisClass::SeekThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	CBroadcastRecipientFilter filter;

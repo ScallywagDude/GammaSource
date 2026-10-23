@@ -310,9 +310,9 @@ void CGrenadeHomer::Launch( CBaseEntity*		pOwner,
 		StartRocketTrail();
 	}
 
-	SetUse( DetonateUse );
-	SetTouch( GrenadeHomerTouch );
-	SetThink( AimThink );
+	SetUse( &ThisClass::DetonateUse );
+	SetTouch( &ThisClass::GrenadeHomerTouch );
+	SetThink( &ThisClass::AimThink );
 	AimThink();
 	SetNextThink( gpGlobals->curtime );
 

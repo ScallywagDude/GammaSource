@@ -22,6 +22,7 @@ class CWeaponCombat_ChargeablePlasma : public CWeaponCombatUsedWithShieldBase
 	DECLARE_CLASS( CWeaponCombat_ChargeablePlasma, CWeaponCombatUsedWithShieldBase );
 public:
 	DECLARE_SERVERCLASS();
+	DECLARE_DATADESC();
 
 	virtual void	ItemPostFrame( void );
 	virtual void	PrimaryAttack( void );
@@ -52,6 +53,18 @@ IMPLEMENT_SERVERCLASS_ST(CWeaponCombat_ChargeablePlasma, DT_WeaponCombat_Chargea
 	SendPropInt( SENDINFO( m_bCharging ), 1, SPROP_UNSIGNED ),
 END_SEND_TABLE()
 
+BEGIN_DATADESC(CWeaponCombat_ChargeablePlasma)
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_bCharging,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_flChargeStartTime,FIELD_TIME),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_flPower,FIELD_FLOAT),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_flNextBurstShotTime,FIELD_TIME),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_iBurstShotsRemaining,FIELD_INTEGER),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_bHasBurstShot,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_bHasCharge,FIELD_BOOLEAN),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_hLockTarget,FIELD_EHANDLE),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_vecTargetOffset,FIELD_VECTOR),
+    DEFINE_FIELD(CWeaponCombat_ChargeablePlasma,m_flLockedAt,FIELD_TIME),
+END_DATADESC()
 LINK_ENTITY_TO_CLASS( weapon_combat_chargeableplasma, CWeaponCombat_ChargeablePlasma );
 PRECACHE_WEAPON_REGISTER(weapon_combat_chargeableplasma);
 
@@ -64,6 +77,15 @@ void CWeaponCombat_ChargeablePlasma::Spawn()
 	BaseClass::Spawn();
 	m_bHasBurstShot = false;
 	m_bHasCharge = false;
+    // HL2MODERN_CHARGE_STATE: initialize every burst/charge/lock field.
+    m_bCharging=false;
+    m_flChargeStartTime=gpGlobals->curtime;
+    m_flPower=0;
+    m_flNextBurstShotTime=0;
+    m_iBurstShotsRemaining=0;
+    m_hLockTarget=NULL;
+    m_vecTargetOffset=vec3_origin;
+    m_flLockedAt=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -206,10 +228,9 @@ void CWeaponCombat_ChargeablePlasma::ItemPostFrame( void )
 void CWeaponCombat_ChargeablePlasma::PrimaryAttack( void )
 {
 	CBaseTFPlayer *pPlayer = (CBaseTFPlayer*)GetOwner();
-	if (!pPlayer)
+	if (!pPlayer || m_iClip1<=0 || IsOwnerEMPed())
 		return;
 	
-	WeaponSound(SINGLE);
 
 	// Fire the bullets
 	Vector vecSrc = pPlayer->Weapon_ShootPosition( );
@@ -223,7 +244,6 @@ void CWeaponCombat_ChargeablePlasma::PrimaryAttack( void )
 		m_hLockTarget = GetLockTarget();
 	}
 
-	PlayAttackAnimation( GetPrimaryAttackActivity() );
 
 	// Shift it down a bit so the firer can see it
 	Vector right;
@@ -231,10 +251,14 @@ void CWeaponCombat_ChargeablePlasma::PrimaryAttack( void )
 	Vector vecStartSpot = vecSrc + Vector(0,0,-8) + right * 12;
 
 	CGuidedPlasma *pShot = CGuidedPlasma::Create(vecStartSpot, vecAiming, m_hLockTarget, m_vecTargetOffset, pPlayer);
+	if (!pShot) { m_flNextPrimaryAttack=gpGlobals->curtime+0.15f; return; }
+	// HL2MODERN_PLASMA_FIRE: failed creation produces no firing effects.
+	WeaponSound(SINGLE);
+	PlayAttackAnimation(GetPrimaryAttackActivity());
 
 	// Set it's charged power level
 	if (m_bHasCharge)
-		m_flPower = min( MAX_CHARGED_TIME, gpGlobals->curtime - m_flChargeStartTime );
+		m_flPower = min( MAX_CHARGED_TIME, max(0.0f,gpGlobals->curtime - m_flChargeStartTime) );
 	else
 		m_flPower = 0.0f;
 
@@ -251,7 +275,7 @@ void CWeaponCombat_ChargeablePlasma::PrimaryAttack( void )
 //-----------------------------------------------------------------------------
 float CWeaponCombat_ChargeablePlasma::GetFireRate( void )
 {	
-	return SequenceDuration();
+	return max(0.15f,SequenceDuration());
 }
 
 //-----------------------------------------------------------------------------
@@ -273,15 +297,12 @@ bool CWeaponCombat_ChargeablePlasma::Deploy( void )
 //-----------------------------------------------------------------------------
 bool CWeaponCombat_ChargeablePlasma::Holster( CBaseCombatWeapon *pSwitchingTo )
 {
-	bool bReturn = BaseClass::Holster(pSwitchingTo);
-
-	// Stop the charging sound
-	if ( m_bCharging )
-	{
-		m_bCharging = false;
-	}
-
-	return bReturn;
+    if (!BaseClass::Holster(pSwitchingTo)) return false;
+    m_bCharging=false;
+    m_iBurstShotsRemaining=0;
+    m_hLockTarget=NULL;
+    m_flPower=0;
+    return true;
 }
 
 //-----------------------------------------------------------------------------

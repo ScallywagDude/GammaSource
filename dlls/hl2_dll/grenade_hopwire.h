@@ -13,6 +13,8 @@
 #include "basegrenade_shared.h"
 #include "sprite.h"
 
+class CTetherHook;
+
 class CGrenadeHopWire : public CBaseGrenade
 {
 	DECLARE_CLASS( CGrenadeHopWire, CBaseGrenade );
@@ -25,6 +27,8 @@ public:
 	void	SetTimer( float timer );
 	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
 	void	Detonate( void );
+	void	UpdateOnRemove( void );
+	void	RemoveTethers( void );
 	
 	void	CombatThink( void );
 	void	TetherThink( void );
@@ -32,7 +36,12 @@ public:
 protected:
 
 	int			m_nHooksShot;
-	CSprite		*m_pGlow;
+	// HL2MODERN_HOPWIRE_COMBAT: saved finite stages and owned child entities.
+	float m_flTetherDeadline;
+	float m_flCombatDeadline;
+	Vector m_vecHookVelocity;
+	CHandle<CTetherHook> m_hHooks[8];
+	CHandle<CSprite> m_pGlow;
 };
 
 extern CBaseGrenade *HopWire_Create( const Vector &position, const QAngle &angles, const Vector &velocity, const AngularImpulse &angVelocity, CBaseEntity *pOwner, float timer );

@@ -28,11 +28,13 @@ class CWeaponMortar : public CBaseTFCombatWeapon
 	DECLARE_CLASS( CWeaponMortar, CBaseTFCombatWeapon );
 public:
 	DECLARE_SERVERCLASS();
+	DECLARE_DATADESC();
 
 	CWeaponMortar();
 
 	// Input
 	void Fire( float flPower, float flAccuracy );
+	bool FireControlled(float power,float accuracy,float yaw);
 	void PrimaryAttack( void );
 	void SecondaryAttack( void );
 
@@ -66,11 +68,11 @@ public:
 
 public:
 	// Data
-	bool			m_bCarried;
-	bool			m_bMortarReloading;
+	CNetworkVar(bool,m_bCarried);
+	CNetworkVar(bool,m_bMortarReloading);
 	CHandle< CObjectMortar > m_hDeployedMortar;
-	Vector			m_vecMortarOrigin;
-	QAngle			m_vecMortarAngles;
+	CNetworkVector(m_vecMortarOrigin);
+	CNetworkQAngle(m_vecMortarAngles);
 	bool			m_bRangeUpgraded;
 	bool			m_bAccuracyUpgraded;
 
@@ -78,5 +80,7 @@ public:
 	float			m_flFiringPower;
 	float			m_flFiringAccuracy;
 };
+
+bool HL2ModernMortarClientCommand(CBaseTFPlayer *player,const char *command);
 
 #endif // WEAPON_MORTAR_H

@@ -20,6 +20,13 @@
 #include "cbase.h"
 #include "../modernize/weapon_hud_layout.h"
 #include "hud_macros.h"
+#include "../modernize/hud_color_client.h"
+// HL2MODERN_HUD_PALETTE: archived options are available to GameUI.
+ConVar hud_color_custom("hud_color_custom","0",FCVAR_ARCHIVE,"Override the HUD foreground color");
+ConVar hud_color_r("hud_color_r","247",FCVAR_ARCHIVE,"HUD red channel",true,0,true,255);
+ConVar hud_color_g("hud_color_g","192",FCVAR_ARCHIVE,"HUD green channel",true,0,true,255);
+ConVar hud_color_b("hud_color_b","84",FCVAR_ARCHIVE,"HUD blue channel",true,0,true,255);
+static Color s_HudSchemeNormal(247,192,84,255);
 #include "history_resource.h"
 #include "parsemsg.h"
 #include "iinput.h"
@@ -356,6 +363,11 @@ void CHud::Init( void )
 void CHud::InitColors( vgui::IScheme *scheme )
 {
 	m_clrNormal = scheme->GetColor( "Normal", Color( 255, 208, 64 ,255 ) );
+#ifdef HL2_CLIENT_DLL
+	m_clrNormal = scheme->GetColor("OldFgColor",Color(247,192,84,255));
+#endif
+	s_HudSchemeNormal=m_clrNormal;
+	m_clrNormal=HL2ModernHudColor(s_HudSchemeNormal);
 	m_clrCaution = scheme->GetColor( "Caution", Color( 255, 48, 0, 255 ) );
 	m_clrYellowish = scheme->GetColor( "Yellowish", Color( 255, 160, 0, 255 ) );
 }
@@ -761,6 +773,7 @@ void CHud::ProcessInput( bool bActive )
 //-----------------------------------------------------------------------------
 void CHud::UpdateHud( bool bActive )
 {
+	m_clrNormal=HL2ModernHudColor(s_HudSchemeNormal);
 	// clear the weapon bits.
 	gHUD.m_iKeyBits &= (~(IN_WEAPON1|IN_WEAPON2));
 

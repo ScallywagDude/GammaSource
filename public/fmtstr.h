@@ -19,14 +19,15 @@
 //=============================================================================
 
 // using macro to be compatable with GCC
-#define FmtStrVSNPrintf( szBuf, nBufSize, ppszFormat ) \
+#define FmtStrVSNPrintf( szBuf, nBufSize, formatValue, lastNamed ) \
 	do \
 	{ \
 		int     result; \
 		va_list arg_ptr; \
 	\
-		va_start(arg_ptr, (*(ppszFormat))); \
-		result = Q_vsnprintf((szBuf), (nBufSize)-1, (*(ppszFormat)), arg_ptr); \
+		va_start(arg_ptr, lastNamed); \
+		result = Q_vsnprintf((szBuf), (nBufSize)-1, (formatValue), arg_ptr); \
+		(void)result; \
 		va_end(arg_ptr); \
 	\
 		(szBuf)[(nBufSize)-1] = 0; \
@@ -45,16 +46,23 @@ public:
 	CFmtStrN()									{ m_szBuf[0] = 0; }
 	
 	// Standard C formatting
-	CFmtStrN(const char *pszFormat, ...)		{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, &pszFormat); }
+	CFmtStrN(const char *pszFormat, ...)		{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, pszFormat, pszFormat); }
 
-	// Use this for pass-through formatting
-	CFmtStrN(const char ** ppszFormat, ...)		{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, ppszFormat); }
+	// Pointer-to-format compatibility form; arguments belong to this call.
+	CFmtStrN(const char ** ppszFormat, ...)		{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, *ppszFormat, ppszFormat); }
 
 	// Explicit reformat
-	void sprintf(const char *pszFormat, ...)	{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, &pszFormat); }
+	void sprintf(const char *pszFormat, ...)	{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, pszFormat, pszFormat); }
 
-	// Use this for pass-through formatting
-	void VSprintf(const char **ppszFormat, ...)	{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, ppszFormat); }
+	// Pointer-to-format compatibility form; arguments belong to this call.
+	void VSprintf(const char **ppszFormat, ...)	{ FmtStrVSNPrintf(m_szBuf, SIZE_BUF, *ppszFormat, ppszFormat); }
+
+	// Forward an existing argument list explicitly; no caller-stack assumptions.
+	void VSprintf(const char *pszFormat, va_list args)
+	{
+		Q_vsnprintf(m_szBuf, SIZE_BUF-1, pszFormat, args);
+		m_szBuf[SIZE_BUF-1]=0;
+	}
 
 	// Use for access
 	operator const char *() const				{ return m_szBuf; }

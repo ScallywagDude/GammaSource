@@ -101,7 +101,7 @@ void CSignalFlare::Spawn( void )
 
 	EmitSound( "SignalFlare.Burn" );
 
-	SetThink( FlareThink );
+	SetThink( &ThisClass::FlareThink );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 }
 
@@ -128,8 +128,8 @@ CSignalFlare *CSignalFlare::Create( Vector vecOrigin, QAngle vecAngles, CBaseEnt
 	pFlare->Spawn();
 
 	// Set the flare's touch and think functions.
-	pFlare->SetTouch( FlareTouch );
-	pFlare->SetThink( FlareThink );
+	pFlare->SetTouch( &ThisClass::FlareTouch );
+	pFlare->SetThink( &ThisClass::FlareThink );
 	
 	// Don't start sparking immediately.
 	pFlare->SetNextThink( gpGlobals->curtime + 0.5f );

@@ -16,6 +16,7 @@ from pathlib import Path
 from weapon_build_audit import ROOT, audit, windows_path
 
 MSBUILD='http://schemas.microsoft.com/developer/msbuild/2003'
+PROTOTYPES={'weapon_combat_chargeableplasma','weapon_infiltrator','weapon_laserdesignator','weapon_laserrifle','weapon_mortar','weapon_pistols'}
 NS=lambda tag:'{%s}%s'%(MSBUILD,tag)
 ET.register_namespace('',MSBUILD)
 
@@ -29,7 +30,7 @@ def enable(project, root=ROOT):
     inventory=audit(root)['branches']['tf2']['weapons']
     added=[]
     for weapon in inventory:
-        if weapon['server_compiled_all_configs']:continue
+        if weapon['classname'] not in PROTOTYPES:continue
         path=(root/weapon['source']).resolve()
         if not path.is_file():raise FileNotFoundError(str(path))
         key=os.path.normpath('../'+weapon['source']).replace('\\','/').casefold()

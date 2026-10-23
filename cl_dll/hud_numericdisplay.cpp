@@ -6,12 +6,15 @@
 
 #include "cbase.h"
 #include "hud_numericdisplay.h"
+#include "hud.h"
+#include "../modernize/hud_color_client.h"
 #include "iclientmode.h"
 
 #include <Color.h>
 #include <KeyValues.h>
 #include <vgui/ISurface.h>
 #include <vgui/ISystem.h>
+#include <vgui/IScheme.h>
 #include <vgui/IVGui.h>
 
 using namespace vgui;
@@ -34,6 +37,20 @@ CHudNumericDisplay::CHudNumericDisplay(vgui::Panel *parent, const char *name) : 
 //-----------------------------------------------------------------------------
 // Purpose: data accessor
 //-----------------------------------------------------------------------------
+// HL2MODERN_2002_FONTS: use installed 2002 fonts when present, with stock fallback.
+void CHudNumericDisplay::ApplySchemeSettings(vgui::IScheme *scheme)
+{
+    BaseClass::ApplySchemeSettings(scheme);
+#ifdef HL2_CLIENT_DLL
+    vgui::HFont numbers=scheme->GetFont("HudNumbers2",IsProportional());
+    vgui::HFont glow=scheme->GetFont("HudNumbersGlow2",IsProportional());
+    vgui::HFont label=scheme->GetFont("Default2",IsProportional());
+    if(numbers) m_hNumberFont=numbers;
+    if(glow) m_hNumberGlowFont=glow;
+    if(label) m_hTextFont=label;
+#endif
+}
+
 void CHudNumericDisplay::SetDisplayValue(int value)
 {
 	m_iValue = value;
@@ -103,12 +120,14 @@ void CHudNumericDisplay::PaintNumbers(HFont font, int xpos, int ypos, int value)
 //-----------------------------------------------------------------------------
 void CHudNumericDisplay::PaintBackground( void )
 {
-	int alpha = m_flAlphaOverride / 255;
+	float alpha = m_flAlphaOverride / 255.0f;
 	Color bgColor = GetBgColor();
+	const Color originalBackground=bgColor; // HL2MODERN_BACKGROUND_ALPHA
 	bgColor[3] *= alpha;
 	SetBgColor( bgColor );
 
 	BaseClass::PaintBackground();
+	SetBgColor(originalBackground);
 }
 
 //-----------------------------------------------------------------------------
@@ -116,15 +135,34 @@ void CHudNumericDisplay::PaintBackground( void )
 //-----------------------------------------------------------------------------
 void CHudNumericDisplay::Paint()
 {
-	float alpha = m_flAlphaOverride / 255;
+	// HL2MODERN_THREE_COUNTERS: retain the 2002 fonts, amber and compact row.
+#ifdef HL2_CLIENT_DLL
+    const bool health=!Q_stricmp(GetName(),"HudHealth");
+    const bool suit=!Q_stricmp(GetName(),"HudSuit");
+    const bool energy=!Q_stricmp(GetName(),"HudSuitPower");
+    if(health || suit || energy)
+    {
+        SetBounds((int)XRES(16+(suit?114:energy?228:0)),ScreenHeight()-(int)YRES(48),
+            (int)XRES(108),(int)YRES(36));
+        text_xpos=XRES(8); text_ypos=YRES(0);
+        digit_xpos=XRES(38); digit_ypos=YRES(9);
+    }
+#endif
+    float alpha = m_flAlphaOverride / 255.0f;
 	Color fgColor = GetFgColor();
+#ifdef HL2_CLIENT_DLL
+    // Red caution animations remain readable; normal counters follow the palette.
+    if (!(fgColor[0]>fgColor[1]*2 && fgColor[1]<80))
+        fgColor=HL2ModernHudColor(Color(247,192,84,fgColor[3]));
+#endif
 	fgColor[3] *= alpha;
-	SetFgColor( fgColor );
+	// Do not write multiplied alpha back into the animated foreground.
+
 
 	if (m_bDisplayValue)
 	{
 		// draw our numbers
-		surface()->DrawSetTextColor(GetFgColor());
+		surface()->DrawSetTextColor(fgColor);
 		PaintNumbers(m_hNumberFont, digit_xpos, digit_ypos, m_iValue);
 
 		// draw the overbright blur
@@ -137,7 +175,7 @@ void CHudNumericDisplay::Paint()
 			else
 			{
 				// draw a percentage of the last one
-				Color col = GetFgColor();
+				Color col = fgColor;
 				col[3] *= fl;
 				surface()->DrawSetTextColor(col);
 				PaintNumbers(m_hNumberGlowFont, digit_xpos, digit_ypos, m_iValue);

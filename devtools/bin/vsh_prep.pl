@@ -462,13 +462,13 @@ for( $g_numBones = 0; $g_numBones <= $maxNumBones; $g_numBones++ )
 				unlink $outhdrfilename;
 				if( $g_dx9 )
 				{
-					$vsa = "..\\..\\devtools\\bin\\vsa9";
+					$vsa = $ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} || "..\\..\\devtools\\bin\\vsa9";
 					$vsadebug = "$vsa /nologo /Zi /Fh$outhdrfilename";
 					$vsanodebug = "$vsa /nologo /Fh$outhdrfilename";
 				}
 				else
 				{
-					$vsa = "..\\..\\devtools\\bin\\vsa8_1";
+					$vsa = $ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} ? $ENV{"HL2_MODERN_ASSEMBLER_COMMAND"} . " --legacy-vertex8" : "..\\..\\devtools\\bin\\vsa8_1";
 					$vsadebug = "$vsa -h";
 					$vsanodebug = "$vsa -h";
 				}
@@ -484,6 +484,7 @@ for( $g_numBones = 0; $g_numBones <= $maxNumBones; $g_numBones++ )
 					@vsaoutput = `$vsanodebug $outfilename 2>&1`;
 #					print @vsaoutput;
 				}
+				if ( $? != 0 ) { die "vertex shader assembler failed: @vsaoutput"; }
 				&TranslateErrorMessages( @vsaoutput );
 				if( $debug )
 				{

@@ -24,8 +24,8 @@ class WeaponRestorationV18(unittest.TestCase):
             self.assertEqual(row['implementation_file'],'dlls/physgun.cpp')
         for branch in ('cstrike','tf2'):
             self.assertNotIn('weapon_physgun',[r['classname'] for r in data['branches'][branch]])
-        self.assertNotIn('weapon_brickbat',[r['classname'] for r in data['branches']['hl2']])
-        self.assertIn('weapon_brickbat',[r['classname'] for r in data['unregistered_prototypes']['hl2']])
+        self.assertIn('weapon_brickbat',[r['classname'] for r in data['branches']['hl2']])
+        self.assertNotIn('weapon_brickbat',[r['classname'] for r in data['unregistered_prototypes']['hl2']])
         self.assertEqual(data,json.loads((ROOT/'modernize/weapon_branch_inventory.json').read_text()))
 
     def test_comment_stripping_preserves_paths(self):
@@ -48,8 +48,10 @@ class WeaponRestorationV18(unittest.TestCase):
         manifest=json.loads((ROOT/'modernize/weapon_impulse101_manifest.json').read_text())
         hl2=next(r for r in manifest if r['branch']=='hl2')
         tf2=next(r for r in manifest if r['branch']=='tf2')
-        self.assertNotIn('weapon_manhack',hl2['compiled_impulse101_extra'])
-        self.assertIn('weapon_manhack',hl2['excluded_source_or_internal'])
+        self.assertIn('weapon_manhack',hl2['compiled_impulse101_extra'])
+        self.assertNotIn('weapon_manhack',hl2['excluded_source_or_internal'])
+        self.assertIn('HL2MODERN_REMOTE_MANHACK',source('dlls/hl2_dll/weapon_manhack.cpp'))
+        self.assertIn('BaseClass::ItemPostFrame();',source('dlls/hl2_dll/weapon_manhack.cpp'))
         self.assertNotIn('weapon_objectselection',tf2['compiled_impulse101_extra'])
         self.assertNotIn('weapon_twohandedcontainer',tf2['compiled_impulse101_extra'])
         self.assertIn('weapon_twohandedcontainer',tf2['excluded_source_or_internal'])

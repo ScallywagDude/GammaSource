@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../modernize/legacy_entity_compat.h"
 #include "multiplay_gamerules.h"
 #include "gameeventdefs.h"
 #include <KeyValues.h>
@@ -849,7 +850,7 @@ END_NETWORK_TABLE()
 // HL2MODERN_BOUNDED_MAPCYCLE_MOTD
     static bool HL2Modern_IsInstalledMap(const char *map, void *)
     {
-        return engine->IsMapValid(map);
+        return HL2ModernEntityCompat::IsMapValid(engine,map);
     }
 
     void CMultiplayRules :: ChangeLevel( void )
@@ -878,7 +879,7 @@ END_NETWORK_TABLE()
         }
         // Without a usable cycle, stay on a valid existing map.
         if (!nextMap[0] && HL2ModernServerText::SafeMapName(current) &&
-            engine->IsMapValid(current))
+            HL2ModernEntityCompat::IsMapValid(engine,current))
             Q_strncpy(nextMap, current, sizeof(nextMap));
         if (!nextMap[0] && engine->IsMapValid("hldm1"))
             Q_strncpy(nextMap, "hldm1", sizeof(nextMap));

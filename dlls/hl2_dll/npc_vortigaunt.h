@@ -28,6 +28,7 @@ class CSprite;
 //=========================================================
 class CNPC_Vortigaunt : public CNPCSimpleTalker
 {
+public: // External activity registration needs the class alias.
 	DECLARE_CLASS( CNPC_Vortigaunt, CNPCSimpleTalker );
 
 public:

@@ -336,7 +336,7 @@ void CGameConsoleDialog::RebuildCompletionList(const char *text)
 	bool normalbuild = true;
 
 	// if there is a space in the text, and the command isn't of the type to know how to autocomplet, then command completion is over
-	char *space = strstr( text, " " );
+	const char *space = strstr( text, " " ); // HL2MODERN_CONST_COMPLETION_SEARCH
 	if (space)
 	{
 		char commandname[ 128 ];

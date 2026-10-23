@@ -49,7 +49,7 @@ public:
         // permits static props without bones or animation channels. Reject
         // invalid IDs and negative counts without discarding valid props.
         const bool staticProp = (h->flags & STUDIOHDR_FLAGS_STATIC_PROP) != 0;
-        if (h->id != IDSTUDIOHEADER ||
+        if (h->id != (('T'<<24)+('S'<<16)+('D'<<8)+'I') ||
             (h->version != STUDIO_VERSION &&
              (!allowV37Layout || h->version != 37)) || h->length != m_Length ||
             h->numbones < (staticProp ? 0 : 1) || h->numbones > MAXSTUDIOBONES ||

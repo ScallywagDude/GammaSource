@@ -562,7 +562,7 @@ bool CNPC_Manhack::CorpseGib( const CTakeDamageInfo &info )
 	PropBreakableCreateAll( GetModelIndex(), NULL, GetAbsOrigin(), GetAbsAngles(), vecGibVelocity, vecGibAVelocity, 1.0, 60, COLLISION_GROUP_DEBRIS );
 
 	AddFlag( EF_NODRAW );
-	SetThink( SUB_Remove );
+	SetThink( &ThisClass::SUB_Remove );
 
 	return true;
 }
@@ -1070,7 +1070,7 @@ void CNPC_Manhack::Bump( CBaseEntity *pHitEntity, float flInterval, trace_t &tr 
 		if (moveVec.z < 0)
 		{
 			float floorZ = GetFloorZ(GetAbsOrigin());
-			if (abs(GetAbsOrigin().z - floorZ) < 36)
+			if (fabs(GetAbsOrigin().z - floorZ) < 36)
 			{
 				moveVec.z = 0;
 			}

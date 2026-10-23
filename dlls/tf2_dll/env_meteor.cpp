@@ -193,7 +193,7 @@ void CEnvMeteorSpawner::Spawn( void )
 	// Set the think function and time.
 	if ( !m_fDisabled )
 	{
-		SetThink( MeteorSpawnerThink );
+		SetThink( &ThisClass::MeteorSpawnerThink );
 	}
 
 	// Link the entity.
@@ -219,7 +219,7 @@ void CEnvMeteorSpawner::InputEnable( inputdata_t &inputdata )
 //	MessageEnd();
 
 	// Set the think function and time.
-	SetThink( MeteorSpawnerThink );
+	SetThink( &ThisClass::MeteorSpawnerThink );
 	SetNextThink( gpGlobals->curtime + m_SpawnerShared.m_flNextSpawnTime );
 }
 
@@ -431,7 +431,7 @@ void CEnvMeteor::Spawn( void )
 	}
 
 	// Assumes we start life in a skybox!
-	SetThink( MeteorSkyboxThink );
+	SetThink( &ThisClass::MeteorSkyboxThink );
 
 	m_bPrevInSkybox = true;
 }
@@ -442,7 +442,7 @@ void CEnvMeteor::Spawn( void )
 //-----------------------------------------------------------------------------
 void CEnvMeteor::MeteorSkyboxThink( void )
 {
-	SetThink( MeteorWorldThink );
+	SetThink( &ThisClass::MeteorWorldThink );
 	SetNextThink( gpGlobals->curtime + 0.2f );
 }
 

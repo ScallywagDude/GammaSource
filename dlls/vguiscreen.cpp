@@ -6,6 +6,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../modernize/legacy_entity_compat.h"
 #include "VGuiScreen.h"
 #include "networkstringtable_gamedll.h"
 
@@ -57,11 +58,9 @@ bool CVGuiScreen::KeyValue( const char *szKeyName, const char *szValue )
 {
 	//!! temp hack, until worldcraft is fixed
 	// strip the # tokens from (duplicate) key names
-	char *s = strchr( szKeyName, '#' );
-	if ( s )
-	{
-		*s = '\0';
-	}
+	char keyName[256];
+	if (!HL2ModernEntityCompat::CopyKeyWithoutSuffix(szKeyName,keyName,sizeof(keyName))) return false;
+	szKeyName=keyName;
 
 	if ( FStrEq( szKeyName, "panelname" ))
 	{

@@ -6,6 +6,7 @@
 
 #include "cbase.h"
 #include "c_weapon__stubs.h"
+#include "c_basecombatcharacter.h"
 #include "basehlcombatweapon_shared.h"
 #include "c_basehlcombatweapon.h"
 
@@ -52,3 +53,6 @@ STUB_WEAPON_CLASS( weapon_hopwire, WeaponHopWire, C_BaseHLCombatWeapon );
 //STUB_WEAPON_CLASS( weapon_physgun, WeaponGravityGun, C_BaseHLCombatWeapon );
 
 
+
+// HL2MODERN_REMOTE_MANHACK: network the original remote camera/body.
+STUB_WEAPON_CLASS( player_manhack, Player_Manhack, C_BaseCombatCharacter );

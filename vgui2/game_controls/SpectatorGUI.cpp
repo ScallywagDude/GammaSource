@@ -213,7 +213,7 @@ void CBottomBar::ApplySchemeSettings(IScheme *pScheme)
 //-----------------------------------------------------------------------------
 void CBottomBar::OnTextChanged(KeyValues *data)
 {
-	Panel *panel = const_cast<vgui::Panel *>( data->GetPtr("panel") );
+	Panel *panel = static_cast<vgui::Panel *>( data->GetPtr("panel") );
 
 	vgui::ComboBox *box = dynamic_cast<vgui::ComboBox *>( panel );
 

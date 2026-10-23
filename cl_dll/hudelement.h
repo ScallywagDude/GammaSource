@@ -10,6 +10,7 @@
 #pragma once
 #endif
 
+#include "networkvar.h"
 #include "hud.h"
 #include "hud_element_helper.h"
 #include "crtdbg.h"

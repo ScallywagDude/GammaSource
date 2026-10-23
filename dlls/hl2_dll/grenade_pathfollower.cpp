@@ -166,9 +166,9 @@ void CGrenadePathfollower::Launch( float flLaunchSpeed, string_t sPathCornerName
 	SetMoveType( MOVETYPE_FLYGRAVITY );
 	m_fEffects		&= ~EF_NODRAW;
 
-	SetUse( DetonateUse );
-	SetTouch( GrenadeTouch );
-	SetThink( AimThink );
+	SetUse( &ThisClass::DetonateUse );
+	SetTouch( &ThisClass::GrenadeTouch );
+	SetThink( &ThisClass::AimThink );
 
 	Relink();
 

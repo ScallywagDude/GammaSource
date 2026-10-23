@@ -255,7 +255,7 @@ void CNPC_Helicopter::Spawn( void )
 	else
 	{
 		SetThink( HuntThink );
-		SetTouch( FlyTouch );
+		SetTouch( &ThisClass::FlyTouch );
 		SetNextThink( gpGlobals->curtime + 1.0 );
 	}
 
@@ -338,7 +338,7 @@ void CNPC_Helicopter::StartupUse( CBaseEntity *pActivator, CBaseEntity *pCaller,
 	m_flGoalSpeed = m_flInitialSpeed;
 
 	SetThink( HuntThink );
-	SetTouch( FlyTouch );
+	SetTouch( &ThisClass::FlyTouch );
 	SetNextThink( gpGlobals->curtime + 0.1f );
 	SetUse( NULL );
 }
@@ -350,8 +350,8 @@ void CNPC_Helicopter::Event_Killed( const CTakeDamageInfo &info )
 	m_flGravity = 0.3;
 
 	UTIL_SetSize( this, Vector( -32, -32, -64), Vector( 32, 32, 0) );
-	SetThink( DyingThink );
-	SetTouch( CrashTouch );
+	SetThink( &ThisClass::DyingThink );
+	SetTouch( &ThisClass::CrashTouch );
 
 	SetNextThink( gpGlobals->curtime + 0.1f );
 	m_iHealth = 0;

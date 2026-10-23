@@ -25,8 +25,8 @@
 #include "vstdlib/random.h"
 
 // Damage CVars
-ConVar	weapon_laserrifle_damage( "weapon_laserrifle_damage","0", FCVAR_NONE, "Laser Rifle maximum damage" );
-ConVar	weapon_laserrifle_range( "weapon_laserrifle_range","0", FCVAR_NONE, "Laser Rifle maximum range" );
+ConVar	weapon_laserrifle_damage( "weapon_laserrifle_damage","20", FCVAR_NONE, "Laser Rifle maximum damage" );
+ConVar	weapon_laserrifle_range( "weapon_laserrifle_range","1000", FCVAR_NONE, "Laser Rifle maximum range" );
 
 // ------------------------------------------------------------------------ //
 // CWeaponLaserRifle
@@ -35,6 +35,7 @@ class CWeaponLaserRifle : public CBaseTFCombatWeapon
 {
 	DECLARE_CLASS( CWeaponLaserRifle, CBaseTFCombatWeapon );
 public:	
+	DECLARE_SERVERCLASS();
 	virtual void	Precache( void );
 	virtual float	GetFireRate( void );
 	virtual void	PrimaryAttack( void );
@@ -44,6 +45,8 @@ public:
 	int		m_iSpriteTexture;
 };
 
+IMPLEMENT_SERVERCLASS_ST(CWeaponLaserRifle,DT_WeaponLaserRifle)
+END_SEND_TABLE()
 LINK_ENTITY_TO_CLASS( weapon_laserrifle, CWeaponLaserRifle );
 PRECACHE_WEAPON_REGISTER(weapon_laserrifle);
 
@@ -85,8 +88,8 @@ bool CWeaponLaserRifle::ComputeEMPFireState( void )
 //-----------------------------------------------------------------------------
 void CWeaponLaserRifle::PrimaryAttack( void )
 {
-	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( m_hOwner );
-	if ( !pPlayer )
+	CBaseTFPlayer *pPlayer = ToBaseTFPlayer( GetOwner() );
+	if ( !pPlayer || pPlayer->GetAmmoCount(m_iPrimaryAmmoType)<=0 )
 		return;
 	
 	if ( !ComputeEMPFireState() )
@@ -99,7 +102,7 @@ void CWeaponLaserRifle::PrimaryAttack( void )
 	pPlayer->m_fEffects |= EF_MUZZLEFLASH;
 
 	// Fire the beam: BLOW OFF AUTOAIM
-	Vector vecSrc	 = pPlayer->Weapon_ShootPosition( pPlayer->GetOrigin() );
+	Vector vecSrc	 = pPlayer->Weapon_ShootPosition();
 	Vector vecAiming, right, up;
 	pPlayer->EyeVectors( &vecAiming, &right, &up);
 
@@ -116,19 +119,18 @@ void CWeaponLaserRifle::PrimaryAttack( void )
 	Vector vecEnd = vecSrc + vecDir * weapon_laserrifle_range.GetFloat();
 
 	trace_t tr;
-	float damagefactor = TFGameRules()->WeaponTraceLine(vecSrc, vecEnd, MASK_SHOT, pPlayer, DMG_ENERGYBEAM, &tr);
+	TFGameRules()->WeaponTraceLine(vecSrc, vecEnd, MASK_SHOT, pPlayer, DMG_ENERGYBEAM, &tr);
 
 	// Hit target?
 	if (tr.fraction != 1.0)
 	{
-		CBaseEntity *pEntity = CBaseEntity::Instance(tr.u.ent);
+		CBaseEntity *pEntity = tr.m_pEnt;
 		if ( pEntity )
 		{
 			ClearMultiDamage();
-			float flDamage = GetDamage( (tr.endpos - vecSrc).Length(), tr.hitgroup );
-			flDamage *= damagefactor;  
-			pEntity->TraceAttack( CTakeDamageInfo( pPlayer, pPlayer, flDamage, DMG_ENERGYBEAM ), vecDir, &tr );
-			ApplyMultiDamage( pPlayer, pPlayer );
+			float flDamage = max(0.0f,weapon_laserrifle_damage.GetFloat());
+			pEntity->DispatchTraceAttack( CTakeDamageInfo( pPlayer, pPlayer, flDamage, DMG_ENERGYBEAM ), vecDir, &tr );
+			ApplyMultiDamage();
 		}
 
 		g_pEffects->EnergySplash( tr.endpos, tr.plane.normal );
@@ -158,7 +160,7 @@ void CWeaponLaserRifle::PrimaryAttack( void )
 					255,	// a
 					255	);	// speed
 
-	pPlayer->m_iAmmo[m_iPrimaryAmmoType]--;
+	pPlayer->RemoveAmmo(1,m_iPrimaryAmmoType);
 	m_flNextPrimaryAttack = gpGlobals->curtime + GetFireRate();
 
 	CheckRemoveDisguise();

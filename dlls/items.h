@@ -30,6 +30,7 @@ private:
 
 	COutputEvent m_OnPlayerTouch;
 
+public: // Derived pickup types register their base datamap.
 	DECLARE_DATADESC();
 };
 
