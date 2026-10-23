@@ -631,7 +631,7 @@ void PhonemeEditor::CloseCaption_FinishDrag( int startx, int endx )
 
 	PushUndo();
 
-	TraversePhrases( ITER_MoveSelectedPhrases, dt );
+	TraversePhrases( &PhonemeEditor::ITER_MoveSelectedPhrases, dt );
 
 	CloseCaption_CleanupPhrases( false );
 
@@ -927,7 +927,7 @@ void PhonemeEditor::CloseCaption_ShiftSelectedPhrase( int direction )
 
 	PushUndo();
 
-	TraversePhrases( ITER_MoveSelectedPhrases, movetime );
+	TraversePhrases( &PhonemeEditor::ITER_MoveSelectedPhrases, movetime );
 
 	PushRedo();
 
@@ -963,7 +963,7 @@ void PhonemeEditor::CloseCaption_ExtendSelectedPhraseEndTime( int direction )
 
 	PushUndo();
 
-	TraversePhrases( ITER_ExtendSelectedPhraseEndTimes, movetime );
+	TraversePhrases( &PhonemeEditor::ITER_ExtendSelectedPhraseEndTimes, movetime );
 
 	PushRedo();
 
@@ -1598,7 +1598,7 @@ void PhonemeEditor::CloseCaption_FinishPhraseDrag( int startx, int endx )
 
 	PushUndo();
 
-	TraversePhrases( ITER_MoveSelectedPhrases, dt );
+	TraversePhrases( &PhonemeEditor::ITER_MoveSelectedPhrases, dt );
 
 	CloseCaption_CleanupPhrases( false );
 

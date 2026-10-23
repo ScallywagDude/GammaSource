@@ -704,7 +704,7 @@ void PhonemeEditor::StartDragging( int dragtype, int startx, int starty, HCURSOR
 		break;
 	case DRAGTYPE_MOVEWORD:
 		{
-			TraverseWords( ITER_AddFocusRectSelectedWords, 0.0f );
+			TraverseWords( &PhonemeEditor::ITER_AddFocusRectSelectedWords, 0.0f );
 			addrect = false;
 			m_bWordsActive = true;
 		}
@@ -716,13 +716,13 @@ void PhonemeEditor::StartDragging( int dragtype, int startx, int starty, HCURSOR
 		break;
 	case DRAGTYPE_MOVEPHRASE:
 		{
-			TraversePhrases( ITER_AddFocusRectSelectedPhrases, 0.0f );
+			TraversePhrases( &PhonemeEditor::ITER_AddFocusRectSelectedPhrases, 0.0f );
 			addrect = false;
 		}
 		break;
 	case DRAGTYPE_MOVEPHONEME:
 		{
-			TraversePhonemes( ITER_AddFocusRectSelectedPhonemes, 0.0f );
+			TraversePhonemes( &PhonemeEditor::ITER_AddFocusRectSelectedPhonemes, 0.0f );
 			addrect = false;
 			m_bWordsActive = false;
 		}
@@ -3071,7 +3071,7 @@ void PhonemeEditor::FinishWordDrag( int startx, int endx )
 
 	PushUndo();
 
-	TraverseWords( ITER_MoveSelectedWords, dt );
+	TraverseWords( &PhonemeEditor::ITER_MoveSelectedWords, dt );
 
 	CleanupWordsAndPhonemes( false );
 
@@ -3165,7 +3165,7 @@ void PhonemeEditor::FinishPhonemeDrag( int startx, int endx )
 
 	PushUndo();
 
-	TraversePhonemes( ITER_MoveSelectedPhonemes, dt );
+	TraversePhonemes( &PhonemeEditor::ITER_MoveSelectedPhonemes, dt );
 
 	CleanupWordsAndPhonemes( false );
 
@@ -4273,7 +4273,7 @@ void PhonemeEditor::SelectSamples( int start, int end )
 
 	// Select any words that span the selection
 	//
-	TraverseWords( ITER_SelectSpanningWords, 0.0f );
+	TraverseWords( &PhonemeEditor::ITER_SelectSpanningWords, 0.0f );
 
 	redraw();
 }
@@ -4295,7 +4295,7 @@ void PhonemeEditor::FinishMoveSelection( int startx, int mx )
 
 	// Select any words that span the selection
 	//
-	TraverseWords( ITER_SelectSpanningWords, 0.0f );
+	TraverseWords( &PhonemeEditor::ITER_SelectSpanningWords, 0.0f );
 
 	redraw();
 }
@@ -4319,7 +4319,7 @@ void PhonemeEditor::FinishMoveSelectionStart( int startx, int mx )
 
 	// Select any words that span the selection
 	//
-	TraverseWords( ITER_SelectSpanningWords, 0.0f );
+	TraverseWords( &PhonemeEditor::ITER_SelectSpanningWords, 0.0f );
 
 	redraw();
 }
@@ -4343,7 +4343,7 @@ void PhonemeEditor::FinishMoveSelectionEnd( int startx, int mx )
 
 	// Select any words that span the selection
 	//
-	TraverseWords( ITER_SelectSpanningWords, 0.0f );
+	TraverseWords( &PhonemeEditor::ITER_SelectSpanningWords, 0.0f );
 
 	redraw();
 }
@@ -4629,7 +4629,7 @@ void PhonemeEditor::OnImport()
 	char const *filename = mxGetOpenFileName( 
 		0, 
 		inSoundAlready ? "." : FacePoser_MakeWindowsSlashes( va( "%s/sound/", GetGameDirectory() ) ), 
-		"*"WORD_DATA_EXTENSION );
+		"*" WORD_DATA_EXTENSION );
 
 	if ( !filename || !filename[ 0 ] )
 		return;
@@ -4660,7 +4660,7 @@ void PhonemeEditor::OnExport()
 	const char *filename = mxGetSaveFileName( 
 		this, 
 		inSoundAlready ? "." : FacePoser_MakeWindowsSlashes( va( "%s/sound/", GetGameDirectory() ) ), 
-		"*"WORD_DATA_EXTENSION );
+		"*" WORD_DATA_EXTENSION );
 
 	if ( !filename || !filename[ 0 ] )
 		return;
@@ -5939,9 +5939,9 @@ void PhonemeEditor::CountSelected( void )
 	m_nSelectedWordCount = 0;
 	m_nSelectedPhraseCount = 0;
 
-	TraverseWords( ITER_CountSelectedWords, 0.0f );
-	TraversePhonemes( ITER_CountSelectedPhonemes, 0.0f );
-	TraversePhrases( ITER_CountSelectedPhrases, 0.0f );
+	TraverseWords( &PhonemeEditor::ITER_CountSelectedWords, 0.0f );
+	TraversePhonemes( &PhonemeEditor::ITER_CountSelectedPhonemes, 0.0f );
+	TraversePhrases( &PhonemeEditor::ITER_CountSelectedPhrases, 0.0f );
 }
 
 void PhonemeEditor::ITER_CountSelectedWords( CWordTag *word, float amount )
@@ -6206,9 +6206,9 @@ void PhonemeEditor::ShowContextMenu_Phonemes( int mx, int my )
 		pop->addSeparator();
 		if ( m_Tags.m_Words.Count() > 0 )
 		{
-			pop->add( "Export word data to "WORD_DATA_EXTENSION"...", IDC_EXPORT_SENTENCE );
+			pop->add( "Export word data to " WORD_DATA_EXTENSION"...", IDC_EXPORT_SENTENCE );
 		}
-		pop->add( "Import word data from "WORD_DATA_EXTENSION"...", IDC_IMPORT_SENTENCE );
+		pop->add( "Import word data from " WORD_DATA_EXTENSION"...", IDC_IMPORT_SENTENCE );
 		pop->add( va("%s Voice Duck", m_Tags.GetVoiceDuck() ? "Disable" : "Enable" ), IDC_TOGGLE_VOICEDUCK );
 	}
 
@@ -6320,7 +6320,7 @@ void PhonemeEditor::ShiftSelectedPhoneme( int direction )
 
 	PushUndo();
 
-	TraversePhonemes( ITER_MoveSelectedPhonemes, movetime );
+	TraversePhonemes( &PhonemeEditor::ITER_MoveSelectedPhonemes, movetime );
 
 	PushRedo();
 
@@ -6358,7 +6358,7 @@ void PhonemeEditor::ExtendSelectedPhonemeEndTime( int direction )
 
 	PushUndo();
 
-	TraversePhonemes( ITER_ExtendSelectedPhonemeEndTimes, movetime );
+	TraversePhonemes( &PhonemeEditor::ITER_ExtendSelectedPhonemeEndTimes, movetime );
 
 	PushRedo();
 
@@ -6605,7 +6605,7 @@ void PhonemeEditor::ShiftSelectedWord( int direction )
 
 	PushUndo();
 
-	TraverseWords( ITER_MoveSelectedWords, movetime );
+	TraverseWords( &PhonemeEditor::ITER_MoveSelectedWords, movetime );
 
 	PushRedo();
 
@@ -6643,7 +6643,7 @@ void PhonemeEditor::ExtendSelectedWordEndTime( int direction )
 
 	PushUndo();
 
-	TraverseWords( ITER_ExtendSelectedWordEndTimes, movetime );
+	TraverseWords( &PhonemeEditor::ITER_ExtendSelectedWordEndTimes, movetime );
 
 	PushRedo();
 

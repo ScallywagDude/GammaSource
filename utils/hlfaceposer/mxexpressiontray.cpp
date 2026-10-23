@@ -204,11 +204,11 @@ void mxExpressionTray::CreateButtons( void )
 	int x = m_nSnapshotWidth - 2 * ( m_nButtonSquare + 4 );
 	int y = 4;
 
-	AddButton( "undo", "Undo", "gfx/hlfaceposer/undo.bmp", ET_Undo, true, x, y, m_nButtonSquare, m_nButtonSquare );
+	AddButton( "undo", "Undo", "gfx/hlfaceposer/undo.bmp", &mxExpressionTray::ET_Undo, true, x, y, m_nButtonSquare, m_nButtonSquare );
 
 	x += ( m_nButtonSquare + 4 );
 
-	AddButton( "redo", "Redo", "gfx/hlfaceposer/redo.bmp", ET_Redo, true, x, y, m_nButtonSquare, m_nButtonSquare );
+	AddButton( "redo", "Redo", "gfx/hlfaceposer/redo.bmp", &mxExpressionTray::ET_Redo, true, x, y, m_nButtonSquare, m_nButtonSquare );
 }
 
 void mxExpressionTray::ActivateButton( const char *name, bool active )

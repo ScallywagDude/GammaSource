@@ -8,8 +8,9 @@
 
 #include <stdarg.h>
 #include <stdlib.h>
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+using std::cerr;
+#include <fstream>
 #include <string.h>
 #include <math.h>
 

@@ -24,6 +24,8 @@ scripts.insert(scripts.index('validate.py'),'patch_hud_customization.py')
 scripts.insert(scripts.index('validate.py'),'patch_debug_class_validation.py')
 scripts.insert(scripts.index('validate.py'),'patch_follow_handles.py')
 scripts.insert(scripts.index('validate.py'),'patch_entity_compiler_compat.py')
+# Keep post-overlay compiler repairs after all source regenerators.
+scripts.insert(scripts.index('validate.py'),'fix_legacy_compiler_errors.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]

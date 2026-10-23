@@ -85,6 +85,7 @@ private:
 
 	typedef vgui::Frame BaseClass;
 
+protected: // Derived page maps refer to this base map.
 	DECLARE_PANELMAP();
 };
 

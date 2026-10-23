@@ -582,7 +582,7 @@ BOOL CHLModMasterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 	
 	char szText[256];
-	sprintf(szText, "Half-Life Mod Master:  %s / ("__DATE__")", AdrToString(net_local_adr ) );
+	sprintf(szText, "Half-Life Mod Master:  %s / (" __DATE__")", AdrToString(net_local_adr ) );
 	SetWindowText(szText);
 
 	m_tStartTime = Sys_FloatTime();

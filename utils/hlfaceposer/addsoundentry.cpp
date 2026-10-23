@@ -83,7 +83,7 @@ static BOOL CALLBACK AddSoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPAR
 				int idx = soundemitter->GetSoundIndex( g_Params.m_szSoundName );
 				if ( soundemitter->IsValidIndex( idx ) )
 				{
-					mxMessageBox( NULL, va( "Sound '%' already exists",
+					mxMessageBox( NULL, va( "Sound '%s' already exists",
 						g_Params.m_szSoundName ), g_appTitle, MX_MB_OK );
 					return TRUE;
 				}
@@ -91,7 +91,7 @@ static BOOL CALLBACK AddSoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPAR
 				// Check out script
 				if ( !filesystem->FileExists( g_Params.m_szScriptName ) )
 				{
-					mxMessageBox( NULL, va( "Script '%' does not exist",
+					mxMessageBox( NULL, va( "Script '%s' does not exist",
 						g_Params.m_szScriptName ), g_appTitle, MX_MB_OK );
 					return TRUE;
 				}

@@ -1170,7 +1170,7 @@ BOOL CHLMasterDlg::OnInitDialog()
 #if defined( _STEAM_HLMASTER )
 	sprintf(szText, "Steam HLMaster %i/HL:%s/CS:%s/TFC:%s/DMC:%s/DOD:%s/Ricochet:%s/OpFor:%s", CURRENT_PROTOCOL, m_szHLVersion, m_szCSVersion, m_szTFCVersion, m_szDMCVersion, m_szDODVersion, m_szRicochetVersion, m_szOpForVersion );
 #else
-	sprintf(szText, "HL Master %s - %i/HL:%s/CS:%s ("__DATE__")", AdrToString(net_local_adr ), CURRENT_PROTOCOL, m_szHLVersion, m_szCSVersion );	
+	sprintf(szText, "HL Master %s - %i/HL:%s/CS:%s (" __DATE__")", AdrToString(net_local_adr ), CURRENT_PROTOCOL, m_szHLVersion, m_szCSVersion );	
 #endif
 
 	SetWindowText(szText);

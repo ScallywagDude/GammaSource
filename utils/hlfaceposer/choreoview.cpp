@@ -1859,7 +1859,7 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 			{
 				DeselectAll();
 			}
-			TraverseWidgets( Select, m_pClickedEvent );
+			TraverseWidgets( &CChoreoView::Select, m_pClickedEvent );
 		}
 		else
 		{
@@ -6899,7 +6899,7 @@ CChoreoEventWidget *CChoreoView::FindWidgetForEvent( CChoreoEvent *event )
 //-----------------------------------------------------------------------------
 void CChoreoView::SelectAll( void )
 {
-	TraverseWidgets( SelectAllEvents, NULL );
+	TraverseWidgets( &CChoreoView::SelectAllEvents, NULL );
 	redraw();
 }
 
@@ -6908,7 +6908,7 @@ void CChoreoView::SelectAll( void )
 //-----------------------------------------------------------------------------
 void CChoreoView::DeselectAll( void )
 {
-	TraverseWidgets( Deselect, NULL );
+	TraverseWidgets( &CChoreoView::Deselect, NULL );
 	redraw();
 }
 
