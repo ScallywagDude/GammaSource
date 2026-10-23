@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{840D5208-05E5-5CDE-81BF-CD45207AA02F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{EA017AEB-4109-54C8-902F-2D056C3C297D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{8DF15CFD-FA75-578A-9D54-2CBC083526DE}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\alienscale_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\basetimeslightmapwet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BaseVSShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\bumpvects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\eyes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gooinglass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\jellyfish.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\jojirium.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\lightmappedgeneric_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\modulate.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\overlay_fit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\particlesphere.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\predator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\refract_dx80.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\shadow_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\shadowbuild.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\shadowmodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sprite.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\teeth_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\unlitgeneric_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\unlittwotexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vertexlitgeneric_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\vmatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\water_dx80.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\water_dx81.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\worldvertexalpha_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\WorldVertexTransition_dx8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\writez.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\yuv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\stdshader_dx8.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\BaseVSShader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\lightmappedgeneric_inc.vsh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include=".\macros.vsh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include=".\unlitgeneric_inc.vsh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include=".\unlittwotexture_inc.vsh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include=".\vertexlitgeneric_inc.vsh">
+      <Filter>Header Files</Filter>
+    </None>
+    <None Include="..\..\devtools\bin\psh_prep.pl" />
+    <None Include=".\stdshader_dx8.txt" />
+    <None Include="..\..\devtools\bin\vsh_prep.pl" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\shaderlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include=".\BaseTimesLightmapWet.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedEnvmap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Cable.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Eyes.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\glowwarp.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\HotSpotGlow.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\JellyFish.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Jojirium.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BaseTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedEnvmap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedEnvmap_ps14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedLightmap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_Detail.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_DetailVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapCameraSpace.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapCameraSpaceVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapSphere.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapSphereVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_VertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BaseTextureBlend.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedTranslucentTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\ParticleSphere.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\predator.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\ScreenSpaceEffect.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\shadow_vs14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\shadow_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\ShadowModel.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Teeth.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_Detail.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapCameraSpace.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapCameraSpaceVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapSphere.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapSphereVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapCameraSpace.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapCameraSpaceVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapSphere.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapSphereVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapVertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_LightingOnlyWorld.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_VertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitTwoTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitTwoTexture_VertexColor.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitEnvMappedTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitEnvMappedTexture_CameraSpace.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitEnvMappedTexture_SphereMap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_Detail.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailEnvMap.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailEnvMapCameraSpace.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailEnvMapSphere.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmap_NoLighting.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmap_NoLighting_ps14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmap_VertLit.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_SelfIllumOnly.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Water_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Water_ps14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldTexture.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexAlpha.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition_Micros.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\writez.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WriteZWithHeightClipPlane.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WriteZWithHeightClipPlane_World.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_vs14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\overlay_fit_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Refract_model_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Refract_world_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_vs11.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_vs14.vsh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_overbright2_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\alienscale_overbright2_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Modulate_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\overlay_fit_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Refract_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\BaseTimesLightmapWet.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedEnvmap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedLightmap_OverBright1.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedLightmap_OverBright2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Cable.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Eyes.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Eyes_Overbright2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\JellyFish.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BaseAlphaMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BaseTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_basetextureblend.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedEnvmap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedEnvmap_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_BumpmappedLightmap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_Detail.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_DetailNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_DetailSelfIlluminated.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_EnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_MaskedEnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_MaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_MultiplyByLighting.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_MultiplyByLightingNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_MultiplyByLightingSelfIllum.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_NoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_SelfIlluminated.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_SelfIlluminatedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_SelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedTranslucentTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\predator.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Shadow.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\ShadowBuildTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\ShadowModel.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\SpriteRenderNormal.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\SpriteRenderTransColor.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\SpriteRenderTransAdd.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_BaseAlphaMaskedEnvMap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_Detail.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailBaseAlphaMaskedEnvMap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapMask.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapMaskNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailEnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_DetailNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMap.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapMask.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapMaskNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_EnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_NoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitTwoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_BaseAlphaMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_Detail.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailBaseAlphaMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailSelfIlluminated.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailSelfIlluminatedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DetailSelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpLightingOnly_Overbright1.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpLightingOnly_Overbright2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase_Overbright1.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase_Overbright1_Translucent.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase_Overbright2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase_Overbright2_Translucent.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmapV2_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_MaskedEnvMapNoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_MaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_NoTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_SelfIlluminated.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_SelfIlluminatedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_SelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_SelfIllumOnly.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitTexture_Overbright2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterReflect_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterRefract_ps11.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\Water_ps14.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\white.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldTexture.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexAlpha.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition_Micros.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition_Micros_EditMode.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WorldVertexTransition_BlendBase2.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WriteEnvMapMaskToAlphaBuffer.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\WriteZWithHeightClipPlane.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\yuv.psh">
+      <Filter>Shaders</Filter>
+    </CustomBuild>
+  </ItemGroup>
+</Project>

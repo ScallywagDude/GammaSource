@@ -284,22 +284,55 @@ void CC_NPC_Focus( void )
 static ConCommand npc_focus("npc_focus", CC_NPC_Focus, "Displays red line to NPC's enemy (if has one) and blue line to NPC's target entity (if has one)\n\tArguments:   	{npc_name} / {npc class_name} / no argument picks what player is looking at", FCVAR_CHEAT);
 
 ConVar npc_create_equipment("npc_create_equipment", "");
+// Cut/unfinished NPC testing: off by default, as some NPCs require map-start
+// precaching, models, activities and scene resources unavailable in this tree.
+static ConVar npc_allow_unprecached_create(
+    "npc_allow_unprecached_create", "0", FCVAR_CHEAT,
+    "Experimental: permit npc_create for registered classes not already in the map. Requires complete NPC assets; use only on test maps.");
+
+static bool NPC_CanCreateFromConsole( const char *pClassName )
+{
+    if ( !pClassName || Q_strnicmp( pClassName, "npc_", 4 ) != 0 )
+    {
+        Msg("NPC classname must begin with npc_\n");
+        return false;
+    }
+    if ( !UTIL_GetCommandClient() )
+    {
+        Msg("npc_create requires an in-game player, not the dedicated server console.\n");
+        return false;
+    }
+    if ( !gEntList.FindEntityByClassname( NULL, pClassName ) &&
+         !npc_allow_unprecached_create.GetBool() )
+    {
+        Msg("Can't create %s. Not precached; enable npc_allow_unprecached_create on a test map to try.\n", pClassName);
+        return false;
+    }
+    return true;
+}
+
 //------------------------------------------------------------------------------
 // Purpose: Create an NPC of the given type
 //------------------------------------------------------------------------------
 void CC_NPC_Create( void )
 {
-	// First make sure one of these types exists, becuase if it ain't
-	// precached, we can't spawn one 
-	CBaseEntity *pPrecached = gEntList.FindEntityByClassname(NULL, engine->Cmd_Argv(1));
-	if (!pPrecached)
-	{
-		Msg("Can't create %s.  Not precached!\n",engine->Cmd_Argv(1));
+	if ( engine->Cmd_Argc() < 2 || !NPC_CanCreateFromConsole( engine->Cmd_Argv(1) ) )
 		return;
-	}
 
 	// Try to create entity
-	CAI_BaseNPC *baseNPC = (CAI_BaseNPC *)CreateEntityByName(engine->Cmd_Argv(1));
+	CBaseEntity *pCreated = CreateEntityByName( engine->Cmd_Argv(1) );
+	CAI_BaseNPC *baseNPC = pCreated ? pCreated->MyNPCPointer() : NULL;
+	if ( pCreated && !baseNPC )
+	{
+		Msg("Can't create %s: this entity is not an NPC.\n", engine->Cmd_Argv(1));
+		UTIL_RemoveImmediate( pCreated );
+		return;
+	}
+	if ( !pCreated )
+	{
+		Msg("Can't create %s: entity factory not registered.\n", engine->Cmd_Argv(1));
+		return;
+	}
 	if (baseNPC)
 	{
 		baseNPC->KeyValue( "additionalequipment", npc_create_equipment.GetString() );
@@ -345,9 +378,15 @@ void CC_NPC_Create( void )
 				baseNPC->Relink();
 			}
 		}
+		else
+		{
+			// HL2MODERN_NPC_SPAWN_SAFETY
+			UTIL_RemoveImmediate( baseNPC );
+			Msg("Can't create %s: no placement surface found.\n", engine->Cmd_Argv(1));
+		}
 	}
 }
-static ConCommand npc_create("npc_create", CC_NPC_Create, "Creates an NPC of the given type where the player is looking (if the given NPC can actually stand at that location).  Note that this only works for npc classes that are already in the world.  You can not create an entity that doesn't have an instance in the level.\n\tArguments:	{npc_class_name}", FCVAR_CHEAT);
+static ConCommand npc_create("npc_create", CC_NPC_Create, "Creates an NPC of the given type where the player is looking (if the given NPC can actually stand at that location).  Normally requires an instance already in the map; npc_allow_unprecached_create enables experimental spawning for cut NPC testing.\n\tArguments:	{npc_class_name}", FCVAR_CHEAT);
 
 
 //------------------------------------------------------------------------------
@@ -355,17 +394,23 @@ static ConCommand npc_create("npc_create", CC_NPC_Create, "Creates an NPC of the
 //------------------------------------------------------------------------------
 void CC_NPC_Create_Aimed( void )
 {
-	// First make sure one of these types exists, becuase if it ain't
-	// precached, we can't spawn one 
-	CBaseEntity *pPrecached = gEntList.FindEntityByClassname(NULL, engine->Cmd_Argv(1));
-	if (!pPrecached)
-	{
-		Msg("Can't create %s.  Not precached!\n",engine->Cmd_Argv(1));
+	if ( engine->Cmd_Argc() < 2 || !NPC_CanCreateFromConsole( engine->Cmd_Argv(1) ) )
 		return;
-	}
 
 	// Try to create entity
-	CAI_BaseNPC *baseNPC = (CAI_BaseNPC *)CreateEntityByName(engine->Cmd_Argv(1));
+	CBaseEntity *pCreated = CreateEntityByName( engine->Cmd_Argv(1) );
+	CAI_BaseNPC *baseNPC = pCreated ? pCreated->MyNPCPointer() : NULL;
+	if ( pCreated && !baseNPC )
+	{
+		Msg("Can't create %s: this entity is not an NPC.\n", engine->Cmd_Argv(1));
+		UTIL_RemoveImmediate( pCreated );
+		return;
+	}
+	if ( !pCreated )
+	{
+		Msg("Can't create %s: entity factory not registered.\n", engine->Cmd_Argv(1));
+		return;
+	}
 	if (baseNPC)
 	{
 		CBasePlayer* pPlayer = UTIL_GetCommandClient();
@@ -413,9 +458,14 @@ void CC_NPC_Create_Aimed( void )
 				baseNPC->Relink();
 			}
 		}
+		else
+		{
+			UTIL_RemoveImmediate( baseNPC );
+			Msg("Can't create %s: no placement surface found.\n", engine->Cmd_Argv(1));
+		}
 	}
 }
-static ConCommand npc_create_aimed("npc_create_aimed", CC_NPC_Create_Aimed, "Creates an NPC aimed away from the player of the given type where the player is looking (if the given NPC can actually stand at that location).  Note that this only works for npc classes that are already in the world.  You can not create an entity that doesn't have an instance in the level.\n\tArguments:	{npc_class_name}", FCVAR_CHEAT);
+static ConCommand npc_create_aimed("npc_create_aimed", CC_NPC_Create_Aimed, "Creates an NPC aimed away from the player of the given type where the player is looking (if the given NPC can actually stand at that location).  Normally requires an instance already in the map; npc_allow_unprecached_create enables experimental spawning for cut NPC testing.\n\tArguments:	{npc_class_name}", FCVAR_CHEAT);
 
 //------------------------------------------------------------------------------
 // Purpose: Destroy unselected NPCs

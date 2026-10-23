@@ -34,6 +34,7 @@ public:
 	void Precache( void );
 	void PrimaryAttack( void );
 	void ItemPostFrame( void );
+	bool Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
 
 	int CapabilitiesGet( void ) {	return bits_CAP_WEAPON_RANGE_ATTACK1;	}
 
@@ -93,6 +94,7 @@ IMPLEMENT_ACTTABLE( CWeaponImmolator );
 CWeaponImmolator::CWeaponImmolator( void )
 {
 	m_fMaxRange1 = 4096;
+	m_vecImmolatorTarget = IMMOLATOR_TARGET_INVALID;
 	StopImmolating();
 }
 
@@ -102,7 +104,7 @@ void CWeaponImmolator::StartImmolating()
 	// determine whether the immolator is operating or not.
 	m_flBurnRadius = 0.1;
 	m_flTimeLastUpdatedRadius = gpGlobals->curtime;
-	SetThink( UpdateThink );
+	SetThink( &CWeaponImmolator::UpdateThink );
 	SetNextThink( gpGlobals->curtime );
 }
 
@@ -142,7 +144,9 @@ void CWeaponImmolator::PrimaryAttack( void )
 //-----------------------------------------------------------------------------
 bool CWeaponImmolator::WeaponLOSCondition( const Vector &ownerPos, const Vector &targetPos, bool bSetConditions )
 {
-	CAI_BaseNPC* npcOwner = GetOwner()->MyNPCPointer();
+	CBaseCombatCharacter *owner=GetOwner();
+	CAI_BaseNPC* npcOwner=owner ? owner->MyNPCPointer() : NULL;
+	if ( !npcOwner ) return false;
 
 	if( IsImmolating() )
 	{
@@ -230,7 +234,7 @@ void CWeaponImmolator::UpdateThink( void )
 {
 	CBaseCombatCharacter *pOwner = GetOwner();
 
-	if( pOwner && !pOwner->IsAlive() )
+	if( !pOwner || !pOwner->IsAlive() )
 	{
 		StopImmolating();
 		return;
@@ -335,11 +339,13 @@ void CWeaponImmolator::Update()
 						);
 		}
 
-		ImmolationDamage( CTakeDamageInfo( this, this, 1, DMG_BURN ), tr.endpos, m_flBurnRadius, CLASS_NONE );
+		ImmolationDamage( CTakeDamageInfo( this, GetOwner(), 1, DMG_BURN ), tr.endpos, m_flBurnRadius, CLASS_NONE );
 	}
 	else
 	{
-		// The attack beam struck some kind of entity directly.
+		// HL2MODERN_IMMOLATOR_DIRECT_HIT: use the existing burn tick on direct impacts.
+		if ( tr.m_pEnt && tr.m_pEnt->m_takedamage!=DAMAGE_NO )
+			tr.m_pEnt->TakeDamage(CTakeDamageInfo(this,GetOwner(),1,DMG_BURN));
 	}
 
 	m_flTimeLastUpdatedRadius = gpGlobals->curtime;
@@ -353,6 +359,12 @@ void CWeaponImmolator::Update()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+bool CWeaponImmolator::Holster( CBaseCombatWeapon *pSwitchingTo )
+{
+	StopImmolating();
+	return BaseClass::Holster(pSwitchingTo);
+}
+
 void CWeaponImmolator::ItemPostFrame( void )
 {
 	BaseClass::ItemPostFrame();

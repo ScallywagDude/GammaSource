@@ -5,6 +5,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../../modernize/weapon_hud_layout.h"
 #include "weapon_selection.h"
 #include "iclientmode.h"
 #include "basetfcombatweapon_shared.h"
@@ -1447,8 +1448,11 @@ void CHudWeaponItemPanel::Paint()
 
 	if ( info.icon )
 	{
-		info.icon->DrawSelf( sizefracw * iconXPos, sizefrach * iconYPos, sizefracw * iconWide, sizefrach * iconTall,
-			iconColor ); 
+        // HL2MODERN_TF_HUD_FIT: animated panel growth must not stretch weapon art.
+        HL2ModernHud::Rect fitted;
+        if ( HL2ModernHud::FitIcon(info.icon->Width(),info.icon->Height(),(int)(sizefracw*iconXPos),
+             (int)(sizefrach*iconYPos),(int)(sizefracw*iconWide),(int)(sizefrach*iconTall),fitted) )
+            info.icon->DrawSelf(fitted.x,fitted.y,fitted.w,fitted.h,iconColor);
 	}
 
 	surface()->DrawSetTextColor( textColor );

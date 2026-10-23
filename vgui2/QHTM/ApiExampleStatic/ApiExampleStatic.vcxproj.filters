@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{0CF3467C-0ADD-5243-B967-470DD741B092}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{227A970E-B89D-5BA1-90ED-DCACA38CE4CE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sample Files">
+      <UniqueIdentifier>{AB96C74E-73D3-5971-806F-364D198715AB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sample Files\z+">
+      <UniqueIdentifier>{6773D995-74F1-5E76-9324-71CE90C0E19C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{F93C9E14-3880-5826-9C76-ADC73B422302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QHTMFiles">
+      <UniqueIdentifier>{E9C7BB36-5765-5975-9715-30186A9A5912}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QHTMFiles\HTML Display stuff">
+      <UniqueIdentifier>{EBB960DF-4D41-5AF6-88D4-1212F22ED975}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QHTMFiles\HTML Document stuff">
+      <UniqueIdentifier>{C85B3F2F-CCA9-5454-8A21-89ED187C1F38}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\AquireImage.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\DecodeCharset.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GetColourFromString.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GetFontSize.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GetFontSizeAsPixels.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GetNumberParameter.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HtmlAnchor.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\htmlblockquote.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLDocument.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLDocumentObject.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLGetAlignmentFromString.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLHorizontalRule.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLImage.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HtmlList.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLListItem.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLParagraph.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLParagraphObject.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLParse.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLParseBase.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLTable.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLTableCell.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLTextBlock.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\drawcontext.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLHorizontalRuleSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLImageSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLSectionABC.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLSectionCreator.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLSectionLink.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\htmltablesection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLTextSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ParentSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTMControlSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ScrollContainer.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sectionabc.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\tablelayout.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TipWindow.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\WindowSection.cpp">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClCompile>
+    <ClCompile Include="..\cursor.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Defaults.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\EnableCoolTips.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GetDisplayWorkArea.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GotoUrl.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\HTMLPrint.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\LoadTextFile.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Mouse.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Palette.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_GetHTMLHeight.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_MessageBox.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_RenderHTML.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_SetHTMLButton.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_SetResources.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\QHTM_Trace.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RegisterWindow.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ResourceLoader.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\SimpleString.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\striremove.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\stristr.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include="..\strremove.cpp">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ApiExampleStatic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ConvertBitmapToDIB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Print.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SaveAsBitmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\WriteDIB.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\AquireImage.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLAnchor.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLBlockQuote.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLDocument.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLDocumentObject.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLFontDef.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLHorizontalRule.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLImage.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLLink.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLList.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLListItem.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLParagraph.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLParagraphObject.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLParse.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLParseBase.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLTable.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLTableCell.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLTextBlock.h">
+      <Filter>Source Files\QHTMFiles\HTML Document stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\drawcontext.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLHorizontalRuleSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLImageSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLSectionABC.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLSectionCreator.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HtmlSectionLink.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\htmltablesection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\HTMLTextSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ParentSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\QHTMControlSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ScrollContainer.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sectionabc.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\tablelayout.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TipWindow.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowSection.h">
+      <Filter>Source Files\QHTMFiles\HTML Display stuff</Filter>
+    </ClInclude>
+    <ClInclude Include="..\cursor.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Defaults.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FontDef.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Palette.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\QHTM.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\QHTM_Trace.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\QHTM_Types.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\resource.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ResourceLoader.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\SimpleString.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\smallstringhash.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Utils.h">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ClInclude>
+    <ClInclude Include=".\resource.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\StaticString.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\QHTM.rc">
+      <Filter>Source Files\QHTMFiles</Filter>
+    </ResourceCompile>
+    <ResourceCompile Include=".\APIExampleStatic.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\arrow.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\Hand.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\res\Hand.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\noimage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\res\noimage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\zoomplus\features.html">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\zoomplus\grid.bmp">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\zoomplus\options.bmp">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\zoomplus\selected.bmp">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\zoomplus\zoomed.bmp">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\zoomplus\zoomlogo.bmp">
+      <Filter>Sample Files\z+</Filter>
+    </None>
+    <None Include=".\about.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\earth.mng">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\fonts.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\FOREST.JPG">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\Headings.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\hyperlink.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\images.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\lists.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\logo.bmp">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\styles.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\tables.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\welcome.html">
+      <Filter>Sample Files</Filter>
+    </None>
+    <None Include=".\ReadMe.txt" />
+  </ItemGroup>
+</Project>

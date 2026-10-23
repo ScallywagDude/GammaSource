@@ -56,6 +56,8 @@
 #include "IOcclusionSystem.h"
 #include "filesystem_engine.h"
 #include "ModelInfo.h"
+#include "../modernize/model_preview_studio_validation.h"
+#include "../modernize/studio_sidecar_fs_v21.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -112,8 +114,66 @@ bool Mod_LoadStudioModel (model_t *mod, void *buffer, bool zerostructure )
 
 	phdr = (studiohdr_t *)pin;
 
-	Studio_ConvertStudioHdrToNewVersion( phdr );
-	
+    // HL2MODERN_STUDIO_LOADER_V37_V21: no blind 37->36 rewrite. For a
+    // version-37 MDL, prove the on-disk bytes conform to our v36 table and
+    // animation layouts *before* handing the buffer to legacy consumers.
+    // Models with newer vertex formats or genuinely changed layouts fail
+    // closed. This bridge is deliberately narrower than all retail v37.
+    const int diskVersion = LittleLong(phdr->version);
+    if (diskVersion == 37)
+    {
+        FileHandle_t disk = g_pFileSystem ? g_pFileSystem->Open(mod->name, "rb") : FILESYSTEM_INVALID_HANDLE;
+        if (disk == FILESYSTEM_INVALID_HANDLE)
+        {
+            Warning("%s: v37 source file could not be opened\n", mod->name);
+            return false;
+        }
+        const int diskLength = g_pFileSystem->Size(disk);
+        bool compatible = false;
+        if (diskLength >= (int)sizeof(studiohdr_t) && diskLength <= 64*1024*1024 &&
+            phdr->length == diskLength)
+        {
+            CUtlVector<byte> diskBytes;
+            diskBytes.SetSize(diskLength);
+            const int read = g_pFileSystem->Read(diskBytes.Base(), diskLength, disk);
+            if (read == diskLength && !memcmp(buffer,diskBytes.Base(),diskLength))
+                compatible = HL2ModernModelPreview::StudioDataValidator(
+                    diskBytes.Base(),diskLength).Validate(true);
+        }
+        g_pFileSystem->Close(disk);
+        // HL2MODERN_STUDIO_SIDECAR_V21: check the actual v6 vertex header,
+        // checksum and bodypart table, not just the existence of a .vtx.
+        if (compatible)
+        {
+            static const char *const suffixes[]={".dx80.vtx",".dx7_3bone.vtx",".dx7_2bone.vtx"};
+            const size_t len=strlen(mod->name);
+            compatible=false;
+            if (len>4 && len<220 && !Q_stricmp(mod->name+len-4,".mdl"))
+            {
+                char vtxPath[256];
+                for (int i=0;i<3 && !compatible;++i)
+                {
+                    memcpy(vtxPath,mod->name,len-4);
+                    strcpy(vtxPath+len-4,suffixes[i]);
+                    compatible=HL2ModernStudioSidecar::LegacyVertexFile(
+                        g_pFileSystem,vtxPath,(const unsigned char *)phdr,sizeof(studiohdr_t));
+                }
+            }
+        }
+        if (!compatible)
+        {
+            Warning("%s: v37 model requires a v36-compatible studio layout and legacy .vtx; rejected\n", mod->name);
+            return false;
+        }
+        // Normalized only in the validated in-memory working copy; the disk
+        // header remains v37 and normal v36 assets remain byte-identical.
+        phdr->version = STUDIO_VERSION;
+    }
+    else
+    {
+        Studio_ConvertStudioHdrToNewVersion(phdr);
+    }
+
 	version = LittleLong (phdr->version);
 	if (version != STUDIO_VERSION)
 	{

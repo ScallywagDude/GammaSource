@@ -283,6 +283,32 @@ int CBaseCombatWeapon::GetSlot( void ) const
 //-----------------------------------------------------------------------------
 int CBaseCombatWeapon::GetPosition( void ) const
 {
+#if defined(CSTRIKE_DLL)
+    // HL2MODERN_CS_SELECTION_COLLISIONS: expanded cheats can own several
+    // rifles/pistols with the same script position. Rank the complete slot
+    // consistently on client and server, without rewriting installed scripts.
+    CBaseCombatCharacter *owner=GetOwner();
+    if ( owner )
+    {
+        bool collision=false;
+        int rank=0, count=0;
+        for ( int i=0; i<owner->WeaponCount(); ++i )
+        {
+            CBaseCombatWeapon *a=owner->GetWeapon(i);
+            if ( !a || a->GetSlot()!=GetSlot() ) continue;
+            ++count;
+            const int position=a->GetWpnData().iPosition;
+            if ( position<GetWpnData().iPosition ||
+                 (position==GetWpnData().iPosition && Q_stricmp(a->GetWpnData().szClassName,GetWpnData().szClassName)<0) ) ++rank;
+            for ( int j=0; j<i; ++j )
+            {
+                CBaseCombatWeapon *b=owner->GetWeapon(j);
+                if ( b && b->GetSlot()==GetSlot() && b->GetWpnData().iPosition==position ) collision=true;
+            }
+        }
+        if ( collision && count<=MAX_WEAPON_POSITIONS ) return rank;
+    }
+#endif
 	return GetWpnData().iPosition;
 }
 

@@ -1,0 +1,1339 @@
+{
+  "asset_roots": [
+    "..\\hl2_2003",
+    "..\\hl2"
+  ],
+  "scanned_unpacked_mdl_count": 3146,
+  "warning": "File existence and bounded studio35/36 metadata parsing do not verify geometry, UVs, animation correctness, materials, sounds, AI, precaching, archived contents, or runtime spawning. Asset roots are external installations and are not bundled in the source release.",
+  "npcs": [
+    {
+      "classname": "npc_assassin",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/fassassin.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "exact",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/fassassin.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": true,
+          "located_paths": [
+            "..\\hl2\\models\\fassassin.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [
+        "Eye",
+        "LeftMuzzle",
+        "RightMuzzle"
+      ],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_ASSASSIN_FLIP_BACK",
+        "ACT_ASSASSIN_FLIP_FORWARD",
+        "ACT_ASSASSIN_FLIP_LEFT",
+        "ACT_ASSASSIN_FLIP_RIGHT",
+        "ACT_ASSASSIN_PERCH",
+        "ACT_RANGE_ATTACK1",
+        "ACT_RUN",
+        "ACT_TURN_LEFT",
+        "ACT_TURN_RIGHT",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [
+        "sprites/redglow1.vmt",
+        "sprites/bluelaser1.vmt"
+      ],
+      "required_sound_files": [
+        "player/pl_shoot1.wav",
+        "player/pl_shoot2.wav",
+        "player/pl_step1.wav",
+        "player/pl_step2.wav",
+        "player/pl_step3.wav",
+        "player/pl_step4.wav"
+      ],
+      "required_sound_events": [
+        "Assassin.AttackMiss",
+        "Zombie.AttackHit"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_bullsquid",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/bullsquid.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "exact",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/bullsquid.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": true,
+          "located_paths": [
+            "..\\hl2\\models\\bullsquid.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [
+        "Mouth"
+      ],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_HOP",
+        "ACT_IDLE",
+        "ACT_RANGE_ATTACK1",
+        "ACT_RUN",
+        "ACT_SQUID_DETECT_SCENT",
+        "ACT_SQUID_EAT",
+        "ACT_SQUID_EXCITED",
+        "ACT_SQUID_INSPECT_FLOOR",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [
+        "sprites/greenspit1.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_Bullsquid.Alert",
+        "NPC_Bullsquid.Attack1",
+        "NPC_Bullsquid.Death",
+        "NPC_Bullsquid.Growl",
+        "NPC_Bullsquid.Idle",
+        "NPC_Bullsquid.Pain",
+        "NPC_Bullsquid.TailWhip"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_houndeye",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/houndeye.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "exact",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/houndeye.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": true,
+          "located_paths": [
+            "..\\hl2\\models\\houndeye.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_CROUCHIDLE",
+        "ACT_HOUND_GUARD",
+        "ACT_IDLE",
+        "ACT_IDLE_ANGRY",
+        "ACT_LEAP",
+        "ACT_RANGE_ATTACK1",
+        "ACT_RUN",
+        "ACT_TURN_LEFT",
+        "ACT_TURN_RIGHT",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_Houndeye.Alert",
+        "NPC_Houndeye.Anger1",
+        "NPC_Houndeye.Anger2",
+        "NPC_Houndeye.Die",
+        "NPC_Houndeye.GroupAttack",
+        "NPC_Houndeye.GroupFollow",
+        "NPC_Houndeye.Pain",
+        "NPC_Houndeye.Retreat",
+        "NPC_Houndeye.SonicAttack",
+        "NPC_Houndeye.SpeakSentence",
+        "NPC_Houndeye.WarmUp",
+        "NPC_Houndeye.Warn"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_hydra",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/Hydra.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/Hydra.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\hydra.mdl"
+          ]
+        },
+        {
+          "reference": "models/props_junk/cardboard_box001a.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": true,
+          "located_paths": [
+            "..\\hl2\\models\\props_junk\\cardboard_box001a.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_180_LEFT",
+        "ACT_HYDRA_COWER",
+        "ACT_HYDRA_STAB",
+        "ACT_TURN_LEFT",
+        "ACT_TURN_RIGHT"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_crabsynth",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/synth.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/synth.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Synth.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_BODY_THROW",
+        "ACT_CHARGE_END",
+        "ACT_CHARGE_HITLEFT",
+        "ACT_CHARGE_HITRIGHT",
+        "ACT_CHARGE_LOOP",
+        "ACT_CHARGE_START",
+        "ACT_CHARGE_START_MOVE"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_mortarsynth",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/mortarsynth.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/mortarsynth.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\MortarSynth.mdl"
+          ]
+        },
+        {
+          "reference": "models/gibs/mortarsynth_gibs.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Gibs\\MortarSynth_gibs.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_IDLE",
+        "ACT_MSYNTH_FLINCH_BACK",
+        "ACT_MSYNTH_FLINCH_FRONT",
+        "ACT_MSYNTH_FLINCH_LEFT",
+        "ACT_MSYNTH_FLINCH_RIGHT"
+      ],
+      "required_effect_materials": [
+        "sprites/physbeam.vmt",
+        "sprites/glow01.vmt",
+        "sprites/physring1.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_MSynth.EnergyShoot",
+        "NPC_MSynth.Hover",
+        "NPC_MSynth.Shoot",
+        "NPC_MSynth.WarmUp"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_combineguard",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/combine_guard.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/combine_guard.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Combine_Guard.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [
+        "muzzle"
+      ],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_CGUARD_IDLE_TO_ANGRY",
+        "ACT_COMBINEGUARD_CLOBBERED",
+        "ACT_COMBINEGUARD_GETUP",
+        "ACT_COMBINEGUARD_HELPLESS",
+        "ACT_COMBINEGUARD_TOPPLE",
+        "ACT_IDLE",
+        "ACT_IDLE_ANGRY",
+        "ACT_RANGE_ATTACK1",
+        "ACT_RUN",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [
+        "sprites/blueflare1.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_CombineGuard.Charging",
+        "NPC_CombineGuard.Fire",
+        "NPC_CombineGuard.FootstepLeft",
+        "NPC_CombineGuard.FootstepRight"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_conscript",
+      "factory_registration_in_source": false,
+      "listed_in_debug_build": true,
+      "expected_model": "models/conscript.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/conscript.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Conscript.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_ARM",
+        "ACT_BARNACLE_CHEW",
+        "ACT_BARNACLE_CHOMP",
+        "ACT_BARNACLE_HIT",
+        "ACT_BARNACLE_PULL",
+        "ACT_CONSCRIPT_AIM",
+        "ACT_IDLE",
+        "ACT_RUN",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [
+        "barney/ba_close.wav",
+        "barney/ba_die1.wav",
+        "barney/ba_die2.wav",
+        "barney/ba_die3.wav",
+        "barney/ba_pain1.wav",
+        "barney/ba_pain2.wav",
+        "barney/ba_pain3.wav"
+      ],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_ichthyosaur",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/ichthyosaur.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/ichthyosaur.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Ichthyosaur.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_ICH_BITE_HIT",
+        "ACT_ICH_BITE_MISS",
+        "ACT_ICH_THRASH",
+        "ACT_MELEE_ATTACK1",
+        "ACT_RUN",
+        "ACT_WALK"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_Ichthyosaur.AttackGrowl",
+        "NPC_Ichthyosaur.Bite",
+        "NPC_Ichthyosaur.BiteMiss"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_lightstalk",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/lightstalk.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/lightstalk.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Lightstalk.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_CROUCH",
+        "ACT_CROUCHIDLE",
+        "ACT_IDLE",
+        "ACT_STAND"
+      ],
+      "required_effect_materials": [
+        "sprites/glow03.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_rollerbull",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/roller.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/roller.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller.mdl"
+          ]
+        },
+        {
+          "reference": "models/roller_spikes.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller_Spikes.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [
+        "npc/roller/bull_buzz.wav",
+        "npc/roller/bull_fast.wav",
+        "npc/roller/bull_slow.wav"
+      ],
+      "required_sound_events": [
+        "NPC_RollerBull.Bark",
+        "NPC_RollerBull.CloseSpikes",
+        "NPC_RollerBull.Cut",
+        "NPC_RollerBull.Idle",
+        "NPC_RollerBull.Measure",
+        "NPC_RollerBull.OpenSpikes",
+        "NPC_RollerBull.Summon",
+        "NPC_RollerBull.Taunt",
+        "NPC_RollerBull.Tossed"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_missiledefense",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/missile_defense.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/missile_defense.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Missile_Defense.mdl"
+          ]
+        },
+        {
+          "reference": "models/gibs/missile_defense_gibs.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Gibs\\missile_defense_gibs.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [
+        "npc/entity/turret/turret_loop1.wav"
+      ],
+      "required_sound_events": [
+        "NPC_MissileDefense.Attack",
+        "NPC_MissileDefense.Reload",
+        "NPC_MissileDefense.Turn"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_roller",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/roller.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/roller.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [
+        "npc/roller/code1.wav",
+        "npc/roller/code2.wav",
+        "npc/roller/code3.wav",
+        "npc/roller/code4.wav",
+        "npc/roller/code5.wav",
+        "npc/roller/code6.wav"
+      ],
+      "required_sound_events": [
+        "NPC_Roller.Marco",
+        "NPC_Roller.Polo",
+        "NPC_Roller.PowerOff",
+        "NPC_Roller.PowerOn"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_rollerbuddy",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/roller.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/roller.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [
+        "npc/roller/code1.wav",
+        "npc/roller/code2.wav",
+        "npc/roller/code3.wav",
+        "npc/roller/code4.wav",
+        "npc/roller/code5.wav",
+        "npc/roller/code6.wav",
+        "npc/roller/roll.wav"
+      ],
+      "required_sound_events": [
+        "NPC_RollerBuddy.Confirm",
+        "NPC_RollerBuddy.RemoteYes"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_rollerdozer",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/roller.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/roller.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_rollerturret",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/roller.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/roller.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Roller.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [
+        "sprites/muzzleflash2.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_RollerTurret.Shoot"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_sscanner",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/shield_scanner.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/shield_scanner.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Shield_Scanner.mdl"
+          ]
+        },
+        {
+          "reference": "models/scanner_shield.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Scanner_Shield.mdl"
+          ]
+        },
+        {
+          "reference": "models/gibs/mortarsynth_gibs.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Gibs\\MortarSynth_gibs.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_IDLE",
+        "ACT_IDLE_ANGRY",
+        "ACT_SSCANNER_CLOSE",
+        "ACT_SSCANNER_FLINCH_BACK",
+        "ACT_SSCANNER_FLINCH_FRONT",
+        "ACT_SSCANNER_FLINCH_LEFT",
+        "ACT_SSCANNER_FLINCH_RIGHT",
+        "ACT_SSCANNER_LOOK",
+        "ACT_SSCANNER_OPEN"
+      ],
+      "required_effect_materials": [
+        "sprites/physbeam.vmt",
+        "sprites/glow01.vmt",
+        "sprites/physring1.vmt"
+      ],
+      "required_sound_files": [
+        "npc/waste_scanner/grenade_fire.wav",
+        "npc/waste_scanner/hover.wav"
+      ],
+      "required_sound_events": [
+        "NPC_SScanner.FlySound"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_wscanner",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/wscanner_single.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/wscanner_single.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\WScanner_Single.mdl"
+          ]
+        },
+        {
+          "reference": "models/wscanner_pair.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\WScanner_Pair.mdl"
+          ]
+        },
+        {
+          "reference": "models/wscanner_tri.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\WScanner_Tri.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_RANGE_ATTACK1",
+        "ACT_WSCANNER_FLINCH_BACK",
+        "ACT_WSCANNER_FLINCH_FRONT",
+        "ACT_WSCANNER_FLINCH_LEFT",
+        "ACT_WSCANNER_FLINCH_RIGHT",
+        "ACT_WSCANNER_JOIN"
+      ],
+      "required_effect_materials": [
+        "sprites/glow01.vmt",
+        "sprites/lgtning.vmt"
+      ],
+      "required_sound_files": [],
+      "required_sound_events": [
+        "NPC_WScanner.Alarm",
+        "NPC_WScanner.Attach",
+        "NPC_WScanner.AttachEvent",
+        "NPC_WScanner.Hover",
+        "NPC_WScanner.HoverAlarm",
+        "NPC_WScanner.LaserShoot",
+        "NPC_WScanner.LaserWarmUp",
+        "NPC_WScanner.ShootEvent",
+        "NPC_WScanner.Split"
+      ],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_combineelite",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/Combine_Elite.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "exact",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/Combine_Elite.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": true,
+          "located_paths": [
+            "..\\hl2\\models\\Combine_Elite.mdl"
+          ]
+        },
+        {
+          "reference": "models/combine_elite.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Combine_Elite.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_odell",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/odell.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/odell.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\Odell.mdl"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [
+        "ACT_180_LEFT",
+        "ACT_TURN_LEFT",
+        "ACT_TURN_RIGHT"
+      ],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    },
+    {
+      "classname": "npc_launcher",
+      "factory_registration_in_source": true,
+      "listed_in_debug_build": true,
+      "expected_model": "models/player.mdl",
+      "model_file_status": "found_unpacked",
+      "model_case_status": "case_mismatch",
+      "model_content": {
+        "status": "unsupported_version",
+        "version": 37,
+        "bones": 0,
+        "bone_names": [],
+        "sequence_names": [],
+        "activity_names": [],
+        "material_names": [],
+        "material_directories": [],
+        "attachments": [],
+        "hitbox_sets": 0,
+        "sequence_groups": [],
+        "issues": [
+          "MDL version 37; supplied engine STUDIO_VERSION is 36; metadata not decoded"
+        ]
+      },
+      "model_dependencies": [
+        {
+          "reference": "models/player.mdl",
+          "status": "found_unpacked",
+          "case_sensitive_match": false,
+          "located_paths": [
+            "..\\hl2\\models\\PLAYER.MDL"
+          ]
+        }
+      ],
+      "named_attachment_checks": [],
+      "named_sequence_checks": [],
+      "dependency_verification_status": "unverified",
+      "required_named_attachments": [],
+      "required_sequences": [],
+      "required_activities": [],
+      "required_effect_materials": [],
+      "required_sound_files": [],
+      "required_sound_events": [],
+      "included_build_configurations": [
+        "Release HL2|Win32",
+        "Debug HL2|Win32"
+      ],
+      "npc_runtime_verified": false
+    }
+  ]
+}

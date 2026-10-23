@@ -1,0 +1,84 @@
+{
+  "experimental": true,
+  "renderer_integration_available": false,
+  "runtime_verified": false,
+  "source": "modernize/shaders/hlsl/fullscreen_tonemap.hlsl",
+  "source_sha256": "2b530523b61c4b0663539122506281cfd4960a0634d8e89fbc4e7c27586e9d64",
+  "compiler_binaries_bundled": false,
+  "artifacts": [
+    {
+      "file": "tonemap_d3d11_vs.dxbc",
+      "bytes": 772,
+      "sha256": "1cfbde32fc3f32144ebbd518fa04cf74890f39f1abb874af7c508288c3734fc4",
+      "stage": "Direct3D 11 VS",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+      "compiler_executable_sha256": "7920b6459ac0800c71bbb9815fa33b1e2a7932f86f5a8f17cff267dc6e8ef7f5",
+      "arguments": [
+        "/nologo",
+        "/T",
+        "vs_5_0",
+        "/E",
+        "VSMain",
+        "/Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_vs.dxbc",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "process_returncode": 0
+    },
+    {
+      "file": "tonemap_d3d11_ps.dxbc",
+      "bytes": 1744,
+      "sha256": "b8e9769f2b92029ab17bf0a84f6de7145925abd72929396aa10e7935d631746e",
+      "stage": "Direct3D 11 PS",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+      "compiler_executable_sha256": "7920b6459ac0800c71bbb9815fa33b1e2a7932f86f5a8f17cff267dc6e8ef7f5",
+      "arguments": [
+        "/nologo",
+        "/T",
+        "ps_5_0",
+        "/E",
+        "PSMain",
+        "/Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_ps.dxbc",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "process_returncode": 0
+    },
+    {
+      "file": "tonemap_d3d12_vs.dxil",
+      "bytes": 3024,
+      "sha256": "4a3115fab97d9c3ae5fb8d99145a9d305db3ac6c6944260826a1e92d4e65dd9a",
+      "stage": "Direct3D 12 VS",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+      "compiler_executable_sha256": "11a4ba86cd78673d28b5e3579dd0912ee5df8642cc5cff8f1ecc29684f9d7550",
+      "arguments": [
+        "-T",
+        "vs_6_0",
+        "-E",
+        "VSMain",
+        "-Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_vs.dxil",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "process_returncode": 0
+    },
+    {
+      "file": "tonemap_d3d12_ps.dxil",
+      "bytes": 4952,
+      "sha256": "d98419c3cab1b572d5d756d6813bd3a0de1bef0feae7e345191c687ef290526e",
+      "stage": "Direct3D 12 PS",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+      "compiler_executable_sha256": "11a4ba86cd78673d28b5e3579dd0912ee5df8642cc5cff8f1ecc29684f9d7550",
+      "arguments": [
+        "-T",
+        "ps_6_0",
+        "-E",
+        "PSMain",
+        "-Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_ps.dxil",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "process_returncode": 0
+    }
+  ]
+}

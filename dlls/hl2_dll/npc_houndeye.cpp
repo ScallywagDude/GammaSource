@@ -28,14 +28,17 @@
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 #include "movevars_shared.h"
+#include "../../modernize/houndeye_sonic_policy.h"
 
 #define	HOUNDEYE_MAX_ATTACK_RADIUS		500
 #define	HOUNDEYE_MIN_ATTACK_RADIUS		100
 
 #define HOUNDEYE_EYE_FRAMES 4 // how many different switchable maps for the eye
 
-ConVar	sk_Houndeye_health( "sk_Houndeye_health","0");
-ConVar	sk_Houndeye_dmg_blast( "sk_Houndeye_dmg_blast","0");
+// HL2MODERN_HOUNDEYE_SONIC_RESTORATION
+// Prototype values were zero, causing lifeless spawns and zero-damage blasts.
+ConVar	sk_Houndeye_health( "sk_Houndeye_health","60");
+ConVar	sk_Houndeye_dmg_blast( "sk_Houndeye_dmg_blast","25");
 
 //=========================================================
 // Interactions
@@ -126,6 +129,7 @@ void CNPC_Houndeye::InitCustomSchedules(void)
 	
 	ADD_CUSTOM_CONDITION(CNPC_Houndeye,	COND_HOUND_GROUP_ATTACK);
 	ADD_CUSTOM_CONDITION(CNPC_Houndeye,	COND_HOUND_GROUP_RETREAT);
+	ADD_CUSTOM_CONDITION(CNPC_Houndeye,	COND_HOUND_GROUP_RALLEY);
 
 	ADD_CUSTOM_SCHEDULE(CNPC_Houndeye,	SCHED_HOUND_HOP_RETREAT);
 	ADD_CUSTOM_SCHEDULE(CNPC_Houndeye,	SCHED_HOUND_RANGE_ATTACK1);
@@ -193,21 +197,21 @@ int CNPC_Houndeye::RangeAttack1Conditions ( float flDot, float flDist )
 	if (tr.startsolid)
 	{
 		CBaseEntity *pEntity = tr.m_pEnt;
-		if (pEntity->Classify() == CLASS_HOUNDEYE)
+		if (pEntity && pEntity->Classify() == CLASS_HOUNDEYE)
 		{
 			return( COND_NONE );
 		}
 	}
 
-	// If I'm really close to my enemy allow me to attack if 
-	// I'm facing regardless of next attack time
-	if (flDist < 100 && flDot >= 0.3)
-	{
-		return COND_CAN_RANGE_ATTACK1;
-	}
+	// Even at close range, respect the sonic cooldown. Range and facing
+	// are checked after this guard to prevent animation event spam.
 	if ( gpGlobals->curtime < m_flNextAttack )
 	{
-		return( COND_NONE );
+		return COND_NONE;
+	}
+	if ( flDist < 100 && flDot >= 0.3f )
+	{
+		return COND_CAN_RANGE_ATTACK1;
 	}
 	if (flDist > ( HOUNDEYE_MAX_ATTACK_RADIUS * 0.5 ))
 	{
@@ -426,6 +430,7 @@ void CNPC_Houndeye::Spawn()
 	CapabilitiesAdd( bits_CAP_TURN_HEAD );
 
 	m_flNextSecondaryAttack = 0;
+	m_flNextAttack = 0;
 	m_bLoopClockwise		= random->RandomInt(0,1) ? true : false;
 
 	m_pEnergyWave			= NULL;
@@ -444,6 +449,7 @@ void CNPC_Houndeye::Precache()
 	engine->PrecacheModel("models/houndeye.mdl");
 
 	UTIL_PrecacheOther("grenade_energy");
+	UTIL_PrecacheOther("energy_wave");
 	BaseClass::Precache();
 }	
 
@@ -673,7 +679,8 @@ void CNPC_Houndeye::SonicAttack ( void )
 	Vector vFacingDir = EyeDirection3D( );
 	m_pEnergyWave = (CEnergyWave*)Create( "energy_wave", EyePosition(), GetLocalAngles() );
 	m_flEndEnergyWaveTime = gpGlobals->curtime + 1; //<<TEMP>> magic
-	m_pEnergyWave->SetAbsVelocity( 100*vFacingDir );
+	if (m_pEnergyWave)
+		m_pEnergyWave->SetAbsVelocity( 100*vFacingDir );
 
 	CBaseEntity *pEntity = NULL;
 	// iterate on all entities in the vicinity.
@@ -697,7 +704,7 @@ void CNPC_Houndeye::SonicAttack ( void )
 			// Adjust damage by distance
 			// --------------------------
 			float flDist = (pEntity->WorldSpaceCenter() - GetAbsOrigin()).Length();
-			float flDamageAdjuster = 1-( flDist / HOUNDEYE_MAX_ATTACK_RADIUS );
+			float flDamageAdjuster = 0.0f;
 
 			// --------------------------
 			// Adjust damage by direction
@@ -707,9 +714,10 @@ void CNPC_Houndeye::SonicAttack ( void )
 			Vector vEntDir		= (pEntity->GetAbsOrigin() - GetAbsOrigin());
 			VectorNormalize(vEntDir);
 			float flDotPr		= DotProduct(forward,vEntDir);
-			flDamageAdjuster   *= flDotPr;
+			flDamageAdjuster = HL2ModernHoundeye::SonicFalloff(
+				flDist, HOUNDEYE_MAX_ATTACK_RADIUS, flDotPr);
 
-			if (flDamageAdjuster < 0)
+			if (flDamageAdjuster <= 0.0f)
 			{
 				continue;
 			}
@@ -738,10 +746,14 @@ void CNPC_Houndeye::SonicAttack ( void )
 			// ------------------------------
 			if (pEntity->m_takedamage != DAMAGE_NO)
 			{
-				CTakeDamageInfo info( this, this, flDamageAdjuster * sk_Houndeye_dmg_blast.GetFloat(), DMG_SONIC | DMG_ALWAYSGIB );
-				CalculateExplosiveDamageForce( &info, (pEntity->GetAbsOrigin() - GetAbsOrigin()), pEntity->GetAbsOrigin() );
-
-				pEntity->TakeDamage( info );
+				const float sonicDamage = HL2ModernHoundeye::BoundedDamage(
+					sk_Houndeye_dmg_blast.GetFloat(), flDamageAdjuster);
+				if (sonicDamage > 0.0f)
+				{
+					CTakeDamageInfo info( this, this, sonicDamage, DMG_SONIC | DMG_ALWAYSGIB );
+					CalculateExplosiveDamageForce( &info, (pEntity->GetAbsOrigin() - GetAbsOrigin()), pEntity->GetAbsOrigin() );
+					pEntity->TakeDamage( info );
+				}
 
 				// Throw the player
 				if ( pEntity->IsPlayer() )
@@ -1067,7 +1079,7 @@ int CNPC_Houndeye::SelectSchedule( void )
 				else
 				{
 					m_flNextAttack = gpGlobals->curtime;
-					SCHED_HOUND_ATTACK_STRAFE;
+					return SCHED_HOUND_ATTACK_STRAFE;
 				}
 			}
 
@@ -1077,7 +1089,7 @@ int CNPC_Houndeye::SelectSchedule( void )
 				return SCHED_HOUND_GROUP_RETREAT;
 			}
 
-			if ( HasCondition( COND_LIGHT_DAMAGE ) | 
+			if ( HasCondition( COND_LIGHT_DAMAGE ) ||
 				 HasCondition( COND_HEAVY_DAMAGE ) )
 			{
 				if ( random->RandomFloat( 0 , 1 ) <= 0.4 )

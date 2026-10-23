@@ -36,9 +36,10 @@
 
 #define		SQUID_SPRINT_DIST	256 // how close the squid has to get before starting to sprint and refusing to swerve
 
-ConVar sk_bullsquid_health ( "sk_bullsquid_health", "0" );
-ConVar sk_bullsquid_dmg_bite ( "sk_bullsquid_dmg_bite", "0" );
-ConVar sk_bullsquid_dmg_whip ( "sk_bullsquid_dmg_whip", "0" );
+ // HL2MODERN_BULLSQUID_COMBAT_RESTORATION
+ConVar sk_bullsquid_health ( "sk_bullsquid_health", "70" );
+ConVar sk_bullsquid_dmg_bite ( "sk_bullsquid_dmg_bite", "20" );
+ConVar sk_bullsquid_dmg_whip ( "sk_bullsquid_dmg_whip", "35" );
 
 //=========================================================
 // monster-specific schedule types
@@ -255,7 +256,9 @@ void CNPC_Bullsquid::HandleAnimEvent( animevent_t *pEvent )
 				Vector vSpitPos;
 				QAngle vSpitAngle;
 
-				GetAttachment( "Mouth", vSpitPos, vSpitAngle);
+				// HL2MODERN_NPC_ASSET_SAFETY: require the original Mouth attachment.
+				if ( !GetAttachment( "Mouth", vSpitPos, vSpitAngle ) )
+					break;
 				
 				Vector			vTarget = GetEnemy()->GetAbsOrigin();
 				Vector			vToss;
@@ -264,6 +267,7 @@ void CNPC_Bullsquid::HandleAnimEvent( animevent_t *pEvent )
 				ThrowLimit(vSpitPos, vTarget, flGravity, 3, Vector(0,0,0), Vector(0,0,0), GetEnemy(), &vToss, &pBlocker);
 
 				CGrenadeSpit *pGrenade = (CGrenadeSpit*)CreateNoSpawn( "grenade_spit", vSpitPos, vec3_angle, this );
+				if (!pGrenade) break;
 				//pGrenade->KeyValue( "velocity", vToss );
 				pGrenade->Spawn( );
 				pGrenade->SetOwner( this );
@@ -274,9 +278,9 @@ void CNPC_Bullsquid::HandleAnimEvent( animevent_t *pEvent )
 				// Tumble through the air
 				pGrenade->SetLocalAngularVelocity(
 					QAngle(
-						random->RandomFloat ( -100, -500 ),
-						random->RandomFloat ( -100, -500 ),
-						random->RandomFloat ( -100, -500 )
+						random->RandomFloat ( -500, -100 ),
+						random->RandomFloat ( -500, -100 ),
+						random->RandomFloat ( -500, -100 )
 					)
 				);
 						
@@ -307,6 +311,20 @@ void CNPC_Bullsquid::HandleAnimEvent( animevent_t *pEvent )
 		case BSQUID_AE_WHIP_SND:
 		{
 			EmitSound( "NPC_Bullsquid.TailWhip" );
+			const float whipDamage = sk_bullsquid_dmg_whip.GetFloat();
+			if (whipDamage > 0.0f && whipDamage <= 1000.0f)
+			{
+				CBaseEntity *pHurt = CheckTraceHullAttack( 70,
+					Vector(-16,-16,-16), Vector(16,16,16), whipDamage, DMG_SLASH );
+				if (pHurt)
+				{
+					Vector right, up;
+					AngleVectors( GetAbsAngles(), NULL, &right, &up );
+					pHurt->SetAbsVelocity( pHurt->GetAbsVelocity() + right * 180 + up * 80 );
+					if (pHurt->GetFlags() & (FL_NPC | FL_CLIENT))
+						pHurt->RemoveFlag( FL_ONGROUND );
+				}
+			}
 			break;
 		}
 
@@ -438,7 +456,7 @@ int CNPC_Bullsquid::RangeAttack1Conditions( float flDot, float flDist )
 //=========================================================
 int CNPC_Bullsquid::MeleeAttack1Conditions( float flDot, float flDist )
 {
-	if ( GetEnemy()->m_iHealth <= sk_bullsquid_dmg_whip.GetFloat() && flDist <= 85 && flDot >= 0.7 )
+	if ( GetEnemy() && GetEnemy()->m_iHealth <= sk_bullsquid_dmg_whip.GetFloat() && flDist <= 85 && flDot >= 0.7 )
 	{
 		return ( COND_CAN_MELEE_ATTACK1 );
 	}
@@ -484,14 +502,14 @@ void CNPC_Bullsquid::RemoveIgnoredConditions( void )
 	if ( GetEnemy() != NULL )
 	{
 		// ( Unless after a tasty headcrab, yumm ^_^ )
-		if ( FClassnameIs( GetEnemy(), "monster_headcrab" ) )
+		if ( (GetEnemy()->Classify() == CLASS_HEADCRAB) )
 			 ClearCondition( COND_SMELL );
 	}
 }
 
 Disposition_t CNPC_Bullsquid::IRelationType( CBaseEntity *pTarget )
 {
-	if ( gpGlobals->curtime - m_flLastHurtTime < 5 && FClassnameIs ( pTarget, "monster_headcrab" ) )
+	if ( gpGlobals->curtime - m_flLastHurtTime < 5 && (pTarget && pTarget->Classify() == CLASS_HEADCRAB) )
 	{
 		// if squid has been hurt in the last 5 seconds, and is getting relationship for a headcrab, 
 		// tell squid to disregard crab. 
@@ -536,7 +554,7 @@ int CNPC_Bullsquid::OnTakeDamage_Alive( const CTakeDamageInfo &inputInfo )
 	}
 #endif
 
-	if ( !FClassnameIs ( inputInfo.GetAttacker(), "monster_headcrab" ) )
+	if ( !(inputInfo.GetAttacker() && inputInfo.GetAttacker()->Classify() == CLASS_HEADCRAB) )
 	{
 		// don't forget about headcrabs if it was a headcrab that hurt the squid.
 		m_flLastHurtTime = gpGlobals->curtime;
@@ -687,7 +705,7 @@ int CNPC_Bullsquid::SelectSchedule( void )
 
 			if ( HasCondition( COND_NEW_ENEMY ) )
 			{
-				if ( m_fCanThreatDisplay && IRelationType( GetEnemy() ) == D_HT && FClassnameIs( GetEnemy(), "monster_headcrab" ) )
+				if ( m_fCanThreatDisplay && GetEnemy() && IRelationType( GetEnemy() ) == D_HT && (GetEnemy()->Classify() == CLASS_HEADCRAB) )
 				{
 					// this means squid sees a headcrab!
 					m_fCanThreatDisplay = FALSE;// only do the headcrab dance once per lifetime.
@@ -876,7 +894,7 @@ NPC_STATE CNPC_Bullsquid::SelectIdealState ( void )
 		COMBAT goes to ALERT upon death of enemy
 		*/
 		{
-			if ( GetEnemy() != NULL && ( HasCondition( COND_LIGHT_DAMAGE ) || HasCondition ( COND_HEAVY_DAMAGE ) ) && FClassnameIs( GetEnemy(), "monster_headcrab" ) )
+			if ( GetEnemy() != NULL && ( HasCondition( COND_LIGHT_DAMAGE ) || HasCondition ( COND_HEAVY_DAMAGE ) ) && (GetEnemy()->Classify() == CLASS_HEADCRAB) )
 			{
 				// if the squid has a headcrab enemy and something hurts it, it's going to forget about the crab for a while.
 				SetEnemy( NULL );

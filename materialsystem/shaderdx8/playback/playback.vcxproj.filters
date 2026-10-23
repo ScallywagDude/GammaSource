@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{142FC7A6-2684-589A-9D4A-56C1ED7F5455}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Public\imageloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Public\mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\playback.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\public\tgawriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\lib\common\s3tc.lib" />
+    <None Include="..\..\..\DX8SDK\lib\d3d8.lib" />
+    <None Include="..\..\..\DX8SDK\lib\d3dx8.lib" />
+    <None Include="..\..\..\dx9sdk\lib\d3d9.lib" />
+    <None Include="..\..\..\dx9sdk\lib\d3dx9.lib" />
+    <None Include="..\..\..\lib\public\tier0.lib" />
+    <None Include="..\..\..\lib\public\vstdlib.lib" />
+  </ItemGroup>
+</Project>

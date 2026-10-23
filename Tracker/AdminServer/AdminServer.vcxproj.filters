@@ -1,0 +1,381 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{E8C83227-9828-5D10-8A8D-B440A901DC09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0EB8054B-1A4E-59E5-A528-D4F08F33FDA7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Favorites">
+      <UniqueIdentifier>{9C791F90-2282-5B04-AA2D-73DB36E9EC42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Generic Dialogs">
+      <UniqueIdentifier>{F731A969-57DB-5820-B9C1-7EE8578804C2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Manage">
+      <UniqueIdentifier>{8B87588C-35B3-511B-A681-384B4E7B7F68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Manage\Menus">
+      <UniqueIdentifier>{4C1746C6-A0E4-5E94-881C-95ED377AB9C3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Manage\Msg Handlers">
+      <UniqueIdentifier>{F6E534AA-93A1-5B35-94C7-97AA3E067892}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Manage\Panels">
+      <UniqueIdentifier>{7D3CA4C5-5CA6-5899-9CFC-2D1ABE403774}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Manage\Queries">
+      <UniqueIdentifier>{3AE05CEE-46B9-52F9-A256-76DF077DBEE7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Utils">
+      <UniqueIdentifier>{D30FC42E-51F4-51D9-AD94-6F574FAA01D1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\DialogAddBan.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogAddServer.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogCvarChange.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogGameInfo.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogKickPlayer.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogServerPassword.cpp">
+      <Filter>Source Files\Generic Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BaseGamesPage.cpp">
+      <Filter>Source Files\Favorites</Filter>
+    </ClCompile>
+    <ClCompile Include=".\FavoriteGames.cpp">
+      <Filter>Source Files\Favorites</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BanContextMenu.cpp">
+      <Filter>Source Files\Manage\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include=".\RulesContextMenu.cpp">
+      <Filter>Source Files\Manage\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ServerContextMenu.cpp">
+      <Filter>Source Files\Manage\Menus</Filter>
+    </ClCompile>
+    <ClCompile Include=".\logmsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MasterMsgHandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerContextMenu.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\playermsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\rconmsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\rulesinfomsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\serverinfomsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\serverpingmsghandler.cpp">
+      <Filter>Source Files\Manage\Msg Handlers</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BanPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChatPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GraphPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MOTDPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\RawLogPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ServerConfigPanel.cpp">
+      <Filter>Source Files\Manage\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include=".\banlist.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmdlist.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mapslist.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\playerlist.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerListCompare.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\rcon.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\rulesinfo.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\serverinfo.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ServerList.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ServerListCompare.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\serverping.cpp">
+      <Filter>Source Files\Manage\Queries</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GamePanelInfo.cpp">
+      <Filter>Source Files\Manage</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HelpText.cpp">
+      <Filter>Source Files\Manage</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\Info.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\interface.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\msgbuffer.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\TrackerNET\NetAddress.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\netapi.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\Socket.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\shared\TokenLine.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\util.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\UtlBuffer.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include=".\AdminServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ConfigPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\serverpage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\AdminServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ban.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BanContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\banlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BanPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BaseGamesPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChatContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChatPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cmdlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ConfigPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogAddBan.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogAddServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogCvarChange.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogGameInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogKickPlayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogServerPassword.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\FavoriteGames.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GamePanelInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GraphPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HelpText.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\AdminServer\IAdminServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IGameList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\inetapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Iresponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\ServerBrowser\IServerBrowser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IServerRefreshResponse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\logmsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\maps.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mapslist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\MasterMsgHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MOTDPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\msgbuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Player.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\playerlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerListCompare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\playermsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\point.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\RawLogPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\rcon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\rconmsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\RulesContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\rulesinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\rulesinfomsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ServerConfigPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ServerContextMenu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\serverinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\serverinfomsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ServerList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ServerListCompare.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\serverpage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\serverping.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\serverpingmsghandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\Socket.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\shared\TokenLine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\UtlBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\utllinkedlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\vgui2\bin\vgui_controls.lib" />
+  </ItemGroup>
+</Project>

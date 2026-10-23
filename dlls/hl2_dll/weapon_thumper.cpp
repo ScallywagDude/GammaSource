@@ -58,6 +58,7 @@ void CPortableThumper::Precache( void )
 
 void CPortableThumper::Spawn( void )
 {
+	Precache(); // HL2MODERN_THUMPER_PLACEMENT
 	m_takedamage = DAMAGE_NO;
 
 	SetModel( "models/fire_equipment/w_firehydrant.mdl" );
@@ -76,14 +77,14 @@ void CPortableThumper::Spawn( void )
 	UTIL_SetSize( this, vecBBMin, vecBBMax );
 	Relink();
 
-	SetThink( ThumpThink );
-	SetUse( ThumperUse );
+	SetThink( &CPortableThumper::ThumpThink );
+	SetUse( &CPortableThumper::ThumperUse );
 	SetNextThink( gpGlobals->curtime + thumpFrequency.GetFloat() );
 }
 
 void CPortableThumper::ThumperUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
 {
-	if( !pActivator->IsPlayer() )
+	if( !pActivator || !pActivator->IsPlayer() )
 	{
 		return;
 	}
@@ -91,7 +92,16 @@ void CPortableThumper::ThumperUse( CBaseEntity *pActivator, CBaseEntity *pCaller
 	CBasePlayer *pPlayer;
 
 	pPlayer = (CBasePlayer *)pActivator;
-	pPlayer->GiveNamedItem( "weapon_thumper" );
+	CBaseCombatWeapon *weapon=pPlayer->Weapon_OwnsThisType("weapon_thumper");
+	if ( weapon )
+	{
+		if ( pPlayer->GiveAmmo(1,weapon->GetPrimaryAmmoType())<=0 ) return;
+	}
+	else
+	{
+		pPlayer->GiveNamedItem("weapon_thumper");
+		if ( !pPlayer->Weapon_OwnsThisType("weapon_thumper") ) return;
+	}
 
 	UTIL_Remove( this );
 }
@@ -168,7 +178,7 @@ void CWeaponThumper::PrimaryAttack( void )
 	if ( !pPlayer )
 		return;
 
-	DecrementAmmo( pPlayer );
+	if ( pPlayer->GetAmmoCount(m_iPrimaryAmmoType)<=0 ) return;
 
 	trace_t tr;
 
@@ -185,10 +195,10 @@ void CWeaponThumper::PrimaryAttack( void )
 
 	UTIL_TraceLine( vecStart, vecStart - Vector( 0, 0, 128 ), MASK_SHOT, pPlayer, COLLISION_GROUP_NONE, &tr );
 
-	if( tr.fraction != 1.0 )
+	if ( !tr.startsolid && tr.fraction<1.0 && tr.plane.normal.z>=0.5f )
 	{
-		Create( "portable_thumper", tr.endpos, vec3_angle, NULL );
-		m_flNextPrimaryAttack = gpGlobals->curtime + 0.5;
+		CBaseEntity *placed=Create("portable_thumper",tr.endpos,vec3_angle,pPlayer);
+		if ( placed ) DecrementAmmo(pPlayer);
 	}
 
 	m_flNextPrimaryAttack = gpGlobals->curtime + 0.5;

@@ -1,0 +1,603 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{BA0CB782-07D0-5EA1-8274-229B66A0C8A5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{DA92A8F4-AF45-5C05-8C7F-287BDA4C4EA6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shader Source">
+      <UniqueIdentifier>{B26CA944-8E4C-5FEC-B9FE-F22C60D55FF7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\pixel shaders">
+      <UniqueIdentifier>{FCA5BBFB-F8B8-5102-9200-D4BC91DC4A64}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\basetimesmod2xenvmap.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugfbtexture.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debuglightingonly.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugluxel.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugmodifyvertex.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugnormalmap.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugsoftwarevertexshader.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debugtangentspace.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\unlitgeneric.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\unlitgeneric_dx6.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vertexlitgeneric.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vertexlitgeneric_dx6.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vertexlitgeneric_dx7.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\wireframe.cpp">
+      <Filter>Source Files\Shader Source</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\characterset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmaterial.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmaterialsystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmaterialvar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\colorspace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\convar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\crtmemdebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cshader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ctexture.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\filesystem_helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\imageloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\imagepacker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\materialsystem_global.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\matsys_cvar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\mempool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\resource_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\shadersystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\texturemanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\tgaloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\tgawriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\utlbuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\utlsymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\vmatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\materials\dxshaders\BaseTimesLightmapWet.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\BumpmappedEnvmap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_LightingOnly_OverBright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_OverBright1.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_OverBright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\DebugFBTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\Eyes.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\Eyes_Overbright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\JellyFish.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightingOnly.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightingOnly_Overbright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_BaseAlphaMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_BaseTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_Detail.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_DetailNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_DetailSelfIlluminated.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLighting.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLightingNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLightingSelfIllum.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_NoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminated.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\predator.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\Predator_Envmap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\Predator_EnvmapTimesEnvmapMask.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\ShadowModel.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_BaseAlphaMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_Detail.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailBaseAlphaMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapMask.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapMaskNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapMask.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapMaskNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_NoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\UnlitTwoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_BaseAlphaMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_BaseAlphaMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_Detail.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailBaseAlphaMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailBaseAlphaMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminated.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright1.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright1_Translucent.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright2_Translucent.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright1.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright1_Translucent.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright2_Translucent.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha_ps14.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_ps14.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMapNoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_NoTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminated.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedMaskedEnvMap.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedMaskedEnvMapV2.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIllumOnly.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WaterReflect.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WaterRefract.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WorldTexture.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WorldVertexTransition.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WriteEnvMapMaskToAlphaBuffer.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\..\materials\dxshaders\WriteZWithHeightClipPlane.psh">
+      <Filter>Source Files\pixel shaders</Filter>
+    </None>
+    <None Include="..\lib\public\vtf.lib" />
+    <None Include="..\lib\public\vstdlib.lib" />
+    <None Include="..\lib\common\s3tc.lib" />
+    <None Include="..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Public\amd3dx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\basetypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\bumpvects.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ColorQuant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ColorSpace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\const.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\crtmemdebug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CShader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cstringhash.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\dbg\dbg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\platform\fasttimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\FileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\appframework\IAppSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ImageLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ImagePacker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterial.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IMaterialInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialproxy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialproxyfactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialsystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialsystemhardwareconfig.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IMaterialSystemInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialvar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IShaderUtil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\itexture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ITextureInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\materialsystem_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MaterialSystem_Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\MATHLIB.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\MemPool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\PixelWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\platform\platform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\resource_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\s3_intrf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShaderAPI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShaderSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\strtools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TextureManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\TGALoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\TGAWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\UtlBuffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\UtlMemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utlrbtree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utlsymbol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\UtlVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector2d.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector4d.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vmatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vplane.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\vstdlib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vtf\vtf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1197 @@
+{
+  "base_zip": "HL2_2003_Modernization_Source_v17.zip",
+  "base_zip_sha256": "ca8950549fa4e5592f388a6aaae17c6b6ffa2f581c27fa6eaabd48ecfa106dcc",
+  "label": "v18",
+  "changes": {
+    "MODERNIZATION_README.md": {
+      "action": "modified",
+      "original_sha256": "38719d5428df4c8a9580ea5379daddeacf6f72858fa3dbe1f5ddf2a6e9f490ac",
+      "modified_sha256": "9b02b198697c6a2fb78d433b3236fc09f9a0d88192657b049c14430a29636c7e",
+      "modified_bytes": 42013
+    },
+    "README_MODERNIZATION.md": {
+      "action": "modified",
+      "original_sha256": "1eec557f72ff4bb37b255559f69a86f022399b662418740290eac5193e835cde",
+      "modified_sha256": "faf1b5a472b660f20259da4073de07dea9c841d08330b8fa5603b2a8341fc5f1",
+      "modified_bytes": 42183
+    },
+    "cl_dll/cstrike/cs_hud_weaponselection.cpp": {
+      "action": "modified",
+      "original_sha256": "72b73c786a0c075d2553fc8edaff5c1aafd56ff5e5a7241ca08c9ab54451883f",
+      "modified_sha256": "d9619ee2736ac8eb1806d2411507e6bf0f6bbc569b3c3b12b21d918a8f16c865",
+      "modified_bytes": 20846
+    },
+    "cl_dll/hud.cpp": {
+      "action": "modified",
+      "original_sha256": "2794a3d433d366bd077c6e3b95c6a89344ef4256cff3c0eb16fe59b422e2a509",
+      "modified_sha256": "753bae33f26f78b0284b8f5dc4804bb03e8057a531a33ee1c6caf65f37454f47",
+      "modified_bytes": 26647
+    },
+    "cl_dll/tf2_hud/hud_weaponselection.cpp": {
+      "action": "modified",
+      "original_sha256": "82b21a3a1dbb56492781c21433f0b78f1539ca6b5cd698364d7dc986ec6786a6",
+      "modified_sha256": "40227cf0c5174c63e814c7c6f8e6a66a8fc479eb10370c42fea9e43d089c6d1b",
+      "modified_bytes": 45741
+    },
+    "dlls/cstrike/cs_player.cpp": {
+      "action": "modified",
+      "original_sha256": "7d8bbcd125017c322e883a3cb3c6757eec7ed2c40f1a5f31663108fcb6b6b300",
+      "modified_sha256": "f774eb897d5cd893d3afd38b1d4febf764b0cc0975fac401cd702cf931dfce58",
+      "modified_bytes": 67807
+    },
+    "dlls/hl1_dll/hl1_player.cpp": {
+      "action": "modified",
+      "original_sha256": "08319f5d7b2e34fd341527bbf85c8b1f56f8f43d3e8a2eba203372145bc8b714",
+      "modified_sha256": "ecf6d5ae3b91237310734f2219107fde11d8c2fc2f09ac2ca97a467384061a37",
+      "modified_bytes": 31366
+    },
+    "dlls/hl2_dll/hl2_player.cpp": {
+      "action": "modified",
+      "original_sha256": "04d5312c9ec6928d2a6941f0f0f2e3885bd55a83071790167f30215a6f3da0e8",
+      "modified_sha256": "7c807a2c5d76f498a2fcbb6914e4d0921c7ca1dc6610bdabeb8bc1774dc6a26a",
+      "modified_bytes": 47163
+    },
+    "dlls/hl2_dll/npc_assassin.cpp": {
+      "action": "modified",
+      "original_sha256": "62ff77772f60cbb0347efe8ca0df50640d6b8e04d81a63df576fa6e4350c8f6b",
+      "modified_sha256": "92c0b8d9d2eaa4cccd4df2d51a9a56ad0bb1863140b28765ac0ffa79a4b78859",
+      "modified_bytes": 31095
+    },
+    "dlls/hl2_dll/npc_bullsquid.cpp": {
+      "action": "modified",
+      "original_sha256": "27801c7b5ca31b3f6ff39b38a7499af396c9a37475e2a558cb8d958a89b3bbdd",
+      "modified_sha256": "8e26ae234f219c488fb76571dfc8e9f4635892da11bd5b371a5d30a66a687539",
+      "modified_bytes": 29601
+    },
+    "dlls/hl2_dll/npc_combineguard.cpp": {
+      "action": "modified",
+      "original_sha256": "29ba2f59d193361a2df57eb461ef7c2a7a59be104ff003dcd012d9e826139ea8",
+      "modified_sha256": "cb2ee06293ec12424081c8c5cf4b86db5219e177f3efa967bb3b5cae7b69ea78",
+      "modified_bytes": 36324
+    },
+    "dlls/hl2_dll/npc_launcher.cpp": {
+      "action": "modified",
+      "original_sha256": "08e7d0ba4205e68a90135f04116c72bd60ad86606f9071f959e98210655d06f6",
+      "modified_sha256": "616f18ad9ace9c3d865bbe423e20ed8370f9a4e4a677d90b781f4de888457922",
+      "modified_bytes": 13723
+    },
+    "dlls/hl2_dll/npc_lightstalk.cpp": {
+      "action": "modified",
+      "original_sha256": "6410bf7d2a3080e8c681764e449f12440b8ccac27c1053c3aabc41909d87c59d",
+      "modified_sha256": "4a269142de926b1a04d7d007ec8f5f51c129a39423c0cd66aeb53755028a14b7",
+      "modified_bytes": 4797
+    },
+    "dlls/hl2_dll/npc_mortarsynth.cpp": {
+      "action": "modified",
+      "original_sha256": "f8c534c6fa200b8b3ae0661fc35aba1b6b7a54a6c87e78149dce76ea1fbb26ad",
+      "modified_sha256": "8de03fffd9f6040cc483800b243c162e081cefa4e191808233491bfd0a689dfb",
+      "modified_bytes": 32567
+    },
+    "dlls/hl2_dll/weapon_immolator.cpp": {
+      "action": "modified",
+      "original_sha256": "55200b601db69a373f1f0c2116b70da4e30799de7ead1d490d11c35f3780f5ec",
+      "modified_sha256": "243179bd7cc031008d95f382d57d8de729591db3d3eb5e07f55cf2197473ef40",
+      "modified_bytes": 10555
+    },
+    "dlls/hl2_dll/weapon_irifle.cpp": {
+      "action": "modified",
+      "original_sha256": "b6b471cabec92fbdb4f6a57937e603507f8dcf9dc60af72764ef31aabb0e8a1f",
+      "modified_sha256": "051e3842a24c14dcc7dea4bd3ccc1dcc21cf679405128398f92379180741199c",
+      "modified_bytes": 3403
+    },
+    "dlls/hl2_dll/weapon_thumper.cpp": {
+      "action": "modified",
+      "original_sha256": "3a8b47f9bb2a63251d9196d0b179e8ac346b676387522476d24cfa97d5bf56ad",
+      "modified_sha256": "f3b851e674e65a101384a932e9c7c1f3bccb04b14b39e16285e3f2e5b461331d",
+      "modified_bytes": 7337
+    },
+    "dlls/hl2_dll/weapon_tripwire.cpp": {
+      "action": "modified",
+      "original_sha256": "ba2ebd6f4f67e5a5cd8d64378da45cf57ace06f152960bf6e3db118c1569dcd3",
+      "modified_sha256": "2afe368677159ad9946e3c3ffdfbe44e4f74b016c3aced03d2b9d3774deba173",
+      "modified_bytes": 11377
+    },
+    "dlls/player.cpp": {
+      "action": "modified",
+      "original_sha256": "46dc7b89da19180cd0e8432ac68cabe5ee510fc41cbf6cc51d10a9280387a4c2",
+      "modified_sha256": "48c22578591489f92a91ef378991a20080e14b1f02de7e451aa081721e7020d6",
+      "modified_bytes": 178870
+    },
+    "dlls/player.h": {
+      "action": "modified",
+      "original_sha256": "1eecdfa57736aab412e214a39e0955d52aae92f03c60d02e866617941694b01d",
+      "modified_sha256": "537bde6a3ced3e65d0bfe97d5fd3635f1684445010cc5f94bd1805d054b477ee",
+      "modified_bytes": 28913
+    },
+    "dlls/tf2_dll/tf_player.cpp": {
+      "action": "modified",
+      "original_sha256": "216aecfc69e9e0cc6a482c15f6b30c5b47bf6a717f2f916008dcbda118d593cb",
+      "modified_sha256": "0eeb88b84b9ff096dca2d863cd962e4de9decc1501b9d29425b4ec8800aa29c6",
+      "modified_bytes": 110995
+    },
+    "engine/engine.dsp": {
+      "action": "modified",
+      "original_sha256": "0d515bf83add3c813a3516e8c3bc3c8dcbf0b754177f3f08bb68c324a07decca",
+      "modified_sha256": "a2a5ccd2e0963df8a0821e4815af8d01367e40e6af2acef5e3d84cd1b9337ec2",
+      "modified_bytes": 103193
+    },
+    "engine/engine.vcxproj": {
+      "action": "modified",
+      "original_sha256": "90f50ebc8ffadf738ce99c270f5f3076b7161b4d6d5cdfff763182ae7087f4b7",
+      "modified_sha256": "a0880f922cdf8f005b4d135cc1fc99c82c636ff012a4057f61e7e1306de9c238",
+      "modified_bytes": 82412
+    },
+    "engine/engine.vcxproj.filters": {
+      "action": "modified",
+      "original_sha256": "62409134a378e1243a5ba638637e903d9bb579425f090841273db2bd4ae3e554",
+      "modified_sha256": "1d509aefb3c619def3e944dda08aa8a2064b559902d174d0c2f138883df29937",
+      "modified_bytes": 67591
+    },
+    "engine/gameui_modelpreview.cpp": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a9bcfb97cf374b8e684747bf576ed3ff320b2f330261d0c3f235cf79d961118b",
+      "modified_bytes": 11263
+    },
+    "engine/modelloader.h": {
+      "action": "modified",
+      "original_sha256": "ad29e3c418abb11f69742c3f569275012830ccece84220739ca0973a8ba7a0cd",
+      "modified_sha256": "1a89f99af54d7a9187fbaf4f74dc9eb75e788f383b2c26c20a157694ad58317d",
+      "modified_bytes": 5707
+    },
+    "game_shared/basecombatweapon_shared.cpp": {
+      "action": "modified",
+      "original_sha256": "e264d95583dc1769c1f5e9e8f99f45db7f97a51d6bc0073adc624e3645f6901a",
+      "modified_sha256": "ea95a4b70b5bc5d302c758a6f1cc9f124c4cf5690ee82b30daa2b2c924e00112",
+      "modified_bytes": 61287
+    },
+    "game_shared/hl2/basehlcombatweapon_shared.h": {
+      "action": "modified",
+      "original_sha256": "63cd74ed41e364057a0f645758447c2fe95f5548d3a63f43c16fd8efcd14bfa9",
+      "modified_sha256": "808ee639d8f2804c0d1ac0d102d3b378e578fd7ae996b213afceca4fe7f2a727",
+      "modified_bytes": 1195
+    },
+    "game_shared/tf2/weapon_twohandedcontainer.cpp": {
+      "action": "modified",
+      "original_sha256": "95092986ee62621304b80983a857f62def100393206cb1a092e32fadb5196874",
+      "modified_sha256": "62f473ef5598661a4c33d9607f3e214c44110ff1f5d879da65f97a30ee6914ba",
+      "modified_bytes": 12160
+    },
+    "gameui/EngineInterface.h": {
+      "action": "modified",
+      "original_sha256": "fd013ed4b29f2b022096e7a52f4865287ed88ce1dbc7439255487e870a0ac95c",
+      "modified_sha256": "63f7b96ce0b460dbf40fb3405b8829a25c9c03cba7695ff4a294210fee49ff75",
+      "modified_bytes": 884
+    },
+    "gameui/GameUI.dsp": {
+      "action": "modified",
+      "original_sha256": "650e511357874ad0e3f80342bf43826adf5ea4bc3d18c01687fb5c7df490b478",
+      "modified_sha256": "7f4fcd316b6206fb3d6fa771ca27070b056a23e99b7de9955b78e531fa0a75bc",
+      "modified_bytes": 16105
+    },
+    "gameui/GameUI.vcxproj": {
+      "action": "modified",
+      "original_sha256": "262f4ebb572b305faf33ce2aee5aecec21b821eef7d8b3aa1a87ba17cd565be6",
+      "modified_sha256": "00b2f0c6b66c435c9c8f9b4d636687e68cc899c518152a50025b93b816eadbed",
+      "modified_bytes": 11451
+    },
+    "gameui/GameUI.vcxproj.filters": {
+      "action": "modified",
+      "original_sha256": "d0e06db99b59602050967a2c795a4899dc6f20a10d188d905568cdcf70d2ac92",
+      "modified_sha256": "b9c161e302b5f6abc4e47cd3d5efd49fcd22b0433c504737eafcecc6fbaaf007",
+      "modified_bytes": 13031
+    },
+    "gameui/GameUI_Interface.cpp": {
+      "action": "modified",
+      "original_sha256": "db74b39bc66f0dc65ef575bf723faceb0bb85ab7dc271f4914ec18fc9c962b11",
+      "modified_sha256": "b2dbba167bd159eb51ce3324a8baac44b66d42d2a99cc6396117a33d33742dca",
+      "modified_bytes": 33452
+    },
+    "gameui/OptionsSubMultiplayer.cpp": {
+      "action": "modified",
+      "original_sha256": "1daf5933a84de9d513e4abf4a3830e9aa1f57356df4499c45414fed9e037da9a",
+      "modified_sha256": "30c18840ef0262e14dc0a66c647fded029b750dc9c7ba01ecb82af51125c647c",
+      "modified_bytes": 25292
+    },
+    "gameui/OptionsSubMultiplayer.h": {
+      "action": "modified",
+      "original_sha256": "aa9778400c6ac0a7909f72df7e84114d1a603ab5e287f341bc19bfd6161eb201",
+      "modified_sha256": "f4367a9511b1946ed6b9c010c6e768d7d3504fa2861160eca682e55adc49c0a6",
+      "modified_bytes": 2546
+    },
+    "gameui/PlayerModelPreviewPanel.cpp": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4e371cbd5a25e8340fc645f9ca07cb733dc4f77ca8ec166cdae94746bbe39eb9",
+      "modified_bytes": 4131
+    },
+    "gameui/PlayerModelPreviewPanel.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a2ae7456e7d5beb061acab9eacb2e32c7b1efd8e911c919bdea12860a7a6e16e",
+      "modified_bytes": 892
+    },
+    "materialsystem/stdshaders/WaterCheap_ps20.fxc": {
+      "action": "modified",
+      "original_sha256": "884f64167d31647dbb06d9429f51ff472ebf01944d408fc4e17f88cdc4fe1285",
+      "modified_sha256": "2e4ef8ce4fe23e238dcd5f03f7a2e6143b8f025521d48a662fb8d6e0168e6855",
+      "modified_bytes": 2592
+    },
+    "modernize/BUILD_AUDIT.md": {
+      "action": "modified",
+      "original_sha256": "cf91f5220f8310c52ef8e2a2293c6fa7ccd7c2b468f19fed3d065f8a28b9d6dc",
+      "modified_sha256": "dbfdb3e1dabaeebfacad9a8ad5decbc25f3925c326c097cf4012cbc9183670a7",
+      "modified_bytes": 908
+    },
+    "modernize/apply_modernization.py": {
+      "action": "modified",
+      "original_sha256": "d89849fa11e1daedcf499218c0c3fdab93fd4ff65e06cd7bc08a47adb53bc2f3",
+      "modified_sha256": "172b361376959a802c53047ed0673723679270eb78082bdb5b83925ef740138a",
+      "modified_bytes": 2249
+    },
+    "modernize/apply_release_overlay.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "3e06c15b25e709f7d635a130cb2bb6e6889cca9ffb2f38ba6a5144a49c33b91d",
+      "modified_bytes": 2771
+    },
+    "modernize/asset_case_patch_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "d69944dab43d29b91bd87f610bc928f97a7464166e37241821475c82559c1b92",
+      "modified_bytes": 11412
+    },
+    "modernize/asset_validation_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "7453f89a3ec314b0f52a6e0656c74b229a252b77de33b82f1b1e3531ac43833e",
+      "modified_bytes": 35708
+    },
+    "modernize/build_audit.json": {
+      "action": "modified",
+      "original_sha256": "390ca701f803bfb8dbda7c27afc68b67b60de841227e4adbcd4f0d0eea5f10ac",
+      "modified_sha256": "f24361a5c8d2477f2793be2cc09fbdd4d1f517af5d4d64e1e04f75856460ebad",
+      "modified_bytes": 71083
+    },
+    "modernize/build_modern_shaders.py": {
+      "action": "modified",
+      "original_sha256": "e85739bd8635ae33279155ad142e26533c02bf0fd6d1ed91450f0580c0aa3dcf",
+      "modified_sha256": "e4e6c05b1a3e13a4c5bd032446c0ed045af6b8067fb6669c34eb7c0e0467a9c0",
+      "modified_bytes": 4511
+    },
+    "modernize/check_weapon_syntax_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "dea4fcb1959e885ce67f19c590a0fa7e925a137afb767aae435dce8af68fdcb9",
+      "modified_bytes": 3431
+    },
+    "modernize/compose_asset_repairs_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "9824631bb17deb87a2deb45b945fac90fa06bfb5615b57808e106c536c32a3ea",
+      "modified_bytes": 4457
+    },
+    "modernize/configs/mapcycle_modern.txt": {
+      "action": "modified",
+      "original_sha256": "73f84a228349f78de9bcae5461bd89439965e38ab01c15e3f406b7fb2044db77",
+      "modified_sha256": "d6ca6499af49bbc5cf7759dc191d11d4f6c7d7104f987c26ae711765ef4fd6a3",
+      "modified_bytes": 16
+    },
+    "modernize/configs/server_deathmatch.cfg": {
+      "action": "modified",
+      "original_sha256": "3e1cab9c6908ea18fe2aaaf2623222dbf59b68ea3f641b032f0c619f364948dd",
+      "modified_sha256": "cf591e16cb18ca69564f3f51e13461f1360e1f2386ea8330cfca6b791337aa6d",
+      "modified_bytes": 662
+    },
+    "modernize/configs/server_teamdeathmatch.cfg": {
+      "action": "modified",
+      "original_sha256": "a0084d9f95b5e09f9a31c1e4f373ea8bf5c786b17d9fc9bdf3ed9c630d278024",
+      "modified_sha256": "f27ca420b32699dc5463b165f9e66e8e6cf835f8b764c2cb17e7fc2b72582b46",
+      "modified_bytes": 680
+    },
+    "modernize/conversion_report.json": {
+      "action": "modified",
+      "original_sha256": "e12611755df3ec579734054f415833f48c5e70b6c42996f0f8e903cb799c5285",
+      "modified_sha256": "c3c16abb4349e78c6c4108cfbae0a1414525c7699187311d50fe594a1908424b",
+      "modified_bytes": 19816
+    },
+    "modernize/convert_dsp.py": {
+      "action": "modified",
+      "original_sha256": "22df27a11176897552658fa287c26b9b788018b59856ba4066d4eca32019a4c0",
+      "modified_sha256": "7c7e234999bed39d9f0c391a1b262c3845d491a9a85291d20c826e0ba638869d",
+      "modified_bytes": 27638
+    },
+    "modernize/cut_npc_inventory.json": {
+      "action": "modified",
+      "original_sha256": "bb29442b52c59555994e171430737db45ac7f9c755787a478f61768dc7e58017",
+      "modified_sha256": "ad616505f40266ba2ddc99156f1c83f5d27416dd03363cc9a747c35423ecb112",
+      "modified_bytes": 25273
+    },
+    "modernize/generate_cut_npcs.py": {
+      "action": "modified",
+      "original_sha256": "ed42bcbf540da2a7c2aaade1f67839a88ea3f881defdb07a3c0cb4c3c3623df8",
+      "modified_sha256": "231e3f15ea51031a61d75e70620d8fd45df9a3796fddcabe88bb14cb9f0811ec",
+      "modified_bytes": 10752
+    },
+    "modernize/generate_npc_material_report.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "51a0e09558d33e76a6f961148c32da43c333053e580971b97f6c2e705e38099d",
+      "modified_bytes": 10345
+    },
+    "modernize/hl2_2003_cut_npcs.fgd": {
+      "action": "modified",
+      "original_sha256": "0c3d3271da4191fdb2188e1e6896bd777aa2ec526eb10521dbec9ceb98f30d41",
+      "modified_sha256": "2096b43b81e7ccc216c63ad44d631c7e2751c6e1a60727d7e6092a598b131c57",
+      "modified_bytes": 4454
+    },
+    "modernize/hud_pixel_audit_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "07b3b075f97ad91714555621bc180811fa407e1ffa9bad225d02a4b1dfedb98f",
+      "modified_bytes": 27079
+    },
+    "modernize/maps/cut_npcs/README.md": {
+      "action": "modified",
+      "original_sha256": "0400ffbdf425d65bb7bedce3032ea2158c6a2cedd07a698ac2c2c9b8b6cd4195",
+      "modified_sha256": "6847d855f5166bb26b6958b7bc6fb9e42ad328ed787704ed5e921541d39fdf91",
+      "modified_bytes": 803
+    },
+    "modernize/maps/cut_npcs/npc_assassin_test.vmf": {
+      "action": "modified",
+      "original_sha256": "a54c52767169342279564a3532f18e8fb55b5de23d7209e3a5830eb96a314804",
+      "modified_sha256": "950e77ee63a9c56a29205dfdbbed65aafce91df583fbda122f65b8da9fe7e21a",
+      "modified_bytes": 13500
+    },
+    "modernize/maps/cut_npcs/npc_bullsquid_test.vmf": {
+      "action": "modified",
+      "original_sha256": "a60a29f71357364340a55ccaf0c685fe733c5bfd25219e0319f370afe852f475",
+      "modified_sha256": "a5aee49629b1cee8726983b666c3aa72b9a8d7d248a500dcc20819d089045f3e",
+      "modified_bytes": 13501
+    },
+    "modernize/maps/cut_npcs/npc_combineelite_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "c0104e927fb27328499aafee595d9241e720300dab37f76f187c9bc18c714093",
+      "modified_bytes": 13504
+    },
+    "modernize/maps/cut_npcs/npc_combineguard_test.vmf": {
+      "action": "modified",
+      "original_sha256": "fdae197d3fe282c4f37668c332fce2eafdcb8c1cb755830776b0d5e5d2de39c2",
+      "modified_sha256": "c3e36fd357a0705a2ee2c4924fa70336af729d17d65f17b568e5fd20ed5dbddc",
+      "modified_bytes": 13504
+    },
+    "modernize/maps/cut_npcs/npc_crabsynth_test.vmf": {
+      "action": "modified",
+      "original_sha256": "2101657f91276e0084241d304dfd67ac1422e7e930d31501a8ee26574613c558",
+      "modified_sha256": "99563019f15df11a0a9fc72057ccf2352f427e59ec54ae6c4cba9b5e2dfad858",
+      "modified_bytes": 13501
+    },
+    "modernize/maps/cut_npcs/npc_houndeye_test.vmf": {
+      "action": "modified",
+      "original_sha256": "bba854aece08bee825874da16911be1811b747e1929e3c7a1d204472b4dde201",
+      "modified_sha256": "bacd5c0c87b0325a267d8dcb5892b6fdf4a56eb7fae0d1090892452b00bcd517",
+      "modified_bytes": 13500
+    },
+    "modernize/maps/cut_npcs/npc_hydra_test.vmf": {
+      "action": "modified",
+      "original_sha256": "9999d5b8651128bb54ed821d8a4323428804a2bf2192694c18b8ffde2fff7543",
+      "modified_sha256": "5d19e536add762f3f14deaca9b3ced0405f70b580a938b408dce59cb0cfad3da",
+      "modified_bytes": 13497
+    },
+    "modernize/maps/cut_npcs/npc_ichthyosaur_test.vmf": {
+      "action": "modified",
+      "original_sha256": "312d7b68cdee43cab1a19f2d4a7649f68aab97a67e90a6752e67fcd2200ebf42",
+      "modified_sha256": "94de94a851890e314b4322532af82bacc8ad0c3dbaf60861ac0a7939cab77432",
+      "modified_bytes": 13503
+    },
+    "modernize/maps/cut_npcs/npc_launcher_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0924ea3f0b323bb50db65614cabdece28a49a6c069d89518e33d20568459ce81",
+      "modified_bytes": 13500
+    },
+    "modernize/maps/cut_npcs/npc_lightstalk_test.vmf": {
+      "action": "modified",
+      "original_sha256": "16339eb06314fad16ec5e18a6865fa5bcc94920f8b02694fc4d9e377b4a4548a",
+      "modified_sha256": "ec713da523b18d3bf13ce73bd317b7567f5aaab3686cffff859bd7fbf1e8fd4c",
+      "modified_bytes": 13502
+    },
+    "modernize/maps/cut_npcs/npc_missiledefense_test.vmf": {
+      "action": "modified",
+      "original_sha256": "e00cd0eb28b1fa804ef2475371f7196ac9f95827b49b786801729a62d5a75737",
+      "modified_sha256": "61f0af22f77dde42324c1ac8188ef5e0ef2a798f8811b31f262fb97ab230f765",
+      "modified_bytes": 13506
+    },
+    "modernize/maps/cut_npcs/npc_mortarsynth_test.vmf": {
+      "action": "modified",
+      "original_sha256": "068b33519f0f407eed4b6f78e2dcfdb302922f9521904de5af831bf7fe621fc8",
+      "modified_sha256": "8c92f6f87f447e51489a0242f2317d92efded4afb39248ccfa7d92204c715cf8",
+      "modified_bytes": 13503
+    },
+    "modernize/maps/cut_npcs/npc_odell_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0b2fc549cec1c6128bdaec18e2b18ba471829e80ca18e542d9ad0385bc93521e",
+      "modified_bytes": 13497
+    },
+    "modernize/maps/cut_npcs/npc_roller_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "c80ed6758bfd662987a33baa49914b063c85e4121df6991d4310fcd454982a74",
+      "modified_bytes": 13498
+    },
+    "modernize/maps/cut_npcs/npc_rollerbuddy_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "3540c0ee0d7afbeb699b74a028125726184230e6453883bf83fb7d57e3857ee7",
+      "modified_bytes": 13503
+    },
+    "modernize/maps/cut_npcs/npc_rollerbull_test.vmf": {
+      "action": "modified",
+      "original_sha256": "8db2d89a467d217ec47f8081316cdbf0513580a0de8a626bb52481ab39086d13",
+      "modified_sha256": "595a7da925ba858ac07f8867e8151311668252319c217801d6814fe387451824",
+      "modified_bytes": 13502
+    },
+    "modernize/maps/cut_npcs/npc_rollerdozer_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "39be0c023c547e0ee43c4f7ef0b07988ebb9c8d969e9f3f646d04643f0b7353f",
+      "modified_bytes": 13503
+    },
+    "modernize/maps/cut_npcs/npc_rollerturret_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4c410345310dcd95164b205f177c9b0f1b38f9559f87827318e982b04bdc8a28",
+      "modified_bytes": 13504
+    },
+    "modernize/maps/cut_npcs/npc_sscanner_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a90616cd6d081bbbe797b034e0233673e12821f44524767a1a41d72eb89b6a48",
+      "modified_bytes": 13500
+    },
+    "modernize/maps/cut_npcs/npc_wscanner_test.vmf": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4a476ae34244a6e30f14019b67e294ffaae068a84b576faf0f7a982a156681d8",
+      "modified_bytes": 13500
+    },
+    "modernize/maps/multiplayer/README.md": {
+      "action": "modified",
+      "original_sha256": "ca4834e6d863ce67d80ab6f77a0211870ed3e0abf46398689fb248d74ff5dedc",
+      "modified_sha256": "6b2c1eeab1ed6e73225d97908402bb52c231113a461bbd9f9646162cc04d6b49",
+      "modified_bytes": 971
+    },
+    "modernize/maps/multiplayer/mp_modern_test.vmf": {
+      "action": "modified",
+      "original_sha256": "287a37e37c9caf3d345917f4d5c27c7f6f7237a38da5194ac87cae428de564c3",
+      "modified_sha256": "c5c1d8635cb9ea4ed98277586f99ac68c42510610b0c4575ff7c55aaa4914456",
+      "modified_bytes": 14765
+    },
+    "modernize/material_syntax_repairs_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "1590184c3d6b4837ac353016502f82628a87632b9be868c42f6ba03a272dc2c5",
+      "modified_bytes": 7027
+    },
+    "modernize/model_preview_policy.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a64795551632923b9b86fbf6c537cbd6560bfa735d088dd1b26895bd62dfb0de",
+      "modified_bytes": 1155
+    },
+    "modernize/model_preview_studio_validation.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "67c3264aaf94b3ce72b323e23cca67330a4da51145c66f36bd18a578d88dd143",
+      "modified_bytes": 8778
+    },
+    "modernize/npc_asset_audit.py": {
+      "action": "modified",
+      "original_sha256": "6c9d5aa370c0d0df38b384f4b81cf0cf6c7dadbf595bcab0b059f9266fcf3fc8",
+      "modified_sha256": "190ff03ede316dd710d758e9bdf8f7885c688b3c2733bc92105bec2f1576253b",
+      "modified_bytes": 6266
+    },
+    "modernize/package_release_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a027b1f51951fc65a7ddf8add3af8a6bd50cfbe16958511528f5ca6b3afd4efd",
+      "modified_bytes": 7767
+    },
+    "modernize/patch_grants_buildaware.py": {
+      "action": "modified",
+      "original_sha256": "79b4adf4f08ad37381aff3225774fb4aa4cc99396723e5fcbb01acd73eeb8bdb",
+      "modified_sha256": "76dcbd764a46433bba7affb6781952bd66bc9404d653386980050da0beccc0d6",
+      "modified_bytes": 2731
+    },
+    "modernize/patch_impulse101_branches.py": {
+      "action": "modified",
+      "original_sha256": "f16b362c7ec4075ad82a4fc9cb8e5ae9682a7a58d12633c90d7a964b779975f8",
+      "modified_sha256": "01df9d552928775e07bf8ce058a2ae4ff4de110248209f4ffda57f747572a480",
+      "modified_bytes": 6322
+    },
+    "modernize/patch_material_assets.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "e1dc75202083d8d9b01528b77c3e108a2a10df131459aa1f4376bd94e0651614",
+      "modified_bytes": 1391
+    },
+    "modernize/patch_model_dropdown_integrity.py": {
+      "action": "modified",
+      "original_sha256": "e4c5baafef6f9d5da4c3dd51e5b361ec9b0609b90be441e1f31c37620084a60d",
+      "modified_sha256": "0137e06e147245d7a2a1888cf0fc9b18887d6f947721c9282503e999172d2d99",
+      "modified_bytes": 2338
+    },
+    "modernize/patch_npc_assets.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "1b996a1b8748ef6db93c8ba2040945a22d0c73ae238f092037fbda7dcd9a61cc",
+      "modified_bytes": 4666
+    },
+    "modernize/patch_preview_status.py": {
+      "action": "modified",
+      "original_sha256": "1d63fa1737cb6fca4322de4744dfcaae7f0d61c81a0a86007347f9932bce5f1b",
+      "modified_sha256": "30c640ed0df24724a2d9e17ef18007cdac8f6a317bd7cc2ab9bb987028a09158",
+      "modified_bytes": 1924
+    },
+    "modernize/patch_weapon_asset_safety.py": {
+      "action": "modified",
+      "original_sha256": "1a263818dc4041ca06450e8c668fc7d735f14d064ae725b67ddde97536d1ec10",
+      "modified_sha256": "db0b54af2f8101e7506fd1e304c7ce9aef1acc1c7efc2c3ecb585ebef527c381",
+      "modified_bytes": 4311
+    },
+    "modernize/patch_weapon_restoration_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "d1fec21471f5d171b5aa1272ec2b605ba686aeed833ae64f3eba5711a97f918c",
+      "modified_bytes": 26071
+    },
+    "modernize/reports/ASSET_CASE_REPAIR_PLAN_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "cc68f0fd7210581ff9a85c15eea7e87d85ca4a10d08d43f08dc6806a811b0993",
+      "modified_bytes": 3977535
+    },
+    "modernize/reports/ASSET_CASE_REPAIR_PLAN_V18.patch": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "38518758f157af973279a8f3f01a095dcb9490181e14faf42606d959a2dcc903",
+      "modified_bytes": 1846330
+    },
+    "modernize/reports/ASSET_REPAIRS_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "58fd263cc4be83e02ee588c1c7971b180055ccdd10f48e94f100ee843070e6b4",
+      "modified_bytes": 3920
+    },
+    "modernize/reports/ASSET_REPAIRS_VALIDATION_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "f67462701db926f96db227c1ae5b4fbcec4dc17e8798059e95f078bbf22e57af",
+      "modified_bytes": 332
+    },
+    "modernize/reports/ASSET_RESTORATION_PLAN_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "584302978106c59be799728b6439c64d2b7a9ac6fb75a98fd1c2fd48fb1ab16b",
+      "modified_bytes": 4057291
+    },
+    "modernize/reports/ASSET_RESTORATION_PLAN_V18.patch": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "fdfea0addfa76a1708c0206f4179612cbbea88a06cc2420580c29f62ab1de04d",
+      "modified_bytes": 1708634
+    },
+    "modernize/reports/ASSET_VALIDATION_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "544d348d9e06ec2833db3a936b1e85c45a93780d094ad15a2dd40b52a0046e75",
+      "modified_bytes": 31902358
+    },
+    "modernize/reports/ASSET_VALIDATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "e3ce1444abcd7a6dad3106a8ed9bbc3561422ee3d56d99ac6ad3eaf785d564af",
+      "modified_bytes": 25142
+    },
+    "modernize/reports/HANDOFF_COVERAGE_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "6aa61dcd8f2fe3c52b2c3cb2dfd079425c8612861b4d2ab968bc3d68b9a49952",
+      "modified_bytes": 6416
+    },
+    "modernize/reports/HUD_AUTOAIM_FALLBACK_PLAN_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "700ee68f74518570f0c952a2f7ce33b3bdf4a1597e963aec50e62333f4531d0d",
+      "modified_bytes": 10101
+    },
+    "modernize/reports/HUD_AUTOAIM_FALLBACK_PLAN_V18.patch": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "98e240935d20058d5a59344677fd5be706ee71627df4fea8f9be53cfc53b1b26",
+      "modified_bytes": 783
+    },
+    "modernize/reports/HUD_PIXEL_AUDIT_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "2ca0b88d48b1fde43d6f22e7bcccca3225c51802cc63ab4d04bdd10cd7d3f3cb",
+      "modified_bytes": 670100
+    },
+    "modernize/reports/HUD_PIXEL_AUDIT_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "8aa6244efb8f5e4068d06c786b8fc5d4d20b66dab38e94f2d89f82106a472d2a",
+      "modified_bytes": 33978
+    },
+    "modernize/reports/HUD_PIXEL_VISUAL_REVIEW_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "ec683cc4570e16e6208ef67349016c7122c269caee60e99168ffe4a2e002bb91",
+      "modified_bytes": 1954
+    },
+    "modernize/reports/HUD_REFERENCE_REPAIR_PLAN_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "1e562f78f22450848b506589d5dab1204e424dad65f47dbb8e152ac5e5adf6bf",
+      "modified_bytes": 3396
+    },
+    "modernize/reports/HUD_REFERENCE_REPAIR_PLAN_V18.patch": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "103a0f899022bf18138c285b5a0d8980188f30e3ae5f0f5880ad0b1e7d8c3441",
+      "modified_bytes": 1585
+    },
+    "modernize/reports/MATERIAL_SYNTAX_REPAIRS_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "10ca3bc85c98dbab70e84db0f5c94f8f6d971bda2f7b86319a850a8ad10c995d",
+      "modified_bytes": 6758
+    },
+    "modernize/reports/MATERIAL_SYNTAX_REPAIRS_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "07f705b8330790b8539358337bc673c088df2e84fb4c3330e36ea6f906e4dfdf",
+      "modified_bytes": 2869
+    },
+    "modernize/reports/MATERIAL_SYNTAX_REPAIRS_V18.patch": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "cfcb14fd9b6e15566f1bc059a5275dba5c4ab2cd0b6d82bc90ec60ab568ddc7a",
+      "modified_bytes": 1212
+    },
+    "modernize/reports/MISSING_ASSETS_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "c765de2c55eb3dda930d1c3d104c3d4b04cd0cafc57746abcb5242ce2a58175e",
+      "modified_bytes": 4027136
+    },
+    "modernize/reports/MISSING_ASSETS_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0e7df23cca1446a0a9de14346a1ebb4f37ad90ba94c6f304b0ebab1ba981ca67",
+      "modified_bytes": 394332
+    },
+    "modernize/reports/MULTIPLAYER_IMPLEMENTATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a2a1243a7de0b1a3876d73bccabe3ad053cbaa8ece56b3b56a5f4f851a10568c",
+      "modified_bytes": 9648
+    },
+    "modernize/reports/MULTIPLAYER_MODEL_AUDIT_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "5ff3ded05385a0445d30d0d1eb98fd23b1f53a82d5025d29b06442a9808869fe",
+      "modified_bytes": 5475
+    },
+    "modernize/reports/MULTIPLAYER_PREVIEW_VALIDATION_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "34a9d0820d3261c4a9701cded47775c05286b893fb452d5d6e64166bf7e0f6df",
+      "modified_bytes": 1118
+    },
+    "modernize/reports/NPC_ASSET_AUDIT_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "03762d64d6f72f64fbf6616c46d5e3769b39b477a0e2682de4f6af109e0cb03c",
+      "modified_bytes": 30086
+    },
+    "modernize/reports/NPC_EXTERNAL_ASSET_AUDIT_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4aaf0c813bcea548b73b20749ae464161d6409423c1f173e2499ed0be94af6af",
+      "modified_bytes": 41706
+    },
+    "modernize/reports/NPC_MATERIAL_IMPLEMENTATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "e2ceca3564e7be9093329ee4ee2dbb707cc0764bc66693b5110644f4eba71fa1",
+      "modified_bytes": 22469
+    },
+    "modernize/reports/RELEASE_NOTES_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "06b99e7d8a3133434b5b054f62faa6a787a7d2a18a6426ec9f935e31c2198721",
+      "modified_bytes": 9016
+    },
+    "modernize/reports/SHADER_VALIDATION_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "829d2ae459f48e63e9e8ac0599cf3a3495f21aabd3f0595884b49d822a2482a5",
+      "modified_bytes": 11247
+    },
+    "modernize/reports/SHADER_VALIDATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "27c5f640403ff2f60690d1069ae967c0c038c613d9ca35472bb6d86a70df2f81",
+      "modified_bytes": 2868
+    },
+    "modernize/reports/SOURCE_ONLY_ASSETS_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0928a35c7c36e774f20796d9ce1dddaf6ba02be54b2af852d3bbe91466cdc01e",
+      "modified_bytes": 449924
+    },
+    "modernize/reports/VALIDATION_RESULTS_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "9a611e5ab1f015df5ddddfe841d91f6c3568c4d09fbc16eb70bdc8ac340e64a8",
+      "modified_bytes": 2549
+    },
+    "modernize/reports/VALIDATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "259eb71cf725c4b5341d78b7151710e94447343d91b37f37f6902139986e4481",
+      "modified_bytes": 8001
+    },
+    "modernize/reports/WEAPON_ASSET_AUDIT_V18.csv": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "48483837c0ac61951719dd6852a08874e481da7aeec7a272ddc96f610cf1ca43",
+      "modified_bytes": 253848
+    },
+    "modernize/reports/WEAPON_ASSET_AUDIT_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "8c5eedbcdc16bd06b961d51b7ef0d52c12a17d30bb96c12cbf5e574a1cd3a89b",
+      "modified_bytes": 99469
+    },
+    "modernize/reports/WEAPON_IMPLEMENTATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "b10e2ded7517c829d02b758cfc03591dd97b0b0bbb9738c4bfa5df30e392b619",
+      "modified_bytes": 30307
+    },
+    "modernize/reports/repaired_assets/ASSET_VALIDATION_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0b29f85cd363da95abd5cbdbdfddb26fb2fca5bbfecaed1a08748b53cbc8fc42",
+      "modified_bytes": 28652070
+    },
+    "modernize/reports/repaired_assets/ASSET_VALIDATION_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "9c4de32b9562d9483e82cc538f959efc7e433233efe6c0dc97c45120382c7db2",
+      "modified_bytes": 25363
+    },
+    "modernize/reports/repaired_assets/HUD_PIXEL_AUDIT_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "37f2f9ecb3d5ad22af80edc20e7f3dd586c7847dac44aefd5855c6d75d34d588",
+      "modified_bytes": 669166
+    },
+    "modernize/reports/repaired_assets/HUD_PIXEL_AUDIT_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "d3749b20f55c65c7d7f417b1dda16d1dabe2674b3bfbed1a8b18878905dc2242",
+      "modified_bytes": 32474
+    },
+    "modernize/reports/repaired_assets/MISSING_ASSETS_V18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "b7b962e3f6540106893719e6f440306d8171addb7a615bd489cd7b42574a06cc",
+      "modified_bytes": 462547
+    },
+    "modernize/reports/repaired_assets/MISSING_ASSETS_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "ab4687eff97240beee701b0eb6849fe4b5379cf39366e7e6a6367e6b4c3942b5",
+      "modified_bytes": 44943
+    },
+    "modernize/reports/repaired_assets/MULTIPLAYER_MODEL_AUDIT_V18.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "5ff3ded05385a0445d30d0d1eb98fd23b1f53a82d5025d29b06442a9808869fe",
+      "modified_bytes": 5475
+    },
+    "modernize/reports/validation/npc_assets_source.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "71bcd509a1c58866eed623f19f4be892ea95a6f1316f86d8b490cc54cfd4b7e0",
+      "modified_bytes": 50
+    },
+    "modernize/reports/validation/regression_tests.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a1d1d23063970d5db83c5c7ee5457784333a6a533bf0e706587627ac6c1b1459",
+      "modified_bytes": 19649
+    },
+    "modernize/reports/validation/replay.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "e9c7c4bf9dc59eea23e49dff2f711405ad2051613495f4b19456394dd63532de",
+      "modified_bytes": 7266
+    },
+    "modernize/reports/validation/shader_plan.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "a80f94ebc62b290e4e0412a19ece17fcd9f7a2cb5b52d412518e2f5c5398d2b0",
+      "modified_bytes": 2412
+    },
+    "modernize/reports/validation/structure.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "6c28097e58ac7fa9e23619b4216cb183b56663b4b4159f41d2c574c6e2ebb414",
+      "modified_bytes": 464
+    },
+    "modernize/reports/validation/weapon_assets_source.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "f592e802493b8ddc7b1c7e01c9f94ce399a26c122286dcad39bbf6a33d44f6e6",
+      "modified_bytes": 238
+    },
+    "modernize/reports/validation/weapon_build.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "01baea2f8b2897571db2d36d8ce3f330cff7a03d5fd7727bbbe703c86ad73bd7",
+      "modified_bytes": 1464
+    },
+    "modernize/reports/validation/weapon_inventory.log": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "8b1e733dca41567b09e81ca6c1f0645a0778c370975c48eb38a1c17bf1bc11f9",
+      "modified_bytes": 84
+    },
+    "modernize/reports/weapon_syntax_v18.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "7cd296a20813f8116d20204f57e512debbeee3373de7c5ebbdcf16d098bf18c9",
+      "modified_bytes": 53313
+    },
+    "modernize/run_validation_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4ee5b736357e436958b3d0335739b74e929ab952fc55b6d889144df3cd3ea423",
+      "modified_bytes": 4023
+    },
+    "modernize/shaders/compiled_v18/README.md": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "435a0fcb3092f08b013b27c929a980b16cde66ef3e0890eb77be4e746d64dff5",
+      "modified_bytes": 952
+    },
+    "modernize/shaders/compiled_v18/provenance.json": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "922c31b0458edbb353719574564ffd8edb5bda6f7bddf18bc242021947c3e910",
+      "modified_bytes": 3476
+    },
+    "modernize/shaders/compiled_v18/tonemap_d3d11_ps.dxbc": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "b8e9769f2b92029ab17bf0a84f6de7145925abd72929396aa10e7935d631746e",
+      "modified_bytes": 1744
+    },
+    "modernize/shaders/compiled_v18/tonemap_d3d11_vs.dxbc": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "1cfbde32fc3f32144ebbd518fa04cf74890f39f1abb874af7c508288c3734fc4",
+      "modified_bytes": 772
+    },
+    "modernize/shaders/compiled_v18/tonemap_d3d12_ps.dxil": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "d98419c3cab1b572d5d756d6813bd3a0de1bef0feae7e345191c687ef290526e",
+      "modified_bytes": 4952
+    },
+    "modernize/shaders/compiled_v18/tonemap_d3d12_vs.dxil": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4a3115fab97d9c3ae5fb8d99145a9d305db3ac6c6944260826a1e92d4e65dd9a",
+      "modified_bytes": 3024
+    },
+    "modernize/shaders/hlsl/fullscreen_tonemap.hlsl": {
+      "action": "modified",
+      "original_sha256": "0eaa8d5e65ab5a7d91acf29c9f8f97226c7231bd69987fa96c80ca0d116b0827",
+      "modified_sha256": "2b530523b61c4b0663539122506281cfd4960a0634d8e89fbc4e7c27586e9d64",
+      "modified_bytes": 1477
+    },
+    "modernize/source_asset_formats.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "69b66ba325643c9778ac9eafda5f05bad08b930b7762bfa9318b86f7df0ed581",
+      "modified_bytes": 5134
+    },
+    "modernize/spawn_protection_policy.h": {
+      "action": "modified",
+      "original_sha256": "2a4605dc3ba94a1b935ef569ef077878743c60a36d4f89aba5cbe3342a383c3c",
+      "modified_sha256": "6f6f259f5e2321a878474cf8aa5a99a3f3bf02afe746a7f6520610c1247a2ddf",
+      "modified_bytes": 2065
+    },
+    "modernize/tests/cpp98shim/cmath": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "392b8d6cea60b6d763eb2db42c7d891a0d40edca5314a7b3e64f84a15a9af354",
+      "modified_bytes": 355
+    },
+    "modernize/tests/cpp98shim/cstddef": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "24ad9c25e2dd50e96fe876848db2d60529dbe9da8eef3e5d91039ff077573b1b",
+      "modified_bytes": 309
+    },
+    "modernize/tests/crabsynth_charge_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "28cf32c2059e906b6f42d39825f3046607a933a313eb096e2ea662fdc9aefe5f",
+      "modified_sha256": "693b2cb0ca646733c82c7d7408710b987cfa11565a02c67cdddac202086f415a",
+      "modified_bytes": 896
+    },
+    "modernize/tests/houndeye_sonic_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "25e94764d1ebcc230747fd0eb56cf88ac6bcc15c1a0d40577cb41e0f083cbb51",
+      "modified_sha256": "82bdb742b9812d213f4307c072e9d16feae1a0e8852c5b325c5830958fc63bca",
+      "modified_bytes": 1084
+    },
+    "modernize/tests/hud_fit_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "45f917af9de8c229c2170d839bda69ce1fa058957cea9ca2733ec3a004aea8d5",
+      "modified_sha256": "26f16da5d285f0ff3225cb98c8a3c26cc05efb6111449f1c5f4433f49095801f",
+      "modified_bytes": 2825
+    },
+    "modernize/tests/lighting_parameters_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "0ec0733761a5222f6dbbcae5a363485a80d357aea719f6d5cc94a3e8a9734a86",
+      "modified_sha256": "6796d23980406d178fe6aa525f8c4597eb0afbd76bcdfe6f5ab26167b42d42c6",
+      "modified_bytes": 1220
+    },
+    "modernize/tests/lightstyle_policy_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "f8b9b0cb1d76ff7cc42af0b6f4ad1ca8b814ee4f1d697ed7e7a1551f68253bde",
+      "modified_sha256": "f3c85941eeab3b641119bd9e5fff969f788c43c3b88943e7f852018c71f97edc",
+      "modified_bytes": 1169
+    },
+    "modernize/tests/model_preview_smoke.cpp": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "7a1448570645f6313a3aadc5de0c25824dcefd5cc2150f7aa247e9d64f5d32a2",
+      "modified_bytes": 1504
+    },
+    "modernize/tests/model_preview_studio_smoke.cpp": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "36344de39efd8f4643f9915971145ba8ef004aa30859df54c823ced104237d61",
+      "modified_bytes": 2697
+    },
+    "modernize/tests/spawn_protection_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "19e01ad876b2ec7b10274985df8476869f8a283925345ecab7498dd437843450",
+      "modified_sha256": "5e574f35d9247923bb843612f105e80d1cb8106e8cd8d69b45e21708c4a6953e",
+      "modified_bytes": 1584
+    },
+    "modernize/tests/steam_client_bridge_smoke.cpp": {
+      "action": "modified",
+      "original_sha256": "c8105ca9597da55120ef4f81ee27e009263cd9fa2bc839fe7c3b4f529a75cfc3",
+      "modified_sha256": "84ae32a41e9e40b6b49731dd3eaa7b54650d05940d99a2eb0e231fa67390fd77",
+      "modified_bytes": 3082
+    },
+    "modernize/tests/test_asset_validation_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "4795329f29e3b18cc8d8c9696bda48af9131096d9a7de7333ff67a2bd1d7f52b",
+      "modified_bytes": 10584
+    },
+    "modernize/tests/test_controller_axis.py": {
+      "action": "modified",
+      "original_sha256": "c0ec31498e570bea876838aaa235d5a31ae0052c8044f1c583bc390ca5810461",
+      "modified_sha256": "385822b0325c45bfddbe5750e515b1885e3b43727f0c49e08e923fc3d263ca08",
+      "modified_bytes": 1485
+    },
+    "modernize/tests/test_conversion.py": {
+      "action": "modified",
+      "original_sha256": "b2e23c8ad6b146c80687c51309d30ac9766d78fb3787da0783c9e192bc0bbf36",
+      "modified_sha256": "a4e3e12fb296cd9e35dd178eaf10f5d5af931f3b634db460839f8b0a065ee487",
+      "modified_bytes": 6268
+    },
+    "modernize/tests/test_cut_npc_inventory.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "134ced3baa17d43c98cffc5ba3cc0bb3d195287fd03025d46835611c8dba2b15",
+      "modified_bytes": 1983
+    },
+    "modernize/tests/test_fp_values.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "05b85661bb3aae92fd61f299c905f9241641962fd2f5e47758019b0525b59856",
+      "modified_bytes": 886
+    },
+    "modernize/tests/test_hud_pixel_audit_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "44ea5b9c832ad3d954f5062f73dd5456e639301251127cc5e07c10f508ab4c74",
+      "modified_bytes": 7753
+    },
+    "modernize/tests/test_material_assets.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "0647de5cd7833472f0780a3c1779ee9d272a5a04c5a017281554ef3d6fbbeb3d",
+      "modified_bytes": 1466
+    },
+    "modernize/tests/test_material_syntax_repairs_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "ecd33398abfd76a1a2915360f5fe19e5f6333d530f23d761d9a9332dc595729b",
+      "modified_bytes": 3439
+    },
+    "modernize/tests/test_model_preview_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "be51863424a6a9273c2c3a5988ba99064a694b4c9cc2ddd3a5e94d2926a8f3c7",
+      "modified_bytes": 4368
+    },
+    "modernize/tests/test_model_weapons.py": {
+      "action": "modified",
+      "original_sha256": "e8da5cb25776d15a5779e59da48284accd8dc55e0128ef8b0e4055fbe31ceba2",
+      "modified_sha256": "b286c710230cd3f1bb06650673a9692cd4128729d7d5c578b5911108c127775f",
+      "modified_bytes": 4146
+    },
+    "modernize/tests/test_npc_asset_audit.py": {
+      "action": "modified",
+      "original_sha256": "a41d57ef34db20a002ffdf17d5fb47c38196e1891a662c93f63506df186d99ca",
+      "modified_sha256": "17bd9938b306af19934d901848f9bb2701169b8b05ca48cdda46ba640089db3a",
+      "modified_bytes": 3222
+    },
+    "modernize/tests/test_phase7_phase8_v16.py": {
+      "action": "modified",
+      "original_sha256": "55320df5e303bfb74872a1d51eb2e34c4ddb387f7b860c549195e80dd8aeb7d0",
+      "modified_sha256": "994023d730448f52c17607f0b7cbc41e4fba02e4370c805c5b284db77bf6b758",
+      "modified_bytes": 4966
+    },
+    "modernize/tests/test_phase7_phase8_v17.py": {
+      "action": "modified",
+      "original_sha256": "5fffda588a364565c7d7667b1b2875bee6984f24ced72e014e123f297516da17",
+      "modified_sha256": "5b713a178ce2cc7bdb8611c0ce0f982c129e557e2f33eb439c61335ab497e5b3",
+      "modified_bytes": 3773
+    },
+    "modernize/tests/test_safe_paths.py": {
+      "action": "modified",
+      "original_sha256": "d6d6cf4c40a43352acea4e6b1aad150e13596fafc9fe5649b5f1783e83e260cb",
+      "modified_sha256": "1f142b3ff77b3ad4efbdafd29cb541b598581dfb2aa2783a0e52866a456018b5",
+      "modified_bytes": 1573
+    },
+    "modernize/tests/test_shader_tool_discovery_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "d864b220355cec65ade62c2f2c7eceae169ed92bcec1d9877b08c333c6ba1522",
+      "modified_bytes": 2183
+    },
+    "modernize/tests/test_source_asset_formats.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "2bd3a763c0658c1966c95ea330a4935eb080d8cbdd0ad36d296771dc29797fa1",
+      "modified_bytes": 2794
+    },
+    "modernize/tests/test_steam_bridge.py": {
+      "action": "modified",
+      "original_sha256": "12bb48e046c6733bc56b5092f16ce85475493e0eeaed384fbb8b4b3bb5ba79a1",
+      "modified_sha256": "092fc84e060124fb5c663a12941aeb1f456cff20beb5253ada17dbb81552320a",
+      "modified_bytes": 1786
+    },
+    "modernize/tests/test_weapon_restoration_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "92ccff65b28828a7af224550382a7ebd105079a7b7007c37dd298748956e2351",
+      "modified_bytes": 8054
+    },
+    "modernize/tests/weapon_grant_policy_smoke.cpp": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "005e1167b3ef8566faa59ef443eeee85729c20ee528ad558b9c8a576f059aefc",
+      "modified_bytes": 1748
+    },
+    "modernize/tests/winshim/windows.h": {
+      "action": "modified",
+      "original_sha256": "2219721071dd26db803894891625f739e5d25514a4770737602b5e87a5fc2c55",
+      "modified_sha256": "32fad4773c0fa804760ce2084da0f8e1984f322722112df5bae8d6ceb688aaaa",
+      "modified_bytes": 834
+    },
+    "modernize/validation_report.json": {
+      "action": "modified",
+      "original_sha256": "0b33ced33d2223cdc4572a1212d698fbb14e54c1828d930721f3d622d00ae100",
+      "modified_sha256": "37f2396f9a23ef78486a5bf78300cfb6ba8320f41208ed497857cc7e88b1a876",
+      "modified_bytes": 2864
+    },
+    "modernize/weapon_asset_report.json": {
+      "action": "modified",
+      "original_sha256": "5f0d5dbd69b0b17aa18bb71d09da46284ab3278f62b397642e5dbb869881532d",
+      "modified_sha256": "225207fd533c17a550e9754ae1f4c63e3e5a600f4e8590e51dbf2f8666db7884",
+      "modified_bytes": 26998
+    },
+    "modernize/weapon_branch_audit.py": {
+      "action": "modified",
+      "original_sha256": "55b38f9b00dbf4796c3fbf2b00c4e03ddacda598938c01992b8bd6a3566a0ffa",
+      "modified_sha256": "d397f99b7d716064d71e6a7937d239778f15cd2631c378c2027eb24f698661f3",
+      "modified_bytes": 5222
+    },
+    "modernize/weapon_branch_inventory.json": {
+      "action": "modified",
+      "original_sha256": "75cc419b16cb617a6638fc7e816ada333bbf2f23effe7477cb2bd1f69a9cfe51",
+      "modified_sha256": "a6e674b0ba75f0e38cc7b6cd80bc3b68dc7e9e101faf3d4b585a7504d91ad4c5",
+      "modified_bytes": 67811
+    },
+    "modernize/weapon_build_report.json": {
+      "action": "modified",
+      "original_sha256": "38a8c72c95c2b336668b7af6663d2b8b354479b5b9ebb2fc0b70830d2a339bef",
+      "modified_sha256": "336fbb13a30bdfddc65748f249cab8153ca0130de76cdc37ccf08ac8e74c70da",
+      "modified_bytes": 49165
+    },
+    "modernize/weapon_grant_policy.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "f0764f8ac4f2c63a2e0d460d4e981a42731568b753e033a08b085a007df582b7",
+      "modified_bytes": 2630
+    },
+    "modernize/weapon_hud_layout.h": {
+      "action": "modified",
+      "original_sha256": "8f8389d26feb166ddcac5972f3559ce6be907ea0482e0af245eb3c0fc2af4837",
+      "modified_sha256": "4fe2bb945d05b68b4ee8374473d10b3b0236d5c68be42f434072bbb135f7aca4",
+      "modified_bytes": 2481
+    },
+    "modernize/weapon_impulse101_manifest.json": {
+      "action": "modified",
+      "original_sha256": "8829e1e74a95438c2814fc473084607ed194a5483bc3506610d52560aa8bf70c",
+      "modified_sha256": "511f8e321e8085753fd2c487f5c6e3c93015e52383574c560d2f7dbe98853b40",
+      "modified_bytes": 8878
+    },
+    "modernize/write_weapon_report_v18.py": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "eab36d07de9e0424b61196771dc59fea89322ca798dd2b01bc66ee46e12df475",
+      "modified_bytes": 14493
+    },
+    "public/IGameUIModelPreview.h": {
+      "action": "added",
+      "original_sha256": null,
+      "modified_sha256": "7634b16d8af4f5b86d8b243e50fb563b659a1a21031238ab00fa4b56c67894c2",
+      "modified_bytes": 648
+    }
+  },
+  "generated_metadata": [
+    "modernize/source_change_manifest.json",
+    "modernize/source_changes.patch",
+    "modernize/release_manifest.json",
+    "modernize/reports/CHANGELOG_V18.md"
+  ],
+  "removed_paths": [],
+  "reproduction": "Read original ZIP and replace/add every overlay member; result matches full archive byte-for-byte per member."
+}

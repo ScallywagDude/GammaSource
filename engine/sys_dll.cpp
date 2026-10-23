@@ -38,6 +38,7 @@
 #include "vstdlib/ICommandLine.h"
 #include "cmd.h"
 #include "glquake.h"
+#include "../modernize/safe_paths.h"
 
 #ifdef _WIN32
 #include "conproc.h"
@@ -139,18 +140,17 @@ int Sys_CompareFileTime( long ft1, long ft2 )
 // Input  : *path - 
 // Output : void Sys_mkdir
 //-----------------------------------------------------------------------------
+// HL2MODERN_SAFE_DIRECTORY_PATHS
 void Sys_mkdir ( const char *path )
 {
 	char testpath[ MAX_OSPATH ];
-
-	// Remove any terminal backslash or /
-	strcpy( testpath, path );
-	if ( strlen( testpath ) > 0 &&
-		testpath[ strlen( testpath ) - 1 ] == '/' ||
-		testpath[ strlen( testpath ) - 1 ] == '\\' )
+	// Reject oversized or empty paths instead of reading before/after the buffer.
+	if ( !HL2ModernPaths::CopyDirectory(path, testpath, sizeof(testpath)) )
 	{
-		testpath[ strlen( testpath ) - 1 ] = 0;
+		Warning("Sys_mkdir: invalid or oversized directory path.\n");
+		return;
 	}
+
 
 	if( g_pFileSystem->FileExists( testpath, "GAME" ) )
 	{
@@ -164,7 +164,7 @@ void Sys_mkdir ( const char *path )
 		}
 	}
 
-	g_pFileSystem->CreateDirHierarchy( path, "GAME" );
+	g_pFileSystem->CreateDirHierarchy( testpath, "GAME" );
 }
 
 

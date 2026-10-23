@@ -4,6 +4,7 @@
 #include "ai_route.h"
 #include "AI_Navigator.h"
 #include "AI_Memory.h"
+#include "../../modernize/crabsynth_charge_policy.h"
 #include "IEffects.h"
 
 class CCrabSynth : public CAI_BaseNPC
@@ -50,6 +51,9 @@ protected:
 	float		m_nextCharge;
 };
 
+
+ConVar sk_crabsynth_charge_dmg( "sk_crabsynth_charge_dmg", "35", FCVAR_NONE,
+    "Damage from a Crab Synth charge impact (0 disables damage)." );
 
 LINK_ENTITY_TO_CLASS( npc_crabsynth, CCrabSynth );
 IMPLEMENT_CUSTOM_AI( npc_crabsynth, CCrabSynth );
@@ -257,7 +261,7 @@ void CCrabSynth::StartTask( const Task_t *pTask )
 		break;
 	case TASK_GET_CHARGE_PATH:
 		{
-			if (IsUnreachable(GetEnemy()))
+			if (!GetEnemy() || IsUnreachable(GetEnemy()))
 			{
 				TaskFail(FAIL_NO_ROUTE);
 				return;
@@ -269,6 +273,7 @@ void CCrabSynth::StartTask( const Task_t *pTask )
 				DevWarning( 2, "GetPathToEnemyLKP failed!!\n" );
 				RememberUnreachable(GetEnemy());
 				TaskFail(FAIL_NO_ROUTE);
+				return;
 			}
 			GetNavigator()->SetMovementActivity( (Activity)ACT_CHARGE_LOOP );
 			TaskComplete();
@@ -319,39 +324,42 @@ void CCrabSynth::RunTask( const Task_t *pTask )
 
 				Vector forward, right;
 				AngleVectors( GetLocalAngles(), &forward, &right, NULL );
-				float dot = DotProduct( forward, pEnemy->GetAbsOrigin() );
-				float dist = dot - DotProduct( forward, GetAbsOrigin() );
-				// about to cross player
-				// HACKHACK: Tune this magic number
-				if ( dist < CHARGE_ATTACK_HIT )
-				{
-					float lateral = DotProduct( right, pEnemy->GetAbsOrigin() ) - DotProduct( right, GetAbsOrigin() );
-					Msg( "Lateral dist: %.2f\n", lateral );
-					if ( lateral < -CHARGE_ATTACK_WIDTH || lateral > CHARGE_ATTACK_WIDTH )
-					{
-						Msg( "Stop!\n" );
-						// play miss/stop animation.  No damage to enemy
-						SetSchedule( SCHED_CRAB_CHARGE_STOP );
-					}
-					else if ( lateral < -CHARGE_ATTACK_TRAMPLE )
-					{
-						Msg( "Hit left!\n" );
-						// hit left side
-						SetSchedule( SCHED_CRAB_CHARGE_HITLEFT );
-					}
-					else if ( lateral > CHARGE_ATTACK_TRAMPLE )
-					{
-						Msg( "Hit Right!\n" );
-						// hit right side
-						SetSchedule( SCHED_CRAB_CHARGE_HITLEFT );
-					}
-					else
-					{
-						Msg( "Head On!!\n" );
-						// head on collision
-						TaskComplete();
-					}
-				}
+                // HL2MODERN_CRABSYNTH_CHARGE_DAMAGE
+                // Evaluate the forward/lateral projections with unit-tested
+                // geometry before applying any server-side damage.
+                const Vector delta = pEnemy->WorldSpaceCenter() - WorldSpaceCenter();
+                const float forwardDistance = DotProduct( forward, delta );
+                const float lateralDistance = DotProduct( right, delta );
+                const HL2ModernCrabCharge::Decision decision =
+                    HL2ModernCrabCharge::Classify(forwardDistance, lateralDistance,
+                        CHARGE_ATTACK_HIT, CHARGE_ATTACK_WIDTH, CHARGE_ATTACK_TRAMPLE);
+                if (decision != HL2ModernCrabCharge::APPROACH)
+                {
+                    // Do not hit a dead or occluded enemy. End a missed charge
+                    // rather than repeatedly dealing damage during RunTask.
+                    if (decision == HL2ModernCrabCharge::MISS ||
+                        !pEnemy->IsAlive() || !FVisible(pEnemy))
+                    {
+                        SetSchedule(SCHED_CRAB_CHARGE_STOP);
+                    }
+                    else
+                    {
+                        const float damage = sk_crabsynth_charge_dmg.GetFloat();
+                        if (damage > 0.0f && damage <= 1000.0f)
+                        {
+                            CTakeDamageInfo info(this, this, damage, DMG_CRUSH);
+                            CalculateMeleeDamageForce(&info, forward, pEnemy->WorldSpaceCenter());
+                            pEnemy->TakeDamage(info);
+                        }
+
+                        if (decision == HL2ModernCrabCharge::HIT_LEFT)
+                            SetSchedule(SCHED_CRAB_CHARGE_HITLEFT);
+                        else if (decision == HL2ModernCrabCharge::HIT_RIGHT)
+                            SetSchedule(SCHED_CRAB_CHARGE_HITRIGHT);
+                        else
+                            TaskComplete();  // Continue to TASK_CHARGE_HIT.
+                    }
+                }
 			}
 		}
 		break;

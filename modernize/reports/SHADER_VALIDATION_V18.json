@@ -1,0 +1,273 @@
+{
+  "runtime_verified": false,
+  "backend_integration_verified": false,
+  "compilers_bundled": false,
+  "source_repair": "Renamed HLSL reserved keyword variable linear to linearColor; actual fxc/dxc compilation previously rejected the source.",
+  "artifact_directory": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18",
+  "searched_roots": [
+    {
+      "path": "C:\\Program Files (x86)\\Windows Kits",
+      "exists": true
+    },
+    {
+      "path": "C:\\Program Files\\Microsoft Visual Studio",
+      "exists": true
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Microsoft Visual Studio",
+      "exists": true
+    },
+    {
+      "path": "C:\\VulkanSDK",
+      "exists": false
+    },
+    {
+      "path": "C:\\Program Files\\VulkanSDK",
+      "exists": false
+    },
+    {
+      "path": "C:\\Program Files\\Microsoft DirectX SDK (June 2010)",
+      "exists": false
+    },
+    {
+      "path": "C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)",
+      "exists": false
+    }
+  ],
+  "installed_sdk_compiler_paths": [
+    "C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\D3D\\arm64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\D3D\\x64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\Redist\\D3D\\x86\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\arm64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\arm64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x86\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.22621.0\\x86\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\arm64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\arm64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x86\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.26100.0\\x86\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\arm64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\arm64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x86\\dxc.exe",
+    "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x86\\fxc.exe"
+  ],
+  "source_sha256": "2b530523b61c4b0663539122506281cfd4960a0634d8e89fbc4e7c27586e9d64",
+  "tools": {
+    "fxc": {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+      "status": "available",
+      "executable_sha256": "7920b6459ac0800c71bbb9815fa33b1e2a7932f86f5a8f17cff267dc6e8ef7f5",
+      "version_summary": [
+        "Microsoft (R) Direct3D Shader Compiler 10.1",
+        "Copyright (C) 2013 Microsoft. All rights reserved.",
+        "",
+        "Usage: fxc <options> <files>",
+        "",
+        "   /?, /help           print this message"
+      ]
+    },
+    "dxc": {
+      "path": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+      "status": "available",
+      "executable_sha256": "11a4ba86cd78673d28b5e3579dd0912ee5df8642cc5cff8f1ecc29684f9d7550",
+      "version_summary": [
+        "dxcompiler.dll: 1.9(5184-21d28f72)(1.9.2602.17) - 1.9.2602.17 (21d28f727)"
+      ]
+    },
+    "glslangValidator": {
+      "path": null,
+      "status": "not_found_in_path_or_known_sdk_vs_locations"
+    }
+  },
+  "jobs": [
+    {
+      "name": "Direct3D 11 VS",
+      "tool": "fxc",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+      "arguments": [
+        "/nologo",
+        "/T",
+        "vs_5_0",
+        "/E",
+        "VSMain",
+        "/Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_vs.dxbc",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "runtime_verified": false,
+      "returncode": 0,
+      "stdout": "compilation object save succeeded; see C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_vs.dxbc\n",
+      "stderr": "",
+      "status": "compiled_artifact_verified",
+      "artifact": {
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_vs.dxbc",
+        "bytes": 772,
+        "sha256": "1cfbde32fc3f32144ebbd518fa04cf74890f39f1abb874af7c508288c3734fc4",
+        "container_signature": "DXBC"
+      }
+    },
+    {
+      "name": "Direct3D 11 PS",
+      "tool": "fxc",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\fxc.exe",
+      "arguments": [
+        "/nologo",
+        "/T",
+        "ps_5_0",
+        "/E",
+        "PSMain",
+        "/Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_ps.dxbc",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "runtime_verified": false,
+      "returncode": 0,
+      "stdout": "compilation object save succeeded; see C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_ps.dxbc\n",
+      "stderr": "",
+      "status": "compiled_artifact_verified",
+      "artifact": {
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d11_ps.dxbc",
+        "bytes": 1744,
+        "sha256": "b8e9769f2b92029ab17bf0a84f6de7145925abd72929396aa10e7935d631746e",
+        "container_signature": "DXBC"
+      }
+    },
+    {
+      "name": "Direct3D 12 VS",
+      "tool": "dxc",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+      "arguments": [
+        "-T",
+        "vs_6_0",
+        "-E",
+        "VSMain",
+        "-Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_vs.dxil",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "runtime_verified": false,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "status": "compiled_artifact_verified",
+      "artifact": {
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_vs.dxil",
+        "bytes": 3024,
+        "sha256": "4a3115fab97d9c3ae5fb8d99145a9d305db3ac6c6944260826a1e92d4e65dd9a",
+        "container_signature": "DXBC"
+      }
+    },
+    {
+      "name": "Direct3D 12 PS",
+      "tool": "dxc",
+      "compiler": "C:\\Program Files (x86)\\Windows Kits\\10\\bin\\10.0.28000.0\\x64\\dxc.exe",
+      "arguments": [
+        "-T",
+        "ps_6_0",
+        "-E",
+        "PSMain",
+        "-Fo",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_ps.dxil",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\hlsl\\fullscreen_tonemap.hlsl"
+      ],
+      "runtime_verified": false,
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "status": "compiled_artifact_verified",
+      "artifact": {
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_d3d12_ps.dxil",
+        "bytes": 4952,
+        "sha256": "d98419c3cab1b572d5d756d6813bd3a0de1bef0feae7e345191c687ef290526e",
+        "container_signature": "DXBC"
+      }
+    },
+    {
+      "name": "OpenGL 3.3 vert",
+      "tool": "glslangValidator",
+      "compiler": null,
+      "arguments": [
+        "-S",
+        "vert",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\glsl330\\fullscreen_tonemap.vert"
+      ],
+      "runtime_verified": false,
+      "status": "blocked_missing_compiler",
+      "reason": "glslangValidator was not found in PATH or inspected installed SDK/VS locations; no download attempted"
+    },
+    {
+      "name": "Vulkan vert",
+      "tool": "glslangValidator",
+      "compiler": null,
+      "arguments": [
+        "-V",
+        "-S",
+        "vert",
+        "-o",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_vulkan_vert.spv",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\vulkan450\\fullscreen_tonemap.vert"
+      ],
+      "runtime_verified": false,
+      "status": "blocked_missing_compiler",
+      "reason": "glslangValidator was not found in PATH or inspected installed SDK/VS locations; no download attempted"
+    },
+    {
+      "name": "OpenGL 3.3 frag",
+      "tool": "glslangValidator",
+      "compiler": null,
+      "arguments": [
+        "-S",
+        "frag",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\glsl330\\fullscreen_tonemap.frag"
+      ],
+      "runtime_verified": false,
+      "status": "blocked_missing_compiler",
+      "reason": "glslangValidator was not found in PATH or inspected installed SDK/VS locations; no download attempted"
+    },
+    {
+      "name": "Vulkan frag",
+      "tool": "glslangValidator",
+      "compiler": null,
+      "arguments": [
+        "-V",
+        "-S",
+        "frag",
+        "-o",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\shader_asset_validation_v18\\tonemap_vulkan_frag.spv",
+        "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\modernize\\shaders\\vulkan450\\fullscreen_tonemap.frag"
+      ],
+      "runtime_verified": false,
+      "status": "blocked_missing_compiler",
+      "reason": "glslangValidator was not found in PATH or inspected installed SDK/VS locations; no download attempted"
+    }
+  ],
+  "summary": {
+    "compiled_artifact_verified": 4,
+    "blocked_missing_compiler": 4,
+    "failed": 0
+  },
+  "bundled_project_shader_artifacts": [
+    {
+      "path": "modernize/shaders/compiled_v18/tonemap_d3d11_vs.dxbc",
+      "sha256": "1cfbde32fc3f32144ebbd518fa04cf74890f39f1abb874af7c508288c3734fc4"
+    },
+    {
+      "path": "modernize/shaders/compiled_v18/tonemap_d3d11_ps.dxbc",
+      "sha256": "b8e9769f2b92029ab17bf0a84f6de7145925abd72929396aa10e7935d631746e"
+    },
+    {
+      "path": "modernize/shaders/compiled_v18/tonemap_d3d12_vs.dxil",
+      "sha256": "4a3115fab97d9c3ae5fb8d99145a9d305db3ac6c6944260826a1e92d4e65dd9a"
+    },
+    {
+      "path": "modernize/shaders/compiled_v18/tonemap_d3d12_ps.dxil",
+      "sha256": "d98419c3cab1b572d5d756d6813bd3a0de1bef0feae7e345191c687ef290526e"
+    }
+  ]
+}

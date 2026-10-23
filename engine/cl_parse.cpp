@@ -1598,6 +1598,7 @@ void CL_Parse_CrosshairAngle( void )
 	g_ClientDLL->SetCrosshairAngle( angle );
 }
 
+// HL2MODERN_BOUNDED_LIGHTSTYLE_FROM_NETWORK
 void CL_Parse_LightStyle( void )
 {
 	int readall = MSG_ReadOneBit();
@@ -1609,7 +1610,7 @@ void CL_Parse_LightStyle( void )
 
 			if ( MSG_ReadOneBit() )
 			{
-				Q_strcpy (cl_lightstyle[i].map,  MSG_ReadString());
+				Q_strncpy (cl_lightstyle[i].map, MSG_ReadString(), sizeof(cl_lightstyle[i].map));
 			}
 			cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
 		}
@@ -1621,7 +1622,7 @@ void CL_Parse_LightStyle( void )
 		{
 			Sys_Error ("svc_lightstyle(%i) > MAX_LIGHTSTYLES", i );
 		}
-		Q_strcpy (cl_lightstyle[i].map,  MSG_ReadString());
+		Q_strncpy (cl_lightstyle[i].map, MSG_ReadString(), sizeof(cl_lightstyle[i].map));
 		cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
 	}
 }

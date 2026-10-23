@@ -1,0 +1,92 @@
+{
+  "projects": 153,
+  "conversion_configs": 348,
+  "missing_source_projects": 66,
+  "missing_source_references": 605,
+  "npc_prototype_candidates": 20,
+  "windows_compiled": false,
+  "renderer_upgrades_compiled": false,
+  "shader_custom_build_items": 19,
+  "multiplayer_tested": false,
+  "errors": [],
+  "missing_examples": [
+    {
+      "project": "Tracker/AdminServer/AdminServer.dsp",
+      "examples": [
+        "..\\..\\common\\Info.cpp",
+        "..\\..\\shared\\TokenLine.cpp"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerNET/TrackerNET.dsp",
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerSRV/TrackerSRV.dsp",
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerTest/TrackerTest.dsp",
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerUI/TrackerUI.dsp",
+      "examples": [
+        "..\\..\\common\\Info.cpp",
+        "..\\..\\common\\Random.cpp",
+        "..\\..\\Platform\\Script1.rc"
+      ]
+    },
+    {
+      "project": "Tracker/sqldb_mysql/sqldb_mysql.dsp",
+      "examples": [
+        "..\\..\\common\\MemPool.cpp"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/demo_executable.dsp",
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/hull_editor.dsp",
+      "examples": [
+        "..\\..\\Ivp_tools\\hull_editor.cxx",
+        "..\\..\\Ivp_tools\\ivp_convex_hull_splitter.cxx",
+        "..\\..\\Ivp_tools\\ivp_hull_editor.cxx",
+        "..\\..\\Ivp_tools\\ivp_hull_splitter_manager.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/internal_project.dsp",
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/internal_project_nogfx.dsp",
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx"
+      ]
+    }
+  ]
+}

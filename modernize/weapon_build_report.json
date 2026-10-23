@@ -1,0 +1,1681 @@
+{
+  "note": "Only server-source exclusion blocks server-side entity registration. Client inclusion of the same file is OPTIONAL and often intentionally absent. Project membership never proves compilation or runtime functionality.",
+  "branches": {
+    "hl2": {
+      "registered": 32,
+      "server_excluded": [],
+      "client_source_not_shared": [
+        "weapon_ar1",
+        "weapon_ar2",
+        "weapon_binoculars",
+        "weapon_bugbait",
+        "weapon_cguard",
+        "weapon_crowbar",
+        "weapon_cubemap",
+        "weapon_extinguisher",
+        "weapon_flaregun",
+        "weapon_frag",
+        "weapon_gauss",
+        "weapon_hmg1",
+        "weapon_hopwire",
+        "weapon_iceaxe",
+        "weapon_immolator",
+        "weapon_irifle",
+        "weapon_manhack",
+        "weapon_molotov",
+        "weapon_physcannon",
+        "weapon_physgun",
+        "weapon_pistol",
+        "weapon_rollerwand",
+        "weapon_rpg",
+        "weapon_shotgun",
+        "weapon_slam",
+        "weapon_smg1",
+        "weapon_smg2",
+        "weapon_sniperrifle",
+        "weapon_stickylauncher",
+        "weapon_stunstick",
+        "weapon_thumper",
+        "weapon_tripwire"
+      ],
+      "weapons": [
+        {
+          "classname": "weapon_ar1",
+          "source": "dlls/hl2_dll/weapon_ar1.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_ar2",
+          "source": "dlls/hl2_dll/weapon_ar2.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_binoculars",
+          "source": "dlls/hl2_dll/weapon_binoculars.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_bugbait",
+          "source": "dlls/hl2_dll/weapon_bugbait.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_cguard",
+          "source": "dlls/hl2_dll/weapon_cguard.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_crowbar",
+          "source": "dlls/hl2_dll/weapon_crowbar.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_cubemap",
+          "source": "dlls/weapon_cubemap.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_extinguisher",
+          "source": "dlls/hl2_dll/weapon_extinguisher.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_flaregun",
+          "source": "dlls/hl2_dll/weapon_flaregun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_frag",
+          "source": "dlls/hl2_dll/weapon_frag.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_gauss",
+          "source": "dlls/hl2_dll/weapon_gauss.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_hmg1",
+          "source": "dlls/hl2_dll/weapon_hgm1.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_hopwire",
+          "source": "dlls/hl2_dll/weapon_hopwire.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_iceaxe",
+          "source": "dlls/hl2_dll/weapon_iceaxe.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_immolator",
+          "source": "dlls/hl2_dll/weapon_immolator.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_irifle",
+          "source": "dlls/hl2_dll/weapon_irifle.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_manhack",
+          "source": "dlls/hl2_dll/weapon_manhack.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_molotov",
+          "source": "dlls/hl2_dll/weapon_molotov.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_physcannon",
+          "source": "dlls/hl2_dll/weapon_physcannon.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_physgun",
+          "source": "dlls/physgun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_pistol",
+          "source": "dlls/hl2_dll/weapon_pistol.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_rollerwand",
+          "source": "dlls/hl2_dll/weapon_rollerwand.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_rpg",
+          "source": "dlls/hl2_dll/weapon_rpg.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_shotgun",
+          "source": "dlls/hl2_dll/weapon_shotgun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_slam",
+          "source": "dlls/hl2_dll/weapon_slam.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_smg1",
+          "source": "dlls/hl2_dll/weapon_smg1.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_smg2",
+          "source": "dlls/hl2_dll/weapon_smg2.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_sniperrifle",
+          "source": "dlls/hl2_dll/weapon_sniperrifle.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_stickylauncher",
+          "source": "dlls/hl2_dll/weapon_stickylauncher.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_stunstick",
+          "source": "dlls/hl2_dll/weapon_stunstick.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_thumper",
+          "source": "dlls/hl2_dll/weapon_thumper.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_tripwire",
+          "source": "dlls/hl2_dll/weapon_tripwire.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        }
+      ]
+    },
+    "hl1": {
+      "registered": 15,
+      "server_excluded": [],
+      "client_source_not_shared": [
+        "weapon_357",
+        "weapon_crossbow",
+        "weapon_crowbar",
+        "weapon_egon",
+        "weapon_gauss",
+        "weapon_glock",
+        "weapon_handgrenade",
+        "weapon_hornetgun",
+        "weapon_mp5",
+        "weapon_physgun",
+        "weapon_rpg",
+        "weapon_satchel",
+        "weapon_shotgun",
+        "weapon_snark",
+        "weapon_tripmine"
+      ],
+      "weapons": [
+        {
+          "classname": "weapon_357",
+          "source": "dlls/hl1_dll/hl1_weapon_357.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_crossbow",
+          "source": "dlls/hl1_dll/hl1_weapon_crossbow.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_crowbar",
+          "source": "dlls/hl1_dll/hl1_weapon_crowbar.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_egon",
+          "source": "dlls/hl1_dll/hl1_weapon_egon.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_gauss",
+          "source": "dlls/hl1_dll/hl1_weapon_gauss.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_glock",
+          "source": "dlls/hl1_dll/hl1_weapon_glock.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_handgrenade",
+          "source": "dlls/hl1_dll/hl1_weapon_handgrenade.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_hornetgun",
+          "source": "dlls/hl1_dll/hl1_weapon_hornetgun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_mp5",
+          "source": "dlls/hl1_dll/hl1_weapon_mp5.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_physgun",
+          "source": "dlls/physgun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_rpg",
+          "source": "dlls/hl1_dll/hl1_weapon_rpg.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_satchel",
+          "source": "dlls/hl1_dll/hl1_weapon_satchel.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_shotgun",
+          "source": "dlls/hl1_dll/hl1_weapon_shotgun.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_snark",
+          "source": "dlls/hl1_dll/hl1_weapon_snark.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_tripmine",
+          "source": "dlls/hl1_dll/hl1_weapon_tripmine.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        }
+      ]
+    },
+    "cstrike": {
+      "registered": 28,
+      "server_excluded": [],
+      "client_source_not_shared": [],
+      "weapons": [
+        {
+          "classname": "weapon_ak47",
+          "source": "game_shared/cstrike/weapon_ak47.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_aug",
+          "source": "game_shared/cstrike/weapon_aug.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_awp",
+          "source": "game_shared/cstrike/weapon_awp.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_basecsgrenade",
+          "source": "game_shared/cstrike/weapon_basecsgrenade.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_c4",
+          "source": "game_shared/cstrike/weapon_c4.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_cs_base",
+          "source": "game_shared/cstrike/weapon_csbase.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_csbase_gun",
+          "source": "game_shared/cstrike/weapon_csbasegun.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_deagle",
+          "source": "game_shared/cstrike/weapon_deagle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_famas",
+          "source": "game_shared/cstrike/weapon_famas.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_fiveseven",
+          "source": "game_shared/cstrike/weapon_fiveseven.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_flashbang",
+          "source": "game_shared/cstrike/weapon_flashbang.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_g3sg1",
+          "source": "game_shared/cstrike/weapon_g3sg1.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_galil",
+          "source": "game_shared/cstrike/weapon_galil.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_glock",
+          "source": "game_shared/cstrike/weapon_glock.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_hegrenade",
+          "source": "game_shared/cstrike/weapon_hegrenade.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_knife",
+          "source": "game_shared/cstrike/weapon_knife.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_m249",
+          "source": "game_shared/cstrike/weapon_m249.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_m3",
+          "source": "game_shared/cstrike/weapon_m3.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_m4a1",
+          "source": "game_shared/cstrike/weapon_m4a1.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_mac10",
+          "source": "game_shared/cstrike/weapon_mac10.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_mp5navy",
+          "source": "game_shared/cstrike/weapon_mp5navy.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_p228",
+          "source": "game_shared/cstrike/weapon_p228.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_p90",
+          "source": "game_shared/cstrike/weapon_p90.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_scout",
+          "source": "game_shared/cstrike/weapon_scout.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_sg550",
+          "source": "game_shared/cstrike/weapon_sg550.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_sg552",
+          "source": "game_shared/cstrike/weapon_sg552.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_ump45",
+          "source": "game_shared/cstrike/weapon_ump45.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_usp",
+          "source": "game_shared/cstrike/weapon_usp.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        }
+      ]
+    },
+    "tf2": {
+      "registered": 38,
+      "server_excluded": [
+        "weapon_combat_chargeableplasma",
+        "weapon_infiltrator",
+        "weapon_laserdesignator",
+        "weapon_laserrifle",
+        "weapon_mortar",
+        "weapon_pistols"
+      ],
+      "client_source_not_shared": [
+        "weapon_builder",
+        "weapon_combat_chargeableplasma",
+        "weapon_infiltrator",
+        "weapon_laserdesignator",
+        "weapon_laserrifle",
+        "weapon_mortar",
+        "weapon_obj_empgenerator",
+        "weapon_pistols",
+        "weapon_plasmarifle"
+      ],
+      "weapons": [
+        {
+          "classname": "weapon_arcwelder",
+          "source": "game_shared/tf2/weapon_arcwelder.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_basecombatobject",
+          "source": "game_shared/tf2/weapon_basecombatobject.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_builder",
+          "source": "game_shared/tf2/weapon_builder.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_combat_basegrenade",
+          "source": "game_shared/tf2/weapon_combat_basegrenade.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_burstrifle",
+          "source": "game_shared/tf2/weapon_combat_burstrifle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_chargeableplasma",
+          "source": "game_shared/tf2/weapon_combat_chargeableplasma.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_combat_grenade",
+          "source": "game_shared/tf2/weapon_combat_grenade.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_grenade_emp",
+          "source": "game_shared/tf2/weapon_combat_grenade_emp.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_laserrifle",
+          "source": "game_shared/tf2/weapon_combat_laserrifle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_plasmagrenadelauncher",
+          "source": "game_shared/tf2/weapon_combat_plasma_grenade_launcher.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_plasmarifle",
+          "source": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_alien",
+          "source": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_base",
+          "source": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_shield",
+          "source": "game_shared/tf2/weapon_combatshield.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_shield_alien",
+          "source": "game_shared/tf2/weapon_combatshield.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_shotgun",
+          "source": "game_shared/tf2/weapon_combat_shotgun.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_combat_usedwithshieldbase",
+          "source": "game_shared/tf2/weapon_combat_usedwithshieldbase.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_drainbeam",
+          "source": "game_shared/tf2/weapon_drainbeam.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_flame_thrower",
+          "source": "game_shared/tf2/weapon_flame_thrower.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_gas_can",
+          "source": "game_shared/tf2/weapon_gas_can.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_grenade_rocket",
+          "source": "game_shared/tf2/weapon_grenade_rocket.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_harpoon",
+          "source": "game_shared/tf2/weapon_harpoon.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_infiltrator",
+          "source": "game_shared/tf2/weapon_infiltrator.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_laserdesignator",
+          "source": "game_shared/tf2/weapon_laserdesignator.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_laserrifle",
+          "source": "game_shared/tf2/weapon_laserrifle.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_limpetmine",
+          "source": "game_shared/tf2/weapon_limpetmine.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_minigun",
+          "source": "game_shared/tf2/weapon_minigun.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_mortar",
+          "source": "game_shared/tf2/weapon_mortar.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_obj_empgenerator",
+          "source": "game_shared/tf2/weapon_obj_empgenerator.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_obj_rallyflag",
+          "source": "game_shared/tf2/weapon_obj_rallyflag.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_objectselection",
+          "source": "game_shared/tf2/weapon_objectselection.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_pistols",
+          "source": "game_shared/tf2/weapon_pistols.cpp",
+          "debug": {
+            "server": false,
+            "client": false
+          },
+          "release": {
+            "server": false,
+            "client": false
+          },
+          "server_compiled_all_configs": false,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_plasmarifle",
+          "source": "game_shared/tf2/weapon_plasmarifle.cpp",
+          "debug": {
+            "server": true,
+            "client": false
+          },
+          "release": {
+            "server": true,
+            "client": false
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": false
+        },
+        {
+          "classname": "weapon_repairgun",
+          "source": "game_shared/tf2/weapon_repairgun.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_rocket_launcher",
+          "source": "game_shared/tf2/weapon_rocketlauncher.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_shield",
+          "source": "game_shared/tf2/weapon_shield.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_shield_grenade",
+          "source": "game_shared/tf2/weapon_shieldgrenade.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        },
+        {
+          "classname": "weapon_twohandedcontainer",
+          "source": "game_shared/tf2/weapon_twohandedcontainer.cpp",
+          "debug": {
+            "server": true,
+            "client": true
+          },
+          "release": {
+            "server": true,
+            "client": true
+          },
+          "server_compiled_all_configs": true,
+          "client_compiled_all_configs": true
+        }
+      ]
+    }
+  }
+}

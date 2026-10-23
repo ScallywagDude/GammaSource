@@ -1,0 +1,599 @@
+{
+  "branches": {
+    "cstrike": {
+      "metadata_candidates": 0,
+      "roots": [],
+      "total": 28,
+      "weapons": [
+        {
+          "classname": "weapon_ak47",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_aug",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_awp",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_basecsgrenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_c4",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_cs_base",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_csbase_gun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_deagle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_famas",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_fiveseven",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_flashbang",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_g3sg1",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_galil",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_glock",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_hegrenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_knife",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_m249",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_m3",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_m4a1",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_mac10",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_mp5navy",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_p228",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_p90",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_scout",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_sg550",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_sg552",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_ump45",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_usp",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        }
+      ]
+    },
+    "hl1": {
+      "metadata_candidates": 0,
+      "roots": [],
+      "total": 15,
+      "weapons": [
+        {
+          "classname": "weapon_357",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_crossbow",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_crowbar",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_egon",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_gauss",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_glock",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_handgrenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_hornetgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_mp5",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_physgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_rpg",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_satchel",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_shotgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_snark",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_tripmine",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        }
+      ]
+    },
+    "hl2": {
+      "metadata_candidates": 0,
+      "roots": [],
+      "total": 32,
+      "weapons": [
+        {
+          "classname": "weapon_ar1",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_ar2",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_binoculars",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_bugbait",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_cguard",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_crowbar",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_cubemap",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_extinguisher",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_flaregun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_frag",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_gauss",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_hmg1",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_hopwire",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_iceaxe",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_immolator",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_irifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_manhack",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_molotov",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_physcannon",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_physgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_pistol",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_rollerwand",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_rpg",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_shotgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_slam",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_smg1",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_smg2",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_sniperrifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_stickylauncher",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_stunstick",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_thumper",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_tripwire",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        }
+      ]
+    },
+    "tf2": {
+      "metadata_candidates": 0,
+      "roots": [],
+      "total": 38,
+      "weapons": [
+        {
+          "classname": "weapon_arcwelder",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_basecombatobject",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_builder",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_basegrenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_burstrifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_chargeableplasma",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_grenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_grenade_emp",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_laserrifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_plasmagrenadelauncher",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_alien",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_base",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_shield",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_shield_alien",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_shotgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_combat_usedwithshieldbase",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_drainbeam",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_flame_thrower",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_gas_can",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_grenade_rocket",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_harpoon",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_infiltrator",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_laserdesignator",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_laserrifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_limpetmine",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_minigun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_mortar",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_obj_empgenerator",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_obj_rallyflag",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_objectselection",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_pistols",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_plasmarifle",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_repairgun",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_rocket_launcher",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_shield",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_shield_grenade",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        },
+        {
+          "classname": "weapon_twohandedcontainer",
+          "runtime_verified": false,
+          "status": "unverified_no_assets"
+        }
+      ]
+    }
+  },
+  "note": "File presence and format are not texture identity, correct scale, or working gameplay.",
+  "schema_version": 23
+}

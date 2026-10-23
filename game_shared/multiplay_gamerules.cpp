@@ -9,6 +9,7 @@
 #include "multiplay_gamerules.h"
 #include "gameeventdefs.h"
 #include <KeyValues.h>
+#include "../modernize/server_text_policy.h"
 
 #ifdef CLIENT_DLL
 
@@ -550,7 +551,8 @@ END_NETWORK_TABLE()
 					}
 				}
 			}
-			else
+			// HL2MODERN_NULL_INFLICTOR: some world kills have no inflictor.
+			else if ( pInflictor )
 			{
 				killer_weapon_name = STRING( pInflictor->m_iClassname );
 			}
@@ -844,119 +846,80 @@ END_NETWORK_TABLE()
 		g_fGameOver = true;
 	}
 
-	void CMultiplayRules :: ChangeLevel( void )
-	{
-		char szNextMap[32];
-		char szFirstMapInList[32];
-		Q_strncpy( szFirstMapInList, "hldm1" ,sizeof(szFirstMapInList));  // the absolute default level is hldm1
+// HL2MODERN_BOUNDED_MAPCYCLE_MOTD
+    static bool HL2Modern_IsInstalledMap(const char *map, void *)
+    {
+        return engine->IsMapValid(map);
+    }
 
-		// find the map to change to
+    void CMultiplayRules :: ChangeLevel( void )
+    {
+        char nextMap[HL2ModernServerText::MAX_MAP_NAME + 1];
+        nextMap[0] = 0;
+        const char *current = STRING(gpGlobals->mapname);
+        const char *mapcfile = mapcyclefile.GetString();
+        int fileLength = 0;
+        byte *fileData = NULL;
+        if (mapcfile && *mapcfile)
+            fileData = engine->LoadFileForMe(mapcfile, &fileLength);
+        if (fileData)
+        {
+            if (fileLength > 0)
+            {
+                // The engine's loaded byte buffer need not end in '\0'.
+                const HL2ModernServerText::MapList maps =
+                    HL2ModernServerText::ParseMapcycle(
+                        (const char *)fileData, (size_t)fileLength);
+                HL2ModernServerText::SelectNextMap(
+                    maps, current, HL2Modern_IsInstalledMap, NULL,
+                    nextMap, sizeof(nextMap));
+            }
+            engine->FreeFile(fileData);
+        }
+        // Without a usable cycle, stay on a valid existing map.
+        if (!nextMap[0] && HL2ModernServerText::SafeMapName(current) &&
+            engine->IsMapValid(current))
+            Q_strncpy(nextMap, current, sizeof(nextMap));
+        if (!nextMap[0] && engine->IsMapValid("hldm1"))
+            Q_strncpy(nextMap, "hldm1", sizeof(nextMap));
+        if (!nextMap[0])
+        {
+            Warning("CHANGE LEVEL: no valid map in mapcycle or fallback\n");
+            g_fGameOver = false;
+            return;
+        }
+        g_fGameOver = true;
+        Msg("CHANGE LEVEL: %s\n", nextMap);
+        engine->ChangeLevel(nextMap, NULL);
+    }
 
-		const char *mapcfile = mapcyclefile.GetString();
-		Assert( mapcfile != NULL );
-		Q_strncpy( szNextMap, STRING(gpGlobals->mapname) ,sizeof(szNextMap));
-		Q_strncpy( szFirstMapInList, STRING(gpGlobals->mapname) ,sizeof(szFirstMapInList));
-
-		int length;
-		char *pFileList;
-		char *aFileList = pFileList = (char*)engine->LoadFileForMe( mapcfile, &length );
-		if ( pFileList && length )
-		{
-			// the first map name in the file becomes the default
-			sscanf( pFileList, " %32s", szNextMap );
-			if ( engine->IsMapValid( szNextMap ) )
-				Q_strncpy( szFirstMapInList, szNextMap ,sizeof(szFirstMapInList));
-
-			// keep pulling mapnames out of the list until the current mapname
-			// if the current mapname isn't found,  load the first map in the list
-			bool next_map_is_it = false;
-			while ( 1 )
-			{
-				while ( *pFileList && isspace( *pFileList ) ) pFileList++; // skip over any whitespace
-				if ( !(*pFileList) )
-					break;
-
-				char cBuf[32];
-				int ret = sscanf( pFileList, " %32s", cBuf );
-				// Check the map name is valid
-				if ( ret != 1 || *cBuf < 13 )
-					break;
-
-				if ( next_map_is_it )
-				{
-					// check that it is a valid map file
-					if ( engine->IsMapValid( cBuf ) )
-					{
-						Q_strncpy( szNextMap, cBuf ,sizeof(szNextMap));
-						break;
-					}
-				}
-
-				if ( FStrEq( cBuf, STRING(gpGlobals->mapname) ) )
-				{  // we've found our map;  next map is the one to change to
-					next_map_is_it = true;
-				}
-
-				pFileList += strlen( cBuf );
-			}
-
-			engine->FreeFile( (byte *)aFileList );
-		}
-
-		if ( !engine->IsMapValid(szNextMap) )
-			Q_strncpy( szNextMap, szFirstMapInList ,sizeof(szNextMap));
-
-		g_fGameOver = true;
-
-		Msg( "CHANGE LEVEL: %s\n", szNextMap );
-		
-		engine->ChangeLevel( szNextMap, NULL );
-	}
-
-	#define MAX_MOTD_CHUNK	  60
-	#define MAX_MOTD_LENGTH   (MAX_MOTD_CHUNK * 4)
-
-	void CMultiplayRules :: SendMOTDToClient( edict_t *client )
-	{
-		// read from the MOTD.txt file
-		int length, char_count = 0;
-		char *pFileList;
-		char *aFileList = pFileList = (char*)engine->LoadFileForMe( "motd.txt", &length );
-
-		// Send the message of the day
-		// read it chunk-by-chunk,  and send it in parts
-
-		while ( pFileList && *pFileList && char_count < MAX_MOTD_LENGTH )
-		{
-			char chunk[MAX_MOTD_CHUNK+1];
-			
-			if ( strlen( pFileList ) < MAX_MOTD_CHUNK )
-			{
-				Q_strncpy( chunk, pFileList ,sizeof(chunk));
-			}
-			else
-			{
-				Q_strncpy( chunk, pFileList, MAX_MOTD_CHUNK+1 );
-			}
-
-			char_count += strlen( chunk );
-			if ( char_count < MAX_MOTD_LENGTH )
-				pFileList = aFileList + char_count; 
-			else
-				*pFileList = 0;
-
-			CBasePlayer *player = (CBasePlayer *)CBaseEntity::Instance( client );
-
-			CSingleUserRecipientFilter user( player );
-			user.MakeReliable();
-			UserMessageBegin( user, "MOTD" );
-				WRITE_BYTE( *pFileList ? false : true );	// false means there is still more message to come
-				WRITE_STRING( chunk );
-			MessageEnd();
-		}
-
-		engine->FreeFile( (byte *)aFileList );
-	}
+    void CMultiplayRules :: SendMOTDToClient( edict_t *client )
+    {
+        int length = 0;
+        byte *data = engine->LoadFileForMe("motd.txt", &length);
+        if (!data) return;
+        CBasePlayer *player = (CBasePlayer *)CBaseEntity::Instance(client);
+        if (player && length > 0)
+        {
+            int offset = 0;
+            while (offset < length && offset < HL2ModernServerText::MOTD_TOTAL_BYTES)
+            {
+                const HL2ModernServerText::MotdChunk chunk =
+                    HL2ModernServerText::ReadMotdChunk(
+                        (const char *)data, length, offset);
+                if (!chunk.bytes) break;
+                CSingleUserRecipientFilter user(player);
+                user.MakeReliable();
+                UserMessageBegin(user, "MOTD");
+                    WRITE_BYTE(chunk.final ? 1 : 0);
+                    WRITE_STRING(chunk.text);
+                MessageEnd();
+                offset += chunk.bytes;
+                if (chunk.final) break;
+            }
+        }
+        engine->FreeFile(data);
+    }
 
 #endif		
 

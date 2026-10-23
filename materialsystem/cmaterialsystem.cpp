@@ -807,6 +807,22 @@ void CMaterialSystem::SetAdapter( int nAdapter, int nAdapterFlags )
 }
 
 	
+// HL2MODERN_RENDER_BACKEND_SELECTION
+// Requested renderer names map to shader API modules. There are NO modern
+// renderer implementations in the overlay. A module is only usable if it
+// exports the complete shader API interface and successfully initializes.
+static const char *HL2Modern_ShaderAPIModule( const char *name )
+{
+    if ( !name || !name[0] ) return NULL;
+    if ( !Q_stricmp( name, "dx9" ) || !Q_stricmp( name, "d3d9" ) ) return "shaderapidx9";
+    if ( !Q_stricmp( name, "dx8" ) || !Q_stricmp( name, "d3d8" ) ) return "shaderapidx8";
+    if ( !Q_stricmp( name, "vulkan" ) || !Q_stricmp( name, "vk" ) ) return "shaderapivulkan";
+    if ( !Q_stricmp( name, "opengl" ) || !Q_stricmp( name, "gl" ) ) return "shaderapiogl";
+    if ( !Q_stricmp( name, "dx11" ) || !Q_stricmp( name, "d3d11" ) ) return "shaderapidx11";
+    if ( !Q_stricmp( name, "dx12" ) || !Q_stricmp( name, "d3d12" ) ) return "shaderapidx12";
+    return NULL;
+}
+
 //-----------------------------------------------------------------------------
 // Initialization + shutdown of the material system
 //-----------------------------------------------------------------------------
@@ -814,8 +830,31 @@ InitReturnVal_t CMaterialSystem::Init()
 {
 	MathLib_Init( 2.2f, 2.2f, 0.0f, 2, true, false, false, true );	// NJS: Why no SSE?
 
-	CreateInterfaceFn clientFactory = CreateShaderAPI( m_pShaderDLL ? m_pShaderDLL : "shaderapidx9" );
-	if (!clientFactory)
+    // -renderapi dx9|dx8|vulkan|opengl|dx11|dx12
+    // Modern options require separately implemented shaderapi*.dll backends.
+    // -renderapi-strict disables fallback for predictable capability testing.
+    const char *requested = CommandLine()->ParmValue( "-renderapi" );
+    const char *module = m_pShaderDLL ? m_pShaderDLL : "shaderapidx9";
+    if ( requested && requested[0] )
+    {
+        const char *selected = HL2Modern_ShaderAPIModule( requested );
+        if ( !selected )
+        {
+            Warning( "Unknown -renderapi '%s'; valid: dx9 dx8 vulkan opengl dx11 dx12\n", requested );
+            if ( CommandLine()->FindParm( "-renderapi-strict" ) )
+                return INIT_FAILED;
+        }
+        else
+            module = selected;
+    }
+    CreateInterfaceFn clientFactory = CreateShaderAPI( module );
+    if ( !clientFactory && requested && requested[0] && !CommandLine()->FindParm( "-renderapi-strict" ) )
+    {
+        Warning( "Shader API module '%s' not installed; reverting to the legacy shaderapidx9 renderer.\n", module );
+        module = "shaderapidx9";
+        clientFactory = CreateShaderAPI( module );
+    }
+    if (!clientFactory)
 	{
 		DestroyShaderAPI();
 		return INIT_FAILED;

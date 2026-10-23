@@ -10,6 +10,11 @@
 #include "teamplay_gamerules.h"
 #include "game.h"
 #include "team.h"
+#include "../modernize/team_balance_policy.h"
+
+// HL2MODERN_TEAM_BALANCE
+static ConVar mp_team_balance("mp_team_balance", "0", FCVAR_SERVER,
+    "Limit manual team changes that worsen team size disparity (0=legacy).");
 
 static char team_names[MAX_TEAMS][MAX_TEAMNAME_LENGTH];
 static int team_scores[MAX_TEAMS];
@@ -256,6 +261,39 @@ void CTeamplayRules::ClientUserInfoChanged( CBasePlayer *pPlayer, char *infobuff
 		UTIL_SayText( text, pPlayer );
 		return;
 	}
+	// Keep a balanced team server balanced. If an admin has inherited
+	// unbalanced counts, permit only player-initiated moves that improve them.
+	// Unknown team names are refused after multiple teams exist in balance mode;
+	// otherwise players can evade fair sizing by creating a new team.
+	if ( mp_team_balance.GetBool() )
+	{
+		RecountTeams();
+		const int source = GetTeamIndex( pPlayer->TeamID() );
+		const int destination = GetTeamIndex( mdls );
+		if ( source >= 0 && source != destination && num_teams >= 2 )
+		{
+			int counts[MAX_TEAMS] = {0};
+			for ( int index = 1; index <= gpGlobals->maxClients; ++index )
+			{
+				CBasePlayer *member = UTIL_PlayerByIndex( index );
+				if ( !member ) continue;
+				const int team = GetTeamIndex( member->TeamID() );
+				if ( team >= 0 && team < MAX_TEAMS ) ++counts[team];
+			}
+			if ( destination < 0 ||
+			     !HL2ModernTeams::PermitsMove(counts, num_teams, source, destination) )
+			{
+				const int clientIndex = pPlayer->entindex();
+				engine->SetClientKeyValue(clientIndex,
+					engine->GetInfoKeyBuffer(pPlayer->edict()), "model", pPlayer->TeamName());
+				engine->SetClientKeyValue(clientIndex,
+					engine->GetInfoKeyBuffer(pPlayer->edict()), "team", pPlayer->TeamName());
+				UTIL_SayText("That team switch would unbalance the teams.\n", pPlayer);
+				return;
+			}
+		}
+	}
+
 	// notify everyone of the team change
 	if ( Q_strlen( STRING(pPlayer->pl.netname) ) > 0 )
 	{
@@ -445,7 +483,7 @@ bool CTeamplayRules::IsValidTeam( const char *pTeamName )
 const char *CTeamplayRules::TeamWithFewestPlayers( void )
 {
 	int i;
-	int minPlayers = MAX_TEAMS;
+	int minPlayers = gpGlobals ? gpGlobals->maxClients + 1 : 65;
 	int teamCount[ MAX_TEAMS ];
 	char *pTeamName = NULL;
 
@@ -495,7 +533,7 @@ void CTeamplayRules::RecountTeams( void )
 	pName = strtok( pName, ";" );
 	while ( pName != NULL && *pName )
 	{
-		if ( GetTeamIndex( pName ) < 0 )
+		if ( GetTeamIndex( pName ) < 0 && num_teams < MAX_TEAMS )
 		{
 			Q_strncpy( team_names[num_teams], pName, sizeof(team_names[num_teams]));
 			num_teams++;
@@ -525,9 +563,10 @@ void CTeamplayRules::RecountTeams( void )
 			
 			if ( tm < 0 ) // no team match found
 			{ 
-				if ( !m_teamLimit )
+				if ( !m_teamLimit && num_teams < MAX_TEAMS &&
+				     pTeamName && pTeamName[0] )
 				{
-					// add to new team
+					// add to new team only if the fixed arrays have capacity
 					tm = num_teams;
 					num_teams++;
 					team_scores[tm] = 0;

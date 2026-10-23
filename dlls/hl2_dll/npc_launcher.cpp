@@ -190,9 +190,13 @@ void CNPC_Launcher::Precache( void )
 {
 	// This is a dummy model that is never used!
 	engine->PrecacheModel("models/player.mdl");
-	engine->PrecacheModel(STRING(m_sMissileModel));
-	enginesound->PrecacheSound( STRING(m_sLaunchSound));
-	enginesound->PrecacheSound( STRING(m_sFlySound));
+	// HL2MODERN_NPC_ASSET_SAFETY: these map-supplied asset names are optional.
+	if ( m_sMissileModel != NULL_STRING && STRING(m_sMissileModel)[0] )
+		engine->PrecacheModel(STRING(m_sMissileModel));
+	if ( m_sLaunchSound != NULL_STRING && STRING(m_sLaunchSound)[0] )
+		enginesound->PrecacheSound( STRING(m_sLaunchSound));
+	if ( m_sFlySound != NULL_STRING && STRING(m_sFlySound)[0] )
+		enginesound->PrecacheSound( STRING(m_sFlySound));
 	
 	UTIL_PrecacheOther( "grenade_homer");
 	BaseClass::Precache();
@@ -269,6 +273,9 @@ Class_T	CNPC_Launcher::Classify( void )
 //------------------------------------------------------------------------------
 void CNPC_Launcher::LaunchGrenade( CBaseEntity* pEnemy )
 {
+	// An empty MissileModel is not a restorable projectile asset.
+	if ( m_sMissileModel == NULL_STRING || !STRING(m_sMissileModel)[0] )
+		return;
 	// If a path following missile, create a path following missile
 	if (m_sPathCornerName != NULL_STRING)
 	{

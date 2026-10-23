@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="IVP_TOOLS">
+      <UniqueIdentifier>{AA4480A2-98D8-561C-8B86-5C137A303FA9}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Ivp_tools\hull_editor.cxx">
+      <Filter>IVP_TOOLS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_tools\ivp_convex_hull_splitter.cxx">
+      <Filter>IVP_TOOLS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_tools\ivp_hull_editor.cxx">
+      <Filter>IVP_TOOLS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_tools\ivp_hull_splitter_manager.cxx">
+      <Filter>IVP_TOOLS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IVP_SAMPLE_SOURCES\ive_example_common.cxx" />
+  </ItemGroup>
+</Project>

@@ -39,7 +39,8 @@ HALF4 main( PS_INPUT i ) : COLOR
 	if (bBlend) 
 	{
 		worldSpaceEye = i.worldSpaceEyeVect;
-		HALF  worldSpaceDistSqr = dot( worldSpaceEye, worldSpaceEye );
+		// HL2MODERN_WATER_SAFE_NORMALIZE: floor is representable in half precision.
+		HALF  worldSpaceDistSqr = max( dot( worldSpaceEye, worldSpaceEye ), 0.0001f );
 		HALF  rcpWorldSpaceDist = rsqrt( worldSpaceDistSqr );
 		worldSpaceEye *= rcpWorldSpaceDist;
 		worldSpaceDist = worldSpaceDistSqr * rcpWorldSpaceDist;
@@ -53,7 +54,7 @@ HALF4 main( PS_INPUT i ) : COLOR
 	if (bBlend) 
 	{
 		worldSpaceEye = i.worldSpaceEyeVect;
-		worldSpaceDist   = length( worldSpaceEye );
+		worldSpaceDist   = max( length( worldSpaceEye ), 0.01f );
 		worldSpaceEye /= worldSpaceDist;
 	}
 	else
@@ -66,7 +67,8 @@ HALF4 main( PS_INPUT i ) : COLOR
 	HALF3 reflectVect      = CalcReflectionVectorUnnormalized( worldSpaceNormal, worldSpaceEye );
 	
 	HALF  dotResult = dot( worldSpaceEye, worldSpaceNormal ); 
-	dotResult = max( 0.0, dotResult );
+	// HL2MODERN_WATER_BOUNDED_FRESNEL: compressed normals may overshoot one.
+	dotResult = saturate( dotResult );
 	HALF  fresnelFactor = pow( 1.0 - dotResult, 5 );
 	
 	HALF3 specularLighting = texCUBE( EnvmapSampler, reflectVect );

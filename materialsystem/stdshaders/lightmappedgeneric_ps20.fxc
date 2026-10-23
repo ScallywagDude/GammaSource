@@ -197,7 +197,8 @@ HALF4 main( PS_INPUT i ) : COLOR
 		// Calc Fresnel factor
 		HALF3 eyeVect = texCUBE( NormalizeSampler, i.worldVertToEyeVector );
 		eyeVect = eyeVect*2.0 - 1.0;
-		HALF fresnel = 1.0 - dot( worldSpaceNormal, eyeVect );
+		// HL2MODERN_BOUNDED_FRESNEL_LIGHTMAP
+		HALF fresnel = saturate( 1.0 - dot( worldSpaceNormal, eyeVect ) );
 		fresnel = pow( fresnel, 5.0 );
 		fresnel = fresnel * g_OneMinusFresnelReflection + g_FresnelReflection;
 		

@@ -1,0 +1,7 @@
+#ifndef HL2MODERN_TEST_CPP98_CSTDDEF
+#define HL2MODERN_TEST_CPP98_CSTDDEF
+// Test-only C++98 namespace bridge over the platform's real C type header.
+// VS2026's <cstddef> pulls in C++11+ type traits even in C++98 compiler mode.
+#include <stddef.h>
+namespace std { using ::size_t; using ::ptrdiff_t; }
+#endif

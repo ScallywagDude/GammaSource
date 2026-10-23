@@ -1,0 +1,50 @@
+--- a/hl2/root1/materials/Models/MegaBuild_render/hl2logo.vmt
++++ b/hl2/root1/materials/Models/MegaBuild_render/hl2logo.vmt
+@@ -34,2 +34,3 @@
+ 
+ }
++}
+--- a/hl2/root1/materials/Models/props_interiors/metalfence007a.vmt
++++ b/hl2/root1/materials/Models/props_interiors/metalfence007a.vmt
+@@ -12,3 +12,2 @@
+ 
+ 
+-metalfence007a--- a/hl2/root1/materials/Models/shadertest/VertexLitTextureDetail.vmt
++++ b/hl2/root1/materials/Models/shadertest/VertexLitTextureDetail.vmt
+@@ -25,3 +25,3 @@
+ 
+ 	}
+-}
++
+--- a/hl2/root1/materials/Models/shadertest/vertexlittexture.vmt
++++ b/hl2/root1/materials/Models/shadertest/vertexlittexture.vmt
+@@ -24,3 +24,3 @@
+ 
+ 	}
+-}
++
+--- a/hl2/root1/materials/hl2_logo/background.vmt
++++ b/hl2/root1/materials/hl2_logo/background.vmt
+@@ -34,2 +34,3 @@
+ 
+ }
++}
+--- a/hl1/root0/materials/Sprites/mommaspit.vmt
++++ b/hl1/root0/materials/Sprites/mommaspit.vmt
+@@ -13,2 +13,3 @@
+ 		}
+ }
++}
+--- a/hl1/root0/materials/Sprites/mommaspout.vmt
++++ b/hl1/root0/materials/Sprites/mommaspout.vmt
+@@ -13,2 +13,3 @@
+ 		}
+ }
++}
+--- a/hl1/root0/materials/models/v_gauss/gloveCHROME.vmt
++++ b/hl1/root0/materials/models/v_gauss/gloveCHROME.vmt
+@@ -8,3 +8,3 @@
+ 	"$multipass" 1
+ }
+-}
++

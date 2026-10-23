@@ -15,6 +15,8 @@
 #include <math.h>
 #include "bumpvects.h"
 #include "colorspace.h"
+// HL2MODERN_GAMMA_INPUT_GUARD
+#include "../modernize/lighting_parameters.h"
 #include "materialsystem_global.h"
 #include "IHardwareConfigInternal.h"
 #include "materialsystem/materialsystem_config.h"
@@ -33,6 +35,8 @@ static int				linearToLightmap[4096];	// linear (0..4) to screen corrected textu
 void ColorSpace::SetGamma( float screenGamma, float texGamma, 
 						   float overbright, bool allowCheats, bool linearFrameBuffer )
 {
+	// HL2MODERN_SANITIZED_GAMMA_TABLE_INPUTS
+	HL2ModernLighting::SanitizeGammaParameters( screenGamma, texGamma, overbright );
 	int		i, inf;
 	float	g1, g3;
 	float	g;

@@ -1116,7 +1116,9 @@ bool CNPC_CombineGuard::AimGunAt( CBaseEntity *pEntity, float flInterval )
 		return true;
 
 	matrix3x4_t gunMatrix;
-	GetAttachment( m_MuzzleAttachment, gunMatrix );
+	// HL2MODERN_NPC_ASSET_SAFETY: avoid using an unavailable muzzle matrix.
+	if ( m_MuzzleAttachment <= 0 || !GetAttachment( m_MuzzleAttachment, gunMatrix ) )
+		return false;
 
 	// transform the enemy into gun space
 	Vector localEnemyPosition;

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{555A1049-D3FB-53FB-A767-ED6907DD66D0}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>shaderdx8</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>shaderapidx8</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;..\..\dx9sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;SHADERAPIDX9;_WIN32;IMAGE_LOADER_NO_DXTC;WIN32;_MBCS;_USRDLL;SHADER_DLL_EXPORT;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead;_WINDOWS;PROTECTED_THINGS_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>shaderapidx8</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;..\..\dx9sdk\include;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;SHADERAPIDX9;_WIN32;IMAGE_LOADER_NO_DXTC;WIN32;_MBCS;_USRDLL;SHADER_DLL_EXPORT;strncpy=use_Q_strncpy_instead;_snprintf=use_Q_snprintf_instead;_WINDOWS;PROTECTED_THINGS_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\public\characterset.cpp" />
+    <ClCompile Include=".\CMaterialSystemStats.cpp" />
+    <ClCompile Include=".\ColorFormatDX8.cpp" />
+    <ClCompile Include="..\..\public\filesystem_helpers.cpp" />
+    <ClCompile Include="..\..\Public\imageloader.cpp" />
+    <ClCompile Include="..\..\Public\interface.cpp" />
+    <ClCompile Include="..\..\public\KeyValues.cpp" />
+    <ClCompile Include="..\..\Public\mathlib.cpp" />
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp" />
+    <ClCompile Include="..\..\public\mempool.cpp" />
+    <ClCompile Include=".\MeshDX8.cpp" />
+    <ClCompile Include=".\Recording.cpp" />
+    <ClCompile Include=".\ShaderAPIDX8.cpp" />
+    <ClCompile Include=".\ShaderShadowDX8.cpp" />
+    <ClCompile Include=".\TextureDX8.cpp" />
+    <ClCompile Include=".\TransitionTable.cpp" />
+    <ClCompile Include="..\..\public\utlbuffer.cpp" />
+    <ClCompile Include="..\..\Public\utlsymbol.cpp" />
+    <ClCompile Include=".\vertexdecl.cpp" />
+    <ClCompile Include=".\VertexShaderDX8.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\TransitionTable.h" />
+    <ClInclude Include=".\vertexdecl.h" />
+    <ClInclude Include=".\CMaterialSystemStats.h" />
+    <ClInclude Include=".\ColorFormatDX8.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3d8.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3d8caps.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3d8types.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3d9.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3d9caps.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3d9types.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8core.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8effect.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8math.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8math.inl" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8mesh.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8shape.h" />
+    <ClInclude Include="..\..\dx8sdk\include\d3dx8tex.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9anim.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9core.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9effect.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9math.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9math.inl" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9mesh.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9shader.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9shape.h" />
+    <ClInclude Include="..\..\dx9sdk\include\d3dx9tex.h" />
+    <ClInclude Include=".\dynamicib.h" />
+    <ClInclude Include=".\dynamicvb.h" />
+    <ClInclude Include=".\IMeshDX8.h" />
+    <ClInclude Include=".\locald3dtypes.h" />
+    <ClInclude Include=".\Recording.h" />
+    <ClInclude Include=".\ShaderAPIDX8.h" />
+    <ClInclude Include=".\ShaderAPIDX8_Global.h" />
+    <ClInclude Include=".\ShaderShadowDX8.h" />
+    <ClInclude Include=".\stubd3ddevice.h" />
+    <ClInclude Include=".\TextureDX8.h" />
+    <ClInclude Include=".\VertexShaderDX8.h" />
+    <ClInclude Include="..\..\utils\scenemanager\workspace.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\dx9sdk\lib\d3dx9.lib" />
+    <None Include="..\..\dx9sdk\lib\d3d9.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

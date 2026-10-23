@@ -340,8 +340,19 @@ bool CCSPlayer::IsShieldDrawn() const
 }
 
 
+extern ConVar sv_impulse101_allweapons;
 void CCSPlayer::CheatImpulseCommands( int iImpulse )
 {
+    // HL2MODERN_BRANCH_CHEAT_GATE: overrides must honor the base cheat gate.
+    if ( iImpulse == 101 )
+    {
+#if defined(HLDEMO_BUILD)
+        return;
+#else
+        extern int g_iWeaponCheat;
+        if ( g_iWeaponCheat == 0 ) return;
+#endif
+    }
 	switch( iImpulse )
 	{
 		case 101:
@@ -352,6 +363,59 @@ void CCSPlayer::CheatImpulseCommands( int iImpulse )
 			//GiveNamedItem( "weapon_ak47" );
 			//GiveNamedItem( "weapon_aug" );
 			AddAccount( 16000 );
+			// Match this branch's assault-suit pickup without requiring another model.
+			m_iKevlar = 2;
+			SetArmorValue(100);
+		// HL2MODERN_BRANCH_IMPULSE101_CS: only this branch's concrete registered weapons.
+		// Experimental cut weapons may require missing assets and animations.
+		if (sv_impulse101_allweapons.GetBool())
+		{
+			const char *const weapons[] = {
+				"weapon_ak47",
+				"weapon_aug",
+				"weapon_awp",
+				"weapon_c4",
+				"weapon_deagle",
+				"weapon_famas",
+				"weapon_fiveseven",
+				"weapon_flashbang",
+				"weapon_g3sg1",
+				"weapon_galil",
+				"weapon_glock",
+				"weapon_hegrenade",
+				"weapon_knife",
+				"weapon_m249",
+				"weapon_m3",
+				"weapon_m4a1",
+				"weapon_mac10",
+				"weapon_mp5navy",
+				"weapon_p228",
+				"weapon_p90",
+				"weapon_scout",
+				"weapon_sg550",
+				"weapon_sg552",
+				"weapon_ump45",
+				"weapon_usp",
+			};
+			// HL2MODERN_IMPULSE101_RESULT: record what the player actually owns.
+			// A registered classname is not proof that its scripts/models work.
+			unsigned int given=0, already=0, failed=0;
+			for (unsigned int k=0; k<sizeof(weapons)/sizeof(weapons[0]); ++k)
+			{
+				if (HasNamedPlayerItem(weapons[k])) { ++already; continue; }
+				GiveCheatWeapon(weapons[k]);
+				if (HasNamedPlayerItem(weapons[k])) ++given;
+				else
+				{
+					++failed;
+					Msg("impulse 101 could not equip %s\n", weapons[k]);
+				}
+			}
+			Msg("impulse 101 extra weapons: equipped %u, owned %u, failed %u\n",
+				given, already, failed);
+			RefillCheatWeaponAmmo();
+		}
+
 
 			GiveAmmo( 250, BULLET_PLAYER_50AE );
 			GiveAmmo( 250, BULLET_PLAYER_762MM );
@@ -363,6 +427,7 @@ void CCSPlayer::CheatImpulseCommands( int iImpulse )
 			GiveAmmo( 250, BULLET_PLAYER_357SIG );
 			GiveAmmo( 250, BULLET_PLAYER_57MM );
 
+			RefillCheatWeaponAmmo();
 			gEvilImpulse101 = false;
 		}
 		break;
@@ -2717,7 +2782,9 @@ void CCSPlayer::State_PreThink_JOINED()
 void CCSPlayer::Weapon_Equip( CBaseCombatWeapon *pWeapon )
 {
 	CWeaponCSBase *pCSWeapon = dynamic_cast< CWeaponCSBase* >( pWeapon );
-	if ( pCSWeapon )
+	// HL2MODERN_CS_CHEAT_SLOTS: retain the full arsenal only during expanded cheats.
+	extern int gEvilImpulse101;
+	if ( pCSWeapon && !(gEvilImpulse101 && sv_impulse101_allweapons.GetBool()) )
 	{
 		// For rifles, pistols, or the knife, drop our old weapon in this slot.
 		if ( pCSWeapon->GetSlot() == WEAPON_SLOT_RIFLE || 
@@ -2755,7 +2822,9 @@ bool CCSPlayer::BumpWeapon( CBaseCombatWeapon *pWeapon )
 	// ----------------------------------------
 	// If I already have it just take the ammo
 	// ----------------------------------------
-	if ( Weapon_SlotOccupied( pWeapon ) )
+	extern int gEvilImpulse101;
+	if ( Weapon_SlotOccupied( pWeapon ) &&
+		!(gEvilImpulse101 && sv_impulse101_allweapons.GetBool()) )
 	{
 		Weapon_EquipAmmoOnly( pWeapon );
 		// Only remove me if I have no ammo left

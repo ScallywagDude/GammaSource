@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="External Headers">
+      <UniqueIdentifier>{5E737C3A-7561-5566-9D7B-44A638D321B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{F8B304C9-0CD1-509F-AC61-0AF94B543F5B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{71639F63-AB28-5AEA-B7A9-D2357F6FC806}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\cl_dll\hl2_hud\c_ar2_explosion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\c_baseentity_stub.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_baseparticleentity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_movie_explosion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_particle_smokegrenade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\c_perftest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_smoke_trail.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_SmokeStack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\c_spheretest.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\c_steamjet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\client_class.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\cmdlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\counter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\datatable_recv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\fasttimer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\Mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\matsysapp\matsysapp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\MemPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\object_bucket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\particle.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\particle_prototype.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\particle_proxies.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\particlemgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\particles_simple.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\cl_dll\ParticleSphereRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\propfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\tweakpropdlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\vallocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\vmatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\cl_dll\c_particlebaseeffect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\counter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\fasttimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\MaterialSystem_Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\matsysapp\matsysapp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\particle_prototype.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\particle_util.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\particledraw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\particlemgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\particles_simple.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\ParticleSphereRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\tweakpropdlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\amd3dx.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\arraylist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\baselist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\basetypes.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\bitbuf.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\BSPFILE.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\bspflags.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\c_baseentity.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\c_smoke_trail.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\cache.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\cache_user.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\cdll_int.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\cl_dll.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\CLIENT.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\client_class.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\client_command.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\cliententitylist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\CMD.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cmdlib.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\cmodel.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\COMMON.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\commonmacros.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\conprint.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\const.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\convar.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\custom.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\CVAR.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\datatable.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\datatable_common.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\datatable_recv.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\dlight.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\entity.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\entity_state.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\event_flags.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\event_system.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\fastlinklist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\GL_MODEL.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\GLQUAKE.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\hlshell.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\icliententitylist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\iclientsound.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\icvar.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\iefx.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ifileaccess.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterial.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialProxyFactory.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialSystem.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialVar.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\imovehelper.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\info.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\interface.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\iprediction.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ishadersystem.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\MaterialSystem\ITexture.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\itriangle.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ivrenderview.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\linklist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\MATHLIB.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\mouthinfo.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\NET.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\netadr.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\object_bucket.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\packed_entity.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\packedentityarray.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\move\physent_client.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\plane.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\PROGS.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\propfile.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\QUAKEDEF.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\RENDER.H">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\smoke_fog_overlay.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\engine\sysexternal.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\touchlist.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\usercmd.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\cl_dll\util_vector.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vallocator.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vector.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\view_shared.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vmatrix.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vplane.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\vstring.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\worldsize.h">
+      <Filter>External Headers</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

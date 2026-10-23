@@ -1,0 +1,13 @@
+........HL2_2003_Modernization_Source_v18.zip: 2,146 bytes; sha256 d61965fc5b304fd8e88e0279e8801ba0d3942842b1283ae55ef15c2c3fd606df
+HL2_2003_Modernization_Overlay_v18.zip: 2,036 bytes; sha256 01fec4a8cacfc298c1b2aef61417ab9bb30d972760c6676c6772f615281682b2
+Verified original + 6 overlay members = 7 full-source members.
+HL2_2003_Modernization_Source_v18.zip: 2,146 bytes; sha256 d61965fc5b304fd8e88e0279e8801ba0d3942842b1283ae55ef15c2c3fd606df
+HL2_2003_Modernization_Overlay_v18.zip: 2,036 bytes; sha256 01fec4a8cacfc298c1b2aef61417ab9bb30d972760c6676c6772f615281682b2
+Verified original + 6 overlay members = 7 full-source members.
+[1/61] tier0/tier0.vcxproj (Debug)
+..................................................................................................s.........................................
+----------------------------------------------------------------------
+Ran 148 tests in 25.524s
+
+OK (skipped=1)
+Saved build report to /tmp/tmppgv5yh5u/logs/build_report.json

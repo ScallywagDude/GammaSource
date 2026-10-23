@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{95946B61-E827-5A87-AA85-FA3A38F1F05C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ApiExampleStatic</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ApiExampleStatic</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ApiExampleStaticD</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PreprocessorDefinitions>_WINDOWS;_MBCS;WIN32;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\AquireImage.cpp" />
+    <ClCompile Include="..\DecodeCharset.cpp" />
+    <ClCompile Include="..\GetColourFromString.cpp" />
+    <ClCompile Include="..\GetFontSize.cpp" />
+    <ClCompile Include="..\GetFontSizeAsPixels.cpp" />
+    <ClCompile Include="..\GetNumberParameter.cpp" />
+    <ClCompile Include="..\HtmlAnchor.cpp" />
+    <ClCompile Include="..\htmlblockquote.cpp" />
+    <ClCompile Include="..\HTMLDocument.cpp" />
+    <ClCompile Include="..\HTMLDocumentObject.cpp" />
+    <ClCompile Include="..\HTMLGetAlignmentFromString.cpp" />
+    <ClCompile Include="..\HTMLHorizontalRule.cpp" />
+    <ClCompile Include="..\HTMLImage.cpp" />
+    <ClCompile Include="..\HtmlList.cpp" />
+    <ClCompile Include="..\HTMLListItem.cpp" />
+    <ClCompile Include="..\HTMLParagraph.cpp" />
+    <ClCompile Include="..\HTMLParagraphObject.cpp" />
+    <ClCompile Include="..\HTMLParse.cpp" />
+    <ClCompile Include="..\HTMLParseBase.cpp" />
+    <ClCompile Include="..\HTMLTable.cpp" />
+    <ClCompile Include="..\HTMLTableCell.cpp" />
+    <ClCompile Include="..\HTMLTextBlock.cpp" />
+    <ClCompile Include="..\drawcontext.cpp" />
+    <ClCompile Include="..\HTMLHorizontalRuleSection.cpp" />
+    <ClCompile Include="..\HTMLImageSection.cpp" />
+    <ClCompile Include="..\HTMLSection.cpp" />
+    <ClCompile Include="..\HTMLSectionABC.cpp" />
+    <ClCompile Include="..\HTMLSectionCreator.cpp" />
+    <ClCompile Include="..\HTMLSectionLink.cpp" />
+    <ClCompile Include="..\htmltablesection.cpp" />
+    <ClCompile Include="..\HTMLTextSection.cpp" />
+    <ClCompile Include="..\ParentSection.cpp" />
+    <ClCompile Include="..\QHTMControlSection.cpp" />
+    <ClCompile Include="..\ScrollContainer.cpp" />
+    <ClCompile Include="..\sectionabc.cpp" />
+    <ClCompile Include="..\tablelayout.cpp" />
+    <ClCompile Include="..\TipWindow.cpp" />
+    <ClCompile Include="..\WindowSection.cpp" />
+    <ClCompile Include="..\cursor.cpp" />
+    <ClCompile Include="..\Defaults.cpp" />
+    <ClCompile Include="..\EnableCoolTips.cpp" />
+    <ClCompile Include="..\GetDisplayWorkArea.cpp" />
+    <ClCompile Include="..\GotoUrl.cpp" />
+    <ClCompile Include="..\HTMLPrint.cpp" />
+    <ClCompile Include="..\LoadTextFile.cpp" />
+    <ClCompile Include="..\Mouse.cpp" />
+    <ClCompile Include="..\Palette.cpp" />
+    <ClCompile Include="..\QHTM.cpp" />
+    <ClCompile Include="..\QHTM_GetHTMLHeight.cpp" />
+    <ClCompile Include="..\QHTM_MessageBox.cpp" />
+    <ClCompile Include="..\QHTM_RenderHTML.cpp" />
+    <ClCompile Include="..\QHTM_SetHTMLButton.cpp" />
+    <ClCompile Include="..\QHTM_SetResources.cpp" />
+    <ClCompile Include="..\QHTM_Trace.cpp" />
+    <ClCompile Include="..\RegisterWindow.cpp" />
+    <ClCompile Include="..\ResourceLoader.cpp" />
+    <ClCompile Include="..\SimpleString.cpp" />
+    <ClCompile Include="..\striremove.cpp" />
+    <ClCompile Include="..\stristr.cpp" />
+    <ClCompile Include="..\strremove.cpp" />
+    <ClCompile Include=".\ApiExampleStatic.cpp" />
+    <ClCompile Include=".\ConvertBitmapToDIB.cpp" />
+    <ClCompile Include=".\Print.cpp" />
+    <ClCompile Include=".\SaveAsBitmap.cpp" />
+    <ClCompile Include=".\StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\WriteDIB.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\AquireImage.h" />
+    <ClInclude Include="..\HTMLAnchor.h" />
+    <ClInclude Include="..\HTMLBlockQuote.h" />
+    <ClInclude Include="..\HTMLDocument.h" />
+    <ClInclude Include="..\HTMLDocumentObject.h" />
+    <ClInclude Include="..\HTMLFontDef.h" />
+    <ClInclude Include="..\HTMLHorizontalRule.h" />
+    <ClInclude Include="..\HTMLImage.h" />
+    <ClInclude Include="..\HTMLLink.h" />
+    <ClInclude Include="..\HTMLList.h" />
+    <ClInclude Include="..\HTMLListItem.h" />
+    <ClInclude Include="..\HTMLParagraph.h" />
+    <ClInclude Include="..\HTMLParagraphObject.h" />
+    <ClInclude Include="..\HTMLParse.h" />
+    <ClInclude Include="..\HTMLParseBase.h" />
+    <ClInclude Include="..\HTMLTable.h" />
+    <ClInclude Include="..\HTMLTableCell.h" />
+    <ClInclude Include="..\HTMLTextBlock.h" />
+    <ClInclude Include="..\drawcontext.h" />
+    <ClInclude Include="..\HTMLHorizontalRuleSection.h" />
+    <ClInclude Include="..\HTMLImageSection.h" />
+    <ClInclude Include="..\HTMLSection.h" />
+    <ClInclude Include="..\HTMLSectionABC.h" />
+    <ClInclude Include="..\HTMLSectionCreator.h" />
+    <ClInclude Include="..\HtmlSectionLink.h" />
+    <ClInclude Include="..\htmltablesection.h" />
+    <ClInclude Include="..\HTMLTextSection.h" />
+    <ClInclude Include="..\ParentSection.h" />
+    <ClInclude Include="..\QHTMControlSection.h" />
+    <ClInclude Include="..\ScrollContainer.h" />
+    <ClInclude Include="..\sectionabc.h" />
+    <ClInclude Include="..\tablelayout.h" />
+    <ClInclude Include="..\TipWindow.h" />
+    <ClInclude Include="..\WindowSection.h" />
+    <ClInclude Include="..\cursor.h" />
+    <ClInclude Include="..\Defaults.h" />
+    <ClInclude Include="..\FontDef.h" />
+    <ClInclude Include="..\Palette.h" />
+    <ClInclude Include="..\QHTM.h" />
+    <ClInclude Include="..\QHTM_Trace.h" />
+    <ClInclude Include="..\QHTM_Types.h" />
+    <ClInclude Include="..\resource.h" />
+    <ClInclude Include="..\ResourceLoader.h" />
+    <ClInclude Include="..\SimpleString.h" />
+    <ClInclude Include="..\smallstringhash.h" />
+    <ClInclude Include="..\Utils.h" />
+    <ClInclude Include=".\resource.h" />
+    <ClInclude Include="..\StaticString.h" />
+    <ClInclude Include=".\StdAfx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\QHTM.rc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ResourceCompile>
+    <ResourceCompile Include=".\APIExampleStatic.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\res\arrow.cur" />
+    <None Include=".\res\Hand.cur" />
+    <None Include="..\res\Hand.cur" />
+    <None Include=".\res\noimage.bmp" />
+    <None Include="..\res\noimage.bmp" />
+    <None Include=".\zoomplus\features.html" />
+    <None Include=".\zoomplus\grid.bmp" />
+    <None Include=".\zoomplus\options.bmp" />
+    <None Include=".\zoomplus\selected.bmp" />
+    <None Include=".\zoomplus\zoomed.bmp" />
+    <None Include=".\zoomplus\zoomlogo.bmp" />
+    <None Include=".\about.html" />
+    <None Include=".\earth.mng" />
+    <None Include=".\fonts.html" />
+    <None Include=".\FOREST.JPG" />
+    <None Include=".\Headings.html" />
+    <None Include=".\hyperlink.html" />
+    <None Include=".\images.html" />
+    <None Include=".\lists.html" />
+    <None Include=".\logo.bmp" />
+    <None Include=".\styles.html" />
+    <None Include=".\tables.html" />
+    <None Include=".\welcome.html" />
+    <None Include=".\ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

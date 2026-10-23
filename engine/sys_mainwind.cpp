@@ -34,6 +34,8 @@
 #include "utllinkedlist.h"
 #include "tier0/vcrmode.h"
 #include "gl_matsysiface.h"
+#include "vstdlib/ICommandLine.h"
+#include "../modernize/steam_client_bridge.h"
 #include "filesystem_engine.h"
 #include "keydefs.h"
 
@@ -148,6 +150,11 @@ private:
 
 
 
+
+// HL2MODERN_STEAM_CLIENT_LIFECYCLE
+// Client-only, explicit opt-in. Steamworks belongs to this process's
+// lifetime, NOT to map changes or multiplayer player connections.
+static HL2ModernSteam::ClientBridge g_HL2ModernSteamClient;
 
 static CGame g_Game;
 IGame *game = ( IGame * )&g_Game;
@@ -580,6 +587,10 @@ void CGame::DispatchGameMsg( UINT uMsg, WPARAM wParam, LPARAM lParam )
 
 void CGame::DispatchAllStoredGameMessages()
 {
+#ifndef SWDS
+	// Process Steam callbacks on the same thread that drives game messages.
+	g_HL2ModernSteamClient.Pump();
+#endif
 	if ( g_pVCR->GetMode() == VCR_Playback )
 	{
 		UINT uMsg;
@@ -857,6 +868,16 @@ bool CGame::Init( void *pvInstance )
 	}
 
 #ifndef SWDS
+	// The owner must provide a real App ID (Steam launch or development ID).
+	// No restart through Steam is attempted by this experimental integration.
+	if ( CommandLine()->FindParm( "-steamworks" ) &&
+	     !CommandLine()->FindParm( "-nosteamworks" ) )
+	{
+		if ( g_HL2ModernSteamClient.Start() )
+			Msg( "Steamworks bootstrap initialized.\n" );
+		else
+			Warning( "Steamworks bootstrap unavailable (steam_api.dll, client, or App ID). Continuing offline.\n" );
+	}
 	thread->Init();
 #endif
 	// Create engine window, etc.
@@ -866,6 +887,7 @@ bool CGame::Init( void *pvInstance )
 bool CGame::Shutdown( void )
 {
 #ifndef SWDS
+	g_HL2ModernSteamClient.Stop();
 	if (NULL != m_pcdinput)
 		delete(m_pcdinput);
 

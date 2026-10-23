@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "jobs": [
+    {
+      "name": "weapon_inventory",
+      "arguments": [
+        "modernize/weapon_branch_audit.py"
+      ],
+      "exit_code": 0,
+      "seconds": 1.047,
+      "log": "modernize/reports/validation/weapon_inventory.log"
+    },
+    {
+      "name": "weapon_build",
+      "arguments": [
+        "modernize/weapon_build_audit.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.265,
+      "log": "modernize/reports/validation/weapon_build.log"
+    },
+    {
+      "name": "weapon_assets_source",
+      "arguments": [
+        "modernize/weapon_asset_audit.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.11,
+      "log": "modernize/reports/validation/weapon_assets_source.log"
+    },
+    {
+      "name": "npc_assets_source",
+      "arguments": [
+        "modernize/npc_asset_audit.py",
+        "--out",
+        "modernize/reports/NPC_ASSET_AUDIT_V18.json"
+      ],
+      "exit_code": 0,
+      "seconds": 0.093,
+      "log": "modernize/reports/validation/npc_assets_source.log"
+    },
+    {
+      "name": "structure",
+      "arguments": [
+        "modernize/validate.py"
+      ],
+      "exit_code": 0,
+      "seconds": 0.469,
+      "log": "modernize/reports/validation/structure.log"
+    },
+    {
+      "name": "shader_plan",
+      "arguments": [
+        "modernize/build_modern_shaders.py",
+        "--plan"
+      ],
+      "exit_code": 0,
+      "seconds": 0.36,
+      "log": "modernize/reports/validation/shader_plan.log"
+    },
+    {
+      "name": "replay",
+      "arguments": [
+        "modernize/apply_modernization.py"
+      ],
+      "exit_code": 0,
+      "seconds": 18.875,
+      "log": "modernize/reports/validation/replay.log"
+    },
+    {
+      "name": "regression_tests",
+      "arguments": [
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "modernize/tests",
+        "-p",
+        "test_*.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "seconds": 15.984,
+      "log": "modernize/reports/validation/regression_tests.log",
+      "tests_run": 144,
+      "skipped": 1
+    }
+  ],
+  "source_drift": [],
+  "compiler_bin": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\Llvm\\x64\\bin",
+  "compiler_found": "C:\\Program Files\\Microsoft Visual Studio\\18\\Community\\VC\\Tools\\Llvm\\x64\\bin\\clang++.EXE",
+  "full_windows_build_verified": false,
+  "source_engine_runtime_verified": false,
+  "modern_renderer_backends_verified": false,
+  "passed": true
+}

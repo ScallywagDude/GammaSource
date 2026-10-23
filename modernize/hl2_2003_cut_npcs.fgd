@@ -1,0 +1,129 @@
+// HL2 2003 prototype NPCs - experimental Hammer definitions.
+// Model geometry is shown when legally installed. Definitions do not supply assets.
+// AI, animation, hitboxes, audio and runtime behavior require verification.
+// Load as an additional FGD; preserve the game FGD.
+
+@PointClass color(255 145 40) studio("models/fassassin.mdl") = npc_assassin : "Assassin (early prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/bullsquid.mdl") = npc_bullsquid : "Bullsquid (cut classic NPC)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/houndeye.mdl") = npc_houndeye : "Houndeye (cut classic NPC)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/Hydra.mdl") = npc_hydra : "Hydra (unfinished)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/synth.mdl") = npc_crabsynth : "Crab Synth (cut Synth)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/mortarsynth.mdl") = npc_mortarsynth : "Mortar Synth (cut Synth)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/combine_guard.mdl") = npc_combineguard : "Combine Guard (early prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/ichthyosaur.mdl") = npc_ichthyosaur : "Ichthyosaur (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/lightstalk.mdl") = npc_lightstalk : "Light Stalk (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/roller.mdl") = npc_rollerbull : "Roller Bull (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/missile_defense.mdl") = npc_missiledefense : "Missile Defense (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/roller.mdl") = npc_roller : "Roller (prototype base entity)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/roller.mdl") = npc_rollerbuddy : "Roller Buddy (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/roller.mdl") = npc_rollerdozer : "Roller Dozer (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/roller.mdl") = npc_rollerturret : "Roller Turret (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/shield_scanner.mdl") = npc_sscanner : "Shield Scanner (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/wscanner_single.mdl") = npc_wscanner : "Wasteland Scanner (prototype)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/Combine_Elite.mdl") = npc_combineelite : "Combine Elite (early character)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) studio("models/odell.mdl") = npc_odell : "Odell (cut character)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+]
+
+@PointClass color(255 145 40) size(-16 -16 0, 16 16 72) = npc_launcher : "Launcher (experimental entity)"
+[
+  targetname(string) : "Name" : ""
+  angles(string) : "Orientation" : "0 0 0"
+  MissileModel(studio) : "Missile model (required for firing)" : ""
+  LaunchSound(sound) : "Optional launch sound" : ""
+  FlySound(sound) : "Optional flight sound" : ""
+  StartOn(choices) : "Start active" : 0 = [0 : "No" 1 : "Yes"]
+]
+

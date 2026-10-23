@@ -25,6 +25,12 @@
 #include "ai_basenpc.h"		
 #include "weapon_physcannon.h"
 #include "globals.h"
+#include "filesystem.h"
+#include "../../modernize/hl2_playermodel_policy.h"
+#include "../../modernize/hl2_player_asset_guard.h"
+#include "studio.h"
+#include "../../modernize/model_preview_studio_validation.h"
+#include "../../modernize/studio_sidecar_fs_v21.h"
 
 extern ConVar weapon_showproficiency;
 extern proficiencyinfo_t g_WeaponProficiencyTable[];
@@ -38,6 +44,7 @@ ConVar max_command_dist( "player_max_command_dist", "1024" );
 #define	HL2_SINGLE_PRIMARY_WEAPON_MODE	0
 
 extern int gEvilImpulse101;
+extern ConVar sv_impulse101_allweapons;
 
 ConVar sv_autojump( "sv_autojump", "0" );
 
@@ -98,9 +105,59 @@ IMPLEMENT_SERVERCLASS_ST(CHL2_Player, DT_HL2_Player)
 END_SEND_TABLE()
 
 
+// HL2MODERN_PLAYER_ASSET_GUARD_V19: only load a validated v36 studio
+// header. A matching filename alone does not establish 2003 compatibility.
+static bool HL2Modern_CompatiblePlayerModel(const char *path)
+{
+    if (!HL2ModernPlayerModels::Find(path) || !filesystem) return false;
+    FileHandle_t file = filesystem->Open(path, "rb", "GAME");
+    if (file == FILESYSTEM_INVALID_HANDLE) return false;
+    unsigned char prefix[80];
+    const int bytes = filesystem->Read(prefix, sizeof(prefix), file);
+    const int fileLength = filesystem->Size(file);
+    // HL2MODERN_SERVER_V37_V21: validate the full v37 table layout, not
+    // merely its IDST/version prefix, before exposing it to precaching.
+    const bool v37 = bytes == (int)sizeof(prefix) &&
+        HL2ModernPlayerAssets::ReadLE32(prefix+4) == 37;
+    bool compatibleV37 = false;
+    if (v37 && fileLength >= (int)sizeof(studiohdr_t) && fileLength <= 64*1024*1024 &&
+        HL2ModernPlayerAssets::StudioHeader(prefix,bytes,(unsigned long)fileLength,37,sizeof(studiohdr_t)))
+    {
+        CUtlVector<byte> content;
+        content.SetSize(fileLength);
+        filesystem->Seek(file,0,FILESYSTEM_SEEK_HEAD);
+        if (filesystem->Read(content.Base(),fileLength,file) == fileLength)
+            compatibleV37 = HL2ModernModelPreview::StudioDataValidator(
+                content.Base(),fileLength).Validate(true);
+    }
+    filesystem->Close(file);
+    if (fileLength <= 0 || (!compatibleV37 && !HL2ModernPlayerAssets::StudioHeader(
+        prefix, bytes, (unsigned long)fileLength, STUDIO_VERSION, sizeof(studiohdr_t)))) return false;
+    // HL2MODERN_SERVER_VERTEX_PREFLIGHT_V20: keep the server's available-model
+    // decision aligned with the 2003 vertex-file loader. This is still only a
+    // preflight, not proof of valid meshes, rigging, or materials.
+    static const char *const variants[] = {
+        ".dx80.vtx", ".dx7_3bone.vtx", ".dx7_2bone.vtx"
+    };
+    char vertexPath[128];
+    for (unsigned int i=0; i<3; ++i)
+        if (HL2ModernPlayerAssets::VertexCompanionPath(prefix, bytes, variants[i],
+              vertexPath, sizeof(vertexPath)) && filesystem->FileExists(vertexPath, "GAME") &&
+            (!v37 || HL2ModernStudioSidecar::LegacyVertexFile(
+                filesystem,vertexPath,prefix,bytes)))
+            return true; // HL2MODERN_PLAYER_SIDECAR_V21
+    return false;
+}
+
 void CHL2_Player::Precache( void )
 {
 	BaseClass::Precache();
+	// HL2MODERN_HL2_PLAYERMODEL: precache only installed, allowlisted models.
+	for (unsigned int i=0; i<HL2ModernPlayerModels::Count(); ++i)
+	{
+		const char *path=HL2ModernPlayerModels::kModels[i].path;
+		if (HL2Modern_CompatiblePlayerModel(path)) engine->PrecacheModel(path);
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -466,8 +523,37 @@ void CHL2_Player::Touch( CBaseEntity *pOther )
 //-----------------------------------------------------------------------------
 void CHL2_Player::Spawn(void)
 {
-	SetModel( "models/player.mdl" );
-    g_ulModelIndexPlayer = GetModelIndex();
+	const char *path=NULL;
+	if (edict())
+	{
+		char *info=engine->GetInfoKeyBuffer(edict());
+		const char *requested=info ? engine->InfoKeyValue(info,"model") : NULL;
+		const HL2ModernPlayerModels::Entry *entry=HL2ModernPlayerModels::Find(requested);
+		if (entry && HL2Modern_CompatiblePlayerModel(entry->path)) path=entry->path;
+	}
+	// If the requested asset is missing/unsupported, prefer the classic model,
+	// then another compatible entry. Never pass a retail v37 model into a v36 loader.
+	if (!path && HL2Modern_CompatiblePlayerModel("models/player.mdl"))
+		path="models/player.mdl";
+	if (!path)
+	{
+		for (unsigned int i=0; i<HL2ModernPlayerModels::Count(); ++i)
+		{
+			const char *candidate=HL2ModernPlayerModels::kModels[i].path;
+			if (HL2Modern_CompatiblePlayerModel(candidate)) { path=candidate; break; }
+		}
+	}
+	if (path)
+	{
+		SetModel(path);
+		g_ulModelIndexPlayer = GetModelIndex();
+	}
+	else
+	{
+		Warning("No compatible 2003 player model installed; player appearance unavailable\n");
+		g_ulModelIndexPlayer = 0;
+		SetModelIndex(0); // fail closed; runtime still requires a compatible asset
+	}
 
 	BaseClass::Spawn();
 
@@ -909,8 +995,74 @@ void CHL2_Player::CommanderMode()
 //-----------------------------------------------------------------------------
 void CHL2_Player::CheatImpulseCommands( int iImpulse )
 {
+    // HL2MODERN_BRANCH_CHEAT_GATE: overrides must honor the base cheat gate.
+    if ( iImpulse == 101 )
+    {
+#if defined(HLDEMO_BUILD)
+        return;
+#else
+        extern int g_iWeaponCheat;
+        if ( g_iWeaponCheat == 0 ) return;
+#endif
+    }
 	switch( iImpulse )
 	{
+	case 101:
+	{
+		// Preserve the base ammo, suit and standard weapon behavior.
+		BaseClass::CheatImpulseCommands(iImpulse);
+		extern int g_iWeaponCheat;
+		if (g_iWeaponCheat != 0)
+		{
+		// HL2MODERN_BRANCH_IMPULSE101_HL2: only this branch's concrete registered weapons.
+		// Experimental cut weapons may require missing assets and animations.
+		if (sv_impulse101_allweapons.GetBool())
+		{
+			const char *const weapons[] = {
+				"weapon_ar1",
+				"weapon_binoculars",
+				"weapon_bugbait",
+				"weapon_cguard",
+				"weapon_extinguisher",
+				"weapon_flaregun",
+				"weapon_hmg1",
+				"weapon_hopwire",
+				"weapon_iceaxe",
+				"weapon_immolator",
+				"weapon_irifle",
+				"weapon_molotov",
+				"weapon_physgun",
+				"weapon_rollerwand",
+				"weapon_slam",
+				"weapon_smg2",
+				"weapon_sniperrifle",
+				"weapon_stickylauncher",
+				"weapon_stunstick",
+				"weapon_thumper",
+				"weapon_tripwire",
+			};
+			// HL2MODERN_IMPULSE101_RESULT: record what the player actually owns.
+			// A registered classname is not proof that its scripts/models work.
+			unsigned int given=0, already=0, failed=0;
+			for (unsigned int k=0; k<sizeof(weapons)/sizeof(weapons[0]); ++k)
+			{
+				if (HasNamedPlayerItem(weapons[k])) { ++already; continue; }
+				GiveCheatWeapon(weapons[k]);
+				if (HasNamedPlayerItem(weapons[k])) ++given;
+				else
+				{
+					++failed;
+					Msg("impulse 101 could not equip %s\n", weapons[k]);
+				}
+			}
+			Msg("impulse 101 extra weapons: equipped %u, owned %u, failed %u\n",
+				given, already, failed);
+			RefillCheatWeaponAmmo();
+		}
+		}
+		break;
+	}
+
 	case 50:
 	{
 		CommanderMode();

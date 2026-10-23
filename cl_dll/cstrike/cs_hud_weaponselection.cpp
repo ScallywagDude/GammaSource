@@ -5,6 +5,7 @@
 //=============================================================================
 
 #include "cbase.h"
+#include "../../modernize/weapon_hud_layout.h"
 #include "weapon_selection.h"
 #include "iclientmode.h"
 
@@ -224,14 +225,17 @@ void CHudWeaponSelection::Paint()
 				// draw icon
 				Color col = GetFgColor();
 				// icons use old system, drawing in screen space
-				if ( pWeapon->GetSpriteActive() )
-				{
-					if (pWeapon == pSelectedWeapon)
-					{
-						col[3] = m_flSelectionAlphaOverride;
-					}
-					pWeapon->GetSpriteActive()->DrawSelf( xpos + m_flIconXPos, ypos + m_flIconYPos, col );
-				}
+                // HL2MODERN_CS_HUD_FIT: active/inactive art keeps its original aspect.
+                CHudTexture const *sprite=pWeapon==pSelectedWeapon ? pWeapon->GetSpriteActive() : pWeapon->GetSpriteInactive();
+                if ( !sprite ) sprite=pWeapon->GetSpriteActive();
+                if ( sprite )
+                {
+                    if ( pWeapon==pSelectedWeapon ) col[3]=m_flSelectionAlphaOverride;
+                    HL2ModernHud::Rect fitted;
+                    if ( HL2ModernHud::FitIcon(sprite->Width(),sprite->Height(),xpos+(int)m_flIconXPos,ypos+(int)m_flIconYPos,
+                        largeBoxWide-2*(int)m_flIconXPos,(int)m_flTextYPos-(int)m_flIconYPos-2,fitted) )
+                        sprite->DrawSelf(fitted.x,fitted.y,fitted.w,fitted.h,col);
+                }
 
 				// draw text
 				col = m_TextColor;

@@ -199,8 +199,14 @@ void FileWeaponInfo_t::Parse( KeyValues *pKeyValuesData, const char *szWeaponNam
 	Q_strncpy( szViewModel, pKeyValuesData->GetString( "viewmodel" ), MAX_WEAPON_STRING );
 	Q_strncpy( szWorldModel, pKeyValuesData->GetString( "playermodel" ), MAX_WEAPON_STRING );
 	Q_strncpy( szAnimationPrefix, pKeyValuesData->GetString( "anim_prefix" ), MAX_WEAPON_PREFIX );
+	// HL2MODERN_WEAPON_SLOT_BOUNDS: scripts can contain cut weapon slots
+	// outside the fixed HUD inventory arrays. Clamp before anyone indexes.
 	iSlot = pKeyValuesData->GetInt( "bucket", 0 );
 	iPosition = pKeyValuesData->GetInt( "bucket_position", 0 );
+	if ( iSlot < 0 ) iSlot = 0;
+	if ( iSlot >= MAX_WEAPON_SLOTS ) iSlot = MAX_WEAPON_SLOTS-1;
+	if ( iPosition < 0 ) iPosition = 0;
+	if ( iPosition >= MAX_WEAPON_POSITIONS ) iPosition = MAX_WEAPON_POSITIONS-1;
 	iMaxClip1 = pKeyValuesData->GetInt( "clip_size", WEAPON_NOCLIP );					// Max primary clips gun can hold (assume they don't use clips by default)
 	iMaxClip2 = pKeyValuesData->GetInt( "clip2_size", WEAPON_NOCLIP );					// Max secondary clips gun can hold (assume they don't use clips by default)
 	iDefaultClip1 = pKeyValuesData->GetInt( "default_clip", iMaxClip1 );		// amount of primary ammo placed in the primary clip when it's picked up

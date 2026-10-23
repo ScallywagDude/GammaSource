@@ -1,0 +1,368 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Documentation">
+      <UniqueIdentifier>{415C0D7C-8168-55A5-9F8C-8B5D00AE1CC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Logfiles">
+      <UniqueIdentifier>{9742D4E4-5E1D-5AD9-AEBA-0FF9DC00E6B0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing">
+      <UniqueIdentifier>{61927E37-BFA8-5607-BF58-B1068A3E1569}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Parsing Headers">
+      <UniqueIdentifier>{B6F16224-1C38-5535-93CA-25F5EACAA548}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Parsing Source">
+      <UniqueIdentifier>{451C8A45-1A42-5BE3-8FE5-49FB12A11641}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports">
+      <UniqueIdentifier>{B74994ED-7E9E-5121-9CE5-D94EFDB4C817}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Awards">
+      <UniqueIdentifier>{F4FEAC5A-7F3A-5301-9484-D3468670FB61}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Awards\Award Headers">
+      <UniqueIdentifier>{70437A21-828F-5AB0-B25A-844239D0ADA8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Awards\Award Source">
+      <UniqueIdentifier>{03CC25C5-0D17-5600-A736-7A137AD405CF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Awards\CustomAwards">
+      <UniqueIdentifier>{51A4CEE2-E2A9-5992-809E-372E7A9C96F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Report Headers">
+      <UniqueIdentifier>{AACA921C-22C5-548E-8C49-71D18D1DFF86}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Parsing\Reports\Report Source">
+      <UniqueIdentifier>{9636F1E1-5D4A-503D-911F-FE017764CA29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Util">
+      <UniqueIdentifier>{A14BEF83-4B74-5F1C-8879-F0E3DA7DB439}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="rule files">
+      <UniqueIdentifier>{862B1209-406D-5EB4-8A8F-E2E33D7263A2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\Argument.cpp">
+      <Filter>Parsing\Parsing Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EventList.cpp">
+      <Filter>Parsing\Parsing Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LogEvent.cpp">
+      <Filter>Parsing\Parsing Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LogEventIOStreams.cpp">
+      <Filter>Parsing\Parsing Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CureAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\KamikazeAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SentryRebuildAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SharpshooterAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SurvivalistAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TalkativeAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TeamKillAward.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\WeaponAwards.cpp">
+      <Filter>Parsing\Reports\Awards\Award Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CustomAward.cpp">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CustomAwardList.cpp">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CustomAwardTriggers.cpp">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Award.cpp">
+      <Filter>Parsing\Reports\Awards</Filter>
+    </ClCompile>
+    <ClCompile Include=".\AllPlayersStats.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CVars.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogueReadout.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MatchResults.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerReport.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerSpecifics.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\scoreboard.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\WhoKilledWho.cpp">
+      <Filter>Parsing\Reports\Report Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Report.cpp">
+      <Filter>Parsing\Reports</Filter>
+    </ClCompile>
+    <ClCompile Include=".\binResources.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTML.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\main.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\memdbg.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\pid.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StaticOutputFiles.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TextFile.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\util.cpp">
+      <Filter>Util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MatchInfo.cpp" />
+    <ClCompile Include=".\Player.cpp" />
+    <ClCompile Include=".\PlrPersist.cpp" />
+    <ClCompile Include=".\TFStatsApplication.cpp" />
+    <ClCompile Include=".\TFStatsOSInterface.cpp" />
+    <ClCompile Include=".\TFStatsReport.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\Argument.h">
+      <Filter>Parsing\Parsing Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\EventList.h">
+      <Filter>Parsing\Parsing Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LogEvent.h">
+      <Filter>Parsing\Parsing Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CureAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\KamikazeAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SentryRebuildAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SharpshooterAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SurvivalistAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TalkativeAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TeamKillAward.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\WeaponAwards.h">
+      <Filter>Parsing\Reports\Awards\Award Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CustomAward.h">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CustomAwardList.h">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CustomAwardTriggers.h">
+      <Filter>Parsing\Reports\Awards\CustomAwards</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Award.h">
+      <Filter>Parsing\Reports\Awards</Filter>
+    </ClInclude>
+    <ClInclude Include=".\awards.h">
+      <Filter>Parsing\Reports\Awards</Filter>
+    </ClInclude>
+    <ClInclude Include=".\AllPlayersStats.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Cvars.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogueReadout.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MatchResults.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerReport.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerSpecifics.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\scoreboard.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\WhoKilledWho.h">
+      <Filter>Parsing\Reports\Report Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\report.h">
+      <Filter>Parsing\Reports</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BinaryResource.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTML.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\memdbg.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\pid.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TextFile.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TimeIndexedList.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\util.h">
+      <Filter>Util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MatchInfo.h" />
+    <ClInclude Include=".\Player.h" />
+    <ClInclude Include=".\PlrPersist.h" />
+    <ClInclude Include=".\TFStatsApplication.h" />
+    <ClInclude Include=".\TFStatsOSInterface.h" />
+    <ClInclude Include=".\TFStatsReport.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\testsuite\testlog1.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog10.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog11.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog12.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog13.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog14.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog15.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog16.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog2.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog3.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog4.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog5.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog50.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog51.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog52.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog53.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog54.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog55.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog56.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog57.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog58.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog59.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog6.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog60.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog7.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog8.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\testsuite\testlog9.txt">
+      <Filter>Logfiles</Filter>
+    </None>
+    <None Include=".\tfc.2fort.rul">
+      <Filter>rule files</Filter>
+    </None>
+    <None Include=".\tfc.cz2.rul">
+      <Filter>rule files</Filter>
+    </None>
+    <None Include=".\tfc.rock2.rul">
+      <Filter>rule files</Filter>
+    </None>
+    <None Include=".\tfc.rul">
+      <Filter>rule files</Filter>
+    </None>
+    <None Include=".\tfc.well.rul">
+      <Filter>rule files</Filter>
+    </None>
+    <None Include=".\readme.txt">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include=".\manual\regexp.html">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include=".\manual\TFstats.htm">
+      <Filter>Documentation</Filter>
+    </None>
+    <None Include=".\tfstats.txt">
+      <Filter>Documentation</Filter>
+    </None>
+  </ItemGroup>
+</Project>

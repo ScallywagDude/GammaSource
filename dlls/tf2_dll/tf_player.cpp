@@ -1395,14 +1395,75 @@ void CBaseTFPlayer::SetAnimation( PLAYER_ANIM playerAnim )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+extern ConVar sv_impulse101_allweapons;
 void CBaseTFPlayer::CheatImpulseCommands( int iImpulse )
 {
+    // HL2MODERN_BRANCH_CHEAT_GATE: overrides must honor the base cheat gate.
+    if ( iImpulse == 101 )
+    {
+#if defined(HLDEMO_BUILD)
+        return;
+#else
+        extern int g_iWeaponCheat;
+        if ( g_iWeaponCheat == 0 ) return;
+#endif
+    }
 	switch(iImpulse)
 	{
 		case 101:
 			if ( GetPlayerClass() )
 			{
 				GetPlayerClass()->ResupplyAmmo( 1.0f, RESUPPLY_ALL_FROM_STATION );
+		// HL2MODERN_BRANCH_IMPULSE101_TF2: only this branch's concrete registered weapons.
+		// Experimental cut weapons may require missing assets and animations.
+		if (sv_impulse101_allweapons.GetBool())
+		{
+			const char *const weapons[] = {
+				"weapon_arcwelder",
+				"weapon_builder",
+				"weapon_combat_burstrifle",
+				"weapon_combat_grenade_emp",
+				"weapon_combat_laserrifle",
+				"weapon_combat_plasmagrenadelauncher",
+				"weapon_combat_plasmarifle",
+				"weapon_combat_plasmarifle_alien",
+				"weapon_combat_shield",
+				"weapon_combat_shield_alien",
+				"weapon_combat_shotgun",
+				"weapon_drainbeam",
+				"weapon_flame_thrower",
+				"weapon_gas_can",
+				"weapon_grenade_rocket",
+				"weapon_harpoon",
+				"weapon_limpetmine",
+				"weapon_minigun",
+				"weapon_obj_empgenerator",
+				"weapon_obj_rallyflag",
+				"weapon_plasmarifle",
+				"weapon_repairgun",
+				"weapon_rocket_launcher",
+				"weapon_shield",
+				"weapon_shield_grenade",
+			};
+			// HL2MODERN_IMPULSE101_RESULT: record what the player actually owns.
+			// A registered classname is not proof that its scripts/models work.
+			unsigned int given=0, already=0, failed=0;
+			for (unsigned int k=0; k<sizeof(weapons)/sizeof(weapons[0]); ++k)
+			{
+				if (HasNamedPlayerItem(weapons[k])) { ++already; continue; }
+				GiveCheatWeapon(weapons[k]);
+				if (HasNamedPlayerItem(weapons[k])) ++given;
+				else
+				{
+					++failed;
+					Msg("impulse 101 could not equip %s\n", weapons[k]);
+				}
+			}
+			Msg("impulse 101 extra weapons: equipped %u, owned %u, failed %u\n",
+				given, already, failed);
+			RefillCheatWeaponAmmo();
+		}
+
 			}
 			break;
 

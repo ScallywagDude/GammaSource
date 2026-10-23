@@ -1,0 +1,299 @@
+{
+  "schema": 1,
+  "purpose": "Minimal same-weapon regular-reticle fallback for proven blank HL1 autoaim pixels",
+  "asset_search_roots": {
+    "hl1": [
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl1"
+    ]
+  },
+  "files": [
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "scripts/weapon_357.txt",
+      "original_sha256": "e238a35e9f85a6a16a8886d30c7b906288695061f11e6659542dc71f25b78470",
+      "modified_sha256": "0cc220f33731315514222f95d6714b9d27e57066ae5d5490d7a1d82538c4ed67",
+      "edits": [
+        {
+          "offset": 1190,
+          "before": "24",
+          "after": "48",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "x",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        },
+        {
+          "offset": 1205,
+          "before": "72",
+          "after": "0",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "y",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        }
+      ],
+      "status": "same_weapon_crosshair_fallback_plan_runtime_unverified",
+      "fallback_label": "Existing same-weapon regular reticle reused for an empty autoaim region; original autoaim artwork is not restored",
+      "old_autoaim_rectangle": [
+        24,
+        72,
+        24,
+        24
+      ],
+      "fallback_crosshair_rectangle": [
+        48,
+        0,
+        24,
+        24
+      ],
+      "material": "materials/Sprites/crosshairs.vmt",
+      "texture": "materials/Sprites/crosshairs.vtf",
+      "texture_sha256": "36464d47f643dd6e2778da4afb89ffb8d7c2ce802ff6f8b6b6953a6fbd536e80",
+      "texture_dimensions": [
+        128,
+        128
+      ],
+      "texture_frames_decoded": 1,
+      "old_autoaim_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 1,
+          "nonblack_alpha_pixels": 0,
+          "effective_nonblank_pixels": 0,
+          "effective_nonblank_fraction": 0.0,
+          "effective_content_bounds": null,
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "fallback_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 4,
+          "nonblack_alpha_pixels": 4,
+          "effective_nonblank_pixels": 4,
+          "effective_nonblank_fraction": 0.006944,
+          "effective_content_bounds": [
+            9,
+            9,
+            14,
+            14
+          ],
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "prerequisites": {
+        "source_registered": true,
+        "same_weapon": true,
+        "same_explicit_raster_material": true,
+        "same_width_and_height": true,
+        "all_autoaim_frames_blank": true,
+        "all_fallback_frames_nonblank": true,
+        "independent_dds_pixel_decode_matches": true
+      },
+      "new_artwork_created": false,
+      "restored_original_autoaim_artwork": false,
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "scripts/weapon_glock.txt",
+      "original_sha256": "1c1e00236e8350ef829e92aaf7e2346f99d1f8d4265f8e8353c85f43ce63af4e",
+      "modified_sha256": "3e6d7d007bdfcc8070d6b3fa5ba904cb9d58dabdc790b33898bdefe3995ea10e",
+      "edits": [
+        {
+          "offset": 1282,
+          "before": "0",
+          "after": "24",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "x",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        },
+        {
+          "offset": 1296,
+          "before": "72",
+          "after": "0",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "y",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        }
+      ],
+      "status": "same_weapon_crosshair_fallback_plan_runtime_unverified",
+      "fallback_label": "Existing same-weapon regular reticle reused for an empty autoaim region; original autoaim artwork is not restored",
+      "old_autoaim_rectangle": [
+        0,
+        72,
+        24,
+        24
+      ],
+      "fallback_crosshair_rectangle": [
+        24,
+        0,
+        24,
+        24
+      ],
+      "material": "materials/Sprites/crosshairs.vmt",
+      "texture": "materials/Sprites/crosshairs.vtf",
+      "texture_sha256": "36464d47f643dd6e2778da4afb89ffb8d7c2ce802ff6f8b6b6953a6fbd536e80",
+      "texture_dimensions": [
+        128,
+        128
+      ],
+      "texture_frames_decoded": 1,
+      "old_autoaim_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 1,
+          "nonblack_alpha_pixels": 0,
+          "effective_nonblank_pixels": 0,
+          "effective_nonblank_fraction": 0.0,
+          "effective_content_bounds": null,
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "fallback_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 8,
+          "nonblack_alpha_pixels": 8,
+          "effective_nonblank_pixels": 8,
+          "effective_nonblank_fraction": 0.013889,
+          "effective_content_bounds": [
+            6,
+            6,
+            17,
+            17
+          ],
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "prerequisites": {
+        "source_registered": true,
+        "same_weapon": true,
+        "same_explicit_raster_material": true,
+        "same_width_and_height": true,
+        "all_autoaim_frames_blank": true,
+        "all_fallback_frames_nonblank": true,
+        "independent_dds_pixel_decode_matches": true
+      },
+      "new_artwork_created": false,
+      "restored_original_autoaim_artwork": false,
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "scripts/weapon_shotgun.txt",
+      "original_sha256": "7385903c2352edeedc97de77106478ec729cc573b22fdfb98467a68f7404e41c",
+      "modified_sha256": "b37daa328682bf66b38553dfffcb5a76bcd8e1efc21d1e40673093d7e127d775",
+      "edits": [
+        {
+          "offset": 1331,
+          "before": "72",
+          "after": "48",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "x",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        },
+        {
+          "offset": 1346,
+          "before": "72",
+          "after": "24",
+          "repair_kind": "same_weapon_regular_crosshair_fallback_for_blank_autoaim",
+          "role": "autoaim",
+          "coordinate": "y",
+          "reused_role": "crosshair",
+          "dependency": "materials/Sprites/crosshairs.vtf",
+          "dependency_root_index": 0
+        }
+      ],
+      "status": "same_weapon_crosshair_fallback_plan_runtime_unverified",
+      "fallback_label": "Existing same-weapon regular reticle reused for an empty autoaim region; original autoaim artwork is not restored",
+      "old_autoaim_rectangle": [
+        72,
+        72,
+        24,
+        24
+      ],
+      "fallback_crosshair_rectangle": [
+        48,
+        24,
+        24,
+        24
+      ],
+      "material": "materials/Sprites/crosshairs.vmt",
+      "texture": "materials/Sprites/crosshairs.vtf",
+      "texture_sha256": "36464d47f643dd6e2778da4afb89ffb8d7c2ce802ff6f8b6b6953a6fbd536e80",
+      "texture_dimensions": [
+        128,
+        128
+      ],
+      "texture_frames_decoded": 1,
+      "old_autoaim_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 1,
+          "nonblack_alpha_pixels": 0,
+          "effective_nonblank_pixels": 0,
+          "effective_nonblank_fraction": 0.0,
+          "effective_content_bounds": null,
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "fallback_pixel_metrics": [
+        {
+          "pixels": 576,
+          "nonzero_alpha_pixels": 12,
+          "nonblack_alpha_pixels": 12,
+          "effective_nonblank_pixels": 12,
+          "effective_nonblank_fraction": 0.020833,
+          "effective_content_bounds": [
+            9,
+            9,
+            14,
+            14
+          ],
+          "content_touches_rectangle_boundary": false,
+          "uniform_rgba": false
+        }
+      ],
+      "prerequisites": {
+        "source_registered": true,
+        "same_weapon": true,
+        "same_explicit_raster_material": true,
+        "same_width_and_height": true,
+        "all_autoaim_frames_blank": true,
+        "all_fallback_frames_nonblank": true,
+        "independent_dds_pixel_decode_matches": true
+      },
+      "new_artwork_created": false,
+      "restored_original_autoaim_artwork": false,
+      "runtime_verified": false
+    }
+  ],
+  "blocked": [],
+  "original_assets_modified": false,
+  "proprietary_assets_bundled": false,
+  "runtime_verified": false,
+  "original_autoaim_artwork_restored": false,
+  "usage": "Compose token edits against these exact original hashes; preserve other planned edits to the same scripts. The fallback retains that weapon regular crosshair appearance while autoaim is active and does not provide distinct on-target artwork."
+}

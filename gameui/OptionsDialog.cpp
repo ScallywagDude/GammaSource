@@ -24,6 +24,7 @@
 #include "OptionsSubVoice.h"
 #include "OptionsSubAdvanced.h"
 #include "OptionsSubMultiplayer.h"
+#include "../modernize/hl2_playermodel_policy.h"
 #include "MultiplayerAdvancedDialog.h"
 #include "ModInfo.h"
 
@@ -67,9 +68,15 @@ COptionsDialog::COptionsDialog(vgui::Panel *parent) : PropertyDialog(parent, "Op
 //	double s5 = system()->GetCurrentTime();
 //	ivgui()->DPrintf("COptionsDialog::COptionsDialog(): %.3fms\n", (float)(s5 - s4) * 1000.0f);
 
-	if ( ModInfo().IsSinglePlayerOnly() ) 
+	// HL2MODERN_MULTIPLAYER_TAB: show the multiplayer model selector in
+	// HL2 even when the original liblist metadata says single-player only.
+	const bool modernHL2 = HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory());
+	if ( ModInfo().IsSinglePlayerOnly() )
 	{
-		AddPage(new CMultiplayerAdvancedPage(this), "#GameUI_AdvancedNoEllipsis");
+		if (modernHL2)
+			AddPage(new COptionsSubMultiplayer(this), "#GameUI_Multiplayer");
+		else
+			AddPage(new CMultiplayerAdvancedPage(this), "#GameUI_AdvancedNoEllipsis");
 	}
 
 	if (!ModInfo().IsMultiplayerOnly() && !ModInfo().IsSinglePlayerOnly() )

@@ -1,0 +1,39 @@
+--- a/hl1/root0/scripts/weapon_357.txt
++++ b/hl1/root0/scripts/weapon_357.txt
+@@ -63,8 +63,8 @@
+ 		"autoaim"
+ 		{
+ 			"file"		"sprites/crosshairs"
+-			"x"			"24"
+-			"y"			"72"
++			"x"			"48"
++			"y"			"0"
+ 			"width"		"24"
+ 			"height"	"24"
+ 		}
+--- a/hl1/root0/scripts/weapon_glock.txt
++++ b/hl1/root0/scripts/weapon_glock.txt
+@@ -66,8 +66,8 @@
+ 		"autoaim"
+ 		{
+ 			"file"		"sprites/crosshairs"
+-			"x"			"0"
+-			"y"			"72"
++			"x"			"24"
++			"y"			"0"
+ 			"width"		"24"
+ 			"height"	"24"
+ 		}
+--- a/hl1/root0/scripts/weapon_shotgun.txt
++++ b/hl1/root0/scripts/weapon_shotgun.txt
+@@ -66,8 +66,8 @@
+ 		"autoaim"
+ 		{
+ 			"file"		"sprites/crosshairs"
+-			"x"			"72"
+-			"y"			"72"
++			"x"			"48"
++			"y"			"24"
+ 			"width"		"24"
+ 			"height"	"24"
+ 		}

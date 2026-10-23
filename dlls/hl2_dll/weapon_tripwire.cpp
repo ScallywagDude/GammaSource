@@ -54,8 +54,7 @@ IMPLEMENT_ACTTABLE(CWeapon_Tripwire);
 
 void CWeapon_Tripwire::Spawn( )
 {
-	UTIL_Remove(this);
-	return;
+	// HL2MODERN_TRIPWIRE_SPAWN: restored existing deployment implementation.
 
 	BaseClass::Spawn();
 
@@ -86,7 +85,7 @@ void CWeapon_Tripwire::Precache( void )
 //------------------------------------------------------------------------------
 void CWeapon_Tripwire::SetPickupTouch( void )
 {
-	SetTouch(TripwireTouch);
+	SetTouch(&CWeapon_Tripwire::TripwireTouch);
 }
 
 //-----------------------------------------------------------------------------
@@ -211,7 +210,8 @@ void CWeapon_Tripwire::TripwireAttach( void )
 			
 			CBaseEntity *pEnt = CBaseEntity::Create( "npc_tripwire", tr.endpos + tr.plane.normal * 3, angles, NULL );
 
-			CTripwireGrenade *pMine = (CTripwireGrenade *)pEnt;
+			CTripwireGrenade *pMine = dynamic_cast<CTripwireGrenade *>(pEnt);
+			if ( !pMine ) return;
 			pMine->SetOwner( GetOwner() );
 
 			pOwner->RemoveAmmo( 1, m_iSecondaryAmmoType );
@@ -383,12 +383,14 @@ void CWeapon_Tripwire::WeaponIdle( void )
 			{
 				pOwner->Weapon_Drop( this );
 				UTIL_Remove(this);
+				return;
 			}
 		}
 		else if (pOwner->GetAmmoCount(m_iSecondaryAmmoType) <= 0)
 		{
 			pOwner->Weapon_Drop( this );
 			UTIL_Remove(this);
+			return;
 		}
 
 		// If I don't need to reload just do the appropriate idle

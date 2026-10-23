@@ -1,0 +1,145 @@
+Running convert_dsp.py...
+{
+  "converted": 153,
+  "files": 9492,
+  "configurations": 348,
+  "no_configs": 0,
+  "missing": 66,
+  "outside_root": 3,
+  "case_only_references": 0,
+  "build_steps": {
+    "Release": 61,
+    "Debug": 61
+  },
+  "unresolved_build_steps": 0,
+  "xml_errors": 0
+}
+Running patch_xinput.py...
+XInput bridge ready C:\Users\doge6\Documents\HL2BetaMegaCuck\modernization_v18\cl_dll\in_joystick.cpp
+Running patch_npc_create.py...
+NPC console patch ready C:\Users\doge6\Documents\HL2BetaMegaCuck\modernization_v18\dlls\ai_concommands.cpp
+Running patch_crabsynth.py...
+Crab Synth: already patched
+Running patch_houndeye.py...
+Houndeye source already patched
+Running patch_bullsquid.py...
+Bullsquid source already patched
+Running patch_npc_assets.py...
+Prototype NPC asset-safety overlay applied (or already present)
+Running patch_player_model_selection.py...
+HL2 Multiplayer tab / branch-safe player model choices / server allowlist patched.
+Running expand_hl2_models.py...
+HL2 model picker: 46 allowlisted model paths (installed models only).
+Running patch_preview_status.py...
+Animated model preview already supplies asset status.
+Running patch_model_dropdown_integrity.py...
+Model dropdown indices and stale portraits guarded.
+Running patch_model_path_policy.py...
+HL2 branch identification handles Windows case and trailing separators.
+Running patch_impulse101_branches.py...
+Preserving v18 canonical grant manifest; patch_weapon_restoration_v18.py refreshes it.
+Weapon branches: [('hl2', 31), ('cs', 28), ('tf2', 38), ('hl1', 14)]
+Running patch_grants_buildaware.py...
+Build-aware impulse101: {'hl2': 21, 'cstrike': 25, 'tf2': 25}
+Running patch_weapon_grant_diagnostics.py...
+Instrumented experimental impulse 101 grants across HL2, CS and TF2 only.
+Running patch_preview_bitmap.py...
+Aspect-correct preview images patched.
+Running patch_multiplayer_model_ui_safety.py...
+Fixed VGUI item IDs, bounded text, empty selections, and portrait fallback.
+Running patch_weapon_hud.py...
+HL2 HUD icons now fit without aspect distortion.
+Running patch_weapon_icon_fallback.py...
+Source HUD now labels weapons whose sprites are missing or invalid.
+Running patch_weapon_asset_safety.py...
+HUD sprite strings/rectangles and weapon script slots bounded.
+Running patch_weapon_restoration_v18.py...
+v18 branch weapon restoration applied; asset and Windows runtime verification still required.
+Running patch_renderer_select.py...
+Renderer DLL selection wired C:\Users\doge6\Documents\HL2BetaMegaCuck\modernization_v18\materialsystem\cmaterialsystem.cpp
+Running patch_multiplayer_chat.py...
+Multiplayer chat policy patched
+Running patch_fair_spawns.py...
+Deathmatch fair-spawn policy patched
+Running patch_map_votes.py...
+Map-vote command bridge and lifecycle hooks in place
+Running patch_xinput_deadzone.py...
+XInput deadzone tuning and sticky-button fix ready
+Running patch_steam_client.py...
+Opt-in client Steamworks lifecycle bootstrap installed
+Running patch_engine_paths.py...
+Sys_mkdir bounded path handling installed
+Running patch_spawn_protection.py...
+Optional server-side spawn protection wired
+Running patch_lighting.py...
+materialsystem/colorspace.cpp: already patched
+materialsystem/colorspace.cpp: already patched
+materialsystem/stdshaders/common_ps_fxc.h: already patched
+materialsystem/stdshaders/lightmappedgeneric_ps20.fxc: already patched
+Running patch_material_assets.py...
+DX9 cheap-water normalization/Fresnel overlay applied (or already present)
+Running patch_team_balance.py...
+Team size safety and optional player-initiated balance rule applied
+Running patch_lightstyles.py...
+engine/cl_parse.cpp: already patched
+engine/gl_rlight.cpp: already patched
+Running patch_server_text.py...
+game_shared/multiplay_gamerules.cpp: already patched
+Running patch_deathnotice.py...
+game_shared/multiplay_gamerules.cpp: already patched
+Running generate_cut_npcs.py...
+Cut NPCs inventoried: 21, experimental definitions: 20
+Running generate_npc_testmaps.py...
+Generated 20 NPC VMF maps in modernize\maps\cut_npcs
+Running generate_multiplayer_testmap.py...
+Generated arena VMF and two multiplayer cfg templates
+Running weapon_branch_audit.py...
+Branch-specific weapon inventory: {'hl2': 32, 'hl1': 15, 'cstrike': 28, 'tf2': 38}
+Running weapon_build_audit.py...
+hl2: registered=32, server excluded=0, client excluded=32
+  source not shared with client (often intentional): weapon_ar1, weapon_ar2, weapon_binoculars, weapon_bugbait, weapon_cguard, weapon_crowbar, weapon_cubemap, weapon_extinguisher, weapon_flaregun, weapon_frag, weapon_gauss, weapon_hmg1, weapon_hopwire, weapon_iceaxe, weapon_immolator, weapon_irifle, weapon_manhack, weapon_molotov, weapon_physcannon, weapon_physgun, weapon_pistol, weapon_rollerwand, weapon_rpg, weapon_shotgun, weapon_slam, weapon_smg1, weapon_smg2, weapon_sniperrifle, weapon_stickylauncher, weapon_stunstick, weapon_thumper, weapon_tripwire
+hl1: registered=15, server excluded=0, client excluded=15
+  source not shared with client (often intentional): weapon_357, weapon_crossbow, weapon_crowbar, weapon_egon, weapon_gauss, weapon_glock, weapon_handgrenade, weapon_hornetgun, weapon_mp5, weapon_physgun, weapon_rpg, weapon_satchel, weapon_shotgun, weapon_snark, weapon_tripmine
+cstrike: registered=28, server excluded=0, client excluded=0
+tf2: registered=38, server excluded=6, client excluded=9
+  not in server: weapon_combat_chargeableplasma, weapon_infiltrator, weapon_laserdesignator, weapon_laserrifle, weapon_mortar, weapon_pistols
+  source not shared with client (often intentional): weapon_builder, weapon_combat_chargeableplasma, weapon_infiltrator, weapon_laserdesignator, weapon_laserrifle, weapon_mortar, weapon_obj_empgenerator, weapon_pistols, weapon_plasmarifle
+Running weapon_asset_audit.py...
+Weapon asset audit: {'hl2': {'total': 32, 'unverified': 32, 'issues': 0}, 'hl1': {'total': 15, 'unverified': 15, 'issues': 0}, 'cstrike': {'total': 28, 'unverified': 28, 'issues': 0}, 'tf2': {'total': 38, 'unverified': 38, 'issues': 0}}
+Running build_audit.py...
+{
+  "Debug": {
+    "steps": 61,
+    "projects_with_missing_compilation_inputs": 0,
+    "missing_compilation_inputs": 0,
+    "missing_shaders": 0,
+    "missing_include_directories": 20,
+    "case_only_references": 0,
+    "first_project_with_missing_inputs": null
+  },
+  "Release": {
+    "steps": 61,
+    "projects_with_missing_compilation_inputs": 0,
+    "missing_compilation_inputs": 0,
+    "missing_shaders": 0,
+    "missing_include_directories": 17,
+    "case_only_references": 0,
+    "first_project_with_missing_inputs": null
+  }
+}
+Running validate.py...
+HL2_2003_VS2026.sln: 57 project references
+HL2_2003_AllProjects_VS2026.sln: 153 project references
+{
+  "projects": 153,
+  "conversion_configs": 348,
+  "missing_source_projects": 66,
+  "missing_source_references": 605,
+  "npc_prototype_candidates": 20,
+  "windows_compiled": false,
+  "renderer_upgrades_compiled": false,
+  "shader_custom_build_items": 19,
+  "multiplayer_tested": false
+}
+PASS: structural project checks (NOT Windows build validation)
+Structural checks passed. Compile/test on Windows before considering any phase complete.

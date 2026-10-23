@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{53BB9732-BB4B-589D-A49C-539A70029405}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{809E9CD9-9553-5BEB-BF3D-DF18D97300C7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vertex Shader include files">
+      <UniqueIdentifier>{6A9D22A3-472A-500B-8132-630C16427E44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Vertex Shaders">
+      <UniqueIdentifier>{D2330DA4-7807-5948-81BD-EB92453598FF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\CMaterialSystemStats.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ColorFormatDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\crtmemdebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\imageloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MeshDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Recording.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ShaderAPIDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ShaderShadowDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TextureDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\utlsymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\VertexShaderDX8.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\CMaterialSystemStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ColorFormatDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dynamicib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dynamicvb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IMeshDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Recording.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShaderAPIDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShaderAPIDX8_Global.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShaderShadowDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TextureDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\VertexShaderDX8.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include=".\basetimeslightmapwet.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\bumpmappedenvmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\bumpmappedlightmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\cable.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\colorstreamtest.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\debugfbtexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\debugtangentspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\eyes.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\fillrate.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\glowwarp.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\hotspotglow.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\jellyfish.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightingonly.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_basetexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_bumpmappedenvmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_bumpmappedenvmap_ps14.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_bumpmappedlightmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_detail.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_detailvertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmapcameraspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmapcameraspacevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmapsphere.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmapspherevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_envmapvertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_lightingonly.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_vertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedtranslucenttexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\localspecular.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\particlesphere.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\predator.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\predator_envmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\predator_envmaptimesenvmapmask.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\shadowmodel.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\teeth.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detail.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmapcameraspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmapcameraspacevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmapsphere.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmapspherevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailenvmapvertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_detailvertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmapcameraspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmapcameraspacevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmapsphere.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmapspherevertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_envmapvertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_lightingonly.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_lightingonlyworld.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric_vertexcolor.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitenvmappedtexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitenvmappedtexture_cameraspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitenvmappedtexture_spheremap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_detail.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_detailenvmap.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_detailenvmapcameraspace.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_detailenvmapsphere.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_diffbumptimesbase.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_envmappedbumpmap_nolighting.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_EnvmappedBumpmap_NoLighting_ps14.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_envmappedbumpmap_vertlit.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_selfillumonly.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlittexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\waterwarp.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\worldtexture.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\worldvertexalpha.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\worldvertextransition.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\writeenvmapmasktoalphabuffer.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\writezwithheightclipplane.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+    <CustomBuild Include=".\writezwithheightclipplane_world.vsh">
+      <Filter>Vertex Shaders</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\LightmappedGeneric_inc.vsh">
+      <Filter>Vertex Shader include files</Filter>
+    </None>
+    <None Include=".\macros.vsh">
+      <Filter>Vertex Shader include files</Filter>
+    </None>
+    <None Include=".\UnlitGeneric_inc.vsh">
+      <Filter>Vertex Shader include files</Filter>
+    </None>
+    <None Include=".\VertexLitGeneric_inc.vsh">
+      <Filter>Vertex Shader include files</Filter>
+    </None>
+    <None Include=".\old.vsh" />
+    <None Include="..\..\devtools\bin\vsh_prep.pl" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\DX8SDK\lib\d3dx8.lib" />
+    <None Include="..\..\DX8SDK\lib\d3d8.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+</Project>

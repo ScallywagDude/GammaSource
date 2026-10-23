@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="IVP_SAMPLES">
+      <UniqueIdentifier>{8C1EF9BC-F7D0-5DC4-B26B-697801E83909}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="IVP_SAMPLES_QUICKSTARTS">
+      <UniqueIdentifier>{6A575608-40E2-5046-9BE6-30E158A0B20D}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_black_hole.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_blackhole2.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_boat.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_body.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bridge.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bsp2ics.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bsptree.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_city.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_common.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_creature.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_ctrl_raycast.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_domino.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_floating.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_flyer.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_forcefld_funnel.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_objectpile.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_onthefly.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_paper.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_phantom1.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_phantom2.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_polygon_soup.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_shootingranch.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_snowflake.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_stiff_creature.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_tankwar.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_terrain.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_turn_up.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_universe.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_vehicle.cxx">
+      <Filter>IVP_SAMPLES</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_act_force.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_act_sprng.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_active_value.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ball.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_buoyancy.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_callback.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_check_dist.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_coll_filter.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_collision.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_cube.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_cut.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_force.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\IVP_SAMPLE_SOURCES_QUICKSTARTS\ive_quickstart_golem_cntr.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_hinge.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_motion_cntrl.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_raycast.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ring.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_rope.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_rotmot.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ski.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_stiff_spring.cxx">
+      <Filter>IVP_SAMPLES_QUICKSTARTS</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1873 @@
+{
+  "note": "Active source registrations plus branch-compiled shared tools; commented prototypes and unusable bases are explicit. Compilation, gameplay and asset quality remain unverified.",
+  "branches": {
+    "hl2": [
+      {
+        "classname": "weapon_ar1",
+        "implementation_file": "dlls/hl2_dll/weapon_ar1.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_ar2",
+        "implementation_file": "dlls/hl2_dll/weapon_ar2.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_binoculars",
+        "implementation_file": "dlls/hl2_dll/weapon_binoculars.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_bugbait",
+        "implementation_file": "dlls/hl2_dll/weapon_bugbait.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_cguard",
+        "implementation_file": "dlls/hl2_dll/weapon_cguard.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_crowbar",
+        "implementation_file": "dlls/hl2_dll/weapon_crowbar.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_cubemap",
+        "implementation_file": "dlls/weapon_cubemap.cpp",
+        "source_scope": "shared_project_member",
+        "grant_exclusion_reason": "shared cubemap debugging tool, not a branch gameplay weapon",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_extinguisher",
+        "implementation_file": "dlls/hl2_dll/weapon_extinguisher.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_flaregun",
+        "implementation_file": "dlls/hl2_dll/weapon_flaregun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/flare.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_frag",
+        "implementation_file": "dlls/hl2_dll/weapon_frag.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_gauss",
+        "implementation_file": "dlls/hl2_dll/weapon_gauss.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_hmg1",
+        "implementation_file": "dlls/hl2_dll/weapon_hgm1.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_hopwire",
+        "implementation_file": "dlls/hl2_dll/weapon_hopwire.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_iceaxe",
+        "implementation_file": "dlls/hl2_dll/weapon_iceaxe.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_immolator",
+        "implementation_file": "dlls/hl2_dll/weapon_immolator.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_irifle",
+        "implementation_file": "dlls/hl2_dll/weapon_irifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_manhack",
+        "implementation_file": "dlls/hl2_dll/weapon_manhack.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "incomplete prototype: both attacks are empty and ItemPostFrame only idles",
+        "implementation_status": "incomplete_source",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_molotov",
+        "implementation_file": "dlls/hl2_dll/weapon_molotov.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/props_junk/w_garb_beerbottle.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_physcannon",
+        "implementation_file": "dlls/hl2_dll/weapon_physcannon.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_physgun",
+        "implementation_file": "dlls/physgun.cpp",
+        "source_scope": "shared_project_member",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/glueblob.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_pistol",
+        "implementation_file": "dlls/hl2_dll/weapon_pistol.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_rollerwand",
+        "implementation_file": "dlls/hl2_dll/weapon_rollerwand.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_rpg",
+        "implementation_file": "dlls/hl2_dll/weapon_rpg.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/w_missile.mdl",
+          "models/weapons/w_missile_closed.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_shotgun",
+        "implementation_file": "dlls/hl2_dll/weapon_shotgun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_slam",
+        "implementation_file": "dlls/hl2_dll/weapon_slam.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_smg1",
+        "implementation_file": "dlls/hl2_dll/weapon_smg1.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_smg2",
+        "implementation_file": "dlls/hl2_dll/weapon_smg2.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_sniperrifle",
+        "implementation_file": "dlls/hl2_dll/weapon_sniperrifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_stickylauncher",
+        "implementation_file": "dlls/hl2_dll/weapon_stickylauncher.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/Weapons/glueblob.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_stunstick",
+        "implementation_file": "dlls/hl2_dll/weapon_stunstick.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_thumper",
+        "implementation_file": "dlls/hl2_dll/weapon_thumper.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/fire_equipment/w_firehydrant.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_tripwire",
+        "implementation_file": "dlls/hl2_dll/weapon_tripwire.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      }
+    ],
+    "hl1": [
+      {
+        "classname": "weapon_357",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_357.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_crossbow",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_crossbow.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/crossbow_bolt.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_crowbar",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_crowbar.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_egon",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_egon.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_gauss",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_gauss.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_glock",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_glock.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_handgrenade",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_handgrenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/w_grenade.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_hornetgun",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_hornetgun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_mp5",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_mp5.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_physgun",
+        "implementation_file": "dlls/physgun.cpp",
+        "source_scope": "shared_project_member",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/glueblob.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_rpg",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_rpg.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/rpgrocket.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_satchel",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_satchel.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/v_satchel.mdl",
+          "models/v_satchel_radio.mdl",
+          "models/w_satchel.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_shotgun",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_shotgun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_snark",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_snark.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/w_sqknest.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_tripmine",
+        "implementation_file": "dlls/hl1_dll/hl1_weapon_tripmine.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/w_tripmine.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      }
+    ],
+    "cstrike": [
+      {
+        "classname": "weapon_ak47",
+        "implementation_file": "game_shared/cstrike/weapon_ak47.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_aug",
+        "implementation_file": "game_shared/cstrike/weapon_aug.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_awp",
+        "implementation_file": "game_shared/cstrike/weapon_awp.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_basecsgrenade",
+        "implementation_file": "game_shared/cstrike/weapon_basecsgrenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "grenade base class without a concrete projectile",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_c4",
+        "implementation_file": "game_shared/cstrike/weapon_c4.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/battery.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_cs_base",
+        "implementation_file": "game_shared/cstrike/weapon_csbase.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "weapon base class",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_csbase_gun",
+        "implementation_file": "game_shared/cstrike/weapon_csbasegun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "weapon base class; Spawn and PrimaryAttack assert",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_deagle",
+        "implementation_file": "game_shared/cstrike/weapon_deagle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_famas",
+        "implementation_file": "game_shared/cstrike/weapon_famas.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_fiveseven",
+        "implementation_file": "game_shared/cstrike/weapon_fiveseven.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_flashbang",
+        "implementation_file": "game_shared/cstrike/weapon_flashbang.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_g3sg1",
+        "implementation_file": "game_shared/cstrike/weapon_g3sg1.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_galil",
+        "implementation_file": "game_shared/cstrike/weapon_galil.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_glock",
+        "implementation_file": "game_shared/cstrike/weapon_glock.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_hegrenade",
+        "implementation_file": "game_shared/cstrike/weapon_hegrenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_knife",
+        "implementation_file": "game_shared/cstrike/weapon_knife.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_m249",
+        "implementation_file": "game_shared/cstrike/weapon_m249.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_m3",
+        "implementation_file": "game_shared/cstrike/weapon_m3.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_m4a1",
+        "implementation_file": "game_shared/cstrike/weapon_m4a1.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_mac10",
+        "implementation_file": "game_shared/cstrike/weapon_mac10.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_mp5navy",
+        "implementation_file": "game_shared/cstrike/weapon_mp5navy.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_p228",
+        "implementation_file": "game_shared/cstrike/weapon_p228.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_p90",
+        "implementation_file": "game_shared/cstrike/weapon_p90.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_scout",
+        "implementation_file": "game_shared/cstrike/weapon_scout.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_sg550",
+        "implementation_file": "game_shared/cstrike/weapon_sg550.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_sg552",
+        "implementation_file": "game_shared/cstrike/weapon_sg552.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_ump45",
+        "implementation_file": "game_shared/cstrike/weapon_ump45.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_usp",
+        "implementation_file": "game_shared/cstrike/weapon_usp.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      }
+    ],
+    "tf2": [
+      {
+        "classname": "weapon_arcwelder",
+        "implementation_file": "game_shared/tf2/weapon_arcwelder.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_basecombatobject",
+        "implementation_file": "game_shared/tf2/weapon_basecombatobject.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "TF2 object weapon base class",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_builder",
+        "implementation_file": "game_shared/tf2/weapon_builder.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/v_slam.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_basegrenade",
+        "implementation_file": "game_shared/tf2/weapon_combat_basegrenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "TF2 grenade base class",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_burstrifle",
+        "implementation_file": "game_shared/tf2/weapon_combat_burstrifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_chargeableplasma",
+        "implementation_file": "game_shared/tf2/weapon_combat_chargeableplasma.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_grenade",
+        "implementation_file": "game_shared/tf2/weapon_combat_grenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "TF2 grenade base without a concrete projectile",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_grenade_emp",
+        "implementation_file": "game_shared/tf2/weapon_combat_grenade_emp.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_laserrifle",
+        "implementation_file": "game_shared/tf2/weapon_combat_laserrifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_plasmagrenadelauncher",
+        "implementation_file": "game_shared/tf2/weapon_combat_plasma_grenade_launcher.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/w_grenade.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_plasmarifle",
+        "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_plasmarifle_alien",
+        "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_plasmarifle_base",
+        "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "TF2 plasma rifle base class",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_shield",
+        "implementation_file": "game_shared/tf2/weapon_combatshield.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_shield_alien",
+        "implementation_file": "game_shared/tf2/weapon_combatshield.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_shotgun",
+        "implementation_file": "game_shared/tf2/weapon_combat_shotgun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_combat_usedwithshieldbase",
+        "implementation_file": "game_shared/tf2/weapon_combat_usedwithshieldbase.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "TF2 shield combination base class",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_drainbeam",
+        "implementation_file": "game_shared/tf2/weapon_drainbeam.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_flame_thrower",
+        "implementation_file": "game_shared/tf2/weapon_flame_thrower.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_gas_can",
+        "implementation_file": "game_shared/tf2/weapon_gas_can.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_grenade_rocket",
+        "implementation_file": "game_shared/tf2/weapon_grenade_rocket.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/w_missile.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_harpoon",
+        "implementation_file": "game_shared/tf2/weapon_harpoon.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [
+          "models/weapons/w_harpoon.mdl"
+        ],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_infiltrator",
+        "implementation_file": "game_shared/tf2/weapon_infiltrator.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_laserdesignator",
+        "implementation_file": "game_shared/tf2/weapon_laserdesignator.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_laserrifle",
+        "implementation_file": "game_shared/tf2/weapon_laserrifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_limpetmine",
+        "implementation_file": "game_shared/tf2/weapon_limpetmine.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_minigun",
+        "implementation_file": "game_shared/tf2/weapon_minigun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_mortar",
+        "implementation_file": "game_shared/tf2/weapon_mortar.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_obj_empgenerator",
+        "implementation_file": "game_shared/tf2/weapon_obj_empgenerator.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_obj_rallyflag",
+        "implementation_file": "game_shared/tf2/weapon_obj_rallyflag.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_objectselection",
+        "implementation_file": "game_shared/tf2/weapon_objectselection.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "internal builder selection entry; requires an initialized object subtype",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_pistols",
+        "implementation_file": "game_shared/tf2/weapon_pistols.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_plasmarifle",
+        "implementation_file": "game_shared/tf2/weapon_plasmarifle.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_repairgun",
+        "implementation_file": "game_shared/tf2/weapon_repairgun.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_rocket_launcher",
+        "implementation_file": "game_shared/tf2/weapon_rocketlauncher.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_shield",
+        "implementation_file": "game_shared/tf2/weapon_shield.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_shield_grenade",
+        "implementation_file": "game_shared/tf2/weapon_shieldgrenade.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": null,
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      },
+      {
+        "classname": "weapon_twohandedcontainer",
+        "implementation_file": "game_shared/tf2/weapon_twohandedcontainer.cpp",
+        "source_scope": "branch",
+        "grant_exclusion_reason": "internal class-loadout support container; requires initialized compatible child weapons",
+        "implementation_status": "source_present_runtime_unverified",
+        "model_literals_in_same_file": [],
+        "asset_checks": {
+          "weapon_script": [],
+          "explicit_models": []
+        },
+        "runtime_verified": false,
+        "viewmodel_verified": false,
+        "hud_image_verified": false,
+        "texture_scale_verified": false
+      }
+    ]
+  },
+  "unregistered_prototypes": {
+    "hl2": [
+      {
+        "classname": "weapon_brickbat",
+        "implementation_file": "dlls/hl2_dll/weapon_brickbat.cpp",
+        "status": "unregistered_commented_prototype",
+        "runtime_verified": false
+      }
+    ],
+    "hl1": [],
+    "cstrike": [],
+    "tf2": []
+  }
+}

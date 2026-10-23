@@ -126,7 +126,8 @@ void CWeaponTwoHandedContainer::ItemPostFrame( void )
 		m_hLeftWeapon->ItemPostFrame();
 	}
 
-	if ( m_hRightWeapon != NULL && m_hRightWeapon->IsPredicted() )
+	// HL2MODERN_TWOHANDED_SERVER: prediction is only a client-side condition.
+	if ( m_hRightWeapon != NULL )
 	{
 // REMOVE WHEN ALL WEAPONS ARE PREDICTED!
 #if defined( CLIENT_DLL )
@@ -163,14 +164,14 @@ void CWeaponTwoHandedContainer::SetWeapons( CBaseTFCombatWeapon *left, CBaseTFCo
 		return;
 
 	// Do we have a different left weapon?
-	if ( m_hLeftWeapon.Get() && m_hLeftWeapon != left )
+	if ( m_hLeftWeapon.Get() && m_hLeftWeapon.Get() != left )
 	{
 		// Holster our old one
 		m_hLeftWeapon->Holster();
 		m_hLeftWeapon = NULL;
 	}
 	// Do we have a different right weapon?
-	if ( m_hRightWeapon.Get() && m_hRightWeapon != right )
+	if ( m_hRightWeapon.Get() && m_hRightWeapon.Get() != right )
 	{
 		// Holster our old one
 		m_hRightWeapon->Holster();

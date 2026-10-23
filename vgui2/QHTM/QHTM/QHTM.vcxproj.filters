@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{C71DC8AB-43D6-5D44-9766-C72BFE246551}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{F6A4EE3B-B0CA-58DB-B242-20B4F0851755}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0D637037-0FEC-5455-96A9-0108D4416038}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Reuse">
+      <UniqueIdentifier>{0360879E-296A-5997-A9A7-8D16C92E31CB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared Stuff">
+      <UniqueIdentifier>{967132C8-83A0-5376-8DBA-7A22706332FA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared Stuff\HTML">
+      <UniqueIdentifier>{965E3A58-78BE-529A-BFEE-14C606182C06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Shared Stuff\Section">
+      <UniqueIdentifier>{DBD37440-22AD-5083-A469-EA42176AF0DD}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\HTMLHorizontalRuleSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLImageSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLSectionABC.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLSectionCreator.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLSectionLink.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\htmltablesection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLTextSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ParentSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ScrollContainer.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sectionabc.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TipWindow.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\WindowSection.cpp">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeCharset.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GetFontSize.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HtmlAnchor.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\htmlblockquote.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLDocument.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLDocumentObject.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLGetAlignmentFromString.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLHorizontalRule.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLImage.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HtmlList.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLListItem.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLParagraph.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLParagraphObject.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLParse.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLTable.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLTableCell.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLTextBlock.cpp">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cursor.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\drawcontext.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GetColourFromString.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GetFontSizeAsPixels.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GetNumberParameter.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLPrint.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Mouse.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SimpleString.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\tablelayout.cpp">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GetDisplayWorkArea.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GotoUrl.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HTMLParseBase.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ResourceLoader.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\striremove.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\stristr.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\strremove.cpp">
+      <Filter>Source Files\Reuse</Filter>
+    </ClCompile>
+    <ClCompile Include=".\AquireImage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Defaults.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dllmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EnableCoolTips.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LoadTextFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Palette.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_GetHTMLHeight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_MessageBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_RenderHTML.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_SetHTMLButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_SetResources.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTM_Trace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTMControlSection.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\RegisterWindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\HTMLHorizontalRuleSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLImageSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLSectionABC.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLSectionCreator.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HtmlSectionLink.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\htmltablesection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLTextSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ParentSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ScrollContainer.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sectionabc.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TipWindow.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\WindowSection.h">
+      <Filter>Source Files\Shared Stuff\Section</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLAnchor.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLBlockQuote.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLDocument.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLDocumentObject.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLHorizontalRule.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLImage.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLLink.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLList.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLListItem.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLParagraph.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLParagraphObject.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLParse.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLTable.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLTableCell.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLTextBlock.h">
+      <Filter>Source Files\Shared Stuff\HTML</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cursor.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\drawcontext.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLFontDef.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SimpleString.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\smallstringhash.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\tablelayout.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Utils.h">
+      <Filter>Source Files\Shared Stuff</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ResourceLoader.h">
+      <Filter>Source Files\Reuse</Filter>
+    </ClInclude>
+    <ClInclude Include=".\AquireImage.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Defaults.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HTMLParseBase.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTM.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\qhtm_includes.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTM_Trace.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTM_Types.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTMControlSection.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StaticString.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Array.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\DebugHlp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Map.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Map.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MapIter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\MapIter.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Palette.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\reuse\ResourceLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\reuse\Store.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\reuse\Stream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\TextABC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WindowText.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WinHelper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\QHTM.def">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include=".\res\arrow.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\hand1.cur">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\noimage.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\History.txt" />
+    <None Include=".\How to Build.txt" />
+    <None Include=".\Licence.txt" />
+    <None Include=".\Stuff to do.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\QHTM.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK SingleThreaded|Win32">
+      <Configuration>SDK SingleThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK MultiThreaded|Win32">
+      <Configuration>SDK MultiThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{7E56CDDF-34C1-52F3-B6B2-F1C09106AAB7}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>havana_constraints</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>havana_constraints</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_surface_manager;..\..\ivp_utility;..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_SDK;HAVANA_CONSTRAINTS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+    <PostBuildEvent>
+      <Command>if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
+copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>havana_constraints_d</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_surface_manager;..\..\ivp_utility;..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;DEBUG;WIN32;IVP_VERSION_SDK;HAVANA_CONSTRAINTS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+    <PostBuildEvent>
+      <Command>if not exist "..\..\..\lib\common" mkdir "..\..\..\lib\common"
+copy /Y "$(TargetPath)" "..\..\..\lib\common\havana_constraints.lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>havana_constraints</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_surface_manager;..\..\ivp_utility;..\..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_SDK;HAVANA_CONSTRAINTS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>havana_constraints_mt</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_surface_manager;..\..\ivp_utility;..\..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_SDK;HAVANA_CONSTRAINTS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\havana\havok\hk_physics\core\vm_query_builder\mass_relative_vector3.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\core\vm_query_builder\vm_query_builder.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\ball_socket\ball_socket_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\ball_socket\ball_socket_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\limited_ball_socket\limited_ball_socket_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\limited_ball_socket\limited_ball_socket_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\ragdoll\ragdoll_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\ragdoll\ragdoll_constraint_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\ragdoll\ragdoll_constraint_bp_builder.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\local_constraint_system\local_constraint_system.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\local_constraint_system\local_constraint_system.inl" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\local_constraint_system\local_constraint_system_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\util\constraint_limit_util.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\hinge\hinge_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\hinge\hinge_bp_builder.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\hinge\hinge_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\breakable_constraint\breakable_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\breakable_constraint\breakable_constraint_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\fixed\fixed_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\fixed\fixed_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\prismatic\prismatic_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\prismatic\prismatic_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\pulley\pulley_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\pulley\pulley_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\stiff_spring\stiff_spring_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\stiff_spring\stiff_spring_constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\constraint.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\constraint_bp.h" />
+    <ClInclude Include="..\..\havana\havok\hk_physics\constraint\constraint_limit.h" />
+    <ClInclude Include="..\..\IVP_PHYSICS\hk_physics\simunit\psi_info.h" />
+    <ClInclude Include="..\..\IVP_PHYSICS\hk_physics\constraint\local_constraint_system\local_constraint_system.h" />
+    <ClInclude Include="..\..\IVP_PHYSICS\hk_physics\physics.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\ball_socket\ball_socket_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\limited_ball_socket\limited_ball_socket_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\ragdoll\ragdoll_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\ragdoll\ragdoll_constraint_bp_builder.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\hinge\hinge_bp_builder.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\hinge\hinge_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\breakable_constraint\breakable_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\fixed\fixed_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\prismatic\prismatic_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\pulley\pulley_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\stiff_spring\stiff_spring_constraint.cpp" />
+    <ClCompile Include="..\..\havana\havok\hk_physics\constraint\constraint.cpp" />
+    <ClCompile Include="..\..\IVP_PHYSICS\hk_physics\constraint\local_constraint_system\local_constraint_system.cpp" />
+    <ClCompile Include="..\..\IVP_PHYSICS\hk_physics\core\rigid_body_core.cpp" />
+    <ClCompile Include="..\..\IVP_PHYSICS\hk_physics\effector\rigid_body_binary_effector.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

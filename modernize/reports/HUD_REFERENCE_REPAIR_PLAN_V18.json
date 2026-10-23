@@ -1,0 +1,99 @@
+{
+  "schema": 1,
+  "note": "Minimal exact-case token repairs. No proprietary original asset payloads. Input hashes required. Apply only against the same root ordering.",
+  "roots": {
+    "hl2": [
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003",
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2"
+    ],
+    "hl1": [
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl1"
+    ],
+    "cstrike": [],
+    "tf2": []
+  },
+  "files": [
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "scripts/weapon_hopwire.txt",
+      "original_sha256": "bf27f60a0fb1318aaeead3c562f474f2eaa5599c34ceb34fd71e7e18724d2eb4",
+      "modified_sha256": "0952ca498ae7e764c26395354f93d5c0d3289bfaaa4e4365722a59d1e867d726",
+      "edits": [
+        {
+          "offset": 128,
+          "before": "models/weapons/v_hopwire.mdl",
+          "after": "models/Weapons/V_hopwire.mdl",
+          "dependency": "models/Weapons/V_hopwire.mdl",
+          "dependency_root_index": 1,
+          "repair_kind": "exact_case"
+        },
+        {
+          "offset": 177,
+          "before": "models/weapons/w_hopwire.mdl",
+          "after": "models/Weapons/w_hopwire.mdl",
+          "dependency": "models/Weapons/w_hopwire.mdl",
+          "dependency_root_index": 1,
+          "repair_kind": "exact_case"
+        },
+        {
+          "offset": 575,
+          "before": "sprites/w_icons3b",
+          "after": "Sprites/w_icons3b",
+          "dependency": "materials/Sprites/w_icons3b.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "exact_case"
+        },
+        {
+          "offset": 703,
+          "before": "sprites/w_icons3b",
+          "after": "Sprites/w_icons3b",
+          "dependency": "materials/Sprites/w_icons3b.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "exact_case"
+        },
+        {
+          "offset": 843,
+          "before": "a_icons1",
+          "after": "Sprites/a_icons1",
+          "dependency": "materials/Sprites/a_icons1.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "legacy_sprite_prefix_and_case"
+        },
+        {
+          "offset": 985,
+          "before": "crosshairs",
+          "after": "Sprites/crosshairs",
+          "dependency": "materials/Sprites/crosshairs.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "legacy_sprite_prefix_and_case"
+        },
+        {
+          "offset": 1102,
+          "before": "crosshairs",
+          "after": "Sprites/crosshairs",
+          "dependency": "materials/Sprites/crosshairs.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "legacy_sprite_prefix_and_case"
+        },
+        {
+          "offset": 1242,
+          "before": "crosshairs",
+          "after": "Sprites/crosshairs",
+          "dependency": "materials/Sprites/crosshairs.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "legacy_sprite_prefix_and_case"
+        },
+        {
+          "offset": 1360,
+          "before": "crosshairs",
+          "after": "Sprites/crosshairs",
+          "dependency": "materials/Sprites/crosshairs.vmt",
+          "dependency_root_index": 1,
+          "repair_kind": "legacy_sprite_prefix_and_case"
+        }
+      ],
+      "status": "repaired_reference_plan_runtime_unverified"
+    }
+  ]
+}

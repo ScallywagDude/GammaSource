@@ -412,27 +412,37 @@ CHL1_Player::~CHL1_Player( void )
 extern int gEvilImpulse101;
 void CHL1_Player::CheatImpulseCommands( int iImpulse )
 {
+    // HL2MODERN_BRANCH_CHEAT_GATE: overrides must honor the base cheat gate.
+    if ( iImpulse == 101 )
+    {
+#if defined(HLDEMO_BUILD)
+        return;
+#else
+        extern int g_iWeaponCheat;
+        if ( g_iWeaponCheat == 0 ) return;
+#endif
+    }
 	switch( iImpulse )
 	{
 	case 101:
 		gEvilImpulse101 = true;
 		
 		GiveNamedItem( "item_suit" );
-		GiveNamedItem( "weapon_physgun" );
-		GiveNamedItem( "weapon_crowbar" );
-		GiveNamedItem( "weapon_glock" );
-		GiveNamedItem( "weapon_357" );
-		GiveNamedItem( "weapon_shotgun" );
-		GiveNamedItem( "weapon_mp5" );
-		GiveNamedItem( "weapon_satchel" );
-		GiveNamedItem( "weapon_rpg" );
-		GiveNamedItem( "weapon_crossbow" );
-		GiveNamedItem( "weapon_egon" );
-		GiveNamedItem( "weapon_tripmine" );
-		GiveNamedItem( "weapon_gauss" );
-		GiveNamedItem( "weapon_handgrenade" );
-		GiveNamedItem( "weapon_snark" );
-		GiveNamedItem( "weapon_hornetgun" );
+		GiveCheatWeapon( "weapon_physgun" );
+		GiveCheatWeapon( "weapon_crowbar" );
+		GiveCheatWeapon( "weapon_glock" );
+		GiveCheatWeapon( "weapon_357" );
+		GiveCheatWeapon( "weapon_shotgun" );
+		GiveCheatWeapon( "weapon_mp5" );
+		GiveCheatWeapon( "weapon_satchel" );
+		GiveCheatWeapon( "weapon_rpg" );
+		GiveCheatWeapon( "weapon_crossbow" );
+		GiveCheatWeapon( "weapon_egon" );
+		GiveCheatWeapon( "weapon_tripmine" );
+		GiveCheatWeapon( "weapon_gauss" );
+		GiveCheatWeapon( "weapon_handgrenade" );
+		GiveCheatWeapon( "weapon_snark" );
+		GiveCheatWeapon( "weapon_hornetgun" );
 		GiveAmmo( 250,	"9mmRound" );
 		GiveAmmo( 36,	"357Round" );
 		GiveAmmo( 125,	"Buckshot" );
@@ -446,6 +456,7 @@ void CHL1_Player::CheatImpulseCommands( int iImpulse )
 		GiveAmmo( 5,	"TripMine" );
 		GiveAmmo( 5,	"Satchel" );
 
+		RefillCheatWeaponAmmo();
 		gEvilImpulse101 = false;
 		break;
 

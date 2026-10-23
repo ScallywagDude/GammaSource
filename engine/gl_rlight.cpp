@@ -23,6 +23,7 @@
 #include <float.h>
 #include "CollisionUtils.h"
 #include "gl_lightmap.h"
+#include "../modernize/lightstyle_policy.h"
 
 
 //-----------------------------------------------------------------------------
@@ -72,31 +73,27 @@ int	r_dlightactive;
 R_AnimateLight
 ==================
 */
+// HL2MODERN_SMOOTH_LIGHTSTYLES
+// Interpolate the original 10 Hz patterns when requested. Off by default.
+ConVar r_smooth_lightstyles( "r_smooth_lightstyles", "0", FCVAR_ARCHIVE,
+    "Interpolate animated lightstyles between 10 Hz samples (0=2003 behavior)." );
+
 void R_AnimateLight (void)
 {
-	int			i,j,k;
-	
-//
-// light animations
-// 'm' is normal light, 'a' is no light, 'z' is double bright
-	i = (int)(cl.gettime()*10);
-	for (j=0 ; j<MAX_LIGHTSTYLES ; j++)
-	{
-		if (!cl_lightstyle[j].length)
-		{
-			d_lightstylevalue[j] = 256;
-			continue;
-		}
-		k = i % cl_lightstyle[j].length;
-		k = cl_lightstyle[j].map[k] - 'a';
-		k = k*22;
-		if (d_lightstylevalue[j] != k)
-		{
-			d_lightstylevalue[j] = k;
-
-			d_lightstyleframe[j] = r_framecount;
-		}
-	}	
+    const double now = cl.gettime();
+    const bool smooth = r_smooth_lightstyles.GetBool();
+    for ( int j = 0; j < MAX_LIGHTSTYLES; ++j )
+    {
+        const int brightness = HL2ModernLightstyles::Sample(
+            cl_lightstyle[j].map, cl_lightstyle[j].length, now, smooth );
+        if ( d_lightstylevalue[j] != brightness )
+        {
+            // Also handles a style being cleared. The original engine reset
+            // its intensity to 256 but forgot to invalidate cached lightmaps.
+            d_lightstylevalue[j] = brightness;
+            d_lightstyleframe[j] = r_framecount;
+        }
+    }
 }
 
 /*

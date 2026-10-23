@@ -1,0 +1,856 @@
+[
+  {
+    "name": "npc_assassin",
+    "description": "Assassin (early prototype)",
+    "source": "dlls/hl2_dll/npc_assassin.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/fassassin.mdl",
+    "model_references": [
+      "models/fassassin.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/redglow1.vmt",
+      "sprites/bluelaser1.vmt"
+    ],
+    "sound_file_references": [
+      "player/pl_shoot1.wav",
+      "player/pl_shoot2.wav",
+      "player/pl_step1.wav",
+      "player/pl_step2.wav",
+      "player/pl_step3.wav",
+      "player/pl_step4.wav"
+    ],
+    "sound_event_references": [
+      "Assassin.AttackMiss",
+      "Zombie.AttackHit"
+    ],
+    "named_attachments": [
+      "Eye",
+      "LeftMuzzle",
+      "RightMuzzle"
+    ],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_ASSASSIN_FLIP_BACK",
+      "ACT_ASSASSIN_FLIP_FORWARD",
+      "ACT_ASSASSIN_FLIP_LEFT",
+      "ACT_ASSASSIN_FLIP_RIGHT",
+      "ACT_ASSASSIN_PERCH",
+      "ACT_RANGE_ATTACK1",
+      "ACT_RUN",
+      "ACT_TURN_LEFT",
+      "ACT_TURN_RIGHT",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_bullsquid",
+    "description": "Bullsquid (cut classic NPC)",
+    "source": "dlls/hl2_dll/npc_bullsquid.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/bullsquid.mdl",
+    "model_references": [
+      "models/bullsquid.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/greenspit1.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_Bullsquid.Alert",
+      "NPC_Bullsquid.Attack1",
+      "NPC_Bullsquid.Death",
+      "NPC_Bullsquid.Growl",
+      "NPC_Bullsquid.Idle",
+      "NPC_Bullsquid.Pain",
+      "NPC_Bullsquid.TailWhip"
+    ],
+    "named_attachments": [
+      "Mouth"
+    ],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_HOP",
+      "ACT_IDLE",
+      "ACT_RANGE_ATTACK1",
+      "ACT_RUN",
+      "ACT_SQUID_DETECT_SCENT",
+      "ACT_SQUID_EAT",
+      "ACT_SQUID_EXCITED",
+      "ACT_SQUID_INSPECT_FLOOR",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": true,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_houndeye",
+    "description": "Houndeye (cut classic NPC)",
+    "source": "dlls/hl2_dll/npc_houndeye.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/houndeye.mdl",
+    "model_references": [
+      "models/houndeye.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_Houndeye.Alert",
+      "NPC_Houndeye.Anger1",
+      "NPC_Houndeye.Anger2",
+      "NPC_Houndeye.Die",
+      "NPC_Houndeye.GroupAttack",
+      "NPC_Houndeye.GroupFollow",
+      "NPC_Houndeye.Pain",
+      "NPC_Houndeye.Retreat",
+      "NPC_Houndeye.SonicAttack",
+      "NPC_Houndeye.SpeakSentence",
+      "NPC_Houndeye.WarmUp",
+      "NPC_Houndeye.Warn"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_CROUCHIDLE",
+      "ACT_HOUND_GUARD",
+      "ACT_IDLE",
+      "ACT_IDLE_ANGRY",
+      "ACT_LEAP",
+      "ACT_RANGE_ATTACK1",
+      "ACT_RUN",
+      "ACT_TURN_LEFT",
+      "ACT_TURN_RIGHT",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": true,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_hydra",
+    "description": "Hydra (unfinished)",
+    "source": "dlls/hl2_dll/npc_hydra.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/Hydra.mdl",
+    "model_references": [
+      "models/Hydra.mdl",
+      "models/props_junk/cardboard_box001a.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_180_LEFT",
+      "ACT_HYDRA_COWER",
+      "ACT_HYDRA_STAB",
+      "ACT_TURN_LEFT",
+      "ACT_TURN_RIGHT"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_crabsynth",
+    "description": "Crab Synth (cut Synth)",
+    "source": "dlls/hl2_dll/npc_crabsynth.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/synth.mdl",
+    "model_references": [
+      "models/synth.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_BODY_THROW",
+      "ACT_CHARGE_END",
+      "ACT_CHARGE_HITLEFT",
+      "ACT_CHARGE_HITRIGHT",
+      "ACT_CHARGE_LOOP",
+      "ACT_CHARGE_START",
+      "ACT_CHARGE_START_MOVE"
+    ],
+    "charge_hit_source_patch": true,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_mortarsynth",
+    "description": "Mortar Synth (cut Synth)",
+    "source": "dlls/hl2_dll/npc_mortarsynth.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/mortarsynth.mdl",
+    "model_references": [
+      "models/mortarsynth.mdl",
+      "models/gibs/mortarsynth_gibs.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/physbeam.vmt",
+      "sprites/glow01.vmt",
+      "sprites/physring1.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_MSynth.EnergyShoot",
+      "NPC_MSynth.Hover",
+      "NPC_MSynth.Shoot",
+      "NPC_MSynth.WarmUp"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_IDLE",
+      "ACT_MSYNTH_FLINCH_BACK",
+      "ACT_MSYNTH_FLINCH_FRONT",
+      "ACT_MSYNTH_FLINCH_LEFT",
+      "ACT_MSYNTH_FLINCH_RIGHT"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_combineguard",
+    "description": "Combine Guard (early prototype)",
+    "source": "dlls/hl2_dll/npc_combineguard.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/combine_guard.mdl",
+    "model_references": [
+      "models/combine_guard.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/blueflare1.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_CombineGuard.Charging",
+      "NPC_CombineGuard.Fire",
+      "NPC_CombineGuard.FootstepLeft",
+      "NPC_CombineGuard.FootstepRight"
+    ],
+    "named_attachments": [
+      "muzzle"
+    ],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_CGUARD_IDLE_TO_ANGRY",
+      "ACT_COMBINEGUARD_CLOBBERED",
+      "ACT_COMBINEGUARD_GETUP",
+      "ACT_COMBINEGUARD_HELPLESS",
+      "ACT_COMBINEGUARD_TOPPLE",
+      "ACT_IDLE",
+      "ACT_IDLE_ANGRY",
+      "ACT_RANGE_ATTACK1",
+      "ACT_RUN",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_conscript",
+    "description": "Conscript (disabled implementation)",
+    "source": "dlls/hl2_dll/npc_conscript.cpp",
+    "registration_active": false,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": false,
+    "model_reference": "models/conscript.mdl",
+    "model_references": [
+      "models/conscript.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [
+      "barney/ba_close.wav",
+      "barney/ba_die1.wav",
+      "barney/ba_die2.wav",
+      "barney/ba_die3.wav",
+      "barney/ba_pain1.wav",
+      "barney/ba_pain2.wav",
+      "barney/ba_pain3.wav"
+    ],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_ARM",
+      "ACT_BARNACLE_CHEW",
+      "ACT_BARNACLE_CHOMP",
+      "ACT_BARNACLE_HIT",
+      "ACT_BARNACLE_PULL",
+      "ACT_CONSCRIPT_AIM",
+      "ACT_IDLE",
+      "ACT_RUN",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_ichthyosaur",
+    "description": "Ichthyosaur (prototype)",
+    "source": "dlls/hl2_dll/npc_ichthyosaur.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/ichthyosaur.mdl",
+    "model_references": [
+      "models/ichthyosaur.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_Ichthyosaur.AttackGrowl",
+      "NPC_Ichthyosaur.Bite",
+      "NPC_Ichthyosaur.BiteMiss"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_ICH_BITE_HIT",
+      "ACT_ICH_BITE_MISS",
+      "ACT_ICH_THRASH",
+      "ACT_MELEE_ATTACK1",
+      "ACT_RUN",
+      "ACT_WALK"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_lightstalk",
+    "description": "Light Stalk (prototype)",
+    "source": "dlls/hl2_dll/npc_lightstalk.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/lightstalk.mdl",
+    "model_references": [
+      "models/lightstalk.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/glow03.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_CROUCH",
+      "ACT_CROUCHIDLE",
+      "ACT_IDLE",
+      "ACT_STAND"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_rollerbull",
+    "description": "Roller Bull (prototype)",
+    "source": "dlls/hl2_dll/npc_rollerbull.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/roller.mdl",
+    "model_references": [
+      "models/roller.mdl",
+      "models/roller_spikes.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [
+      "npc/roller/bull_buzz.wav",
+      "npc/roller/bull_fast.wav",
+      "npc/roller/bull_slow.wav"
+    ],
+    "sound_event_references": [
+      "NPC_RollerBull.Bark",
+      "NPC_RollerBull.CloseSpikes",
+      "NPC_RollerBull.Cut",
+      "NPC_RollerBull.Idle",
+      "NPC_RollerBull.Measure",
+      "NPC_RollerBull.OpenSpikes",
+      "NPC_RollerBull.Summon",
+      "NPC_RollerBull.Taunt",
+      "NPC_RollerBull.Tossed"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_missiledefense",
+    "description": "Missile Defense (prototype)",
+    "source": "dlls/hl2_dll/npc_missiledefense.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/missile_defense.mdl",
+    "model_references": [
+      "models/missile_defense.mdl",
+      "models/gibs/missile_defense_gibs.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [
+      "npc/entity/turret/turret_loop1.wav"
+    ],
+    "sound_event_references": [
+      "NPC_MissileDefense.Attack",
+      "NPC_MissileDefense.Reload",
+      "NPC_MissileDefense.Turn"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_roller",
+    "description": "Roller (prototype base entity)",
+    "source": "dlls/hl2_dll/npc_roller.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/roller.mdl",
+    "model_references": [
+      "models/roller.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [
+      "npc/roller/code1.wav",
+      "npc/roller/code2.wav",
+      "npc/roller/code3.wav",
+      "npc/roller/code4.wav",
+      "npc/roller/code5.wav",
+      "npc/roller/code6.wav"
+    ],
+    "sound_event_references": [
+      "NPC_Roller.Marco",
+      "NPC_Roller.Polo",
+      "NPC_Roller.PowerOff",
+      "NPC_Roller.PowerOn"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_rollerbuddy",
+    "description": "Roller Buddy (prototype)",
+    "source": "dlls/hl2_dll/npc_rollerbuddy.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/roller.mdl",
+    "model_references": [
+      "models/roller.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [
+      "npc/roller/code1.wav",
+      "npc/roller/code2.wav",
+      "npc/roller/code3.wav",
+      "npc/roller/code4.wav",
+      "npc/roller/code5.wav",
+      "npc/roller/code6.wav",
+      "npc/roller/roll.wav"
+    ],
+    "sound_event_references": [
+      "NPC_RollerBuddy.Confirm",
+      "NPC_RollerBuddy.RemoteYes"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false,
+    "model_inherited_from": "npc_roller"
+  },
+  {
+    "name": "npc_rollerdozer",
+    "description": "Roller Dozer (prototype)",
+    "source": "dlls/hl2_dll/npc_rollerdozer.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/roller.mdl",
+    "model_references": [
+      "models/roller.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false,
+    "model_inherited_from": "npc_roller"
+  },
+  {
+    "name": "npc_rollerturret",
+    "description": "Roller Turret (prototype)",
+    "source": "dlls/hl2_dll/npc_rollerturret.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/roller.mdl",
+    "model_references": [
+      "models/roller.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/muzzleflash2.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_RollerTurret.Shoot"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_sscanner",
+    "description": "Shield Scanner (prototype)",
+    "source": "dlls/hl2_dll/npc_sscanner.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/shield_scanner.mdl",
+    "model_references": [
+      "models/shield_scanner.mdl",
+      "models/scanner_shield.mdl",
+      "models/gibs/mortarsynth_gibs.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/physbeam.vmt",
+      "sprites/glow01.vmt",
+      "sprites/physring1.vmt"
+    ],
+    "sound_file_references": [
+      "npc/waste_scanner/grenade_fire.wav",
+      "npc/waste_scanner/hover.wav"
+    ],
+    "sound_event_references": [
+      "NPC_SScanner.FlySound"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_IDLE",
+      "ACT_IDLE_ANGRY",
+      "ACT_SSCANNER_CLOSE",
+      "ACT_SSCANNER_FLINCH_BACK",
+      "ACT_SSCANNER_FLINCH_FRONT",
+      "ACT_SSCANNER_FLINCH_LEFT",
+      "ACT_SSCANNER_FLINCH_RIGHT",
+      "ACT_SSCANNER_LOOK",
+      "ACT_SSCANNER_OPEN"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_wscanner",
+    "description": "Wasteland Scanner (prototype)",
+    "source": "dlls/hl2_dll/npc_wscanner.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/wscanner_single.mdl",
+    "model_references": [
+      "models/wscanner_single.mdl",
+      "models/wscanner_pair.mdl",
+      "models/wscanner_tri.mdl"
+    ],
+    "effect_material_references": [
+      "sprites/glow01.vmt",
+      "sprites/lgtning.vmt"
+    ],
+    "sound_file_references": [],
+    "sound_event_references": [
+      "NPC_WScanner.Alarm",
+      "NPC_WScanner.Attach",
+      "NPC_WScanner.AttachEvent",
+      "NPC_WScanner.Hover",
+      "NPC_WScanner.HoverAlarm",
+      "NPC_WScanner.LaserShoot",
+      "NPC_WScanner.LaserWarmUp",
+      "NPC_WScanner.ShootEvent",
+      "NPC_WScanner.Split"
+    ],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_RANGE_ATTACK1",
+      "ACT_WSCANNER_FLINCH_BACK",
+      "ACT_WSCANNER_FLINCH_FRONT",
+      "ACT_WSCANNER_FLINCH_LEFT",
+      "ACT_WSCANNER_FLINCH_RIGHT",
+      "ACT_WSCANNER_JOIN"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_combineelite",
+    "description": "Combine Elite (early character)",
+    "source": "dlls/hl2_dll/npc_combinee.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/Combine_Elite.mdl",
+    "model_references": [
+      "models/Combine_Elite.mdl",
+      "models/combine_elite.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_odell",
+    "description": "Odell (cut character)",
+    "source": "dlls/hl2_dll/npc_odell.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/odell.mdl",
+    "model_references": [
+      "models/odell.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [
+      "ACT_180_LEFT",
+      "ACT_TURN_LEFT",
+      "ACT_TURN_RIGHT"
+    ],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false
+  },
+  {
+    "name": "npc_launcher",
+    "description": "Launcher (experimental entity)",
+    "source": "dlls/hl2_dll/npc_launcher.cpp",
+    "registration_active": true,
+    "registration_conditional": false,
+    "included_in_debug_hl2": true,
+    "included_build_configurations": [
+      "Release HL2|Win32",
+      "Debug HL2|Win32"
+    ],
+    "prototype_candidate": true,
+    "model_reference": "models/player.mdl",
+    "model_references": [
+      "models/player.mdl"
+    ],
+    "effect_material_references": [],
+    "sound_file_references": [],
+    "sound_event_references": [],
+    "named_attachments": [],
+    "named_sequences": [],
+    "activity_references": [],
+    "charge_hit_source_patch": false,
+    "sonic_attack_source_patch": false,
+    "melee_attack_source_patch": false,
+    "assets_verified": false,
+    "runtime_verified": false,
+    "model_role": "invisible_engine_dummy_not_restored_appearance",
+    "dynamic_asset_keyfields": [
+      "MissileModel",
+      "LaunchSound",
+      "FlySound"
+    ]
+  }
+]

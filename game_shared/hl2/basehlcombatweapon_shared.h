@@ -18,6 +18,7 @@
 
 class CBaseHLCombatWeapon : public CBaseCombatWeapon
 {
+public: // HL2MODERN_WEAPON_DATAMAP_ACCESS: derived save tables reference the base map.
 #if !defined( CLIENT_DLL )
 	DECLARE_DATADESC();
 #endif

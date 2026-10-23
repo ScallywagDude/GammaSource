@@ -1,4 +1,4 @@
-f//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
 //
 // Purpose: This is the incendiary rifle.
 //
@@ -77,6 +77,7 @@ CWeaponIRifle::CWeaponIRifle()
 //---------------------------------------------------------
 void CWeaponIRifle::Precache( void )
 {
+	UTIL_PrecacheOther("env_flare");
 	BaseClass::Precache();
 }
 
@@ -89,15 +90,18 @@ void CWeaponIRifle::PrimaryAttack( void )
 	if ( pOwner == NULL )
 		return;
 
-	m_iClip1 = m_iClip1 - 1;
-
-	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
-	pOwner->m_flNextAttack = gpGlobals->curtime + 1;
+	// HL2MODERN_IRIFLE_AMMO: consume only after a flare is created.
+	if ( UsesClipsForAmmo1() ? m_iClip1<=0 : pOwner->GetAmmoCount(m_iPrimaryAmmoType)<=0 ) return;
 
 	CFlare *pFlare = CFlare::Create( pOwner->Weapon_ShootPosition(), pOwner->EyeAngles(), pOwner, FLARE_DURATION );
 
 	if ( pFlare == NULL )
 		return;
+	if ( UsesClipsForAmmo1() ) --m_iClip1;
+	else pOwner->RemoveAmmo(1,m_iPrimaryAmmoType);
+	SendWeaponAnim(ACT_VM_PRIMARYATTACK);
+	m_flNextPrimaryAttack=gpGlobals->curtime+GetFireRate();
+	pOwner->m_flNextAttack=m_flNextPrimaryAttack;
 
 	Vector forward;
 	pOwner->EyeVectors( &forward );
@@ -112,10 +116,6 @@ void CWeaponIRifle::PrimaryAttack( void )
 //---------------------------------------------------------
 bool CWeaponIRifle::Deploy( void )
 {
-	CBaseCombatCharacter *pOwner  = GetOwner();
-	if (pOwner)
-	{
-		pOwner->GiveAmmo( 90, m_iPrimaryAmmoType);
-	}
+	// Switching weapons must not manufacture ammunition.
 	return BaseClass::Deploy();
 }

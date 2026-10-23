@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{DD40E3FD-FAA9-546A-88F9-E33DDA273BFE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{540D31BC-B542-5565-A6E5-215CFF8F4888}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\DataSource">
+      <UniqueIdentifier>{4A6CC117-F87C-5C30-8084-B7A3B684E4F1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Decoders">
+      <UniqueIdentifier>{56515164-7CAA-5BF6-9BD7-07A4398242A2}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\BufferDataSource.cpp">
+      <Filter>Source Files\DataSource</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DataSourceABC.cpp">
+      <Filter>Source Files\DataSource</Filter>
+    </ClCompile>
+    <ClCompile Include=".\FileDataSource.cpp">
+      <Filter>Source Files\DataSource</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ResourceDataSource.cpp">
+      <Filter>Source Files\DataSource</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeBMP.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeGIF.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeJPEG.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeMNG.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodePCX.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodePNG.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DecodeRIF.cpp">
+      <Filter>Source Files\Decoders</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Dib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Frame.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\BufferDataSource.h">
+      <Filter>Source Files\DataSource</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DataSourceABC.h">
+      <Filter>Source Files\DataSource</Filter>
+    </ClInclude>
+    <ClInclude Include=".\FileDataSource.h">
+      <Filter>Source Files\DataSource</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ResourceDataSource.h">
+      <Filter>Source Files\DataSource</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Array.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Array.inl">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gif.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ImgLib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ImgLibInt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\RIFFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\ImagLib.txt" />
+    <None Include=".\licence.txt" />
+  </ItemGroup>
+</Project>

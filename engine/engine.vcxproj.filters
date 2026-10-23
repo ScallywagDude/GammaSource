@@ -1,0 +1,1943 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include=".">
+      <UniqueIdentifier>{EA645E98-1F79-526F-961B-EE8B0341572D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio">
+      <UniqueIdentifier>{38449410-F392-5601-AB34-B980D0C0873F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Private">
+      <UniqueIdentifier>{51D36AE0-CF85-5B20-972C-0BAF5E85327B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Private\.">
+      <UniqueIdentifier>{6BA28F60-DA84-5477-BD6E-DD7B2CEE02E4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Private\.\Audio">
+      <UniqueIdentifier>{40E94003-FAEC-5E98-B48B-5A13265D73CB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Private\.\Audio\Private: Headers">
+      <UniqueIdentifier>{490E3747-3745-5704-AB9B-FE703BDEECA0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Private\.\Audio\Private: Source">
+      <UniqueIdentifier>{433BF54D-622F-55F4-9367-2ABD35087E7B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include=".\Audio\Public">
+      <UniqueIdentifier>{11E14A61-0B2D-59A7-B166-80DC267A2C38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{09AD5BB5-3C23-5031-B3BE-342005FEE5C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Audio Headers">
+      <UniqueIdentifier>{0BAA92E4-6A38-5994-AEB8-5BDCF039FAF7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Public Headers">
+      <UniqueIdentifier>{A87DCBB7-5937-5AD4-92AB-3C0670432CD6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{E10D424D-EC41-51C1-BEE7-907EF99736E3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6FA7C87F-33FC-5024-AAA1-374856AF15F3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Audio Code">
+      <UniqueIdentifier>{710E8FB7-19A6-5012-BE31-AB54A228A4A5}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\EngineSoundClient.cpp">
+      <Filter>Source Files\Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EngineSoundServer.cpp">
+      <Filter>Source Files\Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EngSoundService.cpp">
+      <Filter>Source Files\Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\riff.cpp">
+      <Filter>Source Files\Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\snd_io.cpp">
+      <Filter>Source Files\Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\baseautocompletefilelist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\bitbuf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\bitbuf_errorhandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\BSPTreeData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\bugreporter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\builddisp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\buildnum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\bumpvects.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cdll_engine_int.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cdll_exp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\changeframelist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\characterset.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\checksum_crc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\checksum_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\checksum_md5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Cl_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoaction.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoaction_types.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoactioneditors.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoactionmanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoeditorpanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demosmootherpanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_demouipanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_entityreport.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_ents.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_ents_parse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_localnetworkbackdoor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Cl_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_null.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Cl_parse.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_parse_event.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cl_pred.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\client.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Cmd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmodel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmodel_bsp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\cmodel_disp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\CollisionUtils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\conproc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Console.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\convar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\crtmemdebug.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CSpatialPartition.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Cvar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\debug_leafvis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DebugOverlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\decal_clip.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\decals.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dinput.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\disp_common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp_defs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp_helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp_leaflink.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\disp_mapload.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\disp_powerinfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DispBuild.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DispChain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\DispColl_Common.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DisplayStats.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_common_eng.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_encode.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_instrumentation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_instrumentation_server.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_localtransfer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\dt_recv.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_recv_decoder.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_recv_eng.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\dt_send.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_send_eng.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_stack.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\dt_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\Editor_SendCommand.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\enginesingleuserfilter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EngineStats.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\enginetrace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\FileSystem_Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\filesystem_helpers.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GameEventManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gametrace_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Gl_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_drawlights.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_lightmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_matsysiface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_rlight.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_rmain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Gl_rmisc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_rsurf.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_screen.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gl_shader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Gl_test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Gl_vidnt.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Gl_warp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\glquake.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Host.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Host_cmd.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\host_listmaps.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\host_saverestore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\host_state.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\ImageLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\initmathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Keys.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\l_studio.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\lightcache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LocalNetworkBackdoor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MaterialProxyFactory.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\Mathlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\matsys_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\measure_section.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\mem_fgets.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\tier0\memoverride.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\MemPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mod_vis.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ModelInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\modelloader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\net_chan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\net_synctags.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\net_ws.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\netgraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTableClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTableItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTableServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\networkvar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OcclusionSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Overlay.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\packed_entity.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Pr_edict.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\precache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\quakedef.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\r_areaportal.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\r_efx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\r_linefile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\randomstream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\recventlist.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\registry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\ScratchPad3D.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\sentence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ShadowMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dsp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StaticPropMgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_ents_write.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_filter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_framesnapshot.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_log.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Sv_main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_master.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_packedentities.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Sv_phys.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_precache.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_rcom.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sv_redirect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Sv_user.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sys_dll.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sys_dll2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sys_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sys_getmodes.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sys_mainwind.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\terrainmod_functions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\testscriptmgr.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\TGAWriter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\thread.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\tmessage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\traceinit.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\UtlBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\utlsymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\vallocator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vengineserver_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vgui_BasePanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vgui_baseui_interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vgui_DebugSystemPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vgui_int.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\View.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Public\vmatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\voiceserver_impl.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vprof_engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\vstring.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\World.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Zone.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\CircularBuffer.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_audio_source.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dev_direct.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dev_wave.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dma.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_mem.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_mix.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_mp3_source.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_sentence_mixer.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_data.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer_adpcm.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer_mp3.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_source.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_temp.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_win.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_gain.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_mixer_controls.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_record_dsound.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_sound_engine_interface.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_wavefile.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\vox.cpp">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gameui_modelpreview.cpp" />
+    <ClCompile Include="..\game_shared\bone_setup.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\baseautocompletefilelist.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cd.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cd_internal.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demoaction.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demoaction_types.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demoactioneditors.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demoactionmanager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demoeditorpanel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demosmootherpanel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demosmoothing.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_demouipanel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dinput.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_common_eng.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\enginebugreporter.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IOcclusionSystem.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ithread.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ModelInfo.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\proto_oob.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\proto_version.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sys_mainwind.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vgui_baseui_interface.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\clientsound_impl.h">
+      <Filter>Header Files\Audio Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ASM_I386.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\bitbuf_errorhandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\BSPTreeData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\bugreporter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cdll_engine_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\changeframelist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\checksum_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_entityreport.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_ents.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_ents_parse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_localnetworkbackdoor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_parse.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_parse_event.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_pred.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cl_servercache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CLIENT.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CMD.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cmodel_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cmodel_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\CollisionUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ColorQuant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\conprint.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\conproc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CONSOLE.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CVAR.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\debug_leafvis.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DebugOverlay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\decal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\decal_clip.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\decal_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\demo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\disp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\disp_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\disp_defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\disp_helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\disp_leaflink.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\disp_powerinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DispBuild.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DispChain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\DispColl_Common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DisplayStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DispNode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\dll_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DRAW.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\dt_common.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_encode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_instrumentation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_instrumentation_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_localtransfer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\dt_recv.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_recv_decoder.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_recv_eng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\dt_send.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_send_eng.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_stack.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dt_test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\engine_hlds_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine_launcher_api.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\enginesingleuserfilter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\EngineSoundInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\EngineStats.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\enginetrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\exefuncs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\FileSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\FileSystem_Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\frame.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\framesnapshot.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\game_interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GameEventManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\getintersectingsurfaces_struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_cvars.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_drawlights.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_hw.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_lightmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_matsysiface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GL_MODEL.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_model_private.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_rmain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_rsurf.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_shaderutil.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_texture.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_warp_sin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gl_water.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GLQUAKE.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\host.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\host_cmd.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\host_jmp.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\host_saverestore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\host_state.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\hud_handlers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\icliententity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\idedicatedexports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\IDispInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine\IEngineSound.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\engine\IEngineTrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\INetworkStringTableClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\INetworkStringTableServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\IScratchPad3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\iserverentity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine\IShadowMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ISpatialPartition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ISpatialPartitionInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\IStudioRender.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ivoicetweak.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\KEYS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\l_studio.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\launcher_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\lightcache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LLIST.HPP">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LocalNetworkBackdoor.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\lowpassstream.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\master.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MaterialProxyFactory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\mem_fgets.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MODELGEN.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\modelloader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\modes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\NET.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\net_synctags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\NetworkStringTable.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\NetworkStringTableClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\networkstringtablecontainerclient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\networkstringtablecontainerserver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\NetworkStringTableDefs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\networkstringtableitem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\NetworkStringTableServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\nmatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\nvector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\optimize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Overlay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\packed_entity.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\packedentityarray.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\pr_edict.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\precache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\procinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\profiling.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PROGS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\protected_things.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\protocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\r_areaportal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\r_efxextern.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\R_LOCAL.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\recventlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\RENDER.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\savegame_version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SBAR.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ScratchPad3D.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SCREEN.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SERVER.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ShadowMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_mp3_source.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_data.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\soundinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SPRITEGN.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StaticPropMgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\studio_internal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\surfinfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_ents_write.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_main.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_packedentities.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sv_precache.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SYS.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sys_dll.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sysexternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\terrainmod_functions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\testscriptmgr.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\textures.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\TGAWriter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\tmessage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\trace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\traceinit.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\usermsg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\utlfixedlinkedlist.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\utlfixedmemory.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utlsymbol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vengineserver_impl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vgui_BasePanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vgui_DebugSystemPanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vgui_int.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\VID.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\VIEW.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vprof_engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\WINQUAKE.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\WORLD.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ZONE.H">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\amd3dx.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ANORMS.H">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\authchallenge.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\basetypes.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\bitbuf.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\bitvec.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\BSPFILE.H">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\bspflags.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\builddisp.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\bumpvects.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\cache_user.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\cdll_int.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\characterset.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\checksum_crc.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\checksum_md5.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\client_class.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\client_command.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\clientstats.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\cmodel.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\COMMON.H">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\commonmacros.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\con_nprint.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\const.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\convar.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\coordsize.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\crtmemdebug.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\custom.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\datamap.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\dbg\dbg.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\dlight.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\edict.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\Editor_SendCommand.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\eiface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\event_flags.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\event_system.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\platform\fasttimer.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\GameBSPFile.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\gameui\GameUI_Interface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\appframework\IAppSystem.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ibsppack.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iclientcollideable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\icliententitylist.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iclientnetworkable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\iclientrenderable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iclientthinkable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iclientunknown.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\engine\ICollideable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\ICommandLine.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\icreatevfont.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\icvar.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\iefx.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\iengine.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ienginevgui.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\igame.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GameUI\IGameConsole.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\IGameUIFuncs.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ImageLoader.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterial.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialproxy.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialproxyfactory.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialsystem.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialsystemhardwareconfig.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialsystemstats.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imaterialvar.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\VGuiMatSurface\IMatSystemSurface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\imesh.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\inetgraph.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\interface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\iprediction.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine\iprops.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iregistry.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\iservernetworkable.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\itexture.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine\ivdebugoverlay.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ivguicenterprint.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ivideomode.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\engine\IVModelRender.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ivoiceserver.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ivrenderview.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\ivtex.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\kbutton.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\keydefs.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\materialsystem\materialsystem_config.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\MATHLIB.H">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\measure_section.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\MemPool.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\model_types.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\mouthinfo.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\netadr.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\overlaytext.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\phyfile.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\plane.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\platform\platform.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\qlimits.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\QUAKEDEF.H">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\r_efx.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\random.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\riff.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\s3_intrf.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\sentence.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\server_class.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\shake.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\soundflags.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\string_t.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\strtools.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\studio.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\terrainmod.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\TGALoader.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\usercmd.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utlbidirectionalset.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\UtlBuffer.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utldict.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utllinkedlist.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\UtlMemory.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\utlrbtree.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\UtlSortVector.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\UtlVector.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vallocator.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vcollide.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\platform\vcr_shared.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\platform\vcrmode.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector2d.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vector4d.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_Color.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\controls\VGUI_Controls.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_Cursor.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_Dar.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\controls\VGUI_EditablePanel.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\controls\VGUI_FocusNavGroup.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IClientPanel.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IHTML.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IImage.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IInput.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_ILocalize.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IPanel.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IScheme.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_ISurface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_IVGui.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_KeyCode.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_KeyValues.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_MessageMap.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\include\VGUI_MouseCode.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\controls\VGUI_Panel.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\controls\VGUI_PHandle.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\view_shared.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vmatrix.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\vmodes.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vphysics_interface.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\vplane.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\vstdlib\vstdlib.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\vstring.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Public\worldsize.h">
+      <Filter>Public Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\ivoicecodec.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\ivoicerecord.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\snd_audio_source.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\snd_device.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\snd_io.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\sound.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\SoundService.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\Voice.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\public\vox.h">
+      <Filter>.\Audio\Public</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\CircularBuffer.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\EAX.H">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_asm_i386.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_channels.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_convars.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_dev_direct.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_dev_wave.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_dma.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_env_fx.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_fixedint.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_mix_buf.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_sfx.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_mixer.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_mixer_adpcm.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_mixer_private.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_source.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\snd_wave_temp.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\sound_private.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\voice_gain.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\voice_mixer_controls.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\voice_sound_engine_interface.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\voice_wavefile.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include=".\audio\private\vox_private.h">
+      <Filter>.\Audio\Private\.\Audio\Private: Headers</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\IGameUIModelPreview.h" />
+    <ClInclude Include="..\game_shared\bone_setup.h" />
+    <ClInclude Include="..\modernize\model_preview_policy.h" />
+    <ClInclude Include="..\modernize\model_preview_studio_validation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\math.s">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include=".\sys_wina.s">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include=".\worlda.s">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include=".\ICON1.ICO">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\icon3.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\valve.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\audio\private\snd_mixa.s">
+      <Filter>.\Audio\Private\.\Audio\Private: Source</Filter>
+    </None>
+    <None Include="..\lib\public\vgui_controls.lib" />
+    <None Include="..\lib\public\vstdlib.lib" />
+    <None Include="..\lib\common\s3tc.lib" />
+    <None Include="..\DX8SDK\lib\dsound.lib" />
+    <None Include="..\DX8SDK\lib\dxguid.lib" />
+    <None Include="..\lib\public\tier0.lib" />
+    <None Include="..\lib\public\vtf.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\halflife.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

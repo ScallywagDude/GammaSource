@@ -1,0 +1,2398 @@
+{
+  "format_version": 1,
+  "description": "Static source inventory; never implies build success",
+  "summary": {
+    "Debug": {
+      "steps": 61,
+      "projects_with_missing_compilation_inputs": 0,
+      "missing_compilation_inputs": 0,
+      "missing_shaders": 0,
+      "missing_include_directories": 20,
+      "case_only_references": 0,
+      "first_project_with_missing_inputs": null
+    },
+    "Release": {
+      "steps": 61,
+      "projects_with_missing_compilation_inputs": 0,
+      "missing_compilation_inputs": 0,
+      "missing_shaders": 0,
+      "missing_include_directories": 17,
+      "case_only_references": 0,
+      "first_project_with_missing_inputs": null
+    }
+  },
+  "build_order": [
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "tier0/tier0.dsp",
+      "configuration": "Release",
+      "step": 1,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vstdlib/vstdlib.dsp",
+      "configuration": "Release",
+      "step": 2,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "unitlib/unitlib.dsp",
+      "configuration": "Release",
+      "step": 3,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vtf/vtf.dsp",
+      "configuration": "Release",
+      "step": 4,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "shaderlib/shaderlib.dsp",
+      "configuration": "Release",
+      "step": 5,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_dbg.dsp",
+      "configuration": "Release",
+      "step": 6,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_dx6.dsp",
+      "configuration": "Release",
+      "step": 7,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_dx7.dsp",
+      "configuration": "Release",
+      "step": 8,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_dx8.dsp",
+      "configuration": "Release",
+      "step": 9,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_dx9.dsp",
+      "configuration": "Release",
+      "step": 10,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/stdshader_hdr_dx9.dsp",
+      "configuration": "Release",
+      "step": 11,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/shader_nvfx.dsp",
+      "configuration": "Release",
+      "step": 12,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9_nv3x"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/stdshaders/shader_nvfx.dsp",
+      "configuration": "Release ps20",
+      "step": 13,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9_nv3x_ps20"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/shaderempty/shaderempty.dsp",
+      "configuration": "Release",
+      "step": 14,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/shaderdx8/shaderdx8.dsp",
+      "configuration": "Release",
+      "step": 15,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/shaderdx8/playback/playback.dsp",
+      "configuration": "Release DX9",
+      "step": 16,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "materialsystem/materialsystem.dsp",
+      "configuration": "Release",
+      "step": 17,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "utils/mxtk/msvc/mxtoolkitwin32.dsp",
+      "configuration": "Release",
+      "step": 18,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vgui2/vgui_surfacelib/vgui_surfacelib.dsp",
+      "configuration": "Release",
+      "step": 19,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vgui2/src/vgui_dll.dsp",
+      "configuration": "Release",
+      "step": 20,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": ".\\IInputInternal.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/src/iinputinternal.h"
+        },
+        {
+          "file": "..\\..\\public\\IKeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "public/ikeyvalues.h"
+        },
+        {
+          "file": "..\\..\\public\\vgui\\KeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "public/vgui/keyvalues.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vgui2/controls/vgui_controls.dsp",
+      "configuration": "Release",
+      "step": 21,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vphysics/vphysics.dsp",
+      "configuration": "Release",
+      "step": 22,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "StudioRender/StudioRender.dsp",
+      "configuration": "Release",
+      "step": 23,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "filesystem/filesystem_stdio/filesystem_stdio.dsp",
+      "configuration": "Release",
+      "step": 24,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "filesystem/filesystem_stdio/filesystem_stdio.dsp",
+      "configuration": "Release STEAM",
+      "step": 25,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "appframework/appframework.dsp",
+      "configuration": "Release",
+      "step": 26,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "vguimatsurface/vguimatsurface.dsp",
+      "configuration": "Release",
+      "step": 27,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "gameui/gameui.dsp",
+      "configuration": "Release",
+      "step": 28,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\BaseUI\\IGameConsole.h",
+          "type": "header_or_resource",
+          "project_relative": "public/baseui/igameconsole.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\hltv\\common"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "engine/voice_codecs/miles/miles.dsp",
+      "configuration": "Release",
+      "step": 29,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\..\\move"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "tracker/serverbrowser/serverbrowser.dsp",
+      "configuration": "Release",
+      "step": 30,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Release",
+      "dsp": "GameUI/GameUI.dsp",
+      "configuration": "Release",
+      "step": 31,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\BaseUI\\IGameConsole.h",
+          "type": "header_or_resource",
+          "project_relative": "public/baseui/igameconsole.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\hltv\\common"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "tier0/tier0.dsp",
+      "configuration": "Debug",
+      "step": 32,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vstdlib/vstdlib.dsp",
+      "configuration": "Debug",
+      "step": 33,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vtf/vtf.dsp",
+      "configuration": "Debug",
+      "step": 34,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "shaderlib/shaderlib.dsp",
+      "configuration": "Debug",
+      "step": 35,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_dbg.dsp",
+      "configuration": "Debug",
+      "step": 36,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_dx6.dsp",
+      "configuration": "Debug",
+      "step": 37,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_dx7.dsp",
+      "configuration": "Debug",
+      "step": 38,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_dx8.dsp",
+      "configuration": "Debug",
+      "step": 39,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_dx9.dsp",
+      "configuration": "Debug",
+      "step": 40,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/stdshader_hdr_dx9.dsp",
+      "configuration": "Debug",
+      "step": 41,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/shader_nvfx.dsp",
+      "configuration": "Debug",
+      "step": 42,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9_nv3x"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/stdshaders/shader_nvfx.dsp",
+      "configuration": "Debug ps20",
+      "step": 43,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "fxctmp9_nv3x_ps20"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "unitlib/unitlib.dsp",
+      "configuration": "Debug",
+      "step": 44,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/shaderempty/shaderempty.dsp",
+      "configuration": "Debug",
+      "step": 45,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/shaderdx8/shaderdx8.dsp",
+      "configuration": "Debug",
+      "step": 46,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/shaderdx8/playback/playback.dsp",
+      "configuration": "Debug DX9",
+      "step": 47,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "materialsystem/materialsystem.dsp",
+      "configuration": "Debug",
+      "step": 48,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "utils/mxtk/msvc/mxtoolkitwin32.dsp",
+      "configuration": "Debug",
+      "step": 49,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vgui2/vgui_surfacelib/vgui_surfacelib.dsp",
+      "configuration": "Debug",
+      "step": 50,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vgui2/src/vgui_dll.dsp",
+      "configuration": "Debug",
+      "step": 51,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": ".\\IInputInternal.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/src/iinputinternal.h"
+        },
+        {
+          "file": "..\\..\\public\\IKeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "public/ikeyvalues.h"
+        },
+        {
+          "file": "..\\..\\public\\vgui\\KeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "public/vgui/keyvalues.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vgui2/controls/vgui_controls.dsp",
+      "configuration": "Debug",
+      "step": 52,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vphysics/vphysics.dsp",
+      "configuration": "Debug",
+      "step": 53,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "StudioRender/StudioRender.dsp",
+      "configuration": "Debug",
+      "step": 54,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "filesystem/filesystem_stdio/filesystem_stdio.dsp",
+      "configuration": "Debug",
+      "step": 55,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "filesystem/filesystem_stdio/filesystem_stdio.dsp",
+      "configuration": "Debug STEAM",
+      "step": 56,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "appframework/appframework.dsp",
+      "configuration": "Debug",
+      "step": 57,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "vguimatsurface/vguimatsurface.dsp",
+      "configuration": "Debug",
+      "step": 58,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "gameui/gameui.dsp",
+      "configuration": "Debug",
+      "step": 59,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\BaseUI\\IGameConsole.h",
+          "type": "header_or_resource",
+          "project_relative": "public/baseui/igameconsole.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "engine/voice_codecs/miles/miles.dsp",
+      "configuration": "Debug",
+      "step": 60,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\..\\move"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "GameUI/GameUI.dsp",
+      "configuration": "Debug",
+      "step": 61,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\BaseUI\\IGameConsole.h",
+          "type": "header_or_resource",
+          "project_relative": "public/baseui/igameconsole.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_common.bat",
+      "type": "Debug",
+      "dsp": "tracker/serverbrowser/serverbrowser.dsp",
+      "configuration": "Debug",
+      "step": 62,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vmpi/vmpi.dsp",
+      "configuration": "Release",
+      "step": 63,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vbspinfo/vbspinfo.dsp",
+      "configuration": "Release",
+      "step": 64,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vbsp/vbsp.dsp",
+      "configuration": "Release",
+      "step": 65,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vrad/vrad.dsp",
+      "configuration": "Release",
+      "step": 66,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\common\\messagemgr.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/messagemgr.h"
+        },
+        {
+          "file": "..\\common\\tcpsocket.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/tcpsocket.h"
+        },
+        {
+          "file": "..\\common\\threadhelpers.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/threadhelpers.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vmpi\\mysql\\mysqlpp\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vrad_launcher/vrad_launcher.dsp",
+      "configuration": "Release",
+      "step": 67,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vvis/vvis.dsp",
+      "configuration": "Release",
+      "step": 68,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vvis_launcher/vvis_launcher.dsp",
+      "configuration": "Release",
+      "step": 69,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\ReadMe.txt",
+          "type": "header_or_resource",
+          "project_relative": "utils/vvis_launcher/readme.txt"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/nvtristriplib/nvtristriplib.dsp",
+      "configuration": "Release",
+      "step": 70,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/studiomdl/studiomdl.dsp",
+      "configuration": "Release",
+      "step": 71,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/hlmviewer/src/hlmv.dsp",
+      "configuration": "Release",
+      "step": 72,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\..\\..\\statemachine"
+      ],
+      "out_of_tree": [
+        {
+          "file": "\\mxtk\\include",
+          "category": "include_dir"
+        }
+      ],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/hlfaceposer/hlfaceposer.dsp",
+      "configuration": "release",
+      "step": 73,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/scenemanager/scenemanager.dsp",
+      "configuration": "release",
+      "step": 74,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/phonemeextractor/phonemeextractor.dsp",
+      "configuration": "Release",
+      "step": 75,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/phonemeextractor/phonemeextractor.dsp",
+      "configuration": "Release IMS",
+      "step": 76,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/newdat/newdat.dsp",
+      "configuration": "Release",
+      "step": 77,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vtex/vtex.dsp",
+      "configuration": "Release",
+      "step": 78,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vtex/vtex_dll.dsp",
+      "configuration": "Release",
+      "step": 79,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/unittest/unittest.dsp",
+      "configuration": "Release",
+      "step": 80,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/bsppack/bsppack.dsp",
+      "configuration": "Release",
+      "step": 81,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/bspzip/bspzip.dsp",
+      "configuration": "Release",
+      "step": 82,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/height2normal/height2normal.dsp",
+      "configuration": "Release",
+      "step": 83,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/vtf2tga/vtf2tga.dsp",
+      "configuration": "Release",
+      "step": 84,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Release",
+      "dsp": "utils/bugreporter/bugreporter.dsp",
+      "configuration": "Release",
+      "step": 85,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vmpi/vmpi.dsp",
+      "configuration": "Debug",
+      "step": 86,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vbspinfo/vbspinfo.dsp",
+      "configuration": "Debug",
+      "step": 87,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vbsp/vbsp.dsp",
+      "configuration": "Debug",
+      "step": 88,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vrad/vrad.dsp",
+      "configuration": "Debug",
+      "step": 89,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\common\\messagemgr.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/messagemgr.h"
+        },
+        {
+          "file": "..\\common\\tcpsocket.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/tcpsocket.h"
+        },
+        {
+          "file": "..\\common\\threadhelpers.h",
+          "type": "header_or_resource",
+          "project_relative": "utils/common/threadhelpers.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vmpi\\mysql\\mysqlpp\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vrad_launcher/vrad_launcher.dsp",
+      "configuration": "Debug",
+      "step": 90,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vvis/vvis.dsp",
+      "configuration": "Debug",
+      "step": 91,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\..\\public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vvis_launcher/vvis_launcher.dsp",
+      "configuration": "Debug",
+      "step": 92,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\ReadMe.txt",
+          "type": "header_or_resource",
+          "project_relative": "utils/vvis_launcher/readme.txt"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/nvtristriplib/nvtristriplib.dsp",
+      "configuration": "Debug",
+      "step": 93,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/studiomdl/studiomdl.dsp",
+      "configuration": "Debug",
+      "step": 94,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/hlmviewer/src/hlmv.dsp",
+      "configuration": "Debug",
+      "step": 95,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        "..\\..\\..\\statemachine"
+      ],
+      "out_of_tree": [
+        {
+          "file": "\\mxtk\\include",
+          "category": "include_dir"
+        }
+      ],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/hlfaceposer/hlfaceposer.dsp",
+      "configuration": "debug",
+      "step": 96,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/scenemanager/scenemanager.dsp",
+      "configuration": "Debug",
+      "step": 97,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/phonemeextractor/phonemeextractor.dsp",
+      "configuration": "Debug",
+      "step": 98,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/phonemeextractor/phonemeextractor.dsp",
+      "configuration": "Debug IMS",
+      "step": 99,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/newdat/newdat.dsp",
+      "configuration": "Debug",
+      "step": 100,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vtex/vtex.dsp",
+      "configuration": "Debug",
+      "step": 101,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vtex/vtex_dll.dsp",
+      "configuration": "Debug",
+      "step": 102,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/unittest/unittest.dsp",
+      "configuration": "Debug",
+      "step": 103,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/bsppack/bsppack.dsp",
+      "configuration": "Debug",
+      "step": 104,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/bspzip/bspzip.dsp",
+      "configuration": "Debug",
+      "step": 105,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/height2normal/height2normal.dsp",
+      "configuration": "Debug",
+      "step": 106,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/vtf2tga/vtf2tga.dsp",
+      "configuration": "Debug",
+      "step": 107,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_tools.bat",
+      "type": "Debug",
+      "dsp": "utils/bugreporter/bugreporter.dsp",
+      "configuration": "Debug",
+      "step": 108,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_engine.bat",
+      "type": "Release",
+      "dsp": "engine/engine.dsp",
+      "configuration": "Release",
+      "step": 109,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\clientsound_impl.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/clientsound_impl.h"
+        },
+        {
+          "file": ".\\bugreporter.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/bugreporter.h"
+        },
+        {
+          "file": ".\\usermsg.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/usermsg.h"
+        },
+        {
+          "file": ".\\ICON1.ICO",
+          "type": "header_or_resource",
+          "project_relative": "engine/icon1.ico"
+        },
+        {
+          "file": ".\\icon3.ico",
+          "type": "header_or_resource",
+          "project_relative": "engine/icon3.ico"
+        },
+        {
+          "file": "..\\common\\authchallenge.h",
+          "type": "header_or_resource",
+          "project_relative": "common/authchallenge.h"
+        },
+        {
+          "file": "..\\Public\\custom.h",
+          "type": "header_or_resource",
+          "project_relative": "public/custom.h"
+        },
+        {
+          "file": "..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\Public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\public\\iclientcollideable.h",
+          "type": "header_or_resource",
+          "project_relative": "public/iclientcollideable.h"
+        },
+        {
+          "file": "..\\Public\\engine\\iprops.h",
+          "type": "header_or_resource",
+          "project_relative": "public/engine/iprops.h"
+        },
+        {
+          "file": "..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcr_shared.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcr_shared.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Color.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_color.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_Controls.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_controls.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Cursor.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_cursor.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Dar.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_dar.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_EditablePanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_editablepanel.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_FocusNavGroup.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_focusnavgroup.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IClientPanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iclientpanel.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IHTML.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ihtml.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IImage.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iimage.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IInput.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iinput.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_ILocalize.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ilocalize.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IPanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ipanel.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IScheme.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ischeme.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_ISurface.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_isurface.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IVGui.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ivgui.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_KeyCode.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_keycode.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_KeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_keyvalues.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_MessageMap.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_messagemap.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_MouseCode.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_mousecode.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_Panel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_panel.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_PHandle.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_phandle.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_engine.bat",
+      "type": "Release",
+      "dsp": "dedicated/dedicated.dsp",
+      "configuration": "Release",
+      "step": 110,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_engine.bat",
+      "type": "Debug",
+      "dsp": "engine/engine.dsp",
+      "configuration": "Debug",
+      "step": 111,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\clientsound_impl.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/clientsound_impl.h"
+        },
+        {
+          "file": ".\\bugreporter.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/bugreporter.h"
+        },
+        {
+          "file": ".\\usermsg.h",
+          "type": "header_or_resource",
+          "project_relative": "engine/usermsg.h"
+        },
+        {
+          "file": ".\\ICON1.ICO",
+          "type": "header_or_resource",
+          "project_relative": "engine/icon1.ico"
+        },
+        {
+          "file": ".\\icon3.ico",
+          "type": "header_or_resource",
+          "project_relative": "engine/icon3.ico"
+        },
+        {
+          "file": "..\\common\\authchallenge.h",
+          "type": "header_or_resource",
+          "project_relative": "common/authchallenge.h"
+        },
+        {
+          "file": "..\\Public\\custom.h",
+          "type": "header_or_resource",
+          "project_relative": "public/custom.h"
+        },
+        {
+          "file": "..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\Public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\public\\iclientcollideable.h",
+          "type": "header_or_resource",
+          "project_relative": "public/iclientcollideable.h"
+        },
+        {
+          "file": "..\\Public\\engine\\iprops.h",
+          "type": "header_or_resource",
+          "project_relative": "public/engine/iprops.h"
+        },
+        {
+          "file": "..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcr_shared.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcr_shared.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Color.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_color.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_Controls.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_controls.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Cursor.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_cursor.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_Dar.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_dar.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_EditablePanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_editablepanel.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_FocusNavGroup.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_focusnavgroup.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IClientPanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iclientpanel.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IHTML.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ihtml.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IImage.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iimage.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IInput.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_iinput.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_ILocalize.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ilocalize.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IPanel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ipanel.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IScheme.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ischeme.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_ISurface.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_isurface.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_IVGui.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_ivgui.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_KeyCode.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_keycode.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_KeyValues.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_keyvalues.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_MessageMap.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_messagemap.h"
+        },
+        {
+          "file": "..\\vgui2\\include\\VGUI_MouseCode.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/include/vgui_mousecode.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_Panel.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_panel.h"
+        },
+        {
+          "file": "..\\vgui2\\controls\\VGUI_PHandle.h",
+          "type": "header_or_resource",
+          "project_relative": "vgui2/controls/vgui_phandle.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_engine.bat",
+      "type": "Debug",
+      "dsp": "dedicated/dedicated.dsp",
+      "configuration": "Debug",
+      "step": 112,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_worldcraft.bat",
+      "type": "Release",
+      "dsp": "worldcraft/worldcraft.dsp",
+      "configuration": "Release",
+      "step": 113,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\res\\connect1.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connect1.ico"
+        },
+        {
+          "file": ".\\res\\connect_grey.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connect_grey.ico"
+        },
+        {
+          "file": ".\\res\\connectbad_grey.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connectbad_grey.ico"
+        },
+        {
+          "file": ".\\res\\ico00003.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/ico00003.ico"
+        },
+        {
+          "file": ".\\res\\input1.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/input1.ico"
+        },
+        {
+          "file": ".\\res\\otputbad.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/otputbad.ico"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_worldcraft.bat",
+      "type": "Debug",
+      "dsp": "worldcraft/worldcraft.dsp",
+      "configuration": "Debug",
+      "step": 114,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\res\\connect1.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connect1.ico"
+        },
+        {
+          "file": ".\\res\\connect_grey.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connect_grey.ico"
+        },
+        {
+          "file": ".\\res\\connectbad_grey.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/connectbad_grey.ico"
+        },
+        {
+          "file": ".\\res\\ico00003.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/ico00003.ico"
+        },
+        {
+          "file": ".\\res\\input1.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/input1.ico"
+        },
+        {
+          "file": ".\\res\\otputbad.ico",
+          "type": "header_or_resource",
+          "project_relative": "worldcraft/res/otputbad.ico"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\common\\ShaderDLL",
+        "..\\common\\iostream",
+        "..\\common\\shaderdll"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_hl2_game.bat",
+      "type": "Release",
+      "dsp": "dlls/hl.dsp",
+      "configuration": "Release HL2",
+      "step": 115,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\hl1_dll\\hl1_weapon_handgrenade.h",
+          "type": "header_or_resource",
+          "project_relative": "dlls/hl1_dll/hl1_weapon_handgrenade.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [
+        {
+          "file": "..\\..\\bin\\halflife1.fgd",
+          "category": "source_reference"
+        },
+        {
+          "file": "..\\..\\dlls",
+          "category": "include_dir"
+        }
+      ],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_hl2_game.bat",
+      "type": "Release",
+      "dsp": "cl_dll/client.dsp",
+      "configuration": "Release HL2",
+      "step": 116,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        ".\\..\\vgui2\\include",
+        ".\\hl2_hud\\elements"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_hl2_game.bat",
+      "type": "Debug",
+      "dsp": "dlls/hl.dsp",
+      "configuration": "Debug HL2",
+      "step": 117,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": ".\\hl1_dll\\hl1_weapon_handgrenade.h",
+          "type": "header_or_resource",
+          "project_relative": "dlls/hl1_dll/hl1_weapon_handgrenade.h"
+        }
+      ],
+      "missing_include_dirs": [],
+      "out_of_tree": [
+        {
+          "file": "..\\..\\bin\\halflife1.fgd",
+          "category": "source_reference"
+        },
+        {
+          "file": "..\\..\\dlls",
+          "category": "include_dir"
+        }
+      ],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_hl2_game.bat",
+      "type": "Debug",
+      "dsp": "cl_dll/client.dsp",
+      "configuration": "Debug HL2",
+      "step": 118,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [
+        ".\\..\\vgui2\\include",
+        ".\\hl2_hud\\elements"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_launcher.bat",
+      "type": "Release",
+      "dsp": "launcher/launcher.dsp",
+      "configuration": "Release",
+      "step": 119,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\Public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcr_shared.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcr_shared.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\dxsdk\\include",
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_launcher.bat",
+      "type": "Release",
+      "dsp": "launcher_main/launcher_main.dsp",
+      "configuration": "Release",
+      "step": 120,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_launcher.bat",
+      "type": "Debug",
+      "dsp": "launcher/launcher.dsp",
+      "configuration": "Debug",
+      "step": 121,
+      "missing_project": false,
+      "missing_inputs": [
+        {
+          "file": "..\\Public\\dbg\\dbg.h",
+          "type": "header_or_resource",
+          "project_relative": "public/dbg/dbg.h"
+        },
+        {
+          "file": "..\\Public\\platform\\fasttimer.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/fasttimer.h"
+        },
+        {
+          "file": "..\\Public\\platform\\platform.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/platform.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcr_shared.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcr_shared.h"
+        },
+        {
+          "file": "..\\public\\platform\\vcrmode.h",
+          "type": "header_or_resource",
+          "project_relative": "public/platform/vcrmode.h"
+        }
+      ],
+      "missing_include_dirs": [
+        "..\\dxsdk\\include",
+        "..\\vgui2\\include"
+      ],
+      "out_of_tree": [],
+      "case_only_references": 0
+    },
+    {
+      "batch": "build_launcher.bat",
+      "type": "Debug",
+      "dsp": "launcher_main/launcher_main.dsp",
+      "configuration": "Debug",
+      "step": 122,
+      "missing_project": false,
+      "missing_inputs": [],
+      "missing_include_dirs": [],
+      "out_of_tree": [],
+      "case_only_references": 0
+    }
+  ]
+}

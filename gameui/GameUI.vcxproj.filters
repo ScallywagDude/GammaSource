@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Controls">
+      <UniqueIdentifier>{70909679-16D8-5944-B4F4-FE4EBB0EA87F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dialogs">
+      <UniqueIdentifier>{BFC8C4D7-A518-506D-9877-7A06C0A2B225}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{C2097F4E-045A-5E77-BD63-1CF9009926A7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Options Dialog">
+      <UniqueIdentifier>{DBF83CDE-02C5-5189-AAFD-E9E199B206E2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{DA2023BF-4FC1-5411-BFF2-7089937DA279}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\BackgroundMenuButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BasePanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChangeGameDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\checksum_md5.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\convar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CreateMultiplayerGameBotPage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CreateMultiplayerGameDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CreateMultiplayerGameGameplayPage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CreateMultiplayerGameServerPage.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GameConsole.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GameUI_Interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LoadingDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LogoFile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ModInfo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tracker\common\msgbuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tracker\common\netapi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GameUI\ObjectList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\GameUI\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\RunGameEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ScriptObject.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Tracker\common\Socket.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Sys_Utils.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Taskbar.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TaskButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\UtlBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\public\utlsymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\VGuiSystemModuleLoader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BitmapImagePanel.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CommandCheckButton.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CvarNegateCheckButton.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CvarSlider.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CvarTextEntry.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CvarToggleCheckButton.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\KeyToggleCheckButton.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LabeledCommandComboBox.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PanelListPanel.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vcontrolslistpanel.cpp">
+      <Filter>Controls</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ContentControlDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GameConsoleDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\HelpDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\LoadGameDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\MultiplayerAdvancedDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\NewGameDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerListDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SaveGameDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SteamPasswordDialog.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsDialog.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubAdvanced.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubAudio.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubKeyboard.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubMouse.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubMultiplayer.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubVideo.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OptionsSubVoice.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PlayerModelPreviewPanel.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\TaskButton.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\VGuiSystemModuleLoader.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BackgroundMenuButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BasePanel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChangeGameDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CreateMultiplayerGameDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CreateMultiplayerGameGameplayPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CreateMultiplayerGameServerPage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DemoEditDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DemoEventsDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DemoPlayerDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DemoPlayerFileDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GameConsole.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GameUI_Interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\BaseUI\IBaseUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\cl_dll\IGameClientExports.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\BaseUI\IGameConsole.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GameUI\IGameUI.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\public\interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IObjectContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IRunGameEngine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IVGuiModule.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\IVGuiModuleLoader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LoadingDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\vgui2\src\Memorybitmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ModInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GameUI\ObjectList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\GameUI\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ScriptObject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Sys_Utils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Taskbar.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\taskframe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Tracker\common\TrackerMessageFlags.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BitmapImagePanel.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CommandCheckButton.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CvarNegateCheckButton.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CvarSlider.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CvarTextEntry.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\CvarToggleCheckButton.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\KeyToggleCheckButton.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LabeledCommandComboBox.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PanelListPanel.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vcontrolslistpanel.h">
+      <Filter>Controls</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ContentControlDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GameConsoleDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\HelpDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\LoadGameDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\MultiplayerAdvancedDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\NewGameDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerListDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SaveGameDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SteamPasswordDialog.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsDialog.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubAdvanced.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubAudio.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubKeyboard.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubMouse.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubMultiplayer.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubVideo.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OptionsSubVoice.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PlayerModelPreviewPanel.h" />
+    <ClInclude Include="..\public\IGameUIModelPreview.h" />
+    <ClInclude Include="..\modernize\model_preview_policy.h" />
+    <ClInclude Include="..\modernize\model_preview_studio_validation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\lib\public\vgui_controls.lib" />
+    <None Include="..\lib\public\tier0.lib" />
+    <None Include="..\lib\public\vstdlib.lib" />
+  </ItemGroup>
+</Project>

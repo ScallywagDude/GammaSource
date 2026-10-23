@@ -26,5 +26,7 @@
 extern IVEngineClient *engine;
 extern class IGameUIFuncs *gameuifuncs;
 extern class IEngineSound *enginesound;
+extern class IGameUIModelPreview *gameuimodelpreview;
+extern class IMatSystemSurface *gameuimatsurface;
 
 #endif // ENGINEINTERFACE_H

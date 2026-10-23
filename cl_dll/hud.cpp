@@ -18,6 +18,7 @@
 // implementation of CHud class
 //
 #include "cbase.h"
+#include "../modernize/weapon_hud_layout.h"
 #include "hud_macros.h"
 #include "history_resource.h"
 #include "parsemsg.h"
@@ -59,16 +60,44 @@ void LoadHudTextures( CUtlDict< CHudTexture *, int >& list, char *psz )
 			pTemp = pTextureSection->GetFirstSubKey();
 			while ( pTemp )
 			{
+				// HL2MODERN_HUD_SPRITE_BOUNDS: do not overflow the fixed
+				// CHudTexture buffers or accept malformed atlas coordinates.
+				// A bad sprite is ignored, leaving other weapon icons usable.
+                // HL2MODERN_HUD_LEGACY_RESOLUTION: preserve the original role
+                // name while reading an existing 640/320 raster layout.
+                // Font-only data has no raster file and remains unsupported.
+                const char *shortName = pTemp->GetName();
+                KeyValues *spriteData=HL2ModernHud::SelectSpriteData(pTemp);
+                char normalizedTexture[sizeof(((CHudTexture *)0)->szTextureFile)];
+                const char *texture=spriteData ? spriteData->GetString("file","") : "";
+                if ( !spriteData || !HL2ModernHud::SpriteMaterialName(texture,normalizedTexture,sizeof(normalizedTexture),spriteData!=pTemp) )
+                {
+                    pTemp=pTemp->GetNextKey();
+                    continue;
+                }
+                texture=normalizedTexture;
+                const int left=spriteData->GetInt("x",0);
+                const int top=spriteData->GetInt("y",0);
+                const int wide=spriteData->GetInt("width",0);
+                const int tall=spriteData->GetInt("height",0);
+				// 8192 is a conservative upper limit for legacy atlas rectangles;
+				// test before addition so large input cannot overflow an int.
+				if ( !shortName || !*shortName || !texture || !*texture ||
+					strlen(shortName) >= sizeof(((CHudTexture *)0)->szShortName) ||
+					strlen(texture) >= sizeof(((CHudTexture *)0)->szTextureFile) ||
+					left < 0 || top < 0 || wide <= 0 || tall <= 0 ||
+					left > 8192 || top > 8192 || wide > 8192-left || tall > 8192-top )
+				{
+					pTemp = pTemp->GetNextKey();
+					continue;
+				}
 				CHudTexture *tex = new CHudTexture();
-
-				// Key Name is the sprite name
-				strcpy( tex->szShortName, pTemp->GetName() );
-				strcpy( tex->szTextureFile, pTemp->GetString( "file" ) );
-				tex->rc.left	= pTemp->GetInt( "x", 0 );
-				tex->rc.top		= pTemp->GetInt( "y", 0 );
-				tex->rc.right	= pTemp->GetInt( "width", 0 )	+ tex->rc.left;
-				tex->rc.bottom	= pTemp->GetInt( "height", 0 )	+ tex->rc.top;
-
+				Q_strncpy( tex->szShortName, shortName, sizeof(tex->szShortName) );
+				Q_strncpy( tex->szTextureFile, texture, sizeof(tex->szTextureFile) );
+				tex->rc.left = left;
+				tex->rc.top = top;
+				tex->rc.right = left + wide;
+				tex->rc.bottom = top + tall;
 				list.Insert( tex->szShortName, tex );
 
 				pTemp = pTemp->GetNextKey();
@@ -405,7 +434,7 @@ void CHudTexture::DrawSelf( int x, int y, Color& clr ) const
 
 void CHudTexture::DrawSelf( int x, int y, int w, int h, Color& clr ) const
 {
-	if ( textureId == -1 )
+	if ( textureId == -1 || Width()<=0 || Height()<=0 || w<=0 || h<=0 )
 		return;
 
 	vgui::surface()->DrawSetTexture( textureId );
@@ -416,7 +445,8 @@ void CHudTexture::DrawSelf( int x, int y, int w, int h, Color& clr ) const
 
 void CHudTexture::DrawSelfCropped( int x, int y, int cropx, int cropy, int cropw, int croph, Color& clr ) const
 {
-	if ( textureId == -1 )
+	if ( textureId == -1 || Width()<=0 || Height()<=0 || cropx<0 || cropy<0 || cropw<=0 || croph<=0 ||
+		cropx>Width() || cropy>Height() || cropw>Width()-cropx || croph>Height()-cropy )
 		return;
 
 	float fw = (float)Width();
@@ -453,6 +483,15 @@ void CHud::SetupNewHudTexture( CHudTexture *t )
 
 	int wide, tall;
 	vgui::surface()->DrawGetTextureSize( t->textureId, wide, tall );
+    // HL2MODERN_ATLAS_DIMENSIONS: reject malformed rectangles using the
+    // loaded texture's dimensions before dividing or sampling outside it.
+    if ( !HL2ModernHud::AtlasRect(t->rc.left,t->rc.top,t->rc.right,t->rc.bottom,wide,tall) )
+    {
+        t->rc.right=t->rc.left;
+        t->rc.bottom=t->rc.top;
+        Q_memset(t->texCoords,0,sizeof(t->texCoords));
+        return;
+    }
 
 	t->texCoords[ 0 ] = (float)(t->rc.left + 0.5f) / (float)wide;
 	t->texCoords[ 1 ] = (float)(t->rc.top + 0.5f) / (float)tall;
@@ -560,6 +599,13 @@ void CHud::RefreshHudTextures()
 		// Get new texture dimensions in case it changed
 		int wide, tall;
 		vgui::surface()->DrawGetTextureSize( icon->textureId, wide, tall );
+        if ( !HL2ModernHud::AtlasRect(icon->rc.left,icon->rc.top,icon->rc.right,icon->rc.bottom,wide,tall) )
+        {
+            icon->rc.right=icon->rc.left;
+            icon->rc.bottom=icon->rc.top;
+            Q_memset(icon->texCoords,0,sizeof(icon->texCoords));
+            continue;
+        }
 
 		// Assign coords
 		icon->texCoords[ 0 ] = (float)(icon->rc.left + 0.5f) / (float)wide;

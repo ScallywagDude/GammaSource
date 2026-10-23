@@ -1,0 +1,707 @@
+{
+  "converted": 153,
+  "files": 9492,
+  "configurations": 348,
+  "no_configs": [],
+  "missing": [
+    {
+      "project": "Tracker/AdminServer/AdminServer.dsp",
+      "count": 6,
+      "examples": [
+        "..\\..\\common\\Info.cpp",
+        "..\\..\\shared\\TokenLine.cpp",
+        "..\\..\\common\\AdminServer\\IAdminServer.h",
+        "..\\..\\common\\info.h",
+        "..\\..\\shared\\TokenLine.h",
+        "..\\..\\vgui2\\bin\\vgui_controls.lib"
+      ]
+    },
+    {
+      "project": "Tracker/Browser/Browser.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\vgui2\\bin\\vgui_controls.lib"
+      ]
+    },
+    {
+      "project": "Tracker/ServerMonitor/ServerMonitor.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\vgui2\\bin\\vgui_controls.lib"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerNET/TrackerNET.dsp",
+      "count": 4,
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp",
+        "..\\..\\common\\MemPool.h",
+        "..\\..\\common\\Random.h"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerSRV/TrackerSRV.dsp",
+      "count": 3,
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp",
+        "..\\..\\common\\Random.h"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerTest/TrackerTest.dsp",
+      "count": 4,
+      "examples": [
+        "..\\..\\common\\MemPool.cpp",
+        "..\\..\\common\\Random.cpp",
+        "..\\..\\common\\MemPool.h",
+        "..\\..\\common\\Random.h"
+      ]
+    },
+    {
+      "project": "Tracker/TrackerUI/TrackerUI.dsp",
+      "count": 9,
+      "examples": [
+        "..\\..\\common\\Info.cpp",
+        "..\\..\\common\\Random.cpp",
+        "..\\..\\Platform\\Script1.rc",
+        "..\\..\\common\\info.h",
+        "..\\..\\common\\ITrackerUser.h",
+        "..\\..\\common\\Random.h",
+        ".\\SystemBuddyButton.h",
+        "..\\..\\Platform\\icon1.ico",
+        "..\\..\\vgui2\\bin\\vgui_controls.lib"
+      ]
+    },
+    {
+      "project": "Tracker/hlds_gui/hlds_gui.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\vgui2\\bin\\vgui_controls.lib"
+      ]
+    },
+    {
+      "project": "Tracker/sqldb_mysql/sqldb_mysql.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\common\\MemPool.cpp"
+      ]
+    },
+    {
+      "project": "cl_dll/client.dsp",
+      "count": 1,
+      "examples": [
+        ".\\cstrike\\VGUI\\icstrikeviewport.h"
+      ]
+    },
+    {
+      "project": "dedicated/dedicated.dsp",
+      "count": 1,
+      "examples": [
+        "..\\public\\platform\\vcrmode.h"
+      ]
+    },
+    {
+      "project": "dlls/hl.dsp",
+      "count": 1,
+      "examples": [
+        ".\\hl1_dll\\hl1_weapon_handgrenade.h"
+      ]
+    },
+    {
+      "project": "engine/engine.dsp",
+      "count": 36,
+      "examples": [
+        ".\\clientsound_impl.h",
+        ".\\bugreporter.h",
+        ".\\usermsg.h",
+        ".\\ICON1.ICO",
+        ".\\icon3.ico",
+        "..\\common\\authchallenge.h",
+        "..\\Public\\custom.h",
+        "..\\Public\\dbg\\dbg.h",
+        "..\\Public\\platform\\fasttimer.h",
+        "..\\public\\iclientcollideable.h"
+      ]
+    },
+    {
+      "project": "filesystem/filesystem_stdio/filesystem_stdio.dsp",
+      "count": 3,
+      "examples": [
+        "..\\..\\public\\dbg\\dbg.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\public\\platform\\platform.h"
+      ]
+    },
+    {
+      "project": "gameui/GameUI.dsp",
+      "count": 1,
+      "examples": [
+        "..\\public\\BaseUI\\IGameConsole.h"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/demo_executable.dsp",
+      "count": 51,
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bridge.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsp2ics.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsptree.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_city.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_common.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_creature.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/havana_constraints.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\havana\\havok\\hk_physics\\constraint\\local_constraint_system\\local_constraint_system.inl"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/hull_editor.dsp",
+      "count": 5,
+      "examples": [
+        "..\\..\\Ivp_tools\\hull_editor.cxx",
+        "..\\..\\Ivp_tools\\ivp_convex_hull_splitter.cxx",
+        "..\\..\\Ivp_tools\\ivp_hull_editor.cxx",
+        "..\\..\\Ivp_tools\\ivp_hull_splitter_manager.cxx",
+        "..\\..\\IVP_SAMPLE_SOURCES\\ive_example_common.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/internal_project.dsp",
+      "count": 50,
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bridge.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsp2ics.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsptree.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_city.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_common.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_creature.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/internal_project_nogfx.dsp",
+      "count": 54,
+      "examples": [
+        "..\\..\\Ivp_sample_sources\\ive_example_black_hole.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_blackhole2.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_boat.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_body.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bridge.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsp2ics.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_bsptree.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_city.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_common.cxx",
+        "..\\..\\Ivp_sample_sources\\ive_example_creature.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/ivp_graphics_lib.dsp",
+      "count": 67,
+      "examples": [
+        "..\\..\\P_main\\P_2d_memory_manager.cxx",
+        "..\\..\\P_object\\P_actuator.cxx",
+        "..\\..\\P_object\\P_actuator_samples.cxx",
+        "..\\..\\P_renderer\\P_blur.cxx",
+        "..\\..\\P_object\\P_camera.cxx",
+        "..\\..\\P_object\\P_coll_event.cxx",
+        "..\\..\\P_renderer\\P_color.cxx",
+        "..\\..\\P_object\\P_control.cxx",
+        "..\\..\\P_object\\p_custom_camera.cxx",
+        "..\\..\\P_main\\P_directory.cxx"
+      ]
+    },
+    {
+      "project": "ivp/ivp_workspaces_src/win32/ivp_physics_lib.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\IVP_PHYSICS\\ivp_auth_empty.hxx"
+      ]
+    },
+    {
+      "project": "launcher/launcher.dsp",
+      "count": 5,
+      "examples": [
+        "..\\Public\\dbg\\dbg.h",
+        "..\\Public\\platform\\fasttimer.h",
+        "..\\Public\\platform\\platform.h",
+        "..\\public\\platform\\vcr_shared.h",
+        "..\\public\\platform\\vcrmode.h"
+      ]
+    },
+    {
+      "project": "master/hlmodmaster/mastertest.dsp",
+      "count": 7,
+      "examples": [
+        ".\\MasterTest\\HLMasterAsyncSocket.cpp",
+        ".\\MasterTest\\MasterTest.cpp",
+        ".\\MasterTest\\MasterTest.rc",
+        ".\\MasterTest\\MasterTestDlg.cpp",
+        ".\\MasterTest\\MessageBuffer.cpp",
+        ".\\MasterTest\\StdAfx.cpp",
+        ".\\MasterTest\\UTIL.cpp"
+      ]
+    },
+    {
+      "project": "materialsystem/materialsystemihvtest.dsp",
+      "count": 23,
+      "examples": [
+        ".\\basetimesmod2xenvmap.cpp",
+        ".\\debugfbtexture.cpp",
+        ".\\debuglightingonly.cpp",
+        ".\\debugluxel.cpp",
+        ".\\debugmodifyvertex.cpp",
+        ".\\debugnormalmap.cpp",
+        ".\\debugsoftwarevertexshader.cpp",
+        ".\\debugtangentspace.cpp",
+        ".\\unlitgeneric.cpp",
+        ".\\unlitgeneric_dx6.cpp"
+      ]
+    },
+    {
+      "project": "materialsystem/shaderdx8/shaderdx8_ihvtest.dsp",
+      "count": 79,
+      "examples": [
+        ".\\basetimeslightmapwet.vsh",
+        ".\\bumpmappedenvmap.vsh",
+        ".\\bumpmappedlightmap.vsh",
+        ".\\cable.vsh",
+        ".\\colorstreamtest.vsh",
+        ".\\debugfbtexture.vsh",
+        ".\\debugtangentspace.vsh",
+        ".\\eyes.vsh",
+        ".\\fillrate.vsh",
+        ".\\glowwarp.vsh"
+      ]
+    },
+    {
+      "project": "materialsystem/shaderempty/shaderempty.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\Public\\platform\\platform.h"
+      ]
+    },
+    {
+      "project": "materialsystem/stdshaders/shader_test.dsp",
+      "count": 2,
+      "examples": [
+        ".\\VertexLit_and_unlit_Generic_test_ps20.fxc",
+        ".\\VertexLit_and_unlit_Generic_test_vs20.fxc"
+      ]
+    },
+    {
+      "project": "shell/autorun/autorun.dsp",
+      "count": 7,
+      "examples": [
+        "..\\netgame\\dibapi.cpp",
+        "..\\netgame\\ODBlendBtn.cpp",
+        "..\\netgame\\UTIL.cpp",
+        "..\\netgame\\dibapi.h",
+        "..\\netgame\\ODBlendBtn.h",
+        "..\\netgame\\util.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "shell/uninstall/uninstall.dsp",
+      "count": 4,
+      "examples": [
+        ".\\res\\cb1.bmp",
+        ".\\res\\cb2.bmp",
+        ".\\res\\cb3.bmp",
+        ".\\res\\cb4.bmp"
+      ]
+    },
+    {
+      "project": "utils/hlmvtest/hlmvtest.dsp",
+      "count": 5,
+      "examples": [
+        "..\\common\\cmdlib.c",
+        "..\\..\\Public\\MATHLIB.C",
+        "..\\..\\common\\MaterialSystem\\IMaterialProxyFactory.h",
+        "..\\..\\common\\MaterialSystem\\IMaterialSystem.h",
+        "..\\..\\engine\\mrm.h"
+      ]
+    },
+    {
+      "project": "utils/makevmt/makevmt.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/modelcheckin/modelcheckin.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/particle/particle.dsp",
+      "count": 37,
+      "examples": [
+        "..\\..\\cl_dll\\c_baseparticleentity.cpp",
+        "..\\..\\Public\\datatable_recv.cpp",
+        "..\\..\\Public\\fasttimer.cpp",
+        "..\\..\\Public\\object_bucket.cpp",
+        "..\\..\\Public\\propfile.cpp",
+        "..\\..\\cl_dll\\c_particlebaseeffect.h",
+        "..\\..\\Public\\fasttimer.h",
+        "..\\..\\common\\MaterialSystem\\MaterialSystem_Config.h",
+        "..\\..\\Public\\arraylist.h",
+        "..\\..\\Public\\baselist.h"
+      ]
+    },
+    {
+      "project": "utils/socket_tests/socket_tests.dsp",
+      "count": 15,
+      "examples": [
+        "..\\common\\fragment_channel.cpp",
+        "..\\common\\iphelpers.cpp",
+        "..\\common\\loopback_channel.cpp",
+        "..\\common\\reliable_channel.cpp",
+        "..\\common\\tcpsocket.cpp",
+        "..\\common\\threadupdatemgr.cpp",
+        "..\\common\\connectionmgr.h",
+        "..\\common\\fragment_channel.h",
+        "..\\common\\ichannel.h",
+        "..\\common\\iphelpers.h"
+      ]
+    },
+    {
+      "project": "utils/standalonedatatabletest/standalonedatatabletest.dsp",
+      "count": 6,
+      "examples": [
+        "..\\..\\engine\\bitbuf.cpp",
+        "..\\..\\engine\\datatable.cpp",
+        "..\\..\\Public\\datatable_recv.cpp",
+        "..\\..\\Public\\datatable_send.cpp",
+        "..\\..\\engine\\datatable_test.cpp",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/tfstats/tfstats.dsp",
+      "count": 3,
+      "examples": [
+        ".\\manual\\regexp.html",
+        ".\\manual\\TFstats.htm",
+        ".\\tfstats.txt"
+      ]
+    },
+    {
+      "project": "utils/tfstats/ui/ui.dsp",
+      "count": 6,
+      "examples": [
+        ".\\PersistentString.cpp",
+        ".\\UI.rc",
+        ".\\UIDlg.cpp",
+        ".\\PersistentString.h",
+        ".\\UIDlg.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vbsp/vbsp.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\Public\\dbg\\dbg.h"
+      ]
+    },
+    {
+      "project": "utils/vcrtrace/vcrtrace.dsp",
+      "count": 3,
+      "examples": [
+        "..\\..\\public\\platform\\vcr_shared.h",
+        "..\\..\\public\\platform\\vcrmode.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/videocardstats/cardstats.dsp",
+      "count": 2,
+      "examples": [
+        "..\\..\\common\\strtools.cpp",
+        "..\\..\\common\\strtools.h"
+      ]
+    },
+    {
+      "project": "utils/viewbump/viewbump.dsp",
+      "count": 1,
+      "examples": [
+        "..\\..\\Public\\MATHLIB.C"
+      ]
+    },
+    {
+      "project": "utils/vmapbuilder/fwatch/fwatch.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmapbuilder/vmapbuilder.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmf_tweak/vmf_tweak.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/MessageWatch/MessageWatch.dsp",
+      "count": 5,
+      "examples": [
+        "..\\..\\common\\iphelpers.h",
+        "..\\..\\common\\messagemgr.h",
+        "..\\..\\common\\tcpsocket.h",
+        "..\\..\\common\\threadhelpers.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/ThreadedTCPSocketTest/ThreadedTCPSocketTest.dsp",
+      "count": 3,
+      "examples": [
+        ".\\ReadMe.txt",
+        "..\\..\\..\\lib\\public\\platform.lib",
+        "..\\..\\..\\lib\\public\\dbg.lib"
+      ]
+    },
+    {
+      "project": "utils/vmpi/WaitAndRestart/WaitAndRestart.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/pingpong/pingpong.dsp",
+      "count": 7,
+      "examples": [
+        "..\\..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\common\\ichannel.h",
+        "..\\..\\common\\iphelpers.h",
+        "..\\..\\common\\loopback_channel.h",
+        "..\\..\\common\\tcpsocket.h",
+        "..\\..\\common\\vmpi.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/socket_stresstest/socket_stresstest.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_browser_job_search/vmpi_browser_job_search.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_browser_job_watch/vmpi_browser_job_watch.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_browser_services/vmpi_browser_services.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_ping/vmpi_ping.dsp",
+      "count": 2,
+      "examples": [
+        "..\\..\\common\\iphelpers.h",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_service/vmpi_service.dsp",
+      "count": 6,
+      "examples": [
+        ".\\idi_busy_icon.ico",
+        ".\\idi_disabled_icon.ico",
+        ".\\idi_waiting_icon.ico",
+        ".\\small.ico",
+        ".\\vmpi_service.ico",
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vmpi/vmpi_service_install/vmpi_service_install.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "utils/vrad/vrad.dsp",
+      "count": 6,
+      "examples": [
+        "..\\common\\messagemgr.h",
+        "..\\common\\tcpsocket.h",
+        "..\\common\\threadhelpers.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\public\\platform\\platform.h",
+        "..\\..\\Public\\dbg\\dbg.h"
+      ]
+    },
+    {
+      "project": "utils/vvis/vvis.dsp",
+      "count": 3,
+      "examples": [
+        "..\\..\\Public\\dbg\\dbg.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\public\\platform\\platform.h"
+      ]
+    },
+    {
+      "project": "utils/vvis_launcher/vvis_launcher.dsp",
+      "count": 1,
+      "examples": [
+        ".\\ReadMe.txt"
+      ]
+    },
+    {
+      "project": "vgui2/QHTM/ApiExampleStatic/ApiExampleStatic.dsp",
+      "count": 3,
+      "examples": [
+        "..\\res\\arrow.cur",
+        "..\\res\\Hand.cur",
+        "..\\res\\noimage.bmp"
+      ]
+    },
+    {
+      "project": "vgui2/QHTM/QHTM/QHTM.dsp",
+      "count": 3,
+      "examples": [
+        "..\\reuse\\ResourceLoader.h",
+        "..\\reuse\\Store.h",
+        "..\\reuse\\Stream.h"
+      ]
+    },
+    {
+      "project": "vgui2/game_controls/game_controls.dsp",
+      "count": 1,
+      "examples": [
+        ".\\MiniMap.h"
+      ]
+    },
+    {
+      "project": "vgui2/src/vgui_dll.dsp",
+      "count": 6,
+      "examples": [
+        "..\\..\\public\\dbg\\dbg.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        ".\\IInputInternal.h",
+        "..\\..\\public\\IKeyValues.h",
+        "..\\..\\public\\vgui\\KeyValues.h",
+        "..\\..\\public\\platform\\platform.h"
+      ]
+    },
+    {
+      "project": "vgui2/vgui_surfacelib/vgui_surfacelib.dsp",
+      "count": 3,
+      "examples": [
+        "..\\..\\public\\dbg\\dbg.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\public\\platform\\platform.h"
+      ]
+    },
+    {
+      "project": "vgui2/vlocalize/vlocalize.dsp",
+      "count": 30,
+      "examples": [
+        "..\\..\\public\\dbg\\dbg.h",
+        "..\\..\\public\\platform\\fasttimer.h",
+        "..\\..\\public\\platform\\platform.h",
+        "..\\include\\VGUI.h",
+        "..\\controls\\VGUI_Button.h",
+        "..\\include\\VGUI_Color.h",
+        "..\\controls\\VGUI_Controls.h",
+        "..\\include\\VGUI_Dar.h",
+        "..\\controls\\VGUI_EditablePanel.h",
+        "..\\controls\\VGUI_FileOpenDialog.h"
+      ]
+    },
+    {
+      "project": "worldcraft/worldcraft.dsp",
+      "count": 6,
+      "examples": [
+        ".\\res\\connect1.ico",
+        ".\\res\\connect_grey.ico",
+        ".\\res\\connectbad_grey.ico",
+        ".\\res\\ico00003.ico",
+        ".\\res\\input1.ico",
+        ".\\res\\otputbad.ico"
+      ]
+    }
+  ],
+  "outside_root": [
+    {
+      "project": "dlls/hl.dsp",
+      "count": 2,
+      "examples": [
+        "..\\..\\bin\\halflife1.fgd",
+        "..\\..\\bin\\tf2.fgd"
+      ]
+    },
+    {
+      "project": "materialsystem/materialsystemihvtest.dsp",
+      "count": 98,
+      "examples": [
+        "..\\..\\materials\\dxshaders\\BaseTimesLightmapWet.psh",
+        "..\\..\\materials\\dxshaders\\BumpmappedEnvmap.psh",
+        "..\\..\\materials\\dxshaders\\BumpmappedLightmap_LightingOnly_OverBright2.psh",
+        "..\\..\\materials\\dxshaders\\BumpmappedLightmap_OverBright1.psh",
+        "..\\..\\materials\\dxshaders\\BumpmappedLightmap_OverBright2.psh",
+        "..\\..\\materials\\dxshaders\\DebugFBTexture.psh",
+        "..\\..\\materials\\dxshaders\\Eyes.psh",
+        "..\\..\\materials\\dxshaders\\Eyes_Overbright2.psh",
+        "..\\..\\materials\\dxshaders\\JellyFish.psh",
+        "..\\..\\materials\\dxshaders\\LightingOnly.psh"
+      ]
+    },
+    {
+      "project": "utils/glview/glview.dsp",
+      "count": 1,
+      "examples": [
+        "C:\\Program Files\\Microsoft Visual Studio\\VC98\\Include\\BASETSD.H"
+      ]
+    }
+  ],
+  "case_only_references": 0,
+  "build_steps": {
+    "Release": 61,
+    "Debug": 61
+  },
+  "unresolved_build_steps": [],
+  "xml_errors": []
+}

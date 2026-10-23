@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="P_HARDWARE_ABSTRACT">
+      <UniqueIdentifier>{80EC9C05-2D12-5D70-856F-8670FA2C0A5A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="P_HARDWARE_DIRECTX">
+      <UniqueIdentifier>{F3C795A7-4B61-56BC-823C-42165938D8CB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="P_SYSTEM">
+      <UniqueIdentifier>{4AD4BBA6-8CB3-55E2-B144-B20478BF2699}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\P_main\P_2d_memory_manager.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_actuator.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_actuator_samples.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_blur.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_camera.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_coll_event.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_color.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_control.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\p_custom_camera.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_directory.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_etc.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\p_float.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_font.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_game.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\p_graphlib_old_demos.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_levels.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_material.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_menu.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_modules.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_after_display.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_ball.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_edit.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_func.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_func2.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_func3.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_light.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_polygon.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_polygon_check.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_polygon_display.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_polygon_edit.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_object_sweep.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\p_os_dep.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_own_menus.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_parse.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_properties.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\p_public_graphics_intf.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_scan.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_smooth.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_stapel.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_sweep.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_sweep_debug.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_sweep_fast.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_sweep_shadow.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\P_task.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_texture.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_texture_manager.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_trafo_ball.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_trafo_texture.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_trafo_texture_fast.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_object\P_worm.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\P_xstruktur.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\readGIF.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_renderer\writeGIF.cxx">
+      <Filter>P_SYSTEM</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_hardware\P_hardware.cxx">
+      <Filter>P_HARDWARE_ABSTRACT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_hardware\P_hardware_pic.cxx">
+      <Filter>P_HARDWARE_ABSTRACT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_hardware\P_in_dev.cxx">
+      <Filter>P_HARDWARE_ABSTRACT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_hardware\P_sound.cxx">
+      <Filter>P_HARDWARE_ABSTRACT</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\P_directx.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\P_directx_listener.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\P_directx_sound.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\P_directx_utils.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\p_dx_clustering_visua.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\p_dx_stat_manager_ovl.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\P_hardware_directx.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_directx\p_hardware_directx_window.cxx">
+      <Filter>P_HARDWARE_DIRECTX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\P_main\main.cxx" />
+  </ItemGroup>
+</Project>

@@ -976,7 +976,9 @@ void CNPC_MSynth::EnergyShoot(void)
 		{
 			Vector vShootStart;
 			QAngle vShootAng;
-			GetAttachment( i, vShootStart, vShootAng );
+			// HL2MODERN_NPC_ASSET_SAFETY: skip a missing energy-gun attachment.
+			if ( !GetAttachment( i, vShootStart, vShootAng ) )
+				continue;
 			Vector vShootDir	= ( pEnemy->EyePosition() ) - vShootStart;
 			VectorNormalize(vShootDir);
 

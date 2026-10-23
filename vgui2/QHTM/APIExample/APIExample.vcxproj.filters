@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{4855056D-443A-51E8-89C0-9932C3819AFE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{56CB8223-2CF2-54AD-AEF5-826B372C932C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\QHTM Files">
+      <UniqueIdentifier>{4F9A8617-1A14-50E4-8F34-F1C1E408FB2D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sample files">
+      <UniqueIdentifier>{141B1D53-3DAD-57B1-8021-503204542982}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Sample files\Zoom+">
+      <UniqueIdentifier>{6183D0AE-E5CF-53CF-835E-7BD79652BB60}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\zoomplus\features.html">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\zoomplus\grid.bmp">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\zoomplus\options.bmp">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\zoomplus\selected.bmp">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\zoomplus\zoomed.bmp">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\zoomplus\zoomlogo.bmp">
+      <Filter>Source Files\Sample files\Zoom+</Filter>
+    </None>
+    <None Include=".\about.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\earth.mng">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\fonts.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\FOREST.JPG">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\Headings.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\hyperlink.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\images.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\lists.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\logo.bmp">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\styles.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\tables.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\welcome.html">
+      <Filter>Source Files\Sample files</Filter>
+    </None>
+    <None Include=".\QHTMLight.dll">
+      <Filter>Source Files\QHTM Files</Filter>
+    </None>
+    <None Include=".\QHTMLight.lib">
+      <Filter>Source Files\QHTM Files</Filter>
+    </None>
+    <None Include=".\ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\QHTM.h">
+      <Filter>Source Files\QHTM Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\APIExample.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\print.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\APIExample.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

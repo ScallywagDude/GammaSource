@@ -29,8 +29,11 @@
 #include "FileSystem.h"
 #include "EngineInterface.h"
 #include "BitmapImagePanel.h"
+#include "PlayerModelPreviewPanel.h"
+#include "IGameUIModelPreview.h"
 #include "UtlBuffer.h"
 #include "ModInfo.h"
+#include "../modernize/hl2_playermodel_policy.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -122,6 +125,8 @@ COptionsSubMultiplayer::COptionsSubMultiplayer(vgui::Panel *parent) : vgui::Prop
 	m_pColorList->SetInitialItem( selected );
 	m_pColorList->AddActionSignalTarget( this );
 
+	m_pPreviewLabel = NULL;
+	m_pModelPreview = NULL;
 	m_pModelImage = new CBitmapImagePanel( this, "ModelImage", NULL );
 	m_pModelImage->AddActionSignalTarget( this );
 
@@ -136,9 +141,21 @@ COptionsSubMultiplayer::COptionsSubMultiplayer(vgui::Panel *parent) : vgui::Prop
 	m_nLogoB = 255;
 
 	LoadControlSettings("Resource/OptionsSubMultiplayer.res");
+	// HL2MODERN_ANIMATED_PREVIEW: use the installed studio model itself.
+	if (HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory()))
+	{
+		m_pModelPreview = new CPlayerModelPreviewPanel(this, "ModernModelPreview3D");
+		m_pModelImage->SetVisible(false);
+	}
+	m_pPreviewLabel = new Label(this, "ModernModelPreviewStatus", "");
+	int previewX, previewY, previewW, previewH;
+	m_pModelImage->GetBounds(previewX, previewY, previewW, previewH);
+	m_pPreviewLabel->SetBounds(previewX, previewY+previewH+4, previewW>0?previewW:160, 36);
+	if (m_pModelPreview) m_pModelPreview->SetBounds(previewX,previewY,previewW,previewH);
+	RemapModel();
 	
 	// turn off model selection stuff if the mod specifies "nomodels" in the liblist.gam file
-	if ( ModInfo().NoModels() )
+	if ( ModInfo().NoModels() && !HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory()) )
 	{
 		Panel *pTempPanel = NULL;
 
@@ -309,6 +326,29 @@ void COptionsSubMultiplayer::InitLogoList( CLabeledCommandComboBox *cb )
 //-----------------------------------------------------------------------------
 void COptionsSubMultiplayer::InitModelList( CLabeledCommandComboBox *cb )
 {
+	// HL2MODERN_MULTIPLAYER_MODELS: only enumerate this branch's vetted,
+	// installed model paths. Other branches keep their 2003 behavior.
+	if (HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory()))
+	{
+		ConVar *cv=(ConVar *)cvar->FindVar("model");
+		const char *current=cv ? cv->GetString() : "";
+		int index=0, selected=0;
+		for (unsigned int i=0; i<HL2ModernPlayerModels::Count(); ++i)
+		{
+			const HL2ModernPlayerModels::Entry &entry=HL2ModernPlayerModels::kModels[i];
+			if (!filesystem()->FileExists(entry.path)) continue;
+			if (gameuimodelpreview && !gameuimodelpreview->IsModelAvailable(entry.path)) continue;
+			char command[160];
+			_snprintf(command, sizeof(command)-1, "model \"%s\"\n", entry.path);
+			command[sizeof(command)-1]=0;
+			cb->AddItem(entry.label,command);
+			if (!stricmp(current,entry.path)) selected=index;
+			++index;
+		}
+		if(index>0) cb->SetInitialItem(selected);
+		return;
+	}
+
 	// cleanup old remap files
 	filesystem()->RemoveFile( "models/player/remapped.bmp", NULL );
 
@@ -336,7 +376,8 @@ void COptionsSubMultiplayer::InitModelList( CLabeledCommandComboBox *cb )
 	currentmodel[ 0 ] = 0;
 	if ( p )
 	{
-		strcpy( currentmodel, p );
+		strncpy( currentmodel, p, sizeof(currentmodel)-1 );
+		currentmodel[sizeof(currentmodel)-1] = 0; // HL2MODERN_MODEL_UI_SAFETY
 	}
 
 	while ( fn )
@@ -406,9 +447,49 @@ void COptionsSubMultiplayer::RemapModel()
 {
 	char modelname[256];
 	
-	m_pModelList->GetText( modelname, 256 );
-	if( !modelname[ 0 ] )
+	m_pModelList->GetText( modelname, sizeof(modelname) );
+	if( !modelname[0] )
+	{
+		// A branch with no installed models must not retain its last portrait.
+		if (m_pModelImage) m_pModelImage->SetVisible(false);
+		if (m_pModelPreview) m_pModelPreview->ClearModel();
+		if (m_pPreviewLabel) m_pPreviewLabel->SetText("No installed compatible models");
 		return;
+	}
+
+	// The legacy RemapPalette() only understands models/player/*.bmp.
+	// HL2 MDL assets need an engine-backed 3D viewport; don't try to
+	// reinterpret MDL data as a BMP or generate corrupt remapped textures.
+	if (HL2ModernPlayerModels::IsHL2GameDir(engine->GetGameDirectory()))
+	{
+		// Live selection preview: render the selected studio model directly,
+		// retaining the existing allowlist and model cvar apply path.
+		const char *command=m_pModelList->GetActiveItemCommand();
+		const char *path=command && !strncmp(command, "model \"", 7) ? command+7 : NULL;
+		const HL2ModernPlayerModels::Entry *entry=NULL;
+		if(path)
+		{
+			char safePath[100];
+			const char *end=strchr(path,'"');
+			if(end && end-path>0 && end-path<sizeof(safePath))
+			{
+				memcpy(safePath,path,end-path);
+				safePath[end-path]=0;
+				entry=HL2ModernPlayerModels::Find(safePath);
+			}
+		}
+		if (m_pModelImage) m_pModelImage->SetVisible(false);
+		if (m_pModelPreview)
+		{
+			if (entry && filesystem()->FileExists(entry->path))
+				m_pModelPreview->SetModel(entry->path);
+			else
+				m_pModelPreview->ClearModel();
+		}
+		if (m_pPreviewLabel)
+			m_pPreviewLabel->SetText(entry && m_pModelPreview ? m_pModelPreview->GetStatusText() : "No compatible player model");
+		return;
+	}
 
 	char texture[ 256 ];
 	sprintf( texture, "models/player/remapped" );
@@ -458,9 +539,9 @@ void COptionsSubMultiplayer::OnApplyButtonEnable()
 //-----------------------------------------------------------------------------
 MessageMapItem_t COptionsSubMultiplayer::m_MessageMap[] =
 {
-	MAP_MESSAGE_PTR( COptionsSubMultiplayer, "TextChanged", OnTextChanged, "panel" ),
-	MAP_MESSAGE_PARAMS( COptionsSubMultiplayer, "SliderMoved", OnSliderMoved ),
-	MAP_MESSAGE( COptionsSubMultiplayer, "ControlModified", OnApplyButtonEnable ),
+	{ "TextChanged", 0, (vgui::MessageFunc_t)&COptionsSubMultiplayer::OnTextChanged, 1, vgui::DATATYPE_PTR, "panel" },
+	{ "SliderMoved", 0, (vgui::MessageFunc_t)&COptionsSubMultiplayer::OnSliderMoved, 1, vgui::DATATYPE_KEYVALUES, NULL },
+	{ "ControlModified", 0, (vgui::MessageFunc_t)&COptionsSubMultiplayer::OnApplyButtonEnable, 0 },
 };
 IMPLEMENT_PANELMAP( COptionsSubMultiplayer, BaseClass );
 
@@ -725,6 +806,8 @@ void COptionsSubMultiplayer::RemapLogoPalette( char *filename, int r, int g, int
 //-----------------------------------------------------------------------------
 void COptionsSubMultiplayer::OnResetData()
 {
+	if (m_pModelList) m_pModelList->Reset();
+	RemapModel();
 }
 
 //-----------------------------------------------------------------------------
@@ -734,7 +817,7 @@ void COptionsSubMultiplayer::OnApplyChanges()
 {
 	m_pPrimaryColorSlider->ApplyChanges();
 	m_pSecondaryColorSlider->ApplyChanges();
-	m_pModelList->ApplyChanges();
+	if (m_pModelList) m_pModelList->ApplyChanges();
 	m_pLogoList->ApplyChanges();
     m_pLogoList->GetText(m_LogoName, sizeof(m_LogoName));
 	m_pColorList->ApplyChanges();	
@@ -789,4 +872,21 @@ void COptionsSubMultiplayer::OnApplyChanges()
 	}
 
 	filesystem()->Close( file );
+}
+// Keep the viewport aligned with the branch's installed Options resource.
+void COptionsSubMultiplayer::PerformLayout()
+{
+    BaseClass::PerformLayout();
+    if (!m_pModelImage || !m_pModelPreview) return;
+    int x,y,w,h;
+    m_pModelImage->GetBounds(x,y,w,h);
+    m_pModelPreview->SetBounds(x,y,w,h);
+    if (m_pPreviewLabel) m_pPreviewLabel->SetBounds(x,y+h+4,w,36);
+}
+
+void COptionsSubMultiplayer::OnThink()
+{
+    BaseClass::OnThink();
+    if (m_pModelPreview && m_pPreviewLabel && m_pModelList->GetActiveItemCommand())
+        m_pPreviewLabel->SetText(m_pModelPreview->GetStatusText());
 }

@@ -639,5 +639,25 @@ SOURCE=..\lib\public\tier0.lib
 
 SOURCE=..\lib\public\vstdlib.lib
 # End Source File
+# Begin Source File
+
+SOURCE=.\PlayerModelPreviewPanel.cpp
+# End Source File
+# Begin Source File
+
+SOURCE=.\PlayerModelPreviewPanel.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\public\IGameUIModelPreview.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\modernize\model_preview_policy.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\modernize\model_preview_studio_validation.h
+# End Source File
 # End Target
 # End Project

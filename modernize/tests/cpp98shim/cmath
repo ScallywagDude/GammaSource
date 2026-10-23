@@ -1,0 +1,8 @@
+#ifndef HL2MODERN_TEST_CPP98_CMATH
+#define HL2MODERN_TEST_CPP98_CMATH
+// Test-only C++98 namespace bridge. VS2026's <cmath> requires a modern STL
+// language mode; policy code is instead checked against the real C CRT sqrt.
+// No policy implementation is replaced, and -std=c++98 remains in force.
+#include <math.h>
+namespace std { using ::sqrt; }
+#endif

@@ -30,6 +30,8 @@ void CLabeledCommandComboBox::DeleteAllItems()
 {
 	BaseClass::DeleteAllItems();
 	m_Items.RemoveAll();
+	m_iCurrentSelection = -1;
+	m_iStartSelection = -1; // HL2MODERN_MODEL_UI_SAFETY
 }
 
 void CLabeledCommandComboBox::AddItem( char const *text, char const *engineCommand )
@@ -39,9 +41,12 @@ void CLabeledCommandComboBox::AddItem( char const *text, char const *engineComma
 
 	item->comboBoxID = BaseClass::AddItem( text, NULL );
 
-	strcpy( item->name, text );
+	const char *safeText = text ? text : "";
+	const char *safeCommand = engineCommand ? engineCommand : "";
+	strncpy(item->name, safeText, sizeof(item->name)-1);
+	item->name[sizeof(item->name)-1] = 0;
 
-	if (text[0] == '#')
+	if (safeText[0] == '#')
 	{
 		// need to localize the string
 		wchar_t *localized = vgui::localize()->Find(text);
@@ -51,12 +56,13 @@ void CLabeledCommandComboBox::AddItem( char const *text, char const *engineComma
 		}
 	}
 
-	strcpy( item->command, engineCommand );
+	strncpy(item->command, safeCommand, sizeof(item->command)-1);
+	item->command[sizeof(item->command)-1] = 0;
 }
 
 void CLabeledCommandComboBox::ActivateItem(int index)
 {
-	if ( index< m_Items.Count() )
+	if ( index >= 0 && index < m_Items.Count() )
 	{
 		int comboBoxID = m_Items[index].comboBoxID;
 		BaseClass::ActivateItem(comboBoxID);
@@ -66,16 +72,18 @@ void CLabeledCommandComboBox::ActivateItem(int index)
 
 void CLabeledCommandComboBox::SetInitialItem(int index)
 {
-	if ( index< m_Items.Count() )
+	if ( index >= 0 && index < m_Items.Count() )
 	{
 		m_iStartSelection = index;
-		int comboBoxID = m_Items[index].comboBoxID;
-		ActivateItem(comboBoxID);
+		ActivateItem(index); // internal index, not ComboBox handle
 	}
 }
 
 void CLabeledCommandComboBox::OnTextChanged( char const *text )
 {
+	// HL2MODERN_COMBO_INDEX_GUARD: never keep the previous command when the
+	// current label is not present (for example after list reload or edits).
+	m_iCurrentSelection = -1;
 	int i;
 	for ( i = 0; i < m_Items.Size(); i++ )
 	{
@@ -88,6 +96,10 @@ void CLabeledCommandComboBox::OnTextChanged( char const *text )
 		}
 	}
 
+	// HL2MODERN_COMBO_LIVE_UPDATE: notify the owner with the originating panel.
+	KeyValues *changed = new KeyValues("TextChanged");
+	changed->SetPtr("panel", this);
+	PostMessage(GetParent(), changed);
 	if (HasBeenModified())
 	{
 		PostActionSignal(new KeyValues("ControlModified"));
@@ -97,7 +109,7 @@ void CLabeledCommandComboBox::OnTextChanged( char const *text )
 
 const char *CLabeledCommandComboBox::GetActiveItemCommand()
 {
-	if (m_iCurrentSelection == -1)
+	if (m_iCurrentSelection < 0 || m_iCurrentSelection >= m_Items.Count())
 		return NULL;
 
 	COMMANDITEM *item = &m_Items[ m_iCurrentSelection ];
@@ -106,7 +118,7 @@ const char *CLabeledCommandComboBox::GetActiveItemCommand()
 
 void CLabeledCommandComboBox::ApplyChanges()
 {
-	if (m_iCurrentSelection == -1)
+	if (m_iCurrentSelection < 0 || m_iCurrentSelection >= m_Items.Count())
 		return;
 	if (m_Items.Size() < 1)
 		return;

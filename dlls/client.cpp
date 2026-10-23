@@ -37,6 +37,7 @@
 #include "vstdlib/strtools.h"
 #include "te_effect_dispatch.h"
 #include "globals.h"
+#include "../modernize/chat_policy.h"
 
 
 extern int giPrecacheGrunt;
@@ -66,138 +67,93 @@ void ClientKill( edict_t *pEdict )
 // or as
 // blah blah blah
 //
-void Host_Say( edict_t *pEdict, int teamonly )
+// HL2MODERN_MULTIPLAYER_CHAT_POLICY
+// Chat sanitation, text length and rate limiting are server-authoritative.
+// 0 cooldown disables throttling. Rates longer than 30 seconds are clamped.
+static ConVar mp_chat_cooldown("mp_chat_cooldown", "0.65", FCVAR_SERVER,
+    "Minimum seconds between chat messages per connected player (0-30).");
+static HL2ModernChat::Slot g_HL2ModernChatSlots[MAX_PLAYERS + 1];
+
+void HL2Modern_ResetChatSlot(int slot)
 {
-	CBasePlayer *client;
-	int		j;
-	char	*p;
-	char	text[128];
-	char    szTemp[256];
-	const char *cpSay = "say";
-	const char *cpSayTeam = "say_team";
-	const char *pcmd = engine->Cmd_Argv(0);
-
-	// We can get a raw string now, without the "say " prepended
-	if ( engine->Cmd_Argc() == 0 )
-		return;
-
-	if ( !stricmp( pcmd, cpSay) || !stricmp( pcmd, cpSayTeam ) )
-	{
-		if ( engine->Cmd_Argc() >= 2 )
-		{
-			p = (char *)engine->Cmd_Args();
-		}
-		else
-		{
-			// say with a blank message, nothing to do
-			return;
-		}
-	}
-	else  // Raw text, need to prepend argv[0]
-	{
-		if ( engine->Cmd_Argc() >= 2 )
-		{
-			Q_snprintf( szTemp,sizeof(szTemp), "%s %s", ( char * )pcmd, (char *)engine->Cmd_Args() );
-		}
-		else
-		{
-			// Just a one word command, use the first word...sigh
-			Q_snprintf( szTemp,sizeof(szTemp), "%s", ( char * )pcmd );
-		}
-		p = szTemp;
-	}
-
-// remove quotes if present
-	if (*p == '"')
-	{
-		p++;
-		p[strlen(p)-1] = 0;
-	}
-
-// make sure the text has content
-	char *pc;
-	for ( pc = p; pc != NULL && *pc != 0; pc++ )
-	{
-		if ( isprint( *pc ) && !isspace( *pc ) )
-		{
-			pc = NULL;	// we've found an alphanumeric character,  so text is valid
-			break;
-		}
-	}
-	if ( pc != NULL )
-		return;  // no character found, so say nothing
-
-	CBasePlayer *pPlayer = ((CBasePlayer *)CBaseEntity::Instance( pEdict ));
-
-	Assert( pPlayer );
-
-	if ( !pPlayer->CanSpeak() )
-		return;
-
-	Assert( STRING( pPlayer->pl.netname ) );
-
-// turn on color set 2  (color on,  no sound)
-	if ( teamonly )
-		Q_snprintf( text,sizeof(text), "%c(TEAM) %s: ", 2, STRING( pPlayer->pl.netname ) );
-	else
-		Q_snprintf( text,sizeof(text), "%c%s: ", 2, STRING( pPlayer->pl.netname ) );
-
-	j = sizeof(text) - 2 - strlen(text);  // -2 for /n and null terminator
-	if ( (int)strlen(p) > j )
-		p[j] = 0;
-
-	strcat( text, p );
-	strcat( text, "\n" );
-
-	// loop through all players
-	// Start with the first player.
-	// This may return the world in single player if the client types something between levels or during spawn
-	// so check it, or it will infinite loop
-
-	client = NULL;
-	
-	// UNDONE: This should use UTIL_PlayerByIndex and not NextEntByClass (does dynamic_cast!)
-	while ( ((client = gEntList.NextEntByClass( (CBasePlayer*)client )) != NULL) && (!FNullEnt(client->edict()) ) )
-	{
-		if ( !client->edict() )
-			continue;
-		
-		if ( client->edict() == pEdict )
-			continue;
-
-		if ( !(client->IsNetClient()) )	// Not a client ? (should never be true)
-			continue;
-
-		if ( teamonly && g_pGameRules->PlayerCanHearChat( client, pPlayer ) != GR_TEAMMATE )
-			continue;
-
-		CSingleUserRecipientFilter user( client );
-		user.MakeReliable();
-		UserMessageBegin( user, "SayText" );
-			WRITE_BYTE( ENTINDEX(client->edict()) );
-			WRITE_STRING( text );
-		MessageEnd();
-
-	}
-
-	// print to the sending client
-	CSingleUserRecipientFilter user( pPlayer );
-	user.MakeReliable();
-	UserMessageBegin( user, "SayText" );
-		WRITE_BYTE( ENTINDEX(pEdict) );
-		WRITE_STRING( text );
-	MessageEnd();
-
-	// echo to server console
-	Msg( text );
-
-	Assert( p );
-	if ( teamonly )
-		UTIL_LogPrintf( "\"%s\" say_team \"%s\"\n", STRING( pPlayer->pl.netname ), p );
-	else
-		UTIL_LogPrintf( "\"%s\" say \"%s\"\n", STRING( pPlayer->pl.netname ), p );
+    if (slot > 0 && slot <= MAX_PLAYERS)
+        HL2ModernChat::Reset(g_HL2ModernChatSlots[slot]);
 }
 
+void Host_Say( edict_t *pEdict, int teamonly )
+{
+    if (!pEdict || !gpGlobals || engine->Cmd_Argc() == 0 || !g_pGameRules)
+        return;
+
+    const char *pcmd = engine->Cmd_Argv(0);
+    const char *raw = NULL;
+    char compound[256];
+    if (!stricmp(pcmd, "say") || !stricmp(pcmd, "say_team"))
+    {
+        if (engine->Cmd_Argc() < 2) return;
+        raw = engine->Cmd_Args();
+    }
+    else
+    {
+        if (engine->Cmd_Argc() >= 2)
+            Q_snprintf(compound, sizeof(compound), "%s %s", pcmd, engine->Cmd_Args());
+        else
+            Q_snprintf(compound, sizeof(compound), "%s", pcmd);
+        raw = compound;
+    }
+
+    char message[96];
+    HL2ModernChat::Clean(raw, message, sizeof(message));
+    if (!HL2ModernChat::HasVisibleText(message)) return;
+
+    CBasePlayer *pPlayer = ToBasePlayer(CBaseEntity::Instance(pEdict));
+    if (!pPlayer || !pPlayer->CanSpeak()) return;
+    const int playerSlot = ENTINDEX(pEdict);
+    if (playerSlot < 1 || playerSlot > MAX_PLAYERS) return;
+    const int userid = engine->GetPlayerUserId(pEdict);
+    if (!HL2ModernChat::Admit(g_HL2ModernChatSlots[playerSlot], userid,
+                              gpGlobals->curtime, mp_chat_cooldown.GetFloat()))
+        return;
+
+    char text[256];
+    char safeName[65];
+    const char *rawName = STRING(pPlayer->pl.netname);
+    HL2ModernChat::Clean(rawName ? rawName : "player", safeName, sizeof(safeName));
+    if (!HL2ModernChat::HasVisibleText(safeName))
+        Q_snprintf(safeName, sizeof(safeName), "player");
+    const char *playerName = safeName;
+    // Reserve space for the trailing newline and terminating byte.
+    if (teamonly)
+        Q_snprintf(text, sizeof(text), "%c(TEAM) %.80s: %s\n", 2, playerName, message);
+    else
+        Q_snprintf(text, sizeof(text), "%c%.80s: %s\n", 2, playerName, message);
+
+    // Use indexed player slots, avoiding a dynamic entity cast and null-edict checks.
+    for (int index = 1; index <= gpGlobals->maxClients; ++index)
+    {
+        CBasePlayer *client = UTIL_PlayerByIndex(index);
+        if (!client || !client->edict() || client->edict() == pEdict || !client->IsNetClient())
+            continue;
+        if (teamonly && g_pGameRules->PlayerCanHearChat(client, pPlayer) != GR_TEAMMATE)
+            continue;
+        CSingleUserRecipientFilter filter(client);
+        filter.MakeReliable();
+        UserMessageBegin(filter, "SayText");
+            WRITE_BYTE(playerSlot);
+            WRITE_STRING(text);
+        MessageEnd();
+    }
+    CSingleUserRecipientFilter self(pPlayer);
+    self.MakeReliable();
+    UserMessageBegin(self, "SayText");
+        WRITE_BYTE(playerSlot);
+        WRITE_STRING(text);
+    MessageEnd();
+    // Do not use untrusted player-controlled text as a printf format string.
+    Msg("%s", text);
+    UTIL_LogPrintf("\"%s\" %s \"%s\"\n", playerName,
+                   teamonly ? "say_team" : "say", message);
+}
 
 void ClientPrecache( void )
 {
@@ -866,6 +822,9 @@ static ConCommand hurtme("hurtme", CC_HurtMe_f, "Hurts the player.\n\tArguments:
 //			Use engine->Cmd_Argv,  engine->Cmd_Argv, and engine->Cmd_Argc to get 
 //			pointers the character string command.
 //-----------------------------------------------------------------------------
+// Optional server-authoritative multiplayer map-vote bridge.
+extern bool HL2Modern_HandleVoteClientCommand(CBasePlayer *player, const char *cmd);
+
 void ClientCommand( CBasePlayer *pPlayer )
 {
 	const char *pcmd = engine->Cmd_Argv(0);
@@ -873,6 +832,8 @@ void ClientCommand( CBasePlayer *pPlayer )
 	// Is the client spawned yet?
 	if ( !pPlayer )
 		return;
+
+	if ( HL2Modern_HandleVoteClientCommand(pPlayer, pcmd) ) return;
 
 	/*
 	const char *pstr;

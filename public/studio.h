@@ -1325,7 +1325,9 @@ inline void Studio_ConvertStudioHdrToNewVersion( studiohdr_t *pStudioHdr )
 		}
 	}
 
-	if( version >= 35 )
+	// HL2MODERN_STUDIO_V37_V21: legacy conversion never blindly rewrites newer
+    // formats; v37 is admitted ONLY through the validated engine bridge.
+    if( version >= 35 && version <= STUDIO_VERSION )
 	{
 		// Don't remove this!!!!  This code has to be inspected everytime the studio format changes.
 		COMPILE_TIME_ASSERT( STUDIO_VERSION == 36 ); //  put this to make sure this code is updated upon changing version.

@@ -26,6 +26,12 @@
 #include "ai_node.h"
 #include "ai_networkmanager.h"
 #include "ammodef.h"
+#include "filesystem.h"
+#include "../modernize/weapon_grant_policy.h"
+#include "../modernize/hl2_player_asset_guard.h"
+#include "studio.h"
+#include "../modernize/model_preview_studio_validation.h"
+#include "../modernize/studio_sidecar_fs_v21.h"
 #include "mathlib.h"
 #include "ndebugoverlay.h"
 #include "baseviewmodel.h"
@@ -49,8 +55,23 @@
 #include "usermessages.h"
 #include "gamevars_shared.h"
 #include "world.h"
+#include "../modernize/spawn_protection_policy.h"
 
 static ConVar	sv_aim( "sv_aim", "1", FCVAR_ARCHIVE | FCVAR_SERVER, "Autoaim state" );
+// HL2MODERN_SPAWN_PROTECTION
+// Opt in on multiplayer deathmatch servers. 0 keeps original HL2 damage rules.
+// Maximum duration is ten seconds; protection is cancelled by attack buttons.
+static ConVar mp_spawn_protection_seconds(
+    "mp_spawn_protection_seconds", "0", FCVAR_SERVER,
+    "Seconds of protection against other players after DM respawn (0-10). Breaks on attack.");
+static HL2ModernSpawn::Guard g_HL2ModernSpawnGuard;
+
+// Called from server join/disconnect hooks. Slots are not stable player identity.
+void HL2Modern_ResetSpawnProtectionSlot(int slot)
+{
+    g_HL2ModernSpawnGuard.Clear(slot);
+}
+
 static ConVar dsp_explosion_effect_duration( "dsp_explosion_effect_duration", "4", 0, "How long to apply confusion/ear-ringing effect after taking damage from blast." );
 
 // TIME BASED DAMAGE AMOUNT
@@ -744,6 +765,16 @@ int CBasePlayer::OnTakeDamage( const CTakeDamageInfo &inputInfo )
 	// Already dead
 	if ( !IsAlive() )
 		return 0;
+	// Only prevent immediate *enemy player* damage after a multiplayer
+	// deathmatch respawn. World hazards and self-inflicted damage still apply.
+	if ( g_pGameRules && g_pGameRules->IsDeathmatch() && edict() &&
+	     info.GetAttacker() && info.GetAttacker() != this &&
+	     info.GetAttacker()->IsPlayer() &&
+	     g_HL2ModernSpawnGuard.Protected(entindex(),
+	         engine->GetPlayerUserId(edict()), gpGlobals->curtime) )
+	{
+		return 0;
+	}
 	// go take the damage first
 
 	
@@ -3235,6 +3266,12 @@ void CBasePlayer::PostThink()
 			}
 		}
 
+		// Act before ItemPostFrame: a protected player loses immunity when
+		// attempting an attack rather than being able to fire while immune.
+		if ( g_pGameRules && g_pGameRules->IsDeathmatch() &&
+		     (m_nButtons & (IN_ATTACK | IN_ATTACK2)) && edict() )
+			g_HL2ModernSpawnGuard.Cancel(entindex(),
+				engine->GetPlayerUserId(edict()));
 		// do weapon stuff
 		ItemPostFrame();
 
@@ -3395,6 +3432,12 @@ bool IsSpawnPointValid( CBaseEntity *pPlayer, CBaseEntity *pSpot )
 }
 
 
+// HL2MODERN_FAIR_SPAWNS
+// Prefer valid deathmatch spawn points farther from living opponents.
+// A server can restore the legacy randomized behavior with mp_fair_spawns 0.
+static ConVar mp_fair_spawns( "mp_fair_spawns", "1", FCVAR_SERVER,
+    "Select valid DM spawn farthest from the nearest living opponent." );
+
 CBaseEntity	*g_pLastSpawn = NULL;
 
 
@@ -3454,6 +3497,47 @@ CBaseEntity *CBasePlayer::EntSelectSpawnPoint()
 	}
 	else if ( g_pGameRules->IsDeathmatch() )
 	{
+        // HL2MODERN_FAIR_SPAWNS: consider all viable deathmatch spawn
+        // points instead of immediately taking a random, camped location.
+        // Do not choose a spot overlapping another client.
+        if ( mp_fair_spawns.GetBool() )
+        {
+            CBaseEntity *pCandidate = NULL;
+            CBaseEntity *pBest = NULL;
+            float bestNearestDistance = -1.0f;
+            while ( (pCandidate = gEntList.FindEntityByClassname(
+                         pCandidate, "info_player_deathmatch")) != NULL )
+            {
+                if ( pCandidate->GetAbsOrigin() == vec3_origin ||
+                     !IsSpawnPointValid( this, pCandidate ) )
+                    continue;
+                float nearestOpponentDistance = 1.0e30f;
+                for ( int slot = 1; slot <= gpGlobals->maxClients; ++slot )
+                {
+                    CBasePlayer *pOther = UTIL_PlayerByIndex(slot);
+                    if ( !pOther || pOther == this || !pOther->IsAlive() )
+                        continue;
+                    if ( g_pGameRules->IsTeamplay() &&
+                         pOther->GetTeamNumber() == GetTeamNumber() )
+                        continue;
+                    Vector difference = pCandidate->GetAbsOrigin() - pOther->GetAbsOrigin();
+                    float distanceSquared = difference.LengthSqr();
+                    if ( distanceSquared < nearestOpponentDistance )
+                        nearestOpponentDistance = distanceSquared;
+                }
+                if ( !pBest || nearestOpponentDistance > bestNearestDistance )
+                {
+                    pBest = pCandidate;
+                    bestNearestDistance = nearestOpponentDistance;
+                }
+            }
+            if ( pBest )
+            {
+                pSpot = pBest;
+                goto ReturnSpot;
+            }
+        }
+
 		pSpot = g_pLastSpawn;
 		// Randomize the start spot
 		for ( int i = random->RandomInt(1,5); i > 0; i-- )
@@ -3656,6 +3740,13 @@ void CBasePlayer::Spawn( void )
 	UTIL_ScreenFade( this, nothing, 0, 0, FFADE_OUT );
 
 	g_pGameRules->PlayerSpawn( this );
+
+	// Record a respawn only after the rules have assigned the player to the
+	// level. The current engine userid stops a reused slot inheriting immunity.
+	if ( g_pGameRules->IsDeathmatch() && edict() )
+		g_HL2ModernSpawnGuard.Begin(entindex(),
+			engine->GetPlayerUserId(edict()), gpGlobals->curtime,
+			mp_spawn_protection_seconds.GetFloat());
 
 	m_vecSmoothedVelocity = vec3_origin;
 	InitVCollision();
@@ -4062,6 +4153,116 @@ void CBloodSplat::Think( void )
 //-----------------------------------------------------------------------------
 // Purpose: Create and give the named item to the player. Then return it.
 //-----------------------------------------------------------------------------
+// HL2MODERN_CHEAT_STUDIO_HEADER: a path is not proof of a compatible model.
+static bool HL2Modern_CheatStudioModel(const char *path)
+{
+    FileHandle_t file=filesystem->Open(path,"rb","GAME");
+    if ( file==FILESYSTEM_INVALID_HANDLE ) return false;
+    unsigned char header[80];
+    const int bytes=filesystem->Read(header,sizeof(header),file);
+    const unsigned long length=filesystem->Size(file);
+    // HL2MODERN_CHEAT_V37_V21: the experimental weapon must have a v36
+    // compatible full studio layout even when labelled v37 on disk.
+    const bool v37 = bytes == (int)sizeof(header) &&
+        HL2ModernWeapons::Little32(header+4) == 37;
+    bool compatibleV37 = false;
+    if (v37 && length >= sizeof(studiohdr_t) && length <= 64*1024*1024 &&
+        HL2ModernWeapons::StudioHeader(header,bytes,length,37,sizeof(studiohdr_t)))
+    {
+        CUtlVector<byte> content;
+        content.SetSize((int)length);
+        filesystem->Seek(file,0,FILESYSTEM_SEEK_HEAD);
+        if (filesystem->Read(content.Base(),(int)length,file) == (int)length)
+            compatibleV37 = HL2ModernModelPreview::StudioDataValidator(
+                content.Base(),(int)length).Validate(true);
+    }
+    filesystem->Close(file);
+    if (bytes!=(int)sizeof(header) || (!compatibleV37 && !HL2ModernWeapons::StudioHeader(
+        header,(unsigned int)bytes,length,STUDIO_VERSION,sizeof(studiohdr_t)))) return false;
+    // HL2MODERN_CHEAT_VERTEX_PREFLIGHT_V20: do not grant invisible prototype
+    // weapons solely because a matching v35/v36 MDL header is installed.
+    // The 2003 model loader needs a supported vertex companion for geometry.
+    static const char *const variants[] = {
+        ".dx80.vtx", ".dx7_3bone.vtx", ".dx7_2bone.vtx"
+    };
+    char vertexPath[128];
+    for (unsigned int v=0; v<3; ++v)
+        if (HL2ModernPlayerAssets::VertexCompanionPath(header, bytes,
+              variants[v],vertexPath,sizeof(vertexPath)) &&
+            filesystem->FileExists(vertexPath,"GAME") &&
+            (!v37 || HL2ModernStudioSidecar::LegacyVertexFile(
+                filesystem,vertexPath,header,bytes))) return true; // HL2MODERN_WEAPON_SIDECAR_V21
+    return false;
+}
+
+// HL2MODERN_SAFE_CHEAT_WEAPON: validate installed data before spawning.
+// Called only from branch-local impulse lists; normal give/pickup stays intact.
+CBaseCombatWeapon *CBasePlayer::GiveCheatWeapon( const char *name )
+{
+    extern int g_iWeaponCheat;
+#if defined(HLDEMO_BUILD)
+    return NULL;
+#endif
+    if ( !g_iWeaponCheat || !HL2ModernWeapons::WeaponClass(name) ) return NULL;
+    CBaseCombatWeapon *owned = Weapon_OwnsThisType(name);
+    if ( owned ) return owned;
+    bool freeSlot = false;
+    for ( int slot=0; slot<WeaponCount(); ++slot )
+        if ( !GetWeapon(slot) ) { freeSlot=true; break; }
+    if ( !freeSlot ) { Msg("impulse 101 inventory full: %s\n",name); return NULL; }
+
+    WEAPON_FILE_INFO_HANDLE handle = GetInvalidWeaponInfoHandle();
+    if ( !ReadWeaponDataFromFileForSlot(filesystem,name,&handle) )
+    { Msg("impulse 101 missing weapon script: scripts/%s.txt\n",name); return NULL; }
+    const FileWeaponInfo_t *info = GetFileWeaponInfoFromHandle(handle);
+    if ( !HL2ModernWeapons::ModelPath(info->szViewModel) ||
+         !HL2ModernWeapons::ModelPath(info->szWorldModel) ||
+         !filesystem->FileExists(info->szViewModel,"GAME") ||
+         !filesystem->FileExists(info->szWorldModel,"GAME") ||
+         !HL2Modern_CheatStudioModel(info->szViewModel) ||
+         !HL2Modern_CheatStudioModel(info->szWorldModel) )
+    { Msg("impulse 101 missing/invalid/unsupported models for %s: %s / %s\n",name,info->szViewModel,info->szWorldModel); return NULL; }
+    if ( (info->szAmmo1[0] && GetAmmoDef()->Index(info->szAmmo1)<0) ||
+         (info->szAmmo2[0] && GetAmmoDef()->Index(info->szAmmo2)<0) )
+    { Msg("impulse 101 undefined ammunition for %s\n",name); return NULL; }
+
+    const int previousImpulse = gEvilImpulse101;
+    gEvilImpulse101 = true;
+    EHANDLE created = GiveNamedItem(name);
+    gEvilImpulse101 = previousImpulse;
+    owned = Weapon_OwnsThisType(name);
+    if ( !owned && created && !created->IsMarkedForDeletion() )
+    {
+        // A rejected developer grant must not leave an invisible/world orphan.
+        CBaseCombatWeapon *weapon = dynamic_cast<CBaseCombatWeapon*>((CBaseEntity*)created);
+        if ( weapon && !weapon->GetOwner() ) UTIL_Remove(weapon);
+    }
+    return owned;
+}
+
+void CBasePlayer::RefillCheatWeaponAmmo( void )
+{
+    extern int g_iWeaponCheat;
+    if ( !g_iWeaponCheat ) return;
+    // Derive reserves from the actual owned weapon's branch ammo registry.
+    // This includes prototype ammo and grenade equipment without foreign names.
+    for ( int slot=0; slot<WeaponCount(); ++slot )
+    {
+        CBaseCombatWeapon *weapon = GetWeapon(slot);
+        if ( !weapon ) continue;
+        const int types[2] = { weapon->GetPrimaryAmmoType(), weapon->GetSecondaryAmmoType() };
+        for ( int channel=0; channel<2; ++channel )
+        {
+            const int type=types[channel];
+            if ( type<0 || type>=MAX_AMMO_TYPES || !GetAmmoDef()->GetAmmoOfIndex(type) ) continue;
+            const int needed=HL2ModernWeapons::AmmoNeeded(GetAmmoDef()->MaxCarry(type),GetAmmoCount(type));
+            if ( needed>0 ) GiveAmmo(needed,type);
+        }
+        if ( weapon->UsesClipsForAmmo1() && weapon->GetMaxClip1()>0 ) weapon->m_iClip1=weapon->GetMaxClip1();
+        if ( weapon->UsesClipsForAmmo2() && weapon->GetMaxClip2()>0 ) weapon->m_iClip2=weapon->GetMaxClip2();
+    }
+}
+
 CBaseEntity	*CBasePlayer::GiveNamedItem( const char *pszName, int iSubType )
 {
 	// If I already own this type don't create one
@@ -4258,6 +4459,9 @@ void CBasePlayer::ForceClientDllUpdate( void )
 ImpulseCommands
 ============
 */
+// HL2MODERN_BRANCH_IMPULSE101_SETTING: original base cheat gate remains in force.
+ConVar sv_impulse101_allweapons("sv_impulse101_allweapons", "1", FCVAR_CHEAT,
+    "Include registered experimental weapons in per-branch impulse 101 grants");
 extern int g_iWeaponCheat;
 
 void CBasePlayer::ImpulseCommands( )
@@ -4413,20 +4617,21 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 		GiveAmmo( 5,	"grenade");
 		GiveAmmo( 150,	"GaussEnergy");
 		
-		GiveNamedItem( "weapon_frag" );
-		GiveNamedItem( "weapon_crowbar" );
-		GiveNamedItem( "weapon_pistol" );
-		GiveNamedItem( "weapon_ar2" );
-		GiveNamedItem( "weapon_shotgun" );
-		GiveNamedItem( "weapon_smg1" );
-		GiveNamedItem( "weapon_gauss" );
-		GiveNamedItem( "weapon_physcannon" );
-		GiveNamedItem( "weapon_rpg" );
+		GiveCheatWeapon( "weapon_frag" );
+		GiveCheatWeapon( "weapon_crowbar" );
+		GiveCheatWeapon( "weapon_pistol" );
+		GiveCheatWeapon( "weapon_ar2" );
+		GiveCheatWeapon( "weapon_shotgun" );
+		GiveCheatWeapon( "weapon_smg1" );
+		GiveCheatWeapon( "weapon_gauss" );
+		GiveCheatWeapon( "weapon_physcannon" );
+		GiveCheatWeapon( "weapon_rpg" );
 		if ( GetHealth() < 100 )
 		{
 			TakeHealth( 25, DMG_GENERIC );
 		}
 		
+		RefillCheatWeaponAmmo();
 		gEvilImpulse101		= false;
 
 		break;

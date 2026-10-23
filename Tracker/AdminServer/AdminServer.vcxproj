@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{CADC7435-8E3A-5106-BC18-FCCA19D7719E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>AdminServer</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;ADMINSERVER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>wsock32.lib;..\..\vgui2\bin\vgui_controls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\shared\\;..\public;..\..\public;..\common;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\shared;..\trackerui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;ADMINSERVER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>wsock32.lib;..\..\vgui2\bin\vgui_controls.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\DialogAddBan.cpp" />
+    <ClCompile Include=".\DialogAddServer.cpp" />
+    <ClCompile Include=".\DialogCvarChange.cpp" />
+    <ClCompile Include=".\DialogGameInfo.cpp" />
+    <ClCompile Include=".\DialogKickPlayer.cpp" />
+    <ClCompile Include=".\DialogServerPassword.cpp" />
+    <ClCompile Include=".\BaseGamesPage.cpp" />
+    <ClCompile Include=".\FavoriteGames.cpp" />
+    <ClCompile Include=".\BanContextMenu.cpp" />
+    <ClCompile Include=".\RulesContextMenu.cpp" />
+    <ClCompile Include=".\ServerContextMenu.cpp" />
+    <ClCompile Include=".\logmsghandler.cpp" />
+    <ClCompile Include=".\MasterMsgHandler.cpp" />
+    <ClCompile Include=".\PlayerContextMenu.cpp" />
+    <ClCompile Include=".\playermsghandler.cpp" />
+    <ClCompile Include=".\rconmsghandler.cpp" />
+    <ClCompile Include=".\rulesinfomsghandler.cpp" />
+    <ClCompile Include=".\serverinfomsghandler.cpp" />
+    <ClCompile Include=".\serverpingmsghandler.cpp" />
+    <ClCompile Include=".\BanPanel.cpp" />
+    <ClCompile Include=".\ChatPanel.cpp" />
+    <ClCompile Include=".\GraphPanel.cpp" />
+    <ClCompile Include=".\MOTDPanel.cpp" />
+    <ClCompile Include=".\PlayerPanel.cpp" />
+    <ClCompile Include=".\RawLogPanel.cpp" />
+    <ClCompile Include=".\ServerConfigPanel.cpp" />
+    <ClCompile Include=".\banlist.cpp" />
+    <ClCompile Include=".\cmdlist.cpp" />
+    <ClCompile Include=".\mapslist.cpp" />
+    <ClCompile Include=".\playerlist.cpp" />
+    <ClCompile Include=".\PlayerListCompare.cpp" />
+    <ClCompile Include=".\rcon.cpp" />
+    <ClCompile Include=".\rulesinfo.cpp" />
+    <ClCompile Include=".\serverinfo.cpp" />
+    <ClCompile Include=".\ServerList.cpp" />
+    <ClCompile Include=".\ServerListCompare.cpp" />
+    <ClCompile Include=".\serverping.cpp" />
+    <ClCompile Include=".\GamePanelInfo.cpp" />
+    <ClCompile Include=".\HelpText.cpp" />
+    <ClCompile Include="..\..\common\Info.cpp" />
+    <ClCompile Include="..\..\public\interface.cpp" />
+    <ClCompile Include="..\common\msgbuffer.cpp" />
+    <ClCompile Include="..\TrackerNET\NetAddress.cpp" />
+    <ClCompile Include="..\common\netapi.cpp" />
+    <ClCompile Include="..\common\Socket.cpp" />
+    <ClCompile Include="..\..\shared\TokenLine.cpp" />
+    <ClCompile Include="..\common\util.cpp" />
+    <ClCompile Include="..\..\public\UtlBuffer.cpp" />
+    <ClCompile Include=".\AdminServer.cpp" />
+    <ClCompile Include=".\ConfigPanel.cpp" />
+    <ClCompile Include=".\serverpage.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\AdminServer.h" />
+    <ClInclude Include=".\ban.h" />
+    <ClInclude Include=".\BanContextMenu.h" />
+    <ClInclude Include=".\banlist.h" />
+    <ClInclude Include=".\BanPanel.h" />
+    <ClInclude Include=".\BaseGamesPage.h" />
+    <ClInclude Include=".\ChatContextMenu.h" />
+    <ClInclude Include=".\ChatPanel.h" />
+    <ClInclude Include=".\cmdlist.h" />
+    <ClInclude Include=".\ConfigPanel.h" />
+    <ClInclude Include=".\DialogAddBan.h" />
+    <ClInclude Include=".\DialogAddServer.h" />
+    <ClInclude Include=".\DialogCvarChange.h" />
+    <ClInclude Include=".\DialogGameInfo.h" />
+    <ClInclude Include=".\DialogKickPlayer.h" />
+    <ClInclude Include=".\DialogServerPassword.h" />
+    <ClInclude Include=".\FavoriteGames.h" />
+    <ClInclude Include=".\GamePanelInfo.h" />
+    <ClInclude Include=".\GraphPanel.h" />
+    <ClInclude Include=".\HelpText.h" />
+    <ClInclude Include="..\..\common\AdminServer\IAdminServer.h" />
+    <ClInclude Include="..\common\IGameList.h" />
+    <ClInclude Include="..\common\inetapi.h" />
+    <ClInclude Include="..\..\common\info.h" />
+    <ClInclude Include="..\..\public\interface.h" />
+    <ClInclude Include=".\Iresponse.h" />
+    <ClInclude Include="..\..\common\ServerBrowser\IServerBrowser.h" />
+    <ClInclude Include="..\common\IServerRefreshResponse.h" />
+    <ClInclude Include=".\logmsghandler.h" />
+    <ClInclude Include=".\maps.h" />
+    <ClInclude Include=".\mapslist.h" />
+    <ClInclude Include="..\common\MasterMsgHandler.h" />
+    <ClInclude Include=".\MOTDPanel.h" />
+    <ClInclude Include="..\common\msgbuffer.h" />
+    <ClInclude Include=".\Player.h" />
+    <ClInclude Include=".\PlayerContextMenu.h" />
+    <ClInclude Include=".\playerlist.h" />
+    <ClInclude Include=".\PlayerListCompare.h" />
+    <ClInclude Include=".\playermsghandler.h" />
+    <ClInclude Include=".\PlayerPanel.h" />
+    <ClInclude Include=".\point.h" />
+    <ClInclude Include=".\RawLogPanel.h" />
+    <ClInclude Include=".\rcon.h" />
+    <ClInclude Include=".\rconmsghandler.h" />
+    <ClInclude Include=".\RulesContextMenu.h" />
+    <ClInclude Include=".\rulesinfo.h" />
+    <ClInclude Include=".\rulesinfomsghandler.h" />
+    <ClInclude Include="..\common\server.h" />
+    <ClInclude Include=".\ServerConfigPanel.h" />
+    <ClInclude Include=".\ServerContextMenu.h" />
+    <ClInclude Include=".\serverinfo.h" />
+    <ClInclude Include=".\serverinfomsghandler.h" />
+    <ClInclude Include=".\ServerList.h" />
+    <ClInclude Include=".\ServerListCompare.h" />
+    <ClInclude Include=".\serverpage.h" />
+    <ClInclude Include=".\serverping.h" />
+    <ClInclude Include=".\serverpingmsghandler.h" />
+    <ClInclude Include="..\common\Socket.h" />
+    <ClInclude Include="..\..\shared\TokenLine.h" />
+    <ClInclude Include="..\common\util.h" />
+    <ClInclude Include="..\..\public\UtlBuffer.h" />
+    <ClInclude Include="..\..\public\utllinkedlist.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\vgui2\bin\vgui_controls.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

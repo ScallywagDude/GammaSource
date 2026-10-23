@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{E8866FCD-775A-5782-ABFF-C13CE297632E}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>particle</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;..\common;..\matsysapp;..\..\common;..\..\common\materialsystem;..\..\engine;..\..\engine\move;..\..\cl_dll;..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;WIN32;_WINDOWS;_MBCS;WIN_ERROR;PARTICLEPROTOTYPE_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;..\common;..\matsysapp;..\..\common;..\..\common\materialsystem;..\..\engine;..\..\engine\move;..\..\cl_dll;..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;WIN32;_WINDOWS;_MBCS;WIN_ERROR;PARTICLEPROTOTYPE_APP;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\cl_dll\hl2_hud\c_ar2_explosion.cpp" />
+    <ClCompile Include=".\c_baseentity_stub.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_baseparticleentity.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_movie_explosion.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_particle_smokegrenade.cpp" />
+    <ClCompile Include=".\c_perftest.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_smoke_trail.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_SmokeStack.cpp" />
+    <ClCompile Include=".\c_spheretest.cpp" />
+    <ClCompile Include="..\..\cl_dll\c_steamjet.cpp" />
+    <ClCompile Include="..\..\Public\client_class.cpp" />
+    <ClCompile Include="..\common\cmdlib.cpp" />
+    <ClCompile Include=".\counter.cpp" />
+    <ClCompile Include="..\..\Public\datatable_recv.cpp" />
+    <ClCompile Include="..\..\Public\fasttimer.cpp" />
+    <ClCompile Include="..\..\Public\interface.cpp" />
+    <ClCompile Include="..\..\Public\Mathlib.cpp" />
+    <ClCompile Include="..\matsysapp\matsysapp.cpp" />
+    <ClCompile Include="..\..\Public\MemPool.cpp" />
+    <ClCompile Include="..\..\Public\object_bucket.cpp" />
+    <ClCompile Include=".\particle.cpp" />
+    <ClCompile Include="..\..\cl_dll\particle_prototype.cpp" />
+    <ClCompile Include="..\..\cl_dll\particle_proxies.cpp" />
+    <ClCompile Include="..\..\cl_dll\particlemgr.cpp" />
+    <ClCompile Include="..\..\cl_dll\particles_simple.cpp" />
+    <ClCompile Include="..\..\cl_dll\ParticleSphereRenderer.cpp" />
+    <ClCompile Include="..\..\Public\propfile.cpp" />
+    <ClCompile Include=".\StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\tweakpropdlg.cpp" />
+    <ClCompile Include="..\..\Public\vallocator.cpp" />
+    <ClCompile Include="..\..\Public\vmatrix.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\cl_dll\c_particlebaseeffect.h" />
+    <ClInclude Include=".\counter.h" />
+    <ClInclude Include="..\..\Public\fasttimer.h" />
+    <ClInclude Include=".\helpers.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\MaterialSystem_Config.h" />
+    <ClInclude Include="..\matsysapp\matsysapp.h" />
+    <ClInclude Include="..\..\cl_dll\particle_prototype.h" />
+    <ClInclude Include="..\..\cl_dll\particle_util.h" />
+    <ClInclude Include="..\..\cl_dll\particledraw.h" />
+    <ClInclude Include="..\..\cl_dll\particlemgr.h" />
+    <ClInclude Include="..\..\cl_dll\particles_simple.h" />
+    <ClInclude Include="..\..\cl_dll\ParticleSphereRenderer.h" />
+    <ClInclude Include=".\tweakpropdlg.h" />
+    <ClInclude Include="..\..\Public\amd3dx.h" />
+    <ClInclude Include="..\..\Public\arraylist.h" />
+    <ClInclude Include="..\..\Public\baselist.h" />
+    <ClInclude Include="..\..\Public\basetypes.h" />
+    <ClInclude Include="..\..\engine\bitbuf.h" />
+    <ClInclude Include="..\..\Public\BSPFILE.H" />
+    <ClInclude Include="..\..\Public\bspflags.h" />
+    <ClInclude Include="..\..\cl_dll\c_baseentity.h" />
+    <ClInclude Include="..\..\cl_dll\c_smoke_trail.h" />
+    <ClInclude Include="..\..\engine\cache.h" />
+    <ClInclude Include="..\..\Public\cache_user.h" />
+    <ClInclude Include="..\..\Public\cdll_int.h" />
+    <ClInclude Include="..\..\cl_dll\cl_dll.h" />
+    <ClInclude Include="..\..\engine\CLIENT.H" />
+    <ClInclude Include="..\..\Public\client_class.h" />
+    <ClInclude Include="..\..\Public\client_command.h" />
+    <ClInclude Include="..\..\cl_dll\cliententitylist.h" />
+    <ClInclude Include="..\..\engine\CMD.H" />
+    <ClInclude Include="..\common\cmdlib.h" />
+    <ClInclude Include="..\..\Public\cmodel.h" />
+    <ClInclude Include="..\..\common\COMMON.H" />
+    <ClInclude Include="..\..\Public\commonmacros.h" />
+    <ClInclude Include="..\..\engine\conprint.h" />
+    <ClInclude Include="..\..\Public\const.h" />
+    <ClInclude Include="..\..\Public\convar.h" />
+    <ClInclude Include="..\..\Public\custom.h" />
+    <ClInclude Include="..\..\engine\CVAR.H" />
+    <ClInclude Include="..\..\engine\datatable.h" />
+    <ClInclude Include="..\..\Public\datatable_common.h" />
+    <ClInclude Include="..\..\Public\datatable_recv.h" />
+    <ClInclude Include="..\..\Public\dlight.h" />
+    <ClInclude Include="..\..\Public\entity.h" />
+    <ClInclude Include="..\..\Public\entity_state.h" />
+    <ClInclude Include="..\..\Public\event_flags.h" />
+    <ClInclude Include="..\..\common\event_system.h" />
+    <ClInclude Include="..\..\Public\fastlinklist.h" />
+    <ClInclude Include="..\..\engine\GL_MODEL.H" />
+    <ClInclude Include="..\..\engine\GLQUAKE.H" />
+    <ClInclude Include="..\..\common\hlshell.h" />
+    <ClInclude Include="..\..\Public\icliententitylist.h" />
+    <ClInclude Include="..\..\Public\iclientsound.h" />
+    <ClInclude Include="..\..\Public\icvar.h" />
+    <ClInclude Include="..\..\Public\iefx.h" />
+    <ClInclude Include="..\..\Public\ifileaccess.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterial.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialProxyFactory.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialSystem.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\IMaterialVar.h" />
+    <ClInclude Include="..\..\Public\imovehelper.h" />
+    <ClInclude Include="..\..\engine\info.h" />
+    <ClInclude Include="..\..\Public\interface.h" />
+    <ClInclude Include="..\..\Public\iprediction.h" />
+    <ClInclude Include="..\..\Public\ishadersystem.h" />
+    <ClInclude Include="..\..\common\MaterialSystem\ITexture.h" />
+    <ClInclude Include="..\..\Public\itriangle.h" />
+    <ClInclude Include="..\..\Public\ivrenderview.h" />
+    <ClInclude Include="..\..\Public\linklist.h" />
+    <ClInclude Include="..\..\Public\MATHLIB.H" />
+    <ClInclude Include="..\..\Public\mouthinfo.h" />
+    <ClInclude Include="..\..\engine\NET.H" />
+    <ClInclude Include="..\..\Public\netadr.h" />
+    <ClInclude Include="..\..\Public\object_bucket.h" />
+    <ClInclude Include="..\..\Public\packed_entity.h" />
+    <ClInclude Include="..\..\common\packedentityarray.h" />
+    <ClInclude Include="..\..\engine\move\physent_client.h" />
+    <ClInclude Include="..\..\Public\plane.h" />
+    <ClInclude Include="..\..\engine\PROGS.H" />
+    <ClInclude Include="..\..\Public\propfile.h" />
+    <ClInclude Include="..\..\common\QUAKEDEF.H" />
+    <ClInclude Include="..\..\engine\RENDER.H" />
+    <ClInclude Include="..\..\cl_dll\smoke_fog_overlay.h" />
+    <ClInclude Include=".\StdAfx.h" />
+    <ClInclude Include="..\..\engine\sysexternal.h" />
+    <ClInclude Include="..\..\Public\touchlist.h" />
+    <ClInclude Include="..\..\Public\usercmd.h" />
+    <ClInclude Include="..\..\cl_dll\util_vector.h" />
+    <ClInclude Include="..\..\Public\vallocator.h" />
+    <ClInclude Include="..\..\Public\vector.h" />
+    <ClInclude Include="..\..\Public\view_shared.h" />
+    <ClInclude Include="..\..\Public\vmatrix.h" />
+    <ClInclude Include="..\..\Public\vplane.h" />
+    <ClInclude Include="..\..\common\vstring.h" />
+    <ClInclude Include="..\..\Public\worldsize.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

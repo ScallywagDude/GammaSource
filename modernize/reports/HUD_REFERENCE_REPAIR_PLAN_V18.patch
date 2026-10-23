@@ -1,0 +1,76 @@
+--- a/hl2/root1/scripts/weapon_hopwire.txt
++++ b/hl2/root1/scripts/weapon_hopwire.txt
+@@ -4,8 +4,8 @@
+ {
+ 	// Weapon data is loaded by both the Game and Client DLLs.
+ 	"printname"	"Hopwire"
+-	"viewmodel"				"models/weapons/v_hopwire.mdl"
+-	"playermodel"			"models/weapons/w_hopwire.mdl"
++	"viewmodel"				"models/Weapons/V_hopwire.mdl"
++	"playermodel"			"models/Weapons/w_hopwire.mdl"
+ 	"anim_prefix"			"Grenade"
+ 	"bucket"				"4"
+ 	"bucket_position"		"3"
+@@ -26,7 +26,7 @@
+ 	{
+ 		"weapon"
+ 		{
+-				"file"		"sprites/w_icons3b"
++				"file"		"Sprites/w_icons3b"
+ 				"x"			"0"
+ 				"y"			"192"
+ 				"width"		"128"
+@@ -34,7 +34,7 @@
+ 		}
+ 		"weapon_s"
+ 		{
+-				"file"		"sprites/w_icons3b"
++				"file"		"Sprites/w_icons3b"
+ 				"x"			"0"
+ 				"y"			"192"
+ 				"width"		"128"
+@@ -44,7 +44,7 @@
+ 		{
+ 			"640"
+ 			{
+-				"file"		"a_icons1"
++				"file"		"Sprites/a_icons1"
+ 				"x"			"55"
+ 				"y"			"110"
+ 				"width"		"73"
+@@ -55,7 +55,7 @@
+ 		{
+ 			"320"
+ 			{
+-				"file"		"crosshairs"
++				"file"		"Sprites/crosshairs"
+ 				"x"			"0"
+ 				"y"			"48"
+ 				"width"		"24"
+@@ -63,7 +63,7 @@
+ 			}
+ 			"640"
+ 			{
+-				"file"		"crosshairs"
++				"file"		"Sprites/crosshairs"
+ 				"x"			"0"
+ 				"y"			"48"
+ 				"width"		"24"
+@@ -74,7 +74,7 @@
+ 		{
+ 			"320"
+ 			{
+-				"file"		"crosshairs"
++				"file"		"Sprites/crosshairs"
+ 				"x"			"48"
+ 				"y"			"72"
+ 				"width"		"24"
+@@ -82,7 +82,7 @@
+ 			}
+ 			"640"
+ 			{
+-				"file"		"crosshairs"
++				"file"		"Sprites/crosshairs"
+ 				"x"			"48"
+ 				"y"			"72"
+ 				"width"		"24"

@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="EVAL SingleThreaded|Win32">
+      <Configuration>EVAL SingleThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK SingleThreaded|Win32">
+      <Configuration>SDK SingleThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK MultiThreaded|Win32">
+      <Configuration>SDK MultiThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{C054DB9E-B8AD-5A6E-958D-66FA371BD4C8}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>internal_project</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ipion_demo_internal_eval</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_compact_builder;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_qhull;..\..\ivp_sample_sources;..\..\ivp_surface_manager;..\..\ivp_tools;..\..\ivp_utility;..\..\p_main;..\..\p_object;..\..\p_renderer;..\..\p_directx;..\..\p_hardware;..\..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_EVAL;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ivp_physics.hxx</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>ddraw.lib;d3drm.lib;dsound.lib;dinput.lib;dxguid.lib;gdi32.lib;user32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ipion_demo_internal</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_compact_builder;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_qhull;..\..\ivp_sample_sources;..\..\ivp_surface_manager;..\..\ivp_tools;..\..\ivp_utility;..\..\p_main;..\..\p_object;..\..\p_renderer;..\..\p_directx;..\..\p_hardware;..\..\..\havana\havok;..\..\havok_bvm;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_SDK;HAVANA;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ivp_physics.hxx</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>ddraw.lib;d3drm.lib;dsound.lib;dinput.lib;dxguid.lib;gdi32.lib;user32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ipion_demo_internal_mt</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_collision;..\..\ivp_compact_builder;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_qhull;..\..\ivp_sample_sources;..\..\ivp_surface_manager;..\..\ivp_tools;..\..\ivp_utility;..\..\p_main;..\..\p_object;..\..\p_renderer;..\..\p_directx;..\..\p_hardware;..\..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;NDEBUG;WIN32;IVP_VERSION_SDK;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ivp_physics.hxx</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>ddraw.lib;d3drm.lib;dsound.lib;dinput.lib;dxguid.lib;gdi32.lib;user32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>ipion_demo_internal_DEBUG</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\ivp_geompack;..\..\ivp_collision;..\..\ivp_compact_builder;..\..\ivp_controller;..\..\ivp_intern;..\..\ivp_physics;..\..\ivp_qhull;..\..\ivp_sample_sources;..\..\ivp_surface_manager;..\..\ivp_tools;..\..\ivp_utility;..\..\p_main;..\..\p_object;..\..\p_renderer;..\..\p_directx;..\..\p_hardware;..\..\..\havana\havok;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;DEBUG;WIN32;IVP_VERSION_SDK;HAVANA;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>ivp_physics.hxx</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>ddraw.lib;d3drm.lib;dsound.lib;dinput.lib;dxguid.lib;gdi32.lib;user32.lib;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_black_hole.cxx">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='EVAL SingleThreaded|Win32'">ivp_physics.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">ivp_physics.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">ivp_physics.hxx</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ivp_physics.hxx</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_blackhole2.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_boat.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_body.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bridge.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bsp2ics.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_bsptree.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_city.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_common.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_creature.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_ctrl_raycast.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_domino.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_floating.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_flyer.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_forcefld_funnel.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_objectpile.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_onthefly.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_paper.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_phantom1.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_phantom2.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_polygon_soup.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_shootingranch.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_snowflake.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_stiff_creature.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_tankwar.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_terrain.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_turn_up.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_universe.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources\ive_example_vehicle.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_act_force.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_act_sprng.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_active_value.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ball.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_buoyancy.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_callback.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_check_dist.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_coll_filter.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_collision.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_cube.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_cut.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_force.cxx" />
+    <ClCompile Include="..\..\IVP_SAMPLE_SOURCES_QUICKSTARTS\ive_quickstart_golem_cntr.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_hinge.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_motion_cntrl.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_raycast.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ring.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_rope.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_rotmot.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_ski.cxx" />
+    <ClCompile Include="..\..\Ivp_sample_sources_quickstarts\ive_quickstart_stiff_spring.cxx" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

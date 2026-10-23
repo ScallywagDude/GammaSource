@@ -1,0 +1,1232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dedicated Debug|Win32">
+      <Configuration>Dedicated Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Dedicated Release|Win32">
+      <Configuration>Dedicated Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{B21947F9-A46A-5608-87EE-F669C3CFD9D6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>engine</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\audio\public;..\public;..\common;..\vgui2\include;..\vgui2\controls;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;fopen=dont_use_fopen;USE_CONVARS;WIN32;VOICE_OVER_IP;BUMPMAP;_WINDOWS;__USEA3D;_ADD_EAX_;ENGINE_DLL;_WIN32;PROTECTED_THINGS_ENABLE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;GLQUAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>vgui_controls.lib;oleaut32.lib;dinput8.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\lib\public;..\lib\common;..\dx8sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\audio\public;..\public;..\common;..\vgui2\include;..\vgui2\controls;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;fopen=dont_use_fopen;USE_CONVARS;WIN32;VOICE_OVER_IP;BUMPMAP;_WINDOWS;__USEA3D;_ADD_EAX_;ENGINE_DLL;_WIN32;PROTECTED_THINGS_ENABLE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;GLQUAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>dinput8.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\lib\public;..\lib\common;..\dx8sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>swds</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\public;..\common;audio\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;SWDS;IMAGE_LOADER_NO_DXTC;fopen=dont_use_fopen;USE_CONVARS;WIN32;VOICE_OVER_IP;BUMPMAP;_WINDOWS;__USEA3D;_ADD_EAX_;ENGINE_DLL;_WIN32;PROTECTED_THINGS_ENABLE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;GLQUAKE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>oleaut32.lib;dinput8.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\lib\public;..\lib\common;..\dx8sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>swds</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\public;..\common;audio\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>SWDS;IMAGE_LOADER_NO_DXTC;fopen=dont_use_fopen;USE_CONVARS;WIN32;VOICE_OVER_IP;BUMPMAP;_WINDOWS;__USEA3D;_ADD_EAX_;ENGINE_DLL;_WIN32;PROTECTED_THINGS_ENABLE;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>GLQUAKE;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>oleaut32.lib;dinput8.lib;winmm.lib;wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;uuid.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>..\lib\public;..\lib\common;..\dx8sdk\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\EngineSoundClient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\EngineSoundServer.cpp" />
+    <ClCompile Include=".\EngSoundService.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\Public\riff.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\audio\private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\snd_io.cpp">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\audio\private;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\baseautocompletefilelist.cpp" />
+    <ClCompile Include="..\Public\bitbuf.cpp" />
+    <ClCompile Include=".\bitbuf_errorhandler.cpp" />
+    <ClCompile Include="..\Public\BSPTreeData.cpp" />
+    <ClCompile Include=".\bugreporter.cpp" />
+    <ClCompile Include="..\common\builddisp.cpp" />
+    <ClCompile Include=".\buildnum.cpp" />
+    <ClCompile Include="..\Public\bumpvects.cpp" />
+    <ClCompile Include=".\cd.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cdll_engine_int.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\cdll_exp.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\changeframelist.cpp" />
+    <ClCompile Include="..\Public\characterset.cpp" />
+    <ClCompile Include="..\Public\checksum_crc.cpp" />
+    <ClCompile Include=".\checksum_engine.cpp" />
+    <ClCompile Include="..\Public\checksum_md5.cpp" />
+    <ClCompile Include=".\Cl_demo.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoaction.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoaction_types.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoactioneditors.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoactionmanager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demoeditorpanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demosmootherpanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_demouipanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_entityreport.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_ents.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_ents_parse.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_localnetworkbackdoor.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\Cl_main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_null.cpp" />
+    <ClCompile Include=".\Cl_parse.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_parse_event.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\cl_pred.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\client.cpp" />
+    <ClCompile Include=".\Cmd.cpp" />
+    <ClCompile Include=".\cmodel.cpp" />
+    <ClCompile Include=".\cmodel_bsp.cpp" />
+    <ClCompile Include=".\cmodel_disp.cpp" />
+    <ClCompile Include="..\Public\CollisionUtils.cpp" />
+    <ClCompile Include=".\Common.cpp" />
+    <ClCompile Include=".\conproc.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\Console.cpp" />
+    <ClCompile Include="..\Public\convar.cpp" />
+    <ClCompile Include="..\Public\crtmemdebug.cpp" />
+    <ClCompile Include=".\CSpatialPartition.cpp" />
+    <ClCompile Include=".\Cvar.cpp" />
+    <ClCompile Include=".\debug_leafvis.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\DebugOverlay.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\decal_clip.cpp" />
+    <ClCompile Include=".\decals.cpp" />
+    <ClCompile Include=".\dinput.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\disp.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\common\disp_common.cpp" />
+    <ClCompile Include=".\disp_defs.cpp" />
+    <ClCompile Include=".\disp_helpers.cpp" />
+    <ClCompile Include=".\disp_interface.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\disp_leaflink.cpp" />
+    <ClCompile Include=".\disp_mapload.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\common\disp_powerinfo.cpp" />
+    <ClCompile Include=".\DispBuild.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\DispChain.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\common\DispColl_Common.cpp" />
+    <ClCompile Include=".\DisplayStats.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\dt.cpp" />
+    <ClCompile Include=".\dt_common_eng.cpp" />
+    <ClCompile Include=".\dt_encode.cpp" />
+    <ClCompile Include=".\dt_instrumentation.cpp" />
+    <ClCompile Include=".\dt_instrumentation_server.cpp" />
+    <ClCompile Include=".\dt_localtransfer.cpp" />
+    <ClCompile Include="..\public\dt_recv.cpp" />
+    <ClCompile Include=".\dt_recv_decoder.cpp" />
+    <ClCompile Include=".\dt_recv_eng.cpp" />
+    <ClCompile Include="..\public\dt_send.cpp" />
+    <ClCompile Include=".\dt_send_eng.cpp" />
+    <ClCompile Include=".\dt_stack.cpp" />
+    <ClCompile Include=".\dt_test.cpp" />
+    <ClCompile Include="..\Public\Editor_SendCommand.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\enginesingleuserfilter.cpp" />
+    <ClCompile Include=".\EngineStats.cpp" />
+    <ClCompile Include=".\enginetrace.cpp" />
+    <ClCompile Include=".\FileSystem_Engine.cpp" />
+    <ClCompile Include="..\public\filesystem_helpers.cpp" />
+    <ClCompile Include=".\GameEventManager.cpp" />
+    <ClCompile Include=".\gametrace_engine.cpp" />
+    <ClCompile Include=".\Gl_draw.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\gl_drawlights.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\gl_lightmap.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\gl_matsysiface.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\gl_rlight.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\gl_rmain.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\Gl_rmisc.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\gl_rsurf.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\gl_screen.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\gl_shader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\Gl_test.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\Gl_vidnt.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\Gl_warp.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\glquake.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\Host.cpp" />
+    <ClCompile Include=".\Host_cmd.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\host_listmaps.cpp" />
+    <ClCompile Include=".\host_saverestore.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\host_state.cpp" />
+    <ClCompile Include="..\Public\ImageLoader.cpp" />
+    <ClCompile Include=".\info.cpp" />
+    <ClCompile Include=".\initmathlib.cpp" />
+    <ClCompile Include="..\Public\interface.cpp" />
+    <ClCompile Include=".\Keys.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\l_studio.cpp" />
+    <ClCompile Include=".\lightcache.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\LocalNetworkBackdoor.cpp" />
+    <ClCompile Include=".\MaterialProxyFactory.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include="..\Public\Mathlib.cpp" />
+    <ClCompile Include=".\matsys_interface.cpp" />
+    <ClCompile Include="..\Public\measure_section.cpp" />
+    <ClCompile Include="..\Public\mem_fgets.cpp" />
+    <ClCompile Include="..\public\tier0\memoverride.cpp" />
+    <ClCompile Include="..\Public\MemPool.cpp" />
+    <ClCompile Include=".\mod_vis.cpp" />
+    <ClCompile Include=".\ModelInfo.cpp" />
+    <ClCompile Include=".\modelloader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">glquake.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\net_chan.cpp" />
+    <ClCompile Include=".\net_synctags.cpp" />
+    <ClCompile Include=".\net_ws.cpp" />
+    <ClCompile Include=".\netgraph.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTable.cpp" />
+    <ClCompile Include=".\NetworkStringTableClient.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\NetworkStringTableItem.cpp" />
+    <ClCompile Include=".\NetworkStringTableServer.cpp" />
+    <ClCompile Include="..\public\networkvar.cpp" />
+    <ClCompile Include=".\OcclusionSystem.cpp" />
+    <ClCompile Include=".\Overlay.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\packed_entity.cpp" />
+    <ClCompile Include=".\Pr_edict.cpp" />
+    <ClCompile Include=".\precache.cpp" />
+    <ClCompile Include=".\quakedef.cpp" />
+    <ClCompile Include=".\r_areaportal.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\r_efx.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\r_linefile.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">glquake.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Use</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">glquake.h</PrecompiledHeaderFile>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\randomstream.cpp" />
+    <ClCompile Include=".\recventlist.cpp" />
+    <ClCompile Include="..\public\registry.cpp" />
+    <ClCompile Include="..\Public\ScratchPad3D.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\Public\sentence.cpp" />
+    <ClCompile Include=".\ShadowMgr.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dsp.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\StaticPropMgr.cpp" />
+    <ClCompile Include=".\sv_ents_write.cpp" />
+    <ClCompile Include=".\sv_filter.cpp" />
+    <ClCompile Include=".\sv_framesnapshot.cpp" />
+    <ClCompile Include=".\sv_log.cpp" />
+    <ClCompile Include=".\Sv_main.cpp" />
+    <ClCompile Include=".\sv_master.cpp" />
+    <ClCompile Include=".\sv_packedentities.cpp" />
+    <ClCompile Include=".\Sv_phys.cpp" />
+    <ClCompile Include=".\sv_precache.cpp" />
+    <ClCompile Include=".\sv_rcom.cpp" />
+    <ClCompile Include=".\sv_redirect.cpp" />
+    <ClCompile Include=".\Sv_user.cpp" />
+    <ClCompile Include=".\sys_dll.cpp" />
+    <ClCompile Include=".\sys_dll2.cpp" />
+    <ClCompile Include=".\sys_engine.cpp" />
+    <ClCompile Include=".\sys_getmodes.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\sys_mainwind.cpp" />
+    <ClCompile Include=".\terrainmod_functions.cpp" />
+    <ClCompile Include=".\testscriptmgr.cpp" />
+    <ClCompile Include="..\Public\TGAWriter.cpp" />
+    <ClCompile Include=".\thread.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\tmessage.cpp" />
+    <ClCompile Include=".\traceinit.cpp" />
+    <ClCompile Include="..\Public\UtlBuffer.cpp" />
+    <ClCompile Include="..\public\utlsymbol.cpp" />
+    <ClCompile Include="..\Public\vallocator.cpp" />
+    <ClCompile Include=".\vengineserver_impl.cpp" />
+    <ClCompile Include=".\vgui_BasePanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\vgui_baseui_interface.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\vgui_DebugSystemPanel.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\vgui_int.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\View.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\Public\vmatrix.cpp" />
+    <ClCompile Include=".\voiceserver_impl.cpp" />
+    <ClCompile Include=".\vprof_engine.cpp" />
+    <ClCompile Include="..\common\vstring.cpp" />
+    <ClCompile Include=".\World.cpp" />
+    <ClCompile Include=".\Zone.cpp" />
+    <ClCompile Include=".\audio\private\CircularBuffer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_audio_source.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dev_direct.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dev_wave.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_dma.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_mem.cpp" />
+    <ClCompile Include=".\audio\private\snd_mix.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_mp3_source.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_sentence_mixer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_data.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer_adpcm.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_mixer_mp3.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_source.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_wave_temp.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\snd_win.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_gain.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_mixer_controls.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_record_dsound.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_sound_engine_interface.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\voice_wavefile.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include=".\audio\private\vox.cpp" />
+    <ClCompile Include=".\gameui_modelpreview.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\game_shared\bone_setup.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Dedicated Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\baseautocompletefilelist.h" />
+    <ClInclude Include=".\cd.h" />
+    <ClInclude Include=".\cd_internal.h" />
+    <ClInclude Include=".\cl_demoaction.h" />
+    <ClInclude Include=".\cl_demoaction_types.h" />
+    <ClInclude Include=".\cl_demoactioneditors.h" />
+    <ClInclude Include=".\cl_demoactionmanager.h" />
+    <ClInclude Include=".\cl_demoeditorpanel.h" />
+    <ClInclude Include=".\cl_demosmootherpanel.h" />
+    <ClInclude Include=".\cl_demosmoothing.h" />
+    <ClInclude Include=".\cl_demouipanel.h" />
+    <ClInclude Include=".\dinput.h" />
+    <ClInclude Include=".\dt_common_eng.h" />
+    <ClInclude Include=".\enginebugreporter.h" />
+    <ClInclude Include=".\IOcclusionSystem.h" />
+    <ClInclude Include=".\ithread.h" />
+    <ClInclude Include=".\ModelInfo.h" />
+    <ClInclude Include="..\common\proto_oob.h" />
+    <ClInclude Include="..\common\proto_version.h" />
+    <ClInclude Include=".\sys_mainwind.h" />
+    <ClInclude Include=".\vgui_baseui_interface.h" />
+    <ClInclude Include=".\clientsound_impl.h" />
+    <ClInclude Include=".\ASM_I386.H" />
+    <ClInclude Include=".\bitbuf_errorhandler.h" />
+    <ClInclude Include="..\Public\BSPTreeData.h" />
+    <ClInclude Include=".\bugreporter.h" />
+    <ClInclude Include=".\cache.h" />
+    <ClInclude Include=".\cdll_engine_int.h" />
+    <ClInclude Include=".\changeframelist.h" />
+    <ClInclude Include=".\checksum_engine.h" />
+    <ClInclude Include=".\cl_entityreport.h" />
+    <ClInclude Include=".\cl_ents.h" />
+    <ClInclude Include=".\cl_ents_parse.h" />
+    <ClInclude Include=".\cl_localnetworkbackdoor.h" />
+    <ClInclude Include=".\cl_main.h" />
+    <ClInclude Include=".\cl_parse.h" />
+    <ClInclude Include=".\cl_parse_event.h" />
+    <ClInclude Include=".\cl_pred.h" />
+    <ClInclude Include=".\cl_servercache.h" />
+    <ClInclude Include=".\CLIENT.H" />
+    <ClInclude Include=".\CMD.H" />
+    <ClInclude Include=".\cmodel_engine.h" />
+    <ClInclude Include=".\cmodel_private.h" />
+    <ClInclude Include="..\Public\CollisionUtils.h" />
+    <ClInclude Include=".\color.h" />
+    <ClInclude Include=".\ColorQuant.h" />
+    <ClInclude Include=".\conprint.h" />
+    <ClInclude Include=".\conproc.h" />
+    <ClInclude Include=".\CONSOLE.H" />
+    <ClInclude Include=".\CVAR.H" />
+    <ClInclude Include=".\debug_leafvis.h" />
+    <ClInclude Include=".\DebugOverlay.h" />
+    <ClInclude Include=".\decal.h" />
+    <ClInclude Include=".\decal_clip.h" />
+    <ClInclude Include=".\decal_private.h" />
+    <ClInclude Include=".\demo.h" />
+    <ClInclude Include=".\disp.h" />
+    <ClInclude Include="..\common\disp_common.h" />
+    <ClInclude Include=".\disp_defs.h" />
+    <ClInclude Include=".\disp_helpers.h" />
+    <ClInclude Include=".\disp_leaflink.h" />
+    <ClInclude Include="..\common\disp_powerinfo.h" />
+    <ClInclude Include=".\DispBuild.h" />
+    <ClInclude Include=".\DispChain.h" />
+    <ClInclude Include="..\common\DispColl_Common.h" />
+    <ClInclude Include=".\DisplayStats.h" />
+    <ClInclude Include=".\DispNode.h" />
+    <ClInclude Include="..\Public\dll_state.h" />
+    <ClInclude Include=".\DRAW.H" />
+    <ClInclude Include=".\dt.h" />
+    <ClInclude Include="..\public\dt_common.h" />
+    <ClInclude Include=".\dt_encode.h" />
+    <ClInclude Include=".\dt_instrumentation.h" />
+    <ClInclude Include=".\dt_instrumentation_server.h" />
+    <ClInclude Include=".\dt_localtransfer.h" />
+    <ClInclude Include="..\public\dt_recv.h" />
+    <ClInclude Include=".\dt_recv_decoder.h" />
+    <ClInclude Include=".\dt_recv_eng.h" />
+    <ClInclude Include="..\public\dt_send.h" />
+    <ClInclude Include=".\dt_send_eng.h" />
+    <ClInclude Include=".\dt_stack.h" />
+    <ClInclude Include=".\dt_test.h" />
+    <ClInclude Include="..\public\engine_hlds_api.h" />
+    <ClInclude Include="..\Public\engine_launcher_api.h" />
+    <ClInclude Include=".\enginesingleuserfilter.h" />
+    <ClInclude Include=".\EngineSoundInternal.h" />
+    <ClInclude Include=".\EngineStats.h" />
+    <ClInclude Include=".\enginetrace.h" />
+    <ClInclude Include="..\Public\exefuncs.h" />
+    <ClInclude Include="..\Public\FileSystem.h" />
+    <ClInclude Include=".\FileSystem_Engine.h" />
+    <ClInclude Include=".\filter.h" />
+    <ClInclude Include=".\frame.h" />
+    <ClInclude Include=".\framesnapshot.h" />
+    <ClInclude Include=".\game_interface.h" />
+    <ClInclude Include=".\GameEventManager.h" />
+    <ClInclude Include=".\getintersectingsurfaces_struct.h" />
+    <ClInclude Include=".\gl_cvars.h" />
+    <ClInclude Include=".\gl_drawlights.h" />
+    <ClInclude Include=".\gl_hw.h" />
+    <ClInclude Include=".\gl_lightmap.h" />
+    <ClInclude Include=".\gl_matsysiface.h" />
+    <ClInclude Include=".\GL_MODEL.H" />
+    <ClInclude Include=".\gl_model_private.h" />
+    <ClInclude Include=".\gl_rmain.h" />
+    <ClInclude Include=".\gl_rsurf.h" />
+    <ClInclude Include=".\gl_shader.h" />
+    <ClInclude Include=".\gl_shaderutil.h" />
+    <ClInclude Include=".\gl_texture.h" />
+    <ClInclude Include=".\gl_warp_sin.h" />
+    <ClInclude Include=".\gl_water.h" />
+    <ClInclude Include=".\GLQUAKE.H" />
+    <ClInclude Include=".\host.h" />
+    <ClInclude Include=".\host_cmd.h" />
+    <ClInclude Include=".\host_jmp.h" />
+    <ClInclude Include=".\host_saverestore.h" />
+    <ClInclude Include=".\host_state.h" />
+    <ClInclude Include=".\hud_handlers.h" />
+    <ClInclude Include="..\Public\icliententity.h" />
+    <ClInclude Include="..\public\idedicatedexports.h" />
+    <ClInclude Include=".\IDispInfo.h" />
+    <ClInclude Include="..\Public\engine\IEngineSound.h" />
+    <ClInclude Include="..\public\engine\IEngineTrace.h" />
+    <ClInclude Include="..\Public\INetworkStringTableClient.h" />
+    <ClInclude Include="..\Public\INetworkStringTableServer.h" />
+    <ClInclude Include=".\info.h" />
+    <ClInclude Include="..\Public\IScratchPad3D.h" />
+    <ClInclude Include="..\Public\iserverentity.h" />
+    <ClInclude Include="..\Public\engine\IShadowMgr.h" />
+    <ClInclude Include="..\Public\ISpatialPartition.h" />
+    <ClInclude Include=".\ISpatialPartitionInternal.h" />
+    <ClInclude Include="..\Public\IStudioRender.h" />
+    <ClInclude Include="..\Public\ivoicetweak.h" />
+    <ClInclude Include=".\KEYS.H" />
+    <ClInclude Include=".\l_studio.h" />
+    <ClInclude Include="..\Public\launcher_int.h" />
+    <ClInclude Include=".\lightcache.h" />
+    <ClInclude Include=".\LLIST.HPP" />
+    <ClInclude Include=".\LocalNetworkBackdoor.h" />
+    <ClInclude Include=".\lowpassstream.h" />
+    <ClInclude Include=".\master.h" />
+    <ClInclude Include=".\MaterialProxyFactory.h" />
+    <ClInclude Include=".\mem.h" />
+    <ClInclude Include="..\Public\mem_fgets.h" />
+    <ClInclude Include=".\MODELGEN.H" />
+    <ClInclude Include=".\modelloader.h" />
+    <ClInclude Include="..\public\modes.h" />
+    <ClInclude Include=".\NET.H" />
+    <ClInclude Include=".\net_synctags.h" />
+    <ClInclude Include=".\NetworkStringTable.h" />
+    <ClInclude Include=".\NetworkStringTableClient.h" />
+    <ClInclude Include=".\networkstringtablecontainerclient.h" />
+    <ClInclude Include=".\networkstringtablecontainerserver.h" />
+    <ClInclude Include="..\Public\NetworkStringTableDefs.h" />
+    <ClInclude Include=".\networkstringtableitem.h" />
+    <ClInclude Include=".\NetworkStringTableServer.h" />
+    <ClInclude Include="..\Public\nmatrix.h" />
+    <ClInclude Include="..\Public\nvector.h" />
+    <ClInclude Include="..\common\optimize.h" />
+    <ClInclude Include=".\Overlay.h" />
+    <ClInclude Include=".\packed_entity.h" />
+    <ClInclude Include=".\packedentityarray.h" />
+    <ClInclude Include=".\pr_edict.h" />
+    <ClInclude Include=".\precache.h" />
+    <ClInclude Include=".\procinfo.h" />
+    <ClInclude Include=".\profile.h" />
+    <ClInclude Include=".\profiling.h" />
+    <ClInclude Include=".\PROGS.H" />
+    <ClInclude Include="..\public\protected_things.h" />
+    <ClInclude Include="..\common\protocol.h" />
+    <ClInclude Include=".\r_areaportal.h" />
+    <ClInclude Include=".\r_efxextern.h" />
+    <ClInclude Include=".\R_LOCAL.H" />
+    <ClInclude Include=".\recventlist.h" />
+    <ClInclude Include=".\RENDER.H" />
+    <ClInclude Include="..\Public\savegame_version.h" />
+    <ClInclude Include=".\SBAR.H" />
+    <ClInclude Include="..\Public\ScratchPad3D.h" />
+    <ClInclude Include=".\SCREEN.H" />
+    <ClInclude Include=".\SERVER.H" />
+    <ClInclude Include=".\ShadowMgr.h" />
+    <ClInclude Include=".\audio\private\snd_mp3_source.h" />
+    <ClInclude Include=".\audio\private\snd_wave_data.h" />
+    <ClInclude Include="..\public\soundinfo.h" />
+    <ClInclude Include=".\SPRITEGN.H" />
+    <ClInclude Include=".\StaticPropMgr.h" />
+    <ClInclude Include=".\studio_internal.h" />
+    <ClInclude Include="..\Public\surfinfo.h" />
+    <ClInclude Include=".\sv_ents_write.h" />
+    <ClInclude Include=".\sv_filter.h" />
+    <ClInclude Include=".\sv_log.h" />
+    <ClInclude Include=".\sv_main.h" />
+    <ClInclude Include=".\sv_packedentities.h" />
+    <ClInclude Include=".\sv_precache.h" />
+    <ClInclude Include=".\SYS.H" />
+    <ClInclude Include=".\sys_dll.h" />
+    <ClInclude Include=".\sysexternal.h" />
+    <ClInclude Include=".\terrainmod_functions.h" />
+    <ClInclude Include=".\testscriptmgr.h" />
+    <ClInclude Include=".\textures.h" />
+    <ClInclude Include="..\Public\TGAWriter.h" />
+    <ClInclude Include=".\tmessage.h" />
+    <ClInclude Include="..\Public\trace.h" />
+    <ClInclude Include=".\traceinit.h" />
+    <ClInclude Include=".\usermsg.h" />
+    <ClInclude Include="..\public\utlfixedlinkedlist.h" />
+    <ClInclude Include="..\public\utlfixedmemory.h" />
+    <ClInclude Include="..\Public\utlsymbol.h" />
+    <ClInclude Include=".\vengineserver_impl.h" />
+    <ClInclude Include=".\vgui_BasePanel.h" />
+    <ClInclude Include=".\vgui_DebugSystemPanel.h" />
+    <ClInclude Include=".\vgui_int.h" />
+    <ClInclude Include=".\VID.H" />
+    <ClInclude Include=".\VIEW.H" />
+    <ClInclude Include=".\vprof_engine.h" />
+    <ClInclude Include=".\WINQUAKE.H" />
+    <ClInclude Include=".\WORLD.H" />
+    <ClInclude Include=".\ZONE.H" />
+    <ClInclude Include="..\Public\amd3dx.h" />
+    <ClInclude Include="..\Public\ANORMS.H" />
+    <ClInclude Include="..\common\authchallenge.h" />
+    <ClInclude Include="..\Public\basetypes.h" />
+    <ClInclude Include="..\Public\bitbuf.h" />
+    <ClInclude Include="..\Public\bitvec.h" />
+    <ClInclude Include="..\Public\BSPFILE.H" />
+    <ClInclude Include="..\Public\bspflags.h" />
+    <ClInclude Include="..\common\builddisp.h" />
+    <ClInclude Include="..\Public\bumpvects.h" />
+    <ClInclude Include="..\Public\cache_user.h" />
+    <ClInclude Include="..\Public\cdll_int.h" />
+    <ClInclude Include="..\Public\characterset.h" />
+    <ClInclude Include="..\Public\checksum_crc.h" />
+    <ClInclude Include="..\Public\checksum_md5.h" />
+    <ClInclude Include="..\Public\client_class.h" />
+    <ClInclude Include="..\Public\client_command.h" />
+    <ClInclude Include="..\Public\clientstats.h" />
+    <ClInclude Include="..\Public\cmodel.h" />
+    <ClInclude Include="..\common\COMMON.H" />
+    <ClInclude Include="..\Public\commonmacros.h" />
+    <ClInclude Include="..\common\con_nprint.h" />
+    <ClInclude Include="..\Public\const.h" />
+    <ClInclude Include="..\Public\convar.h" />
+    <ClInclude Include="..\Public\coordsize.h" />
+    <ClInclude Include="..\Public\crtmemdebug.h" />
+    <ClInclude Include="..\Public\custom.h" />
+    <ClInclude Include="..\Public\datamap.h" />
+    <ClInclude Include="..\Public\dbg\dbg.h" />
+    <ClInclude Include="..\Public\dlight.h" />
+    <ClInclude Include="..\Public\edict.h" />
+    <ClInclude Include="..\Public\Editor_SendCommand.h" />
+    <ClInclude Include="..\Public\eiface.h" />
+    <ClInclude Include="..\Public\event_flags.h" />
+    <ClInclude Include="..\common\event_system.h" />
+    <ClInclude Include="..\Public\platform\fasttimer.h" />
+    <ClInclude Include="..\Public\GameBSPFile.h" />
+    <ClInclude Include="..\gameui\GameUI_Interface.h" />
+    <ClInclude Include="..\public\appframework\IAppSystem.h" />
+    <ClInclude Include="..\Public\ibsppack.h" />
+    <ClInclude Include="..\public\iclientcollideable.h" />
+    <ClInclude Include="..\Public\icliententitylist.h" />
+    <ClInclude Include="..\public\iclientnetworkable.h" />
+    <ClInclude Include="..\Public\iclientrenderable.h" />
+    <ClInclude Include="..\public\iclientthinkable.h" />
+    <ClInclude Include="..\public\iclientunknown.h" />
+    <ClInclude Include="..\public\engine\ICollideable.h" />
+    <ClInclude Include="..\public\vstdlib\ICommandLine.h" />
+    <ClInclude Include="..\Public\icreatevfont.h" />
+    <ClInclude Include="..\Public\icvar.h" />
+    <ClInclude Include="..\Public\iefx.h" />
+    <ClInclude Include=".\iengine.h" />
+    <ClInclude Include="..\Public\ienginevgui.h" />
+    <ClInclude Include=".\igame.h" />
+    <ClInclude Include="..\common\GameUI\IGameConsole.h" />
+    <ClInclude Include="..\public\IGameUIFuncs.h" />
+    <ClInclude Include="..\Public\ImageLoader.h" />
+    <ClInclude Include="..\public\materialsystem\imaterial.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialproxy.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialproxyfactory.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialsystem.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialsystemhardwareconfig.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialsystemstats.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialvar.h" />
+    <ClInclude Include="..\public\VGuiMatSurface\IMatSystemSurface.h" />
+    <ClInclude Include="..\public\materialsystem\imesh.h" />
+    <ClInclude Include="..\Public\inetgraph.h" />
+    <ClInclude Include="..\Public\interface.h" />
+    <ClInclude Include="..\Public\iprediction.h" />
+    <ClInclude Include="..\Public\engine\iprops.h" />
+    <ClInclude Include="..\public\iregistry.h" />
+    <ClInclude Include="..\public\iservernetworkable.h" />
+    <ClInclude Include="..\public\materialsystem\itexture.h" />
+    <ClInclude Include="..\Public\engine\ivdebugoverlay.h" />
+    <ClInclude Include="..\Public\ivguicenterprint.h" />
+    <ClInclude Include=".\ivideomode.h" />
+    <ClInclude Include="..\Public\engine\IVModelRender.h" />
+    <ClInclude Include="..\Public\ivoiceserver.h" />
+    <ClInclude Include="..\Public\ivrenderview.h" />
+    <ClInclude Include="..\Public\ivtex.h" />
+    <ClInclude Include="..\Public\kbutton.h" />
+    <ClInclude Include="..\Public\keydefs.h" />
+    <ClInclude Include="..\public\materialsystem\materialsystem_config.h" />
+    <ClInclude Include="..\Public\MATHLIB.H" />
+    <ClInclude Include="..\Public\measure_section.h" />
+    <ClInclude Include="..\Public\MemPool.h" />
+    <ClInclude Include="..\Public\model_types.h" />
+    <ClInclude Include="..\Public\mouthinfo.h" />
+    <ClInclude Include="..\Public\netadr.h" />
+    <ClInclude Include="..\Public\overlaytext.h" />
+    <ClInclude Include="..\Public\phyfile.h" />
+    <ClInclude Include="..\Public\plane.h" />
+    <ClInclude Include="..\Public\platform\platform.h" />
+    <ClInclude Include="..\common\qlimits.h" />
+    <ClInclude Include="..\common\QUAKEDEF.H" />
+    <ClInclude Include="..\Public\r_efx.h" />
+    <ClInclude Include="..\public\vstdlib\random.h" />
+    <ClInclude Include="..\Public\riff.h" />
+    <ClInclude Include="..\Public\s3_intrf.h" />
+    <ClInclude Include="..\Public\sentence.h" />
+    <ClInclude Include="..\Public\server_class.h" />
+    <ClInclude Include="..\Public\shake.h" />
+    <ClInclude Include="..\Public\soundflags.h" />
+    <ClInclude Include="..\Public\string_t.h" />
+    <ClInclude Include="..\public\vstdlib\strtools.h" />
+    <ClInclude Include="..\Public\studio.h" />
+    <ClInclude Include="..\Public\terrainmod.h" />
+    <ClInclude Include="..\Public\TGALoader.h" />
+    <ClInclude Include="..\Public\usercmd.h" />
+    <ClInclude Include="..\Public\utlbidirectionalset.h" />
+    <ClInclude Include="..\Public\UtlBuffer.h" />
+    <ClInclude Include="..\Public\utldict.h" />
+    <ClInclude Include="..\Public\utllinkedlist.h" />
+    <ClInclude Include="..\Public\UtlMemory.h" />
+    <ClInclude Include="..\Public\utlrbtree.h" />
+    <ClInclude Include="..\public\UtlSortVector.h" />
+    <ClInclude Include="..\Public\UtlVector.h" />
+    <ClInclude Include="..\Public\vallocator.h" />
+    <ClInclude Include="..\Public\vcollide.h" />
+    <ClInclude Include="..\public\platform\vcr_shared.h" />
+    <ClInclude Include="..\public\platform\vcrmode.h" />
+    <ClInclude Include="..\Public\vector.h" />
+    <ClInclude Include="..\Public\vector2d.h" />
+    <ClInclude Include="..\Public\vector4d.h" />
+    <ClInclude Include="..\vgui2\include\VGUI.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_Color.h" />
+    <ClInclude Include="..\vgui2\controls\VGUI_Controls.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_Cursor.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_Dar.h" />
+    <ClInclude Include="..\vgui2\controls\VGUI_EditablePanel.h" />
+    <ClInclude Include="..\vgui2\controls\VGUI_FocusNavGroup.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IClientPanel.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IHTML.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IImage.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IInput.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_ILocalize.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IPanel.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IScheme.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_ISurface.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_IVGui.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_KeyCode.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_KeyValues.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_MessageMap.h" />
+    <ClInclude Include="..\vgui2\include\VGUI_MouseCode.h" />
+    <ClInclude Include="..\vgui2\controls\VGUI_Panel.h" />
+    <ClInclude Include="..\vgui2\controls\VGUI_PHandle.h" />
+    <ClInclude Include="..\Public\view_shared.h" />
+    <ClInclude Include="..\Public\vmatrix.h" />
+    <ClInclude Include="..\common\vmodes.h" />
+    <ClInclude Include="..\Public\vphysics_interface.h" />
+    <ClInclude Include="..\Public\vplane.h" />
+    <ClInclude Include="..\public\vstdlib\vstdlib.h" />
+    <ClInclude Include="..\common\vstring.h" />
+    <ClInclude Include="..\Public\worldsize.h" />
+    <ClInclude Include=".\audio\public\ivoicecodec.h" />
+    <ClInclude Include=".\audio\public\ivoicerecord.h" />
+    <ClInclude Include=".\audio\public\snd_audio_source.h" />
+    <ClInclude Include=".\audio\public\snd_device.h" />
+    <ClInclude Include=".\audio\public\snd_io.h" />
+    <ClInclude Include=".\audio\public\sound.h" />
+    <ClInclude Include=".\audio\public\SoundService.h" />
+    <ClInclude Include=".\audio\public\Voice.h" />
+    <ClInclude Include=".\audio\public\vox.h" />
+    <ClInclude Include=".\audio\private\CircularBuffer.h" />
+    <ClInclude Include=".\audio\private\EAX.H" />
+    <ClInclude Include=".\audio\private\snd_asm_i386.h" />
+    <ClInclude Include=".\audio\private\snd_channels.h" />
+    <ClInclude Include=".\audio\private\snd_convars.h" />
+    <ClInclude Include=".\audio\private\snd_dev_direct.h" />
+    <ClInclude Include=".\audio\private\snd_dev_wave.h" />
+    <ClInclude Include=".\audio\private\snd_dma.h" />
+    <ClInclude Include=".\audio\private\snd_env_fx.h" />
+    <ClInclude Include=".\audio\private\snd_fixedint.h" />
+    <ClInclude Include=".\audio\private\snd_mix_buf.h" />
+    <ClInclude Include=".\audio\private\snd_sfx.h" />
+    <ClInclude Include=".\audio\private\snd_wave_mixer.h" />
+    <ClInclude Include=".\audio\private\snd_wave_mixer_adpcm.h" />
+    <ClInclude Include=".\audio\private\snd_wave_mixer_private.h" />
+    <ClInclude Include=".\audio\private\snd_wave_source.h" />
+    <ClInclude Include=".\audio\private\snd_wave_temp.h" />
+    <ClInclude Include=".\audio\private\sound_private.h" />
+    <ClInclude Include=".\audio\private\voice_gain.h" />
+    <ClInclude Include=".\audio\private\voice_mixer_controls.h" />
+    <ClInclude Include=".\audio\private\voice_sound_engine_interface.h" />
+    <ClInclude Include=".\audio\private\voice_wavefile.h" />
+    <ClInclude Include=".\audio\private\vox_private.h" />
+    <ClInclude Include="..\public\IGameUIModelPreview.h" />
+    <ClInclude Include="..\game_shared\bone_setup.h" />
+    <ClInclude Include="..\modernize\model_preview_policy.h" />
+    <ClInclude Include="..\modernize\model_preview_studio_validation.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\math.s" />
+    <None Include=".\sys_wina.s" />
+    <None Include=".\worlda.s" />
+    <None Include=".\ICON1.ICO" />
+    <None Include=".\icon3.ico" />
+    <None Include=".\valve.ico" />
+    <None Include=".\audio\private\snd_mixa.s" />
+    <None Include="..\lib\public\vgui_controls.lib" />
+    <None Include="..\lib\public\vstdlib.lib" />
+    <None Include="..\lib\common\s3tc.lib" />
+    <None Include="..\DX8SDK\lib\dsound.lib" />
+    <None Include="..\DX8SDK\lib\dxguid.lib" />
+    <None Include="..\lib\public\tier0.lib" />
+    <None Include="..\lib\public\vtf.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\halflife.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

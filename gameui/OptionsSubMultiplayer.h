@@ -15,6 +15,8 @@
 
 class CLabeledCommandComboBox;
 class CBitmapImagePanel;
+class CPlayerModelPreviewPanel;
+namespace vgui { class Label; }
 
 class CCvarToggleCheckButton;
 class CCvarTextEntry;
@@ -32,6 +34,8 @@ public:
 
 protected:
 	virtual void OnCommand(const char *command);
+	virtual void OnThink();
+	virtual void PerformLayout();
 
 	// Called when page is loaded.  Data should be reloaded from document into controls.
 	virtual void OnResetData();
@@ -59,6 +63,8 @@ private:
 	void ColorForName(char const *pszColorName, int &r, int &g, int &b);
 
 	CBitmapImagePanel *m_pModelImage;
+	CPlayerModelPreviewPanel *m_pModelPreview;
+	vgui::Label *m_pPreviewLabel;
 	CLabeledCommandComboBox *m_pModelList;
 
 	CBitmapImagePanel *m_pLogoImage;

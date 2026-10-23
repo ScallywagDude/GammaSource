@@ -7,6 +7,7 @@
 #include "cbase.h"
 #include "weapon_selection.h"
 #include "iclientmode.h"
+#include "../../modernize/weapon_hud_layout.h"
 
 #include <KeyValues.h>
 #include <vgui/IScheme.h>
@@ -230,13 +231,37 @@ void CHudWeaponSelection::Paint()
 				// draw icon
 				Color col = GetFgColor();
 				// icons use old system, drawing in screen space
-				if ( pWeapon->GetSpriteActive() )
+				// HL2MODERN_WEAPON_HUD_FIT: each weapon uses its script-provided
+				// sprite. Never stretch a wide icon to a square or draw over text.
+				const CHudTexture *sprite = pWeapon->GetSpriteActive();
+				if (!sprite) sprite = pWeapon->GetSpriteInactive();
+				bool bIconDrawn = false; // HL2MODERN_MISSING_WEAPON_ICON
+				if (sprite)
 				{
 					if (pWeapon == pSelectedWeapon)
-					{
 						col[3] = m_flSelectionAlphaOverride;
+					const int availableW=(int)(largeBoxWide-2*m_flIconXPos);
+					const int availableH=(int)(m_flTextYPos-m_flIconYPos-2);
+					HL2ModernHud::Rect fitted;
+					if(HL2ModernHud::FitIcon(sprite->Width(),sprite->Height(),
+						(int)(xpos+m_flIconXPos),(int)(ypos+m_flIconYPos),
+						availableW,availableH,fitted))
+					{
+						sprite->DrawSelf(fitted.x,fitted.y,fitted.w,fitted.h,col);
+						bIconDrawn = true;
 					}
-					pWeapon->GetSpriteActive()->DrawSelf( xpos + m_flIconXPos, ypos + m_flIconYPos, col );
+				}
+				if (!bIconDrawn)
+				{
+					// Never draw a stale or unrelated icon for a prototype.
+					// The existing weapon name appears below this placeholder.
+					surface()->DrawSetTextColor(col);
+					surface()->DrawSetTextFont(m_hTextFont);
+					surface()->DrawSetTextPos(xpos + (largeBoxWide/2) - 12,
+						ypos + (int)m_flIconYPos);
+					const char *fallback = "WPN";
+					for (const char *c = fallback; *c; ++c)
+						surface()->DrawUnicodeChar((wchar_t)*c);
 				}
 
 				// draw text

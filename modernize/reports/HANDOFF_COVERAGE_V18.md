@@ -1,0 +1,32 @@
+# Handoff coverage and remaining blockers
+
+Every requested area has an implementation or a specific evidence-backed limit. “Implemented” here means source/configuration work, not a successfully running game. The release does not claim that unavailable original visual assets have been completed.
+
+| Handoff requirement | v18 outcome | Evidence / remaining requirement |
+|---|---|---|
+| Every branch's classes, scripts and project inputs | Implemented inventory for all 113 registrations, shared tools, disabled/commented and project-excluded prototypes | Weapon implementation report, branch/build inventories, per-weapon dependency JSON |
+| Branch-local impulse 101, ammo/equipment, duplicate/slot safety | Implemented source guards, owned-weapon refills, CS arsenal/armor and deterministic selection positions | Native policies and regression tests; full branch runtime testing remains |
+| Missing registrations | Investigated actual registrations and source membership | Brickbat remains commented and unsafe; no invented CS smoke weapon or foreign class |
+| View/world model references and all applicable companion files | Audited exact local references and format metadata | Source zip supplies no game meshes or authoring sources; inspected local MDLs use unvalidated version 37 vs source 36 |
+| UVs, hands, attachments, origin/FOV, proportions | Cannot certify or author original geometry from C++ alone | Original compatible MDL/VTX plus QC/SMD or equivalent authorized rigged geometry/animation sources needed |
+| Draw/fire/reload/holster/idle animations | Source behavior repaired where recoverable; animation data availability explicitly reported | Compatible model animation data and runtime tests required; registration is not animation verification |
+| Active/inactive/ammo/crosshair/pickup HUD artwork | Existing script rectangles, actual texture dependencies, pixel content and fitting reviewed; all 276 final raster crops are nonblank | Three blank HL1 autoaim regions use their own weapon's existing reticle as an explicit fallback; model/art identity and unsupported script-only fonts remain unverified |
+| Experimental weapons | Recoverable IRifle/tripwire/thumper/immolator source fixes; incomplete/internal cases excluded | Per-class report explains manhack, brickbat, TF prototypes and internal child-container dependencies |
+| Hydra, Synths, Houndeye, Bullsquid, Assassin, Conscript and other prototypes | Expanded 21-class audit, 20 active FGDs/test rooms, six NPC source safety repairs | Conscript AI port remains unavailable; compatible models, attachments, skeletons and effects need runtime verification |
+| Correct NPC Hammer/console identity | Source names retained, experimental FGD model references and map keyfields repaired | FGDs and source VMFs supplied; compiled maps/engine spawn behavior not certified |
+| Real animated multiplayer 3D preview | Implemented actual model-loader, bone animation and StudioRender provider/consumer | Five units syntax-checked, native bounds/framing fixtures; compatible actual player assets unavailable |
+| Mouse rotation, idle rotation, materials, proportional framing, immediate update | Implemented in the new viewport | GPU, device loss and actual resource layouts require runtime tests |
+| Installed-only model list and persisted/applied selection | Preserved HL2 allowlist/server validation and archived userinfo apply; added format gating | Forty-six potential HL2 paths audited; HL1/CS/TF2 selection remains separate |
+| Material/shader/normal/specular/cubemap/transparency/UV references | Scanned all supplied local VMT definitions, VTF metadata and shader references; applied conservative path/syntax fixes | Visual appearance, material proxies and UV alignment remain runtime-unverified; seven ambiguous malformed VMTs untouched |
+| Modern rendering preparation | Existing experimental shader sources reviewed and compiled where installed SDK supports them; DX9 water numerical fix | No DX11/DX12/Vulkan/OpenGL backend or GPU functionality inferred from shader output |
+| Controller glyphs, pickup effects, portraits and sounds | No glyph asset references exist in the bridge; pickup/HUD/sound-manifest dependencies audited; HL2 portraits superseded by 3D source path | Missing original content reported; working external artwork/audio not replaced unnecessarily |
+| Existence and exact case | Automated ordered-root index, collision reporting and 6,368 local reference token repairs | Combined local edited files hash-verified; original installation unchanged |
+| Model -> material -> texture | Bounded model parser for supplied layouts, VMT dependency closure and VTF metadata/pixel HUD checks | Version-37 model material/skeleton internals are deliberately not guessed |
+| NPC sequences, attachments and hitboxes | Static requirements inventoried; supported MDL metadata checks and defensive source attachment guards | Unvalidated model layout and runtime AI/animation prevent full verification |
+| Cross-branch contamination | Branch-only source/build/grant checks and foreign script candidates reported | Shared classnames do not automatically count as contamination; no foreign asset directory used to fill CS/TF2 gaps |
+| Invalid/unused/orphan references | Invalid and missing references reported; unreferenced candidates listed separately | Dynamic names, maps and packed archives prevent a safe-to-delete orphan claim |
+| v17 comparison and preservation | Every original archive member retained; deterministic full/patch archives and SHA-256 manifests | Actual archive composition and overlay reproduction verified by packager |
+| Verified/repaired/reconstructed/missing/runtime-unverified distinctions | Explicit per-record states, separate local repair hashes, no fabricated original art | No unavailable model, rig, texture artwork or animation has been labeled reconstructed |
+| Required archives and six audit/change/validation deliverables | Produced with reproduction tools and actual test evidence | See release notes deliverable table and final validation report |
+
+The exact unavailable filenames, unsupported-format records and unverified branch resources are in `MISSING_ASSETS_V18.*`, `SOURCE_ONLY_ASSETS_V18.json` and the per-branch model/weapon/NPC records. The final build/runtime limitations are in `VALIDATION_V18.md`. No missing proprietary content was downloaded, and no compiler/SDK binary was added.

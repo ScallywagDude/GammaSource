@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Dialogs">
+      <UniqueIdentifier>{4ACE6ADD-A965-5D78-9940-46DD0EA2D8B8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Find Buddy Wizard">
+      <UniqueIdentifier>{D1CCAA76-8FA4-52B9-A350-D365E05607F1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{CE62BE0D-8F51-575B-8BC0-AC63D8A2E98C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Login Wizard">
+      <UniqueIdentifier>{117CC567-36BB-585C-AAFA-10E4E617BF8A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Options Dialog">
+      <UniqueIdentifier>{402B1874-437B-53F4-8A7A-858980E7E60B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{C51B015F-5BA1-5786-B0F2-055CD8BA7492}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UserInfo Dialog">
+      <UniqueIdentifier>{DA89389C-2B40-5626-A2C4-8D60E35F57CF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\Buddy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BuddyButton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BuddySectionHeader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\BuildNum.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogAbout.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\IceKey.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\Info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\interface.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OnlineStatus.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\OnlineStatusSelectComboBox.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PanelValveLogo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\common\Random.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ServerSession.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelBuddyList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelTrackerState.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\Tracker.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TrackerDialog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TrackerDoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TrackerRunGameEngine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TrackerUIVGuiModule.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TrackerUser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogLoginUser.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelConnectionIntro.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelConnectionTest.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelCreateUser.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelCreateUser2.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelCreateUser3.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelError.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelLoginUser.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelLoginUser2.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelSelectLoginOption.cpp">
+      <Filter>Login Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogFindBuddy.cpp">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelFindBuddy.cpp">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelFindBuddyComplete.cpp">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelFindBuddyRequestAuth.cpp">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelFindBuddyResults.cpp">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogAuthRequest.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogChat.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogRemoveUser.cpp">
+      <Filter>Dialogs</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogOptions.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelOptionsChat.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelOptionsConnection.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelOptionsPersonal.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelOptionsSounds.cpp">
+      <Filter>Options Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\DialogUserInfo.cpp">
+      <Filter>UserInfo Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelUserInfoDetails.cpp">
+      <Filter>UserInfo Dialog</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SubPanelUserInfoStatus.cpp">
+      <Filter>UserInfo Dialog</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\Platform\Script1.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\Buddy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BuddyButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\BuddySectionHeader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogAbout.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\interface.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\ITrackerUser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OnlineStatus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\OnlineStatusSelectComboBox.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PanelValveLogo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\common\Random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ServerSession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelBuddyList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SystemBuddyButton.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Tracker.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TrackerDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TrackerDoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\TrackerProtocol.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogLoginUser.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelConnectionIntro.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelConnectionTest.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelCreateUser.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelCreateUser2.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelCreateUser3.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelError.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelLoginUser.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelLoginUser2.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelSelectLoginOption.h">
+      <Filter>Login Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogFindBuddy.h">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelFindBuddy.h">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelFindBuddyComplete.h">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelFindBuddyRequestAuth.h">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelFindBuddyResults.h">
+      <Filter>Find Buddy Wizard</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogAuthRequest.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogChat.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogRemoveUser.h">
+      <Filter>Dialogs</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogOptions.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelOptionsChat.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelOptionsConnection.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelOptionsPersonal.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelOptionsSounds.h">
+      <Filter>Options Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\DialogUserInfo.h">
+      <Filter>UserInfo Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelUserInfoDetails.h">
+      <Filter>UserInfo Dialog</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SubPanelUserInfoStatus.h">
+      <Filter>UserInfo Dialog</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Platform\icon1.ico" />
+    <None Include="..\..\vgui2\bin\vgui_controls.lib" />
+  </ItemGroup>
+</Project>

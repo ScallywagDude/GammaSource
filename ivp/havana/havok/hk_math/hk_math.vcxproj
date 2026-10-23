@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK SingleThreaded|Win32">
+      <Configuration>SDK SingleThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="SDK MultiThreaded|Win32">
+      <Configuration>SDK MultiThreaded</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{B1D44051-B4F2-5ADC-84DF-CE2CC6B9D884}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>hk_math</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>hk_math/vecmath.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+    <PostBuildEvent>
+      <Command>if not exist "..\..\..\..\lib\common" mkdir "..\..\..\..\lib\common"
+copy /Y "$(TargetPath)" "..\..\..\..\lib\common\hk_math.lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;WIN32;_DEBUG;HK_DEBUG;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>hk_math/vecmath.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+    <PostBuildEvent>
+      <Command>if not exist "..\..\..\..\lib\common" mkdir "..\..\..\..\lib\common"
+copy /Y "$(TargetPath)" "..\..\..\..\lib\common\hk_math.lib"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>hk_math/vecmath.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>hk_math_mt</TargetName>
+    <TargetExt>.lib</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>hk_math/vecmath.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Lib />
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\lcp\lcp_solver.cpp" />
+    <ClCompile Include=".\incr_lu\incr_lu.cpp" />
+    <ClCompile Include=".\gauss_elimination\gauss_elimination.cpp" />
+    <ClCompile Include=".\quaternion\quaternion.cpp" />
+    <ClCompile Include=".\quaternion\quaternion_util.cpp" />
+    <ClCompile Include=".\vector3\vector3.cpp" />
+    <ClCompile Include=".\vector3\vector3_util.cpp" />
+    <ClCompile Include=".\densematrix.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">hk_math/vecmath.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">hk_math/vecmath.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='SDK SingleThreaded|Win32'">hk_math/vecmath.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='SDK MultiThreaded|Win32'">hk_math/vecmath.h</PrecompiledHeaderFile>
+    </ClCompile>
+    <ClCompile Include=".\densematrix_util.cpp" />
+    <ClCompile Include=".\eulerangles.cpp" />
+    <ClCompile Include=".\math.cpp" />
+    <ClCompile Include=".\matrix3.cpp" />
+    <ClCompile Include=".\odesolve.cpp" />
+    <ClCompile Include=".\plane.cpp" />
+    <ClCompile Include=".\rotation.cpp" />
+    <ClCompile Include=".\spatial_matrix.cpp" />
+    <ClCompile Include=".\spatial_vector.cpp" />
+    <ClCompile Include=".\transform.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\lcp\lcp_solver.h" />
+    <ClInclude Include=".\incr_lu\incr_lu.h" />
+    <ClInclude Include=".\gauss_elimination\gauss_elimination.h" />
+    <ClInclude Include=".\quaternion\quaternion.h" />
+    <ClInclude Include=".\quaternion\quaternion.inl" />
+    <ClInclude Include=".\quaternion\quaternion_util.h" />
+    <ClInclude Include=".\vector3\vector3.h" />
+    <ClInclude Include=".\vector3\vector3.inl" />
+    <ClInclude Include=".\vector3\vector3_util.h" />
+    <ClInclude Include=".\vector3\vector3_util.inl" />
+    <ClInclude Include=".\matrix\matrix_inverter.h" />
+    <ClInclude Include=".\vector_fpu\vector_fpu.h" />
+    <ClInclude Include=".\vector_fpu\vector_fpu.inl" />
+    <ClInclude Include=".\dense_vector.h" />
+    <ClInclude Include=".\dense_vector.inl" />
+    <ClInclude Include=".\densematrix.h" />
+    <ClInclude Include=".\densematrix.inl" />
+    <ClInclude Include=".\densematrix_util.h" />
+    <ClInclude Include=".\densematrix_util.inl" />
+    <ClInclude Include=".\eulerangles.h" />
+    <ClInclude Include=".\interval.h" />
+    <ClInclude Include=".\math.h" />
+    <ClInclude Include=".\math.inl" />
+    <ClInclude Include=".\matrix3.h" />
+    <ClInclude Include=".\matrix3.inl" />
+    <ClInclude Include=".\odesolve.h" />
+    <ClInclude Include=".\plane.h" />
+    <ClInclude Include=".\plane.inl" />
+    <ClInclude Include=".\qtransform.h" />
+    <ClInclude Include=".\qtransform.inl" />
+    <ClInclude Include=".\ray.h" />
+    <ClInclude Include=".\ray.inl" />
+    <ClInclude Include=".\rotation.h" />
+    <ClInclude Include=".\rotation.inl" />
+    <ClInclude Include=".\spatial_matrix.h" />
+    <ClInclude Include=".\spatial_matrix.inl" />
+    <ClInclude Include=".\spatial_vector.h" />
+    <ClInclude Include=".\spatial_vector.inl" />
+    <ClInclude Include=".\transform.h" />
+    <ClInclude Include=".\transform.inl" />
+    <ClInclude Include=".\types.h" />
+    <ClInclude Include=".\vecmath.h" />
+    <ClInclude Include=".\vector4.h" />
+    <ClInclude Include=".\vector4.inl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

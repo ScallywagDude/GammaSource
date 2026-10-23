@@ -53,6 +53,8 @@
 #include "cl_dll/IGameClientExports.h"
 
 #include "IGameUIFuncs.h"
+#include "IGameUIModelPreview.h"
+#include "VGuiMatSurface/IMatSystemSurface.h"
 #include <IEngineVGUI.h>
 #include "BaseUI/IBaseUI.h"
 
@@ -84,6 +86,8 @@
 #include <tier0/memdbgon.h>
 
 IGameUIFuncs *gameuifuncs = NULL;
+IGameUIModelPreview *gameuimodelpreview = NULL;
+IMatSystemSurface *gameuimatsurface = NULL;
 IEngineVGui *enginevguifuncs = NULL;
 vgui::ISurface *enginesurfacefuncs = NULL;
 IBaseUI *baseuifuncs = NULL;
@@ -223,6 +227,8 @@ void CGameUI::Initialize( CreateInterfaceFn *factories, int count )
 
 	gameuifuncs = (IGameUIFuncs * )engineFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL );
 	enginesurfacefuncs = (vgui::ISurface * )engineFactory(VGUI_SURFACE_INTERFACE_VERSION,NULL);
+	gameuimodelpreview = (IGameUIModelPreview *)engineFactory(GAMEUI_MODEL_PREVIEW_INTERFACE_VERSION,NULL);
+	gameuimatsurface = enginesurfacefuncs ? (IMatSystemSurface *)enginesurfacefuncs->QueryInterface(MAT_SYSTEM_SURFACE_INTERFACE_VERSION) : NULL;
 	baseuifuncs = (IBaseUI *)engineFactory( BASEUI_INTERFACE_VERSION, NULL);
 	if (clientFactory)
 	{
@@ -721,6 +727,9 @@ void CGameUI::ValidateCDKey(bool force, bool inConnect)
 //-----------------------------------------------------------------------------
 void CGameUI::Shutdown()
 {
+	if (gameuimodelpreview) gameuimodelpreview->ClearModel();
+	gameuimodelpreview = NULL;
+	gameuimatsurface = NULL;
 	// notify all the modules of Shutdown
 	g_VModuleLoader.ShutdownPlatformModules();
 

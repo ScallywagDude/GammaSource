@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{1AAD0C53-55B9-5FF6-9AFC-7C2168952578}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>panel_zoo</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\public;..\..\vgui2\vlocalize;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\vgui2\controls;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\public;..\..\vgui2\vlocalize;..\..\common;..\..\vgui2\controls;..\..\vgui2\include;..\..\vgui2\controls;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\AnimatingImagePanelDemo.cpp" />
+    <ClCompile Include=".\ButtonDemo.cpp" />
+    <ClCompile Include=".\ButtonDemo2.cpp" />
+    <ClCompile Include=".\CascadingMenu.cpp" />
+    <ClCompile Include=".\CControlCatalog.cpp" />
+    <ClCompile Include=".\CheckButtonDemo.cpp" />
+    <ClCompile Include=".\ComboBox2.cpp" />
+    <ClCompile Include=".\ComboBoxDemo.cpp" />
+    <ClCompile Include=".\DefaultColors.cpp" />
+    <ClCompile Include=".\DemoPage.cpp" />
+    <ClCompile Include=".\EditablePanel2Demo.cpp" />
+    <ClCompile Include=".\EditablePanelDemo.cpp" />
+    <ClCompile Include=".\FileOpenDialogDemo.cpp" />
+    <ClCompile Include=".\FrameDemo.cpp" />
+    <ClCompile Include=".\HTMLDemo.cpp" />
+    <ClCompile Include=".\HTMLDemo2.cpp" />
+    <ClCompile Include=".\ImageDemo.cpp" />
+    <ClCompile Include=".\ImagePanelDemo.cpp" />
+    <ClCompile Include="..\..\public\interface.cpp" />
+    <ClCompile Include=".\Label2Demo.cpp" />
+    <ClCompile Include=".\LabelDemo.cpp" />
+    <ClCompile Include="..\..\vgui2\controls\LabeledSlider.cpp" />
+    <ClCompile Include=".\ListPanelDemo.cpp" />
+    <ClCompile Include=".\MenuBarDemo.cpp" />
+    <ClCompile Include=".\MenuDemo.cpp" />
+    <ClCompile Include=".\MenuDemo2.cpp" />
+    <ClCompile Include=".\MessageBoxDemo.cpp" />
+    <ClCompile Include=".\ProgressBarDemo.cpp" />
+    <ClCompile Include=".\QueryBoxDemo.cpp" />
+    <ClCompile Include=".\RadioButtonDemo.cpp" />
+    <ClCompile Include=".\SampleButtons.cpp" />
+    <ClCompile Include=".\SampleCheckButtons.cpp" />
+    <ClCompile Include=".\SampleDropDowns.cpp" />
+    <ClCompile Include=".\SampleEditFields.cpp" />
+    <ClCompile Include=".\SampleListCategories.cpp" />
+    <ClCompile Include=".\SampleListPanelBoth.cpp" />
+    <ClCompile Include=".\SampleListPanelColumns.cpp" />
+    <ClCompile Include=".\SampleMenus.cpp" />
+    <ClCompile Include=".\SampleRadioButtons.cpp" />
+    <ClCompile Include=".\SampleSliders.cpp" />
+    <ClCompile Include=".\SampleTabs.cpp" />
+    <ClCompile Include=".\ScrollBar2Demo.cpp" />
+    <ClCompile Include=".\ScrollBarDemo.cpp" />
+    <ClCompile Include=".\testfile.cpp" />
+    <ClCompile Include=".\TextEntryDemo.cpp" />
+    <ClCompile Include=".\TextEntryDemo2.cpp" />
+    <ClCompile Include=".\TextEntryDemo3.cpp" />
+    <ClCompile Include=".\TextEntryDemo4.cpp" />
+    <ClCompile Include=".\TextEntryDemo5.cpp" />
+    <ClCompile Include=".\TextImageDemo.cpp" />
+    <ClCompile Include=".\ToggleButtonDemo.cpp" />
+    <ClCompile Include=".\TooltipDemo.cpp" />
+    <ClCompile Include=".\WizardPanelDemo.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\CControlCatalog.h" />
+    <ClInclude Include=".\DemoPage.h" />
+    <ClInclude Include="..\..\public\interface.h" />
+    <ClInclude Include=".\MenuDemo.h" />
+    <ClInclude Include=".\SampleListPanelBoth.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\lib\public\vgui_controls.lib" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

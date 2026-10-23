@@ -112,6 +112,9 @@ END_DATADESC()
 void CNPC_Assassin::Precache( void )
 {
 	engine->PrecacheModel( "models/fassassin.mdl" );
+	// HL2MODERN_NPC_ASSET_SAFETY: effects created by Spawn need level precaching.
+	engine->PrecacheModel( "sprites/redglow1.vmt" );
+	engine->PrecacheModel( "sprites/bluelaser1.vmt" );
 
 	enginesound->PrecacheSound( "player/pl_step1.wav" );
 	enginesound->PrecacheSound( "player/pl_step2.wav" );
@@ -158,7 +161,7 @@ void CNPC_Assassin::Spawn( void )
 	int attachment = LookupAttachment( "Eye" );
 
 	// Start up the eye glow
-	m_pEyeSprite = CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false );
+	m_pEyeSprite = attachment > 0 ? CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false ) : NULL;
 
 	if ( m_pEyeSprite != NULL )
 	{
@@ -168,7 +171,7 @@ void CNPC_Assassin::Spawn( void )
 	}
 
 	// Start up the eye trail
-	m_pEyeTrail	= CSpriteTrail::SpriteTrailCreate( "sprites/bluelaser1.vmt", GetLocalOrigin(), false );
+	m_pEyeTrail	= attachment > 0 ? CSpriteTrail::SpriteTrailCreate( "sprites/bluelaser1.vmt", GetLocalOrigin(), false ) : NULL;
 
 	if ( m_pEyeTrail != NULL )
 	{
@@ -289,7 +292,9 @@ void CNPC_Assassin::FirePistol( int hand )
 
 	const char *handName = ( hand ) ? "LeftMuzzle" : "RightMuzzle";
 
-	GetAttachment( handName, muzzlePos, muzzleAngle );
+	// An incompatible model must not fire from an invalid muzzle transform.
+	if ( !GetAttachment( handName, muzzlePos, muzzleAngle ) )
+		return;
 
 	Vector	muzzleDir;
 	

@@ -323,6 +323,8 @@ public:
 	void					ItemPreFrame( void );
 	virtual void			ItemPostFrame( void );
 	virtual CBaseEntity		*GiveNamedItem( const char *szName, int iSubType = 0 );
+	CBaseCombatWeapon		*GiveCheatWeapon( const char *szName );
+	void					RefillCheatWeaponAmmo( void );
 	void					EnableControl(bool fControl);
 	void					AbortReload( void );
 

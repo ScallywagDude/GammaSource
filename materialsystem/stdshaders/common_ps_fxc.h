@@ -41,7 +41,8 @@ HALF Fresnel( HALF3 normal,
               HALF3 eye,
               HALF2 scaleBias )
 {
-	HALF fresnel = HALF_CONSTANT(1.0f) - dot( normal, eye );
+	// HL2MODERN_BOUNDED_FRESNEL
+	HALF fresnel = saturate( HALF_CONSTANT(1.0f) - dot( normal, eye ) );
 	fresnel = pow( fresnel, HALF_CONSTANT(5.0f) );
 
 	return fresnel * scaleBias.x + scaleBias.y;

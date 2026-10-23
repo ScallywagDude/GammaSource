@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Examples">
+      <UniqueIdentifier>{98116663-4F7B-531C-BF9B-1730E6EA338F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{27090473-F7C2-5B42-AA82-809FBBA2B4D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{E2B9E2E7-2F3D-50A9-9B68-952435C69A8E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{6D73BA13-85F5-533D-8BA7-909C4B5F0B94}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\MainFrm.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTMMFC.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTMMFCDoc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\QHTMMFCView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\StdAfx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\QHTMMFC.rc">
+      <Filter>Source Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\MainFrm.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTMMFC.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTMMFCDoc.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\QHTMMFCView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\Resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\StdAfx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\res\about.html">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\About.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\Default.html">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\logo.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\QHTMMFC.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\QHTMMFC.rc2">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\QHTMMFCDoc.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\Refresh.png">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\res\Toolbar.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\alexRLE.bmp">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\amazon.mng">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\FOREST.JPG">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\ImagingTest.html">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\lauraRGB.bmp">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\logo.png">
+      <Filter>Examples</Filter>
+    </None>
+    <None Include=".\ReadMe.txt" />
+  </ItemGroup>
+</Project>

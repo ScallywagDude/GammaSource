@@ -12,6 +12,9 @@
 // $NoKeywords: $
 //=============================================================================
 #include <windows.h>
+#include <Xinput.h> // Windows SDK: XInput gamepads
+#include "../modernize/controller_axis_policy.h"
+
 #include "cdll_int.h"
 #include "cdll_util.h"
 #include "kbutton.h"
@@ -29,6 +32,102 @@
 
 // Joystick info from windows multimedia system.
 static JOYINFOEX ji;
+
+// HL2MODERN_XINPUT_BRIDGE
+// XInput is loaded at runtime for compatibility with machines that have no
+// XInput DLL. These are Windows system libraries, not bundled binaries.
+static HMODULE s_hXInputLibrary = NULL;
+typedef DWORD (WINAPI *XInputGetStateFn)(DWORD, XINPUT_STATE *);
+static XInputGetStateFn s_pXInputGetState = NULL;
+static bool s_bXInputActive = false;
+static DWORD s_nXInputSlot = 0;
+
+static bool ProbeXInput( void )
+{
+    const char *dlls[] = { "xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll" };
+    for ( int i = 0; i < 3; ++i )
+    {
+        HMODULE module = LoadLibraryA( dlls[i] );
+        if ( !module )
+            continue;
+        XInputGetStateFn fn = (XInputGetStateFn)GetProcAddress( module, "XInputGetState" );
+        if ( fn )
+        {
+            s_hXInputLibrary = module;
+            s_pXInputGetState = fn;
+            for ( DWORD slot = 0; slot < XUSER_MAX_COUNT; ++slot )
+            {
+                XINPUT_STATE state;
+                ZeroMemory( &state, sizeof(state) );
+                if ( fn( slot, &state ) == ERROR_SUCCESS )
+                {
+                    s_nXInputSlot = slot;
+                    return true;
+                }
+            }
+            // Loaded library retained for optional hotplug detection elsewhere.
+            return false;
+        }
+        FreeLibrary( module );
+    }
+    return false;
+}
+
+static DWORD ToJoyAxis( SHORT value, bool invert )
+{
+    // Both WinMM and XInput code paths use a 0..65535 axis with 32768 center.
+    long v = 32768 + (invert ? -(long)value : (long)value);
+    return (DWORD)(v < 0 ? 0 : (v > 65535 ? 65535 : v));
+}
+
+// HL2MODERN_XINPUT_DEADZONE
+// Set these to zero for raw stick axes; ranges are clamped to 0..30000.
+static ConVar joy_xinput_left_deadzone("joy_xinput_left_deadzone", "7849", 0,
+    "Left stick radial XInput deadzone (0-30000).");
+static ConVar joy_xinput_right_deadzone("joy_xinput_right_deadzone", "8689", 0,
+    "Right stick radial XInput deadzone (0-30000).");
+
+static void FillFromXInput( JOYINFOEX *out, const XINPUT_GAMEPAD &pad )
+{
+    int lx = pad.sThumbLX, ly = pad.sThumbLY;
+    int rx = pad.sThumbRX, ry = pad.sThumbRY;
+    HL2ModernController::RadialDeadzone(lx, ly, joy_xinput_left_deadzone.GetInt());
+    HL2ModernController::RadialDeadzone(rx, ry, joy_xinput_right_deadzone.GetInt());
+    out->dwXpos = ToJoyAxis( static_cast<SHORT>(lx), true );
+    out->dwYpos = ToJoyAxis( static_cast<SHORT>(ly), true );
+    out->dwZpos = ToJoyAxis( static_cast<SHORT>(rx), false );
+    out->dwRpos = ToJoyAxis( static_cast<SHORT>(ry), true );
+    out->dwUpos = out->dwVpos = 32768;
+    // First 4 are JOY1..JOY4, next 8 are auxiliary buttons.
+    const WORD buttons[] = {
+        XINPUT_GAMEPAD_A, XINPUT_GAMEPAD_B, XINPUT_GAMEPAD_X, XINPUT_GAMEPAD_Y,
+        XINPUT_GAMEPAD_LEFT_SHOULDER, XINPUT_GAMEPAD_RIGHT_SHOULDER,
+        XINPUT_GAMEPAD_BACK, XINPUT_GAMEPAD_START,
+        XINPUT_GAMEPAD_LEFT_THUMB, XINPUT_GAMEPAD_RIGHT_THUMB
+    };
+    for ( int i = 0; i < 10; ++i )
+        if ( pad.wButtons & buttons[i] )
+            out->dwButtons |= (1u << i);
+    if ( pad.bLeftTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD )
+        out->dwButtons |= (1u << 10);
+    if ( pad.bRightTrigger > XINPUT_GAMEPAD_TRIGGER_THRESHOLD )
+        out->dwButtons |= (1u << 11);
+
+    const bool up = (pad.wButtons & XINPUT_GAMEPAD_DPAD_UP) != 0;
+    const bool down = (pad.wButtons & XINPUT_GAMEPAD_DPAD_DOWN) != 0;
+    const bool left = (pad.wButtons & XINPUT_GAMEPAD_DPAD_LEFT) != 0;
+    const bool right = (pad.wButtons & XINPUT_GAMEPAD_DPAD_RIGHT) != 0;
+    out->dwPOV = JOY_POVCENTERED;
+    if (up && right) out->dwPOV = 4500;
+    else if (down && right) out->dwPOV = 13500;
+    else if (down && left) out->dwPOV = 22500;
+    else if (up && left) out->dwPOV = 31500;
+    else if (up) out->dwPOV = JOY_POVFORWARD;
+    else if (right) out->dwPOV = JOY_POVRIGHT;
+    else if (down) out->dwPOV = JOY_POVBACKWARD;
+    else if (left) out->dwPOV = JOY_POVLEFT;
+}
+
 
 static ConVar joy_name( "joyname", "joystick", 0 );
 static ConVar joy_advanced( "joyadvanced", "0", 0 );
@@ -85,6 +184,20 @@ void CInput::Init_Joystick( void )
 	if ( CommandLine()->FindParm("-nojoy" ) ) 
 		return; 
  
+	// Prefer the XInput pad when connected. Use -noxinput to force WinMM.
+	if ( !CommandLine()->FindParm("-noxinput") && ProbeXInput() )
+	{
+		s_bXInputActive = true;
+		m_nJoystickButtons = 12;
+		m_fJoystickHasPOVControl = 1;
+		m_nJoystickOldButtons = 0;
+		m_nJoystickOldPOVState = 0;
+		m_fJoystickAvailable = 1;
+		m_fJoystickAdvancedInit = 0;
+		Msg("XInput gamepad found (slot %u).\n", (unsigned)s_nXInputSlot);
+		return;
+	}
+
 	// verify joystick driver is present
 	if ((numdevs = joyGetNumDevs ()) == 0)
 	{
@@ -189,6 +302,13 @@ void CInput::Joystick_Advanced(void)
 		// 2 axes only with joystick control
 		m_rgAxes[JOY_AXIS_X].AxisMap = AxisTurn;
 		m_rgAxes[JOY_AXIS_Y].AxisMap = AxisForward;
+		if ( s_bXInputActive )
+		{
+			// Left stick: movement. Right stick: independent camera axes.
+			m_rgAxes[JOY_AXIS_X].AxisMap = AxisSide;
+			m_rgAxes[JOY_AXIS_Z].AxisMap = AxisTurn;
+			m_rgAxes[JOY_AXIS_R].AxisMap = AxisLook;
+		}
 	}
 	else
 	{
@@ -274,13 +394,15 @@ void CInput::ControllerCommands( void )
 		povstate = 0;
 		if(ji.dwPOV != JOY_POVCENTERED)
 		{
-			if (ji.dwPOV == JOY_POVFORWARD)
+			// Include diagonal hat/D-pad directions (45,135,225,315 deg).
+			DWORD angle = ji.dwPOV % 36000;
+			if (angle >= 31500 || angle <= 4500)
 				povstate |= 0x01;
-			if (ji.dwPOV == JOY_POVRIGHT)
+			if (angle >= 4500 && angle <= 13500)
 				povstate |= 0x02;
-			if (ji.dwPOV == JOY_POVBACKWARD)
+			if (angle >= 13500 && angle <= 22500)
 				povstate |= 0x04;
-			if (ji.dwPOV == JOY_POVLEFT)
+			if (angle >= 22500 && angle <= 31500)
 				povstate |= 0x08;
 		}
 		// determine which bits have changed and key an auxillary event for each change
@@ -311,6 +433,35 @@ int CInput::ReadJoystick (void)
 	memset (&ji, 0, sizeof(ji));
 	ji.dwSize = sizeof(ji);
 	ji.dwFlags = (DWORD)m_nJoystickFlags;
+
+	if ( s_bXInputActive )
+	{
+		XINPUT_STATE state;
+		ZeroMemory( &state, sizeof(state) );
+		DWORD result = s_pXInputGetState( s_nXInputSlot, &state );
+		if ( result != ERROR_SUCCESS )
+		{
+			for ( DWORD slot = 0; slot < XUSER_MAX_COUNT; ++slot )
+			{
+				if ( slot == s_nXInputSlot ) continue;
+				if ( s_pXInputGetState( slot, &state ) == ERROR_SUCCESS )
+				{
+					s_nXInputSlot = slot;
+					result = ERROR_SUCCESS;
+					break;
+				}
+			}
+		}
+		// Disconnection emits neutral input, releasing buttons instead of
+		// leaving the previous controller state held forever.
+		ji.dwXpos = ji.dwYpos = ji.dwZpos = ji.dwRpos = 32768;
+		ji.dwUpos = ji.dwVpos = 32768;
+		ji.dwPOV = JOY_POVCENTERED;
+		ji.dwButtons = 0; // button bitmask must never persist across frames/disconnects
+		if ( result == ERROR_SUCCESS )
+			FillFromXInput( &ji, state.Gamepad );
+		return 1;
+	}
 
 	if (joyGetPosEx (m_nJoystickID, &ji) == JOYERR_NOERROR)
 	{
@@ -356,6 +507,27 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 		m_fJoystickAdvancedInit = 1;
 	}
 
+	// HL2MODERN_XINPUT_HOTPLUG: probe for controllers attached after startup.
+	if ( !m_fJoystickAvailable && s_pXInputGetState && in_joystick.GetInt() )
+	{
+		for ( DWORD slot = 0; slot < XUSER_MAX_COUNT; ++slot )
+		{
+			XINPUT_STATE state;
+			ZeroMemory( &state, sizeof(state) );
+			if ( s_pXInputGetState( slot, &state ) == ERROR_SUCCESS )
+			{
+				s_nXInputSlot = slot;
+				s_bXInputActive = true;
+				m_nJoystickButtons = 12;
+				m_fJoystickHasPOVControl = 1;
+				m_nJoystickOldButtons = m_nJoystickOldPOVState = 0;
+				m_fJoystickAvailable = 1;
+				m_fJoystickAdvancedInit = 0;
+				Msg("XInput gamepad connected (slot %u).\n", (unsigned)slot);
+				break;
+			}
+		}
+	}
 	// verify joystick is available and that the user wants to use it
 	if (!m_fJoystickAvailable || !in_joystick.GetInt() )
 	{
@@ -475,7 +647,8 @@ void CInput::JoyStickMove( float frametime, CUserCmd *cmd )
 			break;
 
 		case AxisLook:
-			if (in_jlook.state & 1)
+			// The right stick must look without requiring the legacy +jlook bind.
+			if ((in_jlook.state & 1) || s_bXInputActive)
 			{
 				if (fabs(fAxisValue) > joy_pitchthreshold.GetFloat())
 				{

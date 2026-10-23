@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="gauss_elimination">
+      <UniqueIdentifier>{E6A6189C-F1B1-5D80-B928-BA74ED523F2E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="incr_lu">
+      <UniqueIdentifier>{5AE0EE48-F5A0-5FC9-92C2-92E4B941FD0A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="lcp">
+      <UniqueIdentifier>{0D691993-D95D-5037-AB43-AB40A7D81E23}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="matrix">
+      <UniqueIdentifier>{8B7DBCAD-9D95-5212-B007-C15E443845A3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="quaternion">
+      <UniqueIdentifier>{DE8E099C-3B04-586D-8A02-9BB47F6B9CDD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vector3">
+      <UniqueIdentifier>{AAD48029-0B91-5559-A967-DD44B32CAFF8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vector_fpu">
+      <UniqueIdentifier>{24FB116D-DA5E-5975-808C-F96B02D45F1F}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\lcp\lcp_solver.cpp">
+      <Filter>lcp</Filter>
+    </ClCompile>
+    <ClCompile Include=".\incr_lu\incr_lu.cpp">
+      <Filter>incr_lu</Filter>
+    </ClCompile>
+    <ClCompile Include=".\gauss_elimination\gauss_elimination.cpp">
+      <Filter>gauss_elimination</Filter>
+    </ClCompile>
+    <ClCompile Include=".\quaternion\quaternion.cpp">
+      <Filter>quaternion</Filter>
+    </ClCompile>
+    <ClCompile Include=".\quaternion\quaternion_util.cpp">
+      <Filter>quaternion</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vector3\vector3.cpp">
+      <Filter>vector3</Filter>
+    </ClCompile>
+    <ClCompile Include=".\vector3\vector3_util.cpp">
+      <Filter>vector3</Filter>
+    </ClCompile>
+    <ClCompile Include=".\densematrix.cpp" />
+    <ClCompile Include=".\densematrix_util.cpp" />
+    <ClCompile Include=".\eulerangles.cpp" />
+    <ClCompile Include=".\math.cpp" />
+    <ClCompile Include=".\matrix3.cpp" />
+    <ClCompile Include=".\odesolve.cpp" />
+    <ClCompile Include=".\plane.cpp" />
+    <ClCompile Include=".\rotation.cpp" />
+    <ClCompile Include=".\spatial_matrix.cpp" />
+    <ClCompile Include=".\spatial_vector.cpp" />
+    <ClCompile Include=".\transform.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\lcp\lcp_solver.h">
+      <Filter>lcp</Filter>
+    </ClInclude>
+    <ClInclude Include=".\incr_lu\incr_lu.h">
+      <Filter>incr_lu</Filter>
+    </ClInclude>
+    <ClInclude Include=".\gauss_elimination\gauss_elimination.h">
+      <Filter>gauss_elimination</Filter>
+    </ClInclude>
+    <ClInclude Include=".\quaternion\quaternion.h">
+      <Filter>quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include=".\quaternion\quaternion.inl">
+      <Filter>quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include=".\quaternion\quaternion_util.h">
+      <Filter>quaternion</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector3\vector3.h">
+      <Filter>vector3</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector3\vector3.inl">
+      <Filter>vector3</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector3\vector3_util.h">
+      <Filter>vector3</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector3\vector3_util.inl">
+      <Filter>vector3</Filter>
+    </ClInclude>
+    <ClInclude Include=".\matrix\matrix_inverter.h">
+      <Filter>matrix</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector_fpu\vector_fpu.h">
+      <Filter>vector_fpu</Filter>
+    </ClInclude>
+    <ClInclude Include=".\vector_fpu\vector_fpu.inl">
+      <Filter>vector_fpu</Filter>
+    </ClInclude>
+    <ClInclude Include=".\dense_vector.h" />
+    <ClInclude Include=".\dense_vector.inl" />
+    <ClInclude Include=".\densematrix.h" />
+    <ClInclude Include=".\densematrix.inl" />
+    <ClInclude Include=".\densematrix_util.h" />
+    <ClInclude Include=".\densematrix_util.inl" />
+    <ClInclude Include=".\eulerangles.h" />
+    <ClInclude Include=".\interval.h" />
+    <ClInclude Include=".\math.h" />
+    <ClInclude Include=".\math.inl" />
+    <ClInclude Include=".\matrix3.h" />
+    <ClInclude Include=".\matrix3.inl" />
+    <ClInclude Include=".\odesolve.h" />
+    <ClInclude Include=".\plane.h" />
+    <ClInclude Include=".\plane.inl" />
+    <ClInclude Include=".\qtransform.h" />
+    <ClInclude Include=".\qtransform.inl" />
+    <ClInclude Include=".\ray.h" />
+    <ClInclude Include=".\ray.inl" />
+    <ClInclude Include=".\rotation.h" />
+    <ClInclude Include=".\rotation.inl" />
+    <ClInclude Include=".\spatial_matrix.h" />
+    <ClInclude Include=".\spatial_matrix.inl" />
+    <ClInclude Include=".\spatial_vector.h" />
+    <ClInclude Include=".\spatial_vector.inl" />
+    <ClInclude Include=".\transform.h" />
+    <ClInclude Include=".\transform.inl" />
+    <ClInclude Include=".\types.h" />
+    <ClInclude Include=".\vecmath.h" />
+    <ClInclude Include=".\vector4.h" />
+    <ClInclude Include=".\vector4.inl" />
+  </ItemGroup>
+</Project>

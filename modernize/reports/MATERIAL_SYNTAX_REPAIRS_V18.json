@@ -1,0 +1,209 @@
+{
+  "schema": 1,
+  "scope": "Three single-edit syntactic repairs only. Parsed KeyValues syntax does not verify shaders, parameter meaning, textures, alpha, UVs, or runtime behavior.",
+  "roots": {
+    "hl2": [
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003",
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2"
+    ],
+    "hl1": [
+      "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl1"
+    ],
+    "cstrike": [],
+    "tf2": []
+  },
+  "files": [
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/Models/MegaBuild_render/hl2logo.vmt",
+      "original_sha256": "5cc99b75a0955042ec187e4daf11cda26870645602d3a44a1e8564bdf3462842",
+      "modified_sha256": "4d1ad09bb6d52a06be1dbc950063118304197d2dc91ba08600d7b56a2c18641e",
+      "edits": [
+        {
+          "offset": 477,
+          "before": "",
+          "after": "}\r\n",
+          "reason": "append_single_missing_final_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/Models/props_interiors/metalfence007a.vmt",
+      "original_sha256": "3aef9659472b948eff59c5e1f1ef082565fc799763cfa6e446febcb54237b1aa",
+      "modified_sha256": "d3932f2ac37edd8e9f46e902d291202f8bcfef4d2f5d582805a0a97623ae4101",
+      "edits": [
+        {
+          "offset": 276,
+          "before": "metalfence007a",
+          "after": "",
+          "reason": "remove_bare_terminal_filename_stem"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/Models/shadertest/VertexLitTextureDetail.vmt",
+      "original_sha256": "a89809aad630b78d70bf94ef74ebb4a7982e55c18d245315f81953187055d352",
+      "modified_sha256": "eb87a4a90e4ef768786cea70e6e23e132645b46b22537d095039819775535870",
+      "edits": [
+        {
+          "offset": 441,
+          "before": "}",
+          "after": "",
+          "reason": "remove_single_extra_terminal_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/Models/shadertest/vertexlittexture.vmt",
+      "original_sha256": "6256d34e1d83cd1461e149f9b7bffbbf73d228990da56e8c9a865effa1f585bf",
+      "modified_sha256": "71853f3a701edd3e814d3f0c0e8260ab572ce85f38900e0d429a159250f49b62",
+      "edits": [
+        {
+          "offset": 399,
+          "before": "}",
+          "after": "",
+          "reason": "remove_single_extra_terminal_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/hl2_logo/background.vmt",
+      "original_sha256": "5cc99b75a0955042ec187e4daf11cda26870645602d3a44a1e8564bdf3462842",
+      "modified_sha256": "4d1ad09bb6d52a06be1dbc950063118304197d2dc91ba08600d7b56a2c18641e",
+      "edits": [
+        {
+          "offset": 477,
+          "before": "",
+          "after": "}\r\n",
+          "reason": "append_single_missing_final_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/Sprites/mommaspit.vmt",
+      "original_sha256": "3d72257e5b32bc582737486bf224b5aefffd303520b0bc2aa28a8f50b632364f",
+      "modified_sha256": "5a5e3badc1a025b27e376cc42051fda8c03943632c3860775a4d65b68f7e1b5f",
+      "edits": [
+        {
+          "offset": 288,
+          "before": "",
+          "after": "}\r\n",
+          "reason": "append_single_missing_final_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/Sprites/mommaspout.vmt",
+      "original_sha256": "97347903873aad4369dc66e56341a9b25ea3a45b2cc4dd956ef7e4fb404e9591",
+      "modified_sha256": "cb0fb665b42880aa91a0cb8e115e334242c505c7fedcdf68a58db01ef827c71e",
+      "edits": [
+        {
+          "offset": 288,
+          "before": "",
+          "after": "}\r\n",
+          "reason": "append_single_missing_final_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/models/v_gauss/gloveCHROME.vmt",
+      "original_sha256": "7e131ab1563e140aaf0b87b382c46edbefbb11d286f8c45d01a80964d87b2977",
+      "modified_sha256": "5ac9627b7e9d3ec4b5cd8febf83ef2b5bdea370a20c0ad39598c9784f5073cea",
+      "edits": [
+        {
+          "offset": 175,
+          "before": "}",
+          "after": "",
+          "reason": "remove_single_extra_terminal_brace"
+        }
+      ],
+      "status": "repaired_syntax_runtime_unverified"
+    }
+  ],
+  "unrepaired": [
+    {
+      "branch": "hl2",
+      "root_index": 1,
+      "path": "materials/shadertest/LightmappedTextureDetail.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/halflife/+7flickermon.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/halflife/+7~lab1_cmp1.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/halflife/+8flickermon.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/halflife/+9flickermon.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/liquids/c2a5dam1water.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    },
+    {
+      "branch": "hl1",
+      "root_index": 0,
+      "path": "materials/liquids/water_risingblue.vmt",
+      "reason": "ambiguous_or_unsupported_syntax",
+      "runtime_verified": false
+    }
+  ],
+  "summary": {
+    "scanned": 15410,
+    "already_valid": 15395,
+    "malformed": 15,
+    "repaired": 8,
+    "append_single_missing_final_brace": 4,
+    "remove_bare_terminal_filename_stem": 1,
+    "remove_single_extra_terminal_brace": 3,
+    "unrepaired": 7
+  },
+  "runtime_verified": false,
+  "original_assets_modified": false,
+  "proprietary_asset_payloads_bundled": false
+}

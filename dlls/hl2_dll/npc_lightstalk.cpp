@@ -64,9 +64,13 @@ void CNPC_LightStalk::Spawn( void )
 	SetNextThink( gpGlobals->curtime + 0.1f );
 
 	m_pGlow = CSprite::SpriteCreate( LIGHTSTALK_GLOW_SPRITE, GetLocalOrigin() + Vector(0,0,(WorldAlignMins().z+WorldAlignMaxs().z)*0.5), false );
-	m_pGlow->SetTransparency( kRenderGlow, m_clrRender->r, m_clrRender->g, m_clrRender->b, m_clrRender->a, kRenderFxGlowShell );
-	m_pGlow->SetScale( 1.0 );
-	m_pGlow->SetAttachment( this, 1 );
+	// HL2MODERN_NPC_ASSET_SAFETY: effect allocation can fail.
+	if ( m_pGlow )
+	{
+		m_pGlow->SetTransparency( kRenderGlow, m_clrRender->r, m_clrRender->g, m_clrRender->b, m_clrRender->a, kRenderFxGlowShell );
+		m_pGlow->SetScale( 1.0 );
+		m_pGlow->SetAttachment( this, 1 );
+	}
 	LightRise();
 }
 

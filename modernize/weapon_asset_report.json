@@ -1,0 +1,723 @@
+{
+  "note": "Asset presence checks, not proof of working animations, textures, or in-game render scale.",
+  "branches": {
+    "hl2": {
+      "asset_root": null,
+      "weapons": [
+        {
+          "classname": "weapon_ar1",
+          "implementation_file": "dlls/hl2_dll/weapon_ar1.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_ar2",
+          "implementation_file": "dlls/hl2_dll/weapon_ar2.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_binoculars",
+          "implementation_file": "dlls/hl2_dll/weapon_binoculars.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_bugbait",
+          "implementation_file": "dlls/hl2_dll/weapon_bugbait.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_cguard",
+          "implementation_file": "dlls/hl2_dll/weapon_cguard.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_crowbar",
+          "implementation_file": "dlls/hl2_dll/weapon_crowbar.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_cubemap",
+          "implementation_file": "dlls/weapon_cubemap.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_extinguisher",
+          "implementation_file": "dlls/hl2_dll/weapon_extinguisher.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_flaregun",
+          "implementation_file": "dlls/hl2_dll/weapon_flaregun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_frag",
+          "implementation_file": "dlls/hl2_dll/weapon_frag.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_gauss",
+          "implementation_file": "dlls/hl2_dll/weapon_gauss.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_hmg1",
+          "implementation_file": "dlls/hl2_dll/weapon_hgm1.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_hopwire",
+          "implementation_file": "dlls/hl2_dll/weapon_hopwire.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_iceaxe",
+          "implementation_file": "dlls/hl2_dll/weapon_iceaxe.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_immolator",
+          "implementation_file": "dlls/hl2_dll/weapon_immolator.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_irifle",
+          "implementation_file": "dlls/hl2_dll/weapon_irifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_manhack",
+          "implementation_file": "dlls/hl2_dll/weapon_manhack.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_molotov",
+          "implementation_file": "dlls/hl2_dll/weapon_molotov.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_physcannon",
+          "implementation_file": "dlls/hl2_dll/weapon_physcannon.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_physgun",
+          "implementation_file": "dlls/physgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_pistol",
+          "implementation_file": "dlls/hl2_dll/weapon_pistol.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_rollerwand",
+          "implementation_file": "dlls/hl2_dll/weapon_rollerwand.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_rpg",
+          "implementation_file": "dlls/hl2_dll/weapon_rpg.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_shotgun",
+          "implementation_file": "dlls/hl2_dll/weapon_shotgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_slam",
+          "implementation_file": "dlls/hl2_dll/weapon_slam.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_smg1",
+          "implementation_file": "dlls/hl2_dll/weapon_smg1.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_smg2",
+          "implementation_file": "dlls/hl2_dll/weapon_smg2.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_sniperrifle",
+          "implementation_file": "dlls/hl2_dll/weapon_sniperrifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_stickylauncher",
+          "implementation_file": "dlls/hl2_dll/weapon_stickylauncher.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_stunstick",
+          "implementation_file": "dlls/hl2_dll/weapon_stunstick.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_thumper",
+          "implementation_file": "dlls/hl2_dll/weapon_thumper.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_tripwire",
+          "implementation_file": "dlls/hl2_dll/weapon_tripwire.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        }
+      ],
+      "summary": {
+        "total": 32,
+        "unverified": 32,
+        "issues": 0
+      }
+    },
+    "hl1": {
+      "asset_root": null,
+      "weapons": [
+        {
+          "classname": "weapon_357",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_357.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_crossbow",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_crossbow.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_crowbar",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_crowbar.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_egon",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_egon.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_gauss",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_gauss.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_glock",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_glock.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_handgrenade",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_handgrenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_hornetgun",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_hornetgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_mp5",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_mp5.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_physgun",
+          "implementation_file": "dlls/physgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_rpg",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_rpg.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_satchel",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_satchel.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_shotgun",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_shotgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_snark",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_snark.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_tripmine",
+          "implementation_file": "dlls/hl1_dll/hl1_weapon_tripmine.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        }
+      ],
+      "summary": {
+        "total": 15,
+        "unverified": 15,
+        "issues": 0
+      }
+    },
+    "cstrike": {
+      "asset_root": null,
+      "weapons": [
+        {
+          "classname": "weapon_ak47",
+          "implementation_file": "game_shared/cstrike/weapon_ak47.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_aug",
+          "implementation_file": "game_shared/cstrike/weapon_aug.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_awp",
+          "implementation_file": "game_shared/cstrike/weapon_awp.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_basecsgrenade",
+          "implementation_file": "game_shared/cstrike/weapon_basecsgrenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_c4",
+          "implementation_file": "game_shared/cstrike/weapon_c4.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_cs_base",
+          "implementation_file": "game_shared/cstrike/weapon_csbase.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_csbase_gun",
+          "implementation_file": "game_shared/cstrike/weapon_csbasegun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_deagle",
+          "implementation_file": "game_shared/cstrike/weapon_deagle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_famas",
+          "implementation_file": "game_shared/cstrike/weapon_famas.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_fiveseven",
+          "implementation_file": "game_shared/cstrike/weapon_fiveseven.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_flashbang",
+          "implementation_file": "game_shared/cstrike/weapon_flashbang.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_g3sg1",
+          "implementation_file": "game_shared/cstrike/weapon_g3sg1.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_galil",
+          "implementation_file": "game_shared/cstrike/weapon_galil.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_glock",
+          "implementation_file": "game_shared/cstrike/weapon_glock.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_hegrenade",
+          "implementation_file": "game_shared/cstrike/weapon_hegrenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_knife",
+          "implementation_file": "game_shared/cstrike/weapon_knife.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_m249",
+          "implementation_file": "game_shared/cstrike/weapon_m249.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_m3",
+          "implementation_file": "game_shared/cstrike/weapon_m3.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_m4a1",
+          "implementation_file": "game_shared/cstrike/weapon_m4a1.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_mac10",
+          "implementation_file": "game_shared/cstrike/weapon_mac10.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_mp5navy",
+          "implementation_file": "game_shared/cstrike/weapon_mp5navy.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_p228",
+          "implementation_file": "game_shared/cstrike/weapon_p228.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_p90",
+          "implementation_file": "game_shared/cstrike/weapon_p90.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_scout",
+          "implementation_file": "game_shared/cstrike/weapon_scout.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_sg550",
+          "implementation_file": "game_shared/cstrike/weapon_sg550.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_sg552",
+          "implementation_file": "game_shared/cstrike/weapon_sg552.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_ump45",
+          "implementation_file": "game_shared/cstrike/weapon_ump45.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_usp",
+          "implementation_file": "game_shared/cstrike/weapon_usp.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        }
+      ],
+      "summary": {
+        "total": 28,
+        "unverified": 28,
+        "issues": 0
+      }
+    },
+    "tf2": {
+      "asset_root": null,
+      "weapons": [
+        {
+          "classname": "weapon_arcwelder",
+          "implementation_file": "game_shared/tf2/weapon_arcwelder.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_basecombatobject",
+          "implementation_file": "game_shared/tf2/weapon_basecombatobject.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_builder",
+          "implementation_file": "game_shared/tf2/weapon_builder.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_basegrenade",
+          "implementation_file": "game_shared/tf2/weapon_combat_basegrenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_burstrifle",
+          "implementation_file": "game_shared/tf2/weapon_combat_burstrifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_chargeableplasma",
+          "implementation_file": "game_shared/tf2/weapon_combat_chargeableplasma.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_grenade",
+          "implementation_file": "game_shared/tf2/weapon_combat_grenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_grenade_emp",
+          "implementation_file": "game_shared/tf2/weapon_combat_grenade_emp.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_laserrifle",
+          "implementation_file": "game_shared/tf2/weapon_combat_laserrifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_plasmagrenadelauncher",
+          "implementation_file": "game_shared/tf2/weapon_combat_plasma_grenade_launcher.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle",
+          "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_alien",
+          "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_plasmarifle_base",
+          "implementation_file": "game_shared/tf2/weapon_combat_plasmarifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_shield",
+          "implementation_file": "game_shared/tf2/weapon_combatshield.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_shield_alien",
+          "implementation_file": "game_shared/tf2/weapon_combatshield.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_shotgun",
+          "implementation_file": "game_shared/tf2/weapon_combat_shotgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_combat_usedwithshieldbase",
+          "implementation_file": "game_shared/tf2/weapon_combat_usedwithshieldbase.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_drainbeam",
+          "implementation_file": "game_shared/tf2/weapon_drainbeam.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_flame_thrower",
+          "implementation_file": "game_shared/tf2/weapon_flame_thrower.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_gas_can",
+          "implementation_file": "game_shared/tf2/weapon_gas_can.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_grenade_rocket",
+          "implementation_file": "game_shared/tf2/weapon_grenade_rocket.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_harpoon",
+          "implementation_file": "game_shared/tf2/weapon_harpoon.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_infiltrator",
+          "implementation_file": "game_shared/tf2/weapon_infiltrator.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_laserdesignator",
+          "implementation_file": "game_shared/tf2/weapon_laserdesignator.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_laserrifle",
+          "implementation_file": "game_shared/tf2/weapon_laserrifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_limpetmine",
+          "implementation_file": "game_shared/tf2/weapon_limpetmine.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_minigun",
+          "implementation_file": "game_shared/tf2/weapon_minigun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_mortar",
+          "implementation_file": "game_shared/tf2/weapon_mortar.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_obj_empgenerator",
+          "implementation_file": "game_shared/tf2/weapon_obj_empgenerator.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_obj_rallyflag",
+          "implementation_file": "game_shared/tf2/weapon_obj_rallyflag.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_objectselection",
+          "implementation_file": "game_shared/tf2/weapon_objectselection.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_pistols",
+          "implementation_file": "game_shared/tf2/weapon_pistols.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_plasmarifle",
+          "implementation_file": "game_shared/tf2/weapon_plasmarifle.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_repairgun",
+          "implementation_file": "game_shared/tf2/weapon_repairgun.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_rocket_launcher",
+          "implementation_file": "game_shared/tf2/weapon_rocketlauncher.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_shield",
+          "implementation_file": "game_shared/tf2/weapon_shield.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_shield_grenade",
+          "implementation_file": "game_shared/tf2/weapon_shieldgrenade.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        },
+        {
+          "classname": "weapon_twohandedcontainer",
+          "implementation_file": "game_shared/tf2/weapon_twohandedcontainer.cpp",
+          "runtime_verified": false,
+          "status": "unverified_no_asset_directory"
+        }
+      ],
+      "summary": {
+        "total": 38,
+        "unverified": 38,
+        "issues": 0
+      }
+    }
+  }
+}

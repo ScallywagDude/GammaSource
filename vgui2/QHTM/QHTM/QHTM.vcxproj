@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug Light|Win32">
+      <Configuration>Debug Light</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release Light|Win32">
+      <Configuration>Release Light</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{F7D2C421-0B98-587E-9F65-A8A5844A24E6}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>QHTM</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>QHTM</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QHTM_DLL;NDEBUG;WIN32;_WINDOWS;_MBCS;_WIN32_WINNT=0x400;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>..\ImgLib.lib;..\ZLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>.\QHTM.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>QHTMd</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QHTM_DLL;_DEBUG;WIN32;_WINDOWS;_MBCS;_WIN32_WINNT=0x400;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\ImgLibD.lib;..\ZLibD.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>.\QHTM.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>QHTMLightd</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QHTM_BUILD_LIGHT;QHTM_DLL;_DEBUG;WIN32;_WINDOWS;_MBCS;_WIN32_WINNT=0x400;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\ImgLibD.lib;..\ZLibD.lib;debughlp.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>.\QHTM.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+    <TargetName>QHTMLight</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\;..\\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QHTM_BUILD_LIGHT;QHTM_DLL;NDEBUG;WIN32;_WINDOWS;_MBCS;_WIN32_WINNT=0x400;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>..\ImgLibLight.lib;..\ZLib.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>.\QHTM.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\HTMLHorizontalRuleSection.cpp" />
+    <ClCompile Include=".\HTMLImageSection.cpp" />
+    <ClCompile Include=".\HTMLSection.cpp" />
+    <ClCompile Include=".\HTMLSectionABC.cpp" />
+    <ClCompile Include=".\HTMLSectionCreator.cpp" />
+    <ClCompile Include=".\HTMLSectionLink.cpp" />
+    <ClCompile Include=".\htmltablesection.cpp" />
+    <ClCompile Include=".\HTMLTextSection.cpp" />
+    <ClCompile Include=".\ParentSection.cpp" />
+    <ClCompile Include=".\ScrollContainer.cpp" />
+    <ClCompile Include=".\sectionabc.cpp" />
+    <ClCompile Include=".\TipWindow.cpp" />
+    <ClCompile Include=".\WindowSection.cpp" />
+    <ClCompile Include=".\DecodeCharset.cpp" />
+    <ClCompile Include=".\GetFontSize.cpp" />
+    <ClCompile Include=".\HtmlAnchor.cpp" />
+    <ClCompile Include=".\htmlblockquote.cpp" />
+    <ClCompile Include=".\HTMLDocument.cpp" />
+    <ClCompile Include=".\HTMLDocumentObject.cpp" />
+    <ClCompile Include=".\HTMLGetAlignmentFromString.cpp" />
+    <ClCompile Include=".\HTMLHorizontalRule.cpp" />
+    <ClCompile Include=".\HTMLImage.cpp" />
+    <ClCompile Include=".\HtmlList.cpp" />
+    <ClCompile Include=".\HTMLListItem.cpp" />
+    <ClCompile Include=".\HTMLParagraph.cpp" />
+    <ClCompile Include=".\HTMLParagraphObject.cpp" />
+    <ClCompile Include=".\HTMLParse.cpp" />
+    <ClCompile Include=".\HTMLTable.cpp" />
+    <ClCompile Include=".\HTMLTableCell.cpp" />
+    <ClCompile Include=".\HTMLTextBlock.cpp" />
+    <ClCompile Include=".\cursor.cpp" />
+    <ClCompile Include=".\drawcontext.cpp" />
+    <ClCompile Include=".\GetColourFromString.cpp" />
+    <ClCompile Include=".\GetFontSizeAsPixels.cpp" />
+    <ClCompile Include=".\GetNumberParameter.cpp" />
+    <ClCompile Include=".\HTMLPrint.cpp" />
+    <ClCompile Include=".\Mouse.cpp" />
+    <ClCompile Include=".\SimpleString.cpp" />
+    <ClCompile Include=".\tablelayout.cpp" />
+    <ClCompile Include=".\GetDisplayWorkArea.cpp" />
+    <ClCompile Include=".\GotoUrl.cpp" />
+    <ClCompile Include=".\HTMLParseBase.cpp" />
+    <ClCompile Include=".\ResourceLoader.cpp" />
+    <ClCompile Include=".\striremove.cpp" />
+    <ClCompile Include=".\stristr.cpp" />
+    <ClCompile Include=".\strremove.cpp" />
+    <ClCompile Include=".\AquireImage.cpp" />
+    <ClCompile Include=".\Defaults.cpp" />
+    <ClCompile Include=".\dllmain.cpp" />
+    <ClCompile Include=".\EnableCoolTips.cpp" />
+    <ClCompile Include=".\LoadTextFile.cpp" />
+    <ClCompile Include=".\Palette.cpp" />
+    <ClCompile Include=".\QHTM.cpp" />
+    <ClCompile Include=".\QHTM_GetHTMLHeight.cpp" />
+    <ClCompile Include=".\QHTM_MessageBox.cpp" />
+    <ClCompile Include=".\QHTM_RenderHTML.cpp" />
+    <ClCompile Include=".\QHTM_SetHTMLButton.cpp" />
+    <ClCompile Include=".\QHTM_SetResources.cpp" />
+    <ClCompile Include=".\QHTM_Trace.cpp" />
+    <ClCompile Include=".\QHTMControlSection.cpp" />
+    <ClCompile Include=".\RegisterWindow.cpp" />
+    <ClCompile Include=".\StdAfx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Debug Light|Win32'">stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeaderFile Condition="'$(Configuration)|$(Platform)'=='Release Light|Win32'">stdafx.h</PrecompiledHeaderFile>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\HTMLHorizontalRuleSection.h" />
+    <ClInclude Include=".\HTMLImageSection.h" />
+    <ClInclude Include=".\HTMLSection.h" />
+    <ClInclude Include=".\HTMLSectionABC.h" />
+    <ClInclude Include=".\HTMLSectionCreator.h" />
+    <ClInclude Include=".\HtmlSectionLink.h" />
+    <ClInclude Include=".\htmltablesection.h" />
+    <ClInclude Include=".\HTMLTextSection.h" />
+    <ClInclude Include=".\ParentSection.h" />
+    <ClInclude Include=".\ScrollContainer.h" />
+    <ClInclude Include=".\sectionabc.h" />
+    <ClInclude Include=".\TipWindow.h" />
+    <ClInclude Include=".\WindowSection.h" />
+    <ClInclude Include=".\HTMLAnchor.h" />
+    <ClInclude Include=".\HTMLBlockQuote.h" />
+    <ClInclude Include=".\HTMLDocument.h" />
+    <ClInclude Include=".\HTMLDocumentObject.h" />
+    <ClInclude Include=".\HTMLHorizontalRule.h" />
+    <ClInclude Include=".\HTMLImage.h" />
+    <ClInclude Include=".\HTMLLink.h" />
+    <ClInclude Include=".\HTMLList.h" />
+    <ClInclude Include=".\HTMLListItem.h" />
+    <ClInclude Include=".\HTMLParagraph.h" />
+    <ClInclude Include=".\HTMLParagraphObject.h" />
+    <ClInclude Include=".\HTMLParse.h" />
+    <ClInclude Include=".\HTMLTable.h" />
+    <ClInclude Include=".\HTMLTableCell.h" />
+    <ClInclude Include=".\HTMLTextBlock.h" />
+    <ClInclude Include=".\cursor.h" />
+    <ClInclude Include=".\drawcontext.h" />
+    <ClInclude Include=".\HTMLFontDef.h" />
+    <ClInclude Include=".\SimpleString.h" />
+    <ClInclude Include=".\smallstringhash.h" />
+    <ClInclude Include=".\tablelayout.h" />
+    <ClInclude Include=".\Utils.h" />
+    <ClInclude Include=".\ResourceLoader.h" />
+    <ClInclude Include=".\AquireImage.h" />
+    <ClInclude Include=".\Defaults.h" />
+    <ClInclude Include=".\HTMLParseBase.h" />
+    <ClInclude Include=".\QHTM.h" />
+    <ClInclude Include=".\qhtm_includes.h" />
+    <ClInclude Include=".\QHTM_Trace.h" />
+    <ClInclude Include=".\QHTM_Types.h" />
+    <ClInclude Include=".\QHTMControlSection.h" />
+    <ClInclude Include=".\StaticString.h" />
+    <ClInclude Include="..\Array.h" />
+    <ClInclude Include="..\Array.inl" />
+    <ClInclude Include="..\DebugHlp.h" />
+    <ClInclude Include="..\Map.h" />
+    <ClInclude Include="..\Map.inl" />
+    <ClInclude Include="..\MapIter.h" />
+    <ClInclude Include="..\MapIter.inl" />
+    <ClInclude Include=".\Palette.h" />
+    <ClInclude Include=".\resource.h" />
+    <ClInclude Include="..\reuse\ResourceLoader.h" />
+    <ClInclude Include="..\Stack.h" />
+    <ClInclude Include=".\StdAfx.h" />
+    <ClInclude Include="..\reuse\Store.h" />
+    <ClInclude Include="..\reuse\Stream.h" />
+    <ClInclude Include="..\TextABC.h" />
+    <ClInclude Include="..\WindowText.h" />
+    <ClInclude Include="..\WinHelper.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\QHTM.def" />
+    <None Include=".\res\arrow.cur" />
+    <None Include=".\res\hand1.cur" />
+    <None Include=".\res\noimage.bmp" />
+    <None Include=".\History.txt" />
+    <None Include=".\How to Build.txt" />
+    <None Include=".\Licence.txt" />
+    <None Include=".\Stuff to do.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\QHTM.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

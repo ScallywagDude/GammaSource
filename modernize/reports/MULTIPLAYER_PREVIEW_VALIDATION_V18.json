@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "date": "2026-10-22",
+  "feature_scope": ["HL2", "HL2MP"],
+  "rendering_implementation": "actual IStudioRender DrawModel with compiled skeleton/idle and original model materials",
+  "interface": "GameUIModelPreview001",
+  "supported_mdl_version": 36,
+  "allowlist_entries": 46,
+  "targeted_regression_tests": {"run": 7, "passed": 7},
+  "native_smoke_tests": {
+    "model_preview_smoke.cpp": "compiled_and_executed_pass",
+    "model_preview_studio_smoke.cpp": "compiled_and_executed_pass"
+  },
+  "debug_msvc_syntax_pass": [
+    "engine/gameui_modelpreview.cpp",
+    "game_shared/bone_setup.cpp",
+    "gameui/PlayerModelPreviewPanel.cpp",
+    "gameui/OptionsSubMultiplayer.cpp",
+    "gameui/GameUI_Interface.cpp"
+  ],
+  "legacy_model_generators_replayed": 7,
+  "legacy_generator_source_drift": [],
+  "full_windows_build_verified": false,
+  "release_compilation_verified": false,
+  "gpu_rendering_verified": false,
+  "compatible_player_asset_content_verified": false,
+  "multiplayer_selection_runtime_verified": false,
+  "proprietary_assets_copied": false,
+  "temporary_native_outputs_removed": true
+}

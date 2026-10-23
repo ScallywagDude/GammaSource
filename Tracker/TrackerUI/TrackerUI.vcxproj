@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{A3224F31-F57B-5EB5-86D1-BFEB1615B7DF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>TrackerUI</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\vgui2\include;..\..\vgui2\controls;..\..\common;..\common;..\..\public;..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;TRACKERUI_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\vgui2\include;..\..\vgui2\controls;..\..\common;..\common;..\..\public;..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;TRACKERUI_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>wsock32.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\Buddy.cpp" />
+    <ClCompile Include=".\BuddyButton.cpp" />
+    <ClCompile Include=".\BuddySectionHeader.cpp" />
+    <ClCompile Include=".\BuildNum.cpp" />
+    <ClCompile Include=".\DialogAbout.cpp" />
+    <ClCompile Include="..\common\IceKey.cpp" />
+    <ClCompile Include="..\..\common\Info.cpp" />
+    <ClCompile Include="..\..\public\interface.cpp" />
+    <ClCompile Include=".\OnlineStatus.cpp" />
+    <ClCompile Include=".\OnlineStatusSelectComboBox.cpp" />
+    <ClCompile Include=".\PanelValveLogo.cpp" />
+    <ClCompile Include="..\..\common\Random.cpp" />
+    <ClCompile Include=".\ServerSession.cpp" />
+    <ClCompile Include=".\SubPanelBuddyList.cpp" />
+    <ClCompile Include=".\SubPanelTrackerState.cpp" />
+    <ClCompile Include=".\Tracker.cpp" />
+    <ClCompile Include=".\TrackerDialog.cpp" />
+    <ClCompile Include=".\TrackerDoc.cpp" />
+    <ClCompile Include=".\TrackerRunGameEngine.cpp" />
+    <ClCompile Include=".\TrackerUIVGuiModule.cpp" />
+    <ClCompile Include=".\TrackerUser.cpp" />
+    <ClCompile Include=".\DialogLoginUser.cpp" />
+    <ClCompile Include=".\SubPanelConnectionIntro.cpp" />
+    <ClCompile Include=".\SubPanelConnectionTest.cpp" />
+    <ClCompile Include=".\SubPanelCreateUser.cpp" />
+    <ClCompile Include=".\SubPanelCreateUser2.cpp" />
+    <ClCompile Include=".\SubPanelCreateUser3.cpp" />
+    <ClCompile Include=".\SubPanelError.cpp" />
+    <ClCompile Include=".\SubPanelLoginUser.cpp" />
+    <ClCompile Include=".\SubPanelLoginUser2.cpp" />
+    <ClCompile Include=".\SubPanelSelectLoginOption.cpp" />
+    <ClCompile Include=".\DialogFindBuddy.cpp" />
+    <ClCompile Include=".\SubPanelFindBuddy.cpp" />
+    <ClCompile Include=".\SubPanelFindBuddyComplete.cpp" />
+    <ClCompile Include=".\SubPanelFindBuddyRequestAuth.cpp" />
+    <ClCompile Include=".\SubPanelFindBuddyResults.cpp" />
+    <ClCompile Include=".\DialogAuthRequest.cpp" />
+    <ClCompile Include=".\DialogChat.cpp" />
+    <ClCompile Include=".\DialogRemoveUser.cpp" />
+    <ClCompile Include=".\DialogOptions.cpp" />
+    <ClCompile Include=".\SubPanelOptionsChat.cpp" />
+    <ClCompile Include=".\SubPanelOptionsConnection.cpp" />
+    <ClCompile Include=".\SubPanelOptionsPersonal.cpp" />
+    <ClCompile Include=".\SubPanelOptionsSounds.cpp" />
+    <ClCompile Include=".\DialogUserInfo.cpp" />
+    <ClCompile Include=".\SubPanelUserInfoDetails.cpp" />
+    <ClCompile Include=".\SubPanelUserInfoStatus.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\Platform\Script1.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\Buddy.h" />
+    <ClInclude Include=".\BuddyButton.h" />
+    <ClInclude Include=".\BuddySectionHeader.h" />
+    <ClInclude Include=".\DialogAbout.h" />
+    <ClInclude Include="..\..\common\info.h" />
+    <ClInclude Include="..\..\public\interface.h" />
+    <ClInclude Include="..\..\common\ITrackerUser.h" />
+    <ClInclude Include=".\OnlineStatus.h" />
+    <ClInclude Include=".\OnlineStatusSelectComboBox.h" />
+    <ClInclude Include=".\PanelValveLogo.h" />
+    <ClInclude Include="..\..\common\Random.h" />
+    <ClInclude Include=".\ServerSession.h" />
+    <ClInclude Include=".\SubPanelBuddyList.h" />
+    <ClInclude Include=".\SystemBuddyButton.h" />
+    <ClInclude Include=".\Tracker.h" />
+    <ClInclude Include=".\TrackerDialog.h" />
+    <ClInclude Include=".\TrackerDoc.h" />
+    <ClInclude Include="..\common\TrackerProtocol.h" />
+    <ClInclude Include=".\DialogLoginUser.h" />
+    <ClInclude Include=".\SubPanelConnectionIntro.h" />
+    <ClInclude Include=".\SubPanelConnectionTest.h" />
+    <ClInclude Include=".\SubPanelCreateUser.h" />
+    <ClInclude Include=".\SubPanelCreateUser2.h" />
+    <ClInclude Include=".\SubPanelCreateUser3.h" />
+    <ClInclude Include=".\SubPanelError.h" />
+    <ClInclude Include=".\SubPanelLoginUser.h" />
+    <ClInclude Include=".\SubPanelLoginUser2.h" />
+    <ClInclude Include=".\SubPanelSelectLoginOption.h" />
+    <ClInclude Include=".\DialogFindBuddy.h" />
+    <ClInclude Include=".\SubPanelFindBuddy.h" />
+    <ClInclude Include=".\SubPanelFindBuddyComplete.h" />
+    <ClInclude Include=".\SubPanelFindBuddyRequestAuth.h" />
+    <ClInclude Include=".\SubPanelFindBuddyResults.h" />
+    <ClInclude Include=".\DialogAuthRequest.h" />
+    <ClInclude Include=".\DialogChat.h" />
+    <ClInclude Include=".\DialogRemoveUser.h" />
+    <ClInclude Include=".\DialogOptions.h" />
+    <ClInclude Include=".\SubPanelOptionsChat.h" />
+    <ClInclude Include=".\SubPanelOptionsConnection.h" />
+    <ClInclude Include=".\SubPanelOptionsPersonal.h" />
+    <ClInclude Include=".\SubPanelOptionsSounds.h" />
+    <ClInclude Include=".\DialogUserInfo.h" />
+    <ClInclude Include=".\SubPanelUserInfoDetails.h" />
+    <ClInclude Include=".\SubPanelUserInfoStatus.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\Platform\icon1.ico" />
+    <None Include="..\..\vgui2\bin\vgui_controls.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

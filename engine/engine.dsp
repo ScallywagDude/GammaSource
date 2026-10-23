@@ -4553,5 +4553,41 @@ SOURCE=..\lib\public\tier0.lib
 
 SOURCE=..\lib\public\vtf.lib
 # End Source File
+# Begin Source File
+
+SOURCE=.\gameui_modelpreview.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Dedicated Debug"
+# PROP Exclude_From_Build 1
+!ELSEIF  "$(CFG)" == "engine - Win32 Dedicated Release"
+# PROP Exclude_From_Build 1
+!ENDIF
+# End Source File
+# Begin Source File
+
+SOURCE=..\game_shared\bone_setup.cpp
+
+!IF  "$(CFG)" == "engine - Win32 Dedicated Debug"
+# PROP Exclude_From_Build 1
+!ELSEIF  "$(CFG)" == "engine - Win32 Dedicated Release"
+# PROP Exclude_From_Build 1
+!ENDIF
+# End Source File
+# Begin Source File
+
+SOURCE=..\public\IGameUIModelPreview.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\game_shared\bone_setup.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\modernize\model_preview_policy.h
+# End Source File
+# Begin Source File
+
+SOURCE=..\modernize\model_preview_studio_validation.h
+# End Source File
 # End Target
 # End Project

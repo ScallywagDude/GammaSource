@@ -1,0 +1,888 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="4.0">
+  <ItemGroup>
+    <Filter Include="Audio Code">
+      <UniqueIdentifier>{738282FE-8E71-5C68-AE42-36C8978A6D13}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Choreography">
+      <UniqueIdentifier>{AC4A90D1-477C-58AC-AFA5-97610D204B2B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{1F174916-6270-51A9-87A0-256DDE9DB482}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared Header Files">
+      <UniqueIdentifier>{08E80155-C869-5364-9183-510DA8114B4C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared Source Files">
+      <UniqueIdentifier>{B0AB2FA4-32EC-56D7-917D-8561CB3FCFA0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{5F1FAC8A-6919-5734-898E-F66EDF0ECE65}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Choreo Widgets">
+      <UniqueIdentifier>{61663A81-BD97-54B5-A786-332D1A26B18C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include=".\ChoreoActorWidget.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoChannelWidget.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoEventWidget.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoGlobalEventWidget.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoWidget.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoWidgetDrawHelper.cpp">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ActorProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\addsoundentry.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\basedialogparams.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChannelProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\checksum_crc.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\choiceproperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ChoreoView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\CloseCaptionManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ControlPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EditPhrase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\EventProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\expclass.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\expression.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ExpressionProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\expressions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\ExpressionTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\faceposer_models.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\faceposertoolwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\FacePoserWorkspace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\FlexPanel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GestureTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\GlobalEventProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\hlfaceposer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\InputProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\interval.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\matsyswin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mdlviewer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\mempool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxbitmapbutton.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxbitmaptools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxbitmapwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxexpressionslider.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxExpressionTab.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxexpressiontray.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\mxstatuswindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PhonemeConverter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PhonemeEditor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PhonemeEditor_CloseCaption.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\PhonemeProperties.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\RampTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\SceneRampTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\sentence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\SoundEmitterSystemBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\soundlookup.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\tabwindow.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include=".\TimelineItem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\utlsymbol.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\bone_setup.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\characterset.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\cmdlib.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\CollisionUtils.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\filesystem_helpers.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\FileSystem_Tools.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\ImageLoader.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\interface.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\public\KeyValues.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\Mathlib.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\physdll.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlmviewer\src\physmesh.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\common\scriplib.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlmviewer\src\studio_flex.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlmviewer\src\studio_render.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlmviewer\src\studio_utils.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Public\UtlBuffer.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\hlmviewer\src\ViewerSettings.cpp">
+      <Filter>Shared Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\choreoactor.cpp">
+      <Filter>Choreography</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\choreochannel.cpp">
+      <Filter>Choreography</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\choreoevent.cpp">
+      <Filter>Choreography</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\game_shared\choreoscene.cpp">
+      <Filter>Choreography</Filter>
+    </ClCompile>
+    <ClCompile Include=".\riff.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\snd_audio_source.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\snd_wave_mixer.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\snd_wave_mixer_adpcm.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\snd_wave_source.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+    <ClCompile Include=".\sound.cpp">
+      <Filter>Audio Code</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\ChoreoActorWidget.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoChannelWidget.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoEventWidget.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoGlobalEventWidget.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoWidget.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoWidgetDrawHelper.h">
+      <Filter>Source Files\Choreo Widgets</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ActorProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\addsoundentry.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\basedialogparams.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChannelProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\choiceproperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoView.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ChoreoViewColors.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ControlPanel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\EditPhrase.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\EventProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\expclass.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\expression.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ExpressionProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\expressions.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\expressionsample.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ExpressionTool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\faceposer_models.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\faceposertoolwindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\FlexPanel.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GestureTool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\GlobalEventProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\hlfaceposer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ICloseCaptionManager.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ifaceposersound.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\ifaceposerworkspace.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\InputProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\matsyswin.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mdlviewer.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxbitmapbutton.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxbitmaptools.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxbitmapwindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxexpressionslider.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxexpressiontab.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxexpressiontray.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mxstatuswindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PhonemeConverter.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PhonemeEditor.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PhonemeEditorColors.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\PhonemeProperties.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\RampTool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\SceneRampTool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\sentence.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\SoundEmitterSystemBase.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\soundlookup.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\tabwindow.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\TimelineItem.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\resource.h">
+      <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\iscenetokenprocessor.h">
+      <Filter>Shared Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\amd3dx.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\basehandle.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\basetypes.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\bone_setup.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\BSPFILE.H">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\bspflags.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\bumpvects.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\characterset.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\checksum_crc.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\cmdlib.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\cmodel.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\CollisionUtils.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\Color.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\commonmacros.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\const.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vphysics\constraints.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\convar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\dbg.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\fasttimer.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\FileSystem.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\filesystem_helpers.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\FileSystem_Tools.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\gametrace.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\appframework\IAppSystem.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vstdlib\ICommandLine.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\engine\IEngineSound.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\ihandleentity.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vstdlib\IKeyValuesSystem.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\ImageLoader.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imaterial.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imaterialproxyfactory.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imaterialsystem.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imaterialsystemhardwareconfig.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imaterialvar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\imesh.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\interface.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\interval.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\irecipientfilter.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\IStudioRender.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\itexture.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\KeyValues.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include=".\mapentities.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\materialsystem\materialsystem_config.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\MATHLIB.H">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\matsyswin.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\mdlviewer.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\mem.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\memalloc.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\memdbgoff.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\memdbgon.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\MemPool.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\mouthinfo.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mx.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxBmp.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxButton.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxCheckBox.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxChoice.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxChooseColor.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxEvent.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxFileDialog.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxGlWindow.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxGroupBox.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxImage.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxInit.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxLabel.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxLineEdit.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxLinkedList.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxListBox.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxMatSysWindow.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxMenu.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxMenuBar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxMessageBox.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxpath.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxPcx.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxPopupMenu.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxProgressBar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxRadioButton.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxScrollbar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxSlider.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxstring.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxTab.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxTga.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxToggleButton.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxToolTip.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxTreeView.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxWidget.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\mxtk\include\mx\mxWindow.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\networkvar.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\npcevent.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\phonemeextractor\phonemeextractor.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\phyfile.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\physdll.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\physmesh.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\plane.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\platform.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\protected_things.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vstdlib\random.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\s3_intrf.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\sapi.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\sapiddk.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\common\scriplib.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\sharedInterface.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\soundflags.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\Spddkhlp.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\spdebug.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\sperror.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\sapi51\Include\sphelper.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\string_t.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vstdlib\strtools.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\studio.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\studio_render.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\StudioModel.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\TGALoader.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\UtlBuffer.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\utldict.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\utllinkedlist.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\UtlMemory.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\utlrbtree.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\utlsymbol.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\UtlVector.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vcollide.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vcollide_parse.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vector.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vector2d.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vector4d.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hlmviewer\src\ViewerSettings.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Public\vphysics_interface.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\tier0\vprof.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\public\vstdlib\vstdlib.h">
+      <Filter>Shared Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\choreoactor.h">
+      <Filter>Choreography</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\choreochannel.h">
+      <Filter>Choreography</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\choreoevent.h">
+      <Filter>Choreography</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\choreoscene.h">
+      <Filter>Choreography</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\game_shared\ichoreoeventcallback.h">
+      <Filter>Choreography</Filter>
+    </ClInclude>
+    <ClInclude Include=".\AudioWaveOutput.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\riff.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\snd_audio_source.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\snd_wave_mixer.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\snd_wave_mixer_adpcm.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\snd_wave_mixer_private.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\snd_wave_source.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\sound.h">
+      <Filter>Audio Code</Filter>
+    </ClInclude>
+    <ClInclude Include=".\cbase.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include=".\hlfaceposer.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\ico00001.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\ico00002.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\icon1.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include=".\icon2.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="..\..\lib\common\mxtk.lib" />
+    <None Include="..\..\lib\common\s3tc.lib" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+</Project>
