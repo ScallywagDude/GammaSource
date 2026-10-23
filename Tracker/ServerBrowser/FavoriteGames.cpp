@@ -27,6 +27,7 @@
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/MessageBox.h>
 
+#include <vgui_controls/Controls.h>
 using namespace vgui;
 
 //-----------------------------------------------------------------------------

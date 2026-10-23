@@ -56,8 +56,8 @@ namespace Container
 
 			BucketEntry *m_pNext;
 			BucketEntry(): m_pNext( NULL ){}
-			operator = ( const BucketEntry& ){ m_Value = rhs.m_Value; m_Key = rhs.m_Key; m_pNext = rhs.m_pNext; }
-			BucketEntry( const BucketEntry &rhs ){ operator =( rhs ) }
+			BucketEntry &operator = ( const BucketEntry &rhs ) { m_Value = rhs.m_Value; m_Key = rhs.m_Key; m_pNext = rhs.m_pNext; return *this; }
+			BucketEntry( const BucketEntry &rhs ) { *this = rhs; }
 		};
 		const UINT	m_uBucketArrayLength;
 		BucketEntry	**m_pEntrys;
@@ -79,7 +79,6 @@ namespace Container
 			CMap& operator =( const CMap & );
 		};
 
-	#include "Map.inl"
 
 
 	////////////////////////////////////
@@ -125,5 +124,6 @@ namespace Container
 		return _tcsicmp( pcszLHS, pcszRHS ) == 0;
 	}
 	
+	#include "Map.inl"
 }
 #endif //#ifdef MAP_CONTAINER_H

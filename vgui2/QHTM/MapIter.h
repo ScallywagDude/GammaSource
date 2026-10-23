@@ -43,8 +43,8 @@ namespace Container
 
 		private:
 			const CMap<Key, Value>	&m_Map;
-			CMap<Key, Value>::BucketEntry *m_pBucket;
-			CMap<Key, Value>::BucketEntry *m_pNext;
+			typename CMap<Key, Value>::BucketEntry *m_pBucket;
+			typename CMap<Key, Value>::BucketEntry *m_pNext;
 			UINT				m_iEntry;
 
 		private:

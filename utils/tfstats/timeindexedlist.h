@@ -21,6 +21,7 @@
 #pragma once
 #endif
 #include <list>
+#include <map>
 #include "TFStatsApplication.h"
 #include "util.h"
 //------------------------------------------------------------------------------------------------------
@@ -37,8 +38,8 @@ class CTimeIndexedList
 public:
 	static time_t PENDING;
 	typedef struct{T data;time_t start; time_t end;} listtype;
-	typedef std::list<listtype>::iterator iterator;
-	typedef std::map<T,time_t>::iterator accumulatorIterator;
+	typedef typename std::list<listtype>::iterator iterator;
+	typedef typename std::map<T,time_t>::iterator accumulatorIterator;
 	typedef std::map<T,time_t> accumulator;
 	typedef std::list<listtype> timelist;
 	
@@ -76,25 +77,25 @@ CTimeIndexedList<T>::CTimeIndexedList()
 //------------------------------------------------------------------------------------------------------
 // Function:	CTimeIndexedList<T>::accumulate
 // Purpose:	
-// Output:	CTimeIndexedList<T>::accumulator
+// Output:	typename CTimeIndexedList<T>::accumulator
 //------------------------------------------------------------------------------------------------------
 template<class T>
-CTimeIndexedList<T>::accumulator CTimeIndexedList<T>::accumulate()
+typename CTimeIndexedList<T>::accumulator CTimeIndexedList<T>::accumulate()
 {
-	CTimeIndexedList<T>::accumulator accum; //maps from a value of T, to the time that value was played
+	typename CTimeIndexedList<T>::accumulator accum; //maps from a value of T, to the time that value was played
 	
 /*
 	//iterate through for debugging purposes
 	{
 
-		CTimeIndexedList<T>::iterator it=theList.begin();
+		typename CTimeIndexedList<T>::iterator it=theList.begin();
 		for (it;it!=theList.end();++it)
 		{
 			CTimeIndexedList<T>::listtype lt=*it;
 		}
 	}
 */	
-	CTimeIndexedList<T>::iterator it=theList.begin();	
+	typename CTimeIndexedList<T>::iterator it=theList.begin();	
 	for (it;it!=theList.end();++it)
 	{
 		time_t start=it->start;
@@ -133,7 +134,7 @@ void CTimeIndexedList<T>::add(time_t a,T b)
 	if (!theList.empty())
 	{
 		//find the last element and fix up its end-time (if it's pending)
-		CTimeIndexedList<T>::iterator last=theList.end();
+		typename CTimeIndexedList<T>::iterator last=theList.end();
 		last--;
 		listtype lt=*last;
 
@@ -160,7 +161,7 @@ void CTimeIndexedList<T>::add(time_t a,T b)
 template <class T>
 T CTimeIndexedList<T>::atTime(time_t tm,T errorvalue)
 {
-	CTimeIndexedList<T>::iterator it;
+	typename CTimeIndexedList<T>::iterator it;
 	if (theList.empty())
 		return errorvalue;
 
@@ -193,13 +194,13 @@ T CTimeIndexedList<T>::favourite(T errorvalue)
 	if (theList.empty())
 		return errorvalue;
 
-	CTimeIndexedList<T>::accumulator accum=accumulate();
+	typename CTimeIndexedList<T>::accumulator accum=accumulate();
 
 	//now scan that intermediate map, and determine the element with the longest duration
-	CTimeIndexedList<T>::accumulatorIterator accumiter=accum.begin();
+	typename CTimeIndexedList<T>::accumulatorIterator accumiter=accum.begin();
 
 	time_t maxtime=0;
-	CTimeIndexedList<T>::accumulatorIterator fave=accumiter;
+	typename CTimeIndexedList<T>::accumulatorIterator fave=accumiter;
 
 	T t= fave->first;
 	for (accumiter;accumiter!=accum.end();++accumiter)
@@ -228,7 +229,7 @@ T CTimeIndexedList<T>::favourite(T errorvalue)
 template <class T>
 bool CTimeIndexedList<T>::contains(const T& t)
 {
-	CTimeIndexedList<T>::iterator it=theList.begin();
+	typename CTimeIndexedList<T>::iterator it=theList.begin();
 	for (it=theList.begin();it!=theList.end();++it)
 	{
 		if (it->data==t)
@@ -243,19 +244,19 @@ time_t CTimeIndexedList<T>::howLong(const T& t)
 	if (theList.begin()==theList.end())
 		return 0;
 
-	CTimeIndexedList<T>::accumulator accum=accumulate(); //maps from a value of T, to the time that value was played
+	typename CTimeIndexedList<T>::accumulator accum=accumulate(); //maps from a value of T, to the time that value was played
 	
 	return accum[t];
 }
 
 template <class T>
-CTimeIndexedList<T>::iterator CTimeIndexedList<T>::begin()
+typename CTimeIndexedList<T>::iterator CTimeIndexedList<T>::begin()
 {
 	return theList.begin();
 }
 
 template <class T>
-CTimeIndexedList<T>::iterator CTimeIndexedList<T>::end()
+typename CTimeIndexedList<T>::iterator CTimeIndexedList<T>::end()
 {
 	return theList.end();
 }
@@ -274,7 +275,7 @@ int CTimeIndexedList<T>::numDifferent()
 		return 0;
 
 	 //maps from a value of T, to the time that value was played
-	CTimeIndexedList<T>::accumulator accum=accumulate();
+	typename CTimeIndexedList<T>::accumulator accum=accumulate();
 
 	return accum.size();
 }
@@ -288,7 +289,7 @@ void CTimeIndexedList<T>::cut(time_t t)
 	if (!theList.empty())
 	{
 		//find the last element and fix up its end-time (if it's pending)
-		CTimeIndexedList<T>::iterator last=theList.end();
+		typename CTimeIndexedList<T>::iterator last=theList.end();
 		last--;
 
 		if (last->end==PENDING)
@@ -300,7 +301,7 @@ void CTimeIndexedList<T>::cut(time_t t)
 template<class T>
 void CTimeIndexedList<T>::remove(T b)
 {
-	CTimeIndexedList<T>::iterator it=theList.begin();
+	typename CTimeIndexedList<T>::iterator it=theList.begin();
 	
 	while(it!=theList.end())
 	{
@@ -321,14 +322,14 @@ bool CTimeIndexedList<T>::anythingAtTime(time_t tm)
 	//iterate through for debugging purposes
 	{
 
-		CTimeIndexedList<T>::iterator it=theList.begin();
+		typename CTimeIndexedList<T>::iterator it=theList.begin();
 		for (it;it!=theList.end();++it)
 		{
 			CTimeIndexedList<T>::listtype lt=*it;
 		}
 	}
 	*/
-	CTimeIndexedList<T>::iterator it;
+	typename CTimeIndexedList<T>::iterator it;
 	if (theList.empty())
 		return false;
 

@@ -21,12 +21,13 @@ template<class Key, class Value>
 void CMapIter<Key, Value>::Reset()
 {
 	m_pBucket = NULL;
+	m_pNext = NULL;
 
 	//
 	// Set pointers to first entry that contains some data
 	for( m_iEntry = 0; m_iEntry < m_Map.m_uBucketArrayLength; m_iEntry++ )
 	{
-		CMap<Key,Value>::BucketEntry *pEntry = m_Map.m_pEntrys[m_iEntry];
+		typename CMap<Key,Value>::BucketEntry *pEntry = m_Map.m_pEntrys[m_iEntry];
 		if( pEntry )
 		{
 			m_pBucket = pEntry;
@@ -52,7 +53,7 @@ void CMapIter<Key, Value>::Next()
 	// Get next array bucket
 	while( ++m_iEntry < m_Map.m_uBucketArrayLength )
 	{
-		CMap<Key,Value>::BucketEntry *pEntry = m_Map.m_pEntrys[m_iEntry];
+		typename CMap<Key,Value>::BucketEntry *pEntry = m_Map.m_pEntrys[m_iEntry];
 		if( pEntry )
 		{
 			m_pBucket = pEntry;

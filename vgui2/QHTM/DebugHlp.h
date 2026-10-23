@@ -24,18 +24,7 @@ Purpose:	Debugging helpers
 	#undef TRACE
 #endif	//	__AFX_H__
 
-#ifndef LPCSTR
-	typedef const char * LPCSTR;
-#endif	//	LPCSTR
-
-#ifndef LPCWSTR
-	/*lint -e18 */
-	typedef const unsigned short * LPCWSTR;
-	/*lint +e18 */
-#endif	//	LPCSTR
-#ifndef BOOL
-	typedef int BOOL;
-#endif	//	BOOL
+// Use the Windows SDK definitions of LPCSTR, LPCWSTR and BOOL.
 
 	void _cdecl DebugTraceA( LPCSTR pcszFormat, ... );
 	void _cdecl DebugTraceW( LPCWSTR pcszFormat, ... );

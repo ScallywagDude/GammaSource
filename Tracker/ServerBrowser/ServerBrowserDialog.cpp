@@ -59,6 +59,7 @@
 #include "LanGames.h"
 #include "FriendsGames.h"
 
+#include <vgui_controls/Controls.h>
 using namespace vgui;
 
 static CServerBrowserDialog *s_InternetDlg = NULL;

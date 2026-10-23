@@ -16,6 +16,7 @@
 #include <vgui/IVGui.h>
 #include <KeyValues.h>
 
+#include <vgui_controls/Controls.h>
 // expose the server browser interfaces
 CServerBrowser g_ServerBrowserSingleton;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CServerBrowser, IServerBrowser, SERVERBROWSER_INTERFACE_VERSION, g_ServerBrowserSingleton);

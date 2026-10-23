@@ -32,6 +32,10 @@ scripts.insert(scripts.index('validate.py'),'repair_tracker_source_paths.py')
 scripts.insert(scripts.index('validate.py'),'repair_tracker_vgui2_api.py')
 # Repair additional Tracker type/shadowing mismatches after the initial VGUI2 port.
 scripts.insert(scripts.index('validate.py'),'repair_tracker_vgui2_followup.py')
+# Isolate legacy Gipsysoft QHTM and TFStats Win32 compiler repairs.
+scripts.insert(scripts.index('validate.py'),'repair_qhtm_win32.py')
+scripts.insert(scripts.index('validate.py'),'repair_tfstats_templates.py')
+scripts.insert(scripts.index('validate.py'),'repair_tracker_controls_accessors.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]

@@ -69,7 +69,7 @@ const Value * CMap<Key, Value>::Lookup( const Key &key ) const
 
 
 template<class Key, class Value>
-CMap<Key, Value>::BucketEntry *CMap<Key, Value>::Find( UINT uHash, const Key &key ) const
+typename CMap<Key, Value>::BucketEntry *CMap<Key, Value>::Find( UINT uHash, const Key &key ) const
 {
 	ASSERT( m_pEntrys );
 
