@@ -52,7 +52,7 @@
 #include "ServerContextMenu.h"
 #include "socket.h"
 #include "util.h"
-#include "vinternetdlg.h"
+#include "serverpage.h"
 #include "dialogcvarchange.h"
 //#include "ModList.h"
 #include "DialogGameInfo.h"

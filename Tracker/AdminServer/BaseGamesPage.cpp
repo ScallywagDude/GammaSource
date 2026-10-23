@@ -51,7 +51,7 @@ CBaseGamesPage::CBaseGamesPage(vgui::Panel *parent, const char *name) : Frame(pa
 	m_pAddIP = new Button(this, "AddIPButton", "Add IP");
 
 	m_pManage = new Button(this, "ManageButton", "Manage");
-	m_pManage->SetCommand(new KeyValues("Manage"), GetVPanel());
+	m_pManage->SetCommand(new KeyValues("Manage"));
 	m_pManage->AddActionSignalTarget(this);
 
 

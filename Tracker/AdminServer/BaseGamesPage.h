@@ -12,6 +12,7 @@
 #endif
 
 #include <VGUI_Frame.h>
+#include <VGUI_ListPanel.h>
 #include "ServerList.h"
 #include "IServerRefreshResponse.h"
 #include "server.h"

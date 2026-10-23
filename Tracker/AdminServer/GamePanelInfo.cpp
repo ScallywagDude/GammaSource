@@ -933,7 +933,7 @@ void CGamePanelInfo::ServerResponded()
 				say[strlen(say)-1]='\0';
 
 				_snprintf(chat_text,512,"<%s> %s",player,say);
-				m_pServerChatPanel->InsertString(chat_text);
+				m_pServerChatPanel->DoInsertString(chat_text);
 	
 			} // if enough tokens
 		} // if a say line
@@ -1007,7 +1007,7 @@ void CGamePanelInfo::ServerResponded()
 		}
 		else if (m_bDoingMOTD && motd)
 		{
-			m_pMOTDPanel->InsertString(resp+strlen("motd:"));
+			m_pMOTDPanel->DoInsertString(resp+strlen("motd:"));
 			m_bDoingMOTD=false;
 		}
 		else

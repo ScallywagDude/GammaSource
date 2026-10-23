@@ -207,7 +207,7 @@ void CAdminServer::UpdateGameInfoDialog(GameHandle_t gameDialog, unsigned int ga
 	vgui::VPANEL vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
 	if (vpanel)
 	{
-		CDialogGameInfo *gameDialog = dynamic_cast<CDialogGameInfo *>(vgui::ipanel()->Client(vpanel)->GetPanel());
+		CDialogGameInfo *gameDialog = dynamic_cast<CDialogGameInfo *>(vgui::ipanel()->GetPanel(vpanel, vgui::GetControlsModuleName()));
 		if (gameDialog)
 		{
 			gameDialog->ChangeGame(gameIP, gamePort);

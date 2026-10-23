@@ -27,9 +27,9 @@ class ToggleButton;
 class RadioButton;
 class Label;
 class TextEntry;
-class KeyValues;
+
 class ListPanel;
-class KeyValues;
+
 class MessageBox;
 class ComboBox;
 class Panel;

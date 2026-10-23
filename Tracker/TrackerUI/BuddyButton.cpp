@@ -573,7 +573,7 @@ void CBuddyButton::OnCursorMoved(int x, int y)
 				// check to see if the panel has drag/drop support
 				KeyValues *keyVal = new KeyValues("DragDrop", "type", "TrackerFriend");
 				keyVal->SetInt("friendID", m_iBuddyID);
-				if (ipanel()->Client(mouseOver)->RequestInfo(keyVal))
+				if (ipanel()->RequestInfo(mouseOver, keyVal))
 				{
 					// info request was successful, set the cursor to acceptable
 					bAccept = true;
@@ -622,11 +622,11 @@ void CBuddyButton::OnMouseReleased(vgui::MouseCode code)
 		vgui::VPANEL imouseOver = input()->GetMouseOver();
 		if (imouseOver)
 		{
-			Panel *mouseOver = ipanel()->Client(imouseOver)->GetPanel();
+			Panel *mouseOver = ipanel()->GetPanel(imouseOver, vgui::GetControlsModuleName());
 			KeyValues *keyVal = new KeyValues("DragDrop", "type", "TrackerFriend");
 			keyVal->SetInt("friendID", m_iBuddyID);
 
-			if (mouseOver->RequestInfo(keyVal))
+			if (mouseOver && mouseOver->RequestInfo(keyVal))
 			{
 				Panel *acceptPanel = (Panel *)keyVal->GetPtr("AcceptPanel");
 				if (acceptPanel)

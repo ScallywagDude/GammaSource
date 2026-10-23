@@ -55,6 +55,10 @@ def old_gui(txt):
     txt = re.sub(r'(?m)^([ \t]*)[^\n]*->SetRichEdit\s*\([^;]*;[^\n]*\n', '', txt)
     # Explicit original callsites, not other DoInsertString methods on other classes.
     for control in ('m_pServerChatPanel', 'm_pServerRawLogPanel', 'm_pMOTDPanel', 'm_ConsoleTextEntry'):
+        # In GamePanelInfo these fields are CChatPanel / CMOTDPanel wrappers,
+        # not TextEntry widgets. Leave their DoInsertString methods intact.
+        if 'CGamePanelInfo::' in txt and control in ('m_pServerChatPanel', 'm_pMOTDPanel'):
+            continue
         txt = txt.replace(control + '->DoInsertString(', control + '->InsertString(')
     return txt
 
