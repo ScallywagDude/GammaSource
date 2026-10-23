@@ -35,7 +35,7 @@ CSubPanelOptionsPersonal::~CSubPanelOptionsPersonal()
 //-----------------------------------------------------------------------------
 void CSubPanelOptionsPersonal::OnResetData()
 {
-	vgui::KeyValues *docData = GetDoc()->Data()->FindKey("User", true);
+	KeyValues *docData = GetDoc()->Data()->FindKey("User", true);
 
 	SetControlString("UserNameEdit", docData->GetString("UserName", ""));
 	SetControlString("FirstNameEdit", docData->GetString("FirstName", ""));

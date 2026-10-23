@@ -52,15 +52,15 @@ public:
 	virtual void SetSortFunc(int column, vgui::SortFunc *func);
 	virtual void SetSortColumn(int column); 
 		// returns the count of selected rows
-	virtual int GetNumSelectedRows();
+	virtual int GetSelectedItemsCount();
 	// returns the selected row by selection index, valid in range [0, GetNumSelectedRows)
-	virtual int GetSelectedRow(int selectionIndex);
+	virtual int GetSelectedItem(int selectionIndex);
 	virtual void DeleteAllItems(); // clears and deletes all the memory used by the data items
 
-	virtual int AddItem(vgui::KeyValues *data, unsigned int userData = 0 ); // Takes a copy of the data for use in the table. Returns the index the item is at.
+	virtual int AddItem(KeyValues *data, unsigned int userData = 0 ); // Takes a copy of the data for use in the table. Returns the index the item is at.
 	virtual void SortList( void );
-	virtual vgui::ListPanel::DATAITEM *GetDataItem( int itemIndex );
-	virtual vgui::KeyValues *GetItem(int itemIndex); // returns pointer to data the row holds
+	virtual vgui::ListPanelItem *GetItemData( int itemIndex );
+	virtual KeyValues *GetItem(int itemIndex); // returns pointer to data the row holds
 
 
 	//property page handlers
@@ -76,7 +76,7 @@ private:
 
 	// msg handlers
 	void OnOpenContextMenu(int row);
-	void OnEffectPlayer(vgui::KeyValues *data);
+	void OnEffectPlayer(KeyValues *data);
 
 	// an inner class
 	class BanListPanel: public vgui::ListPanel

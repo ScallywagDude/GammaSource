@@ -99,9 +99,9 @@ void CPlayerPanel::OnPageHide()
 {
 }
 
-vgui::KeyValues *CPlayerPanel::GetSelected()
+KeyValues *CPlayerPanel::GetSelected()
 {
-	return m_pPlayerListPanel->GetItem(m_pPlayerListPanel->GetSelectedRow(0));
+	return m_pPlayerListPanel->GetItem(m_pPlayerListPanel->GetSelectedItem(0));
 }
 
 //-----------------------------------------------------------------------------
@@ -146,9 +146,9 @@ void CPlayerPanel::OnTextChanged(Panel *panel, const char *text)
 void CPlayerPanel::PlayerListPanel::OnMouseDoublePressed(vgui::MouseCode code)
 {	
 	// do nothing, what should the default be??
-/*	if (GetNumSelectedRows())
+/*	if (GetSelectedItemsCount())
 	{
-		unsigned int playerID =GetSelectedRow(0);
+		unsigned int playerID =GetSelectedItem(0);
 		PostMessage(m_pParent->GetVPanel(),  new KeyValues("Chat", "playerID", playerID));
 	}
 	*/
@@ -183,9 +183,9 @@ void CPlayerPanel::SetHasRcon(bool state)
 
 void CPlayerPanel::OnCommand(const char *command)
 {
-	if( m_bHasRcon && m_pPlayerListPanel->GetNumSelectedRows())  // if a user is selected
+	if( m_bHasRcon && m_pPlayerListPanel->GetSelectedItemsCount())  // if a user is selected
 	{
-		int playerID = m_pPlayerListPanel->GetDataItem(m_pPlayerListPanel->GetSelectedRow(0))->userData;
+		int playerID = m_pPlayerListPanel->GetItemData(m_pPlayerListPanel->GetSelectedItem(0))->userData;
 		if (!stricmp(command, "kick"))
 		{
 			PostMessage(m_pParent->GetVPanel(),new KeyValues("Kick", "playerID",playerID));
@@ -207,7 +207,7 @@ void CPlayerPanel::OnCommand(const char *command)
 
 
 
-void CPlayerPanel::OnEffectPlayer(vgui::KeyValues *data)
+void CPlayerPanel::OnEffectPlayer(KeyValues *data)
 {
 	// you MUST make a copy, if you use the original you get a horrid crash
 	KeyValues *kv=data->MakeCopy();
@@ -220,12 +220,12 @@ void CPlayerPanel::OnEffectPlayer(vgui::KeyValues *data)
 void CPlayerPanel::OnOpenContextMenu(int row)
 {
 	if (m_bHasRcon && m_pPlayerListPanel->IsVisible() && m_pPlayerListPanel->IsCursorOver() && 
-		m_pPlayerListPanel->GetNumSelectedRows()  ) 
+		m_pPlayerListPanel->GetSelectedItemsCount()  ) 
 		// show the player menus only if its the visible panel and the cursor is over it
 		// AND rcon is working
 	{
 		// get the server
-			unsigned int playerID = m_pPlayerListPanel->GetDataItem(m_pPlayerListPanel->GetSelectedRow(0))->userData;
+			unsigned int playerID = m_pPlayerListPanel->GetItemData(m_pPlayerListPanel->GetSelectedItem(0))->userData;
 		
 		// activate context menu
 		m_pPlayerContextMenu->ShowMenu(this, playerID);
@@ -265,7 +265,7 @@ void CPlayerPanel::NewPlayerList(CUtlVector<Players_t> *players)
 			kv->SetString("authid",(*players)[i].authid);
 			kv->SetInt("ping",(*players)[i].ping);
 			kv->SetInt("loss",(*players)[i].loss);
-		    index =	m_pPlayerListPanel->AddItem(kv,(*players)[i].userid);
+		    index =	m_pPlayerListPanel->AddItem(kv,(*players)[i].userid,false,false);
 			
 		}
 		m_pPlayerListPanel->SortList();

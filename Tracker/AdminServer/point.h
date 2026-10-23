@@ -5,8 +5,8 @@
 // $NoKeywords: $
 //=============================================================================
 
-#ifndef POINT_H
-#define POINT_H
+#ifndef TRACKER_ADMIN_POINT_H
+#define TRACKER_ADMIN_POINT_H
 #ifdef _WIN32
 #pragma once
 #endif

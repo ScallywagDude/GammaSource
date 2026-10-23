@@ -164,6 +164,19 @@ void CGraphPanel::PerformLayout()
 //-----------------------------------------------------------------------------
 // Purpose: the paint routine for the graph image. Handles the layout and drawing of the graph image
 //-----------------------------------------------------------------------------
+void CGraphPanel::CGraphsImage::DrawPointPolyLine(const vgui::Point *vertices, int count)
+{
+    if (!vertices || count < 2)
+        return;
+    CUtlVector<int> xs;
+    CUtlVector<int> ys;
+    xs.SetCount(count);
+    ys.SetCount(count);
+    for (int i = 0; i < count; ++i)
+        vertices[i].GetPoint(xs[i], ys[i]);
+    DrawPolyLine(xs.Base(), ys.Base(), count);
+}
+
 void CGraphPanel::CGraphsImage::Paint()
 {
 	int x,y,distPoints;
@@ -441,27 +454,27 @@ void CGraphPanel::CGraphsImage::Paint()
 	if(cpu)
 	{
 		SetColor(g); // green
-		DrawPolyLine(pCpu,points.Count());	
+		DrawPointPolyLine(pCpu, points.Count());	
 	}
 
 	if(net) 
 	{
 		SetColor(r); // red
-		DrawPolyLine(pIn,points.Count());	
+		DrawPointPolyLine(pIn, points.Count());	
 
 		SetColor(yel); //yellow
-		DrawPolyLine(pOut,points.Count());	
+		DrawPointPolyLine(pOut, points.Count());	
 	}
 	if(fps)
 	{
 		SetColor(lb);
-		DrawPolyLine(pFPS,points.Count());	
+		DrawPointPolyLine(pFPS, points.Count());	
 	}
 
 	if(ping)
 	{
 		SetColor(purple);
-		DrawPolyLine(pPing,points.Count());	
+		DrawPointPolyLine(pPing, points.Count());	
 	}
 	
 	if(cpu && pCpu) free(pCpu);

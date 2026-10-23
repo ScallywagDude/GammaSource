@@ -54,7 +54,7 @@ void CHelpText::LoadHelpFile(const char *filename)
 {
 
 
-	if (!m_pHelpData->LoadFromFile(filesystem(), filename, true, "PLATFORM"))
+	if (!m_pHelpData->LoadFromFile(filesystem(), filename, "PLATFORM"))
 	{
 		// failed to load...
 	}

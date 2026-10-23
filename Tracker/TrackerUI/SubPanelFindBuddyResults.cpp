@@ -174,7 +174,7 @@ void CSubPanelFindBuddyResults::PerformLayout()
 bool CSubPanelFindBuddyResults::OnNextButton()
 {
 	// don't advance unless there is a row selected
-	if (!m_pTable->GetNumSelectedRows())
+	if (!m_pTable->GetSelectedItemsCount())
 		return false;
 
 	// write the data to the doc
@@ -183,9 +183,9 @@ bool CSubPanelFindBuddyResults::OnNextButton()
 	users->Clear();
 
 	// walk through
-	for (int i = 0; i < m_pTable->GetNumSelectedRows(); i++)
+	for (int i = 0; i < m_pTable->GetSelectedItemsCount(); i++)
 	{
-		int row = m_pTable->GetSelectedRow(i);
+		int row = m_pTable->GetSelectedItem(i);
 
 		KeyValues *user = m_pTable->GetItem(row);
 		KeyValues *dest = users->CreateNewKey();

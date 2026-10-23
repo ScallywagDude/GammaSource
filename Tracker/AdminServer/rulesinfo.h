@@ -41,9 +41,9 @@ public:
 	void RunFrame();
 	bool Refreshed();
 
-	void UpdateServer(netadr_t *adr, CUtlVector<vgui::KeyValues *> *Rules);
+	void UpdateServer(netadr_t *adr, CUtlVector<KeyValues *> *Rules);
 	
-	CUtlVector<vgui::KeyValues *> *Rules();
+	CUtlVector<KeyValues *> *Rules();
 
 	int serverID;
 	int received;
@@ -59,7 +59,7 @@ private:
 	float m_fSendTime;
 	bool m_bRefreshed;
 
-	CUtlVector<vgui::KeyValues *> *m_vRules;
+	CUtlVector<KeyValues *> *m_vRules;
 
 };
 

@@ -16,7 +16,7 @@
 
 #include <VGUI_PHandle.h>
 
-class CServerPage;
+class VInternetDlg;
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles the UI and pinging of a half-life game server list
@@ -30,7 +30,8 @@ public:
 	// IVGui module implementation
 	virtual bool Initialize(CreateInterfaceFn *factorylist, int numFactories);
 	virtual bool PostInitialize(CreateInterfaceFn *modules, int factoryCount);
-	virtual vgui::VPanel *GetPanel();
+	virtual vgui::VPANEL GetPanel();
+	virtual void SetParent(vgui::VPANEL parent);
 	virtual bool Activate();
 	virtual bool IsValid();
 	virtual void Shutdown();
@@ -55,7 +56,7 @@ public:
 	virtual void Open();
 
 private:
-	vgui::DHANDLE<CServerPage> m_hServerPage;
+	vgui::DHANDLE<VInternetDlg> m_hServerPage;
 
 };
 

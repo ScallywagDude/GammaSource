@@ -53,7 +53,7 @@ bool CMasterMsgHandler::Process( netadr_t *from, CMsgBuffer *msg )
 		server.port = msg->ReadShort();
 		server.port = (server.port & 0xff) << 8 | (server.port & 0xff00) >> 8; // roll your own ntohs
 		server.received = 0;
-		server.listEntry = NULL;
+		server.listEntryID = -1;
 		server.doNotRefresh = false;
 		server.hadSuccessfulResponse = false;
 		server.map[0] = 0;

@@ -487,9 +487,9 @@ void VInternetDlg::LoadDialogState(Panel *dialog, const char *dialogName)
 //-----------------------------------------------------------------------------
 // Purpose: accessor to the filter save data
 //-----------------------------------------------------------------------------
-vgui::KeyValues *VInternetDlg::GetFilterSaveData(const char *filterSet)
+KeyValues *VInternetDlg::GetFilterSaveData(const char *filterSet)
 {
-	vgui::KeyValues *filterList = m_pSavedData->FindKey("FilterList", true);
+	KeyValues *filterList = m_pSavedData->FindKey("FilterList", true);
 	return filterList->FindKey(filterSet, true);
 }
 

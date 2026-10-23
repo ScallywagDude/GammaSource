@@ -50,7 +50,7 @@ void CAdminServer::CreateDialog()
 {
 	if (!m_hServerPage.Get())
 	{
-		m_hServerPage = new CServerPage( g_pTrackerUser->GetTrackerID());
+		m_hServerPage = new VInternetDlg( g_pTrackerUser->GetTrackerID());
 		m_hServerPage->Initialize();
 	}
 }
@@ -71,7 +71,7 @@ bool CAdminServer::Initialize(CreateInterfaceFn *factorylist, int factoryCount)
 	}
 
 	// load the vgui interfaces
-	return vgui::VGui_InitInterfacesList(factorylist, factoryCount);
+	return vgui::VGui_InitInterfacesList("TrackerAdminServer", factorylist, factoryCount);
 }
 
 //-----------------------------------------------------------------------------
@@ -129,7 +129,7 @@ void CAdminServer::Open()
 //-----------------------------------------------------------------------------
 // Purpose: returns direct handle to main server browser dialog
 //-----------------------------------------------------------------------------
-vgui::VPanel *CAdminServer::GetPanel()
+vgui::VPANEL CAdminServer::GetPanel()
 {
 	return m_hServerPage.Get() ? m_hServerPage->GetVPanel() : NULL;
 }
@@ -204,7 +204,7 @@ GameHandle_t CAdminServer::JoinGame(unsigned int gameIP, unsigned int gamePort, 
 void CAdminServer::UpdateGameInfoDialog(GameHandle_t gameDialog, unsigned int gameIP, unsigned int gamePort)
 {
 	// updates an existing dialog with a new game (for if a friend changes games)
-	vgui::VPanel *vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
+	vgui::VPANEL vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
 	if (vpanel)
 	{
 		CDialogGameInfo *gameDialog = dynamic_cast<CDialogGameInfo *>(vgui::ipanel()->Client(vpanel)->GetPanel());
@@ -221,9 +221,15 @@ void CAdminServer::UpdateGameInfoDialog(GameHandle_t gameDialog, unsigned int ga
 void CAdminServer::CloseGameInfoDialog(GameHandle_t gameDialog)
 {
 	// forces the dialog closed
-	vgui::VPanel *vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
+	vgui::VPANEL vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
 	if (vpanel)
 	{
 		vgui::ivgui()->PostMessage(vpanel, new KeyValues("Close"), NULL);
 	}
+}
+
+void CAdminServer::SetParent(vgui::VPANEL parent)
+{
+    if (m_hServerPage.Get())
+        m_hServerPage->SetParent(parent);
 }

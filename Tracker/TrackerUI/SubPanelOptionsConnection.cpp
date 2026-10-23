@@ -88,7 +88,7 @@ void CSubPanelOptionsConnection::OnApplyChanges()
 	int speed = 7500;
 	// get the speed from the list and set it in the registry
 	char text[256];
-	m_pInternetSpeed->GetText(0, text, sizeof(text)-1);
+	m_pInternetSpeed->GetText(text, sizeof(text)-1);
 	for (int i = 0; i < ARRAYSIZE(g_Speeds); i++)
 	{
 		if (!stricmp(text, g_Speeds[i].description))

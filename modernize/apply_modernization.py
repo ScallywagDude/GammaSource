@@ -28,6 +28,8 @@ scripts.insert(scripts.index('validate.py'),'patch_entity_compiler_compat.py')
 scripts.insert(scripts.index('validate.py'),'fix_legacy_compiler_errors.py')
 # Restore archived Tracker prerequisites and legacy include spellings after DSP conversion.
 scripts.insert(scripts.index('validate.py'),'repair_tracker_source_paths.py')
+# Reconcile the old Tracker UI source with the existing VGUI2 control interfaces.
+scripts.insert(scripts.index('validate.py'),'repair_tracker_vgui2_api.py')
 for script in scripts:
     print(f'Running {script}...',flush=True)
     cmd=[sys.executable,str(root/'modernize'/script)]

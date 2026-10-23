@@ -27,7 +27,8 @@ public:
 	// IVGui module implementation
 	virtual bool Initialize(CreateInterfaceFn *factorylist, int numFactories);
 	virtual bool PostInitialize(CreateInterfaceFn *modules, int factoryCount);
-	virtual vgui::VPanel *GetPanel();
+	virtual vgui::VPANEL GetPanel();
+	virtual void SetParent(vgui::VPANEL parent);
 	virtual bool Activate();
 	virtual bool IsValid();
 	virtual void Shutdown();

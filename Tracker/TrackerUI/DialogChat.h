@@ -53,11 +53,11 @@ public:
 	int  GetChatID();
 
 	// network messages
-	virtual void OnChatUserLeave(vgui::KeyValues *msg);
-	virtual void OnMessage(vgui::KeyValues *msg);
-	virtual void OnMessageFailed(vgui::KeyValues *msg);
+	virtual void OnChatUserLeave(KeyValues *msg);
+	virtual void OnMessage(KeyValues *msg);
+	virtual void OnMessageFailed(KeyValues *msg);
 	virtual void OnInvited();
-	virtual void OnTypingMessage(vgui::KeyValues *params);
+	virtual void OnTypingMessage(KeyValues *params);
 
 	void LoadChat(int buddyID); // load chat into dialog
 
@@ -69,22 +69,22 @@ private:
 	virtual void OnTextClicked(const char *text);
 	virtual void OnInviteUser(int userID);
 	virtual void OnFriendsStatusChanged();
-	virtual void OnDragDrop(vgui::KeyValues *data);
+	virtual void OnDragDrop(KeyValues *data);
 	virtual void OnCheckRemoteTypingTimeout();
 
 	// Dialog overrides
 	virtual void PerformLayout();
 	virtual void OnClose();
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
-	virtual bool RequestInfo(vgui::KeyValues *outputData);
+	virtual bool RequestInfo(KeyValues *outputData);
 
 	// multi-user chat
-	vgui::KeyValues *GetChatData(int friendID);
+	KeyValues *GetChatData(int friendID);
 
 	void AddUserToChat(int userID, bool bPrintMessage);
-	void SendMessageToAllUsers(int msgID, vgui::KeyValues *msg);
+	void SendMessageToAllUsers(int msgID, KeyValues *msg);
 	void SendTextToAllUsers(const char *text);
-	void OnChatAddUser(vgui::KeyValues *msg);
+	void OnChatAddUser(KeyValues *msg);
 
 	DECLARE_PANELMAP();
 

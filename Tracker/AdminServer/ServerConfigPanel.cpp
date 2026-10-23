@@ -207,7 +207,7 @@ void CServerConfigPanel::OnSendConfig()
 				{
 					if(!stricmp(name,"sv_password") ) // this is a special case to turn on passwords
 					{
-						entry->GetText(0,tmp_text,512);
+						entry->GetText(tmp_text,512);
 						if(strlen(tmp_text) > 0) 
 						{
 							char tmp[512];
@@ -223,7 +223,7 @@ void CServerConfigPanel::OnSendConfig()
 					} 
 					else 
 					{
-						entry->GetText(0,tmp_text,512);
+						entry->GetText(tmp_text,512);
 					}
 				}
 			} // if TextEntry
@@ -282,7 +282,7 @@ void CServerConfigPanel::OnSendConfig()
 }
 
 
-void CServerConfigPanel::SetRules(CUtlVector<vgui::KeyValues *> *rules)
+void CServerConfigPanel::SetRules(CUtlVector<KeyValues *> *rules)
 {
 	m_Rules=rules;
 }

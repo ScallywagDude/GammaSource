@@ -35,7 +35,7 @@ CPlayerContextMenu::~CPlayerContextMenu()
 //-----------------------------------------------------------------------------
 void CPlayerContextMenu::ShowMenu(Panel *target, unsigned int playerID)
 {
-	ClearMenu();
+	DeleteAllItems();
 		
 	AddMenuItem("Kick", "&Kick Player", new KeyValues("Kick", "playerID", playerID), CPlayerContextMenu::parent);
 	AddMenuItem("Ban", "&Ban Player", new KeyValues("Ban", "playerID", playerID), CPlayerContextMenu::parent);

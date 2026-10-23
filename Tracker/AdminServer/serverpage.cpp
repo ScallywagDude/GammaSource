@@ -253,7 +253,7 @@ void VInternetDlg::LoadFilters()
   	}
 
 	m_pSavedData = new KeyValues ("Filters");
-	if (!m_pSavedData->LoadFromFile(filesystem(), "Admin\\AdminServer.vdf", true, "PLATFORM"))
+	if (!m_pSavedData->LoadFromFile(filesystem(), "Admin\\AdminServer.vdf", "PLATFORM"))
 	{
 		// file not successfully loaded, create the default key
 		m_pSavedData->FindKey("List", true);
@@ -567,7 +567,7 @@ void VInternetDlg::OnManageServer(int serverID)
 	}
 }
 
-void VInternetDlg::OnPlayerDialog(vgui::KeyValues *data)
+void VInternetDlg::OnPlayerDialog(KeyValues *data)
 {
 	const char *type=data->GetString("type");
 	const char *playerName=data->GetString("player");

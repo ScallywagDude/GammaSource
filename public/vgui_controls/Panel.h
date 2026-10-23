@@ -37,6 +37,7 @@
 
 namespace vgui
 {
+class BuildGroup;
 
 
 

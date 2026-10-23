@@ -20,9 +20,9 @@
 //-----------------------------------------------------------------------------
 int __cdecl PlayerNameCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	vgui::ListPanelItem *p1, *p2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{
@@ -41,9 +41,9 @@ int __cdecl PlayerNameCompare(const void *elem1, const void *elem2 )
 //-----------------------------------------------------------------------------
 int __cdecl PlayerPingCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	vgui::ListPanelItem *p1, *p2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{
@@ -68,9 +68,9 @@ int __cdecl PlayerPingCompare(const void *elem1, const void *elem2 )
 //-----------------------------------------------------------------------------
 int __cdecl PlayerAuthCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	vgui::ListPanelItem *p1, *p2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{
@@ -91,9 +91,9 @@ int __cdecl PlayerAuthCompare(const void *elem1, const void *elem2 )
 //-----------------------------------------------------------------------------
 int __cdecl PlayerLossCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	vgui::ListPanelItem *p1, *p2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{
@@ -117,9 +117,9 @@ int __cdecl PlayerLossCompare(const void *elem1, const void *elem2 )
 //-----------------------------------------------------------------------------
 int __cdecl PlayerFragsCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	vgui::ListPanelItem *p1, *p2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{
@@ -143,12 +143,12 @@ int __cdecl PlayerFragsCompare(const void *elem1, const void *elem2 )
 //-----------------------------------------------------------------------------
 int __cdecl PlayerTimeCompare(const void *elem1, const void *elem2 )
 {
-	vgui::ListPanel::DATAITEM *p1, *p2;
+	vgui::ListPanelItem *p1, *p2;
 	int h1,h2,m1,m2,s1,s2;
 	float t1=0,t2=0;
 
-	p1 = *(vgui::ListPanel::DATAITEM **)elem1;
-	p2 = *(vgui::ListPanel::DATAITEM **)elem2;
+	p1 = *(vgui::ListPanelItem **)elem1;
+	p2 = *(vgui::ListPanelItem **)elem2;
 
 	if ( !p1 || !p2 )  // No meaningful comparison
 	{

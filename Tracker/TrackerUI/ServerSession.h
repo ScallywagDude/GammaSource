@@ -26,7 +26,7 @@ namespace vgui
 class Panel;
 };
 
-using vgui::KeyValues;
+using KeyValues;
 
 #include "UtlVector.h"
 

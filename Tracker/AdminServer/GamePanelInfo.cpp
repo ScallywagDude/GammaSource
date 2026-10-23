@@ -596,7 +596,7 @@ void CGamePanelInfo::OnRefresh()
 {
 	m_iRequestRetry = system()->GetTimeMillis() + 1000; // do a refresh in 1 second 
 	
-	CServerPage::GetInstance()->UpdateStatusText("Refreshing....");
+	VInternetDlg::GetInstance()->UpdateStatusText("Refreshing....");
 	// re-ask the server for the game info
 //	RequestInfo();
 }
@@ -788,7 +788,7 @@ void CGamePanelInfo::ServerResponded()
 		ConnectToServer();
 	}
 
-	CServerPage::GetInstance()->UpdateStatusText("");
+	VInternetDlg::GetInstance()->UpdateStatusText("");
 
 	if(m_pPlayerList && m_pPlayerList->NewPlayerList() ) 
 	{		
@@ -842,7 +842,7 @@ void CGamePanelInfo::ServerResponded()
 
 				}
 					
-				index =	m_pRulesListPanel->AddItem( (*rules)[i],i);
+				index =	m_pRulesListPanel->AddItem((*rules)[i],i,false,false);
 			}		
 			m_pRulesListPanel->SortList();
 			m_pRulesListPanel->Repaint();	
@@ -879,7 +879,7 @@ void CGamePanelInfo::ServerResponded()
 	{
 							
 		// clear the existing panel
-		m_pMapsCombo->RemoveAllItems();
+		m_pMapsCombo->DeleteAllItems();
 
 	
 		CUtlVector<Maps_t> *maps= m_pMapsList->GetMapsList();
@@ -890,7 +890,7 @@ void CGamePanelInfo::ServerResponded()
 
 		for (int i = 0; i < maps->Count(); i++)
 		{
-		    m_pMapsCombo->AddItem((*maps)[i].name);
+		    m_pMapsCombo->AddItem((*maps)[i].name, NULL);
 		}
 
 		if(maps->Count()==0)
@@ -933,7 +933,7 @@ void CGamePanelInfo::ServerResponded()
 				say[strlen(say)-1]='\0';
 
 				_snprintf(chat_text,512,"<%s> %s",player,say);
-				m_pServerChatPanel->DoInsertString(chat_text);
+				m_pServerChatPanel->InsertString(chat_text);
 	
 			} // if enough tokens
 		} // if a say line
@@ -1007,7 +1007,7 @@ void CGamePanelInfo::ServerResponded()
 		}
 		else if (m_bDoingMOTD && motd)
 		{
-			m_pMOTDPanel->DoInsertString(resp+strlen("motd:"));
+			m_pMOTDPanel->InsertString(resp+strlen("motd:"));
 			m_bDoingMOTD=false;
 		}
 		else
@@ -1044,7 +1044,7 @@ void CGamePanelInfo::ServerResponded()
 void CGamePanelInfo::ServerFailedToRespond()
 {
 
-	CServerPage::GetInstance()->UpdateStatusText("");
+	VInternetDlg::GetInstance()->UpdateStatusText("");
 
 	if (m_pRcon &&  m_pRcon->PasswordFail() ) 
 	{
@@ -1166,12 +1166,12 @@ void CGamePanelInfo::OnOpenContextMenu(int row)
 {
 
 	if (m_pRulesListPanel->IsVisible() && m_pRulesListPanel->IsCursorOver() && 
-		m_pRulesListPanel->GetNumSelectedRows() && !m_pRcon->Disabled())
+		m_pRulesListPanel->GetSelectedItemsCount() && !m_pRcon->Disabled())
 		// show the rules changing menu IF its the visible panel and the cursor is
 		// over it AND rcon isn't disabled
 	{
 		// get the cvar 
-		unsigned int cvarID =m_pRulesListPanel->GetSelectedRow(0);
+		unsigned int cvarID =m_pRulesListPanel->GetSelectedItem(0);
 		
 		// activate context menu
 		m_pRulesContextMenu->ShowMenu(this, cvarID);
@@ -1185,7 +1185,7 @@ void CGamePanelInfo::OnOpenContextMenu(int row)
 //-----------------------------------------------------------------------------
 // Purpose: handles responses from MULTIPLE dialogs, logic to use is keyed off "type"
 //-----------------------------------------------------------------------------
-void CGamePanelInfo::OnPlayerDialog(vgui::KeyValues *data)
+void CGamePanelInfo::OnPlayerDialog(KeyValues *data)
 {
 	const char *type=data->GetString("type");
 	const char *playerName=data->GetString("player");
@@ -1279,7 +1279,7 @@ void CGamePanelInfo::OnPlayerDialog(vgui::KeyValues *data)
 		serveritem_t &server = m_Server->GetServer();
 		v_strncpy(server.rconPassword,value,sizeof(server.rconPassword));
 
-		CServerPage::GetInstance()->UpdateServer(server);
+		VInternetDlg::GetInstance()->UpdateServer(server);
 		RconPasswordDependant(true);
 
 
@@ -1540,7 +1540,7 @@ void CGamePanelInfo::OnStatusPlayer(int playerID)
 //-----------------------------------------------------------------------------
 void CGamePanelInfo::OnCvarChange(int cvarID)
 {
-	KeyValues *kv = m_pRulesListPanel->GetItem(m_pRulesListPanel->GetSelectedRow(0));
+	KeyValues *kv = m_pRulesListPanel->GetItem(m_pRulesListPanel->GetSelectedItem(0));
 	if(kv!=NULL) 
 	{
 			CDialogCvarChange*box = new CDialogCvarChange();
@@ -1559,7 +1559,7 @@ void CGamePanelInfo::OnCvarChange(int cvarID)
 //-----------------------------------------------------------------------------
 void CGamePanelInfo::OnBanRemove(int banID)
 {
-	KeyValues *kv = m_pBanListPanel->GetItem(m_pBanListPanel->GetSelectedRow(0));
+	KeyValues *kv = m_pBanListPanel->GetItem(m_pBanListPanel->GetSelectedItem(0));
 	if(kv!=NULL) 
 	{
 		char banText[255];
@@ -1579,7 +1579,7 @@ void CGamePanelInfo::OnBanRemove(int banID)
 //-----------------------------------------------------------------------------
 void CGamePanelInfo::OnBanChange(int banID)
 {	
-	KeyValues *kv = m_pBanListPanel->GetItem(m_pBanListPanel->GetSelectedRow(0));
+	KeyValues *kv = m_pBanListPanel->GetItem(m_pBanListPanel->GetSelectedItem(0));
 	if(kv!=NULL) 
 	{	
 		char timeText[20];
@@ -1739,9 +1739,9 @@ void CGamePanelInfo::RulesListPanel::OnMousePressed(vgui::MouseCode code)
 	// let the base class do its stuff first 
 	ListPanel::OnMousePressed(code);
 
-	if (m_pHelpText && GetNumSelectedRows())
+	if (m_pHelpText && GetSelectedItemsCount())
 	{
-		KeyValues *kv = GetItem(GetSelectedRow(0));
+		KeyValues *kv = GetItem(GetSelectedItem(0));
 		const char *helpText =m_pHelpText->GetHelp(kv->GetString("cvar"));
 		if (strlen(helpText)<=0) 
 		{
@@ -1759,9 +1759,9 @@ void CGamePanelInfo::RulesListPanel::OnMousePressed(vgui::MouseCode code)
 //----------------------------------------------------------------------------
 void CGamePanelInfo::RulesListPanel::OnMouseDoublePressed(vgui::MouseCode code)
 {	
-	if (allowDoubleClick && code==MOUSE_LEFT && GetNumSelectedRows())
+	if (allowDoubleClick && code==MOUSE_LEFT && GetSelectedItemsCount())
 	{
-		unsigned int cvarID =GetSelectedRow(0);
+		unsigned int cvarID =GetSelectedItem(0);
 		PostMessage(m_pParent->GetVPanel(),  new KeyValues("cvar", "cvarID", cvarID));
 		//return;
 	}

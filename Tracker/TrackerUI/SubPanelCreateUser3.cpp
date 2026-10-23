@@ -134,7 +134,7 @@ WizardSubPanel *CSubPanelCreateUser3::GetPrevSubPanel()
 // Input  : *replyMsg - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-void CSubPanelCreateUser3::OnUserCreated(vgui::KeyValues *data)
+void CSubPanelCreateUser3::OnUserCreated(KeyValues *data)
 {
 	m_pProgressLabel->SetText("#TrackerUI_UserCreateComplete");
 	m_pProgressBar->SetProgress(1.0f);
@@ -190,7 +190,7 @@ void CSubPanelCreateUser3::OnUserCreated(vgui::KeyValues *data)
 // Purpose: 
 // Input  : *data - 
 //-----------------------------------------------------------------------------
-void CSubPanelCreateUser3::OnUserCreateDenied(vgui::KeyValues *data)
+void CSubPanelCreateUser3::OnUserCreateDenied(KeyValues *data)
 {
 	GetWizardPanel()->SetPrevButtonEnabled(true);
 	GetWizardPanel()->ResetKeyFocus();

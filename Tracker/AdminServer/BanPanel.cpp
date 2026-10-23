@@ -116,9 +116,9 @@ void CBanPanel::OnTextChanged(Panel *panel, const char *text)
 void CBanPanel::BanListPanel::OnMouseDoublePressed(vgui::MouseCode code)
 {	
 	// do nothing, what should the default be??
-/*	if (GetNumSelectedRows())
+/*	if (GetSelectedItemsCount())
 	{
-		unsigned int banD =GetSelectedRow(0);
+		unsigned int banD =GetSelectedItem(0);
 		PostMessage(m_pParent->GetVPanel(),  new KeyValues("addban", "banID", playerID));
 	}
 	*/
@@ -137,9 +137,9 @@ void CBanPanel::OnCommand(const char *command)
 			PostMessage(m_pParent->GetVPanel(),new KeyValues("addban", "banID",0));
 	}
 
-	if( m_pBanListPanel->GetNumSelectedRows())  // if a user is selected
+	if( m_pBanListPanel->GetSelectedItemsCount())  // if a user is selected
 	{
-		int playerID = m_pBanListPanel->GetDataItem(m_pBanListPanel->GetSelectedRow(0))->userData;
+		int playerID = m_pBanListPanel->GetItemData(m_pBanListPanel->GetSelectedItem(0))->userData;
 		if (!stricmp(command, "removeban"))
 		{
 			PostMessage(m_pParent->GetVPanel(),new KeyValues("removeban", "playerID",playerID));
@@ -154,7 +154,7 @@ void CBanPanel::OnCommand(const char *command)
 
 
 
-void CBanPanel::OnEffectPlayer(vgui::KeyValues *data)
+void CBanPanel::OnEffectPlayer(KeyValues *data)
 {
 	// you MUST make a copy, if you use the original you get a horrid crash
 	KeyValues *kv=data->MakeCopy();
@@ -167,12 +167,12 @@ void CBanPanel::OnEffectPlayer(vgui::KeyValues *data)
 void CBanPanel::OnOpenContextMenu(int row)
 {
 	if (m_pBanListPanel->IsVisible() && m_pBanListPanel->IsCursorOver()
-		&& m_pBanListPanel->GetNumSelectedRows())
+		&& m_pBanListPanel->GetSelectedItemsCount())
 	// show the ban changing menu IF its the visible panel and the cursor is
 	// over it 
 	{
 	
-		unsigned int banID =m_pBanListPanel->GetSelectedRow(0);
+		unsigned int banID =m_pBanListPanel->GetSelectedItem(0);
 			
 		// activate context menu
 		m_pBanContextMenu->ShowMenu(this, banID);
@@ -204,14 +204,14 @@ void CBanPanel::SetSortColumn(int column)
 	m_pBanListPanel->SetSortColumn(column);
 }
 
-int CBanPanel::GetNumSelectedRows()
+int CBanPanel::GetSelectedItemsCount()
 {
-	return m_pBanListPanel->GetNumSelectedRows();
+	return m_pBanListPanel->GetSelectedItemsCount();
 }
 
-int CBanPanel::GetSelectedRow(int selectionIndex)
+int CBanPanel::GetSelectedItem(int selectionIndex)
 {
-	return m_pBanListPanel->GetSelectedRow(selectionIndex);
+	return m_pBanListPanel->GetSelectedItem(selectionIndex);
 }
 
 void CBanPanel::DeleteAllItems()
@@ -221,7 +221,7 @@ void CBanPanel::DeleteAllItems()
 
 int CBanPanel:: AddItem(KeyValues *data, unsigned int userData  )
 {
-	return m_pBanListPanel->AddItem(data,userData);
+	return m_pBanListPanel->AddItem(data,userData,false,false);
 }
 
 void CBanPanel::SortList( void )
@@ -229,9 +229,9 @@ void CBanPanel::SortList( void )
 	m_pBanListPanel->SortList();
 }
 
-vgui::ListPanel::DATAITEM *CBanPanel::GetDataItem( int itemIndex )
+vgui::ListPanelItem *CBanPanel::GetItemData( int itemIndex )
 {
-	return m_pBanListPanel->GetDataItem(itemIndex);
+	return m_pBanListPanel->GetItemData(itemIndex);
 }
 
 KeyValues *CBanPanel::GetItem(int itemIndex)

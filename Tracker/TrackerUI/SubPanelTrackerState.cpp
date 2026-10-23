@@ -28,7 +28,6 @@ CSubPanelTrackerState::CSubPanelTrackerState(Panel *parent, const char *panelNam
 {
 	m_pMessage = new TextEntry(this, "Message");
 	m_pMessage->SetMultiline(true);
-	m_pMessage->SetRichEdit(true);
 	m_pSignInButton = new Button(this, "SigninButton", "");
 }
 

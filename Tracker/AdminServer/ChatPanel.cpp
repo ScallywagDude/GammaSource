@@ -39,9 +39,8 @@ CChatPanel::CChatPanel(vgui::Panel *parent, const char *name) : PropertyPage(par
 	m_pServerChatPanel->SetEnabled(true);
 	m_pServerChatPanel->SetEditable(false);
 	m_pServerChatPanel->SetVerticalScrollbar(true);
-	m_pServerChatPanel->SetRichEdit(false);
 	//m_pServerChatPanel->SetMaximumCharCount(-1);
-	m_pServerChatPanel->setMaximumCharCount(8000);
+	m_pServerChatPanel->SetMaximumCharCount(8000);
 	m_pServerChatPanel->SetWrap(true);
 
 	m_pEnterChatPanel = new TextEntry(this,"ChatMessage");
@@ -100,7 +99,7 @@ void CChatPanel::PerformLayout()
 //-----------------------------------------------------------------------------
 void CChatPanel::DoInsertString(const char *str) 
 {
-	m_pServerChatPanel->DoInsertString(str);
+	m_pServerChatPanel->InsertString(str);
 }
 
 //-----------------------------------------------------------------------------
@@ -122,7 +121,7 @@ void CChatPanel::OnSendChat()
 		char chat_text[512];
 
 		_snprintf(chat_text,512,"say ");
-		m_pEnterChatPanel->GetText(0,chat_text+4,512-4);
+		m_pEnterChatPanel->GetText(chat_text+4,512-4);
 		if(strlen("say ")!=strlen(chat_text)) // check there is something in the text panel
 		{
 			m_pRcon->SendRcon(chat_text);

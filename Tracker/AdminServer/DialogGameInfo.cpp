@@ -251,7 +251,7 @@ void CDialogGameInfo::ApplySchemeSettings(vgui::IScheme *pScheme)
 	// force the label to get it's scheme settings
 	m_pInfoLabel->InvalidateLayout(true);
 	// override them
-	m_pInfoLabel->SetFgColor(GetSchemeColor("BrightControlText"));
+	m_pInfoLabel->SetFgColor(GetSchemeColor("BrightControlText", scheme()->GetIScheme(scheme()->GetDefaultScheme())));
 }
 
 //-----------------------------------------------------------------------------

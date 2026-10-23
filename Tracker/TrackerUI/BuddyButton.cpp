@@ -564,7 +564,7 @@ void CBuddyButton::OnCursorMoved(int x, int y)
 	if (m_bDragging)
 	{
 		// get the panel the mouse is over
-		VPanel *mouseOver = input()->GetMouseOver();
+		vgui::VPANEL mouseOver = input()->GetMouseOver();
 		if (mouseOver != GetVPanel())
 		{
 			bool bAccept = false;
@@ -619,7 +619,7 @@ void CBuddyButton::OnMouseReleased(vgui::MouseCode code)
 	if (m_bDragging)
 	{
 		// make sure we're over a valid panel
-		VPanel *imouseOver = input()->GetMouseOver();
+		vgui::VPANEL imouseOver = input()->GetMouseOver();
 		if (imouseOver)
 		{
 			Panel *mouseOver = ipanel()->Client(imouseOver)->GetPanel();

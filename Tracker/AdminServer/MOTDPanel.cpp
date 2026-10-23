@@ -39,9 +39,8 @@ CMOTDPanel::CMOTDPanel(vgui::Panel *parent, const char *name) : PropertyPage(par
 	m_pMOTDPanel->SetEnabled(true);
 	m_pMOTDPanel->SetEditable(true);
 	m_pMOTDPanel->SetVerticalScrollbar(true);
-	m_pMOTDPanel->SetRichEdit(false);
 	m_pMOTDPanel->SetCatchEnterKey(true);
-	m_pMOTDPanel->setMaximumCharCount(1024);
+	m_pMOTDPanel->SetMaximumCharCount(1024);
 	
 	m_pSendMOTDButton = new Button(this, "SendMOTD", "&Send");
 	m_pSendMOTDButton->SetCommand(new KeyValues("SendMOTD"));
@@ -94,7 +93,7 @@ void CMOTDPanel::DoInsertString(const char *str)
 		char *fix = const_cast<char *>(str);
 		fix[1024]='\0';
 	}
-	m_pMOTDPanel->DoInsertString(str);
+	m_pMOTDPanel->InsertString(str);
 }
 
 //-----------------------------------------------------------------------------
@@ -116,7 +115,7 @@ void CMOTDPanel::OnSendMOTD()
 		char chat_text[2048];
 
 		_snprintf(chat_text,512,"motd_write ");
-		m_pMOTDPanel->GetText(0,chat_text+11,2048-11);
+		m_pMOTDPanel->GetText(chat_text+11,2048-11);
 		if(strlen("motd_write ")!=strlen(chat_text)) // check there is something in the text panel
 		{
 			unsigned int i=0;

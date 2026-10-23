@@ -54,7 +54,7 @@ public:
 	virtual void PerformLayout();
 
 	// set the rules for the panel to use
-	void SetRules(CUtlVector<vgui::KeyValues *> *rules);
+	void SetRules(CUtlVector<KeyValues *> *rules);
 	void SetHostName(const char *name);
 
 
@@ -67,7 +67,7 @@ private:
 	vgui::Button *m_pSendConfigButton;
 
 	CRcon *m_pRcon;
-	CUtlVector<vgui::KeyValues *> *m_Rules; // the servers rules, so we can parse them
+	CUtlVector<KeyValues *> *m_Rules; // the servers rules, so we can parse them
 	char m_sHostName[512]; // the hostname of the server, this isn't in a rule...	
 
 	DECLARE_PANELMAP();

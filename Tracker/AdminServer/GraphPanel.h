@@ -37,6 +37,7 @@ class CheckButton;
 };
 
 #include "point.h"
+#include <vgui/Point.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
@@ -73,7 +74,8 @@ private:
 		void SetScale(intervals time);
 		void PingOnly(bool state) { ping_only=state; }
 
-		virtual void Paint();	
+		virtual void Paint();
+		void DrawPointPolyLine(const vgui::Point *vertices, int count);	
 
 	private:
 

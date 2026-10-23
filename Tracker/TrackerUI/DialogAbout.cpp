@@ -25,7 +25,6 @@ CDialogAbout::CDialogAbout() : Frame(NULL, "DialogAbout")
 	m_pClose = new Button(this, "CloseButton", "#TrackerUI_Close");
 	m_pText = new TextEntry(this, "AboutText");
 
-	m_pText->SetRichEdit(true);
 	m_pText->SetMultiline(true);
 	m_pText->SetVerticalScrollbar(true);
 

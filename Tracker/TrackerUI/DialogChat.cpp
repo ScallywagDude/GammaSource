@@ -79,7 +79,7 @@ public:
 		}
 		
 		// recalculate the items to show in the menu
-		menu->ClearMenu();
+		menu->DeleteAllItems();
 		
 		// temporary buffer, for sorting
 		Dar<int> friendDar;
@@ -197,10 +197,9 @@ CDialogChat::CDialogChat(int userID) : Frame(NULL, "ChatDialog")
 	}
 	
 	m_pTextEntry->SetMultiline(true);
-	m_pTextEntry->setMaximumCharCount(500);
+	m_pTextEntry->SetMaximumCharCount(500);
 	m_pChatHistory->SetMultiline(true);
 	m_pChatHistory->SetEditable(false);
-	m_pChatHistory->SetRichEdit(true);
 	m_pChatHistory->SetVerticalScrollbar(true);
 	m_pChatHistory->SetEnabled(false);
 	
@@ -403,7 +402,7 @@ void CDialogChat::AddUserToChat(int userID, bool bPrintMessage)
 // Purpose: Called when a user has been added into the chat
 // Input  : *msg - 
 //-----------------------------------------------------------------------------
-void CDialogChat::OnChatAddUser(vgui::KeyValues *msg)
+void CDialogChat::OnChatAddUser(KeyValues *msg)
 {
 	if (!m_bMultiUserChat)
 	{
@@ -686,7 +685,7 @@ void CDialogChat::OnTextChanged(Panel *panel)
 		bool oldState = m_pSendButton->IsEnabled();
 		
 		char text[256];
-		m_pTextEntry->GetText(0, text, sizeof(text)-1);
+		m_pTextEntry->GetText(text, sizeof(text)-1);
 		if (strlen(text) > 0)
 		{
 			m_pSendButton->SetEnabled(true);
@@ -792,7 +791,7 @@ void CDialogChat::Update(bool minimized)
 		GetDoc()->MoveMessageToHistory(m_iFriendID, msg);
 		
 		// play the message sound if the chat window doesn't have focus, or it is not visible, or it's parent is not visible
-		VPanel *focus = input()->GetFocus();
+		vgui::VPANEL focus = input()->GetFocus();
 		if (!(focus && ipanel()->HasParent(focus, this->GetVPanel())) || (!IsVisible()) || (GetParent() && !GetParent()->IsVisible()))
 		{
 			PlayNewMessageSound();
@@ -826,7 +825,7 @@ void CDialogChat::Update(bool minimized)
 void CDialogChat::OnSendMessage()
 {
 	char buf[512];
-	m_pTextEntry->GetText(0, buf, 511);
+	m_pTextEntry->GetText(buf, 511);
 	if (!buf[0])
 		return;
 	
@@ -1261,7 +1260,7 @@ bool CDialogChat::RequestInfo(KeyValues *outputData)
 // Purpose: 
 // Input  : *data - 
 //-----------------------------------------------------------------------------
-void CDialogChat::OnDragDrop(vgui::KeyValues *data)
+void CDialogChat::OnDragDrop(KeyValues *data)
 {
 	if (!stricmp(data->GetString("type"), "TrackerFriend"))
 	{		

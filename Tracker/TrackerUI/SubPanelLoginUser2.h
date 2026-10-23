@@ -36,7 +36,7 @@ public:
 	virtual void OnTimeout();
 
 	// network message handler
-	virtual void OnUserValid(vgui::KeyValues *params);
+	virtual void OnUserValid(KeyValues *params);
 
 	DECLARE_PANELMAP();
 

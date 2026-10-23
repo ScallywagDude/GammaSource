@@ -27,6 +27,7 @@ class KeyValues;
 
 namespace vgui
 {
+class ImageList;
 
 class ScrollBar;
 class TextImage;

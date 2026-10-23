@@ -23,6 +23,7 @@
 
 namespace vgui
 {
+class TextImage;
 
 //-----------------------------------------------------------------------------
 // Purpose: Contains and displays a set of images

@@ -305,7 +305,7 @@ void VInternetDlg::OnCommand(const char *command)
 	else if(!stricmp(command,"go")) // the go button
 	{
 		char newUrl[512];
-		m_pAddressBar->GetText(0,newUrl,512);
+		m_pAddressBar->GetText(newUrl,512);
 		// open url calls OnStartURL where we handle the history list
 		m_pHTML->OpenURL(newUrl);
 	}

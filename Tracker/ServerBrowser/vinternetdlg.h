@@ -108,7 +108,7 @@ public:
 	virtual CDialogGameInfo *OpenGameInfoDialog(int serverIP, int serverPort, const char *titleName);
 
 	// accessor to the filter save data
-	virtual vgui::KeyValues *GetFilterSaveData(const char *filterSet);
+	virtual KeyValues *GetFilterSaveData(const char *filterSet);
 
 	// gets the name of the mod directory we're restricted to accessing, NULL if none
 	virtual const char *GetActiveModName();
@@ -152,7 +152,7 @@ private:
 	CLanGames *m_pLanGames;
 	CFriendsGames *m_pFriendsGames;
 
-	vgui::KeyValues *m_pSavedData;
+	KeyValues *m_pSavedData;
 
 	// context menu
 	CServerContextMenu *m_pContextMenu;

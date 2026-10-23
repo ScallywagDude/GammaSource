@@ -35,7 +35,7 @@ CBanContextMenu::~CBanContextMenu()
 //-----------------------------------------------------------------------------
 void CBanContextMenu::ShowMenu(Panel *target, unsigned int banID)
 {
-	ClearMenu();
+	DeleteAllItems();
 
 	if(banID==-1) 
 	{

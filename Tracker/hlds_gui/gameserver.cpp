@@ -73,8 +73,7 @@ CGameServer::CGameServer( vgui::Panel *parent, const char *name) : PropertyPage(
 	m_ConsoleTextEntry->SetMultiline(true);
 	m_ConsoleTextEntry->SetEnabled(true);
 	m_ConsoleTextEntry->SetVerticalScrollbar(true);
-	m_ConsoleTextEntry->SetRichEdit(true);
-	m_ConsoleTextEntry->setMaximumCharCount(8000);
+	m_ConsoleTextEntry->SetMaximumCharCount(8000);
 	m_ConsoleTextEntry->SetWrap(true);
 	m_ConsoleTextEntry->SetEditable(false);
 
@@ -142,7 +141,7 @@ void CGameServer::ConsoleText(const char *text)
 	i+=10;
 	if(i>255) i=0;
 
-	m_ConsoleTextEntry->DoInsertString(text);
+	m_ConsoleTextEntry->InsertString(text);
 }
 
 void CGameServer::OnCommand(const char *command)
@@ -150,7 +149,7 @@ void CGameServer::OnCommand(const char *command)
 	if(!stricmp(command,"submit"))
 	{
 		char command[512];
-		m_CommandTextEntry->GetText(0,command,512);
+		m_CommandTextEntry->GetText(command,512);
 		if(strlen(command)>0)
 		{
 

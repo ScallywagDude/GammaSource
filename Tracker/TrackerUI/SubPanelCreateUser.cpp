@@ -48,7 +48,7 @@ bool CSubPanelCreateUser::OnNextButton()
 		return false;
 
 	char buf[256];
-	emailEdit->GetText(0, buf, 255);
+	emailEdit->GetText(buf, 255);
 
 	// write the data out into the wizard
 	KeyValues *dat = GetWizardData();
@@ -73,7 +73,7 @@ void CSubPanelCreateUser::PerformLayout()
 	if (emailEdit)
 	{
 		char buf[256];
-		emailEdit->GetText(0, buf, 255);
+		emailEdit->GetText(buf, 255);
 		if (strlen(buf) > 0)
 		{
 			nextValid = true;
@@ -94,7 +94,7 @@ WizardSubPanel *CSubPanelCreateUser::GetNextSubPanel()
 	if (emailEdit)
 	{
 		char buf[256];
-		emailEdit->GetText(0, buf, 255);
+		emailEdit->GetText(buf, 255);
 		if (!IsEmailAddressValid(buf))
 		{
 			// return error dialog
@@ -123,7 +123,7 @@ void CSubPanelCreateUser::OnTextChanged()
 		if (emailEdit)
 		{
 			char text[256];
-			emailEdit->GetText(0, text, 254);
+			emailEdit->GetText(text, 254);
 			GetWizardPanel()->SetNextButtonEnabled(strlen(text) > 0);
 		}
 	}

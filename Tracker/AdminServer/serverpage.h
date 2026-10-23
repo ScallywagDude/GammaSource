@@ -137,7 +137,7 @@ private:
 	
 
 	// password entry dialog for new servers
-	void OnPlayerDialog(vgui::KeyValues *data);
+	void OnPlayerDialog(KeyValues *data);
 	void OnDeleteServer(int chosenPanel);
 
 	// load/saves filter settings from disk
@@ -170,7 +170,7 @@ private:
 	CFavoriteGames *m_pFavoriteGames;
 	CGamePanelInfo *m_pGamePanelInfo;
 
-	vgui::KeyValues *m_pSavedData;
+	KeyValues *m_pSavedData;
 
 	bool m_bAutoRefresh;
 	bool m_bSaveRcon;

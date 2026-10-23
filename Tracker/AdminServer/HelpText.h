@@ -28,7 +28,7 @@ public:
 
 private:
 
-	vgui::KeyValues *m_pHelpData;
+	KeyValues *m_pHelpData;
 
 };
 

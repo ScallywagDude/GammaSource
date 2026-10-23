@@ -55,7 +55,7 @@ CTrackerDoc::CTrackerDoc()
 	m_BuddyMap.SetLessFunc(BuddyMapItemLessFunc);
 
 	// create the base registry
-	m_pDataRegistry = new vgui::KeyValues("Tracker");
+	m_pDataRegistry = new KeyValues("Tracker");
 
 	// create the sub registries
 
@@ -605,7 +605,7 @@ void CTrackerDoc::WriteOut(KeyValues *dat, ISendMessage *outFile)
 	if (dat->GetFirstSubKey())
 	{
 		// iterate through saving all sub items in this key
-		for (vgui::KeyValues *it = dat->GetFirstSubKey(); it != NULL; it = it->GetNextKey())
+		for (KeyValues *it = dat->GetFirstSubKey(); it != NULL; it = it->GetNextKey())
 		{
 			WriteOut(it, outFile);
 		}
@@ -615,14 +615,14 @@ void CTrackerDoc::WriteOut(KeyValues *dat, ISendMessage *outFile)
 		// single item
 		switch (dat->GetDataType(NULL))
 		{
-		case vgui::KeyValues::TYPE_INT:
+		case KeyValues::TYPE_INT:
 			{
 				int idat = dat->GetInt(NULL);
 				outFile->WriteInt(dat->GetName(), idat);
 			}
 			break;
 
-		case vgui::KeyValues::TYPE_STRING:
+		case KeyValues::TYPE_STRING:
 			{
 				const char *str = dat->GetString(NULL);
 				outFile->WriteString(dat->GetName(), str);

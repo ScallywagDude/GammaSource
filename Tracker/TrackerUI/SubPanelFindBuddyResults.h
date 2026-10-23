@@ -35,7 +35,7 @@ public:
 	DECLARE_PANELMAP();
 	
 private:
-	virtual void OnFriendFound(vgui::KeyValues *friendData);
+	virtual void OnFriendFound(KeyValues *friendData);
 	virtual void OnNoFriends(int attemptID);
 	
 	virtual void OnRowSelected(int startIndex, int endIndex);

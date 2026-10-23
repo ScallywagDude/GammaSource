@@ -96,7 +96,7 @@ private:
 	// drag/drop support
 	bool m_bDragging;
 
-	class vgui::KeyValues *m_pBuddyData;
+	class KeyValues *m_pBuddyData;
 
 	vgui::IImage *_statusImage;
 	vgui::TextImage *_nameText;

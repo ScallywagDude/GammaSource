@@ -51,7 +51,7 @@ void CHLDS::CreateDialog()
 bool CHLDS::Initialize(CreateInterfaceFn *factorylist, int factoryCount)
 {
 	// load the vgui interfaces
-	return vgui::VGui_InitInterfacesList(factorylist, factoryCount);
+	return vgui::VGui_InitInterfacesList("TrackerHLDS", factorylist, factoryCount);
 }
 
 //-----------------------------------------------------------------------------
@@ -93,7 +93,7 @@ void CHLDS::Open()
 //-----------------------------------------------------------------------------
 // Purpose: returns direct handle to main server browser dialog
 //-----------------------------------------------------------------------------
-vgui::VPanel *CHLDS::GetPanel()
+vgui::VPANEL CHLDS::GetPanel()
 {
 	return m_hInternetDlg.Get() ? m_hInternetDlg->GetVPanel() : NULL;
 }
@@ -106,8 +106,17 @@ void CHLDS::Shutdown()
 {
 	if (m_hInternetDlg.Get())
 	{
-		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new vgui::KeyValues("Close"), NULL);
+		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new KeyValues("Close"), NULL);
 		m_hInternetDlg->MarkForDeletion();
 	}
 }
 
+
+void CHLDS::SetParent(vgui::VPANEL parent)
+{
+    if (m_hInternetDlg.Get())
+        m_hInternetDlg->SetParent(parent);
+}
+
+void CHLDS::Deactivate() { if (m_hInternetDlg.Get()) m_hInternetDlg->SetVisible(false); }
+void CHLDS::Reactivate() { if (m_hInternetDlg.Get()) m_hInternetDlg->SetVisible(true); }

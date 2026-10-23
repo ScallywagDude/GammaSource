@@ -35,7 +35,7 @@ public:
 private:
 	// the parent class that we push info back to
 	CRulesInfo *m_pRulesInfo;
-	CUtlVector<vgui::KeyValues *> *m_vRules;
+	CUtlVector<KeyValues *> *m_vRules;
 };
 
 

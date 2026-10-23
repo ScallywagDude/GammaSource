@@ -52,7 +52,7 @@ void CBrowser::CreateDialog()
 bool CBrowser::Initialize(CreateInterfaceFn *factorylist, int factoryCount)
 {
 	// load the vgui interfaces
-	return vgui::VGui_InitInterfacesList(factorylist, factoryCount);
+	return vgui::VGui_InitInterfacesList("TrackerBrowser", factorylist, factoryCount);
 }
 
 //-----------------------------------------------------------------------------
@@ -90,7 +90,7 @@ void CBrowser::Deactivate()
 {
 	if (m_hInternetDlg.Get())
 	{
-		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new vgui::KeyValues("Close"), NULL);
+		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new KeyValues("Close"), NULL);
 	}
 }
 
@@ -112,7 +112,7 @@ void CBrowser::Open()
 //-----------------------------------------------------------------------------
 // Purpose: returns direct handle to main server browser dialog
 //-----------------------------------------------------------------------------
-vgui::VPanel *CBrowser::GetPanel()
+vgui::VPANEL CBrowser::GetPanel()
 {
 	return m_hInternetDlg.Get() ? m_hInternetDlg->GetVPanel() : NULL;
 }
@@ -125,8 +125,14 @@ void CBrowser::Shutdown()
 {
 	if (m_hInternetDlg.Get())
 	{
-		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new vgui::KeyValues("Close"), NULL);
+		vgui::ivgui()->PostMessage(m_hInternetDlg->GetVPanel(), new KeyValues("Close"), NULL);
 		m_hInternetDlg->MarkForDeletion();
 	}
 }
 
+
+void CBrowser::SetParent(vgui::VPANEL parent)
+{
+    if (m_hInternetDlg.Get())
+        m_hInternetDlg->SetParent(parent);
+}

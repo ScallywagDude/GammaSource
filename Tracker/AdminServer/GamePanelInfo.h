@@ -128,7 +128,7 @@ protected:
 	void OnJoinServerWithPassword(const char *password);
 
 	// response from player dialog
-	void OnPlayerDialog(vgui::KeyValues *data);
+	void OnPlayerDialog(KeyValues *data);
 
 
 	// vgui overrides

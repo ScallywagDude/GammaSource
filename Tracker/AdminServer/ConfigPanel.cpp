@@ -152,18 +152,18 @@ void CConfigPanel::OnCommand(const char *command)
 		char timeText[20];
 		int time,timeGraphs;
 
-		m_pRefreshTextEntry->GetText(0,timeText,20);
+		m_pRefreshTextEntry->GetText(timeText,20);
 		sscanf(timeText,"%i",&time);
 	
 		memset(timeText,0x0,sizeof(timeText));
-		m_pGraphsRefreshTimeTextEntry->GetText(0,timeText,20);
+		m_pGraphsRefreshTimeTextEntry->GetText(timeText,20);
 		sscanf(timeText,"%i",&timeGraphs);
 
 
 		if(time>0 && time < 9999 && timeGraphs>0 && timeGraphs< 9999) 
 		{
 
-			CServerPage::GetInstance()->SetConfig(m_pRefreshCheckButton->IsSelected(),
+			VInternetDlg::GetInstance()->SetConfig(m_pRefreshCheckButton->IsSelected(),
 													m_pRconCheckButton->IsSelected(),
 													time,
 													m_pGraphsButton->IsSelected(),
