@@ -48,3 +48,13 @@ The v23 changes check ordered per-branch weapon asset layers, legacy direct/640/
 **Completion gate:** 113 registered weapon classes, **0 fully runtime/model/HUD/scale-verified** because the required branch-specific game assets and runtime tests were not available here. This means unverified, not inherently broken. Phase 7 stays active, and no other phase is newly certified complete.
 
 **Next:** Audit legally available unpacked models/materials/weapon scripts for each branch, repair actual dependencies, confirm viewmodel/worldmodel placement and HUD identity/scaling, and test `impulse 101` in each running branch.
+
+## October 22, 2026 — Phase 7 v24 code update
+
+**Local milestone:** v24 (8,267 files; 5 modified and 3 added relative to v23). **Active phase:** Phase 7, weapon restoration. **Publishing progress:** [Layered weapon asset auditor source](modernize/weapon_asset_audit_v23.py) and [v24 implementation and validation report](PHASE7_V24.md) are in this repository as normal source and Markdown files.
+
+**New implementation:** VMT `Patch` materials now resolve inherited textures through safe, bounded `include`, `replace` and `insert` processing. Model VTX companions can be resolved independently across ordered content layers within a branch. The validator remains read-only and keeps HL2, HL1, Counter-Strike and TF2 assets isolated.
+
+**Validation:** 184 regression tests run, 183 passed, 1 skipped, 0 failed. The v23-to-v24 overlay replay matched all 8,267 full-source files. **No Windows compile or in-game rendering test** has been completed.
+
+**Remaining weapon work:** all 113 registered weapon classes need actual installed assets, correct texture/UV/HUD/viewmodel presentation and live `impulse 101` gameplay validation before Phase 7 can be certified. The full proprietary source tree is not yet bulk-published to GitHub. Renderer API modernization remains the final phase.
