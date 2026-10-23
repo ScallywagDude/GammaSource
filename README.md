@@ -33,3 +33,19 @@ Complete Phase 7's weapon inventory, safe `impulse 101` handling, correct per-br
 
 ## AI DISCLOSURE
 Look, I'm ngl to you fam, ts is superrrr AI. I basically took the og source leak from 2003 and shoved that shit into Astra/Sol and were gonna see what happens with that, together.
+
+## October 22, 2026 — Phase 7 weapon audit publication
+
+**Published to this repository:** [Phase 7 evidence checker](phase7_manifest_check.py) and [Phase 7 status report](PHASE7_STATUS.md). Both are regular, uncompressed project-original files. The private/local v22 engine source ZIP was not uploaded.
+
+**Inventory gate:** 113 registered weapon classes (HL2/HL2MP 32, HL1 15, Counter-Strike 28, TF2 38); 86 compiled additional `impulse 101` grants; 7 excluded uncompiled candidate classes. Branch-grant consistency passed. **0/113 registrations have all four required runtime/model/HUD/texture-scale evidence flags**, so Phase 7 remains blocked, not finished. This indicates missing verification, not necessarily broken weapons.
+
+**Tests performed:** the validator ran against the local v22 ZIP and returned the expected **INCOMPLETE** status (exit code 1) after passing inventory integrity checks. Windows compilation and in-game tests were not performed.
+
+**Reproduce locally:**
+
+```sh
+python phase7_manifest_check.py /path/to/HL2_2003_Modernization_Source_v22.zip
+```
+
+**Remaining blockers:** verified playable models, materials, viewmodel animations, HUD artwork/scaling, complete cross-branch `impulse 101` and ammo behavior, and Windows/gameplay testing. Alternative rendering backends remain scheduled last.
