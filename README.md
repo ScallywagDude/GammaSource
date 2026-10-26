@@ -9,7 +9,7 @@ GammaSource restores the original 2003 Half-Life 2 beta experience while improvi
 | **Windows x64 compilation** | **✅ COMPLETE** | Full Waf build completed successfully on October 25, 2026. |
 | Original beta weapons and ammo | **✅ COMPLETE** | Weapon values, ammo capacities, rates, pickups, beta hands, and weapon audits are complete. Preserve this work. |
 | Options and HUD configuration | **✅ COMPLETE** | Audio, mouse, video, borderless, advanced settings, and HUD color controls were exercised in runtime tests. |
-| Beta model and scene compatibility | **In verification** | Model conversion repairs are present; normal choreographed body sequences still need a dedicated runtime test. |
+| Beta model and scene compatibilityBeta model and scene compatibility | **In verification<br><br>Still needs repair** | Model conversion repairs are present; normal choreographed body sequences still need a dedicated runtime test.<br><br>Still noting some puppetting issues |
 | Beta physgun beam / HEV pickup / skybox | **In verification** | Source and assets are repaired; complete the targeted `zoo_item` visual test. |
 | Friendly fire | **Patch prepared** | `gamma_friendlyfire` defaults to enabled in the companion patch; rebuild and test it before claiming it is live in the executable. |
 | Stability and performance tuning | **Ongoing** | Continue with repeatable profiling, crash diagnostics, and long-session tests. |
