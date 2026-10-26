@@ -30,7 +30,7 @@ Use an **x64 Native Tools Command Prompt for Visual Studio** for the commands be
 
 ### 1. Open the engine source directory
 
-```bat
+```
 cd /d "C:\path\to\GammaSource"
 ```
 
@@ -40,7 +40,7 @@ Use the single `GammaSource` directory. The Waf build files and active engine so
 
 On a fresh checkout, run:
 
-```bat
+```
 build_gammasource.cmd configure
 ```
 
@@ -50,7 +50,7 @@ If the project was already configured successfully, you can proceed directly to 
 
 ### 3. Compile the engine and game
 
-```bat
+```
 build_gammasource.cmd
 ```
 
@@ -66,7 +66,7 @@ Compiling produces the engine/game binaries, **not** the complete set of maps, t
 
 The repository includes a staging script:
 
-```powershell
+```
 powershell -NoProfile -ExecutionPolicy Bypass -File ".\stage_gammasource.ps1" -Dest "C:\GammaSourceBuilds" -Install "C:\path\to\engine-install" -Assets "C:\path\to\game-assets" -Beta2003 "C:\path\to\beta-content" -SteamHL2 "C:\path\to\Half-Life 2" -SteamTF2 "C:\path\to\Team Fortress 2" -SteamPortal "C:\path\to\Portal"
 ```
 
@@ -87,7 +87,7 @@ If Windows cannot load a DLL, check **architecture**, its actual file location, 
 ## Development priorities
 
 1. **Finish runtime verification:** exercise normal `logic_choreographed_scene` body sequences on `e3_lab` and `e3_hydra`; prior instanced-scene tests did not exercise normal body `SEQUENCE` playback.
-2. **Complete `zoo_item` visual verification:** inspect the sky, original HEV pickup, and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
+2. **Complete** **`zoo_item`** **visual verification:** inspect the sky, original HEV pickup, and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
 3. **Rebuild and runtime-test friendly fire:** confirm the `gamma_friendlyfire` toggle across the intended allied-damage paths.
 4. **Measure stability and performance:** record repeatable frame times, memory use, map-loading times, and long-session crashes.
 5. **Preserve original beta features:** no removal or replacement of beta HUD, weapons, hands, animations, NPCs, interface, ground deformation, maps, or effects.
@@ -98,6 +98,7 @@ Use isolated test profiles when running automated gameplay checks. Do not overwr
 
 The earlier source milestones are retained as historical reference:
 
+- **v27 — Full Engine Overhaul (Current Commit):** Still not quite finished, very, VERY far along the line though. Will be done in due time. x64 builds and runs, however it still needs to be looked at, there’s still a lot very wrong with the engine, but it’s almost done.
 - **v26 — Native toolchain and restoration:** legacy shader builds, CRT/linkage fixes, assembly compatibility, restored prototype gameplay code, HUD selector and Energy counter work. Recorded **265 tests: 262 passed, 3 skipped, 0 failures**. A later engine milestone superseded its earlier build and runtime blockers.
 - **v25 — Weapon and build repairs:** sticky launcher/hopwire ammunition safety, projectile and TF2 repair behavior fixes, HUD audits, build/linkage repairs. Recorded **217 tests: 216 passed, 1 skipped, 0 failures**.
 - **v24 — Material/model diagnostics:** layered VMT Patch lookup and VTX companion discovery. Historical validation: **184 tests: 183 passed, 1 skipped**.
@@ -105,7 +106,9 @@ The earlier source milestones are retained as historical reference:
 The current **x64** build uses the Waf workflow above; the older Win32 project instructions should not be used as its compilation procedure. The 2003 sources remain under `legacy2003/` for reference and targeted content conversion, not as a second active build. See [the unified layout guide](docs/UNIFIED_LAYOUT.md).
 
 ## AI DISCLOSURE
-Look, I'm ngl to you fam, ts is superrrr AI. I basically took the og source leak from 2003 and shoved that shit into Astra/Sol and were gonna see what happens with that, together.
+
+Look, I'm ngl to you fam, ts is superrrr AI. I basically took the og source leak from 2003 and shoved that shit into Astra/Sol \& Opus and were gonna see what happens with that, together.
 
 ## Redistribution
+
 Yeah so like don't sell this. This is Forcefully Open-Sourced (LEAKED PROPRIETARY SOFTWARE). The only reason I put it up is because come on, it's a 20+ year old version of a game engine that's HORRIBLY unfinished, I don't think they care about little passion projects like this. Do whatever with it, just make sure it's NOT FOR MONETARY VALUE.
