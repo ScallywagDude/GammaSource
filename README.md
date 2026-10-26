@@ -14,6 +14,8 @@ GammaSource restores the original 2003 Half-Life 2 beta experience while improvi
 | Friendly fire | **✅ COMPLETE** | `gamma_friendlyfire` defaults to enabled in the companion patch. |
 | Stability and performance tuning | **Ongoing** | Continue with repeatable profiling, crash diagnostics, and long-session tests. |
 
+This grid does not represent the full roadmap. This is just the road so far unfortunately. There's a whole list more to do that isn't listed here, this is just a list of current things being worked on.
+
 A completed compilation target is not a claim that every map, scripted scene, or visual effect has passed a runtime test.
 
 ## Compilation — Windows x64
