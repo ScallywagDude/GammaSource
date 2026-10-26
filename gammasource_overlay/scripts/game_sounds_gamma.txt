@@ -1,4 +1,4 @@
-// GammaSource 2018 build: sounds of the weapons added after the port
+// GammaSource build: sounds of the weapons added after the port
 
 // weapon_proto1 (game/server/gamma/weapon_proto1.cpp)
 "Weapon_Proto1.Single"

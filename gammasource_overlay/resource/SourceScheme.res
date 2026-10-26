@@ -1,4 +1,4 @@
-// GammaSource 2018 build: the 2003 engine drew GameUI with TrackerScheme.res; the 2018 engine loads SourceScheme.res
+// GammaSource build: the 2003 engine drew GameUI with TrackerScheme.res; the 2018 engine loads SourceScheme.res
 ///////////////////////////////////////////////////////////
 // Tracker scheme resource file
 //

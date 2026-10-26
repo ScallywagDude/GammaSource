@@ -1,10 +1,10 @@
 # Stage a self-contained, Steam-free GammaSource build into <Dest>\<yyyy-MM-dd_HH-mm-ss>.
 #
-#   GammaSource_2018\   the 64-bit build (engine + gammasource game dir + every content layer it mounts)
+#   GammaSource FULL BUILD\   the 64-bit build (engine + gammasource game dir + every content layer it mounts)
 #   GammaSource_2003\   (with -Include2003) a copy of the current 2003 build
 #
 # Nothing in the result points at the Steam folder: the retail HL2/TF2 VPKs and loose files the
-# 2018 build mounts are staged under content\, and gameinfo.txt only uses |gameinfo_path| paths.
+# GammaSource build mounts are staged under content\, and gameinfo.txt only uses |gameinfo_path| paths.
 # Large content files are NTFS hard links (no extra disk space) when source and destination are
 # on the same volume, otherwise copies. Binaries are always real copies.
 param(
@@ -50,19 +50,19 @@ function Put-Tree([string]$src, [string]$dst, [string[]]$Exclude = @(), [switch]
 
 $stamp = Get-Date -Format 'yyyy-MM-dd_HH-mm-ss'
 $out = Join-Path $Dest $stamp
-$g18 = Join-Path $out 'GammaSource_2018'
-$content = Join-Path $g18 'content'
+$buildRoot = Join-Path $out 'GammaSource FULL BUILD'
+$content = Join-Path $buildRoot 'content'
 Write-Host "staging $out"
 
 # engine and launcher (real copies)
-Put-File "$Install\hl2_launcher.exe" "$g18\hl2_launcher.exe" -Copy
-Put-Tree "$Install\bin" "$g18\bin" -Exclude @('*.lib', '*.exp') -Copy
-Put-Tree "$Install\platform" "$g18\platform" -Copy
-Put-File "$SteamHL2\platform\platform_misc_dir.vpk" "$g18\platform\platform_misc_dir.vpk"
-Get-ChildItem "$SteamHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$g18\platform\$($_.Name)" }
+Put-File "$Install\hl2_launcher.exe" "$buildRoot\hl2_launcher.exe" -Copy
+Put-Tree "$Install\bin" "$buildRoot\bin" -Exclude @('*.lib', '*.exp') -Copy
+Put-Tree "$Install\platform" "$buildRoot\platform" -Copy
+Put-File "$SteamHL2\platform\platform_misc_dir.vpk" "$buildRoot\platform\platform_misc_dir.vpk"
+Get-ChildItem "$SteamHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$buildRoot\platform\$($_.Name)" }
 
 # the game directory
-$game = Join-Path $g18 'gammasource'
+$game = Join-Path $buildRoot 'gammasource'
 Put-Tree "$Install\hl2\bin" "$game\bin" -Exclude @('*.lib', '*.exp') -Copy
 New-Item -ItemType Directory -Force "$game\cfg" | Out-Null
 
@@ -70,7 +70,7 @@ New-Item -ItemType Directory -Force "$game\cfg" | Out-Null
 Put-Tree "$Assets\gammashaders" "$content\gammashaders"
 Put-Tree "$Assets\gmodshaders" "$content\gmodshaders"
 Put-Tree "$Install\hl2\converted" "$content\converted"
-Put-Tree "$Repo\gammasource_content_2018" "$content\gammasource_content_2018" -Copy
+Put-Tree "$Repo\gammasource_overlay" "$content\gammasource_overlay" -Copy
 Put-Tree "$Assets\gamma" "$content\gamma"
 Put-Tree $OriginalContent "$content\gammasource_content" -Exclude @('*.bak', '*.before-*')
 Put-Tree $Beta2003 "$content\hl2_2003"
@@ -103,7 +103,7 @@ Get-ChildItem "$SteamPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object 
 			game	|gameinfo_path|..\content\gammashaders
 			game	|gameinfo_path|..\content\gmodshaders
 			game	|gameinfo_path|..\content\converted
-			game	|gameinfo_path|..\content\gammasource_content_2018
+			game	|gameinfo_path|..\content\gammasource_overlay
 			game	|gameinfo_path|..\content\gamma
 			game	|gameinfo_path|..\content\gammasource_content
 			game	|gameinfo_path|..\content\hl2_2003
@@ -125,10 +125,10 @@ Get-ChildItem "$SteamPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object 
 
 @"
 @echo off
-rem GammaSource (64-bit, 2018 engine). Needs no Steam.
+rem GammaSource (64-bit). Needs no Steam.
 cd /d "%~dp0"
 start "" hl2_launcher.exe -game gammasource -multirun -dxlevel 95 -novid %*
-"@ | Set-Content -Encoding ascii "$g18\play.cmd"
+"@ | Set-Content -Encoding ascii "$buildRoot\play.cmd"
 
 if ($Include2003) {
     Put-Tree $Build2003 "$out\GammaSource_2003" -Exclude @('t_*\*', '*.log', 'demoheader.tmp')

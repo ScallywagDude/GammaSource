@@ -71,7 +71,7 @@ def main():
     parser.add_argument('--out', type=Path)
     args = parser.parse_args()
     result = verify((args.repo/'gammasource_content/scripts/surfaceproperties.txt').read_text(),
-        (args.repo/'gammasource_content_2018/scripts/surfaceproperties.txt').read_text())
+        (args.repo/'gammasource_overlay/scripts/surfaceproperties.txt').read_text())
     text = json.dumps(result, indent=2)
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True); args.out.write_text(text + '\n')

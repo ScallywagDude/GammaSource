@@ -26,7 +26,7 @@ def atomic_write(path, data):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, default=ROOT.parent / "hl2")
-    parser.add_argument("--output", type=Path, default=ROOT / "gammasource_content_2018")
+    parser.add_argument("--output", type=Path, default=ROOT / "gammasource_overlay")
     parser.add_argument("--report", type=Path)
     args = parser.parse_args()
     rows = []

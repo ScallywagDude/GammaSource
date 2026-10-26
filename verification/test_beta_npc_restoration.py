@@ -77,7 +77,7 @@ class BetaNPCWiring(unittest.TestCase):
         self.assertIn('citizenpackage',text)
         self.assertIn('cubemap',text)
         self.assertNotIn('weapon_annabelle',text)
-        weapon=read(ROOT/'gammasource_content_2018/scripts/weapon_annabelle.txt')
+        weapon=read(ROOT/'gammasource_overlay/scripts/weapon_annabelle.txt')
         self.assertRegex(weapon, r'(?i)"printname"\s+"Annabelle"')
 
 if __name__ == '__main__': unittest.main()

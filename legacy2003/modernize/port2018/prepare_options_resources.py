@@ -2,7 +2,7 @@
 from pathlib import Path
 import json,shutil
 REPO=Path(r'C:\Users\doge6\Videos\GammaSource-main')
-OUT=REPO/'gammasource_content_2018/resource'
+OUT=REPO/'gammasource_overlay/resource'
 BACKUP=Path(r'C:\Users\doge6\Documents\GammaSourceTest\handoff_finish_backups\repo')
 PAGES={}
 def ctl(kind,name,x,y,w,h=24,text=None,**extra):

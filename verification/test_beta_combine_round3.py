@@ -71,7 +71,7 @@ int main() {
         self.assertRegex(s,r'IsArmorPiece\( i \) && !m_armorPieces\[ i \]\.destroyed')
 
     def test_settings_and_beta_provenance(self):
-        cfg=(ROOT/'gammasource_content_2018/cfg/skill.cfg').read_text()
+        cfg=(ROOT/'gammasource_overlay/cfg/skill.cfg').read_text()
         for key in ('sk_combine_elite_health', 'sk_combine_elite_kick',
                     'sk_combineguard_health', 'sk_combineguard_beam_damage'):
             self.assertRegex(cfg, rf'(?m)^{key}\s+"[0-9]+"')

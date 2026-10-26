@@ -9,7 +9,7 @@ GammaSource/
   build_gammasource.cmd         One-command x64 build wrapper
   stage_gammasource.ps1         One-command packaging wrapper
   app/, engine/, game/, ...     Active game and engine code
-  gammasource_content_2018/    Live beta resource overlay
+  gammasource_overlay/         Live beta resource overlay
   legacy2003/                   Preserved 2003 game source and conversion scripts
   tools/                        Independent project helper tools
   verification/                 Previous recorded validation and visual evidence
@@ -40,6 +40,8 @@ The `legacy2003/` folder is reference source, **not a second Waf build**, and so
 
 The packaging preserves the October 25 friendly-fire source patch and the beta overlay. No gameplay, renderer, or animation code was changed for this consolidation. The required loading screen is the original **green dialog on a plain black background**, not the older branded artwork. Normal choreographed scene body animation, `zoo_item` sky/physgun/HEV visual checks, and friendly-fire runtime toggle remain unverified here.
 
+The managed overlay is `gammasource_overlay/`; original external assets remain a separate `content/gammasource_content/` layer. New playable packages use `GammaSource FULL BUILD/`. Exact external archive names and dated capture paths below remain historical identifiers.
+
 ## Historical manifest
 
-`docs/GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json` retains the original names and hashes from before consolidation. Its old paths reflect the input ZIP, not the new directory; use `UNIFIED_LAYOUT_MANIFEST.json` for consolidated file mapping.
+`docs/GammaSource_FRIENDLY_FIRE_MANIFEST.json` retains the original names and hashes from before consolidation. Its old paths reflect the input ZIP, not the new directory; use `UNIFIED_LAYOUT_MANIFEST.json` for consolidated file mapping.

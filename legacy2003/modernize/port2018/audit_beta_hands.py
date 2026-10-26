@@ -13,7 +13,7 @@ import struct
 from vpkshaders import entries, read_entry
 
 REPO = Path(__file__).resolve().parents[2]
-OVERLAY = REPO / 'gammasource_content_2018'
+OVERLAY = REPO / 'gammasource_overlay'
 BETA = REPO / 'gammasource_content'
 BUILD_BETA = Path(r'C:\Users\doge6\Videos\GammaSource_Build\gammasource_content')
 ASSETS = Path(r'C:\Users\doge6\Downloads\source2018_assets')

@@ -239,7 +239,7 @@
     "final_build_and_stage": {
       "status": "passed",
       "build_log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\build_beta_hands.log",
-      "staged_path": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\staging\\2026-10-25_17-36-30\\GammaSource_2018"
+      "staged_path": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\staging\\2026-10-25_17-36-30\\GammaSource"
     },
     "beta_hands_default": {
       "status": "passed",

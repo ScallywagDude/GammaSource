@@ -49,7 +49,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--hl2', type=Path, default=Path(r'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\hl2_misc_dir.vpk'))
     parser.add_argument('--portal', type=Path, default=Path(r'C:\Program Files (x86)\Steam\steamapps\common\Portal\portal\portal_pak_dir.vpk'))
-    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[2] / 'gammasource_content_2018')
+    parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[2] / 'gammasource_overlay')
     parser.add_argument('--beta-content', type=Path, default=Path(__file__).resolve().parents[2] / 'gammasource_content')
     args = parser.parse_args()
     sources = [(args.hl2, 'v_357', 'v_gamma_357', True),

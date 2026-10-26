@@ -3,7 +3,7 @@
 The integrated engine/client/server/GameUI build passed. The three visual repairs below are implemented, but their zoo_item runtime test had **not started** when the user requested packaging and handoff. Do not describe them as visually verified in game.
 
 Latest stage being refreshed by the coordinating agent:
-`C:\Users\doge6\Documents\GammaSourceTest\2026-10-25_18-29-57\GammaSource_2018`
+`C:\Users\doge6\Documents\GammaSourceTest\2026-10-25_18-29-57\GammaSource`
 
 ## Physgun beam
 
@@ -13,7 +13,7 @@ Changed live engine files, relative to `C:\Users\doge6\Downloads\source-engine-m
 - `game/client/hl2/c_weapon_gravitygun.cpp`: compatible retained material, whole-curve bounds, attachment fallback, continuous updates, cleanup and diagnostics.
 - `game/server/physgun.cpp`: private beam material and entity-index networking.
 
-Private overlay assets under `C:\Users\doge6\Videos\GammaSource-main\gammasource_content_2018`:
+Private overlay assets under `C:\Users\doge6\Videos\GammaSource-main\gammasource_overlay`:
 - `materials/sprites/gamma_physbeam.vmt`
 - `materials/sprites/gamma_physbeam.vtf`
 
@@ -60,7 +60,7 @@ Launch only an isolated validation instance, using the refreshed matching client
 exec gamma_zoo_visual_check
 ```
 
-The cfg is `gammasource_content_2018/cfg/gamma_zoo_visual_check.cfg`. It finishes after about nine seconds and captures:
+The cfg is `gammasource_overlay/cfg/gamma_zoo_visual_check.cfg`. It finishes after about nine seconds and captures:
 - `jpeg zoo_sky_fixed`: sky above the spawn.
 - `jpeg zoo_physgun_beam_fixed`: held primary beam.
 - `jpeg zoo_suit_2003_fixed`: original suit pickups.

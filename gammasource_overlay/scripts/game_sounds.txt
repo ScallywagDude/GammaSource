@@ -995,7 +995,7 @@
 	"wave"	"items/ammocrate_close.wav"
 }
 
-// ---- GammaSource 2018 build: retail HL2 entries this file lacks ----
+// ---- GammaSource build: retail HL2 entries this file lacks ----
 
 "AI_BaseNPC.BodyDrop_Heavy"
 {

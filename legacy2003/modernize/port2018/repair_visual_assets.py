@@ -11,7 +11,7 @@ import struct
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / 'gammasource_content'
-OUT = ROOT / 'gammasource_content_2018'
+OUT = ROOT / 'gammasource_overlay'
 
 
 def install():

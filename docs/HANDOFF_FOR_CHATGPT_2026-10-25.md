@@ -45,7 +45,7 @@ The playable folder includes the required content and uses relative gameinfo pat
 
 ## Completed earlier: preserve these fixes
 
-The earlier WEAPON_REPAIRS_2018.md and weapon validation summary describe this work in detail. In brief: 43 playable weapons were audited; ammo capacities, weapon rates, pickups, missing projectiles, reload behavior, selector icons/slots, movement and jumping, vortex hopwire physics/effects, remote manhack control, playable Alyx gun, viewmodel issues and mandatory beta hands were repaired. The previous build passed movement/jump checks on e3_lab, e3_hydra, e3_techdemo_2 and e3_strider. The prior task included a source ZIP named GammaSource_weapon_repairs_2026-10-25.zip.
+The earlier WEAPON_REPAIRS.md and weapon validation summary describe this work in detail. In brief: 43 playable weapons were audited; ammo capacities, weapon rates, pickups, missing projectiles, reload behavior, selector icons/slots, movement and jumping, vortex hopwire physics/effects, remote manhack control, playable Alyx gun, viewmodel issues and mandatory beta hands were repaired. The previous build passed movement/jump checks on e3_lab, e3_hydra, e3_techdemo_2 and e3_strider. The prior task included a source ZIP named GammaSource_weapon_repairs_2026-10-25.zip.
 
 Current source includes those changes. Do not re-run old broad port/fixup scripts: several are not idempotent and can overwrite subsequent repairs.
 
@@ -65,7 +65,7 @@ Runtime evidence:
 - Classic loading: ui_loading_final.png shows the green box, status, segmented progress and Cancel on a plain black background. No artwork, title leak or close X.
 - Borderless: the actual UI picker produced render/client/outer size 1920x1200 at desktop origin, caption off, popup on; switching back restored a framed window. Same-resolution style changes and saved startup settings were tested. All foreground flags stayed 0 during background tests. Exclusive-fullscreen transitions have source review but were not exercised while the user had another game open.
 
-Key source: gameui/OptionsDialog.cpp, OptionsSubVideo.cpp, OptionsSubKeyboard.cpp, OptionsSubAudio.cpp, OptionsSubMouse.cpp, OptionsSubMultiplayer.cpp, OptionsSubHUD.h, BasePanel.cpp/.h, LoadingDialog.cpp; engine/host.cpp, sys_getmodes.cpp, sys_mainwind.cpp. Resources are under GammaSource-main/gammasource_content_2018/resource/. prepare_options_resources.py reproduces the ten resource overrides.
+Key source: gameui/OptionsDialog.cpp, OptionsSubVideo.cpp, OptionsSubKeyboard.cpp, OptionsSubAudio.cpp, OptionsSubMouse.cpp, OptionsSubMultiplayer.cpp, OptionsSubHUD.h, BasePanel.cpp/.h, LoadingDialog.cpp; engine/host.cpp, sys_getmodes.cpp, sys_mainwind.cpp. Resources are under GammaSource-main/gammasource_overlay/resource/. prepare_options_resources.py reproduces the ten resource overrides.
 
 Diagnostics: gamma_ui_page, gamma_ui_dump, gamma_ui_set, gamma_ui_command, gamma_ui_dropdown, gamma_ui_delay, gamma_ui_clear, gamma_windowinfo. These use real VGUI handlers without OS keyboard/mouse synthesis. They are optional test commands, not required for normal play.
 
@@ -108,4 +108,4 @@ Do not run the old sync2018.ps1 blindly: it kills launcher processes by name. Do
 
 ## Suggested next prompt
 
-"Continue the GammaSource 2018 port from this handoff and uploaded ZIP. Weapon values and beta hands are already complete. First verify normal scripted body sequences on e3_lab/e3_hydra and run the zoo_item beam/suit/sky check. Keep the classic loading dialog on plain black. Report actual test results separately from source changes."
+"Continue the GammaSource port from this handoff and uploaded ZIP. Weapon values and beta hands are already complete. First verify normal scripted body sequences on e3_lab/e3_hydra and run the zoo_item beam/suit/sky check. Keep the classic loading dialog on plain black. Report actual test results separately from source changes."

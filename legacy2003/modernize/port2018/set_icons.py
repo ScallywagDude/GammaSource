@@ -5,7 +5,7 @@ usage: set_icons.py <repo>"""
 import os, re, shutil, sys
 
 REPO = sys.argv[1]
-C18 = os.path.join(REPO, 'gammasource_content_2018', 'scripts')
+C18 = os.path.join(REPO, 'gammasource_overlay', 'scripts')
 BETA = os.path.join(REPO, 'gammasource_content', 'scripts')
 RETAIL = r'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\scripts'
 

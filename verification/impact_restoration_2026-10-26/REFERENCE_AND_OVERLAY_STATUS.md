@@ -15,7 +15,7 @@ The supplied MegaBuild stores common original effects in `hl2/materials` and `hl
 
 ## Installed private overlay
 
-All files are new private paths under `GammaSource/gammasource_content_2018`. Shared/reference files and hard links were not modified.
+All files are new private paths under `GammaSource/gammasource_overlay`. Shared/reference files and hard links were not modified.
 
 - Materials: `materials/gamma_2003/<original material path>.vmt/.vtf`.
 - Blood material names: `gamma_2003/effects/{blood,blood2,blood_gore,blood_drop,blood_puff}`.
@@ -33,7 +33,7 @@ The private namespace prevents mounted TF2/HL2 VPKs, converted assets or retail 
 From the active GammaSource directory, run Python 3 on:
 `tools/gamma/restore_2003_impact_assets.py`
 
-Defaults use the adjacent MegaBuild `hl2` reference and output to `gammasource_content_2018`. Optional arguments: `--reference`, `--out`, `--baseline`, `--report`. The frozen baseline is `tools/gamma/reference/decals_subrect_2018.txt`.
+Defaults use the adjacent MegaBuild `hl2` reference and output to `gammasource_overlay`. Optional arguments: `--reference`, `--out`, `--baseline`, `--report`. The frozen baseline is `tools/gamma/reference/decals_subrect_2018.txt`.
 
 `provenance_manifest.json` records every original/output SHA-256 and dependency. `asset_validation.json` confirms complete closure, exact texture bytes, preserved VMT tokens, unchanged extra groups and a byte-identical independent regeneration. A separate generated copy is in this report folder's `private_overlay`. `secondary_2003_reference_check.json` records the independent 61/61 match.
 

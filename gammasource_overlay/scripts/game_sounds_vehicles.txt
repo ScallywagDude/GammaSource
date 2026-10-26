@@ -365,7 +365,7 @@
 	"wave"		"vehicles/vehicle_turbo_off1.wav"
 }
 
-// ---- GammaSource 2018 build: retail HL2 entries this file lacks ----
+// ---- GammaSource build: retail HL2 entries this file lacks ----
 
 "ATV_engine_null"
 {

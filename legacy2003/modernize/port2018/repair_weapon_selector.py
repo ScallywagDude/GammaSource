@@ -1,4 +1,4 @@
-"""Repair GammaSource 2018 selector positions and missing raster icons.
+"""Repair GammaSource selector positions and missing raster icons.
 
 Uses original sprite art for matching placeholder viewmodels and simple outline
 symbols for utility props. Original 2003 content is never modified.
@@ -47,7 +47,7 @@ def write_vtf(im,path):
 
 def main():
  a=argparse.ArgumentParser();a.add_argument('--repo',type=Path,default=HERE.parents[1]);a.add_argument('--preview',type=Path);a.add_argument('--backup',type=Path);args=a.parse_args()
- repo=args.repo;out=repo/'gammasource_content_2018';base=repo/'gammasource_content'
+ repo=args.repo;out=repo/'gammasource_overlay';base=repo/'gammasource_content'
  def save(p,data):
   if args.backup and p.exists():
    dest=args.backup/p.relative_to(repo);dest.parent.mkdir(parents=True,exist_ok=True)

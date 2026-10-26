@@ -1,6 +1,6 @@
-# GammaSource 2018 weapon repairs — 2026-10-25
+# GammaSource weapon repairs — 2026-10-25
 
-Launch `GammaSource_2018/play.cmd`. This is the tested 64-bit build; the launcher supports running alongside the original 2003 game.
+Launch `GammaSource/play.cmd`. This is the tested 64-bit build; the launcher supports running alongside the original 2003 game.
 
 The 2003 hands are mandatory defaults. Native beta viewmodels and their hand material/texture library match the original 2003 build. Added retail viewmodels use private aliases with their retail arms hidden and original beta donor geometry. The crossbow is included. The legacy `cl_betahands 0` setting clamps to 1. Original arm-free utility models retain their 2003 geometry.
 

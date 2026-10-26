@@ -73,7 +73,7 @@ game_sounds_manifest
 	"precache_file"		"scripts/game_sounds_npc_antlion.txt"
 	"precache_file"		"scripts/game_sounds_npc_bullsquid.txt"
 	"precache_file"		"scripts/game_sounds_npc_cremator.txt"
-	// GammaSource 2018 build: retail HL2 sound scripts
+	// GammaSource build: retail HL2 sound scripts
 	"precache_file"		"scripts/game_sounds_ui.txt"
 	"precache_file"		"scripts/game_sounds_world.txt"
 	"precache_file"		"scripts/game_sounds_ambient_generic.txt"
@@ -131,7 +131,7 @@ game_sounds_manifest
 	"precache_file"		"scripts/npc_sounds_sniper.txt"
 	"precache_file"		"scripts/npc_sounds_stalker.txt"
 	"precache_file"		"scripts/npc_sounds_gman.txt"
-	"precache_file"		"scripts/game_sounds_gamma2018.txt"
+	"precache_file"		"scripts/game_sounds_gamma.txt"
 	"precache_file"		"scripts/game_sounds_portal.txt"
 	"precache_file"		"scripts/game_sounds_player_portal.txt"
 	"precache_file"		"scripts/game_sounds_weapons_portal.txt"

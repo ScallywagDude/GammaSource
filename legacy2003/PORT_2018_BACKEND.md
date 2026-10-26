@@ -87,7 +87,7 @@ Status:
   - The combine guard client effects are rewritten for the 2018 particle API. The energy wave client is ported.
   - The 2018 response system accepts the 2003 `wav` response type.
   - There is no `models/Combine_Elite.mdl` in any of our content, so npc_combineelite has no model. It was the same in the 2003 build.
-- Sound scripts: GammaSource's 2003 scripts override the retail ones by name. `merge_soundscripts.py` builds `gammasource_content_2018/` (2003 entries plus the retail entries they lack, and a merged manifest). That folder is mounted first in the 2018 build.
+- Sound scripts: GammaSource's 2003 scripts override the retail ones by name. `merge_soundscripts.py` builds `gammasource_overlay/` (2003 entries plus the retail entries they lack, and a merged manifest). That folder is mounted first in the 2018 build.
 - World entities the maps actually use: `trigger_camera` (alias of `point_viewcontrol`), `npc_antlionmaker` (ported), `npc_tripmine` (2003 port), and `weapon_physgun` (the 2018 `physgun.cpp` plus its client, with small fixes). The rest of the "missing" list is unused by any map: trigger_vphysics was a commented-out example in 2003, and the teamplay rules, znpc_helicopter and gunshipcrashfx are not used.
 - Check (2026-10-25): e3_strider, e3_hydra, e3_lab and e3_techdemo_2 load and run for 80 s with no unknown-entity, missing-class or crash reports.
 - Dev tools: `gamma_mapstart_cmd`, `gamma_delay <s> <cmd>` (run as the local player), `gamma_trace_down`, `gamma_trace_hull`.

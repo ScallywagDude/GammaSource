@@ -5,14 +5,14 @@
   "path_map": {
     "source-engine-master/": "GammaSource/",
     "GammaSource-main/": "GammaSource/legacy2003/",
-    "GammaSource-main/gammasource_content_2018/": "GammaSource/gammasource_content_2018/",
+    "GammaSource-main/gammasource_content_2018/": "GammaSource/gammasource_overlay/",
     "source-engine-master/README.md": "GammaSource/docs/ENGINE_README_ORIGINAL.md",
     "GammaSource-main/README.md": "GammaSource/docs/README_2003_HISTORICAL.md",
     "tools/": "GammaSource/tools/",
     "verification/": "GammaSource/verification/",
     "README_START_HERE.md": "GammaSource/docs/README_START_HERE.md",
     "HANDOFF_FOR_CHATGPT_2026-10-25.md": "GammaSource/docs/HANDOFF_FOR_CHATGPT_2026-10-25.md",
-    "GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json": "GammaSource/docs/GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json"
+    "GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json": "GammaSource/docs/GammaSource_FRIENDLY_FIRE_MANIFEST.json"
   },
   "source_modifications": [
     "README.md (user-supplied)",

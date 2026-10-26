@@ -1,4 +1,4 @@
-// GammaSource 2018 build: the retail HL2 particle systems plus the Portal ones the portal gun needs
+// GammaSource build: the retail HL2 particle systems plus the Portal ones the portal gun needs
 particles_manifest
 {
 	"file"		"particles/error.pcf"

@@ -73,7 +73,7 @@ def main(gamma, retail, out):
         extra = [body for name, body in blocks(rtext) if name.lower() not in have]
         if not extra:
             continue
-        merged = gtext.rstrip() + '\n\n// ---- GammaSource 2018 build: retail HL2 entries this file lacks ----\n\n' + '\n\n'.join(extra) + '\n'
+        merged = gtext.rstrip() + '\n\n// ---- GammaSource build: retail HL2 entries this file lacks ----\n\n' + '\n\n'.join(extra) + '\n'
         dst = os.path.join(out, rel)
         os.makedirs(os.path.dirname(dst), exist_ok=True)
         open(dst, 'wb').write(merged.encode('latin-1'))
@@ -82,15 +82,15 @@ def main(gamma, retail, out):
 
     # manifest: the 2003 list, then retail files it does not name
     extra_files = [f for f in rfiles if f.lower() not in {g.lower() for g in gfiles}]
-    # sounds of the weapons added in the 2018 build (hand-written, lives in gammasource_content_2018)
-    extra_files.append('scripts/game_sounds_gamma2018.txt')
+    # sounds of the weapons added in the 2018 build (hand-written, lives in gammasource_overlay)
+    extra_files.append('scripts/game_sounds_gamma.txt')
     # the Portal-Base portal gun (Portal content is mounted after HL2)
     extra_files += ['scripts/game_sounds_portal.txt', 'scripts/game_sounds_player_portal.txt',
                     'scripts/game_sounds_weapons_portal.txt', 'scripts/npc_sounds_energy_ball.txt']
     lines = ''.join('\t"precache_file"\t\t"%s"\n' % f for f in extra_files)
     man = gman.rstrip()
     assert man.endswith('}')
-    man = man[:-1] + '\t// GammaSource 2018 build: retail HL2 sound scripts\n' + lines + '}\n'
+    man = man[:-1] + '\t// GammaSource build: retail HL2 sound scripts\n' + lines + '}\n'
     open(os.path.join(out, 'scripts/game_sounds_manifest.txt'), 'wb').write(man.encode('latin-1'))
     print('manifest: +%d retail files; %d retail entries merged' % (len(extra_files), added_total))
 

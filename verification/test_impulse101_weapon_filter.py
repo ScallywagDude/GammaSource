@@ -13,7 +13,7 @@ import unittest
 
 ROOT = Path(__file__).resolve().parent.parent
 HEADER = ROOT / 'game/server/gamma/impulse101_weapon_filter.h'
-SCRIPT = ROOT / 'gammasource_content_2018/scripts/weapon_annabelle.txt'
+SCRIPT = ROOT / 'gammasource_overlay/scripts/weapon_annabelle.txt'
 PLAYER = ROOT / 'game/server/player.cpp'
 
 

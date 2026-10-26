@@ -1,6 +1,6 @@
 {
   "original_root": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2",
-  "overlay_root": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018",
+  "overlay_root": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay",
   "models": [
     {
       "asset": "models/spitball_large.mdl",
@@ -1070,7 +1070,7 @@
       "bytes": 87698,
       "sha256": "42b5bbee9fb93f15a2a0fc8950eeede7eb9850ad98e4998aa4e138b99772e1cb",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.dx7_2bone.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\combine_elite.dx7_2bone.vtx"
     },
     {
       "asset": "models/combine_elite.dx80.vtx",
@@ -1078,7 +1078,7 @@
       "bytes": 87698,
       "sha256": "42b5bbee9fb93f15a2a0fc8950eeede7eb9850ad98e4998aa4e138b99772e1cb",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.dx80.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\combine_elite.dx80.vtx"
     },
     {
       "asset": "models/combine_elite.mdl",
@@ -1086,7 +1086,7 @@
       "bytes": 584624,
       "sha256": "d9028c089e17b1760ca8cccaa12260715dc319dbe09ff163a47beda0e17fb671",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.mdl"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\combine_elite.mdl"
     },
     {
       "asset": "models/combine_elite.phy",
@@ -1105,7 +1105,7 @@
       "bytes": 1356,
       "sha256": "70f86e44b3f2d2c2a188df2e9e32f4b86ab1be8428f87fbe8d4b30b851cb9cc9",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.dx7_2bone.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_large.dx7_2bone.vtx"
     },
     {
       "asset": "models/spitball_large.dx80.vtx",
@@ -1113,7 +1113,7 @@
       "bytes": 1356,
       "sha256": "f5292c7d3a78b8b4cf1c553abb8e88906ed1656415019da14940bf42748820b0",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.dx80.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_large.dx80.vtx"
     },
     {
       "asset": "models/spitball_large.mdl",
@@ -1121,7 +1121,7 @@
       "bytes": 5402,
       "sha256": "2dc43482f4d0bc49deb243a32cb1ab90b90c3f9e138cd0c17fdd6e3b49a186dd",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.mdl"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_large.mdl"
     },
     {
       "asset": "models/spitball_medium.dx7_2bone.vtx",
@@ -1129,7 +1129,7 @@
       "bytes": 1356,
       "sha256": "ba938d1fa4a74e5b36c7c0b14c45ae6b5b66a91d405f446fbcaf6f9955c9a39f",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.dx7_2bone.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_medium.dx7_2bone.vtx"
     },
     {
       "asset": "models/spitball_medium.dx80.vtx",
@@ -1137,7 +1137,7 @@
       "bytes": 1356,
       "sha256": "d4edcc5fc5307d6f34347550334624e316b973f86e0bc28893916228bd5e7b01",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.dx80.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_medium.dx80.vtx"
     },
     {
       "asset": "models/spitball_medium.mdl",
@@ -1145,7 +1145,7 @@
       "bytes": 5402,
       "sha256": "668a1f40e66cb764804a1eb64c2e626285a9412c9a3c8b5ae372dc0c2cdefcde",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.mdl"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_medium.mdl"
     },
     {
       "asset": "models/spitball_small.dx7_2bone.vtx",
@@ -1153,7 +1153,7 @@
       "bytes": 1356,
       "sha256": "3cf79b3b1321aed4dd2b05aac07325bd6e2dde529236f57a41f99e91e9218a35",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.dx7_2bone.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_small.dx7_2bone.vtx"
     },
     {
       "asset": "models/spitball_small.dx80.vtx",
@@ -1161,7 +1161,7 @@
       "bytes": 1356,
       "sha256": "9f2581a2e7758363f76cde11db5c7feaa336ce6873649f4b899cf0bb8f2eedb8",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.dx80.vtx"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_small.dx80.vtx"
     },
     {
       "asset": "models/spitball_small.mdl",
@@ -1169,7 +1169,7 @@
       "bytes": 5402,
       "sha256": "14996c9ea8dd5f5bfee3996f269b233a84efddfa1feccfb3a7d7807ba38cb2ba",
       "status": "copied_exact_original",
-      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.mdl"
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_overlay\\models\\spitball_small.mdl"
     }
   ],
   "limits": [

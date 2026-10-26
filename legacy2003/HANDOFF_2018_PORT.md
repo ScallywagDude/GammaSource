@@ -1,4 +1,4 @@
-# GammaSource 2018-engine port: handoff (2026-10-25)
+# GammaSource engine port: handoff (2026-10-25)
 
 This is for the next agent picking up the work. Read `PORT_2018_BACKEND.md` in this repo as well: it has the full plan, the milestone notes and the gotchas.
 
@@ -45,7 +45,7 @@ This is for the next agent picking up the work. Read `PORT_2018_BACKEND.md` in t
    - Do NOT rebuild stock shaders. GMod's `.vcs` files match this engine, and my sprite rebuild broke glows; it was reverted.
 2. `source2018_assets\gmodshaders`: GMod's stock shaders.
 3. `hl2\converted`
-4. `GammaSource-main\gammasource_content_2018`: everything new for the 2018 build. Scripts, merged sound manifest, particles manifest, beta-hands rules, icons, nodraw overrides.
+4. `GammaSource-main\gammasource_overlay`: everything new for the 2018 build. Scripts, merged sound manifest, particles manifest, beta-hands rules, icons, nodraw overrides.
 5. `source2018_assets\gamma`
 6. `GammaSource-main\gammasource_content`: the 2003 game content.
 7. `Documents\HL2BetaMegaCuck\hl2_2003`
@@ -121,7 +121,7 @@ This is for the next agent picking up the work. Read `PORT_2018_BACKEND.md` in t
 ## What's in the zip
 
 - `source-engine-master/`: the full modified 2018 tree, without `build/`.
-- `GammaSource-main/`: the repo, without the 3.9 GB `gammasource_content` and build outputs. It includes `gammasource_content_2018`, `modernize/port2018/*` and the docs.
+- `GammaSource-main/`: the repo, without the 3.9 GB `gammasource_content` and build outputs. It includes `gammasource_overlay`, `modernize/port2018/*` and the docs.
 - `tools/`: the scratchpad scripts (`sync2018.ps1`, `shot2018.ps1`, `sheet.ps1`, `minidbg.py`, `vpkgrep.py`, `mdlbones.py`, and others).
 - `loading_screen.png`: the user's loading-screen image.
 - Not included (too large; they live on the user's machine):

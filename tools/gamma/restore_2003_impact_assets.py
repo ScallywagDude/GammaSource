@@ -205,7 +205,7 @@ def restore(reference, output, baseline, report):
 def main():
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument('--reference', type=Path, default=ROOT.parent / 'hl2')
-    ap.add_argument('--out', type=Path, default=ROOT / 'gammasource_content_2018')
+    ap.add_argument('--out', type=Path, default=ROOT / 'gammasource_overlay')
     ap.add_argument('--baseline', type=Path,
                     default=Path(__file__).parent / 'reference/decals_subrect_2018.txt')
     ap.add_argument('--report', type=Path,
