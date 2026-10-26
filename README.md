@@ -97,8 +97,8 @@ If Windows cannot load a DLL, check **architecture**, its actual file location, 
 - [ ] **Fix intermittent hard-stop crashes when killing NPCs.** NPC deaths sometimes cause the entire game to crash.
 - [ ] **Restore the Houndeye's missing sonic shockwave.** Consider adapting the Half-Life 1 effect and polishing it to fit Half-Life 2's visual style.
 - [ ] **Complete full ports of the unfinished cut Combine enemies.** Most remain substantially unfinished and need complete behavior and presentation.
-- [ ] **Complete `zoo_item` visual verification.** Inspect the sky, original HEV pickup and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
-- [ ] **Runtime-test friendly fire.** Confirm the enabled-by-default `gamma_friendlyfire` toggle across the intended allied-damage paths.
+- [✅] **Complete `zoo_item` visual verification.** Inspect the sky, original HEV pickup and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
+- [✅] **Runtime-test friendly fire.** Confirm the enabled-by-default `gamma_friendlyfire` toggle across the intended allied-damage paths.
 - [ ] **Measure stability and performance.** Record repeatable frame times, memory use, map-loading times and long-session crashes.
 - [ ] **Remove every Steam dependency.** Cover the game, engine, build process, tools, launchers, content lookup and runtime services; verify independent builds and runtime operation.
 - [ ] **Replace normal Hammer with a WorldCraft-styled editor combining both feature sets.** Reverse-engineer the supplied `hammerplusplus_2013sp_build8872.zip` and combine its features with the existing editor. Match the original 2003 WorldCraft appearance and branding exactly. Start this after Steam dependency removal.
