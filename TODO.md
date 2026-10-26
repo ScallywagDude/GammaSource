@@ -2,7 +2,7 @@
 
 This file mirrors the shared [README TODO list](README.md#todo). All unfinished work is **on hold**. Do not start or resume any items until the project owner explicitly says to **continue on the TODO list**.
 
-- [ ] **Finish current NPC, model, animation and scene restoration.** Continue the unfinished fixes and verification in [v28 known bugs](docs/V28_KNOWN_BUGS.md), including normal choreographed body sequences on `e3_lab` and `e3_hydra`.
+- [ ] **Finish current NPC, model, scripting, animation and puppeteering restoration.** Continue the unfinished fixes and verification in [v28 known bugs](docs/V28_KNOWN_BUGS.md), including normal choreographed body sequences on `e3_lab` and `e3_hydra`. **Alyx's legs are still messed up:** fix the remaining leg deformation and incorrect poses as part of this scripting, animation and puppeteering work.
 - [ ] **Fix barnacle pickup of newly added NPCs.** New NPCs currently cannot be picked up by barnacles.
 - [ ] **Fix intermittent hard-stop crashes when killing NPCs.** NPC deaths sometimes cause the entire game to crash.
 - [ ] **Restore the Houndeye's missing sonic shockwave.** Consider adapting the Half-Life 1 effect and polishing it to fit Half-Life 2's visual style.
