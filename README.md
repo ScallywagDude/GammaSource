@@ -76,6 +76,8 @@ Run this command from the unified `GammaSource/` directory and adjust the paths 
 
 Each staging run creates a dated output folder. Open that folder's `GammaSource_2018` directory and launch the included `play.cmd`.
 
+After validation, include **FULL BUILD** in the complete playable build folder's name. Keep its folder path unchanged while that build is running.
+
 ### 5. Verify the result
 
 1. Check the Waf exit status and preserve its full build log.
