@@ -101,8 +101,8 @@ If Windows cannot load a DLL, check **architecture**, its actual file location, 
 - ✅ **Runtime-test friendly fire.** Confirm the enabled-by-default `gamma_friendlyfire` toggle across the intended allied-damage paths.
 - [ ] **Measure stability and performance.** Record repeatable frame times, memory use, map-loading times and long-session crashes.
 - [ ] **Remove every Steam dependency.** Cover the game, engine, build process, tools, launchers, content lookup and runtime services; verify independent builds and runtime operation.
-- [ ] **Replace normal Hammer with a WorldCraft-styled editor combining both feature sets.** Reverse-engineer the supplied `hammerplusplus_2013sp_build8872.zip` and combine its features with the existing editor. Match the original 2003 WorldCraft appearance and branding exactly. Start this after Steam dependency removal.
-- [ ] **Repair .357/crossbow presentation and restore ammo for every added weapon.** Fix stretching of the mandatory 2003 hands, use the Half-Life 2 crossbow logo/icon, restore ammo availability and pickups for all added weapons, and use .357 ammo models for `weapon_proto1` ammo pickups. Preserve the already repaired weapon values.
+- [ ] **Replace normal Hammer with a WorldCraft-styled editor combining both feature sets.** Edit current hammer. Hammer++ was a placeholder. Match the original 2003 WorldCraft appearance and branding exactly. Starting this after Steam dependency removal.
+- [ ] **Repair .357/crossbow presentation and restore ammo for every added weapon.** Fix stretching of the 2003 hands, use the Half-Life 2 crossbow logo/icon, restore ammo availability and pickups for all added weapons, and use .357 ammo models for `weapon_proto1` ammo pickups. Preserve the already repaired weapon values.
 
 Preserve original beta features throughout this work.
 
