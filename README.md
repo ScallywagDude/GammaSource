@@ -1,6 +1,6 @@
 # GammaSource
 
-GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons (plus a few fan favorites), NPCs, models, animations, maps, interface, and ground deformation.
+GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons (plus a few fan favorites/other unreleased weapons), NPCs, models, animations, maps, interface, and ground deformation.
 
 ## Project status
 
