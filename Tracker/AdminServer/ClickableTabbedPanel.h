@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,12 +11,11 @@
 #pragma once
 #endif
 
-#include <VGUI_PropertySheet.h>
-#include <VGUI_Frame.h>
-#include <VGUI_Panel.h>
-#include <VGUI_MouseCode.h>
+#include <vgui/MouseCode.h>
 
-
+#include <vgui_controls/PropertySheet.h>
+#include <vgui_controls/Frame.h>
+#include <vgui_controls/Panel.h>
 
 namespace vgui
 {

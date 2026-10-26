@@ -1,13 +1,11 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "PlayerListDialog.h"
-#include "Friends/IFriendsUser.h"
-extern IFriendsUser *g_pFriendsUser;
 
 #include <vgui/ILocalize.h>
 #include <vgui/ISurface.h>
@@ -16,12 +14,13 @@ extern IFriendsUser *g_pFriendsUser;
 #include <vgui_controls/Label.h>
 #include <vgui_controls/Button.h>
 #include <vgui_controls/MessageBox.h>
+#include <vgui_controls/ComboBox.h>
 
 #include "EngineInterface.h"
-#include "cl_dll/IGameClientExports.h"
+#include "game/client/IGameClientExports.h"
 #include "GameUI_Interface.h"
-// memdbgon must be the last include file in a .cpp file!!!
-#include <tier0/memdbgon.h>
+#include "steam/steam_api.h"
+#include "fmtstr.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -34,27 +33,13 @@ using namespace vgui;
 CPlayerListDialog::CPlayerListDialog(vgui::Panel *parent) : BaseClass(parent, "PlayerListDialog")
 {
 	SetSize(320, 240);
+	SetTitle("#GameUI_CurrentPlayers", true);
 
-	if (GameClientExports())
-	{
-		wchar_t title[256];
-		wchar_t hostname[128];
-		localize()->ConvertANSIToUnicode(GameClientExports()->GetServerHostName(), hostname, sizeof(hostname));
-		localize()->ConstructString(title, sizeof(title), localize()->Find("#GameUI_PlayerListDialogTitle"), 1, hostname);
-		SetTitle(title, true);
-	}
-	else
-	{
-		SetTitle("Current players", true);
-	}
-
-	m_pAddFriendButton = new Button(this, "AddFriendButton", "");
 	m_pMuteButton = new Button(this, "MuteButton", "");
 
 	m_pPlayerList = new ListPanel(this, "PlayerList");
-	m_pPlayerList->AddColumnHeader(0, "Name", "#GameUI_PlayerName", 128);
-	m_pPlayerList->AddColumnHeader(1, "TName", "#GameUI_FriendsName", 128);
-	m_pPlayerList->AddColumnHeader(2, "Properties", "#GameUI_Properties", 80);
+	m_pPlayerList->AddColumnHeader(0, "Name", "#GameUI_PlayerName", 180);
+	m_pPlayerList->AddColumnHeader(1, "Properties", "#GameUI_Properties", 80);
 
 	m_pPlayerList->SetEmptyListText("#GameUI_NoOtherPlayersInGame");
 
@@ -80,27 +65,19 @@ void CPlayerListDialog::Activate()
 	int maxClients = engine->GetMaxClients();
 	for (int i = 1; i <= maxClients; i++)
 	{
-		// get the player info from the engine
-		char szPlayerIndex[32];
-		sprintf(szPlayerIndex, "%d", i);
+		// get the player info from the engine	
+		player_info_t pi;
 
-		const char *idString = engine->PlayerInfo_ValueForKey(i, "*tracker");
-		if (!idString)
-			break;
-		
-		unsigned int userID = atoi(idString);
-
-		// don't add self to list
-		if (g_pFriendsUser && userID == g_pFriendsUser->GetFriendsID())
+		if ( !engine->GetPlayerInfo(i, &pi) )
 			continue;
+
+		char szPlayerIndex[32];
+		Q_snprintf(szPlayerIndex, sizeof( szPlayerIndex ), "%d", i);
 
 		// collate user data then add it to the table
 		KeyValues *data = new KeyValues(szPlayerIndex);
-		const char *playerName = engine->PlayerInfo_ValueForKey(i, "name");
-		data->SetString("Name", playerName);
-		data->SetString("TID", idString);
-		const char *userName = g_pFriendsUser->GetUserName(userID);
-		data->SetString("TName", userName);
+		
+		data->SetString("Name", pi.name );
 		data->SetInt("index", i);
 
 		// add to the list
@@ -130,29 +107,24 @@ void CPlayerListDialog::RefreshPlayerProperties()
 
 		// assemble properties
 		int playerIndex = data->GetInt("index");
-		int friendsID = data->GetInt("TID");
+		player_info_t pi;
 
-		// make sure the player is still valid
-		const char *playerName = engine->PlayerInfo_ValueForKey(playerIndex, "name");
-		if (!playerName)
+		if ( !engine->GetPlayerInfo( playerIndex, &pi) )
 		{
 			// disconnected
 			data->SetString("properties", "Disconnected");
 			continue;
 		}
-		data->SetString("name", playerName);
+
+		data->SetString( "name", pi.name );
 
 		bool muted = false, friends = false, bot = false;
-		if (GameClientExports() && GameClientExports()->IsPlayerGameVoiceMuted(playerIndex))
+		
+		if ( GameClientExports() && GameClientExports()->IsPlayerGameVoiceMuted(playerIndex) )
 		{
 			muted = true;
 		}
-		if (g_pFriendsUser && friendsID && g_pFriendsUser->IsBuddy(friendsID))
-		{
-			friends = true;
-		}
-		const char *botValue = engine ? engine->PlayerInfo_ValueForKey(playerIndex, "*bot") : NULL;
-		if (botValue && !stricmp("1", botValue))
+		if ( pi.fakeplayer )
 		{
 			bot = true;
 		}
@@ -186,11 +158,7 @@ void CPlayerListDialog::RefreshPlayerProperties()
 //-----------------------------------------------------------------------------
 void CPlayerListDialog::OnCommand(const char *command)
 {
-	if (!stricmp(command, "AddFriend"))
-	{
-		RequestAuthorizationFromSelectedUser();
-	}
-	else if (!stricmp(command, "Mute"))
+	if (!stricmp(command, "Mute"))
 	{
 		ToggleMuteStateOfSelectedUser();
 	}
@@ -208,69 +176,26 @@ void CPlayerListDialog::ToggleMuteStateOfSelectedUser()
 	if (!GameClientExports())
 		return;
 
-	KeyValues *data = m_pPlayerList->GetItem(m_pPlayerList->GetSelectedItem(0));
-	if (!data)
-		return;
-	int playerIndex = data->GetInt("index");
-	assert(playerIndex);
+	for ( int iSelectedItem = 0; iSelectedItem < m_pPlayerList->GetSelectedItemsCount(); iSelectedItem++ )
+	{
+		KeyValues *data = m_pPlayerList->GetItem( m_pPlayerList->GetSelectedItem( iSelectedItem ) );
+		if (!data)
+			return;
+		int playerIndex = data->GetInt("index");
+		Assert(playerIndex);
 
-	if (GameClientExports()->IsPlayerGameVoiceMuted(playerIndex))
-	{
-		GameClientExports()->UnmutePlayerGameVoice(playerIndex);
-	}
-	else
-	{
-		GameClientExports()->MutePlayerGameVoice(playerIndex);
+		if (GameClientExports()->IsPlayerGameVoiceMuted(playerIndex))
+		{
+			GameClientExports()->UnmutePlayerGameVoice(playerIndex);
+		}
+		else
+		{
+			GameClientExports()->MutePlayerGameVoice(playerIndex);
+		}
 	}
 
 	RefreshPlayerProperties();
 	OnItemSelected();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CPlayerListDialog::RequestAuthorizationFromSelectedUser()
-{
-	bool bSuccess = false;
-
-	// get the user ID
-	int itemID = m_pPlayerList->GetSelectedItem(0);
-	KeyValues *data = NULL;
-	unsigned int userID = 0;
-	if ( m_pPlayerList->IsValidItemID(itemID) )
-	{
-		data = m_pPlayerList->GetItem(itemID);
-	}
-	if (!data)
-		return;
-
-	userID = data->GetInt("TID");
-	if (userID > 0 && userID != g_pFriendsUser->GetFriendsID())
-	{
-		g_pFriendsUser->RequestAuthorizationFromUser(userID);
-		bSuccess = true;
-	}
-
-	// popup a message box indicating success/failure
-	wchar_t message[512], friendName[64];
-	const char *playerName = data->GetString("TName", "");
-	if (!playerName[0])
-	{
-		playerName = data->GetString("Name", "");
-	}
-	localize()->ConvertANSIToUnicode(playerName, friendName, sizeof(friendName));
-	if (data && userID != g_pFriendsUser->GetFriendsID() && bSuccess)
-	{
-		localize()->ConstructString(message, sizeof(message), localize()->Find("GameUI_FriendAddedToList"), 1, friendName);
-	}
-	else
-	{
-		localize()->ConstructString(message, sizeof(message), localize()->Find("#GameUI_AddFriendFailed"), 1, friendName);
-		
-	}
-	MessageBox *messageBox = new MessageBox(localize()->Find("#GameUI_AddFriendTitle"), message);
-	messageBox->DoModal();
 }
 
 //-----------------------------------------------------------------------------
@@ -282,18 +207,27 @@ void CPlayerListDialog::OnItemSelected()
 	RefreshPlayerProperties();
 
 	// set the button state based on the selected item
+	bool bMuteButtonEnabled = false;
 	if (m_pPlayerList->GetSelectedItemsCount() > 0)
 	{
 		KeyValues *data = m_pPlayerList->GetItem(m_pPlayerList->GetSelectedItem(0));
-		const char *botValue = data ? engine->PlayerInfo_ValueForKey(data->GetInt("index"), "*bot") : NULL;
-		bool isValidPlayer = botValue ? !stricmp("1", botValue) : false;
-		// make sure the player is valid
-		if (!engine->PlayerInfo_ValueForKey(data->GetInt("index"), "name"))
+
+		player_info_t pi;
+
+		int iLocalPlayer = engine->GetLocalPlayer();
+
+		int iPlayerIndex = data->GetInt("index");		
+		bool isValidPlayer = engine->GetPlayerInfo( iPlayerIndex, &pi );
+
+		// make sure the player is not a bot, or the user 
+		// Matt - changed this check to see if player indeces match, instead of using friends ID
+		if ( pi.fakeplayer || iPlayerIndex == iLocalPlayer ) // || pi.friendsID == g_pFriendsUser->GetFriendsID() )
 		{
 			// invalid player, 
-			isValidPlayer = true;
+			isValidPlayer = false;
 		}
-		if (data && !isValidPlayer && GameClientExports() && GameClientExports()->IsPlayerGameVoiceMuted(data->GetInt("index")))
+
+		if (data && isValidPlayer && GameClientExports() && GameClientExports()->IsPlayerGameVoiceMuted(data->GetInt("index")))
 		{
 			m_pMuteButton->SetText("#GameUI_UnmuteIngameVoice");
 		}
@@ -302,37 +236,15 @@ void CPlayerListDialog::OnItemSelected()
 			m_pMuteButton->SetText("#GameUI_MuteIngameVoice");
 		}
 
-		if (GameClientExports() && !isValidPlayer)
+		if (GameClientExports() && isValidPlayer)
 		{
-			m_pMuteButton->SetEnabled(true);
-		}
-		else
-		{
-			m_pMuteButton->SetEnabled(false);
-		}
-
-		if (!isValidPlayer && g_pFriendsUser && !g_pFriendsUser->IsBuddy(data->GetInt("TID")))
-		{
-			m_pAddFriendButton->SetEnabled(true);
-		}
-		else
-		{
-			m_pAddFriendButton->SetEnabled(false);
+			bMuteButtonEnabled = true;
 		}
 	}
 	else
 	{
-		m_pAddFriendButton->SetEnabled(false);
-		m_pMuteButton->SetEnabled(false);
 		m_pMuteButton->SetText("#GameUI_MuteIngameVoice");
 	}
-}
 
-//-----------------------------------------------------------------------------
-// Purpose: empty message map
-//-----------------------------------------------------------------------------
-MessageMapItem_t CPlayerListDialog::m_MessageMap[] =
-{
-  	MAP_MESSAGE( CPlayerListDialog, "ItemSelected", OnItemSelected ),
-};
-IMPLEMENT_PANELMAP(CPlayerListDialog, Frame);
+	m_pMuteButton->SetEnabled( bMuteButtonEnabled );
+}

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef TABWINDOW_H
 #define TABWINDOW_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "utlvector.h"
 
 class CChoreoWidgetDrawHelper;
@@ -46,11 +46,14 @@ public:
 	virtual void		select (int index);
 	virtual void		remove (int index);
 	virtual void		removeAll ();
+	virtual void		setPrefix( int item, char const *prefix );
 
 	// ACCESSORS
 	virtual int			getItemCount () const;
 	virtual int			getSelectedIndex () const;
 
+	virtual char const	*getLabel( int item );
+	virtual char const	*getPrefix( int item );
 	virtual void		ShowRightClickMenu( int mx, int my ) = 0;
 
 	void				SetColor( int index, COLORREF clr );
@@ -58,10 +61,14 @@ public:
 	void				SetInverted( bool invert );
 	void				SetRightJustify( bool rightjustify );
 
+	int					GetBestHeight( int width );
+	void				SetRowHeight( int rowheight );
+
 protected:
 	void				GetTabRect( const RECT& rcClient, RECT& tabRect, int tabNum );
 	virtual void		DrawTab( CChoreoWidgetDrawHelper& drawHelper, RECT& rcClient, int tabnum, bool selected = false );
-	void				SetTabWidth( CChoreoWidgetDrawHelper& drawHelper, int tabNum );
+
+	int					RecomputeLayout( int windowWidth, bool dolayout = true );
 
 	class CETItem
 	{
@@ -72,12 +79,14 @@ protected:
 		};
 
 		char			m_szString[ MAX_ET_STRING_LENGTH ];
-		int				m_nWidth;
+		char			m_szPrefix[ MAX_ET_STRING_LENGTH ];
+		RECT			rect;
 	};
 
 	int						GetItemUnderMouse( int mx, int my );
 
 	CUtlVector <CETItem>	m_Items;
+	int						m_nRowsRequired;
 
 	int						m_nSelected;
 
@@ -87,5 +96,7 @@ protected:
 	bool					m_bRightJustify;
 
 	COLORREF				m_Colors[ NUM_COLORS ];
+
+	int						m_nRowHeight;
 };
 #endif // TABWINDOW_H

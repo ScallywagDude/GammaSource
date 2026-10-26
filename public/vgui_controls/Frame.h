@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VGUI_FRAME_H
 #define VGUI_FRAME_H
@@ -26,21 +21,19 @@
 namespace vgui
 {
 
-class Button;
 class FrameButton;
-class Menu;
-class TextImage;
-class MenuButton;
 class FrameSystemButton;
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Windowed frame
 //-----------------------------------------------------------------------------
 class Frame : public EditablePanel
 {
+	DECLARE_CLASS_SIMPLE( Frame, EditablePanel );
+
 public:
-	Frame(Panel *parent, const char *panelName, bool showTaskbarIcon = true);
-	~Frame();
+	Frame(Panel *parent, const char *panelName, bool showTaskbarIcon = true, bool bPopup = true );
+	virtual ~Frame();
 
 	// Set the text in the title bar.  Set surfaceTitle=true if you want this to be the taskbar text as well.
 	virtual void SetTitle(const char *title, bool surfaceTitle);
@@ -53,7 +46,11 @@ public:
 	virtual void ActivateMinimized();
 
 	// closes the dialog
-	virtual void Close();
+	MESSAGE_FUNC( Close, "Close" );
+	MESSAGE_FUNC( CloseModal, "CloseModal" );
+
+	// sets the dialog to delete self on close
+	virtual void SetDeleteSelfOnClose( bool state );
 
 	// Move the dialog to the center of the screen 
 	virtual void MoveToCenterOfScreen();
@@ -95,20 +92,50 @@ public:
 	// Set the system menu 
 	virtual void SetSysMenu(Menu *menu);
 
+	// Set the system menu images
+	void SetImages( const char *pEnabledImage, const char *pDisabledImage = NULL );
+
 	// set whether the title bar should be rendered
 	virtual void SetTitleBarVisible( bool state );
 
-	DECLARE_PANELMAP();
+	// When moving via caption, don't let any part of window go outside parent's bounds
+	virtual void SetClipToParent( bool state );
+	virtual bool GetClipToParent() const;
+
+	// Set to true to make the caption height small
+	virtual void SetSmallCaption( bool state );
+	virtual bool IsSmallCaption() const;
+
+	virtual int GetDraggerSize();
+	virtual int GetCornerSize();
+	virtual int GetBottomRightSize();
+	virtual int GetCaptionHeight();
+
 	/* CUSTOM MESSAGE HANDLING
 		"SetTitle"
 			input:	"text"	- string to set the title to be
 	*/
 
+	// Load the control settings 
+	virtual void LoadControlSettings( const char *dialogResourceName, const char *pathID = NULL, KeyValues *pPreloadedKeyValues = NULL, KeyValues *pConditions = NULL );
+
+	void SetChainKeysToParent( bool state );
+	bool CanChainKeysToParent() const;
+
+	// Shows the dialog in a modal fashion
+	virtual void DoModal();
+
+	void PlaceUnderCursor( );
+
+	// Disables the fade-in/out-effect even if configured in the scheme settings
+	void DisableFadeEffect( void );
+
+	// Temporarily enables or disables the fade effect rather than zeroing the fade times as done in DisableFadeEffect
+	void SetFadeEffectDisableOverride( bool disabled );
+
 protected:
 	// Respond to mouse presses
 	virtual void OnMousePressed(MouseCode code);
-	// Respond to Key presses.
-	virtual void OnKeyCodePressed(KeyCode code);
 	// Respond to Key typing
 	virtual void OnKeyCodeTyped(KeyCode code);
 	virtual void OnKeyTyped(wchar_t unichar);
@@ -121,24 +148,33 @@ protected:
 	virtual void PerformLayout();
 	// Respond when a close message is recieved.  Can be called directly to close a frame.
 	virtual void OnClose();
+	// Respond to a window finishing its closure. i.e. when a fading window has fully finished its fadeout.
+	virtual void OnFinishedClose();
 	// Minimize the window on the taskbar.
-	virtual void OnMinimize();
+	MESSAGE_FUNC( OnMinimize, "Minimize" );
 	// Called when minimize-to-systray button is pressed (does nothing by default)
 	virtual void OnMinimizeToSysTray();
+	// the frame close button was pressed
+	MESSAGE_FUNC( OnCloseFrameButtonPressed, "CloseFrameButtonPressed" );
 	// Add the child to the focus nav group
 	virtual void OnChildAdded(VPANEL child);
-	// Load the control settings 
-	virtual void LoadControlSettings(const char *dialogResourceName, const char *pathID = NULL);
 	// settings
 	virtual void ApplySettings(KeyValues *inResourceData);
 	// records the settings into the resource data
 	virtual void GetSettings(KeyValues *outResourceData);
+	virtual const char *GetDescription( void );
 
 	// gets the default position and size on the screen to appear the first time (defaults to centered)
 	virtual bool GetDefaultScreenPosition(int &x, int &y, int &wide, int &tall);
 
 	// painting
 	virtual void PaintBackground();
+
+	// per-frame thinking, used for transition effects
+	virtual void OnThink();
+
+	// screen size
+	virtual void OnScreenSizeChanged(int iOldWide, int iOldTall);
 
 	// Get the size of the panel inside the frame edges.
 	virtual void GetClientArea(int &x, int &y, int &wide, int &tall);
@@ -151,42 +187,72 @@ protected:
 	// returns user config settings for this control
 	virtual void GetUserConfigSettings(KeyValues *userConfig);
 
+	// optimization, return true if this control has any user config settings
+	virtual bool HasUserConfigSettings();
+
 private:
-	void InternalSetTitle(const char *title);
-	void InternalFlashWindow();
+	MESSAGE_FUNC_CHARPTR( InternalSetTitle, "SetTitle", text );
+	MESSAGE_FUNC( InternalFlashWindow, "FlashWindow" );
+	MESSAGE_FUNC_PARAMS( OnDialogVariablesChanged, "DialogVariables", dialogVariables );
+
 	void SetupResizeCursors();
 	void LayoutProportional( FrameButton *bt);
+	void FinishClose();
+	void OnFrameFocusChanged(bool bHasFocus);
 
-	Color _titleBarBgColor;
-	Color _titleBarDisabledBgColor;
-	Color _titleBarFgColor;
-	Color _titleBarDisabledFgColor;
-	TextImage *_title;
-	bool _sizeable;
-	bool _moveable;
-	bool _hasFocus;
-	Panel * _topGrip;
-	Panel *_bottomGrip;
-	Panel *_leftGrip;
-	Panel *_rightGrip;
-	Panel *_topLeftGrip;
-	Panel *_topRightGrip;
-	Panel *_bottomLeftGrip;
-	Panel *_bottomRightGrip;
-	Panel *_captionGrip;
+	Color		_titleBarBgColor;
+	Color		_titleBarDisabledBgColor;
+	Color		_titleBarFgColor;
+	Color		_titleBarDisabledFgColor;
+	Color		m_InFocusBgColor;
+	Color		m_OutOfFocusBgColor;
+	TextImage	*_title;
 
+#if !defined( _X360 )
+	Panel		*_topGrip;
+	Panel		*_bottomGrip;
+	Panel		*_leftGrip;
+	Panel		*_rightGrip;
+	Panel		*_topLeftGrip;
+	Panel		*_topRightGrip;
+	Panel		*_bottomLeftGrip;
+	Panel		*_bottomRightGrip;
+	Panel		*_captionGrip;
 	FrameButton *_minimizeButton;
 	FrameButton	*_maximizeButton;
 	FrameButton *_minimizeToSysTrayButton;
 	FrameButton	*_closeButton;
 	FrameSystemButton *_menuButton;
-	Frame *_resizeable;
-	bool _flashWindow;
-	bool _nextFlashState;
-	Menu *_sysMenu;
-	bool _drawTitleBar;
+	Menu		*_sysMenu;
+#endif
 
-	typedef EditablePanel BaseClass;
+	float	m_flTransitionEffectTime;
+	float	 m_flFocusTransitionEffectTime;
+	int		m_iClientInsetX;
+	int		m_iClientInsetY;
+	int		m_iTitleTextInsetX;
+	int		m_nGripperWidth;
+	VPANEL	m_hPreviousModal;
+	HFont	m_hCustomTitleFont;
+
+	bool	_sizeable : 1;
+	bool	_moveable : 1;
+	bool	 m_bHasFocus : 1;
+	bool	_flashWindow : 1;
+	bool	_nextFlashState : 1;
+	bool	_drawTitleBar : 1;
+	bool	m_bPreviouslyVisible : 1;
+	bool	m_bFadingOut : 1;
+	bool	m_bDeleteSelfOnClose : 1;
+	bool	m_bDisableFadeEffect : 1;
+	bool	m_bClipToParent : 1;
+	bool	m_bSmallCaption : 1;
+	bool	m_bChainKeysToParent : 1;
+	bool	m_bPrimed : 1;
+	bool	m_iClientInsetXOverridden : 1;
+										 
+	CPanelAnimationVarAliasType( int, m_iTitleTextInsetXOverride, "titletextinsetX", "0", "proportional_int" );
+	CPanelAnimationVar( int, m_iTitleTextInsetYOverride, "titletextinsetY", "0" );
 };
 
 } // namespace vgui

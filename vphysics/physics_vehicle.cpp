@@ -1,41 +1,45 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifdef _WIN32
 #pragma warning (disable:4127)
 #pragma warning (disable:4244)
 #endif
 
-#include "ivp_physics.hxx"
-#include "ivp_core.hxx"
+#include "cbase.h"
 #include "ivp_controller.hxx"
 #include "ivp_cache_object.hxx"
 #include "ivp_car_system.hxx"
 #include "ivp_constraint_car.hxx"
 #include "ivp_material.hxx"
 
-#include "convert.h"
-#include "vphysics_interface.h"
-#include "physics_environment.h"
 #include "vphysics/vehicles.h"
+#include "vphysics/friction.h"
 #include "physics_vehicle.h"
 #include "physics_controller_raycast_vehicle.h"
 #include "physics_airboat.h"
-#include "physics_object.h"
-#include "tier0/dbg.h"
-#include "physics_material.h"
-#include "isaverestore.h"
 #include "ivp_car_system.hxx"
 #include "ivp_listener_object.hxx"
-#include "vphysics_saverestore.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 #define THROTTLE_OPPOSING_FORCE_EPSILON		5.0f
+#define VEHICLE_SKID_EPSILON				0.1f
 
 // y in/s = x miles/hour * (5280 * 12 (in / mile)) * (1 / 3600 (hour / sec) )
-#define MPH2INS(x)		( (x) * 5280.0f * 12.0f / 3600.0f )
+//#define MPH2INS(x)		( (x) * 5280.0f * 12.0f / 3600.0f )
+//#define INS2MPH(x)	    ( (x) * 3600 * (1/5280.0f) * (1/12.0f) )
+
+#define MPH_TO_METERSPERSECOND	0.44707f
+#define METERSPERSECOND_TO_MPH	(1.0f / MPH_TO_METERSPERSECOND)
+
+#define MPH_TO_GAMEVEL(x)	(ConvertDistanceToHL( (x) * MPH_TO_METERSPERSECOND ))
+#define GAMEVEL_TO_MPH(x)	(ConvertDistanceToIVP(x) * METERSPERSECOND_TO_MPH)
+
 
 #define FVEHICLE_THROTTLE_STOPPED		0x00000001
 #define FVEHICLE_HANDBRAKE_ON			0x00000002
@@ -50,129 +54,153 @@ struct vphysics_save_cvehiclecontroller_t
 	float						m_bodyMass;
 	float						m_totalWheelMass;
 	float						m_gravityLength;
+	float						m_torqueScale;
 	CPhysicsObject				*m_pWheels[VEHICLE_MAX_WHEEL_COUNT];
 	Vector						m_wheelPosition_Bs[VEHICLE_MAX_WHEEL_COUNT];
 	Vector						m_tracePosition_Bs[VEHICLE_MAX_WHEEL_COUNT];
 	int							m_vehicleFlags;
-	bool						m_bSlipperyTires;
+	unsigned int				m_nTireType;
 	unsigned int				m_nVehicleType;
 	bool						m_bTraceData;
 	bool						m_bOccupied;
 	bool						m_bEngineDisable;
+	float						m_flVelocity[3];
 
 	DECLARE_SIMPLE_DATADESC();
 };
 
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_cvehiclecontroller_t )
-	DEFINE_VPHYSPTR( vphysics_save_cvehiclecontroller_t,m_pCarBody ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_wheelCount,		FIELD_INTEGER ),
-	DEFINE_EMBEDDED( vphysics_save_cvehiclecontroller_t,m_vehicleData ),
-	DEFINE_EMBEDDED( vphysics_save_cvehiclecontroller_t,m_currentState ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_wheelCount,		FIELD_INTEGER ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_bodyMass,			FIELD_FLOAT	),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_totalWheelMass,	FIELD_FLOAT	),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_gravityLength,	FIELD_FLOAT	),
-	DEFINE_VPHYSPTR_ARRAY( vphysics_save_cvehiclecontroller_t,	m_pWheels, VEHICLE_MAX_WHEEL_COUNT ),
-	DEFINE_ARRAY( vphysics_save_cvehiclecontroller_t,	m_wheelPosition_Bs,	FIELD_VECTOR, VEHICLE_MAX_WHEEL_COUNT ),
-	DEFINE_ARRAY( vphysics_save_cvehiclecontroller_t,	m_tracePosition_Bs,	FIELD_VECTOR, VEHICLE_MAX_WHEEL_COUNT ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_vehicleFlags,		FIELD_INTEGER ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_bSlipperyTires,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_nVehicleType,		FIELD_INTEGER ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_bTraceData,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_bOccupied,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( vphysics_save_cvehiclecontroller_t,	m_bEngineDisable,	FIELD_BOOLEAN ),
+	DEFINE_VPHYSPTR( m_pCarBody ),
+	DEFINE_FIELD( m_wheelCount,		FIELD_INTEGER ),
+	DEFINE_EMBEDDED( m_vehicleData ),
+	DEFINE_EMBEDDED( m_currentState ),
+	DEFINE_FIELD( m_wheelCount,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_bodyMass,			FIELD_FLOAT	),
+	DEFINE_FIELD( m_totalWheelMass,	FIELD_FLOAT	),
+	DEFINE_FIELD( m_gravityLength,	FIELD_FLOAT	),
+	DEFINE_FIELD( m_torqueScale,	FIELD_FLOAT	),
+
+	DEFINE_VPHYSPTR_ARRAY( m_pWheels, VEHICLE_MAX_WHEEL_COUNT ),
+	DEFINE_ARRAY( m_wheelPosition_Bs,	FIELD_VECTOR, VEHICLE_MAX_WHEEL_COUNT ),
+	DEFINE_ARRAY( m_tracePosition_Bs,	FIELD_VECTOR, VEHICLE_MAX_WHEEL_COUNT ),
+	DEFINE_FIELD( m_vehicleFlags,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_nTireType,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_nVehicleType,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_bTraceData,		FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bOccupied,		FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bEngineDisable,	FIELD_BOOLEAN ),
+	DEFINE_ARRAY( m_flVelocity,		FIELD_FLOAT, 3 ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_operatingparams_t )
-	DEFINE_FIELD( vehicle_operatingparams_t,	speed,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_operatingparams_t,	engineRPM,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_operatingparams_t,	gear,			FIELD_INTEGER ),
-	DEFINE_FIELD( vehicle_operatingparams_t,	boostDelay,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_operatingparams_t,	boostTimeLeft,	FIELD_INTEGER ),
-	DEFINE_FIELD( vehicle_operatingparams_t,	skidding,		FIELD_BOOLEAN ),
-	DEFINE_ARRAY( vehicle_operatingparams_t,	wheelSkidValue,	FIELD_FLOAT, VEHICLE_MAX_WHEEL_COUNT ),
+	DEFINE_FIELD( speed,			FIELD_FLOAT ),
+	DEFINE_FIELD( engineRPM,		FIELD_FLOAT ),
+	DEFINE_FIELD( gear,			FIELD_INTEGER ),
+	DEFINE_FIELD( boostDelay,		FIELD_FLOAT ),
+	DEFINE_FIELD( boostTimeLeft,	FIELD_INTEGER ),
+	DEFINE_FIELD( skidSpeed,		FIELD_FLOAT ),
+	DEFINE_CUSTOM_FIELD( skidMaterial,	MaterialIndexDataOps() ),
+	DEFINE_FIELD( steeringAngle,	FIELD_FLOAT ),
+	DEFINE_FIELD( wheelsInContact,	FIELD_INTEGER ),
+	DEFINE_FIELD( wheelsNotInContact,FIELD_INTEGER ),
+	DEFINE_FIELD( isTorqueBoosting,	FIELD_BOOLEAN ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_bodyparams_t )
-	DEFINE_FIELD( vehicle_bodyparams_t,	massCenterOverride,		FIELD_VECTOR ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	massOverride,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	addGravity,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	tiltForce,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	tiltForceHeight,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	counterTorqueFactor,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_bodyparams_t,	keepUprightTorque,		FIELD_FLOAT ),
+	DEFINE_FIELD( massCenterOverride,	FIELD_VECTOR ),
+	DEFINE_FIELD( massOverride,			FIELD_FLOAT ),
+	DEFINE_FIELD( addGravity,			FIELD_FLOAT ),
+	DEFINE_FIELD( maxAngularVelocity,	FIELD_FLOAT ),
+	DEFINE_FIELD( tiltForce,			FIELD_FLOAT ),
+	DEFINE_FIELD( tiltForceHeight,		FIELD_FLOAT ),
+	DEFINE_FIELD( counterTorqueFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( keepUprightTorque,	FIELD_FLOAT ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_wheelparams_t )
-	DEFINE_FIELD( vehicle_wheelparams_t,	radius,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	mass,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	inertia,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	damping,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	rotdamping,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	frictionScale,		FIELD_FLOAT ),
-	DEFINE_CUSTOM_FIELD( vehicle_wheelparams_t,	materialIndex,		MaterialIndexDataOps() ),
-	DEFINE_CUSTOM_FIELD( vehicle_wheelparams_t,	skidMaterialIndex,	MaterialIndexDataOps() ),
-	DEFINE_FIELD( vehicle_wheelparams_t,	springAdditionalLength,	FIELD_FLOAT ),
+	DEFINE_FIELD( radius,				FIELD_FLOAT ),
+	DEFINE_FIELD( mass,				FIELD_FLOAT ),
+	DEFINE_FIELD( inertia,			FIELD_FLOAT ),
+	DEFINE_FIELD( damping,			FIELD_FLOAT ),
+	DEFINE_FIELD( rotdamping,			FIELD_FLOAT ),
+	DEFINE_FIELD( frictionScale,		FIELD_FLOAT ),
+	DEFINE_CUSTOM_FIELD( materialIndex,		MaterialIndexDataOps() ),
+	DEFINE_CUSTOM_FIELD( brakeMaterialIndex,	MaterialIndexDataOps() ),
+	DEFINE_CUSTOM_FIELD( skidMaterialIndex,	MaterialIndexDataOps() ),
+	DEFINE_FIELD( springAdditionalLength,	FIELD_FLOAT ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_suspensionparams_t )
-	DEFINE_FIELD( vehicle_suspensionparams_t,	springConstant,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_suspensionparams_t,	springDamping,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_suspensionparams_t,	stabilizerConstant,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_suspensionparams_t,	springDampingCompression,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_suspensionparams_t,	maxBodyForce,		FIELD_FLOAT ),
+	DEFINE_FIELD( springConstant,		FIELD_FLOAT ),
+	DEFINE_FIELD( springDamping,		FIELD_FLOAT ),
+	DEFINE_FIELD( stabilizerConstant,	FIELD_FLOAT ),
+	DEFINE_FIELD( springDampingCompression,	FIELD_FLOAT ),
+	DEFINE_FIELD( maxBodyForce,		FIELD_FLOAT ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_axleparams_t )
-	DEFINE_FIELD( vehicle_axleparams_t,	offset,					FIELD_VECTOR ),
-	DEFINE_FIELD( vehicle_axleparams_t,	wheelOffset,			FIELD_VECTOR ),
-	DEFINE_FIELD( vehicle_axleparams_t,	raytraceCenterOffset,	FIELD_VECTOR ),
-	DEFINE_FIELD( vehicle_axleparams_t,	raytraceOffset,			FIELD_VECTOR ),
-	DEFINE_EMBEDDED( vehicle_axleparams_t,wheels ),
-	DEFINE_EMBEDDED( vehicle_axleparams_t,suspension ),
-	DEFINE_FIELD( vehicle_axleparams_t,	torqueFactor,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_axleparams_t,	brakeFactor,			FIELD_FLOAT ),
+	DEFINE_FIELD( offset,					FIELD_VECTOR ),
+	DEFINE_FIELD( wheelOffset,			FIELD_VECTOR ),
+	DEFINE_FIELD( raytraceCenterOffset,	FIELD_VECTOR ),
+	DEFINE_FIELD( raytraceOffset,			FIELD_VECTOR ),
+	DEFINE_EMBEDDED( wheels ),
+	DEFINE_EMBEDDED( suspension ),
+	DEFINE_FIELD( torqueFactor,			FIELD_FLOAT ),
+	DEFINE_FIELD( brakeFactor,			FIELD_FLOAT ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_steeringparams_t )
-	DEFINE_FIELD( vehicle_steeringparams_t,	degrees,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	steeringRateSlow,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	steeringRateFast,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	steeringRestFactor,	FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	speedSlow,			FIELD_FLOAT ),			
-	DEFINE_FIELD( vehicle_steeringparams_t,	speedFast,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	isSkidAllowed,		FIELD_BOOLEAN ),
-	DEFINE_FIELD( vehicle_steeringparams_t,	dustCloud,			FIELD_BOOLEAN ),
+	DEFINE_FIELD( degreesSlow,		FIELD_FLOAT ),
+	DEFINE_FIELD( degreesFast,		FIELD_FLOAT ),
+	DEFINE_FIELD( degreesBoost,		FIELD_FLOAT ),
+	DEFINE_FIELD( steeringRateSlow,	FIELD_FLOAT ),
+	DEFINE_FIELD( steeringRateFast,	FIELD_FLOAT ),
+	DEFINE_FIELD( steeringRestRateSlow,	FIELD_FLOAT ),
+	DEFINE_FIELD( steeringRestRateFast,	FIELD_FLOAT ),
+	DEFINE_FIELD( throttleSteeringRestRateFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( boostSteeringRestRateFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( boostSteeringRateFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( steeringExponent,	FIELD_FLOAT ),
+	DEFINE_FIELD( speedSlow,			FIELD_FLOAT ),			
+	DEFINE_FIELD( speedFast,			FIELD_FLOAT ),
+	DEFINE_FIELD( turnThrottleReduceSlow,	FIELD_FLOAT ),
+	DEFINE_FIELD( turnThrottleReduceFast,	FIELD_FLOAT ),
+	DEFINE_FIELD( powerSlideAccel,	FIELD_FLOAT ),
+	DEFINE_FIELD( brakeSteeringRateFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( isSkidAllowed,		FIELD_BOOLEAN ),
+	DEFINE_FIELD( dustCloud,			FIELD_BOOLEAN ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicle_engineparams_t )
-	DEFINE_FIELD( vehicle_engineparams_t,	horsepower,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	maxSpeed,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	maxRevSpeed,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	maxRPM,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	axleRatio,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	throttleTime,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	maxRPM,				FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	isAutoTransmission,	FIELD_BOOLEAN ),
-	DEFINE_FIELD( vehicle_engineparams_t,	gearCount,			FIELD_INTEGER ),
-	DEFINE_AUTO_ARRAY( vehicle_engineparams_t,	gearRatio,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	shiftUpRPM,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	shiftDownRPM,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	boostForce,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	boostDuration,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	boostDelay,			FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	boostMaxSpeed,		FIELD_FLOAT ),
-	DEFINE_FIELD( vehicle_engineparams_t,	torqueBoost,		FIELD_BOOLEAN ),
+	DEFINE_FIELD( horsepower,			FIELD_FLOAT ),
+	DEFINE_FIELD( maxSpeed,			FIELD_FLOAT ),
+	DEFINE_FIELD( maxRevSpeed,		FIELD_FLOAT ),
+	DEFINE_FIELD( maxRPM,				FIELD_FLOAT ),
+	DEFINE_FIELD( axleRatio,			FIELD_FLOAT ),
+	DEFINE_FIELD( throttleTime,		FIELD_FLOAT ),
+	DEFINE_FIELD( maxRPM,				FIELD_FLOAT ),
+	DEFINE_FIELD( isAutoTransmission,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( gearCount,			FIELD_INTEGER ),
+	DEFINE_AUTO_ARRAY( gearRatio,		FIELD_FLOAT ),
+	DEFINE_FIELD( shiftUpRPM,			FIELD_FLOAT ),
+	DEFINE_FIELD( shiftDownRPM,		FIELD_FLOAT ),
+	DEFINE_FIELD( boostForce,			FIELD_FLOAT ),
+	DEFINE_FIELD( boostDuration,		FIELD_FLOAT ),
+	DEFINE_FIELD( boostDelay,			FIELD_FLOAT ),
+	DEFINE_FIELD( boostMaxSpeed,		FIELD_FLOAT ),
+	DEFINE_FIELD( autobrakeSpeedGain,	FIELD_FLOAT ),
+	DEFINE_FIELD( autobrakeSpeedFactor,	FIELD_FLOAT ),
+	DEFINE_FIELD( torqueBoost,		FIELD_BOOLEAN ),
 END_DATADESC()
 
 BEGIN_SIMPLE_DATADESC( vehicleparams_t )
-	DEFINE_FIELD( vehicleparams_t,	axleCount,					FIELD_INTEGER ),
-	DEFINE_FIELD( vehicleparams_t,	wheelsPerAxle,				FIELD_INTEGER ),
-	DEFINE_EMBEDDED( vehicleparams_t,body ),
-	DEFINE_EMBEDDED_AUTO_ARRAY( vehicleparams_t,axles ),
-	DEFINE_EMBEDDED( vehicleparams_t,engine ),
-	DEFINE_EMBEDDED( vehicleparams_t,steering ),
+	DEFINE_FIELD( axleCount,					FIELD_INTEGER ),
+	DEFINE_FIELD( wheelsPerAxle,				FIELD_INTEGER ),
+	DEFINE_EMBEDDED( body ),
+	DEFINE_EMBEDDED_AUTO_ARRAY( axles ),
+	DEFINE_EMBEDDED( engine ),
+	DEFINE_EMBEDDED( steering ),
 END_DATADESC()
 
 
@@ -184,14 +212,62 @@ bool IsVehicleWheel( IVP_Real_Object *pivp )
 	if (!pObject)
 		return false;
 
-	return (pObject->GetCallbackFlags() & CALLBACK_IS_VEHICLE_WHEEL) ? true : false;
+	return (pObject->CallbackFlags() & CALLBACK_IS_VEHICLE_WHEEL) ? true : false;
+}
+
+inline bool IsMoveable( IVP_Real_Object *pObject )
+{
+	IVP_Core *pCore = pObject->get_core();
+	if ( pCore->pinned || pCore->physical_unmoveable )
+		return false;
+	return true;
+}
+
+inline bool IVPFloatPointIsZero( const IVP_U_Float_Point &test )
+{
+	const float eps = 1e-4f;
+	return test.quad_length() < eps ? true : false;
+}
+
+bool ShouldOverrideWheelContactFriction( float *pFrictionOut, IVP_Real_Object *pivp0, IVP_Real_Object *pivp1, IVP_U_Float_Point *pNormal )
+{
+	if ( !pivp0->get_core()->car_wheel && !pivp1->get_core()->car_wheel )
+		return false;
+
+	if ( !IsVehicleWheel(pivp0) )
+	{
+		if ( !IsVehicleWheel(pivp1) )
+			return false;
+		// swap so pivp0 is a wheel
+		IVP_Real_Object *pTmp = pivp0;
+		pivp0 = pivp1;
+		pivp1 = pTmp;
+	}
+
+	// if we got here then pivp0 is a car wheel object
+	// BUGBUG: IVP sometimes sends us a bogus normal
+	// when doing a material realc on existing contacts!
+	if ( !IVPFloatPointIsZero(pNormal) )
+	{
+		IVP_U_Float_Point normalWheelSpace;
+		pivp0->get_core()->get_m_world_f_core_PSI()->vimult3( pNormal, &normalWheelSpace );
+		if ( fabs(normalWheelSpace.k[0]) > 0.2588f )	// 15 degree wheel cone
+		{
+			// adjust friction here, this isn't a valid part of the wheel for contact, set friction to zero
+			//Vector tmp;ConvertDirectionToHL( normalWheelSpace, tmp );Msg("Wheel sliding on surface %.2f %.2f %.2f\n", tmp.x, tmp.y, tmp.z );
+			*pFrictionOut = 0;
+			return true;
+		}
+	}
+	// was car wheel, but didn't adjust - use default friction
+	return false;
 }
 
 
 class CVehicleController : public IPhysicsVehicleController, public IVP_Listener_Object
 {
 public:
-	CVehicleController() {}
+	CVehicleController( );
 	CVehicleController( const vehicleparams_t &params, CPhysicsEnvironment *pEnv, unsigned int nVehicleType, IPhysicsGameTrace *pGameTrace );
 	~CVehicleController();
 
@@ -207,8 +283,7 @@ public:
 	vehicleparams_t &GetVehicleParamsForChange()			{ return m_vehicleData; }
 	int GetWheelCount(void)									{ return m_wheelCount; };
 	IPhysicsObject* GetWheel(int index);
-	virtual void GetWheelContactPoint( int index, Vector &contact );
-	virtual float GetWheelSkidDeltaTime( int index );
+	virtual bool GetWheelContactPoint( int index, Vector *pContactPoint, int *pSurfaceProps );
 	void SetWheelFriction(int wheelIndex, float friction);
 
 	void SetEngineDisabled( bool bDisable )					{ m_bEngineDisable = bDisable; }
@@ -216,7 +291,8 @@ public:
 
 	// Save/load
 	void WriteToTemplate( vphysics_save_cvehiclecontroller_t &controllerTemplate );
-	void InitFromTemplate( CPhysicsEnvironment *pEnv, void *pGameData, const vphysics_save_cvehiclecontroller_t &controllerTemplate );
+	void InitFromTemplate( CPhysicsEnvironment *pEnv, void *pGameData, IPhysicsGameTrace *pGameTrace, const vphysics_save_cvehiclecontroller_t &controllerTemplate );
+	void VehicleDataReload();
 
 	// Debug
 	void GetCarSystemDebugData( vehicle_debugcarsystem_t &debugCarSystem );
@@ -229,33 +305,40 @@ public:
     virtual void event_object_frozen ( IVP_Event_Object *) {}
 
 	// Entry/Exit 
-	void OnVehicleEnter( void )								{ m_bOccupied = true; }
-	void OnVehicleExit( void )								{ m_bOccupied = false; }
+	void OnVehicleEnter( void );
+	void OnVehicleExit( void );
 
 protected:
-	float CreateIVPObjects( );
+	void CreateIVPObjects( );
 	void ShutdownCarSystem();
 
 	void InitVehicleData( const vehicleparams_t &params );
 	void InitCarSystemBody( IVP_Template_Car_System &ivpVehicleData );
-	void InitCarSystemWheels( IVP_Template_Car_System &ivpVehicleData, float &totalTorqueDistribution );
+	void InitCarSystemWheels( IVP_Template_Car_System &ivpVehicleData );
 
 	void AttachListener();
-	void DetachListener();
 
 	IVP_Real_Object *CreateWheel( int wheelIndex, vehicle_axleparams_t &axle );
 	void CreateTraceData( int wheelIndex, vehicle_axleparams_t &axle );
 
 	// Update.
-	void UpdateSteering( vehicle_controlparams_t &controls, float flDeltaTime );
-	void UpdatePowerslide( bool bPowerslide );
-	void UpdateEngine( vehicle_controlparams_t &controls, float flDeltaTime, float flThrottle, float flBrake, bool bHandbrake, bool bPowerslide );
+	void UpdateSteering( const vehicle_controlparams_t &controls, float flDeltaTime, float flSpeed );
+	void UpdatePowerslide( const vehicle_controlparams_t &controls, bool bPowerslide, float flSpeed );
+	void UpdateEngine( const vehicle_controlparams_t &controls, float flDeltaTime, float flThrottle, float flBrake, bool bHandbrake, bool bPowerslide );
+	bool UpdateEngineTurboStart( const vehicle_controlparams_t &controls, float flDeltaTime );
+	void UpdateEngineTurboFinish( void );
+	void UpdateHandbrake( const vehicle_controlparams_t &controls, float flThrottle, bool bHandbrake, bool bPowerslide );
+	void UpdateSkidding( bool bHandbrake );
 	void UpdateExtraForces( void );
 	void UpdateWheelPositions( void );
-	float CalcSteering( float dt, float steering );
+	float CalcSteering( float dt, float speed, float steering, bool bAnalog );
 	void CalcEngine( float throttle, float brake_val, bool handbrake, float steeringVal, bool torqueBoost );
+	void CalcEngineTransmission( float flThrottle );
+
+	virtual bool IsBoosting( void );
 
 private:
+	void ResetState();
 	IVP_Car_System				*m_pCarSystem;
 	CPhysicsObject				*m_pCarBody;
 	CPhysicsEnvironment			*m_pEnv;
@@ -267,29 +350,45 @@ private:
 	float						m_bodyMass;
 	float						m_totalWheelMass;
 	float						m_gravityLength;
+	float						m_torqueScale;
 	CPhysicsObject				*m_pWheels[VEHICLE_MAX_WHEEL_COUNT];
 	IVP_U_Float_Point			m_wheelPosition_Bs[VEHICLE_MAX_WHEEL_COUNT];
 	IVP_U_Float_Point			m_tracePosition_Bs[VEHICLE_MAX_WHEEL_COUNT];
 	int							m_vehicleFlags;
-	bool						m_bSlipperyTires;
+	unsigned int				m_nTireType;
 	unsigned int				m_nVehicleType;
 	bool						m_bTraceData;
 	bool						m_bOccupied;
 	bool						m_bEngineDisable;
+	float						m_flVelocity[3];
 };
 
 CVehicleController::CVehicleController( const vehicleparams_t &params, CPhysicsEnvironment *pEnv, unsigned int nVehicleType, IPhysicsGameTrace *pGameTrace )
 {
 	m_pEnv = pEnv;
 	m_pGameTrace = pGameTrace;
-	m_pCarSystem = NULL;
 	m_nVehicleType = nVehicleType;
 	InitVehicleData( params );
+	ResetState();
+}
+
+
+CVehicleController::CVehicleController()
+{
+	ResetState();
+}
+
+
+void CVehicleController::ResetState()
+{
+	m_pCarSystem = NULL;
+	m_flVelocity[0] = m_flVelocity[1]= m_flVelocity[2] = 0.0f;
 	for ( int i = 0; i < VEHICLE_MAX_WHEEL_COUNT; i++ )
 	{
 		m_pWheels[i] = NULL;
 	}
 	m_pCarBody = NULL;
+	m_torqueScale = 1;
 	m_wheelCount = 0;
 	m_wheelRadius = 0;
 	memset( &m_currentState, 0, sizeof(m_currentState) );
@@ -303,6 +402,8 @@ CVehicleController::CVehicleController( const vehicleparams_t &params, CPhysicsE
 	{
 		m_bTraceData = true;
 	}
+
+	m_nTireType = VEHICLE_TIRE_NORMAL;
 
 	m_bOccupied = false;
 	m_bEngineDisable = false;
@@ -341,24 +442,47 @@ void CVehicleController::SetWheelFriction(int wheelIndex, float friction)
 	pAirboat->SetWheelFriction( wheelIndex, friction );
 }
 
-void CVehicleController::GetWheelContactPoint( int index, Vector &contact )
+bool CVehicleController::GetWheelContactPoint( int index, Vector *pContactPoint, int *pSurfaceProps )
 {
-	IVP_Constraint_Car_Object *pWheel = m_pWheels[index]->GetObject()->get_core()->car_wheel;
-	if ( pWheel )
+	bool bSet = false;
+	if ( index < m_wheelCount )
 	{
-		ConvertPositionToHL( pWheel->last_contact_position_ws, contact );
+		IPhysicsFrictionSnapshot *pSnapshot = m_pWheels[index]->CreateFrictionSnapshot();
+		float forceMax = -1.0f;
+		m_pWheels[index]->GetPosition( pContactPoint, NULL );
+		while ( pSnapshot->IsValid() )
+		{
+			float thisForce = pSnapshot->GetNormalForce();
+			if ( thisForce > forceMax )
+			{
+				forceMax = thisForce;
+				if ( pContactPoint )
+				{
+					pSnapshot->GetContactPoint( *pContactPoint );
+				}
+				if ( pSurfaceProps )
+				{
+					*pSurfaceProps = pSnapshot->GetMaterial(1);
+				}
+				bSet = true;
+			}
+			pSnapshot->NextFrictionData();
+		}
+		m_pWheels[index]->DestroyFrictionSnapshot(pSnapshot);
 	}
 	else
 	{
-		contact.Init();
+		if ( pContactPoint )
+		{
+			pContactPoint->Init();
+		}
+		if ( pSurfaceProps )
+		{
+			*pSurfaceProps = 0;
+		}
+		
 	}
-}
-
-float CVehicleController::GetWheelSkidDeltaTime( int index )
-{
-	IVP_Real_Object *pObject = m_pWheels[index]->GetObject();
-	IVP_Constraint_Car_Object *pWheel = pObject->get_core()->car_wheel;
-	return pObject->get_environment()->get_current_time() - pWheel->last_skid_time;
+	return bSet;
 }
 
 void CVehicleController::AttachListener()
@@ -366,12 +490,13 @@ void CVehicleController::AttachListener()
 	m_pCarBody->GetObject()->add_listener_object( this );
 }
 
-void CVehicleController::event_object_deleted( IVP_Event_Object * )
+void CVehicleController::event_object_deleted( IVP_Event_Object *pEvent )
 {
 	// the car system's constraint solver is going to delete itself now, so NULL the car system.
 
-	// BUGBUG: This leaks - fix the car system destructor and add a message to the car system for this!
+	m_pCarSystem->event_object_deleted( pEvent );	
 	m_pCarSystem = NULL;
+	ShutdownCarSystem();
 }
 
 IVP_Real_Object *CVehicleController::CreateWheel( int wheelIndex, vehicle_axleparams_t &axle )
@@ -380,9 +505,11 @@ IVP_Real_Object *CVehicleController::CreateWheel( int wheelIndex, vehicle_axlepa
 		return NULL;
 
 	// HACKHACK: In Save/load, the wheel was reloaded, so pretend to create it
-	if ( GetWheel( wheelIndex ) )
+	// ALSO NOTE: Save/load puts the results into m_pWheels	regardless of vehicle type!!!
+	// That's why I'm not calling GetWheel().
+	if ( m_pWheels[wheelIndex] )
 	{
-		CPhysicsObject *pWheelObject = static_cast<CPhysicsObject *>(GetWheel(wheelIndex));
+		CPhysicsObject *pWheelObject = static_cast<CPhysicsObject *>(m_pWheels[wheelIndex]);
 		return pWheelObject->GetObject();
 	}
 
@@ -407,7 +534,6 @@ IVP_Real_Object *CVehicleController::CreateWheel( int wheelIndex, vehicle_axlepa
 		position -= axle.wheelOffset;
 	}
 
-	QAngle angles = vec3_angle;
 	Vector wheelPositionHL;
 	VectorTransform( position, matrix, wheelPositionHL );
 
@@ -423,18 +549,19 @@ IVP_Real_Object *CVehicleController::CreateWheel( int wheelIndex, vehicle_axlepa
 	params.massCenterOverride = NULL;
 	// needs to be in HL units because we're calling through the "outer" interface to create
 	// the wheels
-	float radius = ConvertDistanceToHL( axle.wheels.radius );
+	float radius = axle.wheels.radius;
 	float r3 = radius * radius * radius;
 	params.volume = (4 / 3) * M_PI * r3;
 
-	CPhysicsObject *pWheel = (CPhysicsObject *)m_pEnv->CreateSphereObject( radius, axle.wheels.materialIndex, wheelPositionHL, angles, &params, false );
+	CPhysicsObject *pWheel = (CPhysicsObject *)m_pEnv->CreateSphereObject( radius, axle.wheels.materialIndex, wheelPositionHL, bodyAngles, &params, false );
     pWheel->Wake();
 
 	// UNDONE: only mask off some of these flags?
-	unsigned int flags = pWheel->GetCallbackFlags();
+	unsigned int flags = pWheel->CallbackFlags();
 	flags = 0;
 	pWheel->SetCallbackFlags( flags );
-
+	// copy the body's game flags
+	pWheel->SetGameFlags( m_pCarBody->GetGameFlags() );
 	// cache the wheel object pointer
 	m_pWheels[wheelIndex] = pWheel;
 
@@ -444,7 +571,7 @@ IVP_Real_Object *CVehicleController::CreateWheel( int wheelIndex, vehicle_axlepa
 	m_wheelPosition_Bs[wheelIndex].set_to_zero();
 	m_wheelPosition_Bs[wheelIndex].set( &wheelPositionBs );
 
-	pWheel->SetCallbackFlags( pWheel->GetCallbackFlags() | CALLBACK_IS_VEHICLE_WHEEL );
+	pWheel->AddCallbackFlags( CALLBACK_IS_VEHICLE_WHEEL );
 
 	return pWheel->GetObject();
 }
@@ -487,25 +614,35 @@ void CVehicleController::CreateTraceData( int wheelIndex, vehicle_axleparams_t &
 	m_tracePosition_Bs[wheelIndex].set( &tracePositionBs );
 }
 
-float CVehicleController::CreateIVPObjects( )
+void CVehicleController::CreateIVPObjects( )
 {
 	// Initialize the car system (body and wheels).
 	IVP_Template_Car_System ivpVehicleData( m_wheelCount, m_vehicleData.axleCount );
 	InitCarSystemBody( ivpVehicleData );
-	float totalTorqueDistribution;
-	InitCarSystemWheels( ivpVehicleData, totalTorqueDistribution );
+
+	InitCarSystemWheels( ivpVehicleData );
+
+	BEGIN_IVP_ALLOCATION();
 
 	// Raycast Car
 	switch ( m_nVehicleType )
 	{
-	case VEHICLE_TYPE_CAR_WHEELS: { m_pCarSystem = new IVP_Car_System_Real_Wheels( m_pEnv->GetIVPEnvironment(), &ivpVehicleData ); break; }
-	case VEHICLE_TYPE_CAR_RAYCAST: { m_pCarSystem = new CPhysics_Car_System_Raycast_Wheels( m_pEnv->GetIVPEnvironment(), &ivpVehicleData ); break; }
-	case VEHICLE_TYPE_AIRBOAT_RAYCAST: { m_pCarSystem = new CPhysics_Airboat( m_pEnv->GetIVPEnvironment(), &ivpVehicleData, m_pGameTrace ); break; }
+	case VEHICLE_TYPE_CAR_WHEELS:
+		m_pCarSystem = new IVP_Car_System_Real_Wheels( m_pEnv->GetIVPEnvironment(), &ivpVehicleData ); 
+		break
+			;
+	case VEHICLE_TYPE_CAR_RAYCAST: 
+		m_pCarSystem = new CPhysics_Car_System_Raycast_Wheels( m_pEnv->GetIVPEnvironment(), &ivpVehicleData ); 
+		break;
+
+	case VEHICLE_TYPE_AIRBOAT_RAYCAST: 
+		m_pCarSystem = new CPhysics_Airboat( m_pEnv->GetIVPEnvironment(), &ivpVehicleData, m_pGameTrace );
+		break; 
 	}
 
 	AttachListener();
 
-	return totalTorqueDistribution;
+	END_IVP_ALLOCATION();
 }
 
 
@@ -520,33 +657,39 @@ void CVehicleController::InitCarSystem( CPhysicsObject *pBodyObject )
 	m_pCarBody = pBodyObject;
 	m_bodyMass = m_pCarBody->GetMass();
 	m_gravityLength = m_pEnv->GetIVPEnvironment()->get_gravity()->real_length();
-	m_vehicleData.body.tiltForce = m_gravityLength * m_vehicleData.body.tiltForce * m_bodyMass;
-	// float keepUprightTorque;						// This is unused for 4-wheel vehicles.
-	// IVP_FLOAT fast_turn_factor					// unmodified
-
 	// Setup axle/wheel counts.
 	m_wheelCount = m_vehicleData.axleCount * m_vehicleData.wheelsPerAxle;
+	CreateIVPObjects();
 
-	float totalTorqueDistribution = CreateIVPObjects();
-
-	IVP_U_Float_Point tmp;
-	ConvertPositionToIVP( m_vehicleData.body.massCenterOverride, tmp );
-    //float mass_center_shift_z = tmp.k[2];
-
-    // Note: Next formula looks reverse, but they are correct !!
-
-	// normalize the torque distribution
-	float torqueScale = 1;
-	if ( totalTorqueDistribution > 0 )
+	if ( m_nVehicleType == VEHICLE_TYPE_AIRBOAT_RAYCAST )
 	{
-		torqueScale /= totalTorqueDistribution;
-	}
-
-	for ( int i = 0; i < m_vehicleData.axleCount; i++ )
-	{
-		m_vehicleData.axles[i].torqueFactor *= torqueScale;
+		float flDampSpeed = 1.0f;
+		float flDampRotSpeed = 1.0f;
+		m_pCarBody->SetDamping( &flDampSpeed, &flDampRotSpeed );
 	}
 }
+
+void CVehicleController::VehicleDataReload()
+{
+	// compute torque normalization factor
+	m_torqueScale = 1;
+	// Clear accumulation.
+	float totalTorqueDistribution = 0.0f;
+	for ( int i = 0; i < m_vehicleData.axleCount; i++ )
+	{
+		totalTorqueDistribution += m_vehicleData.axles[i].torqueFactor;
+	}
+
+	if ( totalTorqueDistribution > 0 )
+	{
+		m_torqueScale /= totalTorqueDistribution;
+	}
+	// input speed is in miles/hour.  Convert to in/s
+	m_vehicleData.engine.maxSpeed = MPH_TO_GAMEVEL(m_vehicleData.engine.maxSpeed);
+	m_vehicleData.engine.maxRevSpeed = MPH_TO_GAMEVEL(m_vehicleData.engine.maxRevSpeed);
+	m_vehicleData.engine.boostMaxSpeed = MPH_TO_GAMEVEL(m_vehicleData.engine.boostMaxSpeed);
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Setup the body parameters.
@@ -560,7 +703,7 @@ void CVehicleController::InitCarSystemBody( IVP_Template_Car_System &ivpVehicleD
 	ivpVehicleData.index_z = IVP_INDEX_Z;
 
 	ivpVehicleData.body_counter_torque_factor = m_vehicleData.body.counterTorqueFactor;
-	ivpVehicleData.body_down_force_vertical_offset = m_vehicleData.body.tiltForceHeight;
+	ivpVehicleData.body_down_force_vertical_offset = ConvertDistanceToIVP( m_vehicleData.body.tiltForceHeight );
 	ivpVehicleData.extra_gravity_force_value = m_vehicleData.body.addGravity * m_gravityLength * m_bodyMass;
 	ivpVehicleData.extra_gravity_height_offset = 0;
 
@@ -574,15 +717,12 @@ void CVehicleController::InitCarSystemBody( IVP_Template_Car_System &ivpVehicleD
 //-----------------------------------------------------------------------------
 // Purpose: Setup the wheel paramters.
 //-----------------------------------------------------------------------------
-void CVehicleController::InitCarSystemWheels( IVP_Template_Car_System &ivpVehicleData, float &totalTorqueDistribution )
+void CVehicleController::InitCarSystemWheels( IVP_Template_Car_System &ivpVehicleData )
 {
 	int	  wheelIndex = 0;
 
 	m_wheelRadius = 0;
 	m_totalWheelMass = 0;
-
-	// Clear to accumulation.
-	totalTorqueDistribution = 0.0f;
 
 	int i;
 	for ( i = 0; i < m_vehicleData.axleCount; i++ )
@@ -602,13 +742,14 @@ void CVehicleController::InitCarSystemWheels( IVP_Template_Car_System &ivpVehicl
 				ivpVehicleData.wheel_radius[wheelIndex] = pWheel->get_core()->upper_limit_radius;
 				ivpVehicleData.wheel_reversed_sign[wheelIndex] = 1.0;
 				// only for raycast car
+
 				ivpVehicleData.friction_of_wheel[wheelIndex] = m_vehicleData.axles[i].wheels.frictionScale;
 				ivpVehicleData.spring_constant[wheelIndex] = m_vehicleData.axles[i].suspension.springConstant * m_bodyMass;
 				ivpVehicleData.spring_dampening[wheelIndex] = m_vehicleData.axles[i].suspension.springDamping * m_bodyMass;
 				ivpVehicleData.spring_dampening_compression[wheelIndex] = m_vehicleData.axles[i].suspension.springDampingCompression * m_bodyMass;
 				ivpVehicleData.max_body_force[wheelIndex] = m_vehicleData.axles[i].suspension.maxBodyForce * m_bodyMass;
-				ivpVehicleData.spring_pre_tension[wheelIndex] = -m_vehicleData.axles[i].wheels.springAdditionalLength;
-				
+				ivpVehicleData.spring_pre_tension[wheelIndex] = -ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.springAdditionalLength );
+								
 				ivpVehicleData.wheel_pos_Bos[wheelIndex] = m_wheelPosition_Bs[wheelIndex];
 				if ( m_bTraceData )
 				{
@@ -621,23 +762,15 @@ void CVehicleController::InitCarSystemWheels( IVP_Template_Car_System &ivpVehicl
 
 		ivpVehicleData.stabilizer_constant[i] = m_vehicleData.axles[i].suspension.stabilizerConstant * m_bodyMass;
 		// this should output in radians per second
-		ivpVehicleData.wheel_max_rotation_speed[i] = m_vehicleData.engine.maxSpeed / m_vehicleData.axles[i].wheels.radius;
-		totalTorqueDistribution += m_vehicleData.axles[i].torqueFactor;
-		if ( m_vehicleData.axles[i].wheels.radius > m_wheelRadius )
+		float radius = ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.radius );
+		float totalMaxSpeed = max( m_vehicleData.engine.boostMaxSpeed, m_vehicleData.engine.maxSpeed );
+		ivpVehicleData.wheel_max_rotation_speed[i] = totalMaxSpeed / radius;
+		if ( radius > m_wheelRadius )
 		{
-			m_wheelRadius = m_vehicleData.axles[i].wheels.radius;
+			m_wheelRadius = radius;
 		}
 	}
 
-	// Set up wheel collisions
-	for ( i = 0; i < m_wheelCount; i++ )
-	{
-		m_pEnv->DisableCollisions( m_pCarBody, m_pWheels[i] );
-		for ( int w = 0; w < i; w++ )
-		{
-			m_pEnv->DisableCollisions( m_pWheels[i], m_pWheels[w] );
-		}
-	}
 	for ( i = 0; i < m_wheelCount; i++ )
 	{
 		m_pWheels[i]->EnableCollisions( true );
@@ -650,7 +783,10 @@ void CVehicleController::ShutdownCarSystem()
 	m_pCarSystem = NULL;
 	for ( int i = 0; i < m_wheelCount; i++ )
 	{
-		m_pEnv->DestroyObject( m_pWheels[i] );
+		if ( m_pWheels[i] )
+		{
+			m_pEnv->DestroyObject( m_pWheels[i] );
+		}
 		m_pWheels[i] = NULL;
 	}
 }
@@ -659,16 +795,7 @@ void CVehicleController::ShutdownCarSystem()
 void CVehicleController::InitVehicleData( const vehicleparams_t &params )
 {
 	m_vehicleData = params;
-	// input speed is in miles/hour.  Convert to in/s
-	m_vehicleData.engine.maxSpeed = MPH2INS(m_vehicleData.engine.maxSpeed);
-	m_vehicleData.engine.maxRevSpeed = MPH2INS(m_vehicleData.engine.maxRevSpeed);
-	m_vehicleData.engine.boostMaxSpeed = MPH2INS(m_vehicleData.engine.boostMaxSpeed);
-	m_vehicleData.body.tiltForceHeight = ConvertDistanceToIVP( m_vehicleData.body.tiltForceHeight );
-	for ( int i = 0; i < m_vehicleData.axleCount; i++ )
-	{
-		m_vehicleData.axles[i].wheels.radius = ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.radius );
-		m_vehicleData.axles[i].wheels.springAdditionalLength = ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.springAdditionalLength );
-	}
+	VehicleDataReload();
 }
 
 void CVehicleController::SetSpringLength(int wheelIndex, float length)
@@ -689,19 +816,39 @@ float CVehicleController::UpdateBooster( float dt )
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Are whe boosting?
+//-----------------------------------------------------------------------------
+bool CVehicleController::IsBoosting( void )
+{
+	return ( m_pCarSystem->get_booster_time_to_go() > 0.0f );
+}
+
+//-----------------------------------------------------------------------------
 // Purpose: Update the vehicle controller.
 //-----------------------------------------------------------------------------
-void CVehicleController::Update( float dt, vehicle_controlparams_t &controls )
+void CVehicleController::Update( float dt, vehicle_controlparams_t &controlsIn )
 {
+	vehicle_controlparams_t controls = controlsIn;
+	// Speed.
+    m_currentState.speed = ConvertDistanceToHL( m_pCarSystem->get_body_speed() );
+	float flSpeed = GAMEVEL_TO_MPH( m_currentState.speed );
+	float flAbsSpeed = fabsf( flSpeed );
+
 	// Calculate the throttle and brake values.
 	float flThrottle = controls.throttle;
 	bool bHandbrake = controls.handbrake;
 	float flBrake = controls.brake;
-	bool bPowerslide = bHandbrake;
+	bool bPowerslide = bHandbrake && ( flAbsSpeed > 18.0f );
 
-	if ( bPowerslide )
+	if ( bHandbrake )
 	{
 		flThrottle = 0.0f;
+	}
+
+	if ( IsBoosting() )
+	{
+		controls.boost = true;
+		flThrottle = flThrottle < 0.0f ? -1.0f : 1.0f;
 	}
 
 	if ( flThrottle == 0.0f && flBrake == 0.0f && !bHandbrake )
@@ -710,13 +857,19 @@ void CVehicleController::Update( float dt, vehicle_controlparams_t &controls )
 	}
 
 	// Update steering.
-	UpdateSteering( controls, dt );
+	UpdateSteering( controls, dt, flAbsSpeed );
 
 	// Update powerslide.
-	UpdatePowerslide( bPowerslide );
+	UpdatePowerslide( controls, bPowerslide, flSpeed );
 
 	// Update engine.
 	UpdateEngine( controls, dt, flThrottle, flBrake, bHandbrake, bPowerslide );
+
+	// Update handbrake.
+	UpdateHandbrake( controls, flThrottle, bHandbrake, bPowerslide );
+
+	// Update skidding.
+	UpdateSkidding( bHandbrake );
 
 	// Apply the extra forces to the car (downward, counter-torque, etc.)
 	UpdateExtraForces();
@@ -728,17 +881,18 @@ void CVehicleController::Update( float dt, vehicle_controlparams_t &controls )
 //-----------------------------------------------------------------------------
 // Purpose: Update the steering on the vehicle.
 //-----------------------------------------------------------------------------
-void CVehicleController::UpdateSteering( vehicle_controlparams_t &controls, float flDeltaTime )
+void CVehicleController::UpdateSteering( const vehicle_controlparams_t &controls, float flDeltaTime, float flSpeed )
 {
    // Steering - IVP steering is in radians.
-    float flSteeringAngle = CalcSteering( flDeltaTime, controls.steering );
-    m_pCarSystem->do_steering( DEG2RAD( flSteeringAngle ) );
+    float flSteeringAngle = CalcSteering( flDeltaTime, flSpeed, controls.steering, controls.bAnalogSteering );
+    m_pCarSystem->do_steering( DEG2RAD( flSteeringAngle ), controls.bAnalogSteering );
+	m_currentState.steeringAngle = flSteeringAngle;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Update the powerslide state (wheel materials).
 //-----------------------------------------------------------------------------
-void CVehicleController::UpdatePowerslide( bool bPowerslide )
+void CVehicleController::UpdatePowerslide( const vehicle_controlparams_t &controls, bool bPowerslide, float flSpeed )
 {
 	// Only allow skidding if it is allowed by the vehicle type.
 	if ( !m_vehicleData.steering.isSkidAllowed )
@@ -748,37 +902,129 @@ void CVehicleController::UpdatePowerslide( bool bPowerslide )
 	if ( !m_bOccupied )
 		return;
 
-	// Check to see if the wheels are already appropriate for the powerslide state.
-	if ( bPowerslide == m_bSlipperyTires )
-		return;
+	// Set the powerslide left/right.
+	bool bPowerslideLeft = bPowerslide && controls.handbrakeLeft;
+	bool bPowerslideRight = bPowerslide && controls.handbrakeRight;
 
 	int iWheel = 0;
-	for ( int iAxle = 0; iAxle < m_vehicleData.axleCount; ++iAxle )
+	unsigned int newTireType = VEHICLE_TIRE_NORMAL;
+	if ( bPowerslideLeft || bPowerslideRight )
 	{
-		for ( int iAxleWheel = 0; iAxleWheel < m_vehicleData.wheelsPerAxle; ++iAxleWheel, ++iWheel )
+		newTireType = VEHICLE_TIRE_POWERSLIDE;
+	}
+	else if ( bPowerslide )
+	{
+		newTireType = VEHICLE_TIRE_BRAKING;
+	}
+
+	if ( newTireType != m_nTireType )
+	{
+		for ( int iAxle = 0; iAxle < m_vehicleData.axleCount; ++iAxle )
 		{
-			// Change to slippery tires - if we can.
-			if ( bPowerslide && ( m_vehicleData.axles[iAxle].wheels.skidMaterialIndex != - 1 ) )
+			int materialIndex = m_vehicleData.axles[iAxle].wheels.materialIndex;
+			if ( newTireType == VEHICLE_TIRE_POWERSLIDE && ( m_vehicleData.axles[iAxle].wheels.skidMaterialIndex != - 1 ) )
 			{
- 				m_pWheels[iWheel]->SetMaterialIndex( m_vehicleData.axles[iAxle].wheels.skidMaterialIndex );
+				materialIndex = m_vehicleData.axles[iAxle].wheels.skidMaterialIndex;
 			}
-			// Change back to normal tires.
-			else
+			else if ( newTireType == VEHICLE_TIRE_BRAKING && ( m_vehicleData.axles[iAxle].wheels.brakeMaterialIndex != -1 ) )
 			{
-				m_pWheels[iWheel]->SetMaterialIndex( m_vehicleData.axles[iAxle].wheels.materialIndex );
+				materialIndex = m_vehicleData.axles[iAxle].wheels.brakeMaterialIndex;
 			}
+
+			for ( int iAxleWheel = 0; iAxleWheel < m_vehicleData.wheelsPerAxle; ++iAxleWheel, ++iWheel )
+			{
+				m_pWheels[iWheel]->SetMaterialIndex( materialIndex );
+			}
+						
+			m_nTireType = newTireType;
 		}
 	}
 
-	m_bSlipperyTires = bPowerslide;
+	// Push the car a little.
+	float flFrontAccel = 0.0f;
+	float flRearAccel = 0.0f;
+	if ( flSpeed > 0 && (bPowerslideLeft != bPowerslideRight) )
+	{
+		// NOTE: positive acceleration is to the left
+		float powerSlide = RemapValClamped( flSpeed, m_vehicleData.steering.speedSlow, m_vehicleData.steering.speedFast, 0, 1 );
+		float powerSlideAccel = ConvertDistanceToIVP( m_vehicleData.steering.powerSlideAccel);
+		if ( bPowerslideLeft )
+		{
+			flFrontAccel = powerSlideAccel * powerSlide;
+			flRearAccel = -powerSlideAccel * powerSlide;
+		}
+		else
+		{
+			flFrontAccel = -powerSlideAccel * powerSlide;
+			flRearAccel = powerSlideAccel * powerSlide;
+		}
+	}
+	m_pCarSystem->set_powerslide( flFrontAccel, flRearAccel );
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose:
 //-----------------------------------------------------------------------------
-void CVehicleController::UpdateEngine( vehicle_controlparams_t &controls, float flDeltaTime, 
+void CVehicleController::UpdateEngine( const vehicle_controlparams_t &controls, float flDeltaTime, 
 									   float flThrottle, float flBrake, bool bHandbrake, bool bPowerslide )
+{
+	bool bTorqueBoost = UpdateEngineTurboStart( controls, flDeltaTime );
+
+	CalcEngine( flThrottle, flBrake, bHandbrake, controls.steering, bTorqueBoost );
+
+	UpdateEngineTurboFinish();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool CVehicleController::UpdateEngineTurboStart( const vehicle_controlparams_t &controls, float flDeltaTime )
+{
+	bool bTorqueBoost = false;
+	if ( controls.boost > 0 )
+	{
+		if ( m_vehicleData.engine.torqueBoost )
+		{
+			// Turbo will be applied at the engine level.
+			bTorqueBoost = true;
+			m_pCarSystem->activate_booster( 0.0f, m_vehicleData.engine.boostDuration, m_vehicleData.engine.boostDelay );
+		}
+		else
+		{
+			// Activate the turbo force booster - applied to vehicle body.
+			m_pCarSystem->activate_booster( m_vehicleData.engine.boostForce * controls.boost, m_vehicleData.engine.boostDuration, m_vehicleData.engine.boostDelay );
+		}
+	}
+
+	m_pCarSystem->update_booster( flDeltaTime );
+	m_currentState.boostDelay = m_pCarSystem->get_booster_delay();
+	m_currentState.isTorqueBoosting = bTorqueBoost;
+
+	return bTorqueBoost;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CVehicleController::UpdateEngineTurboFinish( void )
+{
+	if ( m_vehicleData.engine.boostDuration + m_vehicleData.engine.boostDelay > 0 )	// watch out for div by zero
+	{
+		if ( m_currentState.boostDelay > 0 )
+		{
+			m_currentState.boostTimeLeft = 100 - 100 * ( m_currentState.boostDelay / ( m_vehicleData.engine.boostDuration +  m_vehicleData.engine.boostDelay ) );
+		}
+		else
+		{
+			m_currentState.boostTimeLeft = 100;		// ready to go any time
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Update the handbrake.
+//-----------------------------------------------------------------------------
+void CVehicleController::UpdateHandbrake( const vehicle_controlparams_t &controls, float flThrottle, bool bHandbrake, bool bPowerslide )
 {
 	// Get the current vehicle speed.
     m_currentState.speed = ConvertDistanceToHL( m_pCarSystem->get_body_speed() );
@@ -792,35 +1038,85 @@ void CVehicleController::UpdateEngine( vehicle_controlparams_t &controls, float 
 		}
 	}
 
-	// only activate booster if vehicle uses force type boost, otherwise, apply torqueboost in CalcEngine()
-	bool torqueBoost = false;
-	if ( controls.boost > 0 )
+	if ( bHandbrake )
 	{
-		if ( m_vehicleData.engine.torqueBoost )
+		// HACKHACK: only allow the handbrake when the wheels have contact with something
+		// otherwise they will affect the car in an undesirable way
+ 		bHandbrake = false;
+		for ( int iWheel = 0; iWheel < m_wheelCount; ++iWheel )
 		{
-			torqueBoost = true;
-		}
-		else
-		{
-			m_pCarSystem->activate_booster( m_vehicleData.engine.boostForce * controls.boost, m_vehicleData.engine.boostDuration, m_vehicleData.engine.boostDelay );
+			if ( m_pWheels[iWheel]->GetContactPoint(NULL, NULL) )
+			{
+				bHandbrake = true;
+				break;
+			}
 		}
 	}
 
-	m_pCarSystem->update_booster( flDeltaTime );
-	m_currentState.boostDelay = m_pCarSystem->get_booster_delay();
-
-	CalcEngine( flThrottle, flBrake, bHandbrake, controls.steering, torqueBoost );
-	m_pCarSystem->update_throttle( flThrottle );
-
-	if ( m_vehicleData.engine.boostDuration + m_vehicleData.engine.boostDelay > 0 )	// watch out for div by zero
+	bool currentHandbrake = (m_vehicleFlags & FVEHICLE_HANDBRAKE_ON) ? true : false;
+	if ( bHandbrake != currentHandbrake )
 	{
-		if ( m_currentState.boostDelay > 0 )
+		if ( bHandbrake )
 		{
-			m_currentState.boostTimeLeft = 100 - 100 * ( m_currentState.boostDelay / ( m_vehicleData.engine.boostDuration +  m_vehicleData.engine.boostDelay ) );
+			m_vehicleFlags |= FVEHICLE_HANDBRAKE_ON;
 		}
 		else
 		{
-			m_currentState.boostTimeLeft = 100;		// ready to go any time
+			m_vehicleFlags &= ~FVEHICLE_HANDBRAKE_ON;
+		}
+
+		for ( int iWheel = 0; iWheel < m_wheelCount; ++iWheel )
+		{
+			m_pCarSystem->fix_wheel( ( IVP_POS_WHEEL )iWheel, bHandbrake ? IVP_TRUE : IVP_FALSE );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CVehicleController::UpdateSkidding( bool bHandbrake )
+{
+	m_currentState.skidSpeed = 0.0f;
+	m_currentState.skidMaterial = 0;
+	m_currentState.wheelsInContact = m_wheelCount;
+	m_currentState.wheelsNotInContact = 0;
+	if ( m_vehicleData.steering.isSkidAllowed )
+	{
+		// Estimate rot speed based on current speed and the front wheels radius
+		float flAbsSpeed = fabs( m_currentState.speed );
+
+		Vector contact;
+		Vector velocity;
+		int surfaceProps;
+		m_currentState.wheelsInContact = 0;
+		m_currentState.wheelsNotInContact = 0;
+
+		for( int iWheel = 0; iWheel < m_wheelCount; ++iWheel )
+		{
+			if ( GetWheelContactPoint( iWheel, &contact, &surfaceProps ) )
+			{
+				// NOTE: The wheel should be translating by the negative of the speed a point in contact with the surface
+				// is moving.  So the net velocity on the surface is zero if that wheel is 100% engaged in driving the car
+				// any velocity in excess of this gets compared against the threshold for skidding
+				m_pWheels[iWheel]->GetVelocityAtPoint( contact, &velocity );
+				float speed = velocity.Length();
+				if ( speed > m_currentState.skidSpeed || m_currentState.skidSpeed <= 0.0f )
+				{
+					m_currentState.skidSpeed = speed;
+					m_currentState.skidMaterial = surfaceProps;
+				}
+				m_currentState.wheelsInContact++;
+			}
+			else
+			{
+				m_currentState.wheelsNotInContact++;
+			}
+		}
+		// Check for locked wheels.
+		if ( bHandbrake && ( flAbsSpeed > 30 ) )
+		{
+			m_currentState.skidSpeed = flAbsSpeed;
 		}
 	}
 }
@@ -836,7 +1132,7 @@ void CVehicleController::UpdateExtraForces( void )
 	float y_val = co->m_world_f_object.get_elem( IVP_INDEX_Y, IVP_INDEX_Y );
 	if ( fabs( y_val ) < 0.05 )
 	{
-		m_pCarSystem->change_body_downforce( m_vehicleData.body.tiltForce );
+		m_pCarSystem->change_body_downforce( m_vehicleData.body.tiltForce * m_gravityLength * m_bodyMass );
 	}
 	else
 	{
@@ -848,6 +1144,16 @@ void CVehicleController::UpdateExtraForces( void )
 	if ( m_nVehicleType == VEHICLE_TYPE_CAR_WHEELS )
 	{
 	    m_pCarSystem->update_body_countertorque();
+	}
+
+	// if the car has a global angular velocity limit, apply that constraint
+	AngularImpulse angVel;
+	m_pCarBody->GetVelocity( NULL, &angVel );
+	if ( m_vehicleData.body.maxAngularVelocity > 0 && angVel.Length() > m_vehicleData.body.maxAngularVelocity )
+	{
+		VectorNormalize(angVel);
+		angVel *= m_vehicleData.body.maxAngularVelocity;
+		m_pCarBody->SetVelocityInstantaneous( NULL, &angVel );
 	}
 }
 
@@ -863,84 +1169,122 @@ void CVehicleController::UpdateWheelPositions( void )
 	}
 }
 
-float CVehicleController::CalcSteering( float dt, float steering )
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+float CVehicleController::CalcSteering( float dt, float speed, float steering, bool bAnalog )
 {
-    steering *= m_vehicleData.steering.degrees;
-	return steering;
+	float degrees = RemapValClamped( speed, m_vehicleData.steering.speedSlow, m_vehicleData.steering.speedFast, m_vehicleData.steering.degreesSlow, m_vehicleData.steering.degreesFast );
+	float speedGame = MPH_TO_GAMEVEL(speed);
+	if ( speedGame > m_vehicleData.engine.maxSpeed )
+	{
+		degrees = RemapValClamped( speedGame, m_vehicleData.engine.maxSpeed, m_vehicleData.engine.boostMaxSpeed, m_vehicleData.steering.degreesFast, m_vehicleData.steering.degreesBoost );
+	}
+	if ( m_vehicleData.steering.steeringExponent != 0 )
+	{
+		float sign = steering < 0 ? -1 : 1;
+		float absSteering = fabs(steering);
+		if ( bAnalog )
+		{
+			// analog steering is directly mapped, not integrated, so go ahead and map the full range using the exponent
+			// then clamp to the output cone - keeps stick position:turn rate constant
+			// NOTE: Also hardcode exponent to 2 because we can't add a script entry at this point
+			float output = pow(absSteering, 2.0f) * sign * m_vehicleData.steering.degreesSlow;
+			return clamp(output, -degrees, degrees );
+		}
+		// digital steering is integrated, keep time to full turn rate constant
+		return pow(absSteering, m_vehicleData.steering.steeringExponent) * sign * degrees;
+	}
+	return steering * degrees;
 }
 
-void CVehicleController::CalcEngine( float throttle, float brake_val, bool handbrake, float steeringVal, bool torqueBoost )
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CVehicleController::CalcEngineTransmission( float flThrottle )
 {
-    // throttle goes forward and backward, [-1, 1]
-    // brake_val [0..1]
+	// Automatic Transmission?
+	if ( !m_vehicleData.engine.isAutoTransmission )
+		return;
 
-    // estimate rot speed based on current speed and the front wheels radius
-    float absSpeed = fabs( m_currentState.speed );
-
-	if ( m_vehicleData.engine.isAutoTransmission )
+	// Calculate the average rotational speed of the vehicle's wheels.
+	float flAvgRotSpeed = 0.0;
+	for( int iWheel = 0; iWheel < m_wheelCount; ++iWheel )
 	{
-		// estimate the engine RPM
-		float avgRotSpeed = 0.0;
-
-		bool skid = false;
-		for( int i = 0; i < m_wheelCount; i++ )
+		float flRotSpeed = fabs( m_pCarSystem->get_wheel_angular_velocity( IVP_POS_WHEEL( iWheel ) ) );
+		flAvgRotSpeed += flRotSpeed;
+	}
+	flAvgRotSpeed *= 0.5f / ( float )IVP_PI / m_wheelCount;
+	
+	float flEstEngineRPM = flAvgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[m_currentState.gear] * 60;
+	
+	// Only shift up when going forward (throttling).
+	if ( flThrottle > 0.0f )
+	{
+		// Shift up?, top gear is gearcount-1 (0 based)
+		while ( ( flEstEngineRPM > m_vehicleData.engine.shiftUpRPM ) && ( m_currentState.gear < m_vehicleData.engine.gearCount-1 ) )
 		{
-			float rot_speed = fabs(m_pCarSystem->get_wheel_angular_velocity(IVP_POS_WHEEL(i)));
-			avgRotSpeed += rot_speed;
-			if ( fabs(rot_speed) > absSpeed + 0.1 )		// allow for some slop
-			{
-				skid = true;
-			}
+			m_currentState.gear++;
+			flEstEngineRPM = flAvgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[m_currentState.gear] * 60;
 		}
-		// check for locked wheels also
-		if ( handbrake && fabs(m_currentState.speed) > 30 )	// wheels locked and car still moving?
-		{
-			skid = true;					// then we're skidding
-		}
-		m_currentState.skidding = skid & m_vehicleData.steering.isSkidAllowed;		
-
-		avgRotSpeed *= 0.5f / (float)IVP_PI / m_wheelCount;
-
-		float estEngineRPM = avgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[ m_currentState.gear ] * 60;
-
-		// only shift up when going forward
-		if ( throttle > 0 )
-		{
-			// check for higher gear, top gear is gearcount-1 (0 based)
-			while ( estEngineRPM > m_vehicleData.engine.shiftUpRPM && m_currentState.gear < m_vehicleData.engine.gearCount-1 )
-			{
-				m_currentState.gear++;
-				estEngineRPM = avgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[ m_currentState.gear ] * 60;
-			}
-		}
-
-		// check for lower gear
-		while ( estEngineRPM < m_vehicleData.engine.shiftDownRPM && m_currentState.gear > 0 )
-		{
-			m_currentState.gear--;
-			estEngineRPM = avgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[ m_currentState.gear ] * 60;
-		}
-		m_currentState.engineRPM = avgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[ m_currentState.gear ] * 60;
 	}
 	
-	// speed governor
-#if 0
-	if ( fabs(throttle) > 0 && ( (!torqueBoost && absSpeed > m_vehicleData.engine.maxSpeed ) || 
-		 ( torqueBoost && absSpeed > m_vehicleData.engine.boostMaxSpeed) ) )
+	// Downshift?
+	while ( ( flEstEngineRPM < m_vehicleData.engine.shiftDownRPM ) && ( m_currentState.gear > 0 ) )
 	{
-		throttle = 0.0;
-    }
-#endif
-	if ( ( throttle > 0 ) && ( ( !torqueBoost && absSpeed > m_vehicleData.engine.maxSpeed ) || 
-		 ( torqueBoost && absSpeed > m_vehicleData.engine.boostMaxSpeed) ) )
+		m_currentState.gear--;
+		flEstEngineRPM = flAvgRotSpeed * m_vehicleData.engine.axleRatio * m_vehicleData.engine.gearRatio[m_currentState.gear] * 60;
+	}
+
+	m_currentState.engineRPM = flEstEngineRPM;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// throttle goes forward and backward, [-1, 1]
+// brake_val [0..1]
+//-----------------------------------------------------------------------------
+void CVehicleController::CalcEngine( float throttle, float brake_val, bool handbrake, float steeringVal, bool torqueBoost )
+{
+	// Update the engine transmission.
+	CalcEngineTransmission( throttle );
+	
+	// Get the speed of the vehicle.
+    float flAbsSpeed = fabs( m_currentState.speed );
+
+	// Speed governor
+	if ( IsPC() )
 	{
-		throttle = 0.0;
-    }
+		float maxSpeed = torqueBoost ? m_vehicleData.engine.boostMaxSpeed : m_vehicleData.engine.maxSpeed;
+		maxSpeed = max(1.f,maxSpeed);	// make sure this is non-zero before the divide
+		if ( (throttle > 0) && (flAbsSpeed > maxSpeed) )
+		{
+			float frac = flAbsSpeed / maxSpeed;
+			if ( frac > m_vehicleData.engine.autobrakeSpeedGain )
+			{
+				throttle = 0;
+				brake_val = (frac - 1.0f) * m_vehicleData.engine.autobrakeSpeedFactor;
+				if ( m_currentState.wheelsInContact == 0 )
+				{
+					brake_val = 0;
+				}
+			}
+			throttle *= 0.1f;
+		}
+	}
+	else	// consoles
+	{
+		if ( ( throttle > 0 ) && ( ( !torqueBoost && flAbsSpeed > (m_vehicleData.engine.maxSpeed * throttle) ) || 
+			( torqueBoost && flAbsSpeed > m_vehicleData.engine.boostMaxSpeed) ) )
+		{
+			throttle *= 0.1f;
+		}
+	}
 
 	// Check for reverse - both of these "governors" or horrible and need to be redone before we ship!
-	if ( ( throttle < 0 ) && ( !torqueBoost && ( absSpeed > m_vehicleData.engine.maxRevSpeed ) ) )
+	if ( ( throttle < 0 ) && ( !torqueBoost && ( flAbsSpeed > m_vehicleData.engine.maxRevSpeed ) ) )
 	{
-		throttle = 0.0f;
+		throttle *= 0.1f;
 	}
 
     if ( throttle != 0.0 )
@@ -963,14 +1307,23 @@ void CVehicleController::CalcEngine( float throttle, float brake_val, bool handb
 		int wheelIndex = 0;
 		for ( int i = 0; i < m_vehicleData.axleCount; i++ )
 		{
-			float axleFactor = m_vehicleData.axles[i].torqueFactor;
+			float axleFactor = m_vehicleData.axles[i].torqueFactor * m_torqueScale;
 
 			float boostFactor = 0.5f;
-			if ( torqueBoost )
+			if ( torqueBoost && IsBoosting() )
 			{
-				boostFactor = 1.0f;
+				// reduce the boost at low speeds and high turns since this usually just makes the tires spin
+				// this means you only get the full boost when travelling in a straight line at high speed
+				float speedFactor = RemapValClamped( flAbsSpeed, 0, m_vehicleData.engine.maxSpeed, 0.1f, 1.0f );
+				float turnFactor = 1.0f - (fabs(steeringVal) * 0.95f);
+				float dampedBoost = m_vehicleData.engine.boostForce * speedFactor * turnFactor;
+				if ( dampedBoost > boostFactor )
+				{
+					boostFactor = dampedBoost;
+				}
+				//Msg("Boost applied %.2f, speed %.2f, turn %.2f\n", boostFactor, speedFactor, turnFactor );
 			}
-			float axleTorque = boostFactor * wheel_force_by_throttle * axleFactor * m_vehicleData.axles[i].wheels.radius;
+			float axleTorque = boostFactor * wheel_force_by_throttle * axleFactor * ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.radius );
 
 			for ( int w = 0; w < m_vehicleData.wheelsPerAxle; w++, wheelIndex++ )
 			{
@@ -990,7 +1343,7 @@ void CVehicleController::CalcEngine( float throttle, float brake_val, bool handb
 		int wheelIndex = 0;
 		for ( int i = 0; i < m_vehicleData.axleCount; i++ )
 		{
-			float torque_val = 0.5 * sign * wheel_force_by_brake * m_vehicleData.axles[i].brakeFactor * m_vehicleData.axles[i].wheels.radius;
+			float torque_val = 0.5 * sign * wheel_force_by_brake * m_vehicleData.axles[i].brakeFactor * ConvertDistanceToIVP( m_vehicleData.axles[i].wheels.radius );
 			for ( int w = 0; w < m_vehicleData.wheelsPerAxle; w++, wheelIndex++ )
 			{
 				m_pCarSystem->change_wheel_torque( ( IVP_POS_WHEEL )wheelIndex, torque_val );
@@ -1007,36 +1360,8 @@ void CVehicleController::CalcEngine( float throttle, float brake_val, bool handb
 		}
 	}
 
-	bool currentHandbrake = (m_vehicleFlags & FVEHICLE_HANDBRAKE_ON) ? true : false;
-	if ( handbrake != currentHandbrake )
-	{
-		if ( handbrake )
-		{
-			m_vehicleFlags |= FVEHICLE_HANDBRAKE_ON;
-		}
-		else
-		{
-			m_vehicleFlags &= ~FVEHICLE_HANDBRAKE_ON;
-		}
-
-		for ( int w = 0; w < m_wheelCount; w++ )
-		{
-			m_pCarSystem->fix_wheel( (IVP_POS_WHEEL)w, handbrake ? IVP_TRUE : IVP_FALSE );
-		}
-	}
-
-	if ( m_nVehicleType == VEHICLE_TYPE_CAR_WHEELS )
-	{
-		for ( int w = 0; w < m_wheelCount; w++ )
-		{
-			m_currentState.wheelSkidValue[w] = m_pWheels[w]->GetObject()->get_core()->car_wheel->last_skid_value;
-		}
-
-//	    m_pCarSystem->update_body_countertorque();
-	}
-
-    // motor sound effects
-    // ...
+	// Update the throttle - primarily for the airboat!
+	m_pCarSystem->update_throttle( throttle );
 }
 
 //-----------------------------------------------------------------------------
@@ -1045,6 +1370,7 @@ void CVehicleController::CalcEngine( float throttle, float brake_val, bool handb
 void CVehicleController::GetCarSystemDebugData( vehicle_debugcarsystem_t &debugCarSystem )
 {
 	IVP_CarSystemDebugData_t carSystemDebugData;
+	memset(&carSystemDebugData,0,sizeof(carSystemDebugData));
 	m_pCarSystem->GetCarSystemDebugData( carSystemDebugData );
 
 	// Raycast car wheel trace data.
@@ -1061,6 +1387,13 @@ void CVehicleController::GetCarSystemDebugData( vehicle_debugcarsystem_t &debugC
 		debugCarSystem.vecWheelRaycastImpacts[iWheel] = debugCarSystem.vecWheelRaycasts[iWheel][0] + ( carSystemDebugData.wheelRaycastImpacts[iWheel] *
 			                                            ( debugCarSystem.vecWheelRaycasts[iWheel][1] - debugCarSystem.vecWheelRaycasts[iWheel][0] ) );
 	}
+
+	ConvertPositionToHL( carSystemDebugData.backActuatorLeft, debugCarSystem.vecAxlePos[0] );
+	ConvertPositionToHL( carSystemDebugData.backActuatorRight, debugCarSystem.vecAxlePos[1] );
+	ConvertPositionToHL( carSystemDebugData.frontActuatorLeft, debugCarSystem.vecAxlePos[2] );
+	// vecAxlePos only has three elements so this line is illegal. The mapping of actuators
+	// to axles seems dodgy anyway.
+	//ConvertPositionToHL( carSystemDebugData.frontActuatorRight, debugCarSystem.vecAxlePos[3] );
 }
 
 
@@ -1079,8 +1412,9 @@ void CVehicleController::WriteToTemplate( vphysics_save_cvehiclecontroller_t &co
 	controllerTemplate.m_bodyMass = m_bodyMass;
 	controllerTemplate.m_totalWheelMass = m_totalWheelMass;
 	controllerTemplate.m_gravityLength = m_gravityLength;
+	controllerTemplate.m_torqueScale = m_torqueScale;
 	controllerTemplate.m_vehicleFlags = m_vehicleFlags;
-	controllerTemplate.m_bSlipperyTires = m_bSlipperyTires;
+	controllerTemplate.m_nTireType = m_nTireType;
 	controllerTemplate.m_nVehicleType = m_nVehicleType;
 	controllerTemplate.m_bTraceData = m_bTraceData;
 	controllerTemplate.m_bOccupied = m_bOccupied;
@@ -1093,26 +1427,72 @@ void CVehicleController::WriteToTemplate( vphysics_save_cvehiclecontroller_t &co
 		ConvertPositionToHL( m_wheelPosition_Bs[i], controllerTemplate.m_wheelPosition_Bs[i] );
 		ConvertPositionToHL( m_tracePosition_Bs[i], controllerTemplate.m_tracePosition_Bs[i] );
 	}
+	m_flVelocity[0] = m_flVelocity[1] = m_flVelocity[2] = 0.0f;
+	if ( m_pCarBody )
+	{
+		IVP_U_Float_Point &speed = m_pCarBody->GetObject()->get_core()->speed; 
+		controllerTemplate.m_flVelocity[0] = speed.k[0];
+		controllerTemplate.m_flVelocity[1] = speed.k[1];
+		controllerTemplate.m_flVelocity[2] = speed.k[2];
+	}
+
 }
 
+// JAY: Keep this around for now while we still have a bunch of games saved with the old 
+// vehicle controls.  We won't ship this, but it lets us debug
+#define OLD_SAVED_GAME 1
 
-void CVehicleController::InitFromTemplate( CPhysicsEnvironment *pEnv, void *pGameData, const vphysics_save_cvehiclecontroller_t &controllerTemplate )
+#if OLD_SAVED_GAME
+#define SET_DEFAULT(x,y) { if ( x == 0 ) x = y; }
+#endif
+
+void CVehicleController::InitFromTemplate( CPhysicsEnvironment *pEnv, void *pGameData,
+	IPhysicsGameTrace *pGameTrace, const vphysics_save_cvehiclecontroller_t &controllerTemplate )
 {
 	m_pEnv = pEnv;
+	m_pGameTrace = pGameTrace;
 	m_pCarBody = controllerTemplate.m_pCarBody;
 	m_wheelCount = controllerTemplate.m_wheelCount;
 	m_wheelRadius = controllerTemplate.m_wheelRadius;
 	m_bodyMass = controllerTemplate.m_bodyMass;
 	m_totalWheelMass = controllerTemplate.m_totalWheelMass;
 	m_gravityLength = controllerTemplate.m_gravityLength;
+	m_torqueScale = controllerTemplate.m_torqueScale;
 	m_vehicleFlags = controllerTemplate.m_vehicleFlags;
-	m_bSlipperyTires = controllerTemplate.m_bSlipperyTires;
+	m_nTireType = controllerTemplate.m_nTireType;
 	m_nVehicleType = controllerTemplate.m_nVehicleType;
 	m_bTraceData = controllerTemplate.m_bTraceData;
 	m_bOccupied = controllerTemplate.m_bOccupied;
 	m_bEngineDisable = controllerTemplate.m_bEngineDisable;
+	m_pCarSystem = NULL;
 	memcpy( &m_currentState, &controllerTemplate.m_currentState, sizeof(m_currentState) );
 	memcpy( &m_vehicleData, &controllerTemplate.m_vehicleData, sizeof(m_vehicleData) );
+	memcpy( &m_flVelocity, controllerTemplate.m_flVelocity, sizeof(m_flVelocity) );
+
+#if OLD_SAVED_GAME
+	SET_DEFAULT( m_torqueScale, 1.0 );
+	SET_DEFAULT( m_vehicleData.steering.steeringRateSlow, 4.5 );
+	SET_DEFAULT( m_vehicleData.steering.steeringRateFast, 0.5 );
+	SET_DEFAULT( m_vehicleData.steering.steeringRestRateSlow, 3.0 );
+	SET_DEFAULT( m_vehicleData.steering.steeringRestRateFast, 1.8 );
+	SET_DEFAULT( m_vehicleData.steering.speedSlow, m_vehicleData.engine.maxSpeed*0.25 );
+	SET_DEFAULT( m_vehicleData.steering.speedFast, m_vehicleData.engine.maxSpeed*0.75 );
+	SET_DEFAULT( m_vehicleData.steering.degreesSlow, 50 );
+	SET_DEFAULT( m_vehicleData.steering.degreesFast, 18 );
+	SET_DEFAULT( m_vehicleData.steering.degreesBoost, 10 );
+	
+
+	SET_DEFAULT( m_vehicleData.steering.turnThrottleReduceSlow, 0.3 );
+	SET_DEFAULT( m_vehicleData.steering.turnThrottleReduceFast, 3 );
+	SET_DEFAULT( m_vehicleData.steering.brakeSteeringRateFactor, 6 );
+	SET_DEFAULT( m_vehicleData.steering.throttleSteeringRestRateFactor, 2 );
+	SET_DEFAULT( m_vehicleData.steering.boostSteeringRestRateFactor, 1 );
+	SET_DEFAULT( m_vehicleData.steering.boostSteeringRateFactor, 1 );
+	SET_DEFAULT( m_vehicleData.steering.powerSlideAccel, 200 );
+
+	SET_DEFAULT( m_vehicleData.engine.autobrakeSpeedGain, 1.0 );
+	SET_DEFAULT( m_vehicleData.engine.autobrakeSpeedFactor, 2.0 );
+#endif
 
 	for (int i = 0; i < VEHICLE_MAX_WHEEL_COUNT; ++i )
 	{
@@ -1122,16 +1502,79 @@ void CVehicleController::InitFromTemplate( CPhysicsEnvironment *pEnv, void *pGam
 	}
 
 	CreateIVPObjects( );
+
+	// HACKHACK: vehicle wheels don't have valid friction at startup, clearing the body's angular velocity keeps 
+	// this fact from affecting the vehicle dynamics in any noticeable way
+	// using growFriction will re-establish the contact point with moveable objects, but the friction that 
+	// occurs afterward is not the same across the save even when that is extended to include static objects
+	if ( m_pCarBody )
+	{
+		// clear angVel
+		m_pCarBody->SetVelocity( NULL, &vec3_origin );
+		m_pCarBody->GetObject()->get_core()->speed_change.set( m_flVelocity[0], m_flVelocity[1], m_flVelocity[2] );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CVehicleController::OnVehicleEnter( void )
+{ 
+	m_bOccupied = true; 
+
+	if ( m_nVehicleType == VEHICLE_TYPE_AIRBOAT_RAYCAST )
+	{
+		float flDampSpeed = 0.0f;
+		float flDampRotSpeed = 0.0f;
+		m_pCarBody->SetDamping( &flDampSpeed, &flDampRotSpeed );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+void CVehicleController::OnVehicleExit( void )
+{ 
+	m_bOccupied = false; 
+
+	// Reset the vehicle tires when exiting the vehicle.
+	if ( m_vehicleData.steering.isSkidAllowed )
+	{
+		int iWheel = 0;
+		for ( int iAxle = 0; iAxle < m_vehicleData.axleCount; ++iAxle )
+		{
+			for ( int iAxleWheel = 0; iAxleWheel < m_vehicleData.wheelsPerAxle; ++iAxleWheel, ++iWheel )
+			{
+				// Change back to normal tires.
+				if ( m_nTireType != VEHICLE_TIRE_NORMAL )
+				{
+					m_pWheels[iWheel]->SetMaterialIndex( m_vehicleData.axles[iAxle].wheels.materialIndex );
+				}
+
+				m_pCarSystem->fix_wheel( ( IVP_POS_WHEEL )iWheel, IVP_TRUE );
+			}
+		}
+		m_nTireType = VEHICLE_TIRE_NORMAL;
+		m_currentState.skidSpeed = 0.0f;
+	}
+
+	if ( m_nVehicleType == VEHICLE_TYPE_AIRBOAT_RAYCAST ) 
+	{
+		float flDampSpeed = 1.0f;
+		float flDampRotSpeed = 1.0f;
+		m_pCarBody->SetDamping( &flDampSpeed, &flDampRotSpeed );
+	}
+
+	SetEngineDisabled( false );
 }
 
 //-----------------------------------------------------------------------------
 // Class factory
 //-----------------------------------------------------------------------------
-IPhysicsVehicleController *CreateVehicleController( CPhysicsEnvironment *pEnv, CPhysicsObject *pBodyObject, const vehicleparams_t &params, unsigned int nVehicleType,  IPhysicsGameTrace *pGameTrace )
+IPhysicsVehicleController *CreateVehicleController( CPhysicsEnvironment *pEnv, CPhysicsObject *pBodyObject, const vehicleparams_t &params, unsigned int nVehicleType, IPhysicsGameTrace *pGameTrace )
 {
 	CVehicleController *pController = new CVehicleController( params, pEnv, nVehicleType, pGameTrace );
 	pController->InitCarSystem( pBodyObject );
-
 	return pController;
 }
 
@@ -1148,13 +1591,14 @@ bool SavePhysicsVehicleController( const physsaveparams_t &params, CVehicleContr
 
 bool RestorePhysicsVehicleController( const physrestoreparams_t &params, CVehicleController **ppVehicleController )
 {
-	*ppVehicleController = new CVehicleController();
+	*ppVehicleController = new CVehicleController;
 	
 	vphysics_save_cvehiclecontroller_t controllerTemplate;
 	memset( &controllerTemplate, 0, sizeof(controllerTemplate) );
 	params.pRestore->ReadAll( &controllerTemplate );
 
-	(*ppVehicleController)->InitFromTemplate( static_cast<CPhysicsEnvironment *>(params.pEnvironment), params.pGameData, controllerTemplate );
+	(*ppVehicleController)->InitFromTemplate( static_cast<CPhysicsEnvironment *>(params.pEnvironment),
+		params.pGameData, params.pGameTrace, controllerTemplate );
 
 	return true;
 }

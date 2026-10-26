@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef CHOREOEVENTWIDGET_H
 #define CHOREOEVENTWIDGET_H
 #ifdef _WIN32
@@ -45,18 +45,29 @@ public:
 	CChoreoEvent				*GetEvent( void );
 	void						SetEvent( CChoreoEvent *event );
 
+	// If the user changes the association of .mdls to actors, then the gender could change and we could need to access a different .wav file
+	// Call this to reconcile things
+	void						RecomputeWave();
+
 	// System wide icons for various event types ( indexed by CChoreEvent::m_fType )
 	static void					LoadImages( void );
 	static void					DestroyImages( void );
 	static mxbitmapdata_t		*GetImage( int type );
 	static mxbitmapdata_t		*GetPauseImage( void );
+	static mxbitmapdata_t		*GetLockImage( void );
 
 private:
+
+	COLORREF					GrayOutColor( COLORREF clr );
+
 	void						DrawRelativeTags( CChoreoWidgetDrawHelper& drawHelper, RECT &rcWAV, float length, CChoreoEvent *event );
 	void						DrawAbsoluteTags( CChoreoWidgetDrawHelper& drawHelper, RECT &rcWAV, float length, CChoreoEvent *event );
 
 	const char					*GetLabelText( void );
 
+	void						DrawSpeakEvent(  CChoreoWidgetDrawHelper& drawHelper, RECT& rcEventLine );
+	void						DrawGestureEvent( CChoreoWidgetDrawHelper& drawHelper, RECT& rcEventLine );
+	void						DrawGenericEvent( CChoreoWidgetDrawHelper& drawHelper, RECT& rcEventLine );
 	// Parent widget
 	CChoreoWidget		*m_pParent;
 
@@ -71,6 +82,7 @@ private:
 	// Bitmaps for drawing event widgets
 	static mxbitmapdata_t m_Bitmaps[ FP_NUM_BITMAPS ];
 	static mxbitmapdata_t m_ResumeConditionBitmap;
+	static mxbitmapdata_t m_LockBodyFacingBitmap;
 };
 
 #endif // CHOREOEVENTWIDGET_H

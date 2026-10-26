@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include <stdio.h>
@@ -13,6 +13,7 @@
 #include "snd_wave_mixer_adpcm.h"
 #include "iscenemanagersound.h"
 #include "AudioWaveOutput.h"
+#include "tier2/riff.h"
 
 typedef struct channel_s
 {
@@ -83,9 +84,6 @@ public:
 	}
 };
 
-
-#define WAVE_FORMAT_PCM		1
-#define WAVE_FORMAT_ADPCM	2
 
 //-----------------------------------------------------------------------------
 // Purpose: Create an approprite mixer type given the data format
@@ -322,7 +320,7 @@ bool CAudioMixerWave::SkipSamples( channel_t *pChannel, int startSample, int sam
 
 	int inputSampleRate = (int)(pChannel->pitch * m_pData->Source().SampleRate());
 	float rate = (float)inputSampleRate / outputRate;
-	fixedint fracstep = FIX_FLOAT( rate );
+	// fixedint fracstep = FIX_FLOAT( rate );
 
 	sampleCount = min( sampleCount, PAINTBUFFER_SIZE );
 

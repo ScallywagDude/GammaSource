@@ -1,11 +1,19 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // TerrainBlend.cpp : Defines the entry point for the application.
 //
 
 #include "stdafx.h"
 #include "resource.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "tier0/dbg.h"
-#include "vstdlib/icommandline.h"
+#include "tier0/icommandline.h"
+#include "tier1/strtools.h"
 
 
 #define MAX_LOADSTRING 100
@@ -112,7 +120,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
                      LPSTR     lpCmdLine,
                      int       nCmdShow)
 {
-	CommandLine()->CreateCmdLine( lpCmdLine );
+	CommandLine()->CreateCmdLine( Plat_GetCommandLine() );
 
 	// TODO: Place code here.
 	SpewOutputFunc( D3DAppSpewFunc );
@@ -453,7 +461,7 @@ bool Sys_Error(const char *pMsg, ...)
 	va_list marker;
 
 	va_start( marker, pMsg );
-	_vsnprintf( msg, sizeof(msg), pMsg, marker );
+	V_vsprintf_safe( msg, pMsg, marker );
 	va_end( marker );
 
 	MessageBox( NULL, msg, "Error!", MB_OK );
@@ -474,7 +482,7 @@ void Sys_SetWindowText( char const *pMsg, ... )
 	char msg[4096];
 	
 	va_start(marker, pMsg);
-	_vsnprintf(msg, sizeof(msg), pMsg, marker);
+	V_vsprintf_safe(msg, pMsg, marker);
 	va_end(marker);
 
 	SetWindowText( g_hWnd, msg );

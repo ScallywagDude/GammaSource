@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include <VGUI_PropertyPage.h>
+#include <vgui_controls/PropertyPage.h>
 #include "filesystem.h"
-#include <VGUI_Controls.h>
+#include <vgui_controls/Panel.h>
 
-#include <VGUI_IVGui.h> // for dprinf statements
+#include <VGUI/IVGui.h> // for dprinf statements
 
 using namespace vgui;
 

@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "RulesContextMenu.h"
 
 #include <VGUI_Controls.h>
@@ -36,7 +35,7 @@ CRulesContextMenu::~CRulesContextMenu()
 //-----------------------------------------------------------------------------
 void CRulesContextMenu::ShowMenu(Panel *target, unsigned int cvarID)
 {
-	DeleteAllItems();
+	ClearMenu();
 		
 	AddMenuItem("cvar", "&Change Value", new KeyValues("cvar", "cvarID", cvarID), CRulesContextMenu::parent);
 

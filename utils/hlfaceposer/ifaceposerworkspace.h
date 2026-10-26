@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IFACEPOSERWORKSPACE_H
 #define IFACEPOSERWORKSPACE_H
@@ -22,6 +22,8 @@ public:
 
 		NUM_FILE_TYPES
 	};
+
+	virtual void			Init( char const *pchShortName ) = 0;
 
 	// Restore
 	virtual int				GetNumStoredFiles( int type ) = 0;

@@ -6,10 +6,6 @@
  *                      contains: Triangle and Tri_Edge infos
  ********************************************************************************/
 
-#ifndef WIN32
-#	pragma interface
-#endif
-
 #ifndef _IVP_U_TYPES_INCLUDED
 #	include "ivu_types.hxx"
 #endif
@@ -132,6 +128,7 @@ class IVP_Compact_Ledge {
     friend class IVP_SurfaceBuilder_Ledge_Soup;
     friend class IVP_SurfaceBuilder_Mopp;
     friend class IVP_GridBuilder_Array;
+    friend class CVPhysicsVirtualMeshWriter;
 private:
     int c_point_offset; // byte offset from 'this' to (ledge) point array
     union {
@@ -249,7 +246,11 @@ public:
 const IVP_Compact_Triangle *IVP_Compact_Edge::get_triangle() const
 {
     // mask 4 lowest adress bits to receive triangle
+#if PLATFORM_64BITS
+    return (IVP_Compact_Triangle *)(((uintp)this) & 0xfffffffffffffff0);
+#else
     return (IVP_Compact_Triangle *)(((unsigned int)this) & 0xfffffff0);
+#endif
 }
 
 
@@ -271,30 +272,30 @@ const IVP_Compact_Poly_Point *IVP_Compact_Edge::get_start_point(const IVP_Compac
 
 const IVP_Compact_Edge *IVP_Compact_Edge::get_next() const
 {
-    int idx = (int)(((unsigned int)this) & 0x0c);
+    int idx = (int)(((uintp)this) & 0x0c);
     return (IVP_Compact_Edge *)(((char *)this) + ((int *)(((char *)this->next_table)+idx))[0]);
 }
 
 int IVP_Compact_Edge::get_edge_index()const{
-  int idx = (int((((unsigned int)this) & 0x0c))>>2) - 1;
+  int idx = (int((((uintp)this) & 0x0c))>>2) - 1;
     return idx;
 }
 
 IVP_Compact_Edge *IVP_Compact_Edge::get_next()
 {
-    int idx = (int)(((unsigned int)this) & 0x0c);
+    int idx = (int)(((uintp)this) & 0x0c);
     return (IVP_Compact_Edge *)(((char *)this) + ((int *)(((char *)this->next_table)+idx))[0]);
 }
 
 const IVP_Compact_Edge *IVP_Compact_Edge::get_prev() const
 {
-    int idx = (int)(((unsigned int)this) & 0x0c);
+    int idx = (int)(((uintp)this) & 0x0c);
     return (IVP_Compact_Edge *)(((char *)this) + ((int *)(((char *)this->prev_table)+idx))[0]);
 }
 
 IVP_Compact_Edge *IVP_Compact_Edge::get_prev() 
 {
-    int idx = (int)(((unsigned int)this) & 0x0c);
+    int idx = (int)(((uintp)this) & 0x0c);
     return (IVP_Compact_Edge *)(((char *)this) + ((int *)(((char *)this->prev_table)+idx))[0]);
 }
 

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "quakedef.h"
 #include "cdll_int.h"
 #include "draw.h"
@@ -5,6 +12,7 @@
 #include "common.h"
 #include "characterset.h"
 #include "mem_fgets.h"
+#include "tier0/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -21,11 +29,11 @@ client_textmessage_t	*gMessageTable = NULL;
 int						gMessageTableCount = 0;
 
 char	gNetworkTextMessageBuffer[MAX_NETMESSAGE][512];
-const char *gNetworkMessageNames[MAX_NETMESSAGE] = { NETWORK_MESSAGE1, NETWORK_MESSAGE2, NETWORK_MESSAGE3, NETWORK_MESSAGE4 };
+const char *gNetworkMessageNames[MAX_NETMESSAGE] = { NETWORK_MESSAGE1, NETWORK_MESSAGE2, NETWORK_MESSAGE3, NETWORK_MESSAGE4, NETWORK_MESSAGE5, NETWORK_MESSAGE6 };
 
 client_textmessage_t	gNetworkTextMessage[MAX_NETMESSAGE] = 
 {
-	0, // effect
+	{ 0, // effect
 	255,255,255,255,
 	255,255,255,255,
 	-1.0f, // x
@@ -36,7 +44,7 @@ client_textmessage_t	gNetworkTextMessage[MAX_NETMESSAGE] =
 	0.0f, // fxTime,
 	NULL,//pVGuiSchemeFontName (NULL == default)
 	NETWORK_MESSAGE1,  // pName message name.
-	gNetworkTextMessageBuffer[0]    // pMessage
+	gNetworkTextMessageBuffer[0] }    // pMessage
 };
 
 char	gDemoMessageBuffer[512];
@@ -170,6 +178,29 @@ int ParseFloats( const char *pText, float *pFloat, int count )
 	return 0;
 }
 
+int ParseString( char const *pText, char *buf, size_t bufsize )
+{
+	const char *pTemp = pText;
+
+	// Skip current token / float
+	pTemp = SkipText( pTemp );
+	// Skip any whitespace in between
+	pTemp = SkipSpace( pTemp );
+	
+	if ( pTemp )
+	{
+		char const *pStart = pTemp;
+		pTemp = SkipText( pTemp );
+
+        intp len =  min( pTemp - pStart + 1, (ptrdiff_t)bufsize - 1 );
+		Q_strncpy( buf, pStart, len );
+		buf[ len ] = 0;
+		return 1;
+	}
+
+	return 0;
+}
+
 
 // Trims all whitespace from the front and end of a string
 void TrimSpace( const char *source, char *dest )
@@ -204,13 +235,13 @@ int IsToken( const char *pText, const char *pTokenName )
 	if ( !pText || !pTokenName )
 		return 0;
 
-	if ( !strnicmp( pText+1, pTokenName, strlen(pTokenName) ) )
+	if ( !Q_strnicmp( pText+1, pTokenName, strlen(pTokenName) ) )
 		return 1;
 	
 	return 0;
 }
 
-
+static char g_pchSkipName[ 64 ];
 
 int ParseDirective( const char *pText )
 {
@@ -279,9 +310,48 @@ int ParseDirective( const char *pText )
 				gMessageParms.holdtime = tempFloat[0];
 			}
 		}
+		else if ( IsToken( pText, "boxsize" ) )
+		{
+			if ( ParseFloats( pText, tempFloat, 1 ) )
+			{
+				gMessageParms.bRoundedRectBackdropBox = tempFloat[0] != 0.0f;
+				gMessageParms.flBoxSize = tempFloat[0];
+			}
+		}
+		else if ( IsToken( pText, "boxcolor" ) )
+		{
+			if ( ParseFloats( pText, tempFloat, 4 ) )
+			{
+				// that's original code, msvc2015 generates illegal instruction on amd64 architecture
+				/*for ( int i = 0; i < 4; ++i )
+				{
+					gMessageParms.boxcolor[ i ] = (byte)(int)tempFloat[ i ];
+				}*/
+
+				// workaround
+				gMessageParms.boxcolor[0] = (int)tempFloat[0];
+				gMessageParms.boxcolor[1] = (int)tempFloat[1];
+				gMessageParms.boxcolor[2] = (int)tempFloat[2];
+				gMessageParms.boxcolor[3] = (int)tempFloat[3];
+			}
+		}
+		else if ( IsToken( pText, "clearmessage" ) )
+		{
+			if ( ParseString( pText, g_pchSkipName, sizeof( g_pchSkipName ) ) )
+			{
+				if ( !g_pchSkipName[ 0 ] || !Q_stricmp( g_pchSkipName, "0" ) )
+				{
+					gMessageParms.pClearMessage = NULL;
+				}
+				else
+				{
+					gMessageParms.pClearMessage = g_pchSkipName;
+				}
+			}
+		}
 		else
 		{
-			Con_DPrintf("Unknown token: %s\n", pText );
+			ConDMsg("Unknown token: %s\n", pText );
 		}
 
 		return 1;
@@ -304,13 +374,16 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 
 	client_textmessage_t	textMessages[ MAX_MESSAGES ];
 	
-	int			i, nameHeapSize, textHeapSize, messageSize, nameOffset;
+	int			i, nameHeapSize, textHeapSize, messageSize;
+	intp nameOffset;
 
 	lastNamePos = 0;
 	lineNumber = 0;
 	filePos = 0;
 	lastLinePos = 0;
 	messageCount = 0;
+
+	bool bSpew = CommandLine()->FindParm( "-textmessagedebug" ) ? true : false;
 
 	CharacterSetBuild( &g_WhiteSpace, " \r\n\t" );
 
@@ -339,10 +412,10 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 			}
 			if ( IsEndOfText( trim ) )
 			{
-				Con_DPrintf("Unexpected '}' found, line %d\n", lineNumber );
+				ConDMsg("Unexpected '}' found, line %d\n", lineNumber );
 				return;
 			}
-			strcpy( currentName, trim );
+			Q_strncpy( currentName, trim, sizeof( currentName ) );
 			break;
 		
 		case MSGFILE_TEXT:
@@ -353,19 +426,56 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 				// Save name on name heap
 				if ( lastNamePos + length > 8192 )
 				{
-					Con_DPrintf("Error parsing file!\n" );
+					ConDMsg("Error parsing file!\n" );
 					return;
 				}
-				strcpy( nameHeap + lastNamePos, currentName );
+				Q_strcpy( nameHeap + lastNamePos, currentName );
 
 				// Terminate text in-place in the memory file (it's temporary memory that will be deleted)
-				pMemFile[ lastLinePos - 1 ] = 0;
+				// If the string starts with #, it's a localization string and we don't
+				// want the \n (or \r) on the end or the Find() lookup will fail (so subtract 2)
+				if ( pCurrentText && pCurrentText[0] && pCurrentText[0] == '#' && lastLinePos > 1 && 
+					( ( pMemFile[lastLinePos - 2] == '\n' ) || ( pMemFile[lastLinePos - 2] == '\r' ) ) )
+				{
+					pMemFile[ lastLinePos - 2 ] = 0;
+				}
+				else
+				{
+					pMemFile[ lastLinePos - 1 ] = 0;
+				}
 
 				// Save name/text on heap
 				textMessages[ messageCount ] = gMessageParms;
 				textMessages[ messageCount ].pName = nameHeap + lastNamePos;
 				lastNamePos += strlen(currentName) + 1;
+				if ( gMessageParms.pClearMessage )
+				{
+					Q_strncpy( nameHeap + lastNamePos, textMessages[ messageCount ].pClearMessage, Q_strlen( textMessages[ messageCount ].pClearMessage ) + 1 );
+					textMessages[ messageCount ].pClearMessage = nameHeap + lastNamePos;
+					lastNamePos += Q_strlen( textMessages[ messageCount ].pClearMessage ) + 1;
+				}
 				textMessages[ messageCount ].pMessage = pCurrentText;
+
+				if ( bSpew )
+				{
+					client_textmessage_t *m = &textMessages[ messageCount ];
+					Msg( "%d %s\n",
+						messageCount, m->pName ? m->pName : "(null)" );
+					Msg( "  effect %d, color1(%d,%d,%d,%d), color2(%d,%d,%d,%d)\n",
+						m->effect, m->r1, m->g1, m->b1, m->a1, m->r2, m->g2, m->b2, m->a2 );
+					Msg( "  pos %f,%f, fadein %f fadeout %f hold %f fxtime %f\n",
+						m->x, m->y, m->fadein, m->fadeout, m->holdtime, m->fxtime );
+					Msg( "  '%s'\n", m->pMessage ? m->pMessage : "(null)" );
+
+					Msg( "  box %s, size %f, color(%d,%d,%d,%d)\n",
+						m->bRoundedRectBackdropBox ? "yes" : "no", m->flBoxSize, m->boxcolor[ 0 ], m->boxcolor[ 1 ], m->boxcolor[ 2 ], m->boxcolor[ 3 ] );
+
+					if ( m->pClearMessage )
+					{
+						Msg( "  will clear '%s'\n", m->pClearMessage );
+					}
+				}
+
 				messageCount++;
 
 				// Reset parser to search for names
@@ -374,7 +484,7 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 			}
 			if ( IsStartOfText( trim ) )
 			{
-				Con_DPrintf("Unexpected '{' found, line %d\n", lineNumber );
+				ConDMsg("Unexpected '{' found, line %d\n", lineNumber );
 				return;
 			}
 			break;
@@ -384,12 +494,12 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 
 		if ( messageCount >= MAX_MESSAGES )
 		{
-			Con_Printf("WARNING: TOO MANY MESSAGES IN TITLES.TXT, MAX IS %d\n", MAX_MESSAGES );
+			ConMsg("WARNING: TOO MANY MESSAGES IN TITLES.TXT, MAX IS %d\n", MAX_MESSAGES );
 			break;
 		}
 	}
 
-	Con_DPrintf("Parsed %d text messages\n", messageCount );
+	ConDMsg("Parsed %d text messages\n", messageCount );
 	nameHeapSize = lastNamePos;
 	textHeapSize = 0;
 	for ( i = 0; i < messageCount; i++ )
@@ -415,14 +525,18 @@ void TextMessageParse( byte *pMemFile, int fileSize )
 	for ( i = 0; i < messageCount; i++ )
 	{
 		gMessageTable[i].pName += nameOffset;		// Adjust name pointer (parallel buffer)
-		strcpy( pCurrentText, gMessageTable[i].pMessage );	// Copy text over
+		if ( gMessageTable[ i ].pClearMessage )
+		{
+			gMessageTable[ i ].pClearMessage += nameOffset;
+		}
+		Q_strcpy( pCurrentText, gMessageTable[i].pMessage );	// Copy text over
 		gMessageTable[i].pMessage = pCurrentText;
 		pCurrentText += strlen( pCurrentText ) + 1;
 	}
 
 #if _DEBUG
 	if ( (pCurrentText - (char *)gMessageTable) != (textHeapSize + nameHeapSize + messageSize) )
-		Con_Printf("Overflow text message buffer!!!!!\n");
+		ConMsg("Overflow text message buffer!!!!!\n");
 #endif
 	gMessageTableCount = messageCount;
 }
@@ -449,10 +563,13 @@ void TextMessageInit( void )
 		gMessageTable = NULL;
 	}
 
-	pMemFile = COM_LoadTempFile( "scripts/titles.txt", &fileSize );
+	pMemFile = COM_LoadFile( "scripts/titles.txt", 5, &fileSize );
 
 	if ( pMemFile )
+	{
 		TextMessageParse( pMemFile, fileSize );
+		free( pMemFile );
+	}
 
 	int i;
 
@@ -471,7 +588,7 @@ void TextMessage_DemoMessage( const char *pszMessage, float fFadeInTime, float f
 	// Restore
 	tm_demomessage = orig_demo_message;
 
-	strcpy( (char *)tm_demomessage.pMessage, (char *)pszMessage );
+	Q_strncpy( gDemoMessageBuffer, (char *)pszMessage, sizeof( gDemoMessageBuffer ) );
 	tm_demomessage.fadein   = fFadeInTime;
 	tm_demomessage.fadeout  = fFadeOutTime;
 	tm_demomessage.holdtime = fHoldTime;
@@ -494,32 +611,32 @@ void TextMessage_DemoMessageFull( const char *pszMessage, client_textmessage_t c
 	memcpy( &tm_demomessage, message, sizeof( tm_demomessage ) );
 	tm_demomessage.pMessage = orig_demo_message.pMessage;
 	tm_demomessage.pName = orig_demo_message.pName;
-	Q_strcpy( (char *)tm_demomessage.pMessage, pszMessage );
+	Q_strncpy( gDemoMessageBuffer, pszMessage, sizeof( gDemoMessageBuffer ) );
 }
 
 
 client_textmessage_t *TextMessageGet( const char *pName )
 {
-	int i;
-
-	if (!stricmp( pName, DEMO_MESSAGE ))
-	{
+	if (!Q_stricmp( pName, DEMO_MESSAGE ))
 		return &tm_demomessage;
-	}
 
 	// HACKHACK -- add 4 "channels" of network text
-	if (!stricmp( pName, NETWORK_MESSAGE1 ))
+	if (!Q_stricmp( pName, NETWORK_MESSAGE1 ))
 		return gNetworkTextMessage;
-	else if (!stricmp( pName, NETWORK_MESSAGE2 ))
+	else if (!Q_stricmp( pName, NETWORK_MESSAGE2 ))
 		return gNetworkTextMessage + 1;
-	else if (!stricmp( pName, NETWORK_MESSAGE3 ))
+	else if (!Q_stricmp( pName, NETWORK_MESSAGE3 ))
 		return gNetworkTextMessage + 2;
-	else if (!stricmp( pName, NETWORK_MESSAGE4 ))
+	else if (!Q_stricmp( pName, NETWORK_MESSAGE4 ))
 		return gNetworkTextMessage + 3;
+	else if (!Q_stricmp( pName, NETWORK_MESSAGE5 ))
+		return gNetworkTextMessage + 4;
+	else if (!Q_stricmp( pName, NETWORK_MESSAGE6 ))
+		return gNetworkTextMessage + 5;
 
-	for ( i = 0; i < gMessageTableCount; i++ )
+	for ( int i = 0; i < gMessageTableCount; i++ )
 	{
-		if ( !strcmp( pName, gMessageTable[i].pName ) )
+		if ( !Q_stricmp( pName, gMessageTable[i].pName ) )
 			return &gMessageTable[i];
 	}
 

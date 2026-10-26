@@ -1,15 +1,22 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "riff.h"
+#include "tier2/riff.h"
 #include "snd_wave_source.h"
 #include "snd_wave_mixer_private.h"
 #include "snd_audio_source.h"
 #include <mmsystem.h>		// wave format
 #include <mmreg.h>			// adpcm format
 #include "hlfaceposer.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "utlbuffer.h"
 #include "phonemeconverter.h"
 
@@ -205,7 +212,7 @@ void CAudioSourceWave::ConvertSamples( char *pData, int sampleCount )
 //-----------------------------------------------------------------------------
 void CAudioSourceWave::ParseSentence( IterateRIFF &walk )
 {
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.EnsureCapacity( walk.ChunkSize() );
 	walk.ChunkRead( buf.Base() );
@@ -289,6 +296,8 @@ public:
 
 	virtual int				GetOutputData( void **pData, int samplePosition, int sampleCount, bool forward = true );
 	virtual float			GetRunningLength( void ) { return CAudioSourceWave::GetRunningLength(); };
+
+	virtual int				GetNumChannels();
 
 private:
 	char	*m_pData;		// wave data
@@ -394,6 +403,12 @@ void CAudioSourceMemWave::ParseDataChunk( IterateRIFF &walk )
 	}
 }
 
+int CAudioSourceMemWave::GetNumChannels()
+{
+	return m_channels;
+}
+
+
 
 //-----------------------------------------------------------------------------
 // Purpose: parses loop information from a cue chunk
@@ -463,6 +478,11 @@ int CAudioSourceWave::ConvertLoopedPosition( int samplePosition )
 	}
 
 	return samplePosition;
+}
+
+bool CAudioSourceWave::IsStereoWav( void ) 
+{ 
+	return (m_channels == 2) ? true : false;
 }
 
 //-----------------------------------------------------------------------------

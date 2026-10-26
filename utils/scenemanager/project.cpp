@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "project.h"
 #include "cmdlib.h"
@@ -17,7 +17,7 @@ CProject::CProject( CWorkspace *ws, char const *filename ) : m_pOwner( ws )
 {
 	Q_strncpy( m_szFile, filename, sizeof( m_szFile ) );
 	// By default, name is the same as the filename
-	ExtractFileBase( m_szFile, m_szName, sizeof( m_szName ) );
+	Q_FileBase( m_szFile, m_szName, sizeof( m_szName ) );
 
 	m_bDirty = false;
 	m_pszComments = NULL;
@@ -64,8 +64,7 @@ void CProject::SetDirty( bool dirty )
 void CProject::SetComments( char const *comments )
 {
 	delete[] m_pszComments;
-	m_pszComments = new char[ Q_strlen( comments ) + 1 ];
-	Q_strcpy( m_pszComments, comments );
+	m_pszComments = V_strdup( comments );
 
 	SetDirty( true );
 }
@@ -192,7 +191,7 @@ void CProject::SaveToFile()
 {
 	SetDirty( false );
 
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.Printf( "%s\n{\n", GetName() );
 

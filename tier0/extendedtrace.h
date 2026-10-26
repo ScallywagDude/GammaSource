@@ -1,3 +1,4 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //////////////////////////////////////////////////////////////////////////////////////
 //
 // Written by Zoltan Csizmadia, zoltan_csizmadia@yahoo.com
@@ -18,8 +19,6 @@
 
 #if defined(_DEBUG) && defined(WIN32)
 
-#include <windows.h>
-#include <tchar.h>
 
 #pragma comment( lib, "imagehlp.lib" )
 
@@ -27,7 +26,7 @@
 #define TRACEF									         TRACE
 #else
 #define TRACEF									         OutputDebugStringFormat
-void OutputDebugStringFormat( LPCTSTR, ... );
+void OutputDebugStringFormat( PRINTF_FORMAT_STRING LPCTSTR, ... );
 #endif
 
 #define EXTENDEDTRACEINITIALIZE( IniSymbolPath )	InitSymInfo( IniSymbolPath )

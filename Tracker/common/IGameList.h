@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,6 +12,9 @@
 #endif
 
 struct serveritem_t;
+#include "FindSteamServers.h"
+
+#define EMPTY_SERVER_NAME "0.0.0.0:0"
 
 //-----------------------------------------------------------------------------
 // Purpose: Interface to accessing a game list
@@ -25,6 +28,7 @@ public:
 		FILTERS,
 		GETNEWLIST,
 		ADDSERVER,
+		ADDCURRENTSERVER,
 	};
 
 	// returns true if the game list supports the specified ui elements
@@ -49,7 +53,7 @@ public:
 	virtual void AddNewServer(serveritem_t &server) = 0;
 
 	// marks that server list has been fully received
-	virtual void ListReceived(bool moreAvailable, int lastUnique) = 0;
+	virtual void ListReceived(bool moreAvailable, const char *lastUniqueIP, ESteamServerType serverType) = 0;
 
 	// called when Connect button is pressed
 	virtual void OnBeginConnect() = 0;

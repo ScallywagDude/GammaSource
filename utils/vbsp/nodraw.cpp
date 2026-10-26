@@ -1,8 +1,14 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vbsp.h"
 
 Vector draw_mins, draw_maxs;
-qboolean	drawflag;
 
 void Draw_ClearWindow (void)
 {

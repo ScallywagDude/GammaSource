@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include <stdio.h>
 #include "resource.h"
 #include "SoundProperties.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "soundentry.h"
 #include "cmdlib.h"
 #include "workspacemanager.h"
@@ -18,7 +18,7 @@
 
 static CSoundParams g_Params;
 
-static void PopulateChannelList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateChannelList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_CHANNEL );
 	if ( !control )
@@ -29,7 +29,7 @@ static void PopulateChannelList( HWND wnd, CSoundEmitterSystemBase::CSoundParame
 	SendMessage( control, CB_RESETCONTENT, 0, 0 ); 
 	if ( p )
 	{
-		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->m_szChannel );
+		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->ChannelToString() );
 	}
 	else
 	{
@@ -46,7 +46,7 @@ static void PopulateChannelList( HWND wnd, CSoundEmitterSystemBase::CSoundParame
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"CHAN_STATIC" ); 
 }
 
-static void PopulateVolumeList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateVolumeList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_VOLUME );
 	if ( !control )
@@ -58,7 +58,7 @@ static void PopulateVolumeList( HWND wnd, CSoundEmitterSystemBase::CSoundParamet
 
 	if ( p )
 	{
-		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->m_szVolume );
+		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->VolumeToString() );
 	}
 	else
 	{
@@ -68,7 +68,7 @@ static void PopulateVolumeList( HWND wnd, CSoundEmitterSystemBase::CSoundParamet
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"VOL_NORM" ); 
 }
 
-static void PopulateSoundlevelList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateSoundlevelList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_SOUNDLEVEL );
 	if ( !control )
@@ -80,7 +80,7 @@ static void PopulateSoundlevelList( HWND wnd, CSoundEmitterSystemBase::CSoundPar
 
 	if ( p )
 	{
-		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->m_szSoundLevel );
+		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->SoundLevelToString() );
 	}
 	else
 	{
@@ -117,7 +117,7 @@ static void PopulateSoundlevelList( HWND wnd, CSoundEmitterSystemBase::CSoundPar
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"SNDLVL_150dB" );
 }
 
-static void PopulatePitchList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulatePitchList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_PITCH );
 	if ( !control )
@@ -129,7 +129,7 @@ static void PopulatePitchList( HWND wnd, CSoundEmitterSystemBase::CSoundParamete
 
 	if ( p )
 	{
-		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->m_szPitch );
+		SendMessage( control, WM_SETTEXT , 0, (LPARAM)p->PitchToString() );
 	}
 	else
 	{
@@ -157,15 +157,15 @@ static void PopulateScriptList( HWND wnd, char const *curscript )
 		SendMessage( control, WM_SETTEXT , 0, (LPARAM)curscript );
 	}
 
-	int c = soundemitter->GetNumSoundScripts();
+	int c = g_pSoundEmitterSystem->GetNumSoundScripts();
 	for ( int i = 0; i < c; i++ )
 	{
 		// add text to combo box
-		SendMessage( control, CB_ADDSTRING, 0, (LPARAM)soundemitter->GetSoundScriptName( i ) );
+		SendMessage( control, CB_ADDSTRING, 0, (LPARAM)g_pSoundEmitterSystem->GetSoundScriptName( i ) );
 
 		if ( !curscript && i == 0 )
 		{
-			SendMessage( control, WM_SETTEXT , 0, (LPARAM)soundemitter->GetSoundScriptName( i ) );
+			SendMessage( control, WM_SETTEXT , 0, (LPARAM)g_pSoundEmitterSystem->GetSoundScriptName( i ) );
 		}
 	}
 }
@@ -182,7 +182,7 @@ static bool WaveLessFunc( const char *const& name1, const char *const& name2 )
 // Input  : wnd - 
 // Output : static void
 //-----------------------------------------------------------------------------
-static void PopulateWaveList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateWaveList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_WAVELIST );
 	if ( !control )
@@ -196,24 +196,26 @@ static void PopulateWaveList( HWND wnd, CSoundEmitterSystemBase::CSoundParameter
 
 	CUtlRBTree< char const *, int >		m_SortedNames( 0, 0, WaveLessFunc );
 
-	int c = p->soundnames.Count();
+	int c = p->NumSoundNames();
 	for ( int i = 0; i < c; i++ )
 	{
-		char const *name = soundemitter->GetWaveName( p->soundnames[ i ] );
+		char const *name = strdup( g_pSoundEmitterSystem->GetWaveName( p->GetSoundNames()[ i ].symbol ) );
 
 		m_SortedNames.Insert( name );
 	}
 
-	i = m_SortedNames.FirstInorder();
-	while ( i != m_SortedNames.InvalidIndex() )
+	int j = m_SortedNames.FirstInorder();
+	while ( j != m_SortedNames.InvalidIndex() )
 	{
-		char const *name = m_SortedNames[ i ];
+		char const *name = m_SortedNames[ j ];
 		if ( name && name[ 0 ] )
 		{
 			SendMessage( control, LB_ADDSTRING, 0, (LPARAM)name ); 
 		}
 
-		i = m_SortedNames.NextInorder( i );
+		delete name;
+
+		j = m_SortedNames.NextInorder( j );
 	}
 }
 
@@ -246,16 +248,16 @@ static void PopulateWaveList_Available( HWND wnd )
 	// Remove all
 	SendMessage( control, LB_RESETCONTENT, 0, 0 );
 
-	i = m_SortedNames.FirstInorder();
-	while ( i != m_SortedNames.InvalidIndex() )
+	int j = m_SortedNames.FirstInorder();
+	while ( j != m_SortedNames.InvalidIndex() )
 	{
-		char const *name = m_SortedNames[ i ];
+		char const *name = m_SortedNames[ j ];
 		if ( name && name[ 0 ] )
 		{
 			SendMessage( control, LB_ADDSTRING, 0, (LPARAM)name ); 
 		}
 
-		i = m_SortedNames.NextInorder( i );
+		j = m_SortedNames.NextInorder( j );
 	}
 }
 
@@ -305,7 +307,7 @@ static const char *SoundProperties_GetSelectedWave( HWND hwndDlg, HWND control, 
 
 static void SoundProperties_OnOK( HWND hwndDlg )
 {
-	CSoundEmitterSystemBase::CSoundParametersInternal outparams;
+	CSoundParametersInternal outparams;
 
 	// Gather info and make changes
 	CSoundEntry *item = g_Params.items[ 0 ];
@@ -321,8 +323,8 @@ static void SoundProperties_OnOK( HWND hwndDlg )
 
 	if ( !g_Params.addsound )
 	{
-		soundindex = soundemitter->GetSoundIndex( item->GetName() );
-		script = soundemitter->GetSourceFileForSound( soundindex );
+		soundindex = g_pSoundEmitterSystem->GetSoundIndex( item->GetName() );
+		script = g_pSoundEmitterSystem->GetSourceFileForSound( soundindex );
 	}
 
 	char sz[ 128 ];
@@ -340,11 +342,7 @@ static void SoundProperties_OnOK( HWND hwndDlg )
 
 	bool owneronly = SendMessage( GetDlgItem( hwndDlg, IDC_OWNERONLY ), BM_GETCHECK, 0, 0 ) == BST_CHECKED ? true : false;
 
-	outparams.play_to_owner_only = owneronly;
-
-	bool noprecache = SendMessage( GetDlgItem( hwndDlg, IDC_NOPRECACHE ), BM_GETCHECK, 0, 0 ) == BST_CHECKED ? true : false;
-
-	outparams.precache = !noprecache;
+	outparams.SetOnlyPlayToOwner( owneronly );
 
 	// Retrieve wave list
 	int c = SendMessage( GetDlgItem( hwndDlg, IDC_WAVELIST ), LB_GETCOUNT, 0, 0 );
@@ -354,22 +352,25 @@ static void SoundProperties_OnOK( HWND hwndDlg )
 		char wavename[ 256 ];
 		SendMessage( GetDlgItem( hwndDlg, IDC_WAVELIST ), LB_GETTEXT, i, (LPARAM)wavename );
 
-		CUtlSymbol sym = soundemitter->AddWaveName( wavename );
-		outparams.soundnames.AddToTail( sym );
+		CUtlSymbol sym = g_pSoundEmitterSystem->AddWaveName( wavename );
+		SoundFile sf;
+		sf.symbol = sym;
+		sf.gender = GENDER_NONE;
+		outparams.AddSoundName( sf );
 	}
 
 	if ( g_Params.addsound )
 	{
-		soundemitter->AddSound( outsoundname, outscriptfile, outparams );
+		g_pSoundEmitterSystem->AddSound( outsoundname, outscriptfile, outparams );
 	}
 	else
 	{
 		// Update sound stuff
-		soundemitter->MoveSound( item->GetName(), outscriptfile );
+		g_pSoundEmitterSystem->MoveSound( item->GetName(), outscriptfile );
 		item->SetScriptFile( outscriptfile );
-		soundemitter->UpdateSoundParameters( item->GetName(), outparams );
+		g_pSoundEmitterSystem->UpdateSoundParameters( item->GetName(), outparams );
 		// Rename if necessary
-		soundemitter->RenameSound( item->GetName(), outsoundname );
+		g_pSoundEmitterSystem->RenameSound( item->GetName(), outsoundname );
 	}
 
 	// Apply changes
@@ -397,7 +398,7 @@ static BOOL CALLBACK SoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPARAM 
 
 			CSoundEntry *item = NULL;
 
-			CSoundEmitterSystemBase::CSoundParametersInternal *p = NULL;
+			CSoundParametersInternal *p = NULL;
 			char const *script = NULL;
 				
 			if ( g_Params.addsound )
@@ -409,36 +410,33 @@ static BOOL CALLBACK SoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPARAM 
 
 				item = item = g_Params.items[ 0 ];
 
-				SendMessage( GetDlgItem( hwndDlg, IDC_NOPRECACHE ), BM_SETCHECK, 
-				( WPARAM )BST_UNCHECKED,
-				( LPARAM )0 );
-
 				SendMessage( GetDlgItem( hwndDlg, IDC_OWNERONLY ), BM_SETCHECK, 
 					( WPARAM )BST_UNCHECKED,
 					( LPARAM )0 );
 
 				SetDlgItemText( hwndDlg, IDC_STATIC_SENTENCETEXT, "" );
+				SetDlgItemTextW( hwndDlg, IDC_STATIC_CLOSECAPTION, L"" );
 			}
 			else
 			{
 				item = g_Params.items[ 0 ];
 
-				int soundindex = soundemitter->GetSoundIndex( item->GetName() );
+				int soundindex = g_pSoundEmitterSystem->GetSoundIndex( item->GetName() );
 
-				script = soundemitter->GetSourceFileForSound( soundindex );
+				script = g_pSoundEmitterSystem->GetSourceFileForSound( soundindex );
 
-				p = soundemitter->InternalGetParametersForSound( soundindex );
+				p = g_pSoundEmitterSystem->InternalGetParametersForSound( soundindex );
 				Assert( p );
 
-				SendMessage( GetDlgItem( hwndDlg, IDC_NOPRECACHE ), BM_SETCHECK, 
-					( WPARAM ) !p->precache ? BST_CHECKED : BST_UNCHECKED,
-					( LPARAM )0 );
-
 				SendMessage( GetDlgItem( hwndDlg, IDC_OWNERONLY ), BM_SETCHECK, 
-					( WPARAM ) p->play_to_owner_only ? BST_CHECKED : BST_UNCHECKED,
+					( WPARAM ) p->OnlyPlayToOwner() ? BST_CHECKED : BST_UNCHECKED,
 					( LPARAM )0 );
 
 				SetDlgItemText( hwndDlg, IDC_STATIC_SENTENCETEXT, item->GetSentenceText( 0 ) );
+				wchar_t cctext[ 1024 ];
+				item->GetCCText( cctext, sizeof( cctext ) / sizeof( wchar_t ) );
+
+				SetDlgItemTextW( hwndDlg, IDC_STATIC_CLOSECAPTION, cctext );
 			}
 			
 			PopulateChannelList( hwndDlg, p );

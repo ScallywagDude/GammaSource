@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SND_WAVE_MIXER_PRIVATE_H
 #define SND_WAVE_MIXER_PRIVATE_H
@@ -60,8 +55,9 @@ public:
 	virtual CAudioSource *GetSource( void );
 
 	virtual int GetSamplePosition( void );
+	virtual int GetScrubPosition( void );
 
-	virtual bool SetSamplePosition( int position );
+	virtual bool SetSamplePosition( int position, bool scrubbing = false );
 	virtual void SetLoopPosition( int position );
 	virtual int	GetStartPosition( void );
 
@@ -76,9 +72,14 @@ public:
 
 	virtual void	SetAutoDelete( bool autodelete );
 	virtual bool	GetAutoDelete( void ) const;
+
+	virtual void	SetVolume( float volume );
+	virtual channel_t *GetChannel();
+
 protected:
 	int					m_sample;
 	int					m_absoluteSample;
+	int					m_scrubSample;
 	int					m_startpos;
 	int					m_loop;
 	int					m_fracOffset;
@@ -93,6 +94,8 @@ protected:
 	bool				m_bForward;
 
 	bool				m_bAutoDelete;
+
+	channel_t			*m_pChannel;
 };
 
 

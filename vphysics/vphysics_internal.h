@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VPHYSICS_INTERNAL_H
 #define VPHYSICS_INTERNAL_H
@@ -18,9 +18,9 @@ extern class IPhysics *g_PhysicsInternal;
 //-----------------------------------------------------------------------------
 // Memory debugging 
 //-----------------------------------------------------------------------------
-#ifdef _DEBUG
-#define BEGIN_IVP_ALLOCATION()	g_pMemAlloc->PushAllocDbgInfo("IVP", 0)
-#define END_IVP_ALLOCATION()	g_pMemAlloc->PopAllocDbgInfo()
+#if defined(_DEBUG) || defined(USE_MEM_DEBUG)
+#define BEGIN_IVP_ALLOCATION()	MemAlloc_PushAllocDbgInfo("IVP: " __FILE__ , __LINE__ )
+#define END_IVP_ALLOCATION()	MemAlloc_PopAllocDbgInfo()
 #else
 #define BEGIN_IVP_ALLOCATION()	0
 #define END_IVP_ALLOCATION()	0

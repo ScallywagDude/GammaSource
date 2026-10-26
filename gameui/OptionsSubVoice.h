@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef OPTIONS_SUB_VOICE_H
 #define OPTIONS_SUB_VOICE_H
@@ -15,12 +15,6 @@
 
 typedef struct IVoiceTweak_s IVoiceTweak;
 
-namespace vgui
-{
-	class CheckButton;
-	class Slider;
-}
-
 class CCvarSlider;
 class CCvarToggleCheckButton;
 //-----------------------------------------------------------------------------
@@ -28,7 +22,7 @@ class CCvarToggleCheckButton;
 //-----------------------------------------------------------------------------
 class COptionsSubVoice : public vgui::PropertyPage
 {
-	typedef vgui::PropertyPage BaseClass;
+	DECLARE_CLASS_SIMPLE( COptionsSubVoice, vgui::PropertyPage );
 
 public:
 	COptionsSubVoice(vgui::Panel *parent);
@@ -37,26 +31,22 @@ public:
 	virtual void OnResetData();
 	virtual void OnApplyChanges();
 
-	DECLARE_PANELMAP();
-
 protected:
 	virtual void OnThink();							// called every frame before painting, but only if panel is visible
 
 private:
-	virtual void	OnPageHide();
     virtual void    OnCommand( const char *command );
 
-    void            OnSliderMoved( int position );
-    void            OnCheckButtonChecked( int state );
-    void            OnControlModified();
+	MESSAGE_FUNC( OnPageHide, "PageHide" );
+    MESSAGE_FUNC_INT( OnSliderMoved, "SliderMoved", position );
+    MESSAGE_FUNC_INT( OnCheckButtonChecked, "CheckButtonChecked", state );
+    MESSAGE_FUNC( OnControlModified, "ControlModified" );
 
     void            StartTestMicrophone();
     void            EndTestMicrophone();
 
     void            UseCurrentVoiceParameters();
     void            ResetVoiceParameters();
-
-	typedef vgui::PropertyPage BaseClass;
 
 	IVoiceTweak				*m_pVoiceTweak;		// Engine voice tweak API.
 	vgui::CheckButton		*m_pMicBoost;

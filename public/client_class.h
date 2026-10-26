@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( CLIENT_CLASS_H )
 #define CLIENT_CLASS_H
 #ifdef _WIN32
@@ -54,7 +49,7 @@ typedef IClientNetworkable*	(*CreateEventFn)();
 class ClientClass
 {
 public:
-	ClientClass( char *pNetworkName, CreateClientClassFn createFn, CreateEventFn createEventFn, RecvTable *pRecvTable )
+	ClientClass( const char *pNetworkName, CreateClientClassFn createFn, CreateEventFn createEventFn, RecvTable *pRecvTable )
 	{
 		m_pNetworkName	= pNetworkName;
 		m_pCreateFn		= createFn;
@@ -66,24 +61,34 @@ public:
 		g_pClientClassHead	= this;
 	}
 
+	const char* GetName()
+	{
+		return m_pNetworkName;
+	}
+
 public:
 	CreateClientClassFn		m_pCreateFn;
 	CreateEventFn			m_pCreateEventFn;	// Only called for event objects.
-	char					*m_pNetworkName;
+	const char				*m_pNetworkName;
 	RecvTable				*m_pRecvTable;
 	ClientClass				*m_pNext;
+	int						m_ClassID;	// Managed by the engine.
 };
 
 #define DECLARE_CLIENTCLASS() \
 	virtual int YouForgotToImplementOrDeclareClientClass();\
-	virtual char const* GetClassName();\
 	virtual ClientClass* GetClientClass();\
 	static RecvTable *m_pClassRecvTable; \
 	DECLARE_CLIENTCLASS_NOBASE()
 
-#define DECLARE_CLIENTCLASS_NOBASE() \
+
+// This can be used to give all datatables access to protected and private members of the class.
+#define ALLOW_DATATABLES_PRIVATE_ACCESS() \
 	template <typename T> friend int ClientClassInit(T *);
 
+
+#define DECLARE_CLIENTCLASS_NOBASE ALLOW_DATATABLES_PRIVATE_ACCESS
+	
 // This macro adds a ClientClass to the linked list in g_pClientClassHead (so
 // the list can be given to the engine).
 // Use this macro to expose your client class to the engine.
@@ -103,6 +108,15 @@ public:
 													NULL,\
 													&dataTable::g_RecvTable);
 
+// Implement a client class and provide a factory so you can allocate and delete it yourself
+// (or make it a singleton).
+#define IMPLEMENT_CLIENTCLASS_FACTORY(clientClassName, dataTable, serverClassName, factory) \
+	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName) \
+	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
+													factory, \
+													NULL,\
+													&dataTable::g_RecvTable);
+
 // The IMPLEMENT_CLIENTCLASS_DT macros do IMPLEMENT_CLIENT_CLASS and also do BEGIN_RECV_TABLE.
 #define IMPLEMENT_CLIENTCLASS_DT(clientClassName, dataTable, serverClassName)\
 	IMPLEMENT_CLIENTCLASS(clientClassName, dataTable, serverClassName)\
@@ -117,8 +131,8 @@ public:
 // is responsible for freeing itself.
 #define IMPLEMENT_CLIENTCLASS_EVENT(clientClassName, dataTable, serverClassName)\
 	INTERNAL_IMPLEMENT_CLIENTCLASS_PROLOGUE(clientClassName, dataTable, serverClassName)\
-	static clientClassName __g_##clientClassName##; \
-	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName##;}\
+	static clientClassName __g_##clientClassName; \
+	static IClientNetworkable* _##clientClassName##_CreateObject() {return &__g_##clientClassName;}\
 	ClientClass __g_##clientClassName##ClientClass(#serverClassName, \
 													NULL,\
 													_##clientClassName##_CreateObject, \
@@ -160,7 +174,6 @@ public:
 	namespace dataTable {extern RecvTable g_RecvTable;}\
 	extern ClientClass __g_##clientClassName##ClientClass;\
 	RecvTable*		clientClassName::m_pClassRecvTable = &dataTable::g_RecvTable;\
-	char const*		clientClassName::GetClassName() {return #clientClassName;}\
 	int				clientClassName::YouForgotToImplementOrDeclareClientClass() {return 0;}\
 	ClientClass*	clientClassName::GetClientClass() {return &__g_##clientClassName##ClientClass;}
 

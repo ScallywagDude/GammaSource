@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MEMORYBITMAP_H
 #define MEMORYBITMAP_H
@@ -43,9 +38,14 @@ public:
 	virtual void SetSize(int x, int y);
 	virtual void SetColor(Color col);
 
+	virtual bool Evict() { return false; }
+	virtual int GetNumFrames() { return 0; }
+	virtual void SetFrame( int nFrame ) {}
+	virtual HTexture GetID();		// returns the texture id
+	virtual void SetRotation( int iRotation ) { return; };
+
 	// methods
 	void ForceUpload(unsigned char *texture,int wide, int tall);	// ensures the bitmap has been uploaded
-	HTexture GetID();		// returns the texture id
 	const char *GetName();
 	bool IsValid()
 	{

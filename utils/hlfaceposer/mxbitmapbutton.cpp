@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "mxBitmapButton.h"
 #include "hlfaceposer.h"
 
@@ -83,7 +83,7 @@ void mxBitmapButton::SetImage( const char *bitmapname )
 		DeleteImage();
 	}
 
-	LoadBitmapFromFile( va( "%s/%s", GetGameDirectory(), bitmapname ), m_bmImage );
+	LoadBitmapFromFile( bitmapname, m_bmImage );
 }
 
 void mxBitmapButton::DeleteImage( void )

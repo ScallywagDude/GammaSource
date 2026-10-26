@@ -1,16 +1,20 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "BaseVSShader.h"
 #include "convar.h"
 
+#include "overlay_fit_vs11.inc"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
 // FIXME: Need to make a dx9 version so that "CENTROID" works.
 
-BEGIN_VS_SHADER( Overlay_Fit,
-			  "Help for TerrainTest2" )
+BEGIN_VS_SHADER_FLAGS( Overlay_Fit, "Help for TerrainTest2", SHADER_NOT_EDITABLE )
 
 	BEGIN_SHADER_PARAMS
 	END_SHADER_PARAMS
@@ -32,10 +36,10 @@ BEGIN_VS_SHADER( Overlay_Fit,
 
 	SHADER_FALLBACK
 	{
-		if( g_pHardwareConfig->SupportsVertexAndPixelShaders() )
-			return 0;
-		else
+		if ( IsPC() && !g_pHardwareConfig->SupportsVertexAndPixelShaders() )
 			return "WorldTwoTextureBlend";
+
+		return 0;
 	}
 
 	SHADER_INIT
@@ -48,33 +52,37 @@ BEGIN_VS_SHADER( Overlay_Fit,
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );	// BASETEXTURE
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );	// LIGHTMAP
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );	// BASETEXTURE
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );	// BASETEXTURE
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );	// LIGHTMAP
+			pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );	// BASETEXTURE
 
 			// texcoord0 : base texcoord
 			// texcoord1 : alpha texcoord (mapped to fill the overlay)
 			unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
 			int numTexCoords = 3;
-			pShaderShadow->VertexShaderVertexFormat( flags, numTexCoords, 0, 0, 0 );
+			pShaderShadow->VertexShaderVertexFormat( flags, numTexCoords, 0, 0 );
 
 			pShaderShadow->EnableBlending( true );
 			pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
 
-			pShaderShadow->EnablePolyOffset( true );
+			pShaderShadow->EnablePolyOffset( SHADER_POLYOFFSET_DECAL );
 
-			pShaderShadow->SetVertexShader( "Overlay_Fit_vs11" );
+			overlay_fit_vs11_Static_Index vshIndex;
+			pShaderShadow->SetVertexShader( "Overlay_Fit_vs11", vshIndex.GetIndex() );
+
 			pShaderShadow->SetPixelShader ( "Overlay_Fit_ps11", 0 );
+
+			FogToFogColor();
 		}
 		DYNAMIC_STATE
 		{
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE1 );
-			BindTexture( SHADER_TEXTURE_STAGE2, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_LIGHTMAP );
+			BindTexture( SHADER_SAMPLER2, BASETEXTURE, FRAME );
 
-			pShaderAPI->SetVertexShaderIndex( 0 );
-
-			FogToFogColor();
+			overlay_fit_vs11_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 		}
 		Draw();
 	}

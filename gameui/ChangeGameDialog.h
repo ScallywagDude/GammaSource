@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CHANGEGAMEDIALOG_H
 #define CHANGEGAMEDIALOG_H
@@ -23,7 +23,6 @@ public:
 	~CChangeGameDialog();
 
 	virtual void OnCommand( const char *command );
-	virtual void OnClose();
 
 private:
 	void LoadModList();

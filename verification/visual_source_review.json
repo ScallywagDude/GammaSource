@@ -1,0 +1,89 @@
+{
+  "engine_files": [
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\game\\client\\hl2\\c_weapon_gravitygun.cpp",
+      "sha256": "b970a62e11f95d76cd9c20c345bb169fc8630017daa6c7922f77b7c2b16e335f"
+    },
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\game\\server\\physgun.cpp",
+      "sha256": "5fb3d012793de8bece5af51604e34d5a292068e95914faf113e564d180bd5c69"
+    },
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\game\\server\\hl2\\item_suit.cpp",
+      "sha256": "36e293a265eb71ce2713eefb96dab82e92d90d2b8f2d666aca31ad8c3afefe52"
+    },
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\engine\\modelloader.cpp",
+      "sha256": "10cd471d8c3cc3dd3b4b4206fdeff375e5c2cd743123edfff1422a8f2a2b06c4"
+    },
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\engine\\sys_getmodes.cpp",
+      "sha256": "d9825a75598777d13162777d170cf1eaa95c0fe00a15c2a57bfca2be51989757"
+    },
+    {
+      "path": "C:\\Users\\doge6\\Downloads\\source-engine-master\\source-engine-master\\engine\\sys_mainwind.cpp",
+      "sha256": "1e41ec53075743a62dd59a0ce43951b2abb3e304c1b0b7a2ba547beaa44e0425"
+    }
+  ],
+  "sky": {
+    "map": "zoo_item",
+    "skyname": "sky_wasteland04",
+    "faces": [
+      {
+        "face": "rt",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "77ca0591473dff70f654bc1f42947f9b273bfa8d86a112e6a8c7cc70b03d2668"
+      },
+      {
+        "face": "bk",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "9be67af91f690dac116f6d135282ef3e28765bdf53f59717c677aa3229267a29"
+      },
+      {
+        "face": "lf",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "fe2127c251976d94ae64a42fff69eae190cd774714f31530790f01815b884191"
+      },
+      {
+        "face": "ft",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "bbea075117f49fc2dd5a6cbd2377c33ecb391fec22b85f36f6e8c16e08413eb7"
+      },
+      {
+        "face": "up",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "b5b9d2ce350010512b0181f1237b483b63875eb40b681b7ab101888bcf1b7acd"
+      },
+      {
+        "face": "dn",
+        "dimensions": [
+          512,
+          512
+        ],
+        "format": 15,
+        "sha256": "d9bab98e1966d1255f6202fcb3b202741eaa8fe021760562e5bc80ad95e48463"
+      }
+    ]
+  },
+  "validation": "Source and binary-asset checks complete; parent owns build and runtime visual verification."
+}

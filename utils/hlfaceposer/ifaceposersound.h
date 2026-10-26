@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef IFACEPOSERSOUND_H
 #define IFACEPOSERSOUND_H
 #ifdef _WIN32
@@ -26,10 +26,9 @@ public:
 
 	virtual CAudioSource *LoadSound( const char *wavfile ) = 0;
 
-	virtual void		PlaySound( StudioModel *model, const char *wavfile, CAudioMixer **ppMixer ) = 0;
-
-	virtual void		PlaySound( CAudioSource *source, CAudioMixer **ppMixer ) = 0;
-	virtual void		PlayPartialSound( StudioModel *model, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample ) = 0;
+	virtual void		PlaySound( StudioModel *model, float volume, const char *wavfile, CAudioMixer **ppMixer ) = 0;
+	virtual void		PlaySound( CAudioSource *source, float volume, CAudioMixer **ppMixer ) = 0;
+	virtual void		PlayPartialSound( StudioModel *model, float volume, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample ) = 0;
 
 	virtual bool		IsSoundPlaying( CAudioMixer *pMixer ) = 0;
 	virtual CAudioMixer *FindMixer( CAudioSource *source ) = 0;

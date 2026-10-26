@@ -1,20 +1,23 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 BEGIN_SHADER( Cloud,
 			  "Help for Cloud" )
 	BEGIN_SHADER_PARAMS
-		SHADER_PARAM( CLOUDALPHATEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "cloud alpha texture" )
+		SHADER_PARAM_OVERRIDE( BASETEXTURE, SHADER_PARAM_TYPE_TEXTURE, "shadertest/cloud", "cloud texture", 0 )
+		SHADER_PARAM( CLOUDALPHATEXTURE, SHADER_PARAM_TYPE_TEXTURE, "shadertest/cloudalpha", "cloud alpha texture" )
 		SHADER_PARAM( CLOUDSCALE, SHADER_PARAM_TYPE_VEC2, "[1 1]", "cloudscale" )
 		SHADER_PARAM( MASKSCALE, SHADER_PARAM_TYPE_VEC2, "[1 1]", "maskscale" )
-		SHADER_PARAM( ADDITIVE, SHADER_PARAM_TYPE_BOOL, "0", "additive blend (as opposed to over blend)" )
 	END_SHADER_PARAMS
 	SHADER_INIT
 	{
@@ -22,27 +25,23 @@ BEGIN_SHADER( Cloud,
 		LoadTexture( CLOUDALPHATEXTURE );
 		if( !params[CLOUDSCALE]->IsDefined() )
 		{
-			params[CLOUDSCALE]->SetVecValue( 1.0f, 1.0f, 1.0f );
+			params[CLOUDSCALE]->SetVecValue( 1.0f, 1.0f );
 		}
 		if( !params[MASKSCALE]->IsDefined() )
 		{
-			params[MASKSCALE]->SetVecValue( 1.0f, 1.0f, 1.0f );
-		}
-		if( !params[ADDITIVE]->IsDefined() )
-		{
-			params[ADDITIVE]->SetIntValue( 0 );
+			params[MASKSCALE]->SetVecValue( 1.0f, 1.0f );
 		}
 	}
 
 	SHADER_DRAW
 	{
-		if( g_pHardwareConfig->GetNumTextureUnits() >= 2 )
+		if( g_pHardwareConfig->GetSamplerCount() >= 2 )
 		{
 			SHADOW_STATE
 			{
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
-				if( params[ADDITIVE]->GetIntValue() )
+				if ( IS_FLAG_SET( MATERIAL_VAR_ADDITIVE ) )
 				{
 					pShaderShadow->BlendFunc( SHADER_BLEND_ONE, SHADER_BLEND_ONE );
 				}
@@ -50,22 +49,22 @@ BEGIN_SHADER( Cloud,
 				{
 					pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
 				}
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
 
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | 
 					SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_TEXCOORD1 );
+				DefaultFog();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				BindTexture( SHADER_TEXTURE_STAGE1, CLOUDALPHATEXTURE );
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+				BindTexture( SHADER_SAMPLER1, CLOUDALPHATEXTURE );
 
 				// handle scrolling of base texture
 				SetFixedFunctionTextureScaledTransform( MATERIAL_TEXTURE0,
 					BASETEXTURETRANSFORM, CLOUDSCALE );
 				SetFixedFunctionTextureScale( MATERIAL_TEXTURE1, MASKSCALE );
-				FogToFogColor();
 			}
 			Draw();
 		}

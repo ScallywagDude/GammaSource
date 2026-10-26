@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IBORDER_H
 #define IBORDER_H
@@ -34,6 +29,9 @@ class IScheme;
 class IBorder
 {
 public:
+	IBorder() {}
+	virtual ~IBorder() {}
+
 	virtual void Paint(VPANEL panel) = 0;
 	virtual void Paint(int x0, int y0, int x1, int y1) = 0;
 	virtual void Paint(int x0, int y0, int x1, int y1, int breakSide, int breakStart, int breakStop) = 0;
@@ -43,6 +41,14 @@ public:
 	virtual const char *GetName() = 0;
 	virtual void SetName(const char *name) = 0;
 
+	enum backgroundtype_e
+	{
+		BACKGROUND_FILLED,
+		BACKGROUND_TEXTURED,
+		BACKGROUND_ROUNDEDCORNERS,
+	};
+	virtual backgroundtype_e GetBackgroundType() = 0;
+
 	enum sides_e
 	{
 		SIDE_LEFT = 0,
@@ -50,6 +56,8 @@ public:
 		SIDE_RIGHT = 2,
 		SIDE_BOTTOM = 3
 	};
+
+	virtual bool PaintFirst( void ) = 0;
 };
 
 } // namespace vgui

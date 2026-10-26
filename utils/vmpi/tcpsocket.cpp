@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 
 //#define PARANOID
@@ -16,14 +16,14 @@
 #include <winsock2.h>
 #include <mswsock.h>
 #include "tcpsocket.h"
-#include "utllinkedlist.h"
+#include "tier1/utllinkedlist.h"
 #include <stdio.h>
 #include "threadhelpers.h"
 #include "tier0/dbg.h"
 
 
 
-#error "I am TCPSocket and I suck. Use IThreadedTCPSocket or ThreadedTCPSocketEmu instead.
+#error "I am TCPSocket and I suck. Use IThreadedTCPSocket or ThreadedTCPSocketEmu instead."
 
 
 extern TIMEVAL SetupTimeVal( double flTimeout );

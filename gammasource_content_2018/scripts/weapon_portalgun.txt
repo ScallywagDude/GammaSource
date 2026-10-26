@@ -1,0 +1,72 @@
+// GammaSource icons: sprites/w_icons5b (modernize/port2018/make_icons.ps1, set_icons.py)
+// Portalgun
+
+WeaponData
+{
+	"bucket_position_360"	"6"
+	"bucket_360"	"0"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"			"#Portal_Portalgun"
+	"viewmodel"			"models/weapons/v_gamma_portalgun.mdl"
+	"playermodel"			"models/weapons/w_portalgun.mdl"
+	"anim_prefix"			"portalgun"
+	"bucket"			"0"
+	"bucket_position"		"6"
+
+	"clip_size"			"1"
+	"primary_ammo"			"None"
+	"secondary_ammo"		"None"
+
+	"weight"			"0"
+	"autoswitchto"		"0"
+	"autoswitchfrom"	"0"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"single_shot"		"Weapon_Portalgun.fire_blue"
+		"double_shot"		"Weapon_Portalgun.fire_red"
+
+		// NPC SECTION
+		"single_shot_npc"	"Weapon_Portalgun.fire_blue_npc"
+		"double_shot_npc"	"Weapon_Portalgun.fire_red_npc"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons5b"
+				"x"		"128"
+				"y"		"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons5b"
+				"x"		"128"
+				"y"		"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

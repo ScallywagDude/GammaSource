@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef OPTIONS_SUB_VIDEO_H
 #define OPTIONS_SUB_VIDEO_H
@@ -15,13 +15,8 @@
 #include <vgui_controls/ComboBox.h>
 #include <vgui_controls/PropertyPage.h>
 #include "EngineInterface.h"
-#include "igameuifuncs.h"
-
-namespace vgui
-{
-class CheckButton;
-class ComboBox;
-}
+#include "IGameUIFuncs.h"
+#include "URLButton.h"
 
 class CCvarSlider;
 
@@ -30,58 +25,55 @@ class CCvarSlider;
 //-----------------------------------------------------------------------------
 class COptionsSubVideo : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( COptionsSubVideo, vgui::PropertyPage );
+
 public:
 	COptionsSubVideo(vgui::Panel *parent);
 	~COptionsSubVideo();
 
 	virtual void OnResetData();
 	virtual void OnApplyChanges();
+	virtual void PerformLayout();
+
+	virtual bool RequiresRestart();
 
 private:
-	typedef vgui::PropertyPage BaseClass;
-
-	struct CVidSettings
-	{
-		int			w, h;
-		int			bpp;
-		int			windowed;
-		char		renderer[ 128 ];
-	};
-
-	CVidSettings		m_OrigSettings;
-	CVidSettings		m_CurrentSettings;
-
-	void		GetVidSettings();
-	void		RevertVidSettings();
-	void		ApplyVidSettings(bool bForceRefresh);
-
-    void        SetCurrentRendererComboItem();
     void        SetCurrentResolutionComboItem();
+	void		EnableOrDisableWindowedForVR();
 
-	void		OnButtonChecked(KeyValues *data);
-	void		OnTextChanged(vgui::Panel *pPanel, const char *pszText);
-    void        SetRendererComboItem();
-	void		PrepareResolutionList( void );
+    MESSAGE_FUNC( OnDataChanged, "ControlModified" );
+	MESSAGE_FUNC_PTR_CHARPTR( OnTextChanged, "TextChanged", panel, text );
+	MESSAGE_FUNC( OpenAdvanced, "OpenAdvanced" );
+	MESSAGE_FUNC( LaunchBenchmark, "LaunchBenchmark" );
+	MESSAGE_FUNC( OpenGammaDialog, "OpenGammaDialog" );
 
-	vgui::ComboBox *m_pMode;
-	vgui::ComboBox *m_pRenderer;
-	vgui::ComboBox *m_pColorDepth;
-	vgui::CheckButton *m_pWindowed;
-	vgui::ComboBox *m_pAspectRatio;
+   
+	void		PrepareResolutionList();
+	bool		IsWindowedItemActive();	// GammaSource: windowed or borderless windowed
 
-	CCvarSlider		*m_pBrightnessSlider;
-	CCvarSlider		*m_pGammaSlider;
+	bool		BUseHDContent();
+	void		SetUseHDContent( bool bUse );
 
-    char            m_pszRenderNames[3][32];
-	char            m_pszAspectName[2][32];
+	int m_nSelectedMode; // -1 if we are running in a nonstandard mode
 
-    int             m_iStartRenderer;
-    int             m_iStartResolution;
-	bool			m_bStartWidescreen;
+	bool m_bDisplayedVRModeMessage;
 
+	vgui::ComboBox		*m_pMode;
+	vgui::ComboBox		*m_pWindowed;
+	vgui::ComboBox		*m_pAspectRatio;
+	vgui::ComboBox		*m_pVRMode;
+	vgui::Button		*m_pGammaButton;
+	vgui::Button		*m_pAdvanced;
+	vgui::Button		*m_pBenchmark;
+	vgui::CheckButton	*m_pHDContent;
 
-	DECLARE_PANELMAP();
-    void OnDataChanged();
+	vgui::DHANDLE<class COptionsSubVideoAdvancedDlg> m_hOptionsSubVideoAdvancedDlg;
+	vgui::DHANDLE<class CGammaDialog> m_hGammaDialog;
+
+	bool m_bRequireRestart;
+   MESSAGE_FUNC( OpenThirdPartyVideoCreditsDialog, "OpenThirdPartyVideoCreditsDialog" );
+   vgui::URLButton   *m_pThirdPartyCredits;
+   vgui::DHANDLE<class COptionsSubVideoThirdPartyCreditsDlg> m_OptionsSubVideoThirdPartyCreditsDlg;
 };
 
 

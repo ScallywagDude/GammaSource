@@ -1,14 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-//=============================================================================
+//===========================================================================//
 
 #ifndef GL_CVARS_H
 #define GL_CVARS_H
@@ -18,25 +14,53 @@
 #endif
 
 #include "convar.h"
+#include "cmd.h"
 
 // Stuff that's dealt with by the material system
-extern  ConVar	mat_loadtextures;	// Can help load levels quickly for debugging.
-extern	ConVar	mat_polyoffset;		// Offset value for decals glPolyOffset(value)
-extern	ConVar	mat_overbright;		// Use overbright blending?
-extern	ConVar	mat_envmapsize;		// Dimensions of square skybox bitmap (in 3D screen shots, not game textures)
 extern	ConVar	mat_wireframe;		// Draw the world in wireframe mode
-extern	ConVar	mat_luxels;			// Draw lightmaps as checkerboards
-extern	ConVar	mat_showlightmappage;// set this to the lightmap page that you want to see on screen
-									// set to -1 to show nothing.
-extern	ConVar	mat_lightmapsonly;	// set to 1 to draw with g_materialDebugLightmap.
 extern	ConVar	mat_normals;		// Draw the world with vertex normals
+extern	ConVar	mat_luxels;			// Draw lightmaps as checkerboards
+extern  ConVar	mat_loadtextures;	// Can help load levels quickly for debugging.
 extern	ConVar	mat_bumpbasis;		// Draw the world with the bump basis vectors drawn
-extern	ConVar	mat_leafvis;		// Draw a wireframe of the leaf volume
-extern	ConVar	mat_picmip;			// How many mip to I skip for texture scalability.
-extern	ConVar	mat_softwarelighting;	// Use softwarelighting?
-extern	ConVar	mat_showbadnormals; // Use this to show out of range normal map texels.
+extern	ConVar	mat_envmapsize;		// Dimensions of square skybox bitmap (in 3D screen shots, not game textures)
+extern  ConVar  mat_envmaptgasize;
+extern  ConVar  mat_levelflush;
+extern	ConVar	mat_hdr_level;
 
-extern ConVar  mat_envmaptgasize;
-extern ConVar  mat_levelflush;
+static inline bool CanCheat()
+{
+	extern	ConVar	sv_cheats;
+	extern	ConVar	cl_debug_respect_cheat_vars;
+
+#ifdef _DEBUG
+	bool bRespectCheatVars = cl_debug_respect_cheat_vars.GetBool() && !Cmd_IsRptActive();
+	if ( bRespectCheatVars )
+		return sv_cheats.GetBool();
+	return true;
+#else
+	return sv_cheats.GetBool();
+	// johns 07/10/2015 - Disabled -- RPT's conditions for activating are not sufficient for this to be reasonable -
+	//                    though it requires the remote client have valve credentials to issue commands, it can be set
+	//                    to 'active' on demand by clients, and thus needs to be reworked before it can be allowed to
+	//                    bypass cheats.
+	// return ( sv_cheats.GetBool() || Cmd_IsRptActive() );
+#endif
+}
+
+static inline int WireFrameMode( void )
+{
+	if ( CanCheat() )
+		return mat_wireframe.GetInt();
+	return 0;
+}
+
+static inline bool ShouldDrawInWireFrameMode( void )
+{
+	if ( CanCheat() )
+		return ( mat_wireframe.GetInt() != 0 );
+	return false;
+}
+
+extern	ConVar	r_drawbrushmodels;
 
 #endif	//GL_CVARS_H

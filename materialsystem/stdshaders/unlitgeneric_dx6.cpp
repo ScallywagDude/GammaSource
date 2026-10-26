@@ -1,14 +1,23 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( UnlitGeneric, UnlitGeneric_DX6 )
+DEFINE_FALLBACK_SHADER( MonitorScreen, UnlitGeneric_DX6 )
+DEFINE_FALLBACK_SHADER( ParticleSphere, UnlitGeneric_DX6 )
+DEFINE_FALLBACK_SHADER( Predator, Predator_DX60 )
+DEFINE_FALLBACK_SHADER( Predator_DX60, UnlitGeneric_DX6 )
+DEFINE_FALLBACK_SHADER( WindowImposter, WindowImposter_DX60 )
+DEFINE_FALLBACK_SHADER( WindowImposter_DX60, UnlitGeneric_DX6 )
 
 BEGIN_SHADER( UnlitGeneric_DX6,
 			  "Help for UnlitGeneric_DX6" )
@@ -17,22 +26,14 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 		SHADER_PARAM( DETAIL, SHADER_PARAM_TYPE_TEXTURE, "shadertest/detail", "detail texture" )
 		SHADER_PARAM( DETAILSCALE, SHADER_PARAM_TYPE_FLOAT, "4", "scale of the detail texture" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
-		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
-		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTimesLightmapPlusMaskedCubicEnvMap_glass", "envmap mask" )
-		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
+		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
+		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_envmask", "envmap mask" )
+		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
 		SHADER_PARAM( ENVMAPMASKSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "envmap mask scale" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
+		SHADER_PARAM( ENVMAPOPTIONAL, SHADER_PARAM_TYPE_BOOL, "0", "Make the envmap only apply to dx9 and higher hardware" )
+		SHADER_PARAM( ALPHATESTREFERENCE, SHADER_PARAM_TYPE_FLOAT, "0.7", "" )	
 	END_SHADER_PARAMS
-
-	SHADER_FALLBACK
-	{
-		// The only thing we can't do here is masked env-mapped
-		if ((g_pHardwareConfig->GetNumTextureUnits() < 2) && params[ENVMAPMASK]->IsDefined() )
-		{
-			return "UnlitGeneric_DX5";
-		}
-		return 0;
-	}
 
 	SHADER_INIT_PARAMS()
 	{
@@ -53,6 +54,18 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 		if (IS_FLAG_SET(MATERIAL_VAR_DECAL))
 		{
 			SET_FLAGS( MATERIAL_VAR_NO_DEBUG_OVERRIDE );
+		}
+
+		// Get rid of the envmap if it's optional for this dx level.
+		if( params[ENVMAPOPTIONAL]->IsDefined() && params[ENVMAPOPTIONAL]->GetIntValue() )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
+
+		// If mat_specular 0, then get rid of envmap
+		if( !g_pConfig->UseSpecular() && params[ENVMAP]->IsDefined() && params[BASETEXTURE]->IsDefined() )
+		{
+			params[ENVMAP]->SetUndefined();
 		}
 	}
 
@@ -101,7 +114,7 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 		int flags = SHADER_DRAW_POSITION;
 		if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
 			flags |= SHADER_DRAW_COLOR;
-		if (params[BASETEXTURE]->IsDefined())
+		if (params[BASETEXTURE]->IsTexture())
 			flags |= SHADER_DRAW_TEXCOORD0;
 		if (doDetail)
 			flags |= SHADER_DRAW_TEXCOORD1;
@@ -111,13 +124,13 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 	void SetDetailShadowState(IShaderShadow* pShaderShadow)
 	{
 		// Specifically choose overbright2, will cause mod2x here
-		pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+		pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
 		pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE1, 2.0f );
 	}
 
 	void SetDetailDymamicState(IShaderShadow* pShaderShadow)
 	{
-		BindTexture( SHADER_TEXTURE_STAGE1, DETAIL, FRAME );
+		BindTexture( SHADER_SAMPLER1, DETAIL, FRAME );
 		SetFixedFunctionTextureScaledTransform( MATERIAL_TEXTURE1, BASETEXTURETRANSFORM, DETAILSCALE );
 	}
 
@@ -130,13 +143,13 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 			if (doDetail)
 				SetDetailShadowState(pShaderShadow);
 			pShaderShadow->DrawFlags( GetDrawFlagsPass1(params, doDetail) );
+			FogToBlack();
 		}
 		DYNAMIC_STATE
 		{
 			SetModulationDynamicState();
 			if (doDetail)
 				SetDetailDymamicState(pShaderShadow);
-			FogToBlack();
 		}
 		Draw( );
 	}
@@ -145,21 +158,21 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 			SetModulationShadowState();
 			SetAdditiveBlendingShadowState( BASETEXTURE, true );
 			if (doDetail)
 				SetDetailShadowState(pShaderShadow);
 			pShaderShadow->DrawFlags( GetDrawFlagsPass1(params, doDetail) );
+			FogToBlack();
 		}
 		DYNAMIC_STATE
 		{
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
 			if (doDetail)
 				SetDetailDymamicState(pShaderShadow);
 			SetModulationDynamicState();
-			FogToBlack();
 		}
 		Draw( );
 	}
@@ -173,13 +186,13 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 			if (doDetail)
 				SetDetailShadowState(pShaderShadow);
 			pShaderShadow->DrawFlags( GetDrawFlagsPass1(params, doDetail) );
+			FogToFogColor();
 		}
 		DYNAMIC_STATE
 		{
 			SetModulationDynamicState();
 			if (doDetail)
 				SetDetailDymamicState(pShaderShadow);
-			FogToFogColor();
 		}
 		Draw( );
 	}
@@ -188,50 +201,54 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 			SetModulationShadowState();
 			SetNormalBlendingShadowState( BASETEXTURE, true );
 			if (doDetail)
 				SetDetailShadowState(pShaderShadow);
 			pShaderShadow->DrawFlags( GetDrawFlagsPass1(params, doDetail) );
+			FogToFogColor();
 		}
 		DYNAMIC_STATE
 		{
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
 			if (doDetail)
 				SetDetailDymamicState(pShaderShadow);
 			SetModulationDynamicState();
-			FogToFogColor();
 		}
 		Draw( );
 	}
 
 	SHADER_DRAW
 	{
-		bool isTextureDefined = params[BASETEXTURE]->IsDefined();
+		bool isTextureDefined = params[BASETEXTURE]->IsTexture();
 		bool hasVertexColor = IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR);
-		bool doFirstPass = isTextureDefined || hasVertexColor || (!params[ENVMAP]->IsDefined());
+		bool doFirstPass = isTextureDefined || hasVertexColor || (!params[ENVMAP]->IsTexture());
 
 		if (doFirstPass)
 		{
 			SHADOW_STATE
 			{
  				pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
+				if( params[ALPHATESTREFERENCE]->IsDefined() && params[ALPHATESTREFERENCE]->GetFloatValue() > 0.0f )
+				{
+					pShaderShadow->AlphaFunc( SHADER_ALPHAFUNC_GEQUAL, params[ALPHATESTREFERENCE]->GetFloatValue() );
+				}
 			}
 
 			if (IS_FLAG_SET(MATERIAL_VAR_ADDITIVE))
 			{
 				if (!isTextureDefined)
 				{
-					bool hasDetailTexture = params[DETAIL]->IsDefined();
+					bool hasDetailTexture = params[DETAIL]->IsTexture();
 					DrawAdditiveNonTextured( params, pShaderAPI, pShaderShadow, hasDetailTexture );
 				}
 				else
 				{
 					// We can't do detail in a single pass if we're also
 					// colormodulating and have vertex color
-					bool hasDetailTexture = params[DETAIL]->IsDefined();
+					bool hasDetailTexture = params[DETAIL]->IsTexture();
 					bool isModulating = IsColorModulating() || IsAlphaModulating(); 
 					bool onePassDetail = hasDetailTexture && (!hasVertexColor || !isModulating);
 					DrawAdditiveTextured( params, pShaderAPI, pShaderShadow, onePassDetail );
@@ -246,14 +263,14 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 			{
 				if (!isTextureDefined)
 				{
-					bool hasDetailTexture = params[DETAIL]->IsDefined();
+					bool hasDetailTexture = params[DETAIL]->IsTexture();
 					DrawNonTextured( params, pShaderAPI, pShaderShadow, hasDetailTexture );
 				}
 				else
 				{
 					// We can't do detail in a single pass if we're also
 					// colormodulating and have vertex color
-					bool hasDetailTexture = params[DETAIL]->IsDefined();
+					bool hasDetailTexture = params[DETAIL]->IsTexture();
 					bool isModulating = IsColorModulating() || IsAlphaModulating(); 
 					bool onePassDetail = hasDetailTexture && (!hasVertexColor || !isModulating);
 					DrawTextured( params, pShaderAPI, pShaderShadow, onePassDetail );
@@ -273,7 +290,7 @@ BEGIN_SHADER( UnlitGeneric_DX6,
 		}
 
 		// Second pass...
-		if (params[ENVMAP]->IsDefined() && 
+		if (params[ENVMAP]->IsTexture() && 
 			(!doFirstPass || IS_FLAG_SET(MATERIAL_VAR_MULTIPASS)) )
 		{
 			if (doFirstPass || IS_FLAG_SET(MATERIAL_VAR_ADDITIVE))

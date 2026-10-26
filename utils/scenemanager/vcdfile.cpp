@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "vcdfile.h"
 #include "soundentry.h"
@@ -109,11 +109,12 @@ CScene *CVCDFile::GetOwnerScene()
 //-----------------------------------------------------------------------------
 CChoreoScene *CVCDFile::LoadScene( char const *filename )
 {
-	if ( SceneManager_FullpathFileExists( va( "%s/%s", SceneManager_GetGameDirectory(), (char *)filename ) ) )
+	if ( filesystem->FileExists( filename ) )
 	{
-		LoadScriptFile( va( "%s/%s", SceneManager_GetGameDirectory(), (char *)filename ) );
-
-		CChoreoScene *scene = ChoreoLoadScene( this, &g_TokenProcessor, Con_Printf );
+		char fullpath[ 512 ];
+		filesystem->RelativePathToFullPath( filename, "GAME", fullpath, sizeof( fullpath ) );
+		LoadScriptFile( fullpath );
+		CChoreoScene *scene = ChoreoLoadScene( filename, this, &g_TokenProcessor, Con_Printf );
 		return scene;
 	}
 
@@ -155,8 +156,7 @@ char const *CVCDFile::GetComments()
 void CVCDFile::SetComments( char const *comments )
 {
 	delete[] m_pszComments;
-	m_pszComments = new char[ Q_strlen( comments ) + 1 ];
-	Q_strcpy( m_pszComments, comments );
+	m_pszComments = V_strdup( comments );
 
 	if ( GetOwnerScene() )
 	{

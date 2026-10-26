@@ -1,28 +1,38 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-
-#include <mx/mx.h>
+//=============================================================================//
+#include "hlfaceposer.h"
+#include <mxtk/mx.h>
 #include "expressions.h"
 #include "expclass.h"
 #include "hlfaceposer.h"
 #include "StudioModel.h"
-#include "cmdlib.h"
+#include "filesystem.h"
 #include "FlexPanel.h"
 #include "ControlPanel.h"
 #include "mxExpressionTray.h"
 #include "UtlBuffer.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "ExpressionTool.h"
 #include "faceposer_models.h"
 #include "mdlviewer.h"
 #include "phonemeconverter.h"
+#include "ProgressDialog.h"
+#include "tier1/fmtstr.h"
+#include "tier1/utlstring.h"
+#include "tier1/utlvector.h"
 
+
+#undef ALIGN4
+#undef ALIGN16
 #define ALIGN4( a ) a = (byte *)((int)((byte *)a + 3) & ~ 3)
 #define ALIGN16( a ) a = (byte *)((int)((byte *)a + 15) & ~ 15)
+
+char const *GetGlobalFlexControllerName( int index );
+int GetGlobalFlexControllerCount( void );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -30,14 +40,12 @@
 //-----------------------------------------------------------------------------
 CExpClass::CExpClass( const char *classname ) 
 { 
-	strcpy( m_szClassName, classname ); 
+	Q_strncpy( m_szClassName, classname, sizeof( m_szClassName ) ); 
+	Q_FileBase( m_szClassName, m_szBaseName, sizeof( m_szBaseName ) );
 	m_szFileName[ 0 ] = 0;
 	m_bDirty = false;
 	m_nSelectedExpression = -1;
-
-	m_bIsOverride = false;
-	m_pOverride = NULL;
-	m_bIsPhonemeClass = strstr( classname, "phonemes" ) ? true : false;
+	m_bIsPhonemeClass = Q_strstr( classname, "phonemes" ) ? true : false;
 }
 
 //-----------------------------------------------------------------------------
@@ -69,15 +77,7 @@ int	CExpClass::FindExpressionIndex( CExpression *exp )
 //-----------------------------------------------------------------------------
 void CExpClass::Save( void )
 {
-	// Save overridden elements
-	if ( !IsOverrideClass() && HasOverrideClass() )
-	{
-		CExpClass *oc = GetOverrideClass();
-		Assert( oc );
-		oc->Save();
-	}
-
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
 		return;
@@ -89,7 +89,7 @@ void CExpClass::Save( void )
 
 	Con_Printf( "Saving changes to %s to file %s\n", GetName(), GetFileName() );
 
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	int i, j;
 
@@ -98,24 +98,21 @@ void CExpClass::Save( void )
 
 	CExpression *expr = NULL;
 	// find all used controllers
-	for (j = 0; j < hdr->numflexcontrollers; j++)
+	int fc = GetGlobalFlexControllerCount();
+	for ( j = 0; j < fc; ++j )
 	{
 		for (i = 0; i < GetNumExpressions(); i++)
 		{
 			expr = GetExpression( i );
 			Assert( expr );
 
-			if ( expr->GetType() == CExpression::TYPE_MARKOV )
-				continue;
-
 			float *settings = expr->GetSettings();
 			float *weights = expr->GetWeights();
-			Assert( settings );
-			Assert( weights );
 
-			if ( settings[j] != 0 || weights[j] != 0)
+			if ( settings[j] != 0 || 
+				 weights[j] != 0 )
 			{
-				flexmap[numflexmaps++] = j;
+				flexmap[ numflexmaps++ ] = j;
 				break;
 			}
 		}
@@ -124,7 +121,7 @@ void CExpClass::Save( void )
 	buf.Printf( "$keys" );
 	for (j = 0; j < numflexmaps; j++)
 	{
-		buf.Printf( " %s", hdr->pFlexcontroller( flexmap[j] )->pszName() );
+		buf.Printf( " %s", GetGlobalFlexControllerName( flexmap[j] ) );
 	}
 	buf.Printf( "\n" );
 
@@ -134,80 +131,45 @@ void CExpClass::Save( void )
 	{
 		expr = GetExpression( i );
 
-		if ( expr->GetType() == CExpression::TYPE_NORMAL )
+		buf.Printf( "\"%s\" ", expr->name );
+
+		// isalpha returns non zero for ents > 256
+		if (expr->index <= 'z') 
 		{
-			buf.Printf( "\"%s\" ", expr->name );
-
-			// isalpha returns non zero for ents > 256
-			if (expr->index <= 'z') 
-			{
-				buf.Printf( "\"%c\" ", expr->index );
-			}
-			else
-			{
-				buf.Printf( "\"0x%04x\" ", expr->index );
-			}
-
-			float *settings = expr->GetSettings();
-			float *weights = expr->GetWeights();
-			Assert( settings );
-			Assert( weights );
-
-			for (j = 0; j < numflexmaps; j++)
-			{
-				buf.Printf( "%.3f %.3f ", settings[flexmap[j]], weights[flexmap[j]] );
-			}
-
-			if ( strstr( expr->name, "Right Side Smile" ) )
-			{
-				Con_Printf( "wrote %s with checksum %s\n",
-					expr->name, expr->GetBitmapCheckSum() );
-			}
-
-			buf.Printf( "\"%s\"\n", expr->description );
+			buf.Printf( "\"%c\" ", expr->index );
 		}
 		else
 		{
-			buf.Printf( "$groupname \"%s\" ", expr->name );
-			buf.Printf( "\"%s\"\n", expr->description );
+			buf.Printf( "\"0x%04x\" ", expr->index );
 		}
-	}
 
-	for (i = 0; i < GetNumExpressions(); i++)
-	{
-		expr = GetExpression( i );
+		float *settings = expr->GetSettings();
+		float *weights = expr->GetWeights();
+		Assert( settings );
+		Assert( weights );
 
-		if ( expr->GetType() == CExpression::TYPE_NORMAL )
-			continue;
-
-		buf.Printf( "$group \"%s\" ", expr->name );
-		for ( j = 0; j < expr->m_Group.Size(); j++ )
+		for (j = 0; j < numflexmaps; j++)
 		{
-			CMarkovGroup *g = &expr->m_Group[ j ];
-			CExpression *me = GetExpression( g->expression );
-			Assert( me );
-
-			buf.Printf( "\"%s\" %i", me->name, g->weight );
-			if ( j != expr->m_Group.Size() - 1 )
-			{
-				buf.Printf( " " );
-			}
+			buf.Printf( "%.3f %.3f ", settings[flexmap[j]], weights[flexmap[j]] );
 		}
-		buf.Printf( "\n" );
+
+		if ( Q_strstr( expr->name, "Right Side Smile" ) )
+		{
+			Con_Printf( "wrote %s with checksum %s\n",
+				expr->name, expr->GetBitmapCheckSum() );
+		}
+
+		buf.Printf( "\"%s\"\n", expr->description );
 	}
 
 	char relative[ 512 ];
-	strcpy( relative, filename );
-	if ( strchr( filename, ':' ) )
-	{
-		filesystem->FullPathToRelativePath( filename, relative );
-	}
-
+	filesystem->FullPathToRelativePath( filename, relative, sizeof( relative ) );
+	
 	MakeFileWriteable( relative );
 	FileHandle_t fh = filesystem->Open( relative, "wt" );
 	if ( !fh )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Unable to write to %s (read-only?)\n", relative );
+		Con_ErrorPrintf( "Unable to write to %s (read-only?)\n", relative );
 		return;
 	}
 	else
@@ -229,26 +191,14 @@ void CExpClass::Save( void )
 	}
 }
 
-char const *GetGlobalFlexControllerName( int index );
-int GetGlobalFlexControllerCount( void );
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CExpClass::Export( void )
 {
-	// Export overridden elements
-	if ( !IsOverrideClass() && HasOverrideClass() )
-	{
-		CExpClass *oc = GetOverrideClass();
-		Assert( oc );
-		oc->Export();
-	}
-
 	char vfefilename[ 512 ];
-	strcpy( vfefilename, GetFileName() );
-	StripExtension( vfefilename );
-	DefaultExtension( vfefilename, ".vfe" );
+	Q_StripExtension( GetFileName(), vfefilename, sizeof( vfefilename ) );
+	Q_DefaultExtension( vfefilename, ".vfe", sizeof( vfefilename ) );
 
 	Con_Printf( "Exporting %s to %s\n", GetName(), vfefilename );
 
@@ -290,7 +240,7 @@ void CExpClass::Export( void )
 	
 	fhdr->id = ('V' << 16) + ('F' << 8) + ('E');
 	fhdr->version = 0;
-	strcpy( fhdr->name, vfefilename );
+	V_strncpy( fhdr->name, vfefilename, sizeof( fhdr->name ) );
 
 	// allocate room for header
 	pData += sizeof( flexsettinghdr_t );
@@ -310,63 +260,25 @@ void CExpClass::Export( void )
 		pSetting[i].index = expr->index;
 		pSetting[i].settingindex = pData - (byte *)(&pSetting[i]);
 
-		// Make sure this is zero by default
-		pSetting[i].currentindex = 0;
+		flexweight_t *pFlexWeights = (flexweight_t *)pData;
 
-		if ( expr->GetType() != CExpression::TYPE_MARKOV )
+		float *settings = expr->GetSettings();
+		float *weights = expr->GetWeights();
+		Assert( settings );
+		Assert( weights );
+
+		for (j = 0; j < numflexmaps; j++)
 		{
-			pSetting[i].type = CExpression::TYPE_NORMAL;
-
-			flexweight_t *pFlexWeights = (flexweight_t *)pData;
-
-			float *settings = expr->GetSettings();
-			float *weights = expr->GetWeights();
-			Assert( settings );
-			Assert( weights );
-
-			for (j = 0; j < numflexmaps; j++)
+			if (settings[flexmap[j]] != 0 || weights[flexmap[j]] != 0)
 			{
-				if (settings[flexmap[j]] != 0 || weights[flexmap[j]] != 0)
-				{
-					pSetting[i].numsettings++;
-					pFlexWeights->key = j;
-					pFlexWeights->weight = settings[flexmap[j]];
-					pFlexWeights->influence = weights[flexmap[j]];
-					pFlexWeights++;
-				}
-				pData = (byte *)pFlexWeights;
-				ALIGN4( pData );
-			}
-		}
-		else if ( expr->GetType() == CExpression::TYPE_MARKOV )
-		{
-			pSetting[i].type = CExpression::TYPE_MARKOV;
-
-			flexmarkovgroup_t *pMarkovGroups = (flexmarkovgroup_t *)pData;
-
-			for (j = 0; j < expr->GetNumGroups(); j++)
-			{
-				CMarkovGroup *group = expr->GetGroup( j );
-				Assert( group );
-
-				// Skip it if can't find it
-				int expindex = FindExpressionIndex( GetExpression( group->expression ) );
-				if ( expindex == -1 )
-					continue;
-
 				pSetting[i].numsettings++;
-				pMarkovGroups->settingnumber = expindex;
-				pMarkovGroups->weight = group->weight;
-				pMarkovGroups++;
-
-				pData = (byte *)pMarkovGroups;
-				ALIGN4( pData );
+				pFlexWeights->key = j;
+				pFlexWeights->weight = settings[flexmap[j]];
+				pFlexWeights->influence = weights[flexmap[j]];
+				pFlexWeights++;
 			}
-		}
-		else
-		{
-			// Shouldn't ever happen
-			Assert( 0 );
+			pData = (byte *)pFlexWeights;
+			ALIGN4( pData );
 		}
 	}
 
@@ -429,18 +341,13 @@ void CExpClass::Export( void )
 	fhdr->length = pData - pDataStart;
 
 	char relative[ 512 ];
-	strcpy( relative, vfefilename );
-	if ( strchr( vfefilename, ':' ) )
-	{
-		filesystem->FullPathToRelativePath( vfefilename, relative );
-	}
-
-
+	filesystem->FullPathToRelativePath( vfefilename, relative, sizeof( relative ) );
+	
 	MakeFileWriteable( relative );
 	FileHandle_t fh = filesystem->Open( relative, "wb" );
 	if ( !fh )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Unable to write to %s (read-only?)\n", relative );
+		Con_ErrorPrintf( "Unable to write to %s (read-only?)\n", relative );
 		return;
 	}
 	else
@@ -454,7 +361,16 @@ void CExpClass::Export( void )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CExpClass::GetName( void )
+const char *CExpClass::GetBaseName( void ) const
+{
+	return m_szBaseName;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : const char
+//-----------------------------------------------------------------------------
+const char *CExpClass::GetName( void ) const
 {
 	return m_szClassName;
 }
@@ -463,7 +379,7 @@ const char *CExpClass::GetName( void )
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CExpClass::GetFileName( void )
+const char *CExpClass::GetFileName( void ) const
 {
 	return m_szFileName;
 }
@@ -477,56 +393,21 @@ void CExpClass::SetFileName( const char *filename )
 	strcpy( m_szFileName, filename );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *name - 
-//			*description - 
-// Output : CExpression
-//-----------------------------------------------------------------------------
-CExpression *CExpClass::AddGroupExpression( const char *name, const char *description )
-{
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
-	if ( !hdr )
-		return NULL;
-
-	CExpression *exp = FindExpression( name );
-	if ( exp )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't create, an expression with the name '%s' already exists.\n", name );
-		return NULL;
-	}
-
-	// Add to end of list
-	int idx = m_Expressions.AddToTail();
-
-	exp = &m_Expressions[ idx ];
-
-	exp->SetExpressionClass( GetName() );
-	strcpy( exp->name, name );
-	strcpy( exp->description, description );
-	exp->index = '_';
-
-	if ( IsPhonemeClass() )
-	{
-		exp->index = TextToPhoneme( name );
-	}
-
-	exp->SetType( CExpression::TYPE_MARKOV );
-
-	SetDirty( true );
-
-	exp->m_Bitmap[ models->GetActiveModelIndex() ].valid = false;
-
-	SetDirty( true );
-
-	return exp;
-}
+bool IsUsingPerPlayerExpressions();
 
 void CExpClass::ReloadBitmaps( void )
 {
+	bool bUsingPerPlayerOverrides = IsUsingPerPlayerExpressions();
+
 	int c = models->Count();
 	for ( int model = 0; model < MAX_FP_MODELS; model++ )
 	{
+		// Only reload bitmaps for current model index
+		if ( bUsingPerPlayerOverrides && model != models->GetActiveModelIndex() )
+			continue;
+
+		models->ForceActiveModelIndex( model );
+
 		for ( int i = 0 ; i < GetNumExpressions(); i++ )
 		{
 			CExpression *e = GetExpression( i );
@@ -544,17 +425,12 @@ void CExpClass::ReloadBitmaps( void )
 
 			if ( !LoadBitmapFromFile( e->GetBitmapFilename( model ), e->m_Bitmap[ model ] ) )
 			{
-				// Make sure it's active if we're going to take a snapshot!!!
-				if ( models->GetActiveModelIndex() != model )
-				{
-					g_MDLViewer->SetActiveModelTab( model );
-				}
-
-				SelectExpression( i );
 				e->CreateNewBitmap( model );
 			}
 		}
 	}
+
+	models->UnForceActiveModelIndex();
 }
 
 //-----------------------------------------------------------------------------
@@ -565,16 +441,16 @@ void CExpClass::ReloadBitmaps( void )
 //			selectnewitem - 
 // Output : CExpression
 //-----------------------------------------------------------------------------
-CExpression *CExpClass::AddExpression( const char *name, const char *description, float *flexsettings, float *flexweights, bool selectnewitem )
+CExpression *CExpClass::AddExpression( const char *name, const char *description, float *flexsettings, float *flexweights, bool selectnewitem, bool bDirtyClass )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 		return NULL;
 
 	CExpression *exp = FindExpression( name );
 	if ( exp )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't create, an expression with the name '%s' already exists.\n", name );
+		Con_ErrorPrintf( "Can't create, an expression with the name '%s' already exists.\n", name );
 		return NULL;
 	}
 
@@ -600,12 +476,9 @@ CExpression *CExpClass::AddExpression( const char *name, const char *description
 		exp->index = TextToPhoneme( name );
 	}
 
-	SetDirty( true );
-
 	exp->m_Bitmap[ models->GetActiveModelIndex() ].valid = false;
 	if ( !LoadBitmapFromFile( exp->GetBitmapFilename( models->GetActiveModelIndex() ), exp->m_Bitmap[ models->GetActiveModelIndex() ] ) )
 	{
-		SelectExpression( idx );
 		exp->CreateNewBitmap( models->GetActiveModelIndex() );
 	}
 	
@@ -614,7 +487,10 @@ CExpression *CExpClass::AddExpression( const char *name, const char *description
 		SelectExpression( idx );
 	}
 
-	SetDirty( true );
+	if ( bDirtyClass )
+	{
+		SetDirty( true );
+	}
 
 	return exp;
 }
@@ -650,16 +526,6 @@ void CExpClass::DeleteExpression( const char *name )
 		CExpression *exp = &m_Expressions[ i ];
 		if ( !stricmp( exp->name, name ) )
 		{
-			// If this class hav overrides, remove it from there, too
-			if ( !IsOverrideClass() && HasOverrideClass() )
-			{
-				CExpClass *oc = GetOverrideClass();
-				if ( oc )
-				{
-					oc->DeleteExpression( name );
-				}
-			}
-
 			SetDirty( true );
 
 			m_Expressions.Remove( i );
@@ -772,27 +638,7 @@ void CExpClass::SwapExpressionOrder( int exp1, int exp2 )
 	m_Expressions.InsertBefore( exp2, temp1 );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CExpClass::NewMarkovIndices( void )
-{
-	for ( int i = 0; i < m_Expressions.Size(); i++ )
-	{
-		CExpression *exp = &m_Expressions[ i ];
-		if ( !exp || ( exp->GetType() != CExpression::TYPE_MARKOV ) )
-			continue;
-
-		exp->NewMarkovIndex();
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *checksum - 
-// Output : CExpression
-//-----------------------------------------------------------------------------
-CExpression *CExpClass::FindBitmapForChecksum( const char *checksum )
+void CExpClass::BuildValidChecksums( CUtlRBTree< CRC32_t > &tree )
 {
 	for ( int i = 0; i < m_Expressions.Size(); i++ )
 	{
@@ -800,22 +646,9 @@ CExpression *CExpClass::FindBitmapForChecksum( const char *checksum )
 		if ( !exp )
 			continue;
 
-		const char *checkval = exp->GetBitmapCheckSum();
-		Assert( checkval );
-		if ( !checkval )
-			continue;
-
-		if ( !stricmp( checksum, checkval ) )
-			return exp;
+		CRC32_t crc = exp->GetBitmapCRC();
+		tree.Insert( crc );
 	}
-
-	if ( !IsOverrideClass() && HasOverrideClass() )
-	{
-		CExpClass *oc = GetOverrideClass();
-		return oc->FindBitmapForChecksum( checksum );
-	}
-
-	return NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -824,165 +657,72 @@ CExpression *CExpClass::FindBitmapForChecksum( const char *checksum )
 //-----------------------------------------------------------------------------
 void CExpClass::CheckBitmapConsistency( void )
 {
-	if ( IsOverrideClass() )
-		return;
-
 	char path[ 512 ];
-	HANDLE hFindFile;
-	WIN32_FIND_DATA wfd;
 
-	sprintf( path, "%s/expressions/%s/%s/*.bmp", GetGameDirectory(), models->GetActiveModelName(), GetName() );
+	Q_snprintf( path, sizeof( path ), "expressions/%s/%s/*.bmp", models->GetActiveModelName(), GetBaseName() );
+	Q_FixSlashes( path );
+	Q_strlower( path );
 
-	hFindFile = FindFirstFile( path, &wfd );
-	if ( hFindFile != INVALID_HANDLE_VALUE )
+	g_pProgressDialog->Start( CFmtStr( "%s / %s - Reconcile Expression Thumbnails", models->GetActiveModelName(), GetBaseName() ), "", true );
+
+	CUtlVector< CUtlString > workList;
+
+	FileFindHandle_t hFindFile;
+	char const *fn = filesystem->FindFirstEx( path, "MOD", &hFindFile );
+	if ( fn )
 	{
-		bool morefiles = true;
-		while ( morefiles )
+		while ( fn )
 		{
 			// Don't do anything with directories
-			if ( wfd.dwFileAttributes != FILE_ATTRIBUTE_DIRECTORY )
+			if ( !filesystem->FindIsDirectory( hFindFile ) )
 			{
-				// 
-				char testname[ 256 ];
-				strcpy( testname, wfd.cFileName );
+				CUtlString s = fn;
+				workList.AddToTail( s );
 
-				StripExtension( testname );
-	
-				if ( !FindBitmapForChecksum( testname ) )
-				{
-					// Delete it
-					Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Removing unused bitmap file %s\n", 
-						va( "%s/expressions/%s/%s/%s", GetGameDirectory(), models->GetActiveModelName(), GetName(), wfd.cFileName ) );
-
-					_unlink( va( "%s/expressions/%s/%s/%s", GetGameDirectory(), models->GetActiveModelName(), GetName(), wfd.cFileName ) );
-				}
+				
 			}
 
-			morefiles = FindNextFile( hFindFile, &wfd ) ? true : false;
+			fn = filesystem->FindNext( hFindFile );
 		}
 
-		FindClose( hFindFile );
+		filesystem->FindClose( hFindFile );
 	}
-}
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CExpClass::IsOverrideClass( void ) const
-{
-	return m_bIsOverride;
-}
+	CUtlRBTree< CRC32_t > tree( 0, 0, DefLessFunc( CRC32_t ) );
+	BuildValidChecksums( tree );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : override - 
-//-----------------------------------------------------------------------------
-void CExpClass::SetIsOverrideClass( bool override )
-{
-	m_bIsOverride = override;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CExpClass::RemoveOverrides( void )
-{
-	// Doesn't apply to us
-	if ( IsOverrideClass() )
-		return;
-
-	for ( int i = 0; i < m_Expressions.Size(); i++ )
+	for ( int i = 0 ; i < workList.Count(); ++i )
 	{
-		CExpression *exp = &m_Expressions[ i ];
-		if ( !exp )
-			continue;
+		char testname[ 256 ];
+		Q_StripExtension( workList[ i ].String(), testname, sizeof( testname ) );
 
-		if ( !exp->HasOverride() )
-			continue;
+		g_pProgressDialog->UpdateText( "%s", testname );
+		g_pProgressDialog->Update( (float)i / (float)workList.Count() );
 
-		exp->SetOverride( NULL );
-	}
-}
+		CRC32_t check;
+		Q_hextobinary( testname, Q_strlen( testname ), (byte *)&check, sizeof( check ) );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CExpClass::ApplyOverrides( void )
-{
-	// Doesn't apply to us
-	if ( IsOverrideClass() )
-		return;
-
-	if ( !HasOverrideClass() )
-		return;
-
-	Assert( m_pOverride );
-
-	int i;
-	for ( i = 0; i < m_Expressions.Size(); i++ )
-	{
-		CExpression *exp = &m_Expressions[ i ];
-		if ( !exp )
-			continue;
-
-		// See if any override exists
-		CExpression *override = m_pOverride->FindExpression( exp->name );
-		if ( override )
+		if ( tree.Find( check ) == tree.InvalidIndex() )
 		{
-			exp->SetOverride( m_pOverride );
+			char kill[ 512 ];
+			Q_snprintf( kill, sizeof( kill ), "expressions/%s/%s/%s", models->GetActiveModelName(), GetBaseName(), fn );
+			Q_FixSlashes( kill );
+			Q_strlower( kill );
+
+			// Delete it
+			Con_ErrorPrintf( "Removing unused bitmap file '%s'\n", kill );
+
+			filesystem->RemoveFile( kill, "MOD" );
 		}
-		else
+
+		if ( g_pProgressDialog->IsCancelled() )
 		{
-			exp->SetOverride( NULL );
+			Msg( "Cancelled\n" );
+			break;
 		}
 	}
 
-	// Now walk the override class and see if it has any elements not in the base
-	//  class, if so, delete them
-	for ( i = m_pOverride->GetNumExpressions() - 1; i >= 0 ; i-- )
-	{
-		CExpression *exp = m_pOverride->GetExpression( i );
-		if ( !exp )
-			continue;
-
-		// It exists in the base class
-		if ( FindExpression( exp->name ) )
-			continue;
-
-		Con_Printf( "Removing obsolete override '%s' from '%s'\n",
-			exp->name, GetName() );
-
-		// Remove the override since it doesn't exist in the base class
-		m_pOverride->DeleteExpression( exp->name );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CExpClass::HasOverrideClass( void ) const
-{
-	return m_pOverride ? true : false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *overrideClass - 
-//-----------------------------------------------------------------------------
-void CExpClass::SetOverrideClass( CExpClass *overrideClass )
-{
-	m_pOverride = overrideClass;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : CExpClass
-//-----------------------------------------------------------------------------
-CExpClass *CExpClass::GetOverrideClass( void )
-{
-	return m_pOverride;
+	g_pProgressDialog->Finish();
 }
 
 //-----------------------------------------------------------------------------

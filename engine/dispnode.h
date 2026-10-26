@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DISPNODE_H
 #define DISPNODE_H
@@ -47,7 +47,7 @@ public:
     //
     // Construction/Decontruction
     //
-    CDispNode() {};
+    CDispNode() = default;
     ~CDispNode() {};
 
     //=========================================================================

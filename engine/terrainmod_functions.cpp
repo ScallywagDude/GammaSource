@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2004, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2004, Valve LLC, All rights reserved. ============
 //
 // Purpose: 
 //
 //=============================================================================
 
 #include "terrainmod_functions.h"
-#include "mathlib.h"
-#include "convar.h"
+#include "mathlib/mathlib.h"
+#include "tier1/convar.h"
 
 // This cvar is here for now because it is shared by the client and the server.
 ConVar disp_modlimit_side( "disp_modlimit", "80" );
@@ -96,7 +96,7 @@ void CTerrainMod_Suck::Init( CTerrainModParams const &params )
 	m_flStrength = params.m_flStrength;
 	m_bStayAboveOriginal = !!(params.m_Flags & CTerrainModParams::TMOD_STAYABOVEORIGINAL);
 
-	float rad = max( m_flRadius, 300 );
+	float rad = MAX( m_flRadius, 300.0f );
 	m_BBMin.Init( m_vCenter.x - rad, m_vCenter.y - rad, m_vCenter.z - rad );
 	m_BBMax.Init( m_vCenter.x + rad, m_vCenter.y + rad, m_vCenter.z + rad );
 
@@ -167,7 +167,7 @@ bool CTerrainMod_Suck::ApplyMod( Vector &vecTargetPos, Vector const &vecOriginal
 		flPercent = ApplyGain( flPercent ); // (smooth out near 0 and 1)
 
 		vPos.z += m_flStrength * flPercent;
-		vPos.z = min( vPos.z, m_vCenter.z );
+		vPos.z = MIN( vPos.z, m_vCenter.z );
 
 		// Clamp the distance.
 		LockDist( vPos, vOriginalPos, m_bStayAboveOriginal );

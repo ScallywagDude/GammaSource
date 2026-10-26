@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 
 #include "netadr.h"
 #include "MsgBuffer.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 
 #include <stdio.h>
 
@@ -123,7 +123,7 @@ public:
 	// Allow other objects to get the raw socket interger
 	virtual int				GetSocketNumber( void ) const;
 	// Called when FD_ISSET noted that the socket has incoming data
-	virtual void			ReceiveData( void );
+	virtual bool			ReceiveData( void );
 	// Called to get current time
 	static float			GetClock( void );
 

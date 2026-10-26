@@ -1,12 +1,22 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Lightmap only shader
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "BaseVSShader.h"
+
+
+#include "lightmappedgeneric_vs11.inc"
+#include "unlitgeneric_vs11.inc"
+#include "worldvertextransition_seamless.inc"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+static ConVar mat_fullbright( "mat_fullbright","0", FCVAR_CHEAT );
 
 DEFINE_FALLBACK_SHADER( LightmappedGeneric, LightmappedGeneric_DX8 )
 
@@ -14,27 +24,51 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 			  "Help for LightmappedGeneric_DX8" )
 
 	BEGIN_SHADER_PARAMS
+		SHADER_PARAM( ALBEDO, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTexture", "albedo (Base texture with no baked lighting)" )
 		SHADER_PARAM( SELFILLUMTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "Self-illumination tint" )
 		SHADER_PARAM( DETAIL, SHADER_PARAM_TYPE_TEXTURE, "shadertest/detail", "detail texture" )
 		SHADER_PARAM( DETAILSCALE, SHADER_PARAM_TYPE_FLOAT, "4", "scale of the detail texture" )
+		SHADER_PARAM( DETAILBLENDFACTOR, SHADER_PARAM_TYPE_FLOAT, "1", "amount of detail texture to apply" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
 		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
 		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_envmask", "envmap mask" )
 		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
 		SHADER_PARAM( ENVMAPMASKSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "envmap mask scale" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
-		SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/WorldDiffuseBumpMap_bump", "bump map" )
+		SHADER_PARAM( BUMPMAP, SHADER_PARAM_TYPE_TEXTURE, "models/shadertest/shader1_normal", "bump map" )
 		SHADER_PARAM( BUMPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $bumpmap" )
 		SHADER_PARAM( BUMPTRANSFORM, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "$bumpmap texcoord transform" )
 		SHADER_PARAM( ENVMAPCONTRAST, SHADER_PARAM_TYPE_FLOAT, "0.0", "contrast 0 == normal 1 == color*color" )
 		SHADER_PARAM( ENVMAPSATURATION, SHADER_PARAM_TYPE_FLOAT, "1.0", "saturation 0 == greyscale 1 == normal" )
-		SHADER_PARAM( FRESNELREFLECTION, SHADER_PARAM_TYPE_FLOAT, "0.0", "0.0 == no fresnel, 1.0 == full fresnel" )
+		SHADER_PARAM( FRESNELREFLECTION, SHADER_PARAM_TYPE_FLOAT, "1.0", "1.0 == mirror, 0.0 == water" )
+		SHADER_PARAM( ENVMAPOPTIONAL, SHADER_PARAM_TYPE_INTEGER, "90", "Do specular pass only on dxlevel or higher (ie.80, 81, 90)" )
+		SHADER_PARAM( NODIFFUSEBUMPLIGHTING, SHADER_PARAM_TYPE_BOOL, "0", "0 == Use diffuse bump lighting, 1 = No diffuse bump lighting" )
+		SHADER_PARAM( FORCEBUMP, SHADER_PARAM_TYPE_BOOL, "0", "0 == Do bumpmapping if the card says it can handle it. 1 == Always do bumpmapping." )
+		SHADER_PARAM( ALPHATESTREFERENCE, SHADER_PARAM_TYPE_FLOAT, "0.0", "" )	
+		SHADER_PARAM( SSBUMP, SHADER_PARAM_TYPE_INTEGER, "0", "whether or not to use alternate bumpmap format with height" )
+		SHADER_PARAM( SEAMLESS_SCALE, SHADER_PARAM_TYPE_FLOAT, "0", "Scale factor for 'seamless' texture mapping. 0 means to use ordinary mapping" )
 	END_SHADER_PARAMS
+
+	virtual bool ShouldUseBumpmapping( IMaterialVar **params ) 
+	{ 
+		return g_pConfig->UseBumpmapping() && params[BUMPMAP]->IsDefined(); 
+	}
 
 	// Set up anything that is necessary to make decisions in SHADER_FALLBACK.
 	SHADER_INIT_PARAMS()
 	{
-		if( IsUsingGraphics() && params[ENVMAP]->IsDefined() )
+		// FLASHLIGHTFIXME
+		params[FLASHLIGHTTEXTURE]->SetStringValue( "effects/flashlight001" );
+
+		// Write over $basetexture with $albedo if we are going to be using diffuse normal mapping.
+		if( ShouldUseBumpmapping( params ) && params[ALBEDO]->IsDefined() &&
+			params[BASETEXTURE]->IsDefined() && 
+			!( params[NODIFFUSEBUMPLIGHTING]->IsDefined() && params[NODIFFUSEBUMPLIGHTING]->GetIntValue() ) )
+		{
+			params[BASETEXTURE]->SetStringValue( params[ALBEDO]->GetStringValue() );
+		}
+
+		if( IsUsingGraphics() && params[ENVMAP]->IsDefined() && !CanUseEditorMaterials() )
 		{
 			if( stricmp( params[ENVMAP]->GetStringValue(), "env_cubemap" ) == 0 )
 			{
@@ -44,35 +78,65 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 		}
 		
 		if( !params[ENVMAPMASKSCALE]->IsDefined() )
+		{
 			params[ENVMAPMASKSCALE]->SetFloatValue( 1.0f );
+		}
 
 		if( !params[ENVMAPTINT]->IsDefined() )
+		{
 			params[ENVMAPTINT]->SetVecValue( 1.0f, 1.0f, 1.0f );
+		}
 
 		if( !params[SELFILLUMTINT]->IsDefined() )
+		{
 			params[SELFILLUMTINT]->SetVecValue( 1.0f, 1.0f, 1.0f );
+		}
 
 		if( !params[DETAILSCALE]->IsDefined() )
+		{
 			params[DETAILSCALE]->SetFloatValue( 4.0f );
+		}
+
+		if( !params[DETAILBLENDFACTOR]->IsDefined() )
+		{
+			params[DETAILBLENDFACTOR]->SetFloatValue( 1.0f );
+		}
 
 		if( !params[FRESNELREFLECTION]->IsDefined() )
+		{
 			params[FRESNELREFLECTION]->SetFloatValue( 1.0f );
+		}
 
 		if( !params[ENVMAPMASKFRAME]->IsDefined() )
+		{
 			params[ENVMAPMASKFRAME]->SetIntValue( 0 );
+		}
 		
 		if( !params[ENVMAPFRAME]->IsDefined() )
+		{
 			params[ENVMAPFRAME]->SetIntValue( 0 );
+		}
 
 		if( !params[BUMPFRAME]->IsDefined() )
+		{
 			params[BUMPFRAME]->SetIntValue( 0 );
+		}
 
 		if( !params[ENVMAPCONTRAST]->IsDefined() )
+		{
 			params[ENVMAPCONTRAST]->SetFloatValue( 0.0f );
+		}
 		
 		if( !params[ENVMAPSATURATION]->IsDefined() )
+		{
 			params[ENVMAPSATURATION]->SetFloatValue( 1.0f );
-		
+		}
+
+		if( !params[ALPHATESTREFERENCE]->IsDefined() )
+		{
+			params[ALPHATESTREFERENCE]->SetFloatValue( 0.0f );
+		}
+
 		// No texture means no self-illum or env mask in base alpha
 		if ( !params[BASETEXTURE]->IsDefined() )
 		{
@@ -87,22 +151,70 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 		}
 
 		SET_FLAGS2( MATERIAL_VAR2_LIGHTING_LIGHTMAP );
-		if( g_pConfig->bBumpmap && params[BUMPMAP]->IsDefined() )
+		if( ShouldUseBumpmapping( params ) && (params[NODIFFUSEBUMPLIGHTING]->GetIntValue() == 0) )
 		{
 			SET_FLAGS2( MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP );
+		}
+
+		// Get rid of the envmap if it's optional for this dx level.
+		if( params[ENVMAPOPTIONAL]->IsDefined() && (params[ENVMAPOPTIONAL]->GetIntValue() > g_pHardwareConfig->GetDXSupportLevel()) )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
+
+		// If mat_specular 0, then get rid of envmap
+		if( !g_pConfig->UseSpecular() && params[ENVMAP]->IsDefined() && params[BASETEXTURE]->IsDefined() )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
+
+		if( params[SEAMLESS_SCALE]->IsDefined() && params[SEAMLESS_SCALE]->GetFloatValue() != 0.0f )
+		{
+			if( params[BUMPMAP]->IsDefined() )
+			{
+				Warning( "Can't use $bumpmap with $seamless_scale for lightmappedgeneric_dx8.  Implicitly disabling $bumpmap: %s\n", pMaterialName );
+				params[BUMPMAP]->SetUndefined();
+			}
+			if( params[ENVMAP]->IsDefined() )
+			{
+				Warning( "Can't use $envmap with $seamless_scale for lightmappedgeneric_dx8. Implicitly disabling $envmap: %s\n", pMaterialName );
+				params[ENVMAP]->SetUndefined();
+			}
+		}
+
+		if ( !params[SEAMLESS_SCALE]->IsDefined() )
+		{
+			// zero means don't do seamless mapping.
+			params[SEAMLESS_SCALE]->SetFloatValue( 0.0f );
+		}
+
+		// Get rid of envmap if we aren't using bumpmapping 
+		// *and* we have normalmapalphaenvmapmask *and* we don't have envmapmask elsewhere
+		if ( params[ENVMAP]->IsDefined() && params[BUMPMAP]->IsDefined() && IS_FLAG_SET( MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK ) && !ShouldUseBumpmapping( params ) )
+		{
+			if ( !IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK) && !params[ENVMAPMASK]->IsDefined() )
+			{
+				params[ENVMAP]->SetUndefined();
+			}
 		}
 	}
 
 	SHADER_FALLBACK
 	{
-		if (g_pHardwareConfig->GetDXSupportLevel() < 80)
+		if ( IsPC() && g_pHardwareConfig->GetDXSupportLevel() < 80)
 			return "LightmappedGeneric_DX6";
+
+		if ( IsPC() && g_pHardwareConfig->PreferReducedFillrate() )
+			return "LightmappedGeneric_NoBump_DX8";
+
 		return 0;
 	}
 
 	SHADER_INIT
 	{
-		if( g_pConfig->bBumpmap && params[BUMPMAP]->IsDefined() )
+		LoadTexture( FLASHLIGHTTEXTURE );
+		
+		if( ShouldUseBumpmapping( params ) )
 		{
 			LoadBumpMap( BUMPMAP );
 		}
@@ -143,50 +255,14 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 				LoadTexture( ENVMAPMASK );
 		}
 
-		if( g_pConfig->bBumpmap && params[BUMPMAP]->IsDefined() )
+		if( ShouldUseBumpmapping( params ) )
 		{
 			SET_FLAGS2( MATERIAL_VAR2_NEEDS_TANGENT_SPACES );
 		}
 	}
 
-	inline const char *GetVertexShaderName( IMaterialVar **params )
-	{
-		int materialVarFlags = params[FLAGS]->GetIntValue();
-
-		static char const* s_pVertexShaders[] = 
-		{
-			"LightmappedGeneric",
-			"LightmappedGeneric_VertexColor",
-			"LightmappedGeneric",
-			"LightmappedGeneric_VertexColor",
-			"LightmappedGeneric",
-			"LightmappedGeneric_VertexColor",
-			"LightmappedGeneric",
-			"LightmappedGeneric_VertexColor",
-
-			"LightmappedGeneric_EnvMap",
-			"LightmappedGeneric_EnvMapVertexColor",
-			"LightmappedGeneric_EnvMapSphere",
-			"LightmappedGeneric_EnvMapSphereVertexColor",
-			"LightmappedGeneric_EnvMapCameraSpace",
-			"LightmappedGeneric_EnvMapCameraSpaceVertexColor",
-			"LightmappedGeneric_EnvMapSphere",
-			"LightmappedGeneric_EnvMapSphereVertexColor",
-		};
-
-		int vshIndex = 0;
-		if (materialVarFlags & MATERIAL_VAR_VERTEXCOLOR)
-			vshIndex |= 0x1;
-		if (materialVarFlags & MATERIAL_VAR_ENVMAPSPHERE)
-			vshIndex |= 0x2;
-		if (materialVarFlags & MATERIAL_VAR_ENVMAPCAMERASPACE)
-			vshIndex |= 0x4;
-		if (params[ENVMAP]->IsDefined())
-			vshIndex |= 0x8;
-
-		return s_pVertexShaders[vshIndex];
-	}
-	inline const char *GetPixelShaderName( IMaterialVar** params )
+#ifndef USE_HLSL_PIXEL_SHADERS
+	inline const char *GetPixelShaderName( IMaterialVar** params, bool bBumpedEnvMap )
 	{
 		static char const* s_pPixelShaders[] = 
 		{
@@ -205,11 +281,11 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 			"LightmappedGeneric_SelfIlluminatedMaskedEnvMapV2",
 		};
 
-		if (!params[BASETEXTURE]->IsDefined())
+		if (!params[BASETEXTURE]->IsTexture())
 		{
-			if (params[ENVMAP]->IsDefined())
+			if (params[ENVMAP]->IsTexture() && !bBumpedEnvMap )
 			{
-				if (!params[ENVMAPMASK]->IsDefined())
+				if (!params[ENVMAPMASK]->IsDefined() )
 				{
 					return "LightmappedGeneric_EnvmapNoTexture";
 				}
@@ -225,14 +301,14 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 		}
  		else
 		{
-			if (params[ENVMAP]->IsDefined())
+			if (params[ENVMAP]->IsTexture() && !bBumpedEnvMap )
 			{
 				int pshIndex = 0;
 				if (IS_FLAG_SET(MATERIAL_VAR_SELFILLUM))
 					pshIndex |= 0x1;
 				if (IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK))
 					pshIndex |= 0x2;
-				if (params[ENVMAPMASK]->IsDefined())
+				if (params[ENVMAPMASK]->IsTexture())
 					pshIndex |= 0x4;
 				return s_pPixelShaders[pshIndex];
 			}
@@ -245,87 +321,133 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 			}
 		}
 	}
+#endif
 
-	void DrawUnbumpedUsingVertexShader( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	void DrawUnbumpedUsingVertexShader( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, bool bBumpedEnvMap )
 	{
-		SHADOW_STATE
+		bool hasEnvmap = params[ENVMAP]->IsTexture() && !bBumpedEnvMap;
+		bool hasBaseTexture = params[BASETEXTURE]->IsTexture();
+		bool hasVertexColor = IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR );
+		bool hasEnvmapCameraSpace = IS_FLAG_SET( MATERIAL_VAR_ENVMAPCAMERASPACE );
+		bool hasEnvmapSphere = IS_FLAG_SET( MATERIAL_VAR_ENVMAPSPHERE );
+
+		if ( hasEnvmap || hasBaseTexture || hasVertexColor || !bBumpedEnvMap )
 		{
-			// Alpha test
-			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
-
-			// Base texture on stage 0
-			if (params[BASETEXTURE]->IsDefined())
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-
-			// Lightmap on stage 1
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
-
-			int fmt = VERTEX_POSITION;
-
-			if (params[ENVMAP]->IsDefined())
+			SHADOW_STATE
 			{
-				fmt |= VERTEX_NORMAL;
-
-				// envmap on stage 2
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );
-
-				// envmapmask on stage 3
-				if (params[ENVMAPMASK]->IsDefined() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK ) )
-					pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE3, true );
-			}
-
-			if (params[BASETEXTURE]->IsDefined())
-				SetDefaultBlendingShadowState( BASETEXTURE, true );
-			else
-				SetDefaultBlendingShadowState( ENVMAPMASK, false );
-
-			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
-				fmt |= VERTEX_COLOR;
-
-			pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0, 0 );
-			const char *vshName = GetVertexShaderName( params );
-			pShaderShadow->SetVertexShader( vshName );
-			const char *pshName = GetPixelShaderName( params );
-			pShaderShadow->SetPixelShader( pshName );
-		}
-		DYNAMIC_STATE
-		{
-			if (params[BASETEXTURE]->IsDefined())
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				SetVertexShaderTextureTransform( 90, BASETEXTURETRANSFORM );
-			}
-
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE1 );
-
-			if (params[ENVMAP]->IsDefined())
-			{
-				BindTexture( SHADER_TEXTURE_STAGE2, ENVMAP, ENVMAPFRAME );
-
-				if (params[ENVMAPMASK]->IsDefined() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK) )
+				// Alpha test
+				pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
+				if ( params[ALPHATESTREFERENCE]->GetFloatValue() > 0.0f )
 				{
-					if (params[ENVMAPMASK]->IsDefined() )
-						BindTexture( SHADER_TEXTURE_STAGE3, ENVMAPMASK, ENVMAPMASKFRAME );
-					else
-						BindTexture( SHADER_TEXTURE_STAGE3, BASETEXTURE, FRAME );
-		
-					SetVertexShaderTextureScaledTransform( 92, BASETEXTURETRANSFORM, ENVMAPMASKSCALE );
+					pShaderShadow->AlphaFunc( SHADER_ALPHAFUNC_GEQUAL, params[ALPHATESTREFERENCE]->GetFloatValue() );
 				}
 
-				if (IS_FLAG_SET(MATERIAL_VAR_ENVMAPSPHERE) ||
-					IS_FLAG_SET(MATERIAL_VAR_ENVMAPCAMERASPACE))
+				// Base texture on stage 0
+				if (params[BASETEXTURE]->IsTexture())
 				{
-					LoadViewMatrixIntoVertexShaderConstant( 17 );
+					pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				}
-				SetEnvMapTintPixelShaderDynamicState( 2, ENVMAPTINT, -1 );
-			}
 
-			SetModulationVertexShaderDynamicState();
-			EnablePixelShaderOverbright( 0, !IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT), true );
-			SetPixelShaderConstant( 1, SELFILLUMTINT );
-			DefaultFog();
+				// Lightmap on stage 1
+				pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
+
+				int fmt = VERTEX_POSITION;
+
+				if ( hasEnvmap )
+				{
+					fmt |= VERTEX_NORMAL;
+
+					// envmap on stage 2
+					pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
+
+					// envmapmask on stage 3
+					if (params[ENVMAPMASK]->IsTexture() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK ) )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );
+					}
+				}
+
+				if (params[BASETEXTURE]->IsTexture() || bBumpedEnvMap)
+				{
+					SetDefaultBlendingShadowState( BASETEXTURE, true );
+				}
+				else
+				{
+					SetDefaultBlendingShadowState( ENVMAPMASK, false );
+				}
+
+				if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
+				{
+					fmt |= VERTEX_COLOR;
+				}
+
+				pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0 );
+				lightmappedgeneric_vs11_Static_Index vshIndex;
+				vshIndex.SetDETAIL( false );
+				vshIndex.SetENVMAP( hasEnvmap );
+				vshIndex.SetENVMAPCAMERASPACE( hasEnvmap && hasEnvmapCameraSpace );
+				vshIndex.SetENVMAPSPHERE( hasEnvmap && hasEnvmapSphere );
+				vshIndex.SetVERTEXCOLOR( hasVertexColor );
+				pShaderShadow->SetVertexShader( "LightmappedGeneric_vs11", vshIndex.GetIndex() );
+
+				const char *pshName = GetPixelShaderName( params, bBumpedEnvMap );
+				pShaderShadow->SetPixelShader( pshName );
+				DefaultFog();
+			}
+			DYNAMIC_STATE
+			{
+				if (hasBaseTexture)
+				{
+					BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+					SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, BASETEXTURETRANSFORM );
+				}
+
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_LIGHTMAP );
+
+				if ( hasEnvmap )
+				{
+					BindTexture( SHADER_SAMPLER2, ENVMAP, ENVMAPFRAME );
+
+					if (params[ENVMAPMASK]->IsTexture() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK) )
+					{
+						if (params[ENVMAPMASK]->IsTexture() )
+							BindTexture( SHADER_SAMPLER3, ENVMAPMASK, ENVMAPMASKFRAME );
+						else
+							BindTexture( SHADER_SAMPLER3, BASETEXTURE, FRAME );
+			
+						SetVertexShaderTextureScaledTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_2, BASETEXTURETRANSFORM, ENVMAPMASKSCALE );
+					}
+
+					if (IS_FLAG_SET(MATERIAL_VAR_ENVMAPSPHERE) ||
+						IS_FLAG_SET(MATERIAL_VAR_ENVMAPCAMERASPACE))
+					{
+						LoadViewMatrixIntoVertexShaderConstant( VERTEX_SHADER_VIEWMODEL );
+					}
+					SetEnvMapTintPixelShaderDynamicState( 2, ENVMAPTINT, -1 );
+				}
+
+				if ( !hasEnvmap || hasBaseTexture || hasVertexColor )
+				{
+					SetModulationVertexShaderDynamicState();
+				}
+				EnablePixelShaderOverbright( 0, true, true );
+				SetPixelShaderConstant( 1, SELFILLUMTINT );
+
+				lightmappedgeneric_vs11_Dynamic_Index vshIndex;
+				vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+				pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
+			}
+			Draw();
 		}
-		Draw();
+
+		if ( bBumpedEnvMap )
+		{
+			DrawWorldBumpedSpecularLighting(
+				BUMPMAP, ENVMAP, BUMPFRAME, ENVMAPFRAME,
+				ENVMAPTINT, ALPHA, ENVMAPCONTRAST, ENVMAPSATURATION,
+				BUMPTRANSFORM, FRESNELREFLECTION,
+				hasEnvmap || hasBaseTexture || hasVertexColor );
+		}
 	}
 
 	void DrawDetailNoEnvmap( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, bool doSelfIllum )
@@ -336,14 +458,14 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
 
 			// Base texture on stage 0
-			if (params[BASETEXTURE]->IsDefined())
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+			if (params[BASETEXTURE]->IsTexture())
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 
 			// Lightmap on stage 1
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
 
 			// Detail on stage 2
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
 
 			int fmt = VERTEX_POSITION;
 
@@ -352,18 +474,17 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
 				fmt |= VERTEX_COLOR;
 
-			pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0, 0 );
+			pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0 );
 
-			if (!IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
-			{
-				pShaderShadow->SetVertexShader("LightmappedGeneric_Detail");
-			}
-			else
-			{
-				pShaderShadow->SetVertexShader("LightmappedGeneric_DetailVertexColor");
-			}
+			lightmappedgeneric_vs11_Static_Index vshIndex;
+			vshIndex.SetDETAIL( true );
+			vshIndex.SetENVMAP( false );
+			vshIndex.SetENVMAPCAMERASPACE( false );
+			vshIndex.SetENVMAPSPHERE( false );
+			vshIndex.SetVERTEXCOLOR( IS_FLAG_SET( MATERIAL_VAR_VERTEXCOLOR ) );
+			pShaderShadow->SetVertexShader( "LightmappedGeneric_vs11", vshIndex.GetIndex() );
 
-			if (!params[BASETEXTURE]->IsDefined())
+			if (!params[BASETEXTURE]->IsTexture())
 			{
 				pShaderShadow->SetPixelShader("LightmappedGeneric_DetailNoTexture");
 			}
@@ -378,121 +499,37 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 					pShaderShadow->SetPixelShader("LightmappedGeneric_DetailSelfIlluminated");
 				}
 			}
-
+			DefaultFog();
 		}
 		DYNAMIC_STATE
 		{
-			if (params[BASETEXTURE]->IsDefined())
+			if (params[BASETEXTURE]->IsTexture())
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				SetVertexShaderTextureTransform( 90, BASETEXTURETRANSFORM );
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+				SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, BASETEXTURETRANSFORM );
 			}
 
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE1 );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_LIGHTMAP );
 
-			BindTexture( SHADER_TEXTURE_STAGE2, DETAIL, FRAME );
-			SetVertexShaderTextureScaledTransform( 94, BASETEXTURETRANSFORM, DETAILSCALE );
+			BindTexture( SHADER_SAMPLER2, DETAIL, FRAME );
+			SetVertexShaderTextureScaledTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4, BASETEXTURETRANSFORM, DETAILSCALE );
 
 			SetModulationVertexShaderDynamicState();
-			EnablePixelShaderOverbright( 0, !IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT), true );
+			EnablePixelShaderOverbright( 0, true, true );
 
 			if (doSelfIllum)
 			{
 				SetPixelShaderConstant( 1, SELFILLUMTINT );
 			}
+			float c2[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+			c2[0] = c2[1] = c2[2] = c2[3] = params[DETAILBLENDFACTOR]->GetFloatValue();
+			pShaderAPI->SetPixelShaderConstant( 2, c2, 1 );
 
-			DefaultFog();
+			lightmappedgeneric_vs11_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 		}
 		Draw();
-	}
-
-	void DrawDetailWithEnvmap( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		VertexShaderUnlitGenericPass( 
-			false, BASETEXTURE, FRAME, BASETEXTURETRANSFORM,
-			DETAIL, DETAILSCALE, true, ENVMAP, ENVMAPFRAME, ENVMAPMASK,
-			ENVMAPMASKFRAME, ENVMAPMASKSCALE, ENVMAPTINT );
-	}
-
-	void MultiplyByLighting( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		SHADOW_STATE
-		{
-			// Multiply the frame buffer by the lightmap
-			pShaderShadow->EnableDepthWrites( false );
-			pShaderShadow->EnableBlending( true );
-			pShaderShadow->BlendFunc( SHADER_BLEND_DST_COLOR, SHADER_BLEND_ZERO );
-
-			// Alpha test
-			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
-
-			// Base texture on stage 0
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, params[BASETEXTURE]->IsDefined() );
-
-			// Lightmap on stage 1
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
-
-			// Disable other things
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, false );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE3, false );
-
-			int fmt = VERTEX_POSITION;
-			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA))
-				fmt |= VERTEX_COLOR;
-
-			pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0, 0 );
-
-			if (!IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA))
-			{
-				pShaderShadow->SetVertexShader( "LightmappedGeneric" );
-			}
-			else
-			{
-				pShaderShadow->SetVertexShader( "LightmappedGeneric_VertexColor" );
-			}
-
-			if (!IS_FLAG_SET(MATERIAL_VAR_SELFILLUM))
-			{
-				if (TextureIsTranslucent(BASETEXTURE, true))
-				{
-					pShaderShadow->SetPixelShader( "LightmappedGeneric_MultiplyByLighting" );
-				}
-				else
-				{
-					pShaderShadow->SetPixelShader( "LightmappedGeneric_MultiplyByLightingNoTexture" );
-				}
-			}
-			else
-			{
-				pShaderShadow->SetPixelShader( "LightmappedGeneric_MultiplyByLightingSelfIllum" );
-			}
-		}
-		DYNAMIC_STATE
-		{
-			if (params[BASETEXTURE]->IsDefined())
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				SetVertexShaderTextureTransform( 90, BASETEXTURETRANSFORM );
-			}
-
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE1 );
-
-			SetModulationVertexShaderDynamicState();
-			SetPixelShaderConstant( 1, SELFILLUMTINT );
-			EnablePixelShaderOverbright( 0, !IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT), true );
-
-			FogToWhite();
-		}
-		Draw();
-	}
-
-	void DrawDetailMode0( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		// Mode 0:
-		// Pass 1 : B * D + E * M
-		// Pass 2 : Multiply by lighting (L) (with Self Illum)
-		DrawDetailWithEnvmap( params, pShaderAPI, pShaderShadow );
-		MultiplyByLighting( params, pShaderAPI, pShaderShadow );
 	}
 
 	inline const char *GetAdditiveEnvmapPixelShaderName( bool usingMask, 
@@ -500,159 +537,266 @@ BEGIN_VS_SHADER( LightmappedGeneric_DX8,
 	{
 		static char const* s_pPixelShaders[] = 
 		{
-			"UnlitGeneric_EnvMapNoTexture",
-			"UnlitGeneric_EnvMapMaskNoTexture",
+			"LightmappedGeneric_AddEnvmapNoTexture",
+			"LightmappedGeneric_AddEnvmapMaskNoTexture",
 		};
 
-		if (!usingMask && usingBaseTexture && usingBaseAlphaEnvmapMask )
-		{
-			return "UnlitGeneric_BaseAlphaMaskedEnvMap";
-		}
-		else
-		{
-			int pshIndex = 0;
-			if (usingMask)
-				pshIndex |= 0x1;
-			return s_pPixelShaders[pshIndex];
-		}
+		if ( !usingMask && usingBaseTexture && usingBaseAlphaEnvmapMask )
+			return "LightmappedGeneric_AddBaseAlphaMaskedEnvMap";
+
+		int pshIndex = 0;
+		if (usingMask)
+			pshIndex |= 0x1;
+		return s_pPixelShaders[pshIndex];
 	}
 	
 	void DrawAdditiveEnvmap( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
 	{
-		bool usingBaseTexture = params[BASETEXTURE]->IsDefined();
-		bool usingMask = params[ENVMAPMASK]->IsDefined();
+		bool usingBaseTexture = params[BASETEXTURE]->IsTexture();
+		bool usingMask = params[ENVMAPMASK]->IsTexture();
 		bool usingBaseAlphaEnvmapMask = IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK);
 		SHADOW_STATE
 		{
 			// Alpha test
-			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
+			pShaderShadow->EnableAlphaTest( false );
 
-			// Base texture on stage 0
-			if (params[BASETEXTURE]->IsDefined())
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, false );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, false );
 
-			// envmap on stage 1
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+			// envmap on stage 2
+			pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
 
-			// envmapmask on stage 2
-			if (params[ENVMAPMASK]->IsDefined() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK ) )
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );
+			// envmapmask on stage 3
+			if (params[ENVMAPMASK]->IsTexture() || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK ) )
+			{
+				pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );
+			}
 
-			if (params[BASETEXTURE]->IsDefined())
+			if (params[BASETEXTURE]->IsTexture())
+			{
 				SetAdditiveBlendingShadowState( BASETEXTURE, true );
+			}
 			else
+			{
 				SetAdditiveBlendingShadowState( ENVMAPMASK, false );
+			}
 
 			int fmt = VERTEX_POSITION | VERTEX_NORMAL;
 
-			pShaderShadow->VertexShaderVertexFormat( fmt, 1, 0, 0, 0 );
+			pShaderShadow->VertexShaderVertexFormat( fmt, 1, 0, 0 );
 
-			// Re-use the unlit envmapped shaders; they're what we need...
-			static char const* s_pVertexShaders[] = 
-			{
-				"UnlitGeneric_EnvMap",
-				"UnlitGeneric_EnvMapVertexColor",
-				"UnlitGeneric_EnvMapSphere",
-				"UnlitGeneric_EnvMapSphereVertexColor",
-
-				"UnlitGeneric_EnvMapCameraSpace",
-				"UnlitGeneric_EnvMapCameraSpaceVertexColor",
-				"UnlitGeneric_EnvMapSphere",
-				"UnlitGeneric_EnvMapSphereVertexColor",
-			};
-
-			int vshIndex = 0;
-			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
-				vshIndex |= 0x1;
-			if (IS_FLAG_SET(MATERIAL_VAR_ENVMAPSPHERE))
-				vshIndex |= 0x2;
-			if (IS_FLAG_SET(MATERIAL_VAR_ENVMAPCAMERASPACE))
-				vshIndex |= 0x4;
-			pShaderShadow->SetVertexShader( s_pVertexShaders[vshIndex] );
+			// Compute the vertex shader index.
+			lightmappedgeneric_vs11_Static_Index vshIndex;
+			vshIndex.SetDETAIL( false );
+			vshIndex.SetENVMAP( true );
+			vshIndex.SetENVMAPCAMERASPACE( IS_FLAG_SET(MATERIAL_VAR_ENVMAPCAMERASPACE) );
+			vshIndex.SetENVMAPSPHERE( IS_FLAG_SET(MATERIAL_VAR_ENVMAPSPHERE) );
+			vshIndex.SetVERTEXCOLOR( false );
+			s_pShaderShadow->SetVertexShader( "LightmappedGeneric_vs11", vshIndex.GetIndex() );
 
 			const char *pshName = GetAdditiveEnvmapPixelShaderName( usingMask, 
 				usingBaseTexture, usingBaseAlphaEnvmapMask );
 			pShaderShadow->SetPixelShader( pshName );
+			FogToBlack();
 		}
 		DYNAMIC_STATE
 		{
-			if (usingBaseTexture)
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				SetVertexShaderTextureTransform( 90, BASETEXTURETRANSFORM );
-			}
-
-			BindTexture( SHADER_TEXTURE_STAGE1, ENVMAP, ENVMAPFRAME );
+			BindTexture( SHADER_SAMPLER2, ENVMAP, ENVMAPFRAME );
 
 			if (usingMask || IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK))
 			{
 				if (usingMask)
-					BindTexture( SHADER_TEXTURE_STAGE2, ENVMAPMASK, ENVMAPMASKFRAME );
+					BindTexture( SHADER_SAMPLER3, ENVMAPMASK, ENVMAPMASKFRAME );
 				else
-					BindTexture( SHADER_TEXTURE_STAGE2, BASETEXTURE, FRAME );
+					BindTexture( SHADER_SAMPLER3, BASETEXTURE, FRAME );
 
-				SetVertexShaderTextureScaledTransform( 92, BASETEXTURETRANSFORM, ENVMAPMASKSCALE );
+				SetVertexShaderTextureScaledTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_2, BASETEXTURETRANSFORM, ENVMAPMASKSCALE );
 			}
 
 			SetPixelShaderConstant( 2, ENVMAPTINT );
 
 			if (IS_FLAG_SET(MATERIAL_VAR_ENVMAPSPHERE) || IS_FLAG_SET(MATERIAL_VAR_ENVMAPCAMERASPACE))
 			{
-				LoadViewMatrixIntoVertexShaderConstant( 17 );
+				LoadViewMatrixIntoVertexShaderConstant( VERTEX_SHADER_VIEWMODEL );
 			}
 
 			SetModulationVertexShaderDynamicState();
-			FogToBlack();
+
+			// Compute the vertex shader index.
+			lightmappedgeneric_vs11_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( s_pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			s_pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 		}
 		Draw();
 	}
 
-	void DrawDetailMode1( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	void DrawDetailMode1( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, bool bBumpedEnvMap )
 	{
 		// Mode 1 :
 		// Pass 1 : B * L * D + Self Illum
 		// Pass 2 : Add E * M
 
 		// Draw the detail w/ no envmap
-		DrawDetailNoEnvmap( params, pShaderAPI, pShaderShadow, true );
-		DrawAdditiveEnvmap( params, pShaderAPI, pShaderShadow );
-	}
+	 	DrawDetailNoEnvmap( params, pShaderAPI, pShaderShadow, true );
 
-	void DrawDetailUsingVertexShader( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		// We don't have enough textures; gotta do this in two passes if there's envmapping
-		if (!params[ENVMAP]->IsDefined())
+		if ( !bBumpedEnvMap )
 		{
-			DrawDetailNoEnvmap( params, pShaderAPI, pShaderShadow, true );
+			DrawAdditiveEnvmap( params, pShaderAPI, pShaderShadow );
 		}
 		else
 		{
-			if (!params[BASETEXTURE]->IsDefined())
+			DrawWorldBumpedSpecularLighting(
+				BUMPMAP, ENVMAP, BUMPFRAME, ENVMAPFRAME,
+				ENVMAPTINT, ALPHA, ENVMAPCONTRAST, ENVMAPSATURATION,
+				BUMPTRANSFORM, FRESNELREFLECTION,
+				true );
+		}
+	}
+
+	void DrawDetailUsingVertexShader( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow, bool bBumpedEnvMap )
+	{
+		// We don't have enough textures; gotta do this in two passes if there's envmapping
+		if (!params[ENVMAP]->IsTexture())
+		{
+			DrawDetailNoEnvmap( params, pShaderAPI, pShaderShadow, IS_FLAG_SET( MATERIAL_VAR_SELFILLUM ) );
+		}
+		else
+		{
+			if (!params[BASETEXTURE]->IsTexture())
 			{
 				// If there's an envmap but no base texture, ignore detail
-				DrawUnbumpedUsingVertexShader( params, pShaderAPI, pShaderShadow );
+				DrawUnbumpedUsingVertexShader( params, pShaderAPI, pShaderShadow, bBumpedEnvMap );
 			}
 			else
 			{
-				DrawDetailMode1( params, pShaderAPI, pShaderShadow );
+				DrawDetailMode1( params, pShaderAPI, pShaderShadow, bBumpedEnvMap );
 			}
 		}
+	}
+
+	void DrawUnbumpedSeamlessUsingVertexShader( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	{
+		// This is the seamless_scale version, which doesn't use $detail or $bumpmap
+		SHADOW_STATE
+		{
+			// three copies of the base texture for seamless blending
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
+
+			// lightmap
+			pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );
+
+			int fmt = VERTEX_POSITION;
+			pShaderShadow->VertexShaderVertexFormat( fmt, 2, 0, 0 );
+
+			worldvertextransition_seamless_Static_Index vshIndex;
+			pShaderShadow->SetVertexShader( "WorldVertexTransition_Seamless", vshIndex.GetIndex() );
+
+			int pshIndex = 0;
+			pShaderShadow->SetPixelShader( "WorldVertexTransition_Seamless", pshIndex );
+
+			FogToFogColor();
+		}
+		DYNAMIC_STATE
+		{
+			bool bLightingOnly = mat_fullbright.GetInt() == 2 && !IS_FLAG_SET( MATERIAL_VAR_NO_DEBUG_OVERRIDE );
+			// Texture 0..2
+			if( bLightingOnly )
+			{
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER0, TEXTURE_GREY );
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_GREY );
+				pShaderAPI->BindStandardTexture( SHADER_SAMPLER2, TEXTURE_GREY );
+			}
+			else
+			{
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+				BindTexture( SHADER_SAMPLER1, BASETEXTURE, FRAME );
+				BindTexture( SHADER_SAMPLER2, BASETEXTURE, FRAME );
+			}
+
+			// Texture 3 = lightmap
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER3, TEXTURE_LIGHTMAP );
+
+			EnablePixelShaderOverbright( 0, true, true );
+
+			float fSeamlessScale = params[SEAMLESS_SCALE]->GetFloatValue();
+			float map_scale[4]= { fSeamlessScale, fSeamlessScale, fSeamlessScale, fSeamlessScale };
+			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, map_scale );
+
+			worldvertextransition_seamless_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
+		}
+		Draw();
 	}
 
 	SHADER_DRAW
 	{
-		if( g_pConfig->bBumpmap && params[BUMPMAP]->IsDefined() )
+		bool hasFlashlight = UsingFlashlight( params );
+		bool bBump = ShouldUseBumpmapping( params ) && params[BUMPMAP]->IsTexture() && 
+			(params[NODIFFUSEBUMPLIGHTING]->GetIntValue() == 0);
+		bool bSSBump = bBump && ( params[SSBUMP]->GetIntValue() != 0 );
+
+		if( hasFlashlight )
 		{
-			DrawWorldBumpedUsingVertexShader( BASETEXTURE, BASETEXTURETRANSFORM,
+			DrawFlashlight_dx80( params, pShaderAPI, pShaderShadow, bBump, BUMPMAP, BUMPFRAME, BUMPTRANSFORM, 
+				FLASHLIGHTTEXTURE, FLASHLIGHTTEXTUREFRAME, true, false, 0, -1, -1 );
+		}
+		else if( bBump )
+		{
+			DrawWorldBumpedUsingVertexShader( 
+				BASETEXTURE, BASETEXTURETRANSFORM,
 				BUMPMAP, BUMPFRAME, BUMPTRANSFORM, ENVMAPMASK, ENVMAPMASKFRAME, ENVMAP, 
-				ENVMAPFRAME, ENVMAPTINT, ALPHA,	ENVMAPCONTRAST, ENVMAPSATURATION, FRAME, FRESNELREFLECTION );
+				ENVMAPFRAME, ENVMAPTINT, COLOR, ALPHA, ENVMAPCONTRAST, ENVMAPSATURATION, FRAME, FRESNELREFLECTION,
+				false, -1, -1, -1, bSSBump );
 		}
 		else
 		{
-			if (params[DETAIL]->IsDefined())
-				DrawDetailUsingVertexShader( params, pShaderAPI, pShaderShadow );
+			bool bBumpedEnvMap = ShouldUseBumpmapping( params ) && params[BUMPMAP]->IsTexture() && params[ENVMAP]->IsTexture();
+			if (!params[DETAIL]->IsTexture())
+			{
+				if( params[SEAMLESS_SCALE]->GetFloatValue() != 0.0f )
+				{
+					DrawUnbumpedSeamlessUsingVertexShader( params, pShaderAPI, pShaderShadow );
+				}
+				else
+				{
+					DrawUnbumpedUsingVertexShader( params, pShaderAPI, pShaderShadow, bBumpedEnvMap );
+				}
+			}
 			else
-				DrawUnbumpedUsingVertexShader( params, pShaderAPI, pShaderShadow );
+			{
+				DrawDetailUsingVertexShader( params, pShaderAPI, pShaderShadow, bBumpedEnvMap );
+			}
 		}
 	}
 END_SHADER
+
+
+//-----------------------------------------------------------------------------
+// Version that doesn't do bumpmapping
+//-----------------------------------------------------------------------------
+BEGIN_INHERITED_SHADER( LightmappedGeneric_NoBump_DX8, LightmappedGeneric_DX8,
+			  "Help for LightmappedGeneric_NoBump_DX8" )
+
+	SHADER_FALLBACK
+	{
+		if (g_pHardwareConfig->GetDXSupportLevel() < 80)
+			return "LightmappedGeneric_DX6";
+
+		return 0;
+	}
+
+	virtual bool ShouldUseBumpmapping( IMaterialVar **params ) 
+	{
+		if ( !g_pConfig->UseBumpmapping() )
+			return false;
+
+		if ( !params[BUMPMAP]->IsDefined() )
+			return false;
+
+		return ( params[FORCEBUMP]->GetIntValue() != 0 );
+	}
+
+END_INHERITED_SHADER

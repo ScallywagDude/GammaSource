@@ -1,8 +1,16 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "CvarNegateCheckButton.h"
 #include "EngineInterface.h"
 #include <vgui/IVGui.h>
 #include "IGameUIFuncs.h"
-#include <KeyValues.h>
+#include "tier1/KeyValues.h"
+#include "tier1/convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -10,7 +18,7 @@
 using namespace vgui;
 
 CCvarNegateCheckButton::CCvarNegateCheckButton( Panel *parent, const char *panelName, const char *text, 
-	char const *cvarname )
+	const char *cvarname )
  : CheckButton( parent, panelName, text )
 {
 	m_pszCvarName = cvarname ? strdup( cvarname ) : NULL;
@@ -36,11 +44,11 @@ void CCvarNegateCheckButton::Paint()
 
 	// Look up current value
 //	float value = engine->pfnGetCvarFloat( m_pszCvarName );
-	ConVar const *var = cvar->FindVar( m_pszCvarName );
-	if ( !var )
+	ConVarRef var( m_pszCvarName );
+	if ( !var.IsValid() )
 		return;
 
-	float value = var->GetFloat();
+	float value = var.GetFloat();
 		
 	if ( value < 0 )
 	{
@@ -65,11 +73,11 @@ void CCvarNegateCheckButton::Reset()
 {
 	// Look up current value
 //	float value = engine->pfnGetCvarFloat( m_pszCvarName );
-	ConVar const *var = cvar->FindVar( m_pszCvarName );
-	if ( !var )
+	ConVarRef var( m_pszCvarName );
+	if ( !var.IsValid() )
 		return;
 
-	float value = var->GetFloat();
+	float value = var.GetFloat();
 		
 	if ( value < 0 )
 	{
@@ -101,14 +109,8 @@ void CCvarNegateCheckButton::ApplyChanges()
 	if ( !m_pszCvarName || !m_pszCvarName[ 0 ] ) 
 		return;
 
-	// Look up current value
-//	float value = engine->pfnGetCvarFloat( m_pszCvarName );
-
-	ConVar *var = (ConVar *)cvar->FindVar( m_pszCvarName );
-	if ( !var )
-		return;
-
-	float value = var->GetFloat();
+	ConVarRef var( m_pszCvarName );
+	float value = var.GetFloat();
 	
 	value = (float)fabs( value );
 	if (value < 0.00001)
@@ -119,12 +121,9 @@ void CCvarNegateCheckButton::ApplyChanges()
 
 	m_bStartState = IsSelected();
 	value = -value;
-	//engine->Cvar_SetValue( m_pszCvarName, m_bStartState ? value :  -value );
-	var = (ConVar *)cvar->FindVar( m_pszCvarName );
-	if ( !var )
-		return;
-	float ans = (m_bStartState ? value :  -value );
-	var->SetValue( ans );
+
+	float ans = m_bStartState ? value : -value;
+	var.SetValue( ans );
 }
 
 
@@ -135,13 +134,3 @@ void CCvarNegateCheckButton::OnButtonChecked()
 		PostActionSignal(new KeyValues("ControlModified"));
 	}
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Message mapping 
-//-----------------------------------------------------------------------------
-vgui::MessageMapItem_t CCvarNegateCheckButton::m_MessageMap[] =
-{
-	MAP_MESSAGE( CCvarNegateCheckButton, "CheckButtonChecked", OnButtonChecked),
-};
-
-IMPLEMENT_PANELMAP( CCvarNegateCheckButton, BaseClass );

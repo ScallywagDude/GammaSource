@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -7,6 +7,10 @@
 #include <string.h>
 #include <assert.h>
 #include "msgbuffer.h"
+// memdbgon must be the last include file in a .cpp file!!!
+#include <tier0/memdbgon.h>
+
+#pragma warning(disable: 4244) // warning C4244: '=' : conversion from 'int' to 'unsigned char', possible loss of data
 
 //-----------------------------------------------------------------------------
 // Purpose: Allocate message buffer

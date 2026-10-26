@@ -1,12 +1,14 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Constants specified by the app
-;	 c20	 = Shadow color
-;	 c90-c92 = Shadow texture matrix
-;	 c93	 = Tex origin
-;	 c94	 = Tex Scale
-;	 c95	 = [Shadow falloff offset, 1/Shadow distance, Shadow scale, 0 ]
+;	 $SHADER_SPECIFIC_CONST_0-$SHADER_SPECIFIC_CONST_2 = Shadow texture matrix
+;	 $SHADER_SPECIFIC_CONST_3	 = Tex origin
+;	 $SHADER_SPECIFIC_CONST_4	 = Tex Scale
+;	 $SHADER_SPECIFIC_CONST_5	 = [Shadow falloff offset, 1/Shadow distance, Shadow scale, 0 ]
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
@@ -16,7 +18,7 @@ vs.1.1
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$worldPos );
 &AllocateRegister( \$worldNormal );
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
 
 ; Transform the position from world to view space
 &AllocateRegister( \$projPos );
@@ -37,24 +39,24 @@ mov oPos, $projPos
 ; Transform position into texture space (from 0 to 1)
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$texturePos );
-dp4 $texturePos.x, $worldPos, c90
-dp4 $texturePos.y, $worldPos, c91
-dp4 $texturePos.z, $worldPos, c92
+dp4 $texturePos.x, $worldPos, $SHADER_SPECIFIC_CONST_0
+dp4 $texturePos.y, $worldPos, $SHADER_SPECIFIC_CONST_1
+dp4 $texturePos.z, $worldPos, $SHADER_SPECIFIC_CONST_2
 &FreeRegister( \$worldPos );
 
 ;------------------------------------------------------------------------------
 ; Figure out the shadow fade amount
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$shadowFade );
-sub $shadowFade, $texturePos.z, c95.x
-mul $shadowFade, $shadowFade, c95.y
+sub $shadowFade, $texturePos.z, $SHADER_SPECIFIC_CONST_5.x
+mul $shadowFade, $shadowFade, $SHADER_SPECIFIC_CONST_5.y
   
 ;------------------------------------------------------------------------------
 ; Offset it into the texture
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$actualTextureCoord );
-mul $actualTextureCoord.xyz, c94, $texturePos
-add oT0.xyz, $actualTextureCoord, c93
+mul $actualTextureCoord.xyz, $SHADER_SPECIFIC_CONST_4, $texturePos
+add oT0.xyz, $actualTextureCoord, $SHADER_SPECIFIC_CONST_3
 ;mov oT0.xyz, $texturePos
 &FreeRegister( \$actualTextureCoord );
 
@@ -62,8 +64,8 @@ add oT0.xyz, $actualTextureCoord, c93
 ; We're doing clipping by using texkill
 ;------------------------------------------------------------------------------
 mov oT1.xyz, $texturePos		; also clips when shadow z < 0 !
-sub oT2.xyz, c0.y, $texturePos
-sub oT2.z, c0.y, $shadowFade.z	; clips when shadow z > shadow distance	
+sub oT2.xyz, $cOne, $texturePos
+sub oT2.z, $cOne, $shadowFade.z	; clips when shadow z > shadow distance	
 &FreeRegister( \$texturePos );
 
 ;------------------------------------------------------------------------------
@@ -71,13 +73,13 @@ sub oT2.z, c0.y, $shadowFade.z	; clips when shadow z > shadow distance
 ;------------------------------------------------------------------------------
 ; Transform z component of normal in texture space
 ; If it's negative, then don't draw the pixel
-dp3 oT3, $worldNormal, -c92
+dp3 oT3, $worldNormal, -$SHADER_SPECIFIC_CONST_2
 &FreeRegister( \$worldNormal );
 
 ;------------------------------------------------------------------------------
 ; Shadow color, falloff
 ;------------------------------------------------------------------------------
 mov oD0, $cModulationColor
-mul oD0.w, $shadowFade.x, c95.z
+mul oD0.w, $shadowFade.x, $SHADER_SPECIFIC_CONST_5.z
 &FreeRegister( \$shadowFade );
 

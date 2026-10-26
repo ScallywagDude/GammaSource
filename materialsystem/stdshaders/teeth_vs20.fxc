@@ -1,32 +1,39 @@
-//	STATIC: "LIGHT_COMBO"			"0..21"
-//	STATIC: "FOG_TYPE"				"0..1"
-//	STATIC: "NUM_BONES"				"0..3"
-//	STATIC: "BUMPMAP"				"0..1"
+//======= Copyright © 1996-2006, Valve Corporation, All rights reserved. ======
 
-//#define USE_CONDITIONALS
+//	STATIC: "INTRO"						"0..1"
+//  STATIC: "USE_STATIC_CONTROL_FLOW"	"0..1" [vs20]
 
-#include "common_vs_fxc.h"
+//	DYNAMIC: "COMPRESSED_VERTS"			"0..1"
+//	DYNAMIC: "DOWATERFOG"				"0..1"
+//	DYNAMIC: "SKINNING"					"0..1"
+//	DYNAMIC: "DYNAMIC_LIGHT"			"0..1"
+//	DYNAMIC: "STATIC_LIGHT"				"0..1"
+//  DYNAMIC: "MORPHING"					"0..1" [vs30]
+//  DYNAMIC: "NUM_LIGHTS"				"0..2" [vs20]
 
-static const int g_LightCombo		= LIGHT_COMBO;
-static const int g_FogType			= FOG_TYPE;
-#ifdef USE_CONDITIONALS
-const bool g_bZeroBones : register( b0 );
-const bool g_bOneBone   : register( b1 );
-const bool g_bTwoBones  : register( b2 );
-#else
-static const int g_NumBones			= NUM_BONES;
+// If using static control flow on Direct3D, we should use the NUM_LIGHTS=0 combo
+//  SKIP: $USE_STATIC_CONTROL_FLOW && ( $NUM_LIGHTS > 0 ) [vs20]
+
+#include "vortwarp_vs20_helper.h"
+
+static const int g_FogType			= DOWATERFOG;
+static const bool g_bSkinning		= SKINNING ? true : false;
+
+const float4 cTeethLighting			:  register( SHADER_SPECIFIC_CONST_0 );
+#if INTRO
+const float4 const4	:  register( SHADER_SPECIFIC_CONST_1 );
+#define g_Time const4.w
+#define modelOrigin const4.xyz
 #endif
-static const bool g_bBumpmap		 = BUMPMAP ? true : false;
 
-static const int g_StaticLightType = g_StaticLightTypeArray[g_LightCombo];
-static const int g_AmbientLightType = g_AmbientLightTypeArray[g_LightCombo];
-static const int g_LocalLightType0 = g_LocalLightType0Array[g_LightCombo];
-static const int g_LocalLightType1 = g_LocalLightType1Array[g_LightCombo];
+#ifdef SHADER_MODEL_VS_3_0
+// NOTE: cMorphTargetTextureDim.xy = target dimensions,
+//		 cMorphTargetTextureDim.z = 4tuples/morph
+const float3 cMorphTargetTextureDim			: register( SHADER_SPECIFIC_CONST_6 );
+const float4 cMorphSubrect					: register( SHADER_SPECIFIC_CONST_7 );
 
-const float4 cTeethLighting						:  register( c20 );
-const float4 cBaseTexCoordTransform[2]			:  register( c90 );
-const float4 cBumpTexCoordTransform[2]			:  register( c92 );
-const float4 cEnvmapMaskTexCoordTransform[2]	:  register( c94 );
+sampler2D morphSampler : register( D3DVERTEXTEXTURESAMPLER0, s0 );
+#endif
 
 struct VS_INPUT
 {
@@ -34,85 +41,86 @@ struct VS_INPUT
 	float4 vPos				: POSITION;
 	float4 vBoneWeights		: BLENDWEIGHT;
 	float4 vBoneIndices		: BLENDINDICES;
-	float3 vNormal			: NORMAL;
-	float4 vColor			: COLOR0;
-	float3 vSpecular		: COLOR1;
-	// make these float2's and stick the [n n 0 1] in the dot math.
-	float4 vTexCoord0		: TEXCOORD0;
-	float4 vTexCoord1		: TEXCOORD1;
-	float4 vTexCoord2		: TEXCOORD2;
-	float4 vTexCoord3		: TEXCOORD3;
-	float3 vTangentS		: TANGENT;
-	float3 vTangentT		: BINORMAL;
-	float4 vUserData		: TANGENT;
+	float4 vNormal			: NORMAL;
+	float2 vTexCoord0		: TEXCOORD0;
+
+	// Position and normal/tangent deltas
+	float3 vPosFlex			: POSITION1;
+	float3 vNormalFlex		: NORMAL1;
+#ifdef SHADER_MODEL_VS_3_0
+	float vVertexID			: POSITION2;
+#endif
 };
 
 struct VS_OUTPUT
 {
-    float4 projPos					: POSITION;	
-	float  fog						: FOG;
-	float2 baseTexCoord				: TEXCOORD0;
-	float2 bumpTexCoord				: TEXCOORD1;
-	// bump mapping and a separate envmap mask texture are mutually exclusive.
-	float2 envmapMaskTexCoord		: TEXCOORD2;
-	float3 worldVertToEyeVector				: TEXCOORD3;
-	float3x3 tangentSpaceTranspose	: TEXCOORD4;
-	float4 color1					: COLOR0;
-	float3 color2					: COLOR1;
-	float3 color3					: TEXCOORD7;
+    float4 projPos			: POSITION;	
+#if !defined( _X360 )    
+	float  fog				: FOG;
+#endif
+	float2 baseTexCoord		: TEXCOORD0;
+	float3 vertAtten		: TEXCOORD1;
+	
+	float4 worldPos_projPosZ		: TEXCOORD7;		// Necessary for pixel fog
 };
 
 VS_OUTPUT main( const VS_INPUT v )
 {
 	VS_OUTPUT o = ( VS_OUTPUT )0;
 
-	float3 worldNormal, worldPos, worldTangentS, worldTangentT;
-	SkinPositionNormalAndTangentSpace( 
-#ifdef USE_CONDITIONALS
-		g_bZeroBones, g_bOneBone, g_bTwoBones,
+	bool bDynamicLight = DYNAMIC_LIGHT ? true : false;
+	bool bStaticLight = STATIC_LIGHT ? true : false;
+
+	float4 vPosition = v.vPos;
+	float3 vNormal;
+	DecompressVertex_Normal( v.vNormal, vNormal );
+
+#if !defined( SHADER_MODEL_VS_3_0 ) || !MORPHING
+	ApplyMorph( v.vPosFlex, v.vNormalFlex, vPosition.xyz, vNormal );
 #else
-		g_NumBones, 
+	ApplyMorph( morphSampler, cMorphTargetTextureDim, cMorphSubrect, v.vVertexID, float3( 0, 0, 0 ), vPosition.xyz, vNormal );
 #endif
-		v.vPos, v.vNormal, v.vUserData,
-		v.vBoneWeights, v.vBoneIndices,
-		worldPos, worldNormal, worldTangentS, worldTangentT );
 
-	float4 projPos = mul( float4( worldPos, 1 ), cViewProj );
-	o.projPos = projPos;
-	o.fog = CalcFog( worldPos, projPos, g_FogType );
-	o.worldVertToEyeVector = VSHADER_VECT_SCALE * (cEyePos - worldPos);
+	// Normalize the flexed normal
+	vNormal.xyz = normalize( vNormal.xyz );
 
-	float flTeethDarkening = dot( cTeethLighting.xyz, worldNormal );
-	flTeethDarkening = max( 0.0f, flTeethDarkening );
-	flTeethDarkening *= cTeethLighting.w;
+	// Transform the position
+	float3 worldPos, worldNormal;
+	SkinPositionAndNormal( g_bSkinning, vPosition, vNormal, v.vBoneWeights, v.vBoneIndices, worldPos, worldNormal );
 
-	if( g_bBumpmap )
-	{
-		float3 gammaColorNormal;
-		// hack - need 3 baked lighting values for static props (vSpecular)
-		DoBumpedLighting( worldPos, worldNormal, worldTangentS, worldTangentT,
-			v.vSpecular, v.vSpecular, v.vSpecular, v.vSpecular,
-			g_StaticLightType, g_AmbientLightType, g_LocalLightType0, g_LocalLightType1,
-			flTeethDarkening, o.color1.xyz, o.color2.xyz, o.color3.xyz, gammaColorNormal );
-	}
-	else
-	{
-		o.color1.xyz = DoLighting( worldPos, worldNormal, v.vSpecular,
-			g_StaticLightType, g_AmbientLightType, g_LocalLightType0, g_LocalLightType1, flTeethDarkening );
-	}
+#if INTRO
+	float3 dummy = float3( 0.0f, 0.0f, 0.0f );
+	WorldSpaceVertexProcess( g_Time, modelOrigin, worldPos, worldNormal, dummy, dummy );
+#endif
 
-	o.baseTexCoord.x = dot( v.vTexCoord0, cBaseTexCoordTransform[0] );
-	o.baseTexCoord.y = dot( v.vTexCoord0, cBaseTexCoordTransform[1] );
-	o.bumpTexCoord.x = dot( v.vTexCoord0, cBumpTexCoordTransform[0] );
-	o.bumpTexCoord.y = dot( v.vTexCoord0, cBumpTexCoordTransform[1] );
-	o.envmapMaskTexCoord.x = dot( v.vTexCoord0, cEnvmapMaskTexCoordTransform[0] );
-	o.envmapMaskTexCoord.y = dot( v.vTexCoord0, cEnvmapMaskTexCoordTransform[1] );
-	if( g_bBumpmap )
-	{
-		o.tangentSpaceTranspose[0] = worldTangentS;
-		o.tangentSpaceTranspose[1] = worldTangentT;
-		o.tangentSpaceTranspose[2] = worldNormal;
-	}
+	// Transform into projection space
+	float4 vProjPos = mul( float4( worldPos, 1 ), cViewProj );
+	o.projPos = vProjPos;
+	vProjPos.z = dot( float4( worldPos, 1 ), cViewProjZ );
+
+	o.worldPos_projPosZ = float4( worldPos.xyz, vProjPos.z );
+#if !defined( _X360 )
+	// Set fixed-function fog factor
+	o.fog = CalcFog( worldPos, vProjPos, g_FogType );
+#endif
+
+	// Compute lighting
+#if ( USE_STATIC_CONTROL_FLOW ) || defined ( SHADER_MODEL_VS_3_0 )
+	float3 linearColor = DoLighting( worldPos, worldNormal, float3(0.0f, 0.0f, 0.0f), bStaticLight, bDynamicLight, false );
+#else
+	float3 linearColor = DoLightingUnrolled( worldPos, worldNormal, float3(0.0f, 0.0f, 0.0f), bStaticLight, bDynamicLight, false, NUM_LIGHTS );
+#endif
+
+	// Forward vector
+	float3 vForward = cTeethLighting.xyz;
+	float fIllumFactor = cTeethLighting.w;
+
+	// Darken by forward dot normal and illumination factor
+	linearColor *= fIllumFactor * saturate( dot( worldNormal, vForward ) );	
+
+	o.vertAtten = linearColor;
+	o.baseTexCoord = v.vTexCoord0;
+
 	return o;
 }
 

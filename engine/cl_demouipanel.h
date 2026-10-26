@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOUIPANEL_H
 #define CL_DEMOUIPANEL_H
@@ -32,7 +32,7 @@ class CDemoSmootherPanel;
 //-----------------------------------------------------------------------------
 class CDemoUIPanel : public vgui::Frame
 {
-	typedef vgui::Frame BaseClass;
+	DECLARE_CLASS_SIMPLE( CDemoUIPanel, vgui::Frame );
 
 public:
 	CDemoUIPanel( vgui::Panel *parent );
@@ -42,42 +42,52 @@ public:
 
 	// Command issued
 	virtual void OnCommand(const char *command);
+	virtual void OnMessage(const KeyValues *params,  vgui::VPANEL fromPanel);
 
 	virtual void	OnVDMChanged( void );
 
-	virtual float	GetPlaybackScale();
+	virtual bool	OverrideView( democmdinfo_t& info, int frame );
+    virtual void	DrawDebuggingInfo();
 
-	virtual bool		OverrideView( democmdinfo_t& info, int frame, float elapsed );
-	virtual void		DrawDebuggingInfo( int frame, float elapsed );
-	DECLARE_PANELMAP();
+	static	void	InstallDemoUI( vgui::Panel *parent );
+
+			bool	IsInDriveMode();
+			void	SetDriveViewPoint( Vector &origin, QAngle &angle );
+			void	GetDriveViewPoint( Vector &origin, QAngle &angle );
+
 protected:
-	virtual void OnClose();
-
-	void		HandleInput( bool active );
-
+	
+	void			HandleInput( bool active );
 	bool			IsHoldingFastForward();
+	void			SetPlaybackScale( float scale );
+	float			GetPlaybackScale();
+	void			GetCurrentView();
 
-	void		OnFileSelected( char const *fullpath );
+	MESSAGE_FUNC_CHARPTR( OnFileSelected, "FileSelected", fullpath );
 
 	void		OnEdit();
 	void		OnSmooth();
 	void		OnLoad();
-	void		OnGotoFrame();
+	
+	vgui::Label		*m_pCurrentDemo;
+	vgui::Button	*m_pStop;
+	vgui::Button	*m_pLoad;
 
-	vgui::Label  *m_pCurrentDemo;
-	vgui::Button *m_pPlayPauseResume;
-	vgui::Button *m_pStop;
-	vgui::Button *m_pLoad;
-	vgui::Button *m_pEdit;
-	vgui::Button *m_pSmooth;
+	// special editor buttons
+	vgui::Button	*m_pEdit;
+	vgui::Button	*m_pSmooth;
 	vgui::Button	*m_pDriveCamera;
 
-	vgui::CheckButton *m_pTimeDemo;
+	// player controls
+	vgui::Button	*m_pPlayPauseResume;
+	vgui::Button	*m_pGoStart;
+	vgui::Button	*m_pGoEnd;
 	vgui::Button	*m_pFastForward;
-	vgui::Button	*m_pAdvanceFrame;
+	vgui::Button	*m_pFastBackward;
+	vgui::Button	*m_pPrevFrame;
+	vgui::Button	*m_pNextFrame;
 
 	vgui::ProgressBar *m_pProgress;
-	vgui::Label	*m_pProgressLabelPercent;
 	vgui::Label	*m_pProgressLabelFrame;
 	vgui::Label	*m_pProgressLabelTime;
 
@@ -89,13 +99,89 @@ protected:
 	vgui::DHANDLE< vgui::FileOpenDialog > m_hFileOpenDialog;
 
 	vgui::Button	*m_pGo;
-	vgui::TextEntry *m_pGotoFrame;
+	vgui::TextEntry *m_pGotoTick;
 
 	bool		m_bInputActive;
 	int			m_nOldCursor[2];
 	Vector		m_ViewOrigin;
 	QAngle		m_ViewAngles;
-	bool		m_bGrabNewViewSetup;
 };
+
+extern CDemoUIPanel *g_pDemoUI;
+
+//-----------------------------------------------------------------------------
+// Purpose: a special demo UI panel that is always visible allowing you
+// to interact with the game and adding more features to the old
+// demo UI panel.
+//-----------------------------------------------------------------------------
+class CDemoUIPanel2 : public vgui::Frame
+{
+	DECLARE_CLASS_SIMPLE( CDemoUIPanel2, vgui::Frame );
+
+public:
+	CDemoUIPanel2( vgui::Panel *pParentBkgnd, vgui::Panel *pParentFgnd, bool bPutToForeground );
+	~CDemoUIPanel2();
+
+	virtual void OnTick();
+
+	// Command issued
+	virtual void OnCommand(const char *command);
+	virtual void OnMessage(const KeyValues *params,  vgui::VPANEL fromPanel);
+
+	virtual void	OnVDMChanged( void );
+
+	virtual bool	OverrideView( democmdinfo_t& info, int frame );
+	virtual void	DrawDebuggingInfo();
+
+	static	void	Install( vgui::Panel *pParentBkgnd, vgui::Panel *pParentFgnd, bool bPutToForeground );
+
+	bool	IsInDriveMode();
+	void	SetDriveViewPoint( Vector &origin, QAngle &angle );
+	void	GetDriveViewPoint( Vector &origin, QAngle &angle );
+
+	void	MakePanelForeground( bool bPutToForeground );
+
+protected:
+
+	void			HandleInput( bool active );
+	bool			IsHoldingFastForward();
+	void			SetPlaybackScale( float scale );
+	float			GetPlaybackScale();
+
+	MESSAGE_FUNC_CHARPTR( OnFileSelected, "FileSelected", fullpath );
+
+	void		OnLoad();
+
+	vgui::Button	*m_pStop;
+	vgui::Button	*m_pLoad;
+
+	// player controls
+	vgui::Button	*m_pPlayPauseResume;
+	vgui::Button	*m_pGoStart;
+	vgui::Button	*m_pGoEnd;
+	vgui::Button	*m_pFastForward;
+	vgui::Button	*m_pFastBackward;
+	vgui::Button	*m_pPrevFrame;
+	vgui::Button	*m_pNextFrame;
+
+	vgui::Slider *m_pProgress;
+	vgui::Label	*m_pProgressLabelFrame;
+	vgui::Label	*m_pProgressLabelTime;
+
+	vgui::Slider *m_pSpeedScale;
+	vgui::Label	*m_pSpeedScaleLabel;
+
+	vgui::DHANDLE< vgui::FileOpenDialog > m_hFileOpenDialog;
+
+	bool		m_bInputActive;
+	int			m_nOldCursor[2];
+
+	// Bkgnd-fgnd switch
+	vgui::Panel *m_arrParents[2];
+	bool		m_bIsInForeground;
+};
+
+extern CDemoUIPanel2 *g_pDemoUI2;
+
 
 #endif // CL_DEMOUIPANEL_H

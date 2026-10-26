@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "stdafx.h"
+//=============================================================================//
 #include <stdio.h>
 #include <windows.h>
 #include "depcheck_util.h"
 #include "icodeprocessor.h"
+#include "tier1/strtools.h"
 
 char    *va(char *format, ...)
 {
@@ -16,7 +16,7 @@ char    *va(char *format, ...)
 	static char             string[1024];
 	
 	va_start (argptr, format);
-	_vsnprintf( string, 1024, format, argptr );
+	Q_vsnprintf( string, 1024, format, argptr );
 	va_end (argptr);
 
 	return string;  
@@ -80,7 +80,8 @@ int main( int argc, char* argv[] )
 	vprint( 0, "Valve Software - depcheck.exe (%s)\n", __DATE__ );
 	vprint( 0, "--- Game Code Simple Build Dependency Analyzer ---\n" );
 
-	for ( int i=1 ; i<argc ; i++)
+	int i=1;
+	for ( i ; i<argc ; i++)
 	{
 		if ( argv[ i ][ 0 ] == '-' )
 		{
@@ -111,7 +112,7 @@ int main( int argc, char* argv[] )
 	char sourcetreebase[ 256 ];
 	strcpy( sourcetreebase, argv[i-2] );
 
-	UTIL_StripTrailingSlashes( sourcetreebase );
+	Q_StripTrailingSlash( sourcetreebase );
 
 //	ProcessDirectory( argv[ i-1 ], sourcetreebase, "engine", "engdll.dsp", "quiver - Win32 GL Debug" );
 //	ProcessDirectory( argv[ i-1 ], sourcetreebase, "dlls", "hl.dsp", va( "hl - Win32 %s Debug", argv[ i - 1 ] ) );

@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -21,7 +16,7 @@
 // 3) In general, we try to cache off expensive state pre-processing in
 //		the shader shadow phase (like texture stage pipeline).
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef SHADERSYSTEM_H
 #define SHADERSYSTEM_H
@@ -30,10 +25,11 @@
 #pragma once
 #endif
 
-#include "materialsystem/IShaderSystem.h"
+#include "IShaderSystem.h"
 #include "shaderlib/BaseShader.h"
 #include "materialsystem/materialsystem_config.h"
-#include "shaderapi.h"
+#include "shaderapi/ishaderapi.h"
+#include "materialsystem_global.h"
 
 
 //-----------------------------------------------------------------------------
@@ -44,10 +40,12 @@ class TextureManager_t;
 class ITextureInternal;
 class ShaderSystem_t;
 class IMesh;
+class IVertexBuffer;
+class IIndexBuffer;
 class Vector;
 enum MaterialPrimitiveType_t;
 enum MaterialPropertyTypes_t;
-enum MaterialVertexFormat_t;
+enum MaterialIndexFormat_t;
 enum ShaderParamType_t;
 
 
@@ -72,9 +70,6 @@ enum
 	SHADER_OPACITY_OPAQUE			= 0x0020,
 	SHADER_OPACITY_TRANSLUCENT		= 0x0040,
 	SHADER_OPACITY_MASK				= 0x0070,
-
-	// optimization flags....
-	SHADER_USES_AMBIENT_CUBE_STAGE0	= 0x0100,
 };
 
 
@@ -91,18 +86,38 @@ struct RenderPassList_t
 {
 	int m_nPassCount;
 	StateSnapshot_t	m_Snapshot[MAX_RENDER_PASSES];
+	// per material shader-defined state
+	CBasePerMaterialContextData *m_pContextData[MAX_RENDER_PASSES];
 };
 
 struct ShaderRenderState_t
 {
-	// We store 4 sets of snapshots; one for each combo of alpha mod + color mod
-	RenderPassList_t m_Snapshots[4];
-
 	// These are the same, regardless of whether alpha or color mod is used
 	int				m_Flags;	// Can't shrink this to a short
 	VertexFormat_t	m_VertexFormat;
-	int				m_VertexUsage;
+	VertexFormat_t	m_VertexUsage;
+	MorphFormat_t	m_MorphFormat;
+
+	// List of all snapshots
+	RenderPassList_t *m_pSnapshots;
+
+
 };
+
+
+//-----------------------------------------------------------------------------
+// Used to get the snapshot count
+//-----------------------------------------------------------------------------
+enum
+{
+	SNAPSHOT_COUNT_NORMAL = 16,
+	SNAPSHOT_COUNT_EDITOR = 32,
+};
+
+inline int SnapshotTypeCount()
+{
+	return MaterialSystem()->CanUseEditorMaterials() ? SNAPSHOT_COUNT_EDITOR : SNAPSHOT_COUNT_NORMAL;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -110,22 +125,22 @@ struct ShaderRenderState_t
 //-----------------------------------------------------------------------------
 inline void SetFlags( IMaterialVar **params, MaterialVarFlags_t _flag )
 {
-	params[FLAGS]->SetIntValue( params[FLAGS]->GetIntValue() | (_flag) );
+	params[FLAGS]->SetIntValue( params[FLAGS]->GetIntValueFast() | (_flag) );
 }
 
 inline void SetFlags2( IMaterialVar **params, MaterialVarFlags2_t _flag )
 {
-	params[FLAGS2]->SetIntValue( params[FLAGS2]->GetIntValue() | (_flag) );
+	params[FLAGS2]->SetIntValue( params[FLAGS2]->GetIntValueFast() | (_flag) );
 }
 
 inline bool IsFlagSet( IMaterialVar **params, MaterialVarFlags_t _flag )
 {
-	return ((params[FLAGS]->GetIntValue() & (_flag) ) != 0);
+	return ((params[FLAGS]->GetIntValueFast() & (_flag) ) != 0);
 }
 
 inline bool IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag )
 {
-	return ((params[FLAGS2]->GetIntValue() & (_flag) ) != 0);
+	return ((params[FLAGS2]->GetIntValueFast() & (_flag) ) != 0);
 }
 
 
@@ -133,7 +148,7 @@ inline bool IsFlag2Set( IMaterialVar **params, MaterialVarFlags2_t _flag )
 //-----------------------------------------------------------------------------
 // Poll params + renderstate
 //-----------------------------------------------------------------------------
-inline bool	IsTranslucent( ShaderRenderState_t* pRenderState )
+inline bool	IsTranslucent( const ShaderRenderState_t* pRenderState )
 {
 	return (pRenderState->m_Flags & SHADER_OPACITY_TRANSLUCENT) != 0;
 }
@@ -147,12 +162,14 @@ inline bool	IsAlphaTested( ShaderRenderState_t* pRenderState )
 //-----------------------------------------------------------------------------
 // The shader system (a singleton)
 //-----------------------------------------------------------------------------
-class IShaderSystemInternal : public IShaderInit, public IShaderSystem
+abstract_class IShaderSystemInternal : public IShaderInit, public IShaderSystem
 {
 public:
 	// Initialization, shutdown
 	virtual void		Init() = 0;
 	virtual void		Shutdown() = 0;
+	virtual void		ModInit() = 0;
+	virtual void		ModShutdown() = 0;
 
 	// Methods related to reading in shader DLLs
 	virtual bool		LoadShaderDLL( const char *pFullPath ) = 0;
@@ -161,11 +178,9 @@ public:
 	// Find me a shader!
 	virtual IShader*	FindShader( char const* pShaderName ) = 0;
 
-	// returns various vertex formats
-	virtual VertexFormat_t GetVertexFormat( MaterialVertexFormat_t vfmt ) = 0;
-
 	// returns strings associated with the shader state flags...
-	virtual char const* ShaderStateString( int i ) = 0;
+	virtual char const* ShaderStateString( int i ) const = 0;
+	virtual int ShaderStateCount( ) const = 0;
 
 	// Rendering related methods
 
@@ -179,7 +194,7 @@ public:
 	virtual void InitShaderParameters( IShader *pShader, IMaterialVar **params, const char *pMaterialName ) = 0;
 
 	// Call the SHADER_INIT block of the shaders
-	virtual void InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName ) = 0;
+	virtual void InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName, const char *pTextureGroupName ) = 0;
 
 	// go through each param and make sure it is the right type, load textures, 
 	// compute state snapshots and vertex types, etc.
@@ -189,7 +204,12 @@ public:
 	virtual void CleanupRenderState( ShaderRenderState_t* pRenderState ) = 0;
 
 	// Draws the shader
-	virtual void DrawElements( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pShaderState ) = 0;
+	virtual void DrawElements( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pShaderState, VertexCompressionType_t vertexCompression,
+							   uint32 nMaterialVarTimeStamp ) = 0;
+
+	// Used to iterate over all shaders for editing purposes
+	virtual int	 ShaderCount() const = 0;
+	virtual int  GetShaders( int nFirstShader, int nCount, IShader **ppShaderList ) const = 0;
 };
 
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,12 +11,12 @@
 #pragma once
 #endif
 
-#include "AdminServer/IAdminServer.h"
+#include "IAdminServer.h"
 #include "IVGuiModule.h"
 
-#include <VGUI_PHandle.h>
+#include <utlvector.h>
 
-class VInternetDlg;
+class CServerPage;
 
 //-----------------------------------------------------------------------------
 // Purpose: Handles the UI and pinging of a half-life game server list
@@ -31,34 +31,39 @@ public:
 	virtual bool Initialize(CreateInterfaceFn *factorylist, int numFactories);
 	virtual bool PostInitialize(CreateInterfaceFn *modules, int factoryCount);
 	virtual vgui::VPANEL GetPanel();
-	virtual void SetParent(vgui::VPANEL parent);
 	virtual bool Activate();
 	virtual bool IsValid();
 	virtual void Shutdown();
 	virtual void Deactivate();
 	virtual void Reactivate();
+	virtual void SetParent(vgui::VPANEL parent);
 
 	// IAdminServer implementation
-	// opens a game info dialog to watch the specified server; associated with the friend 'userName'
-	virtual GameHandle_t OpenGameInfoDialog(unsigned int gameIP, unsigned int gamePort, const char *userName);
+	// opens a manage server dialog for a local server
+	virtual ManageServerUIHandle_t OpenManageServerDialog(const char *serverName, const char *gameDir);
 
-	// joins a specified game - game info dialog will only be opened if the server is fully or passworded
-	virtual GameHandle_t JoinGame(unsigned int gameIP, unsigned int gamePort, const char *userName);
-
-	// changes the game info dialog to watch a new server; normally used when a friend changes games
-	virtual void UpdateGameInfoDialog(GameHandle_t gameDialog, unsigned int gameIP, unsigned int gamePort);
+	// opens a manage server dialog to a remote server
+	virtual ManageServerUIHandle_t OpenManageServerDialog(unsigned int gameIP, unsigned int gamePort, const char *password);
 
 	// forces the game info dialog closed
-	virtual void CloseGameInfoDialog(GameHandle_t gameDialog);
+	virtual void CloseManageServerDialog(ManageServerUIHandle_t gameDialog);
 
-	// methods
-	virtual void CreateDialog();
-	virtual void Open();
+	// Gets a handle to the interface
+	virtual IManageServer *GetManageServerInterface(ManageServerUIHandle_t handle);
 
 private:
-	vgui::DHANDLE<VInternetDlg> m_hServerPage;
-
+	struct OpenedManageDialog_t
+	{
+		unsigned long handle;
+		IManageServer *manageInterface;
+	};
+	CUtlVector<OpenedManageDialog_t> m_OpenedManageDialog;
+	vgui::VPANEL m_hParent;
 };
+
+
+class IVProfExport;
+extern IVProfExport *g_pVProfExport;
 
 
 #endif // AdminServer_H

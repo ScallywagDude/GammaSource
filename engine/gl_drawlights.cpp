@@ -1,29 +1,30 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 
-#include "glquake.h"
+#include "render_pch.h"
 #include "gl_matsysiface.h"
 #include "gl_cvars.h"
 #include "enginetrace.h"
 #include "r_local.h"
 #include "gl_model_private.h"
-#include "materialsystem/IMesh.h"
+#include "materialsystem/imesh.h"
 #include "cdll_engine_int.h"
+#include "cl_main.h"
+#include "debugoverlay.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-static ConVar r_drawlights(  "r_drawlights", "0" );
+static ConVar r_drawlights(  "r_drawlights", "0", FCVAR_CHEAT );
+static ConVar r_drawlightinfo(  "r_drawlightinfo", "0", FCVAR_CHEAT );
+
 static bool s_bActivateLightSprites = false;
 
 //-----------------------------------------------------------------------------
@@ -39,11 +40,15 @@ bool ActivateLightSprites( bool bActive )
 
 #define LIGHT_MIN_LIGHT_VALUE 0.03f
 
-static float ComputeLightRadius( dworldlight_t *pLight )
+float ComputeLightRadius( dworldlight_t *pLight, bool bIsHDR )
 {
 	float flLightRadius = pLight->radius;
 	if (flLightRadius == 0.0f)
 	{
+		// HACKHACK: Usually our designers scale the light intensity by 0.5 in HDR
+		// This keeps the behavior of the cutoff radius consistent between LDR and HDR
+		float minLightValue = bIsHDR ? (LIGHT_MIN_LIGHT_VALUE * 0.5f) : LIGHT_MIN_LIGHT_VALUE;
+
 		// Compute the light range based on attenuation factors
 		float flIntensity = sqrtf( DotProduct( pLight->intensity, pLight->intensity ) );
 		if (pLight->quadratic_attn == 0.0f)
@@ -55,14 +60,14 @@ static float ComputeLightRadius( dworldlight_t *pLight )
 			}
 			else
 			{
-				flLightRadius = (flIntensity / LIGHT_MIN_LIGHT_VALUE - pLight->constant_attn) / pLight->linear_attn;
+				flLightRadius = (flIntensity / minLightValue - pLight->constant_attn) / pLight->linear_attn;
 			}
 		}
 		else
 		{
 			float a = pLight->quadratic_attn;
 			float b = pLight->linear_attn;
-			float c = pLight->constant_attn - flIntensity / LIGHT_MIN_LIGHT_VALUE;
+			float c = pLight->constant_attn - flIntensity / minLightValue;
 			float discrim = b * b - 4 * a * c;
 			if (discrim < 0.0f)
 			{
@@ -85,7 +90,7 @@ static float ComputeLightRadius( dworldlight_t *pLight )
 static void DrawLightSprite( dworldlight_t *pLight, float angleAttenFactor )
 {
 	Vector lightToEye;
-	lightToEye = r_origin - pLight->origin;
+	lightToEye = CurrentViewOrigin() - pLight->origin;
 	VectorNormalize( lightToEye );
 	Vector up( 0.0f, 0.0f, 1.0f );
 	Vector right;
@@ -116,8 +121,10 @@ static void DrawLightSprite( dworldlight_t *pLight, float angleAttenFactor )
 	color[1] = pow( color[1], 1.0f / 2.2f );
 	color[2] = pow( color[2], 1.0f / 2.2f );
 	
-	materialSystemInterface->Bind( g_pMaterialLightSprite );
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+	CMatRenderContextPtr pRenderContext( materials );
+
+	pRenderContext->Bind( g_pMaterialLightSprite );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
 
@@ -162,8 +169,10 @@ static void DrawPointLight( const Vector &vecOrigin, float flLightRadius )
 	int nVertCount = POINT_THETA_GRID * (POINT_PHI_GRID + 1);
 	int nIndexCount = 8 * POINT_THETA_GRID * POINT_PHI_GRID;
 
-	materialSystemInterface->Bind( g_materialWorldWireframeZBuffer );
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+	CMatRenderContextPtr pRenderContext( materials );
+
+	pRenderContext->Bind( g_materialWorldWireframeZBuffer );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_LINES, nVertCount, nIndexCount );
 
@@ -235,7 +244,7 @@ static void DrawPointLight( const Vector &vecOrigin, float flLightRadius )
 
 void DrawSpotLight( dworldlight_t *pLight )
 {
-	float flLightRadius = ComputeLightRadius( pLight );
+	float flLightRadius = ComputeLightRadius( pLight, false );
 
 	int nGridLines = (int)(flLightRadius / SPOT_GRID_LINE_DISTANCE) + 1;
 	int nVertCount = SPOT_RADIAL_GRID * (nGridLines + 1);
@@ -251,8 +260,10 @@ void DrawSpotLight( dworldlight_t *pLight )
 	VectorNormalize( xaxis );
 	CrossProduct( pLight->normal, xaxis, yaxis ); 
 
-	materialSystemInterface->Bind( g_materialWorldWireframeZBuffer );
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+	CMatRenderContextPtr pRenderContext( materials );
+
+	pRenderContext->Bind( g_materialWorldWireframeZBuffer );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_LINES, nVertCount, nIndexCount );
 
@@ -269,18 +280,18 @@ void DrawSpotLight( dworldlight_t *pLight )
 		
 		float flRadius = flDist * flTanAngle;
 
-		float flAngle = 0;
+		float flTempAngle = 0;
 		for ( int j = 0; j < SPOT_RADIAL_GRID; ++j )
 		{
-			float flSin = sin(DEG2RAD(flAngle));
-			float flCos = cos(DEG2RAD(flAngle));
+			float flSin = sin( DEG2RAD( flTempAngle ) );
+			float flCos = cos( DEG2RAD( flTempAngle ) );
 			VectorMA( vecCenter, flRadius * flCos, xaxis, pt );
 			VectorMA( pt, flRadius * flSin, yaxis, pt );
 
 			meshBuilder.Position3fv( pt.Base() );
 			meshBuilder.AdvanceVertex();
 
-			flAngle += dTheta;
+			flTempAngle += dTheta;
 		}
 
 		flDist += SPOT_GRID_LINE_DISTANCE;
@@ -329,20 +340,20 @@ void DrawLightSprites( void )
 		return;
 
 	int i;	
-	for (i = 0; i < host_state.worldmodel->brush.numworldlights; i++)
+	for (i = 0; i < host_state.worldbrush->numworldlights; i++)
 	{
-		dworldlight_t *pLight = &host_state.worldmodel->brush.worldlights[i];
+		dworldlight_t *pLight = &host_state.worldbrush->worldlights[i];
 		trace_t tr;
 		CTraceFilterWorldAndPropsOnly traceFilter;
 		Ray_t ray;
-		ray.Init( r_origin, pLight->origin );
+		ray.Init( CurrentViewOrigin(), pLight->origin );
 		g_pEngineTraceClient->TraceRay( ray, MASK_OPAQUE, &traceFilter, &tr );
 		if( tr.fraction < 1.0f )
 			continue;
 
 		float angleAttenFactor = 0.0f;
 		Vector lightToEye;
-		lightToEye = r_origin - pLight->origin;
+		lightToEye = CurrentViewOrigin() - pLight->origin;
 		VectorNormalize( lightToEye );
 		switch( pLight->type )
 		{
@@ -378,26 +389,48 @@ void DrawLightSprites( void )
 //-----------------------------------------------------------------------------
 void DrawLightDebuggingInfo( void )
 {
+	int		i;
+	char	buf[256];
+	int		lineOffset;
+
 	int nLight = r_drawlights.GetInt();
-	if( nLight == 0 )
+
+	if ( r_drawlightinfo.GetBool() )
+	{
+		for (i = 0; i < host_state.worldbrush->numworldlights; i++)
+		{	
+			dworldlight_t *pLight = &host_state.worldbrush->worldlights[i];
+
+			lineOffset = 0;
+			Q_snprintf( buf, sizeof( buf ), "light:  %d\n", i+1 );
+			CDebugOverlay::AddTextOverlay( pLight->origin, lineOffset++, 0, buf );	
+			Q_snprintf( buf, sizeof( buf ), "origin: <%d, %d, %d>\n", (int)pLight->origin[0], (int)pLight->origin[1], (int)pLight->origin[2] );
+			CDebugOverlay::AddTextOverlay( pLight->origin, lineOffset++, 0, buf );	
+
+			if (!nLight)
+			{
+				// avoid a double debug draw
+				DrawLightSprite( pLight, 1.0f );
+			}
+		}
+	}
+
+	if (!nLight)
 		return;
 
-	int i;	
-	for (i = 0; i < host_state.worldmodel->brush.numworldlights; i++)
+	for (i = 0; i < host_state.worldbrush->numworldlights; i++)
 	{
 		if ((nLight > 0) && (i != nLight-1))
 			continue;
 
-		dworldlight_t *pLight = &host_state.worldmodel->brush.worldlights[i];
-		float angleAttenFactor = 0.0f;
+		dworldlight_t *pLight = &host_state.worldbrush->worldlights[i];
 		Vector lightToEye;
-		lightToEye = r_origin - pLight->origin;
-		VectorNormalize( lightToEye );
+		float angleAttenFactor = 0.0f;
 		switch( pLight->type )
 		{
 		case emit_point:
 			angleAttenFactor = 1.0f;
-			DrawPointLight( pLight->origin, ComputeLightRadius( pLight ) );
+			DrawPointLight( pLight->origin, ComputeLightRadius( pLight, false ) );
 			break;
 		case emit_spotlight:
 			angleAttenFactor = 1.0f;
@@ -406,6 +439,8 @@ void DrawLightDebuggingInfo( void )
 		case emit_surface:
 			// garymcthack - don't do surface lights
 			continue;
+			lightToEye = CurrentViewOrigin() - pLight->origin;
+			VectorNormalize( lightToEye );
 			if( DotProduct( lightToEye, pLight->normal ) < 0.0f )
 			{
 				continue;
@@ -429,6 +464,6 @@ void DrawLightDebuggingInfo( void )
 		if ( (r_dlightactive & (1 << lnum)) == 0 )
 			continue;
 
-		DrawPointLight( cl_dlights[lnum].origin, cl_dlights[lnum].radius );
+		DrawPointLight( cl_dlights[lnum].origin, cl_dlights[lnum].GetRadius() );
 	}
 }

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( CLASS_H )
 #define CLASS_H
 #ifdef _WIN32
@@ -106,9 +106,9 @@ class CClass
 public:
 	enum
 	{
-		MAX_VARIABLES = 512,
-		MAX_MEMBERS   = 512,
-		MAX_TDFIELDS  = 512,
+		MAX_VARIABLES = 1024,
+		MAX_MEMBERS   = 1024,
+		MAX_TDFIELDS  = 1024,
 	};
 
 					CClass( const char *name );
@@ -131,6 +131,8 @@ public:
 	bool			ParseClassMember( char *&input, int protection );
 	bool			ParseNetworkVar( char *&input, int protection );
 	void			ReportTypeMismatches( CClassVariable *var, CTypeDescriptionField *td );
+
+	void			CheckForHungarianErrors( int& warnings );
 
 	char			m_szName[ 128 ];
 	char			m_szBaseClass[ 128 ];

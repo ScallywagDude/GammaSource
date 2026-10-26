@@ -1,12 +1,5 @@
+; DYNAMIC: "WRITEONETODESTALPHA" "0..1"
 ps.1.1
-
-;------------------------------------------------------------------------------
-; Draw a texture . . woo hoo!
-; t0 - texture
-;
-; The texture coordinates need to be defined as follows:
-; tc0 - texcoords
-;------------------------------------------------------------------------------
 
 ; Get the color from the texture
 tex t0
@@ -24,3 +17,6 @@ mul_x2 r0.rgb, r0, t3		; detail texture
 mul r1, t0, c1				; Self illum * tint
 lrp r0.rgb, t0.a, r1, r0	; Blend between self-illum + base * lighting
 
+#if WRITEONETODESTALPHA
+mov r0.a, c4			; make alpha 255
+#endif

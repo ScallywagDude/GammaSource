@@ -1,49 +1,68 @@
-/***
-*
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-****/
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
+
+#ifndef STUDIOMDL_H
+#define STUDIOMDL_H
+
+#ifdef _WIN32
+#pragma once
+#endif
+
 
 #include <stdio.h>
 #include "basetypes.h"
-#include "utlvector.h"
-#include "utlsymbol.h"
-#include "vector.h"
+#include "tier1/utlvector.h"
+#include "tier1/utlsymbol.h"
+#include "tier1/utlstring.h"
+#include "mathlib/vector.h"
 #include "studio.h"
+#include "datamodel/dmelementhandle.h"
+#include "checkuv.h"
 
 struct LodScriptData_t;
+struct s_flexkey_t;
+struct s_flexcontroller_t;
+struct s_flexcontrollerremap_t;
+struct s_combinationrule_t;
+struct s_combinationcontrol_t;
+class CDmeVertexDeltaData;
+class CDmeCombinationOperator;
 
-#define IDSTUDIOHEADER	(('T'<<24)+('S'<<16)+('D'<<8)+'I')
+#define IDSTUDIOHEADER			(('T'<<24)+('S'<<16)+('D'<<8)+'I')
 														// little-endian "IDST"
-#define IDSTUDIOSEQHEADER	(('Q'<<24)+('S'<<16)+('D'<<8)+'I')
-														// little-endian "IDSQ"
+#define IDSTUDIOANIMGROUPHEADER	(('G'<<24)+('A'<<16)+('D'<<8)+'I')
+														// little-endian "IDAG"
 
-#define MAXSTUDIOANIMATIONS	2000	// max frames per animation
-#define MAXSTUDIOSEQUENCES	512		// total animation sequences
-#define MAXSTUDIOSRCBONES	512		// bones allowed at source movement
-#define MAXSTUDIOMODELS		32		// sub-models per model
-#define MAXSTUDIOBODYPARTS	32
-#define MAXSTUDIOMESHES		256
-#define MAXSTUDIOEVENTS		1024
-#define MAXSTUDIOFLEXKEYS	128
-#define MAXSTUDIOFLEXRULES	256
-#define MAXSTUDIOBONEWEIGHTS 4
-#define MAXSTUDIOCMDS		64
-#define MAXSTUDIOMOVEKEYS	64
-#define MAXSTUDIOIKRULES	64
 
-#define MAXSTUDIONAME		128
+#define STUDIO_QUADRATIC_MOTION 0x00002000
+
+#define MAXSTUDIOANIMFRAMES		5000	// max frames per animation
+#define MAXSTUDIOANIMS			2000	// total animations
+#define MAXSTUDIOSEQUENCES		1524	// total sequences
+#define MAXSTUDIOSRCBONES		512		// bones allowed at source movement
+#define MAXSTUDIOMODELS			32		// sub-models per model
+#define MAXSTUDIOBODYPARTS		32
+#define MAXSTUDIOMESHES			256
+#define MAXSTUDIOEVENTS			1024
+#define MAXSTUDIOFLEXKEYS		512
+#define MAXSTUDIOFLEXRULES		1024
+#define MAXSTUDIOBONEWEIGHTS	3
+#define MAXSTUDIOCMDS			64
+#define MAXSTUDIOMOVEKEYS		64
+#define MAXSTUDIOIKRULES		64
+#define MAXSTUDIONAME			128
 
 #ifndef EXTERN
 #define EXTERN extern
 #endif
 
-EXTERN	char		outname[1024];
-EXTERN	char		g_pPlatformName[1024];
+EXTERN	char		outname[MAX_PATH];
+//EXTERN	char		g_pPlatformName[1024];
 EXTERN  qboolean	cdset;
 EXTERN  int			numdirs;
 EXTERN	char		cddir[32][MAX_PATH];
@@ -64,12 +83,13 @@ EXTERN	int			numrep;
 
 EXTERN	int			tag_reversed;
 EXTERN	int			tag_normals;
-EXTERN	int			flip_triangles;
 EXTERN	float		normal_blend;
 EXTERN	int			dump_hboxes;
 EXTERN	int			ignore_warnings;
 
 EXTERN	Vector		eyeposition;
+EXTERN	float		g_flMaxEyeDeflection;
+EXTERN	int			g_illumpositionattachment;
 EXTERN	Vector		illumposition;
 EXTERN	int			illumpositionset;
 EXTERN	int			gflags;
@@ -78,14 +98,14 @@ EXTERN	Vector		cbox[2];
 EXTERN	bool		g_wrotebbox;
 EXTERN	bool		g_wrotecbox;
 
-EXTERN	int			maxseqgroupsize;
-
-EXTERN	int			split_textures;
 EXTERN	int			clip_texcoords;
 EXTERN	bool		g_staticprop;
 EXTERN	bool		g_centerstaticprop;
 
 EXTERN	bool		g_realignbones;
+EXTERN	bool		g_definebones;
+
+EXTERN  byte		g_constdirectionalightdot;
 
 // Methods associated with the key value text block
 extern CUtlVector< char >	g_KeyValueText;
@@ -94,8 +114,28 @@ const char *KeyValueText( CUtlVector< char > *pKeyValue );
 
 extern vec_t Q_rint (vec_t in);
 
-extern void WriteFile (void);
+extern void WriteModelFiles(void);
 void *kalloc( int num, int size );
+
+// --------------------------------------------------------------------
+
+template< class T >
+class CUtlVectorAuto : public CUtlVector< T >
+{
+	// typedef CUtlVectorAuto< T, CUtlVector<T > > BaseClass;
+public:
+	T& operator[]( int i );
+};
+
+template< typename T >
+inline T& CUtlVectorAuto<T>::operator[]( int i )
+{
+	EnsureCount( i + 1 );
+	Assert( IsValidIndex(i) );
+	return Base()[i];
+}
+
+// --------------------------------------------------------------------
 
 struct s_trianglevert_t
 {
@@ -114,19 +154,6 @@ struct s_boneweight_t
 };
 
 
-struct s_vertexinfo_t
-{
-	// wtf is this doing here?
-	int		material;
-
-	int		firstref;
-	int		lastref;
-
-	int		flexmask;
-	int		numflex;
-	int		flexoffset;
-};
-
 struct s_tmpface_t
 {
 	int	material;
@@ -138,6 +165,18 @@ struct s_tmpface_t
 struct s_face_t
 {
 	unsigned long		a, b, c;
+};
+
+
+struct s_vertexinfo_t
+{
+	int				material;
+	int				mesh;
+	Vector			position;	
+	Vector			normal;
+	Vector4D		tangentS;
+	Vector2D		texcoord;
+	s_boneweight_t	boneweight;
 };
 
 
@@ -162,14 +201,19 @@ struct s_bonetable_t
 	Vector			rotscale;	// rotation values scale
 	int				group;		// hitgroup
 	Vector			bmin, bmax;	// bounding box
+	bool			bPreDefined;
+	matrix3x4_t		rawLocalOriginal; // original transform of preDefined bone
 	matrix3x4_t		rawLocal;
 	matrix3x4_t		srcRealign;
+	bool			bPreAligned;
 	matrix3x4_t		boneToPose;
 	int				flags;
 	int				proceduralindex;
 	int				physicsBoneIndex;
 	int				surfacePropIndex;
 	Quaternion		qAlignment;
+	bool			bDontCollapse;
+	Vector			posrange;
 };
 EXTERN	s_bonetable_t g_bonetable[MAXSTUDIOSRCBONES];
 extern int findGlobalBone( const char *name );	// finds a named bone in the global bone table
@@ -182,6 +226,25 @@ struct s_renamebone_t
 };
 EXTERN s_renamebone_t g_renamedbone[MAXSTUDIOSRCBONES];
 const char *RenameBone( const char *pName ); // returns new name if available, else return pName.
+
+EXTERN int g_numimportbones;
+struct s_importbone_t
+{
+	char			name[MAXSTUDIONAME];
+	char			parent[MAXSTUDIONAME];
+	matrix3x4_t		rawLocal;
+	bool			bPreAligned;
+	matrix3x4_t		srcRealign;
+};
+EXTERN s_importbone_t g_importbone[MAXSTUDIOSRCBONES];
+
+
+EXTERN int g_numincludemodels;
+struct s_includemodel_t
+{
+	char			name[MAXSTUDIONAME];
+};
+EXTERN s_includemodel_t g_includemodel[128];
 
 struct s_bbox_t
 {
@@ -244,15 +307,26 @@ struct s_attachment_t
 	char	bonename[MAXSTUDIONAME];
 	int		bone;
 	int		type;
+	int		flags;
 	matrix3x4_t	local;
 	int		found;	// a owning bone has been flagged
+
+	bool operator==( const s_attachment_t &rhs ) const;
 };
+
 
 #define IS_ABSOLUTE		0x0001
 #define IS_RIGID		0x0002
 
 EXTERN s_attachment_t g_attachment[MAXSTUDIOSRCBONES];
 EXTERN int g_numattachments;
+
+struct s_bonemerge_t
+{
+	char	bonename[MAXSTUDIONAME];
+};
+
+EXTERN CUtlVector< s_bonemerge_t > g_BoneMerge;
 
 struct s_mouth_t
 {
@@ -305,6 +379,11 @@ struct s_linearmove_t
 #define CMD_SPLINEDELTA 14
 #define CMD_COMPRESS 15
 #define CMD_NUMFRAMES 16
+#define CMD_COUNTERROTATE 17
+#define CMD_SETBONE 18
+#define CMD_WORLDSPACEBLEND 19
+#define CMD_MATCHBLEND 20
+#define CMD_LOCALHIERARCHY 21
 
 struct s_animation_t;
 struct s_ikrule_t;
@@ -344,12 +423,24 @@ struct s_animcmd_t
 			int				motiontype;
 			int				srcframe;
 			int				destframe;
+			char			*pBonename;
 		} ao;
 
 		struct
 		{
 			s_animation_t	*ref;
+			int				srcframe;
+			int				destframe;
+			int				destpre;
+			int				destpost;
 		} match;
+
+		struct
+		{
+			s_animation_t	*ref;
+			int				startframe;
+			int				loops;
+		} world;
 
 		struct 
 		{
@@ -392,14 +483,43 @@ struct s_animcmd_t
 			int				frames;
 		} numframes;
 
+		struct
+		{
+			char			*pBonename;
+			bool			bHasTarget;
+			float 			targetAngle[3];
+		} counterrotate;
+
+		struct
+		{
+			char			*pBonename;
+			char			*pParentname;
+			int				start;
+			int				peak;
+			int				tail;
+			int				end;
+		} localhierarchy;
+
 		struct s_motion_t	motion;
 	} u;
 };
 
-struct s_ikerror_t
+struct s_streamdata_t
 {
 	Vector pos;
 	Quaternion q;
+};
+
+
+struct s_animationstream_t
+{
+	// source animations
+	int					numerror;
+	s_streamdata_t		*pError;
+	// compressed animations
+	float				scale[6];
+	int					numanim[6];
+	mstudioanimvalue_t	*anim[6];
 };
 
 struct s_ikrule_t
@@ -410,6 +530,7 @@ struct s_ikrule_t
 	int		type;
 	int		slot;
 	char	bonename[MAXSTUDIONAME];
+	char	attachment[MAXSTUDIONAME];
 	int		bone;
 	Vector	pos;
 	Quaternion q;
@@ -423,29 +544,64 @@ struct s_ikrule_t
 	int		end;
 
 	int		contact;
-	int		numerror;
-	s_ikerror_t	*pError;	
+
+	bool	usesequence;
+	bool	usesource;
+
+	int		flags;
+
+	s_animationstream_t errorData;
 };
 
-EXTERN int g_numikrules;
-EXTERN s_ikrule_t g_ikrule[128];
+struct s_localhierarchy_t
+{
+	int		bone;
+	int		newparent;
+
+	int		start;
+	int		peak;
+	int		tail;
+	int		end;
+
+	s_animationstream_t localData;
+};
 
 
 struct s_source_t;
 EXTERN	int g_numani;
+struct s_compressed_t
+{
+	int					num[6];
+	mstudioanimvalue_t *data[6];
+};
+
 struct s_animation_t
 {
-	bool			isimplied;
+	bool			isImplied;
+	bool			isOverride;
+	bool			doesOverride;
 	int				index;
 	char			name[MAXSTUDIONAME];
 	char			filename[MAX_PATH];
+
+	/*
+	int				animsubindex;
+
+	// For sharing outside of current .mdl file
+	bool			shared_group_checkvalidity;
+	bool			shared_group_valid;
+	char			shared_animgroup_file[ MAX_PATH ]; // share file name
+	char			shared_animgroup_name[ MAXSTUDIONAME ]; // group name in share file
+	int				shared_group_subindex;
+	studioanimhdr_t *shared_group_header;
+	*/
 
 	float			fps;
 	int				startframe;
 	int				endframe;
 	int				flags;
 	// animations processed (time shifted, linearized, and bone adjusted ) from source animations
-	s_bone_t		*sanim[MAXSTUDIOANIMATIONS]; // [frame][bones];
+	CUtlVectorAuto< s_bone_t * > sanim; // [MAXSTUDIOANIMFRAMES]; // [frame][bones];
 
 	int				motiontype;
 
@@ -461,27 +617,39 @@ struct s_animation_t
 	float			scale; // ????
 	RadianEuler		rotation; 
 
-	s_source_t *source;
+	s_source_t		*source;
+	char			animationname[MAX_PATH];
 
 	Vector 			bmin;
 	Vector			bmax;
 
-	// NA???
-
 	int				numframes;
-	int				numanim[MAXSTUDIOSRCBONES][6];
-	mstudioanimvalue_t *anim[MAXSTUDIOSRCBONES][6];
 
-	int				weightlist;
+	// compressed animation data
+	int				numsections;
+	int				sectionframes;
+	CUtlVectorAuto< CUtlVectorAuto< s_compressed_t > > anim;
+
+	// int				weightlist;
 	float			weight[MAXSTUDIOSRCBONES];
+	float			posweight[MAXSTUDIOSRCBONES];
 
 	int				numcmds;
 	s_animcmd_t		cmds[MAXSTUDIOCMDS];
 
 	int				numikrules;
 	s_ikrule_t		ikrule[MAXSTUDIOIKRULES];
+	bool			noAutoIK;
+
+	int				numlocalhierarchy;
+	s_localhierarchy_t localhierarchy[MAXSTUDIOIKRULES];
+
+	float			motionrollback;
+
+	bool			disableAnimblocks;		// no demand loading
+	bool			isFirstSectionLocal;	// first block of a section isn't demand loaded
 };
-EXTERN	s_animation_t *g_panimation[MAXSTUDIOANIMATIONS];
+EXTERN	s_animation_t *g_panimation[MAXSTUDIOANIMS];
 
 
 EXTERN  int	g_numcmdlists;
@@ -491,7 +659,7 @@ struct s_cmdlist_t
 	int				numcmds;
 	s_animcmd_t		cmds[MAXSTUDIOCMDS];
 };
-EXTERN	s_cmdlist_t g_cmdlist[MAXSTUDIOANIMATIONS];
+EXTERN	s_cmdlist_t g_cmdlist[MAXSTUDIOANIMS];
 
 
 struct s_iklock_t
@@ -511,6 +679,7 @@ struct s_event_t
 	int				event;
 	int				frame;
 	char			options[64];
+	char			eventname[MAXSTUDIONAME];
 };
 
 struct s_autolayer_t
@@ -518,6 +687,7 @@ struct s_autolayer_t
 	char			name[MAXSTUDIONAME];
 	int				sequence;
 	int				flags;
+	int				pose;
 	float			start;
 	float			peak;
 	float			tail;
@@ -525,9 +695,9 @@ struct s_autolayer_t
 };
 
 
-EXTERN	int g_numseq;
-struct s_sequence_t
+class s_sequence_t
 {
+public:
 	char			name[MAXSTUDIONAME];
 	char			activityname[MAXSTUDIONAME];	// index into the string table, the name of this activity.
 
@@ -543,20 +713,22 @@ struct s_sequence_t
 
 	int				numblends;
 	int				groupsize[2];
-	s_animation_t	*panim[MAXSTUDIOBLENDS][MAXSTUDIOBLENDS];
+	CUtlVectorAuto< CUtlVectorAuto< s_animation_t * > > panim; // [MAXSTUDIOBLENDS][MAXSTUDIOBLENDS];
 
 	int				paramindex[2];
 	float			paramstart[2];
 	float			paramend[2];
 	int				paramattachment[2];
 	int				paramcontrol[2];
-	float			param0[MAXSTUDIOBLENDS]; // [MAXSTUDIOBLENDS];
-	float			param1[MAXSTUDIOBLENDS]; // [MAXSTUDIOBLENDS];
+	CUtlVectorAuto< float >param0; // [MAXSTUDIOBLENDS];
+	CUtlVectorAuto< float >param1; // [MAXSTUDIOBLENDS];
+	s_animation_t	*paramanim;
+	s_animation_t	*paramcompanim;
+	s_animation_t	*paramcenter;
 
 	// Vector			automovepos[MAXSTUDIOANIMATIONS];
 	// Vector			automoveangle[MAXSTUDIOANIMATIONS];
 
-	int				seqgroup;
 	int				animindex;
 
 	Vector 			bmin;
@@ -574,25 +746,32 @@ struct s_sequence_t
 	int				numikrules;
 
 	int				numautolayers;
-	s_autolayer_t	autolayer[8];
+	s_autolayer_t	autolayer[64];
 
 	float			weight[MAXSTUDIOSRCBONES];
 
-	s_iklock_t		iklock[8];
+	s_iklock_t		iklock[64];
 	int				numiklocks;
+
+	int				cycleposeindex;
 
 	CUtlVector< char > KeyValue;
 };
-EXTERN	s_sequence_t g_sequence[MAXSTUDIOSEQUENCES];
+EXTERN	CUtlVector< s_sequence_t > g_sequence;
+//EXTERN	int g_numseq;
 
 
-EXTERN int g_numseqgroups;
-struct s_sequencegroup_t
+EXTERN int g_numanimblocks;
+struct s_animblock_t
 {
-	char	label[MAXSTUDIONAME];
-	char	name[MAXSTUDIONAME];
+	int		iStartAnim;
+	int		iEndAnim;
+	byte	*start;
+	byte	*end;
 };
-EXTERN s_sequencegroup_t g_sequencegroup[MAXSTUDIOSEQUENCES];
+EXTERN s_animblock_t g_animblock[MAXSTUDIOANIMBLOCKS];
+EXTERN int g_animblocksize;
+EXTERN char g_animblockname[260];
 
 
 EXTERN int g_numposeparameters;
@@ -623,6 +802,10 @@ struct rgb2_t
 };
 
 // FIXME: what about texture overrides inline with loading models
+enum TextureFlags_t
+{
+	RELATIVE_TEXTURE_PATH_SPECIFIED = 0x1
+};
 
 struct s_texture_t
 {
@@ -661,9 +844,52 @@ struct s_mesh_t
 
 struct s_vertanim_t
 {
-	int	vertex;
+	int		vertex;
+	float	speed;
+	float	side;
 	Vector	pos;
 	Vector	normal;
+	float	wrinkle;
+};
+
+struct s_lodvertexinfo_t : public s_vertexinfo_t
+{
+	int lodFlag;
+};
+
+// processed aggregate lod pools
+struct s_loddata_t
+{
+	int					numvertices;
+	s_lodvertexinfo_t	*vertex;
+
+	int					numfaces;
+	s_face_t			*face;
+
+	s_mesh_t			mesh[MAXSTUDIOSKINS];
+
+	// remaps verts from an lod's source mesh to this all-lod processed aggregate pool
+	int					*pMeshVertIndexMaps[MAX_NUM_LODS];
+};
+
+// Animations stored in raw off-disk source files.  Raw data should be not processed.
+class s_sourceanim_t
+{
+public:
+	char animationname[MAX_PATH];
+	int numframes;
+	int startframe;
+	int endframe;
+	CUtlVectorAuto< s_bone_t * >rawanim;
+
+	// vertex animation
+	bool			newStyleVertexAnimations;	// new style doesn't store a base pose in vertex anim[0]
+	int				*vanim_mapcount;	// local verts map to N target verts
+	int				**vanim_map;		// local vertices to target vertices mapping list
+	int				*vanim_flag;		// local vert does animate
+
+	int				numvanims[MAXSTUDIOANIMFRAMES];
+	s_vertanim_t	*vanim[MAXSTUDIOANIMFRAMES];	// [frame][vertex]
 };
 
 // raw off-disk source files.  Raw data should be not processed.
@@ -672,65 +898,70 @@ struct s_source_t
 	char	filename[MAX_PATH];
 	int 	time;	// time stamp
 
+	bool	isActiveModel;
+
 	// local skeleton hierarchy
 	int numbones;
 	s_node_t localBone[MAXSTUDIOSRCBONES];
 	matrix3x4_t boneToPose[MAXSTUDIOSRCBONES];	// converts bone local data into initial pose data
 
 	// bone remapping
-	int boneref[MAXSTUDIOSRCBONES]; // is local bone (or child) referenced with a vertex
+	int boneflags[MAXSTUDIOSRCBONES];	// attachment, vertex, etc flags for this bone
+	int boneref[MAXSTUDIOSRCBONES];		// flags for this and child bones
 	int	boneLocalToGlobal[MAXSTUDIOSRCBONES]; // bonemap : local bone to world bone mapping
 	int	boneGlobalToLocal[MAXSTUDIOSRCBONES]; // boneimap : world bone to local bone mapping
-
 
 	int	texmap[MAXSTUDIOSKINS*4];		// map local MAX materials to unique textures
 
 	// per material mesh
-	int nummeshes;
-	int	meshindex[MAXSTUDIOSKINS];	// mesh to skin index
-	s_mesh_t mesh[MAXSTUDIOSKINS];
+	int				nummeshes;
+	int				meshindex[MAXSTUDIOSKINS];	// mesh to skin index
+	s_mesh_t		mesh[MAXSTUDIOSKINS];
 
-	// model global copy of vertices
-	int numvertices;
-	s_boneweight_t *localBoneweight;	// vertex info about local bone weighting
-	s_boneweight_t *globalBoneweight;	// vertex info about global bone weighting
-	s_vertexinfo_t *vertexInfo;			// generic vertex info
-	Vector*		vertex;	
-	Vector*		normal;
-	Vector4D*		tangentS;
-	Vector2D*	texcoord;
-	int *		topLODMeshVertIndex; // garymcthack - need to make sure this starts off NULL
+	// vertices defined in "local" space (not remapped to global bones)
+	int				numvertices;
+	s_vertexinfo_t	*vertex;
+
+	// vertices defined in "global" space (remapped to global bones)
+	CUtlVector< s_vertexinfo_t > m_GlobalVertices;
 
 	int numfaces;
 	s_face_t *face;						// vertex indexs per face
 
-	// raw skeletal animation	
-	int numframes;
-	int startframe;
-	int endframe;
-	s_bone_t		*rawanim[MAXSTUDIOANIMATIONS]; // [frame][bones];
+	// raw skeletal animation
+	CUtlVector< s_sourceanim_t > m_Animations;
+	// default adjustments
+	Vector			adjust;
+	float			scale; // ????
+	RadianEuler		rotation; 
 
-	// vertex animation
-	int				*vanim_mapcount;	// local verts map to N target verts
-	int				**vanim_map;		// local vertices to target vertices mapping list
-	int				*vanim_flag;		// local vert does animate
 
-	int				numvanims[MAXSTUDIOANIMATIONS];
-	s_vertanim_t	*vanim[MAXSTUDIOANIMATIONS];	// [frame][vertex]
-	// texture coord animation
+	// Flex keys stored in the source data
+	CUtlVector< s_flexkey_t > m_FlexKeys;
 
-	// eyeball placement
+	// Combination controls stored in the source data
+	CUtlVector< s_combinationcontrol_t > m_CombinationControls;
+
+	// Combination rules stored in the source data
+	CUtlVector< s_combinationrule_t > m_CombinationRules;
+
+	// Flexcontroller remaps
+	CUtlVector< s_flexcontrollerremap_t > m_FlexControllerRemaps;
+
+	// Attachment points stored in the SMD/DMX/etc. file
+	CUtlVector< s_attachment_t > m_Attachments;
+
+	// Information about how flex controller remaps map into flex rules
+	int m_nKeyStartIndex;	// The index at which the flex keys for this model start in the global list
+	CUtlVector< int > m_rawIndexToRemapSourceIndex;
+	CUtlVector< int > m_rawIndexToRemapLocalIndex;
+	CUtlVector< int > m_leftRemapIndexToGlobalFlexControllIndex;
+	CUtlVector< int > m_rightRemapIndexToGlobalFlexControllIndex;
 };
+
 
 EXTERN int g_numsources;
 EXTERN s_source_t *g_source[MAXSTUDIOSEQUENCES];
-
-struct s_eyeballvert_t
-{
-	int		vertex;		// vertex index
-	int		texcoord;	// texture coordinate index
-	int		normal;		// normal index
-};
 
 struct s_eyeball_t
 {
@@ -744,19 +975,22 @@ struct s_eyeball_t
 	Vector	forward;
 
 	int		mesh;
-	int		iris_material;
 	float	iris_scale;
-	int		glint_material;	// !!!
-
-	int		upperflexdesc[3];
-	int		lowerflexdesc[3];
-	float	uppertarget[3];
-	float	lowertarget[3];
-	int		upperflex;
-	int		lowerflex;
 
 	int		upperlidflexdesc;
+	int		upperflexdesc[3];
+	float	uppertarget[3];
+
 	int		lowerlidflexdesc;
+	int		lowerflexdesc[3];
+	float	lowertarget[3];
+
+	int		m_flags;
+
+	enum StudioMdlEyeBallFlags
+	{
+		STUDIOMDL_EYELID_DME = 1 << 0
+	};
 };
 
 struct s_model_t
@@ -765,7 +999,6 @@ struct s_model_t
 	char filename[MAX_PATH];
 
 	// needs local scaling and rotation paramaters
-
 	s_source_t	 *source; // index into source table
 
 	float scale;	// UNUSED
@@ -782,7 +1015,14 @@ struct s_model_t
 
 	int	numflexes;
 	int flexoffset;
+
+	// References to sources which are the LODs for this model
+	CUtlVector< s_source_t* > m_LodSources;
+
+	// processed aggregate lod data
+	s_loddata_t		*m_pLodData;
 };
+
 EXTERN	int g_nummodels;
 EXTERN	int g_nummodelsbeforeLOD;
 EXTERN	s_model_t *g_model[MAXSTUDIOMODELS];
@@ -794,6 +1034,7 @@ struct s_flexdesc_t
 };
 EXTERN int g_numflexdesc;
 EXTERN s_flexdesc_t g_flexdesc[MAXSTUDIOFLEXDESC];
+int Add_Flexdesc( const char *name );
 
 
 struct s_flexcontroller_t
@@ -806,12 +1047,31 @@ struct s_flexcontroller_t
 EXTERN int g_numflexcontrollers;
 EXTERN s_flexcontroller_t g_flexcontroller[MAXSTUDIOFLEXCTRL];
 
+struct s_flexcontrollerremap_t
+{
+	CUtlString m_Name;
+	FlexControllerRemapType_t m_RemapType;
+	bool m_bIsStereo;
+	CUtlVector< CUtlString > m_RawControls;
+	int m_Index;		///< The model relative index of the slider control for value for this if it's not split, -1 otherwise
+	int m_LeftIndex;	///< The model relative index of the left slider control for this if it's split, -1 otherwise
+	int m_RightIndex;	///< The model relative index of the right slider control for this if it's split, -1 otherwise
+	int m_MultiIndex;	///< The model relative index of the value slider control for this if it's multi, -1 otherwise
+	CUtlString m_EyesUpDownFlexName;	// The name of the eyes up/down flex controller
+	int m_EyesUpDownFlexController;		// The global index of the Eyes Up/Down Flex Controller
+	int m_BlinkController;				// The global index of the Blink Up/Down Flex Controller
+};
+
+extern CUtlVector<s_flexcontrollerremap_t> g_FlexControllerRemap;
+
 
 struct s_flexkey_t
 {
 	int	 flexdesc;
+	int	 flexpair;
 	
 	s_source_t	 *source; // index into source table
+	char animationname[MAX_PATH];
 
 	int	imodel;
 	int	frame;
@@ -824,22 +1084,25 @@ struct s_flexkey_t
 	int		original;
 	float	split;
 
+	float	decay;
+
 	// extracted and remapped vertex animations
 	int				numvanims;
 	s_vertanim_t	*vanim;
-
+	int				vanimtype;
 	int	weighttable;
 };
 EXTERN int g_numflexkeys;
 EXTERN s_flexkey_t g_flexkey[MAXSTUDIOFLEXKEYS];
 EXTERN s_flexkey_t *g_defaultflexkey;
 
-#define MAX_OPS 128
+#define MAX_OPS 512
 
 struct s_flexop_t
 {
 	int		op;
-	union {
+	union 
+	{
 		int		index;
 		float	value;
 	} d;
@@ -851,8 +1114,25 @@ struct s_flexrule_t
 	int		numops;
 	s_flexop_t op[MAX_OPS];
 };
+
 EXTERN int g_numflexrules;
 EXTERN s_flexrule_t g_flexrule[MAXSTUDIOFLEXRULES];
+
+struct s_combinationcontrol_t
+{
+	char name[MAX_PATH];
+};
+
+struct s_combinationrule_t
+{
+	// The 'ints' here are indices into the m_Controls array
+	CUtlVector< int > m_Combination;
+	CUtlVector< CUtlVector< int > > m_Dominators;
+
+	// The index into the flexkeys to put the result in
+	// (should affect both left + right if the key is sided)
+	int m_nFlex;
+};
 
 EXTERN	Vector g_defaultadjust;
 
@@ -868,22 +1148,30 @@ EXTERN	int g_numbodyparts;
 EXTERN	s_bodypart_t g_bodypart[MAXSTUDIOBODYPARTS];
 
 
+#define MAXWEIGHTLISTS	128
+#define MAXWEIGHTSPERLIST	(MAXSTUDIOBONES)
+
 struct s_weightlist_t
 {
+	// weights, indexed by numbones per weightlist
 	char			name[MAXSTUDIONAME];
 	int				numbones;
-	char			bonename[16][MAXSTUDIONAME];
-	float			boneweight[16];
-	float			weight[MAXSTUDIOBONES]; // unified weightlist
+	char			*bonename[MAXWEIGHTSPERLIST];
+	float			boneweight[MAXWEIGHTSPERLIST];
+	float			boneposweight[MAXWEIGHTSPERLIST];
+
+	// weights, indexed by global bone index
+	float			weight[MAXSTUDIOBONES];
+	float			posweight[MAXSTUDIOBONES];
 };
 
 EXTERN	int	g_numweightlist;
-EXTERN	s_weightlist_t g_weightlist[16];
+EXTERN	s_weightlist_t g_weightlist[MAXWEIGHTLISTS];
 
 struct s_iklink_t
 {
 	int		bone;
-	Vector	contact;
+	Vector	kneeDir;
 };
 
 struct s_ikchain_t
@@ -893,14 +1181,29 @@ struct s_ikchain_t
 	int				axis;
 	float			value;
 	int				numlinks;
-	int				link[10]; // hip, knee, ankle, toes...
+	s_iklink_t		link[10]; // hip, knee, ankle, toes...
 	float			height;
 	float			radius;
 	float			floor;
+	Vector			center;
 };
 
 EXTERN	int g_numikchains;
 EXTERN	s_ikchain_t g_ikchain[16];
+
+
+struct s_jigglebone_t
+{
+	int				flags;
+	char			bonename[MAXSTUDIONAME];
+	int				bone;
+
+	mstudiojigglebone_t data;	// the actual jiggle properties
+};
+
+EXTERN int g_numjigglebones;
+EXTERN s_jigglebone_t g_jigglebones[MAXSTUDIOBONES];
+EXTERN int g_jigglebonemap[MAXSTUDIOBONES]; // map used jigglebone's to source jigglebonebone's
 
 
 struct s_axisinterpbone_t
@@ -944,6 +1247,26 @@ EXTERN int g_numquatinterpbones;
 EXTERN s_quatinterpbone_t g_quatinterpbones[MAXSTUDIOBONES];
 EXTERN int g_quatinterpbonemap[MAXSTUDIOBONES]; // map used quatinterpbone's to source axisinterpbone's
 
+
+struct s_aimatbone_t
+{
+	char			bonename[MAXSTUDIONAME];
+	int				bone;
+	char			parentname[MAXSTUDIONAME];
+	int				parent;
+	char			aimname[MAXSTUDIONAME];
+	int				aimAttach;
+	int				aimBone;
+	Vector			aimvector;
+	Vector			upvector;
+	Vector			basepos;
+};
+
+EXTERN int g_numaimatbones;
+EXTERN s_aimatbone_t g_aimatbones[MAXSTUDIOBONES];
+EXTERN int g_aimatbonemap[MAXSTUDIOBONES]; // map used aimatpbone's to source aimatpbone's (may be optimized out)
+
+
 struct s_forcedhierarchy_t
 {
 	char			parentname[MAXSTUDIONAME];
@@ -974,46 +1297,76 @@ EXTERN s_limitrotation_t g_limitrotation[MAXSTUDIOBONES];
 
 extern int BuildTris (s_trianglevert_t (*x)[3], s_mesh_t *y, byte **ppdata );
 
-EXTERN	int is_v1support;
+
+struct s_bonesaveframe_t
+{
+	char		name[ MAXSTUDIOHITBOXSETNAME ];
+	bool		bSavePos;
+	bool		bSaveRot;
+};
+
+EXTERN CUtlVector< s_bonesaveframe_t > g_bonesaveframe;
 
 int OpenGlobalFile( char *src );
-s_source_t *Load_Source( char const *filename, const char *ext, bool reverse = false );
-extern int Load_VRM ( s_source_t *psource );
-extern int Load_SMD ( s_source_t *psource );
-extern int Load_VTA ( s_source_t *psource );
-extern void Build_Reference( s_source_t *psource);
-extern int Grab_Nodes( s_node_t *pnodes );
-extern void Grab_Animation( s_source_t *psource );
+bool GetGlobalFilePath( const char *pSrc, char *pFullPath, int nMaxLen );
+s_source_t *Load_Source( char const *filename, const char *ext, bool reverse = false, bool isActiveModel = false );
+int Load_VRM( s_source_t *psource );
+int Load_SMD( s_source_t *psource );
+int Load_VTA( s_source_t *psource );
+int Load_OBJ( s_source_t *psource );
+int Load_DMX( s_source_t *psource );
+int AppendVTAtoOBJ( s_source_t *psource, char *filename, int frame );
+void Build_Reference( s_source_t *psource, const char *pAnimName );
+int Grab_Nodes( s_node_t *pnodes );
+void Grab_Animation( s_source_t *psource, const char *pAnimName );
 
-extern int lookup_texture( char *texturename );
-extern int use_texture_as_material( int textureindex );
-extern int material_to_texture( int material );
+// Processes source comment line and extracts information about the data file
+void ProcessSourceComment( s_source_t *psource, const char *pCommentString );
 
-extern int LookupAttachment( char *name );
+// Processes original content file "szOriginalContentFile" that was used to generate
+// data file "szDataFile"
+void ProcessOriginalContentFile( const char *szDataFile, const char *szOriginalContentFile );
 
-extern void ClearModel (void);
-extern void SimplifyModel (void);
-extern void CollapseBones (void);
+//-----------------------------------------------------------------------------
+// Utility methods to get or add animation data from sources
+//-----------------------------------------------------------------------------
+s_sourceanim_t *FindSourceAnim( s_source_t *pSource, const char *pAnimName );
+const s_sourceanim_t *FindSourceAnim( const s_source_t *pSource, const char *pAnimName );
+s_sourceanim_t *FindOrAddSourceAnim( s_source_t *pSource, const char *pAnimName );
 
-extern void Sys_Error (char *error, ...);
+// Adds flexkey data to a particular source
+void AddFlexKey( s_source_t *pSource, CDmeCombinationOperator *pComboOp, const char *pFlexKeyName );
 
-extern void adjust_vertex( float *org );
-extern void scale_vertex( Vector &org );
-extern void clip_rotations( RadianEuler& rot );
-extern void clip_rotations( Vector& rot );
+// Adds combination data to the source
+void AddCombination( s_source_t *pSource, CDmeCombinationOperator *pCombination );
 
-extern void *kalloc( int num, int size );
-extern void kmemset( void *ptr, int value, int size );
-extern char *stristr( const char *string, const char *string2 );
-#define strcpyn( a, b ) strncpy( a, b, sizeof( a ) )
+int LookupTexture( const char *pTextureName, bool bRelativePath = false );
+int UseTextureAsMaterial( int textureindex );
+int MaterialToTexture( int material );
 
-bool CompareNormalFuzzy( Vector n1, Vector n2 );
-bool ComparePositionFuzzy( const Vector &p1, const Vector &p2 );
-bool CompareTexCoordsFuzzy( const Vector2D &t1, const Vector2D &t2 );
-bool CompareBoneWeights( const s_boneweight_t &b1, const s_boneweight_t &b2 );
-bool CompareBoneWeightsFuzzy( const s_boneweight_t &b1, const s_boneweight_t &b2 );
+int LookupAttachment( char *name );
+
+void ClearModel (void);
+void SimplifyModel (void);
+void CollapseBones (void);
+
+void adjust_vertex( float *org );
+void scale_vertex( Vector &org );
+void clip_rotations( RadianEuler& rot );
+void clip_rotations( Vector& rot );
+
+void *kalloc( int num, int size );
+void kmemset( void *ptr, int value, int size );
+char *stristr( const char *string, const char *string2 );
 
 void CalcBoneTransforms( s_animation_t *panimation, int frame, matrix3x4_t* pBoneToWorld );
+void CalcBoneTransforms( s_animation_t *panimation, s_animation_t *pbaseanimation, int frame, matrix3x4_t* pBoneToWorld );
+void CalcBoneTransformsCycle( s_animation_t *panimation, s_animation_t *pbaseanimation, float flCycle, matrix3x4_t* pBoneToWorld );
+
+void BuildRawTransforms( const s_source_t *psource, const char *pAnimationName, int frame, float scale, Vector const &shift, RadianEuler const &rotate, int flags, matrix3x4_t* boneToWorld );
+void BuildRawTransforms( const s_source_t *psource, const char *pAnimationName, int frame, matrix3x4_t* boneToWorld );
+
+void TranslateAnimations( const s_source_t *pSource, const matrix3x4_t *pSrcBoneToWorld, matrix3x4_t *pDestBoneToWorld );
 
 // Returns surface property for a given joint
 char* GetSurfaceProp ( char const* pJointName );
@@ -1038,16 +1391,18 @@ s_source_t* GetModelLODSource( const char *pModelName,
 
 void LoadLODSources( void );
 void ConvertBoneTreeCollapsesToReplaceBones( void );
+void FixupReplacedBones( void );
 void UnifyLODs( void );
 void SpewBoneUsageStats( void );
 void MarkParentBoneLODs( void );
-
+//void CheckAutoShareAnimationGroup( char const *animation_name );
 
 /*
 =================
 =================
 */
 
+extern bool GetLineInput(void);
 extern char	g_szFilename[1024];
 extern FILE	*g_fpInput;
 extern char	g_szLine[4096];
@@ -1058,7 +1413,7 @@ extern float g_min_resolution, g_max_resolution;
 
 EXTERN	int g_numverts;
 EXTERN	Vector g_vertex[MAXSTUDIOVERTS];
-EXTERN	mstudioboneweight_t g_bone[MAXSTUDIOVERTS];
+EXTERN	s_boneweight_t g_bone[MAXSTUDIOVERTS];
 
 EXTERN	int g_numnormals;
 EXTERN	Vector g_normal[MAXSTUDIOVERTS];
@@ -1087,6 +1442,7 @@ EXTERN	v_unify_t v_listdata[MAXSTUDIOVERTS];
 EXTERN	int numvlist;
 
 int SortAndBalanceBones( int iCount, int iMaxCount, int bones[], float weights[] );
+void Grab_Vertexanimation( s_source_t *psource, const char *pAnimationName );
 extern void BuildIndividualMeshes( s_source_t *psource );
 
 //-----------------------------------------------------------------------------
@@ -1163,24 +1519,84 @@ public:
 	{
 		return m_bFacialAnimation;
 	}
+
+	void StripFromModel( bool val )
+	{
+		m_bStrippedFromModel = val;
+	}
+	bool IsStrippedFromModel() const
+	{
+		return m_bStrippedFromModel;
+	}
+	
 	LodScriptData_t()
 	{
 		m_bFacialAnimation = true;
+		m_bStrippedFromModel = false;
 	}
+
 private:
 	bool m_bFacialAnimation;
+	bool m_bStrippedFromModel;
 };
 
 EXTERN CUtlVector<LodScriptData_t> g_ScriptLODs;
 
 extern bool g_collapse_bones;
+extern bool g_collapse_bones_aggressive;
 extern bool g_quiet;
+extern bool g_verbose;
 extern bool g_bCheckLengths;
 extern bool g_bPrintBones;
 extern bool g_bPerf;
 extern bool g_bFast;
+extern bool g_bDumpGraph;
+extern bool g_bMultistageGraph;
+extern bool g_bCreateMakefile;
+extern bool g_bZBrush;
+extern bool g_bVerifyOnly;
+extern bool g_bUseBoneInBBox;
+extern bool g_bLockBoneLengths;
+extern bool g_bOverridePreDefinedBones;
+extern bool g_bX360;
+extern int g_minLod;
+extern int g_numAllowedRootLODs;
+extern bool g_bBuildPreview;
+extern bool g_bCenterBonesOnVerts;
+extern float g_flDefaultMotionRollback;
+extern int g_minSectionFrameLimit;
+extern int g_sectionFrames;
+extern bool g_bNoAnimblockStall;
 
-EXTERN int g_numcollapse;
-EXTERN char *g_collapse[MAXSTUDIOSRCBONES];
+extern Vector g_vecMinWorldspace;
+extern Vector g_vecMaxWorldspace;
+
+EXTERN CUtlVector< char * >g_collapse;
 
 extern float GetCollisionModelMass();
+
+// List of defined bone flex drivers
+extern DmElementHandle_t g_hDmeBoneFlexDriverList;
+
+// the first time these are called, the name of the model/QC file is printed so that when 
+// running in batch mode, no echo, when dumping to a file, it can be determined which file is broke.
+void MdlError( PRINTF_FORMAT_STRING char const *pMsg, ... );
+void MdlWarning( PRINTF_FORMAT_STRING char const *pMsg, ... );
+
+void CreateMakefile_AddDependency( const char *pFileName );
+void EnsureDependencyFileCheckedIn( const char *pFileName );
+
+bool ComparePath( const char *a, const char *b );
+
+byte IsByte( int val );
+char IsChar( int val );
+int IsInt24( int val );
+short IsShort( int val );
+unsigned short IsUShort( int val );
+
+
+extern CCheckUVCmd g_StudioMdlCheckUVCmd;
+
+
+#endif // STUDIOMDL_H
+

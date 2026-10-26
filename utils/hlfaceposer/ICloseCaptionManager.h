@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ICLOSECAPTIONMANAGER_H
 #define ICLOSECAPTIONMANAGER_H
@@ -21,10 +21,11 @@ class ICloseCaptionManager
 public:
 	virtual void Reset( void ) = 0;
 
-	virtual void PreProcess( int framecount ) = 0;
-	virtual void Process( int framecount, StudioModel *model, float curtime, CSentence* sentence ) = 0;
-	virtual void PostProcess( int framecount, float frametime ) = 0;
-	virtual void Draw( CChoreoWidgetDrawHelper &helper, RECT &rcOutput ) = 0;
+	virtual void Process( char const *tokenname, float duration, int languageid ) = 0;
+
+	virtual bool LookupUnicodeText( int languageId, char const *token, wchar_t *outbuf, size_t count ) = 0;
+	// Same as above, except strips out <> command tokens
+	virtual bool LookupStrippedUnicodeText( int languageId, char const *token, wchar_t *outbuf, size_t count ) = 0;
 };
 
 extern ICloseCaptionManager *closecaptionmanager;

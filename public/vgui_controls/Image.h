@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IMAGE_H
 #define IMAGE_H
@@ -36,18 +31,23 @@ public:
 	virtual ~Image();
 
 	// Set the position of the image
-	virtual void SetPos(int x,int y);
+	virtual void SetPos( int x, int y );
 	// Get the position of the image
-	virtual void GetPos(int& x,int& y);
+	virtual void GetPos( int &x, int &y );
 	// Get the size of the image
-	virtual void GetSize(int& wide,int& tall);
-	virtual void GetContentSize(int& wide,int& tall);
+	virtual void GetSize( int &wide, int &tall );
+	virtual void GetContentSize( int &wide, int &tall );
 	// Set the draw color 
-	virtual void SetColor(Color color);
+	virtual void SetColor( Color color );
 	// set the background color
-	virtual void SetBkColor(Color color) { DrawSetColor(color); }
+	virtual void SetBkColor( Color color ) { DrawSetColor( color ); }
 	// Get the draw color 
 	virtual Color GetColor();
+	virtual bool Evict();
+	virtual int GetNumFrames();
+	virtual void SetFrame( int nFrame );
+	virtual HTexture GetID();
+	virtual void SetRotation( int iRotation ) { return; };
 
 protected:
 	virtual void SetSize(int wide, int tall);

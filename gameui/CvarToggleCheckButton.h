@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CVARTOGGLECHECKBUTTON_H
 #define CVARTOGGLECHECKBUTTON_H
@@ -15,6 +15,8 @@
 
 class CCvarToggleCheckButton : public vgui::CheckButton
 {
+	DECLARE_CLASS_SIMPLE( CCvarToggleCheckButton, vgui::CheckButton );
+
 public:
 	CCvarToggleCheckButton( vgui::Panel *parent, const char *panelName, const char *text, 
 		char const *cvarname );
@@ -27,12 +29,10 @@ public:
 	void			Reset();
 	void			ApplyChanges();
 	bool			HasBeenModified();
+	virtual void	ApplySettings( KeyValues *inResourceData );
 
 private:
-	typedef vgui::CheckButton BaseClass;
-
-	DECLARE_PANELMAP();
-	void			OnButtonChecked();
+	MESSAGE_FUNC( OnButtonChecked, "CheckButtonChecked" );
 
 	char			*m_pszCvarName;
 	bool			m_bStartValue;

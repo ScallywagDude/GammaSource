@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
@@ -21,7 +23,7 @@ mov oPos, $projPos
 ;------------------------------------------------------------------------------
 
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2
@@ -39,10 +41,14 @@ free $worldPos
 ; each bumped lightmap
 &AllocateRegister( \$offset );
 mov $offset.xy, $vTexCoord2
-dp4 oT0.x, $vTexCoord0, c90
-dp4 oT0.y, $vTexCoord0, c91
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 add oT1.xy, $offset, $vTexCoord1
 mad oT2.xy, $offset, $cTwo, $vTexCoord1
-mad oT3.xy, $offset, $cThree, $vTexCoord1
+; make a 3
+alloc $three
+add $three, $cOne, $cTwo
+mad oT3.xy, $offset, $three, $vTexCoord1
+free $three
 
 &FreeRegister( \$offset );

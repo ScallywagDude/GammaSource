@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef WIZARDPANEL_H
 #define WIZARDPANEL_H
@@ -30,6 +25,8 @@ class WizardSubPanel;
 //-----------------------------------------------------------------------------
 class WizardPanel : public Frame
 {
+	DECLARE_CLASS_SIMPLE( WizardPanel, Frame );
+
 public:
 	WizardPanel(Panel *parent, const char *panelName);
 	~WizardPanel();
@@ -37,14 +34,12 @@ public:
 	// Start the wizard, starting with the startPanel
 	virtual void Run(WizardSubPanel *startPanel);
 
-	DECLARE_PANELMAP();
-
 	// Called when the buttons are pressed
 	// WizardSubPanels can also call these functions to simulate a button being pressed
-	virtual void OnNextButton();
-	virtual void OnPrevButton();
-	virtual void OnFinishButton();
-	virtual void OnCancelButton();
+	MESSAGE_FUNC( OnNextButton, "NextButton" );
+	MESSAGE_FUNC( OnPrevButton, "PrevButton" );
+	MESSAGE_FUNC( OnFinishButton, "FinishButton" );
+	MESSAGE_FUNC( OnCancelButton, "CancelButton" );
 
 	// sets whether or not a button is enabled
 	// this state is managed, and will be reset whenever going to a new page
@@ -87,10 +82,16 @@ public:
 	virtual void GetClientArea(int &x, int &y, int &wide, int &tall);
 
 protected:
+	MESSAGE_FUNC_PTR( InternalActivateNextSubPanel, "ActivateNextSubPanel", panel )
+	{
+		ActivateNextSubPanel( (WizardSubPanel *)panel );
+	}
+
 	virtual void ActivateNextSubPanel(WizardSubPanel *subPanel);
 	virtual void ActivatePrevSubPanel();
 	virtual void CreateButtons();
 	virtual void RecalculateTabOrdering();
+	virtual vgui::WizardSubPanel *GetCurrentSubPanel()	{ return _currentSubPanel; }
 
 	// overrides
 	virtual void PerformLayout();
@@ -102,10 +103,10 @@ protected:
 	// close maps to the cancel button
 	virtual void OnClose();
 	virtual void OnCommand(const char *command);
+	virtual void OnCloseFrameButtonPressed();
 
 private:
-	virtual void InternalOnCancelButton();
-	virtual void InternalOnFinishButton();
+	WizardSubPanel *FindNextValidSubPanel(WizardSubPanel *currentPanel);
 
 	Button *_prevButton;
 	Button *_nextButton;
@@ -118,9 +119,6 @@ private:
 	Dar<WizardSubPanel *> _subPanelStack;  // contains a list of all the subpanels (not including the current one)
 
 	bool _showButtons;
-
-	typedef Frame BaseClass;
-
 };
 
 } // namespace vgui

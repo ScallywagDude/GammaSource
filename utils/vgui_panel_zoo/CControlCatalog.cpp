@@ -1,25 +1,23 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
-//=============================================================================
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 
 #include "CControlCatalog.h"
 #include "stdio.h"
 
-#include <VGUI_ISurface.h>
-#include <VGUI_Controls.h>
-#include <VGUI_KeyValues.h>
+#include <vgui/ISurface.h>
+#include "vgui_controls/Controls.h"
+#include "tier1/KeyValues.h"
 
-#include <VGUI_Label.h>
-#include <VGUI_ComboBox.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/ComboBox.h>
 
-#include <VGUI_IVGui.h> // for dprinf statements
+#include "vgui/IVGui.h" // for dprinf statements
 
 #include "filesystem.h"
 
@@ -109,11 +107,19 @@ CControlCatalog::CControlCatalog(): Frame(NULL, "PanelZoo")
 	// Set the width of the Combo box so any element selected will display nicely.
 	m_pSelectControl->SetWide(180);
 
+	CUtlRBTree< char const *, int > sorted( 0, 0, CaselessStringLessThan );
+
+	int i;
+	for ( i = 0; i < m_PanelList.Size(); i++)
+	{
+		sorted.Insert( m_PanelList[i]->GetName() );
+	}
+
 	// Add text selections to the menu list
 	// These are the names of the panels in the panel list
-	for (int i = 0; i < m_PanelList.Size(); i++)
+	for ( i = sorted.FirstInorder() ; i != sorted.InvalidIndex(); i = sorted.NextInorder( i ) )
 	{
-		m_pSelectControl->AddItem(m_PanelList[i]->GetName());
+		m_pSelectControl->AddItem( sorted[ i ], NULL);
 	}
 
 	m_pSelectControl->ActivateItem(0);
@@ -151,7 +157,7 @@ void CControlCatalog::OnClose()
 void CControlCatalog::OnTextChanged()
 {
 	char buf[40];
-	m_pSelectControl->GetText(0, buf, 40);
+	m_pSelectControl->GetText(buf, sizeof( buf ));
 
 	m_pPrevPanel->SetVisible(false);
 

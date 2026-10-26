@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SND_AUDIO_SOURCE_H
 #define SND_AUDIO_SOURCE_H
@@ -40,6 +35,11 @@ class CAudioSource;
 class IAudioDevice
 {
 public:
+	// Add a virtual destructor to silence the clang warning.
+	// This is harmless but not important since the only derived class
+	// doesn't have a destructor.
+	virtual ~IAudioDevice() {}
+
 	virtual void MixBegin( void ) = 0;
 	virtual void Mix8Mono( channel_t *pChannel, char *pData, int outputOffset, int inputOffset, int rateScaleFix, int outCount, int timecompress, bool forward = true ) = 0;
 	virtual void Mix8Stereo( channel_t *pChannel, char *pData, int outputOffset, int inputOffset, int rateScaleFix, int outCount, int timecompress, bool forward = true ) = 0;
@@ -68,8 +68,9 @@ public:
 	virtual CAudioSource *GetSource( void ) = 0;
 
 	virtual int GetSamplePosition( void ) = 0;
+	virtual int GetScrubPosition( void ) = 0;
 
-	virtual bool SetSamplePosition( int position ) = 0;
+	virtual bool SetSamplePosition( int position, bool scrubbing = false ) = 0;
 	virtual void SetLoopPosition( int position ) = 0;
 	virtual int	GetStartPosition( void ) = 0;
 
@@ -84,6 +85,9 @@ public:
 
 	virtual void	SetAutoDelete( bool autodelete ) = 0;
 	virtual bool	GetAutoDelete( void ) const = 0;
+
+	virtual void	SetVolume( float volume ) = 0;
+	virtual channel_t *GetChannel() = 0;
 };
 
 //-----------------------------------------------------------------------------
@@ -108,9 +112,10 @@ public:
 	virtual bool				IsLooped( void ) = 0;
 	virtual bool				IsStreaming( void ) = 0;
 	virtual float				GetRunningLength( void ) = 0;
+	virtual int					GetNumChannels() = 0;
+	virtual bool				IsStereoWav( void ) = 0;
 
 	virtual CSentence			*GetSentence( void ) { return NULL; };
-
 };
 
 

@@ -1,14 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( VertexLitGeneric, VertexLitGeneric_DX7 )
+DEFINE_FALLBACK_SHADER( Skin_DX9, VertexLitGeneric_DX7 )
 
 BEGIN_SHADER( VertexLitGeneric_DX7, 
 			  "Help for VertexLitGeneric_DX7" )
@@ -18,18 +22,19 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 		SHADER_PARAM( DETAILSCALE, SHADER_PARAM_TYPE_FLOAT, "4", "scale of the detail texture" )
 		SHADER_PARAM( SELFILLUMTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "Self-illumination tint" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
-		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
-		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTimesLightmapPlusMaskedCubicEnvMap_glass", "envmap mask" )
-		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
+		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
+		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_envmask", "envmap mask" )
+		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
 		SHADER_PARAM( ENVMAPMASKSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "envmap mask scale" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
 	{
-		// default to 'MODEL' mode...
-		if (!IS_FLAG_DEFINED( MATERIAL_VAR_MODEL ))
-			SET_FLAGS( MATERIAL_VAR_MODEL );
+		// FLASHLIGHTFIXME
+		params[FLASHLIGHTTEXTURE]->SetStringValue( "effects/flashlight001" );
+
+		SET_FLAGS2( MATERIAL_VAR2_SUPPORTS_HW_SKINNING );
 
 		if( !params[ENVMAPMASKSCALE]->IsDefined() )
 			params[ENVMAPMASKSCALE]->SetFloatValue( 1.0f );
@@ -57,20 +62,26 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 		}
 
 		SET_FLAGS2( MATERIAL_VAR2_LIGHTING_VERTEX_LIT );
+		SET_FLAGS2( MATERIAL_VAR2_NEEDS_BAKED_LIGHTING_SNAPSHOTS );
+
+		// If mat_specular 0, then get rid of envmap
+		if( !g_pConfig->UseSpecular() && params[ENVMAP]->IsDefined() && params[BASETEXTURE]->IsDefined() )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
 	}
 
 	SHADER_FALLBACK
 	{
-		if (g_pConfig->bSoftwareLighting)
+		if (g_pHardwareConfig->GetDXSupportLevel() < 70)
 			return "VertexLitGeneric_DX6";
 
-		if (!g_pHardwareConfig->SupportsHardwareLighting())
-			return "VertexLitGeneric_DX6";
 		return 0;
 	}
 
 	SHADER_INIT
 	{
+		LoadTexture( FLASHLIGHTTEXTURE );
 		if (params[BASETEXTURE]->IsDefined())
 		{
 			LoadTexture( BASETEXTURE );
@@ -108,169 +119,13 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 		}
 	}
 
-	int GetDrawFlagsPass1(IMaterialVar** params)
+	void DrawBaseTimesVertexColor( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
 	{
-		int flags = SHADER_DRAW_POSITION;
-		if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
-			flags |= SHADER_DRAW_COLOR;
-		if (params[BASETEXTURE]->IsDefined())
-			flags |= SHADER_DRAW_TEXCOORD1;
-		return flags;
-	}
-
-	void DrawVertexLightingOnly( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		SHADOW_STATE
-		{
-			pShaderShadow->EnableAmbientLightCubeOnStage0( true );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, false );
-			pShaderShadow->EnableLighting( true );
-
-			SetModulationShadowState();
-			SetDefaultBlendingShadowState( );
-
-			pShaderShadow->DrawFlags( GetDrawFlagsPass1( params ) );
-		}
-		DYNAMIC_STATE
-		{
-			SetAmbientCubeDynamicStateFixedFunction( );
-			SetModulationDynamicState();
-			DefaultFog();
-		}
-		Draw();
-	}
-	 
-	void MultiplyByVertexLighting( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		SHADOW_STATE
-		{				
-			pShaderShadow->EnableTexGen( SHADER_TEXTURE_STAGE0, false );
-			pShaderShadow->EnableTexGen( SHADER_TEXTURE_STAGE1, false );
-
-			pShaderShadow->EnableAmbientLightCubeOnStage0( true );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, false );
-			pShaderShadow->EnableLighting( true );
-
-			// NOTE: We're not doing lightmapping here, but we want to use the
-			// same blend mode as we used for lightmapping
-			pShaderShadow->EnableBlending( true );
-			SingleTextureLightmapBlendMode();
-			
-			pShaderShadow->EnableCustomPixelPipe( true );
-			pShaderShadow->CustomTextureStages( 2 );
-
-			// This here will perform color = vertex light * (cc alpha) + 1 * (1 - cc alpha)
-			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
-				SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_ADDSIGNED2X, 
-				SHADER_TEXARG_TEXTURE, SHADER_TEXARG_VERTEXCOLOR );
-
-			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
-				SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_BLEND_CONSTANTALPHA, 
-				SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_CONSTANTCOLOR );
-
-			// Alpha isn't used, it doesn't matter what we set it to.
-			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
-				SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
-				SHADER_TEXARG_NONE, SHADER_TEXARG_NONE );
-			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
-				SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
-				SHADER_TEXARG_NONE, SHADER_TEXARG_NONE );
-
-			pShaderShadow->DrawFlags( SHADER_DRAW_POSITION );
-		}
-		DYNAMIC_STATE
-		{
-			// Put the alpha in the color channel to modulate the color down....
-			float alpha = GetAlpha();
-			float overbright = IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT) ? 1.0 : g_pConfig->overbright;
-			if (overbright == 2.0f)
-				pShaderAPI->Color4f( 0.5f, 0.5f, 0.5f, alpha );
-			else
-				pShaderAPI->Color4f( 1.0f, 1.0f, 1.0f, alpha );
-
-			SetAmbientCubeDynamicStateFixedFunction( );
-			FogToWhite();
-		}
-		Draw();
-
-		SHADOW_STATE
-		{
-			pShaderShadow->EnableCustomPixelPipe( false );
-			pShaderShadow->EnableAmbientLightCubeOnStage0( false );
-			pShaderShadow->EnableLighting( false );
-		}
-	}
-
-
-	//-----------------------------------------------------------------------------
-	// Used by mode 1
-	//-----------------------------------------------------------------------------
-
-	void DrawBaseTimesVertexLighting( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		// Base times vertex lighting, no vertex color
 		SHADOW_STATE
 		{
 			// alpha test
  			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
 
-			// Vertex lighting + ambient cube
-			pShaderShadow->EnableAmbientLightCubeOnStage0( true );
-			pShaderShadow->EnableLighting( true );
-
-			if (!IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT))
-				pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE1, g_pConfig->overbright );
-
-			// base
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
-
-			// Can't have color modulation here
-			pShaderShadow->EnableConstantColor( false );
-
-			// Independenly configure alpha and color
-			pShaderShadow->EnableAlphaPipe( true );
-			pShaderShadow->EnableConstantAlpha( IsAlphaModulating() );
-			pShaderShadow->EnableVertexAlpha( IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA) );
-			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE0, false );
-			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE1, true );
-
-			SetDefaultBlendingShadowState( BASETEXTURE, true );
-
-			pShaderShadow->DrawFlags( GetDrawFlagsPass1( params ) );
-		}
-		DYNAMIC_STATE
-		{
-			SetAmbientCubeDynamicStateFixedFunction( );
-			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE1, BASETEXTURETRANSFORM );
-			BindTexture( SHADER_TEXTURE_STAGE1, BASETEXTURE, FRAME );
-			SetModulationDynamicState();
-			DefaultFog();
-		}
-		Draw();
-
-		SHADOW_STATE
-		{
-			// Vertex lighting + ambient cube
-			pShaderShadow->EnableAmbientLightCubeOnStage0( false );
-			pShaderShadow->EnableLighting( false );
-			pShaderShadow->EnableAlphaPipe( false );
-		}
-	}
-
-	inline int DrawBaseTimesVertexColor_GetDrawFlags(IMaterialVar** params)
-	{
-		int flags = SHADER_DRAW_POSITION;// | SHADER_DRAW_SPECULAR;
-//		if (params[BASETEXTURE]->IsDefined())
-			flags |= SHADER_DRAW_TEXCOORD0;
-		return flags;
-	}
-
-	
-	void DrawBaseTimesVertexColor( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
-	{
-		SHADOW_STATE
-		{
-#if 0
 			pShaderShadow->EnableCustomPixelPipe( true );
 			
 			pShaderShadow->CustomTextureStages( 1 );
@@ -279,105 +134,244 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 				SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_MODULATE2X, 
 				SHADER_TEXARG_TEXTURE, SHADER_TEXARG_VERTEXCOLOR );
 		
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			pShaderShadow->DrawFlags( DrawBaseTimesVertexColor_GetDrawFlags( params ) );
-#else
-			// alpha test
-// 			pShaderShadow->EnableAlphaTest( IS_FLAG_SET(MATERIAL_VAR_ALPHATEST) );
+			// Get alpha from the texture so that alpha blend and alpha test work properly.
+			bool bTextureIsTranslucent = TextureIsTranslucent( BASETEXTURE, true );
+			if ( bTextureIsTranslucent )
+			{
+				pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+					SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+					SHADER_TEXARG_TEXTURE, SHADER_TEXARG_NONE );
+			}
+ 			else
+			{
+				if ( IsAlphaModulating() )
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+						SHADER_TEXARG_CONSTANTCOLOR, SHADER_TEXARG_NONE );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+						SHADER_TEXARG_ONE, SHADER_TEXARG_NONE );
+				}
+			}
 
-			// base
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			pShaderShadow->EnableLighting( true );
-			if (!IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT))
-				pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE0, g_pConfig->overbright );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			int flags = SHADER_DRAW_POSITION | SHADER_DRAW_NORMAL | SHADER_DRAW_TEXCOORD0;
+			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
 
-			// Independenly configure alpha and color
+			if ( IsAlphaModulating() || IsColorModulating() )
+			{
+				pShaderShadow->CustomTextureStages( 2 );
 
-			// Color = Color mod * Vertex Light * Tex (x2)
-			// Alpha = Constant Alpha * Tex Alpha (no tex alpha if self illum == 1)
-			// Can't have color modulation here
-//			pShaderShadow->EnableConstantColor( IsColorModulating() );
+				if ( IsColorModulating() )
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_MODULATE, 
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_CONSTANTCOLOR );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_SELECTARG1,
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_NONE );
+				}
 
-			// Independenly configure alpha and color
-//			pShaderShadow->EnableAlphaPipe( true );
-//			pShaderShadow->EnableConstantAlpha( IsAlphaModulating() );
-//			pShaderShadow->EnableVertexAlpha( IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA) );
+				// Get alpha from the texture so that alpha blend and alpha test work properly.
+				if ( IsAlphaModulating() && bTextureIsTranslucent )
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_MODULATE, 
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_CONSTANTCOLOR );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1,
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_NONE );
+				}
+			}
 
-						
-			
-//			if (!IS_FLAG_SET(MATERIAL_VAR_SELFILLUM) && !IS_FLAG_SET(MATERIAL_VAR_BASEALPHAENVMAPMASK))
-//				pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE0, true );
-
-//			SetDefaultBlendingShadowState( BASETEXTURE, true );
-			pShaderShadow->DrawFlags( DrawBaseTimesVertexColor_GetDrawFlags( params ) );
-#endif
-
+			SetDefaultBlendingShadowState( BASETEXTURE, true );
 		}
 		DYNAMIC_STATE
 		{
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-//			SetModulationDynamicState();
-			DefaultFog();
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			SetModulationDynamicState();
 		}
 		Draw();
 	}
 
-	void DrawMode0( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	void DrawVertexColorNoBase( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
 	{
-		bool texDefined = params[BASETEXTURE]->IsDefined();
-		bool envDefined = params[ENVMAP]->IsDefined();
-//		bool maskDefined = params[ENVMAPMASK]->IsDefined();
-
-		// Pass 1 : Base + env
-
-		// FIXME: Could make it 1 pass for base + env, if it wasn't
-		// for the envmap tint. So this is 3 passes for now....
-
-		// If it's base + mask * env, gotta do that in 2 passes
-		if ( texDefined )
+		SHADOW_STATE
 		{
-			FixedFunctionBaseTimesDetailPass( 
-				BASETEXTURE, FRAME, BASETEXTURETRANSFORM, DETAIL, DETAILSCALE ); 
-		}
-		else
-		{
-			FixedFunctionMaskedEnvmapPass( 
-				ENVMAP, ENVMAPMASK, BASETEXTURE,
-				ENVMAPFRAME, ENVMAPMASKFRAME, FRAME, 
-				BASETEXTURETRANSFORM, ENVMAPMASKSCALE, ENVMAPTINT );
-		}
+			pShaderShadow->EnableCustomPixelPipe( true );
+			
+			pShaderShadow->CustomTextureStages( 1 );
 
-		// We can get here if multipass isn't set if we specify a vertex color
-		if ( IS_FLAG_SET(MATERIAL_VAR_MULTIPASS) )
-		{
-			if ( texDefined && envDefined )
-			{
-				FixedFunctionAdditiveMaskedEnvmapPass( 
-					ENVMAP, ENVMAPMASK, BASETEXTURE,
-					ENVMAPFRAME, ENVMAPMASKFRAME, FRAME, 
-					BASETEXTURETRANSFORM, ENVMAPMASKSCALE, ENVMAPTINT );
-			}
+			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+				SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_MODULATE2X, 
+				SHADER_TEXARG_ONE, SHADER_TEXARG_VERTEXCOLOR );
+		
+			int flags = SHADER_DRAW_POSITION;
+			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
 		}
-
-		// Pass 2 : * vertex lighting
- 		MultiplyByVertexLighting( params, pShaderAPI, pShaderShadow );
-
-		// FIXME: We could add it to the lightmap 
-		// Draw the selfillum pass (blows away envmap at self-illum points)
-		if ( IS_FLAG_SET(MATERIAL_VAR_SELFILLUM) )
+		DYNAMIC_STATE
 		{
-			FixedFunctionSelfIlluminationPass( 
-				SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME, BASETEXTURETRANSFORM, SELFILLUMTINT );
+//			SetModulationDynamicState();
 		}
+		Draw();
 	}
 
-	void DrawMode1( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	void DrawBaseTimesBakedVertexLighting( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
 	{
-		// Pass 1 : Base * lightmap or just lightmap
-		if ( params[BASETEXTURE]->IsDefined() )
+		SHADOW_STATE
 		{
-			DrawBaseTimesVertexLighting( params, pShaderAPI, pShaderShadow );
+			// alpha test
+ 			pShaderShadow->EnableAlphaTest( IS_FLAG_SET( MATERIAL_VAR_ALPHATEST ) );
+
+			// base
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			int flags = SHADER_DRAW_POSITION;
+			if (params[BASETEXTURE]->IsTexture())
+			{
+				flags |= SHADER_DRAW_TEXCOORD1;
+			}
+			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
+
+			pShaderShadow->EnableCustomPixelPipe( true );
+			pShaderShadow->CustomTextureStages( 1 );
+
+			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+				SHADER_TEXCHANNEL_COLOR, 
+				SHADER_TEXOP_MODULATE2X,
+				SHADER_TEXARG_SPECULARCOLOR, SHADER_TEXARG_TEXTURE );
+
+			// Get alpha from the texture so that alpha blend and alpha test work properly.
+			bool bTextureIsTranslucent = TextureIsTranslucent( BASETEXTURE, true );
+			if ( bTextureIsTranslucent )
+			{
+				pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+					SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+					SHADER_TEXARG_TEXTURE, SHADER_TEXARG_NONE );
+			}
+			else
+			{
+				if ( IsAlphaModulating() )
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+						SHADER_TEXARG_CONSTANTCOLOR, SHADER_TEXARG_NONE );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+						SHADER_TEXARG_ONE, SHADER_TEXARG_NONE );
+				}
+			}
+
+			if ( IsAlphaModulating() || IsColorModulating() )
+			{
+				pShaderShadow->CustomTextureStages( 2 );
+
+				if ( IsColorModulating())
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_MODULATE, 
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_CONSTANTCOLOR );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_COLOR, SHADER_TEXOP_SELECTARG1,
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_NONE );
+				}
+
+				// Get alpha from the texture so that alpha blend and alpha test work properly.
+				if ( IsAlphaModulating() && bTextureIsTranslucent )
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_MODULATE, 
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_CONSTANTCOLOR );
+				}
+				else
+				{
+					pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE1, 
+						SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1,
+						SHADER_TEXARG_PREVIOUSSTAGE, SHADER_TEXARG_NONE );
+				}
+			}
+
+			SetDefaultBlendingShadowState( BASETEXTURE, true );
+		}
+		DYNAMIC_STATE
+		{
+			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE1, BASETEXTURETRANSFORM );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			SetModulationDynamicState();
+		}
+		Draw();
+	}
+
+	void DrawBakedVertexLightingNoBase( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
+	{
+		SHADOW_STATE
+		{
+			int flags = SHADER_DRAW_POSITION;
+			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
+
+			pShaderShadow->EnableCustomPixelPipe( true );
+			pShaderShadow->CustomTextureStages( 1 );
+
+			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+				SHADER_TEXCHANNEL_COLOR, 
+				SHADER_TEXOP_MODULATE2X,
+				SHADER_TEXARG_SPECULARCOLOR, SHADER_TEXARG_NONE );
+
+			// Alpha isn't used, it doesn't matter what we set it to.
+			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
+				SHADER_TEXCHANNEL_ALPHA, SHADER_TEXOP_SELECTARG1, 
+				SHADER_TEXARG_NONE, SHADER_TEXARG_NONE );
+		}
+		DYNAMIC_STATE
+		{
+		}
+		Draw();
+	}
+
+	SHADER_DRAW
+	{
+		bool bBakedLighting = IS_FLAG2_SET( MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+		bool hasFlashlight = UsingFlashlight( params );
+
+		if( hasFlashlight )
+		{
+			DrawFlashlight_dx70( params, pShaderAPI, pShaderShadow, FLASHLIGHTTEXTURE, FLASHLIGHTTEXTUREFRAME );
+			return;
+		}
+		// Pass 1 : Base * lightmap or just lightmap
+		if ( params[BASETEXTURE]->IsTexture() )
+		{
+			// Draw base times lighting.
+			// Lighting is either sent down per vertex from the app, or it's in the second
+			// stream as color values.
+			if( bBakedLighting )
+			{
+				DrawBaseTimesBakedVertexLighting( params, pShaderAPI, pShaderShadow );
+			}
+			else
+			{
+				DrawBaseTimesVertexColor( params, pShaderAPI, pShaderShadow );
+			}
 
 			// Detail map
 			FixedFunctionMultiplyByDetailPass(
@@ -387,12 +381,19 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 			if ( IS_FLAG_SET(MATERIAL_VAR_SELFILLUM) )
 			{
 				FixedFunctionSelfIlluminationPass( 
-					SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME, BASETEXTURETRANSFORM, SELFILLUMTINT );
+					SHADER_SAMPLER0, BASETEXTURE, FRAME, BASETEXTURETRANSFORM, SELFILLUMTINT );
 			}
 		}
 		else
 		{
-			DrawVertexLightingOnly( params, pShaderAPI, pShaderShadow );
+			if( bBakedLighting )
+			{
+				DrawBakedVertexLightingNoBase( params, pShaderAPI, pShaderShadow );
+			}
+			else
+			{
+				DrawVertexColorNoBase( params, pShaderAPI, pShaderShadow );
+			}
 
 			FixedFunctionMultiplyByDetailPass(
 				BASETEXTURE, FRAME, BASETEXTURETRANSFORM, DETAIL, DETAILSCALE );
@@ -400,19 +401,13 @@ BEGIN_SHADER( VertexLitGeneric_DX7,
 		 
 
 		// Pass 2 : Masked environment map
-		if ( params[ENVMAP]->IsDefined() && (IS_FLAG_SET(MATERIAL_VAR_MULTIPASS)) )
+		if ( params[ENVMAP]->IsTexture() && (IS_FLAG_SET(MATERIAL_VAR_MULTIPASS)) )
 		{
 			FixedFunctionAdditiveMaskedEnvmapPass( 
 				ENVMAP, ENVMAPMASK, BASETEXTURE,
 				ENVMAPFRAME, ENVMAPMASKFRAME, FRAME, 
 				BASETEXTURETRANSFORM, ENVMAPMASKSCALE, ENVMAPTINT );
 		}
-	}
-
-	SHADER_DRAW
-	{
-		// Base * Vertex lighting + env
-		DrawMode1( params, pShaderAPI, pShaderShadow );
+		
 	}
 END_SHADER
-

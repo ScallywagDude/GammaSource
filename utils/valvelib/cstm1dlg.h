@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_CSTM1DLG_H__F9EAE5A1_5043_41B1_80CA_495CB6723480__INCLUDED_)
 #define AFX_CSTM1DLG_H__F9EAE5A1_5043_41B1_80CA_495CB6723480__INCLUDED_
 

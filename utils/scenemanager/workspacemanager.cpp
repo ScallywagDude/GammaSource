@@ -1,9 +1,16 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "cbase.h"
 #include "workspacemanager.h"
 #include "workspacebrowser.h"
 #include "workspace.h"
 #include "statuswindow.h"
-#include "SoundEmitterSystemBase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "drawhelper.h"
 #include "InputProperties.h"
 #include "filesystem.h"
@@ -24,10 +31,12 @@
 #include "wavefile.h"
 #include "ifileloader.h"
 #include "MultipleRequest.h"
+#include <vgui/ILocalize.h>
+#include "tier3/tier3.h"
 
-char g_appTitle[] = "Source Engine SceneManager v0.1";
-static char g_appTitleFmt[] = "%s - SceneManager Workspace";
-static char g_appTitleFmtModified[] = "%s * - SceneManager Workspace";
+char g_appTitle[] = "Source Engine SceneManager";
+static char g_appTitleFmt[] = "%s - SceneManager Workspace (%s)";
+static char g_appTitleFmtModified[] = "%s * - SceneManager Workspace (%s)";
 
 #define RECENT_FILES_FILE "scenemanager.rf"
 
@@ -86,6 +95,9 @@ enum
 	// These should be the final entriex
 	IDC_WSM_FILE_RECENT_WORKSPACE_START = 1500,
 	IDC_WSM_FILE_RECENT_WORKSPACE_END = 1510,
+
+	IDC_WSM_OPTIONS_LANGUAGESTART = 1600,
+	IDC_WSM_OPTIONS_LANGUAGEEND = 1600 + CC_NUM_LANGUAGES,
 };
 
 static CWorkspaceManager *g_pManager = NULL;
@@ -113,6 +125,9 @@ public:
 CWorkspaceManager::CWorkspaceManager()
 	: mxWindow (0, 0, 0, 0, 0, g_appTitle, mxWindow::Normal)
 {
+	m_lEnglishCaptionsFileChangeTime = -1L;
+	m_nLanguageId = CC_ENGLISH;
+
 	g_pManager = this;
 
 	g_pStatusWindow = new CStatusWindow( this, 0, 0, 1024, 150, "" );
@@ -123,7 +138,6 @@ CWorkspaceManager::CWorkspaceManager()
 	Con_Printf( "Initializing\n" );
 
 	Con_Printf( "CSoundEmitterSystemBase::Init()\n" );
-	soundemitter->BaseInit();
 
 	m_nRecentMenuItems = 0;
 
@@ -131,9 +145,25 @@ CWorkspaceManager::CWorkspaceManager()
 	m_pMenuBar = new mxMenuBar (this);
 	m_pFileMenu = new mxMenu ();
 	m_pProjectMenu = new mxMenu ();
+	m_pOptionsMenu = new mxMenu();
+
+	{
+		m_pMenuCloseCaptionLanguages = new mxMenu();
+
+		for ( int i = 0; i < CC_NUM_LANGUAGES; i++ )
+		{
+			int id = IDC_WSM_OPTIONS_LANGUAGESTART + i;
+			m_pMenuCloseCaptionLanguages->add( CSentence::NameForLanguage( i ), id );
+		}
+		// Check the first item
+		m_pMenuCloseCaptionLanguages->setChecked( IDC_WSM_OPTIONS_LANGUAGESTART + CC_ENGLISH, true );
+		m_pOptionsMenu->addMenu( "CC Language", m_pMenuCloseCaptionLanguages );
+
+	}
 
 	m_pMenuBar->addMenu ("File", m_pFileMenu );
 	m_pMenuBar->addMenu( "Project", m_pProjectMenu );
+	m_pMenuBar->addMenu ( "Options", m_pOptionsMenu );
 	
 	CreateFileMenu( m_pFileMenu );
 	CreateProjectMenu( m_pProjectMenu );
@@ -181,13 +211,13 @@ bool CWorkspaceManager::Closing()
 	MultipleRequestChangeContext();
 
 	// Save any changed sound script files
-	int c = soundemitter->GetNumSoundScripts();
+	int c = g_pSoundEmitterSystem->GetNumSoundScripts();
 	for ( int i = 0; i < c; i++ )
 	{
-		if ( !soundemitter->IsSoundScriptDirty( i ) )
+		if ( !g_pSoundEmitterSystem->IsSoundScriptDirty( i ) )
 			continue;
 
-		char const *scriptname = soundemitter->GetSoundScriptName( i );
+		char const *scriptname = g_pSoundEmitterSystem->GetSoundScriptName( i );
 		if ( !scriptname )
 			continue;
 
@@ -248,7 +278,7 @@ bool CWorkspaceManager::Closing()
 		if ( !save )
 			continue;
 
-		soundemitter->SaveChangesToSoundScript( i );
+		g_pSoundEmitterSystem->SaveChangesToSoundScript( i );
 	}
 
 	return CloseWorkspace();
@@ -291,7 +321,7 @@ void CWorkspaceManager::UpdateMenus()
 	ITreeItem *item = GetBrowser()->GetSelectedItem();
 
 	bool hasworkspace = ws != NULL ? true : false;
-	bool workspacedirty = ws && ws->IsDirty() ? true : false;
+	//bool workspacedirty = ws && ws->IsDirty() ? true : false;
 	bool hasproject = item && item->GetProject() ? true : false;
 
 	m_pMenuBar->setEnabled( IDC_WSM_FILE_WS_SAVE, true );
@@ -404,6 +434,8 @@ int CWorkspaceManager::handleEvent( mxEvent *event )
 			if (event->action)
 			{
 				mx::setIdleWindow( this );
+				// Force reload of localization data
+				OnChangeLanguage( GetLanguageId(), true );
 			}
 			else
 			{
@@ -437,6 +469,11 @@ int CWorkspaceManager::handleEvent( mxEvent *event )
 						 event->action < IDC_WSM_FILE_RECENT_WORKSPACE_END )
 					{
 						OnRecentWorkspace( event->action - IDC_WSM_FILE_RECENT_WORKSPACE_START );
+					}
+					else if ( event->action >= IDC_WSM_OPTIONS_LANGUAGESTART &&
+						event->action < IDC_WSM_OPTIONS_LANGUAGEEND	)
+					{
+						OnChangeLanguage( event->action - IDC_WSM_OPTIONS_LANGUAGESTART );
 					}
 					else
 					{
@@ -665,7 +702,7 @@ void CWorkspaceManager::OnUpdateTitle( void )
 		{
 			fmt = g_appTitleFmtModified;
 		}
-		Q_snprintf( szTitle, sizeof( szTitle ), fmt, ws->GetName() );
+		Q_snprintf( szTitle, sizeof( szTitle ), fmt, ws->GetName(), CSentence::NameForLanguage( m_nLanguageId ) );
 	}
 	else
 	{
@@ -704,10 +741,10 @@ void CWorkspaceManager::OnNewWorkspace()
 
 	// Strip game directory and slash
 	char workspace_name[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, workspace_name );
+	filesystem->FullPathToRelativePath( fullpath, workspace_name, sizeof( workspace_name ) );
 
-	StripExtension( workspace_name );
-	DefaultExtension( workspace_name, ".vsw" );
+	Q_StripExtension( workspace_name, workspace_name, sizeof( workspace_name ) );
+	Q_DefaultExtension( workspace_name, ".vsw", sizeof( workspace_name ) );
 
 	if ( filesystem->FileExists( workspace_name ) )
 	{
@@ -791,7 +828,7 @@ void CWorkspaceManager::SaveRecentFilesMenuToDisk()
 	int i;
 	int c = m_RecentFiles.Count();
 
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.Printf( "recentfiles\n{\n" );
 
@@ -865,7 +902,7 @@ void CWorkspaceManager::OnOpenWorkspace()
 
 	// Strip game directory and slash
 	char workspace_name[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, workspace_name );
+	filesystem->FullPathToRelativePath( fullpath, workspace_name, sizeof( workspace_name ) );
 
 	LoadWorkspace( workspace_name );
 }
@@ -913,10 +950,10 @@ void CWorkspaceManager::OnNewProject()
 
 	// Strip game directory and slash
 	char project_name[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, project_name );
+	filesystem->FullPathToRelativePath( fullpath, project_name, sizeof( project_name ) );
 
-	StripExtension( project_name );
-	DefaultExtension( project_name, ".vsp" );
+	Q_StripExtension( project_name, project_name, sizeof( project_name ) );
+	Q_DefaultExtension( project_name, ".vsp", sizeof( project_name ) );
 
 	if ( filesystem->FileExists( project_name ) )
 	{
@@ -930,10 +967,8 @@ void CWorkspaceManager::OnNewProject()
 	{
 		// Create one on the fly
 		char workspace_name[ 512 ];
-		Q_strcpy( workspace_name, project_name );
-
-		StripExtension( workspace_name );
-		DefaultExtension( workspace_name, ".vsw" );
+		Q_StripExtension( project_name, workspace_name, sizeof( workspace_name ) );
+		Q_DefaultExtension( workspace_name, ".vsw", sizeof( workspace_name ) );
 
 		if ( !filesystem->FileExists( workspace_name ) )
 		{
@@ -956,7 +991,7 @@ void CWorkspaceManager::OnNewProject()
 
 	if ( ws && ws->FindProjectFile( project_name ) )
 	{
-		Con_Printf( "Project %s already exists in workspace\n" );
+		Con_Printf( "Project %s already exists in workspace\n", project_name );
 		return;
 	}
 
@@ -991,20 +1026,18 @@ void CWorkspaceManager::OnInsertProject()
 
 	// Strip game directory and slash
 	char project_name[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, project_name );
+	filesystem->FullPathToRelativePath( fullpath, project_name, sizeof( project_name ) );
 
-	StripExtension( project_name );
-	DefaultExtension( project_name, ".vsp" );
+	Q_StripExtension( project_name, project_name, sizeof( project_name ) );
+	Q_DefaultExtension( project_name, ".vsp", sizeof( project_name ) );
 
 	CWorkspace *ws = GetBrowser()->GetWorkspace();
 	if ( !ws )
 	{
 		// Create one on the fly
 		char workspace_name[ 512 ];
-		Q_strcpy( workspace_name, project_name );
-
-		StripExtension( workspace_name );
-		DefaultExtension( workspace_name, ".vsw" );
+		Q_StripExtension( project_name, workspace_name, sizeof( workspace_name ) );
+		Q_DefaultExtension( workspace_name, ".vsw", sizeof( workspace_name ) );
 
 		if ( !filesystem->FileExists( workspace_name ) )
 		{
@@ -1203,6 +1236,63 @@ void CWorkspaceManager::OnRecentWorkspace( int index )
 	LoadWorkspace( m_RecentFiles[ index ].filename );
 }
 
+int	 CWorkspaceManager::GetLanguageId() const
+{
+	return m_nLanguageId;
+}
+
+void CWorkspaceManager::OnChangeLanguage( int lang_index, bool force /* = false */ )
+{
+	bool changed = m_nLanguageId != lang_index;
+	m_nLanguageId = lang_index;
+
+	if ( changed || force )
+	{
+		// Update the menu
+		for ( int i = 0; i < CC_NUM_LANGUAGES; i++ )
+		{
+			int id = IDC_WSM_OPTIONS_LANGUAGESTART + i;
+			m_pMenuCloseCaptionLanguages->setChecked( id, i == m_nLanguageId );
+		}
+
+		bool filechanged = false;
+
+		char const *suffix = CSentence::NameForLanguage( lang_index );
+		if ( Q_stricmp( suffix, "unknown_language" ) )
+		{
+			char fn[ MAX_PATH ];
+			Q_snprintf( fn, sizeof( fn ), "resource/closecaption_%s.txt", suffix );
+
+			long filetimestamp = filesystem->GetFileTime( fn );
+
+			
+			if ( filesystem->FileExists( fn ) )
+			{
+				if ( m_lEnglishCaptionsFileChangeTime != filetimestamp )
+				{
+					filechanged = true;
+					m_lEnglishCaptionsFileChangeTime = filetimestamp;
+					//Con_Printf( "Reloading close caption data from '%s'\n", fn );
+					g_pVGuiLocalize->RemoveAll();
+					g_pVGuiLocalize->AddFile( fn );
+				}
+			}
+			else
+			{
+				Con_Printf( "CWorkspaceManager::OnChangeLanguage  Warning, can't find localization file %s\n", fn );
+			}
+		}
+
+		if ( !force || filechanged )
+		{
+			// Update all text for items.
+			RefreshBrowsers();
+
+			OnUpdateTitle();
+		}
+	}
+}
+
 void CWorkspaceManager::OnDoubleClicked( ITreeItem *item )
 {
 	CSoundEntry *s = item->GetSoundEntry();
@@ -1249,7 +1339,7 @@ void CWorkspaceManager::OnSoundEditText()
 	memset( &params, 0, sizeof( params ) );
 	Q_snprintf( params.m_szDialogTitle, sizeof( params.m_szDialogTitle ), "Edit text of '%s'", s->GetName() );
 	Q_strcpy( params.m_szPrompt, "Sentence text:" );
-	Q_strcpy( params.m_szInputText, s->GetSentenceText() );
+	V_strcpy_safe( params.m_szInputText, s->GetSentenceText() );
 
 	if ( !InputProperties( &params ) )
 		return;
@@ -1288,10 +1378,10 @@ void CWorkspaceManager::OnSceneAddVCD()
 
 	// Strip game directory and slash
 	char vcd_name[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, vcd_name );
+	filesystem->FullPathToRelativePath( fullpath, vcd_name, sizeof( vcd_name ) );
 
-	StripExtension( vcd_name );
-	DefaultExtension( vcd_name, ".vcd" );
+	Q_StripExtension( vcd_name, vcd_name, sizeof( vcd_name ) );
+	Q_DefaultExtension( vcd_name, ".vcd", sizeof( vcd_name ) );
 
 	if ( scene->FindVCD( vcd_name ) )
 	{
@@ -1613,8 +1703,8 @@ void CWorkspaceManager::OnChangeVSSProperites()
 	CVSSParams params;
 	memset( &params, 0, sizeof( params ) );
 	Q_snprintf( params.m_szDialogTitle, sizeof( params.m_szDialogTitle ), "VSS Properites" );
-	Q_strcpy( params.m_szUserName, ws->GetVSSUserName() );
-	Q_strcpy( params.m_szProject, ws->GetVSSProject() );
+	V_strcpy_safe( params.m_szUserName, ws->GetVSSUserName() );
+	V_strcpy_safe( params.m_szProject, ws->GetVSSProject() );
 
 	if ( !VSSProperties( &params ) )
 		return;
@@ -1676,8 +1766,10 @@ HIMAGELIST CWorkspaceManager::CreateImageList()
     // Load the icon resources, and add the icons to the image list. 
     HICON hicon;
 	int slot;
+#if defined( DBGFLAG_ASSERT )
 	int c = 0;
-	
+#endif
+
 	hicon = LoadIcon( GetModuleHandle( 0 ), MAKEINTRESOURCE(IDI_WORKSPACE)); 
 	slot = ImageList_AddIcon(list, hicon); 
 	Assert( slot == c++ );
@@ -1745,10 +1837,20 @@ HIMAGELIST CWorkspaceManager::CreateImageList()
 //-----------------------------------------------------------------------------
 void CWorkspaceManager::RefreshBrowsers()
 {
-	GetBrowser()->PopulateTree();
+	if ( GetBrowser() )
+	{
+		GetBrowser()->PopulateTree();
+	}
 
-	GetSoundBrowser()->RepopulateTree();
-	GetWaveBrowser()->RepopulateTree();
+	if ( GetSoundBrowser() )
+	{
+		GetSoundBrowser()->RepopulateTree();
+	}
+
+	if ( GetWaveBrowser() )
+	{
+		GetWaveBrowser()->RepopulateTree();
+	}
 }
 
 void CWorkspaceManager::OnSoundShowInBrowsers()

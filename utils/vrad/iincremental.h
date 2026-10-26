@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IINCREMENTAL_H
 #define IINCREMENTAL_H
@@ -12,7 +12,7 @@
 #endif
 
 
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "utlvector.h"
 
 

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef MXSTATUSWINDOW_H
 #define MXSTATUSWINDOW_H
 #ifdef _WIN32
@@ -22,7 +22,7 @@ public:
 	mxStatusWindow (mxWindow *parent, int x, int y, int w, int h, const char *label = 0 );
 	~mxStatusWindow();
 
-	void StatusPrint( int r, int g, int b, bool overwrite, const char *text );
+	void StatusPrint( COLORREF clr, bool overwrite, const char *text );
 
 	virtual void	DrawActiveTool();
 
@@ -46,7 +46,7 @@ private:
 	struct TextLine
 	{
 		char		m_szText[ 512 ];
-		int			r, g, b;
+		COLORREF	rgb;
 		float		curtime;
 	};
 

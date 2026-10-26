@@ -1,12 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Basic random number generator
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
+
 
 #include <time.h>
 #include "Random.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 #define IA 16807
 #define IM 2147483647
@@ -79,6 +83,7 @@ float fran1(void)
 	else return temp;
 }
 
+#ifndef _XBOX
 float RandomFloat( float flLow, float flHigh )
 {
 	if (idum == 0)
@@ -89,6 +94,7 @@ float RandomFloat( float flLow, float flHigh )
 	float fl = fran1(); // float in [0,1)
 	return (fl * (flHigh-flLow)) + flLow; // float in [low,high)
 }
+#endif
 
 long RandomLong( long lLow, long lHigh )
 {

@@ -1,23 +1,29 @@
+use String::CRC32;
+BEGIN {use File::Basename; push @INC, dirname($0); }
+require "valve_perl_helpers.pl";
+
+$dynamic_compile = defined $ENV{"dynamic_shaders"} && $ENV{"dynamic_shaders"} != 0;
+
 $depnum = 0;
+$baseSourceDir = ".";
+
+my %dep;
 
 sub GetAsmShaderDependencies_R
 {
 	local( $shadername ) = shift;
 	local( *SHADER );
+	
 	open SHADER, "<$shadername";
 	while( <SHADER> )
 	{
 		if( m/^\s*\#\s*include\s+\"(.*)\"/ )
 		{
-			print "$shadername depends on $1\n";
-			if( !defined( $dep{$shadername} ) )
+			# make sure it isn't in there already.
+			if( !defined( $dep{$1} ) )
 			{
-				$dep{$shadername} = $1;
+				$dep{$1} = 1;
 				GetAsmShaderDependencies_R( $1 );
-			}
-			else
-			{
-				print "circular dependency in $shadername!\n";
 			}
 		}
 	}
@@ -27,24 +33,20 @@ sub GetAsmShaderDependencies_R
 sub GetAsmShaderDependencies
 {
 	local( $shadername ) = shift;
-	print "-------------------------------\n";
-	print "$shadername\n";
 	undef %dep;
 	GetAsmShaderDependencies_R( $shadername );
-	local( $i );
-	foreach $i ( keys( %dep ) )
-	{
-		print "$i depends on $dep{$i}\n";
-	}
-	return values( %dep );
+#	local( $i );
+#	foreach $i ( keys( %dep ) )
+#	{
+#		print "$shadername depends on $i\n";
+#	}
+	return keys( %dep );
 }
 
-sub DoAsmShader
+sub GetShaderType
 {
-	local( $shadername ) = shift;
-	push @newdsp, "# Begin Source File\n\n";
-	push @newdsp, "SOURCE=.\\$shadername\n";
-	local( $shadertype );
+	my $shadername = shift;
+	my $shadertype;
 	if( $shadername =~ m/\.vsh/i )
 	{
 		$shadertype = "vsh";
@@ -61,90 +63,107 @@ sub DoAsmShader
 	{
 		die;
 	}
-	foreach $config ( @configs )
-	{
-		if( $config eq $configs[0] )
-		{
-			push @newdsp, "\!IF  \"\$(CFG)\" == \"" . $config . "\"\n";
-		}
-		else
-		{
-			push @newdsp, "\!ELSEIF  \"\$(CFG)\" == \"" . $config . "\"\n";
-		}
-		$dx9 = "-dx9";
-		$dx = "9";
-		@dep = &GetAsmShaderDependencies( $shadername );
-
-		push @newdsp, "USERDEP__" . "$depnum" . "=";
-		foreach $dep ( sort( @dep ) )
-		{
-			push @newdsp, "\t\"$dep\"";
-		}
-		if( $shadername =~ m/\.fxc/i )
-		{
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\fxc.exe\"";
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\fxc_prep.pl\"";
-		}
-		elsif( $shadername =~ m/\.vsh/i )
-		{
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\vsa9.exe\"";
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\vsh_prep.pl\"";
-		}
-		elsif( $shadername =~ m/\.psh/i )
-		{   
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\psa9.exe\"";
-			push @newdsp, "\t\"..\\..\\devtools\\bin\\psh_prep.pl\"";
-		}
-		push @newdsp, "\n";
-
-		push @newdsp, "\# Begin Custom Build\n";
-		push @newdsp, "InputPath=.\\" . "$shadername\n";
-		$base = $shadername;
-		$base =~ s/\.$shadertype//i;
-		push @newdsp, "InputName=" . $base . "\n\n";
-		if( $shadername =~ m/\.fxc/i && $nv3x )
-		{
-			if( $config =~ /ps20/i )
-			{
-				push @newdsp, "\"$shadertype" . "tmp" . $dx . "_nv3x_ps20\\\$(InputName)\.inc\" : \$(SOURCE) \"\$(INTDIR)\" \"\$(OUTDIR)\"\n";
-				push @newdsp, "\t..\\..\\devtools\\bin\\perl ..\\..\\devtools\\bin\\" . $shadertype . "_prep\.pl $dx9 -nv3x \$(InputName)\." . $shadertype . "\n\n";
-			}
-			else
-			{
-				push @newdsp, "\"$shadertype" . "tmp" . $dx . "_nv3x\\\$(InputName)\.inc\" : \$(SOURCE) \"\$(INTDIR)\" \"\$(OUTDIR)\"\n";
-				push @newdsp, "\t..\\..\\devtools\\bin\\perl ..\\..\\devtools\\bin\\" . $shadertype . "_prep\.pl $dx9 -nv3x -ps20a \$(InputName)\." . $shadertype . "\n\n";
-			}
-		}
-		else
-		{
-			push @newdsp, "\"$shadertype" . "tmp" . $dx . "\\\$(InputName)\.inc\" : \$(SOURCE) \"\$(INTDIR)\" \"\$(OUTDIR)\"\n";
-			push @newdsp, "\t..\\..\\devtools\\bin\\perl ..\\..\\devtools\\bin\\" . $shadertype . "_prep\.pl $dx9 \$(InputName)\." . $shadertype . "\n\n";
-		}
-		push @newdsp, "\# End Custom Build\n";
-	}
-	push @newdsp, "\!ENDIF\n";
-	push @newdsp, "# End Source File\n";
-	$depnum++;
+	return $shadertype;
 }
 
-sub MakeSureFileExists
+sub GetShaderSrc
 {
-	local( $filename ) = shift;
-	local( $testexists ) = shift;
-	local( $testwrite ) = shift;
+	my $shadername = shift;
+	if ( $shadername =~ m/^(.*)-----/i )
+	{
+		return $1;
+	}
+	else
+	{
+		return $shadername;
+	}
+}
 
-	local( @statresult ) = stat $filename;
-	if( !@statresult && $testexists )
+sub GetShaderBase
+{
+	my $shadername = shift;
+	if ( $shadername =~ m/-----(.*)$/i )
 	{
-		die "$filename doesn't exist!\n";
+		return $1;
 	}
-	local( $mode, $iswritable );
-	$mode = oct( $statresult[2] );
-	$iswritable = ( $mode & 2 ) != 0;
-	if( !$iswritable && $testwrite )
+	else
 	{
-		die "$filename isn't writable!\n";
+		my $shadertype = &GetShaderType( $shadername );
+		$shadername =~ s/\.$shadertype//i;
+		return $shadername;
 	}
+}
+
+sub DoAsmShader
+{
+	my $argstring = shift;
+	my $shadername = &GetShaderSrc( $argstring );
+	my $shaderbase = &GetShaderBase( $argstring );
+	my $shadertype = &GetShaderType( $argstring );
+	my $incfile = "";
+	if( $shadertype eq "fxc" || $shadertype eq "vsh" )
+	{
+		$incfile = $shadertype . "tmp9" . $g_tmpfolder . "\\$shaderbase.inc ";
+	}
+
+	my $vcsfile = $shaderbase . $g_vcsext;
+	my $bWillCompileVcs = 1;
+	if( ( $shadertype eq "fxc") && $dynamic_compile )
+	{
+		$bWillCompileVcs = 0;
+	}
+	if( $shadercrcpass{$argstring} )
+	{
+		$bWillCompileVcs = 0;
+	}
+
+	if( $bWillCompileVcs )
+	{
+		&output_makefile_line( $incfile . "shaders\\$shadertype\\$vcsfile: $shadername @dep\n") ;
+	}
+	else
+	{
+		# psh files don't need a rule at this point since they don't have inc files and we aren't compiling a vcs.
+		if( $shadertype eq "fxc" || $shadertype eq "vsh" )
+		{
+			&output_makefile_line( $incfile . ":  $shadername @dep\n") ;
+		}
+	}
+	
+
+	my $x360switch = "";
+	my $moreswitches = "";
+	if( !$bWillCompileVcs && $shadertype eq "fxc" )
+	{
+		$moreswitches .= "-novcs ";
+	}
+	if( $g_x360 )
+	{
+		$x360switch = "-x360";
+		
+		if( $bWillCompileVcs && ( $shaderbase =~ m/_ps20$/i ) )
+		{
+			$moreswitches .= "-novcs ";
+			$bWillCompileVcs = 0;
+		}
+	}
+
+	# if we are psh and we are compiling the vcs, we don't need this rule.
+	if( !( $shadertype eq "psh" && !$bWillCompileVcs ) )
+	{
+		&output_makefile_line( "\tperl $g_SourceDir\\devtools\\bin\\" . $shadertype . "_prep.pl $moreswitches $x360switch -source \"$g_SourceDir\" $argstring\n") ;
+	}
+
+	if( $bWillCompileVcs )
+	{
+		&output_makefile_line( "\techo $shadername>> filestocopy.txt\n") ;
+		my $dep;
+		foreach $dep( @dep )
+		{
+			&output_makefile_line( "\techo $dep>> filestocopy.txt\n") ;
+		}
+	}
+	&output_makefile_line( "\n") ;
 }
 
 if( scalar( @ARGV ) == 0 )
@@ -152,13 +171,27 @@ if( scalar( @ARGV ) == 0 )
 	die "Usage updateshaders.pl shaderprojectbasename\n\tie: updateshaders.pl stdshaders_dx6\n";
 }
 
+$g_x360			= 0;
+$g_tmpfolder	= "_tmp";
+$g_vcsext		= ".vcs";
+
 while( 1 )
 {
 	$inputbase = shift;
 
-	if( $inputbase =~ m/-p4edit/ )
+	if( $inputbase =~ m/-source/ )
 	{
-		$p4edit = 1;
+		$g_SourceDir = shift;
+	}
+	elsif( $inputbase =~ m/-x360/ )
+	{
+		$g_x360 = 1;
+		$g_tmpfolder = "_360_tmp";
+		$g_vcsext = ".360.vcs";
+	}
+	elsif( $inputbase =~ m/-execute/ )
+	{
+		$g_execute = 1;
 	}
 	elsif( $inputbase =~ m/-nv3x/ )
 	{
@@ -170,131 +203,103 @@ while( 1 )
 	}
 }
 
-if( $p4edit )
+my @srcfiles = &LoadShaderListFile( $inputbase );
+
+open MAKEFILE, ">makefile\.$inputbase";
+open COPYFILE, ">makefile\.$inputbase\.copy";
+open INCLIST, ">inclist.txt";
+open VCSLIST, ">vcslist.txt";
+
+# make a default dependency that depends on all of the shaders.
+&output_makefile_line( "default: ") ;
+foreach $shader ( @srcfiles )
 {
-	system "p4 edit $inputbase.cpp";
-	system "p4 edit $inputbase.dsp";
-}
-
-&MakeSureFileExists( "$inputbase.dsp", 1, 1 );
-&MakeSureFileExists( "$inputbase.cpp", 0, 1 );
-&MakeSureFileExists( "$inputbase.txt", 1, 0 );
-
-push @configs, "$inputbase - Win32 Release";
-push @configs, "$inputbase - Win32 Debug";
-if( $nv3x )
-{
-	push @configs, "$inputbase - Win32 Release ps20";
-	push @configs, "$inputbase - Win32 Debug ps20";
-}
-
-open SHADERLISTFILE, "<$inputbase.txt" || die;
-@srcfiles = <SHADERLISTFILE>;
-close SHADERLISTFILE;
-
-open DSP, "<$inputbase.dsp" || die;
-
-# read up until the point that we want to insert our new stuff.
-while( <DSP> )
-{
-	push @newdsp, $_;
-	if( m/\#\s+Begin Group \"shaders\"/i )
+	my $shadertype = &GetShaderType( $shader );
+	my $shaderbase = &GetShaderBase( $shader );
+	my $shadersrc = &GetShaderSrc( $shader );
+	if( $shadertype eq "fxc" || $shadertype eq "vsh" )
 	{
-		last;
-	}	
+		# We only generate inc files for fxc and vsh files.
+		my $incFileName = "$shadertype" . "tmp9" . $g_tmpfolder . "\\" . $shaderbase . "\.inc";
+		&output_makefile_line( " $incFileName" );
+		&output_inclist_line( "$incFileName\n" );  
+	}
+
+	my $vcsfile = $shaderbase . $g_vcsext;
+
+	my $compilevcs = 1;
+	if( $shadertype eq "fxc" && $dynamic_compile )
+	{
+		$compilevcs = 0;
+	}
+	if( $g_x360 && ( $shaderbase =~ m/_ps20$/i ) )
+	{
+		$compilevcs = 0;
+	}
+	if( $compilevcs )
+	{
+		my $vcsFileName = "..\\..\\..\\game\\hl2\\shaders\\$shadertype\\$shaderbase" . $g_vcsext;
+		# We want to check for perforce operations even if the crc matches in the event that a file has been manually reverted and needs to be checked out again.
+		&output_vcslist_line( "$vcsFileName\n" );  
+		$shadercrcpass{$shader} = &CheckCRCAgainstTarget( $shadersrc, $vcsFileName, 0 );
+		if( $shadercrcpass{$shader} )
+		{
+			$compilevcs = 0;
+		}
+	}
+	if( $compilevcs )
+	{
+		&output_makefile_line( " shaders\\$shadertype\\$vcsfile" );
+		# emit a list of vcs files to copy to the target since we want to build them.
+		&output_copyfile_line( GetShaderSrc($shader) . "-----" . GetShaderBase($shader) . "\n" );
+	}
 }
+&output_makefile_line( "\n\n") ;
 
 # Insert all of our vertex shaders and depencencies
-foreach $line ( @srcfiles )
+$lastshader = "";
+foreach $shader ( @srcfiles )
 {
-	$line =~ s/\/\/.*$//;
-	$line =~ s/^\s*//;
-	$line =~ s/\s*$//;
-	next if( $line =~ m/^\s*$/ );
-	if( $line =~ m/\.fxc/ || $line =~ m/\.vsh/ || $line =~ m/\.psh/ )
+	my $currentshader = &GetShaderSrc( $shader );
+	if ( $lastshader ne $currentshader )
 	{
-		&DoAsmShader( $line );
+		$lastshader = $currentshader;
+		@dep = &GetAsmShaderDependencies( $lastshader );
 	}
+	&DoAsmShader( $shader );
+}
+close VCSLIST;
+close INCLIST;
+close COPYFILE;
+close MAKEFILE;
+
+# nuke the copyfile if it is zero length
+if( ( stat "makefile\.$inputbase\.copy" )[7] == 0 )
+{
+	unlink "makefile\.$inputbase\.copy";
 }
 
-
-# skip everything until the end of the group
-while( <DSP> )
+sub output_makefile_line
 {
-	if( m/\# End Group/ )
-	{
-		push @newdsp, $_;
-		last;
-	}
+	local ($_)=@_;
+	print MAKEFILE $_;
 }
 
-while( <DSP> )
+sub output_copyfile_line
 {
-	push @newdsp, $_;
+	local ($_)=@_;
+	print COPYFILE $_;
 }
 
-close DSP;
-
-open DSP, ">$inputbase.dsp" || die "can't open $inputbase.dsp for writing\n";
-print DSP @newdsp;
-close DSP;
-
-# Generate shaders.cpp
-
-open SHADERSINC, ">$inputbase.cpp" || die "can't open $inputbase.cpp for writing\n";
-
-# disable this warning:
-#	warning C4049: compiler limit : terminating line number emission
-printf SHADERSINC "// Get rid of:\n";
-printf SHADERSINC "//	warning C4049: compiler limit : terminating line number emission\n";
-printf SHADERSINC "\#ifdef _WIN32\n";
-printf SHADERSINC "\#pragma warning (disable:4049)\n";
-printf SHADERSINC "\#endif\n";
-printf SHADERSINC "\#define DEFINE_SHADERS\n";
-
-printf SHADERSINC "\#include \"tier0/dbg.h\"\n";
-printf SHADERSINC "\#include \"materialsystem/ishader.h\"\n";
-printf SHADERSINC "\#include \"shaderlib/shaderDLL.h\"\n";
-
-$dx = "9";
-foreach $line ( sort( @srcfiles ) )
+sub output_vcslist_line
 {
-#	print SHADERSINC $line . "\n";
-	local( $name ) = $line;
-	$name =~ s/\/\/.*$//;
-	$name =~ s/^\s*//;
-	$name =~ s/\s*$//;
-	next if( $line =~ m/^\s*$/ );
-	if( $name =~ m/\.psh/ )
-	{
-		$name =~ s/\.psh//i;
-		printf SHADERSINC "\#include \"pshtmp" . $dx . "\\$name" . "\.inc\"\n";
-	}
-	elsif( $name =~ m/\.vsh/ )
-	{
-		$name =~ s/\.vsh//i;
-		printf SHADERSINC "\#include \"vshtmp" . $dx . "\\$name" . "\.inc\"\n";
-	}
-	elsif( $name =~ m/\.fxc/ )
-	{
-		$name =~ s/\.fxc//i;
-		if( $nv3x )
-		{
-			printf SHADERSINC "\#ifdef PS20A\n";
-			printf SHADERSINC "\#include \"fxctmp" . $dx . "_nv3x\\$name" . "\.inc\"\n";
-			printf SHADERSINC "\#else\n";
-			printf SHADERSINC "\#include \"fxctmp" . $dx . "_nv3x_ps20\\$name" . "\.inc\"\n";
-			printf SHADERSINC "\#endif\n\n";
-		}
-		else
-		{
-			printf SHADERSINC "\#include \"fxctmp" . $dx . "\\$name" . "\.inc\"\n";
-		}
-	}
-	else
-	{
-		die;
-	}
+	local ($_)=@_;
+	print VCSLIST $_;
 }
 
-close SHADERSINC;
+sub output_inclist_line
+{
+	local ($_)=@_;
+	print INCLIST $_;
+}
+

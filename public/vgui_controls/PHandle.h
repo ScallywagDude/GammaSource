@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PHANDLE_H
 #define PHANDLE_H
@@ -32,14 +27,41 @@ class PHandle
 public:
 	PHandle() : m_iPanelID(INVALID_PANEL) {} //m_iSerialNumber(0), m_pListEntry(0) {}
 
-	Panel *Get();
+	Panel *Get() const;
 	Panel *Set( Panel *pPanel );
+	Panel *Set( HPanel hPanel );
 
-	operator Panel *()						{ return Get(); }
+	operator Panel *() const				{ return Get(); }
 	Panel * operator ->()					{ return Get(); }
 	Panel * operator = (Panel *pPanel)		{ return Set(pPanel); }
 
-	bool operator == (Panel *pPanel)		{ return (Get() == pPanel); }
+	//bool operator == (Panel *pPanel)		{ return (Get() == pPanel); }
+	operator bool () const					{ return Get() != 0; }
+
+    friend bool operator == ( const PHandle &p1, const PHandle &p2 )
+    {
+        return p1.m_iPanelID == p2.m_iPanelID;
+    }
+
+private:
+	HPanel m_iPanelID;
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: Safe pointer class to just convert between VPANEL's and PHandle
+//-----------------------------------------------------------------------------
+class VPanelHandle
+{
+public:
+	VPanelHandle() : m_iPanelID(INVALID_PANEL) {}
+
+	VPANEL Get();
+	VPANEL Set( VPANEL pPanel );
+
+	operator VPANEL ()						{ return Get(); }
+	VPANEL operator = (VPANEL pPanel)		{ return Set(pPanel); }
+
+	bool operator == (VPANEL pPanel)		{ return (Get() == pPanel); }
 	operator bool ()						{ return Get() != 0; }
 
 private:
@@ -55,6 +77,7 @@ class DHANDLE : public PHandle
 public:
 	PanelType *Get()					{ return (PanelType *)PHandle::Get(); }
 	PanelType *Set( PanelType *pPanel )	{ return (PanelType *)PHandle::Set(pPanel); }
+	PanelType *Set( HPanel hPanel )		{ return (PanelType *)PHandle::Set(hPanel); }
 
 	operator PanelType *()						{ return (PanelType *)PHandle::Get(); }
 	PanelType * operator ->()					{ return (PanelType *)PHandle::Get(); }

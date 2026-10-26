@@ -1,18 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "BanContextMenu.h"
 
-#include <VGUI_Controls.h>
-#include <VGUI_IInput.h>
-#include <VGUI_IPanel.h>
-#include <VGUI_ISurface.h>
-#include <VGUI_KeyValues.h>
+#include <vgui/IInput.h>
+#include <vgui/IPanel.h>
+#include <vgui/ISurface.h>
+#include <KeyValues.h>
 
 using namespace vgui;
 
@@ -40,12 +38,12 @@ void CBanContextMenu::ShowMenu(Panel *target, unsigned int banID)
 
 	if(banID==-1) 
 	{
-		AddMenuItem("ban", "&Add Ban", new KeyValues("addban", "banID", banID), CBanContextMenu::parent);
+		AddMenuItem("ban", "#Ban_Menu_Add", new KeyValues("addban", "banID", banID), CBanContextMenu::parent);
 	} 
 	else
 	{
-		AddMenuItem("ban", "&Remove Ban", new KeyValues("removeban", "banID", banID), CBanContextMenu::parent);
-		AddMenuItem("ban", "&Change Time", new KeyValues("changeban", "banID", banID), CBanContextMenu::parent);
+		AddMenuItem("ban", "#Ban_Menu_Remove", new KeyValues("removeban", "banID", banID), CBanContextMenu::parent);
+		AddMenuItem("ban", "#Ban_Menu_Change", new KeyValues("changeban", "banID", banID), CBanContextMenu::parent);
 	}
 
 	MakePopup();

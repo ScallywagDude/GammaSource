@@ -1,4 +1,7 @@
 vs.1.1
+
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Constants specified by the app
 ;    c0      = (0, 1, 2, 0.5)
@@ -9,7 +12,7 @@ vs.1.1
 ;    c12-c15 = model->view matrix (transpose)
 ;	 c16	 = [fogStart, fogEnd, fogRange, undefined]
 ;
-; c90..c93 - special proj matrix
+; $SHADER_SPECIFIC_CONST_0..$SHADER_SPECIFIC_CONST_3 - special proj matrix
 ;
 ; Vertex components (as specified in the vertex DECL)
 ;    $vPos    = Position
@@ -47,7 +50,7 @@ dp4 $worldPos.x, $vPos, $cModel0
 dp4 $worldPos.y, $vPos, $cModel1
 dp4 $worldPos.z, $vPos, $cModel2
 
-&RangeFog( $projPos );
+&CalcFog( $worldPos, $projPos );
 
 alloc $worldEyeVect
 
@@ -65,8 +68,8 @@ mov $tangentEyeVect.w, $cZero
 mov oT5, $tangentEyeVect
 
 ; base coordinates
-dp4 oT0.x, $vTexCoord0, c91
-dp4 oT0.y, $vTexCoord0, c92
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_2
 
 ; reflection
 alloc $projPosReflect
@@ -83,7 +86,7 @@ mul $projPos.xy, $projPos, $cHalf
 mov oT2, $projPos
 
 ; reflectionscale, refractionscale
-mov oT4, c94
+mov oT4, $SHADER_SPECIFIC_CONST_4
 
 free $worldEyeVect
 free $tangentEyeVect

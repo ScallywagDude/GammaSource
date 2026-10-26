@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DISP_VRAD_H
 #define DISP_VRAD_H
@@ -12,11 +12,11 @@
 #endif
 
 
-#include "../../common/builddisp.h"
+#include "builddisp.h"
 
 
 // Blend the normals of neighboring displacement surfaces so they match at edges and corners.
-void SmoothNeighboringDispSurfNormals( CCoreDispInfo *pListBase, int listSize );
+void SmoothNeighboringDispSurfNormals( CCoreDispInfo **ppListBase, int listSize );
 
 
 #endif // DISP_VRAD_H

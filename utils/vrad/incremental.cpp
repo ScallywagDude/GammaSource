@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "incremental.h"
 #include "lightmap.h"
 
@@ -234,8 +241,8 @@ bool CIncremental::WriteIncrementalHeader( long fp )
 
 	for( int i=0; i < nFaces; i++ )
 	{
-		hdr.m_FaceLightmapSizes[i].m_Width = dfaces[i].m_LightmapTextureSizeInLuxels[0];
-		hdr.m_FaceLightmapSizes[i].m_Height = dfaces[i].m_LightmapTextureSizeInLuxels[1];
+		hdr.m_FaceLightmapSizes[i].m_Width = g_pFaces[i].m_LightmapTextureSizeInLuxels[0];
+		hdr.m_FaceLightmapSizes[i].m_Height = g_pFaces[i].m_LightmapTextureSizeInLuxels[1];
 	}
 
 	FileWrite( fp, hdr.m_FaceLightmapSizes.Base(), sizeof(CIncrementalHeader::CLMSize) * nFaces );
@@ -261,8 +268,8 @@ bool CIncremental::IsIncrementalFileValid()
 			int i;
 			for( i=0; i < numfaces; i++ )
 			{
-				if( hdr.m_FaceLightmapSizes[i].m_Width  != dfaces[i].m_LightmapTextureSizeInLuxels[0] ||							
-					hdr.m_FaceLightmapSizes[i].m_Height != dfaces[i].m_LightmapTextureSizeInLuxels[1] )
+				if( hdr.m_FaceLightmapSizes[i].m_Width  != g_pFaces[i].m_LightmapTextureSizeInLuxels[0] ||							
+					hdr.m_FaceLightmapSizes[i].m_Height != g_pFaces[i].m_LightmapTextureSizeInLuxels[1] )
 				{
 					break;
 				}
@@ -295,7 +302,8 @@ void CIncremental::AddLightToFace(
 
 	// Check for the 99.99% case in which the face already exists.
 	CLightFace *pFace;
-	if( pLight->m_pCachedFaces[iThread] && pLight->m_pCachedFaces[iThread]->m_FaceIndex == iFace )
+	if( pLight->m_pCachedFaces[iThread] && 
+		pLight->m_pCachedFaces[iThread]->m_FaceIndex == iFace )
 	{
 		pFace = pLight->m_pCachedFaces[iThread];
 	}
@@ -486,8 +494,8 @@ bool CIncremental::Finalize()
         if( !m_FacesTouched[facenum] || !faceLights[facenum].Count() )
 			continue;
 
-		int w = dfaces[facenum].m_LightmapTextureSizeInLuxels[0]+1;
-		int h = dfaces[facenum].m_LightmapTextureSizeInLuxels[1]+1;
+		int w = g_pFaces[facenum].m_LightmapTextureSizeInLuxels[0]+1;
+		int h = g_pFaces[facenum].m_LightmapTextureSizeInLuxels[1]+1;
 		int nLuxels = w * h;
 		assert( nLuxels <= sizeof(faceLight) / sizeof(faceLight[0]) );
 
@@ -518,12 +526,11 @@ bool CIncremental::Finalize()
 
 		// Convert to the floating-point representation in the BSP file.
 		Vector *pSrc = faceLight;
-		unsigned char *pDest = &dlightdata[ dfaces[facenum].lightofs ];
+		unsigned char *pDest = &(*pdlightdata)[ g_pFaces[facenum].lightofs ];
 
 		for( int iSample=0; iSample < nLuxels; iSample++ )
 		{
-			extern void Vec3toColorRGBExp32( Vector& v, colorRGBExp32 *c );
-			Vec3toColorRGBExp32( *pSrc, ( colorRGBExp32 *)pDest );
+			VectorToColorRGBExp32( *pSrc, *( ColorRGBExp32 *)pDest );
 			pDest += 4;
 			pSrc++;
 		}

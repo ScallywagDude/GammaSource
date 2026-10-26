@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "soundentry.h"
 #include "sentence.h"
 #include "iscenemanagersound.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "snd_wave_source.h"
 #include "cmdlib.h"
 #include "workspacemanager.h"
@@ -16,6 +16,8 @@
 #include "workspacebrowser.h"
 #include "wavefile.h"
 #include "wavebrowser.h"
+#include <vgui/ILocalize.h>
+#include "tier3/tier3.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -31,24 +33,24 @@ CSoundEntry::CSoundEntry( CVCDFile *vcd, char const *name ) : m_pOwner( vcd )
 
 	// Get name out of sound emitter system
 	char filebase [ 64 ];
-	int slot = soundemitter->GetSoundIndex( name );
-	if ( soundemitter->IsValidIndex( slot ) )
+	int slot = g_pSoundEmitterSystem->GetSoundIndex( name );
+	if ( g_pSoundEmitterSystem->IsValidIndex( slot ) )
 	{
-		ExtractFileBase( soundemitter->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
+		Q_FileBase( g_pSoundEmitterSystem->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
 		Q_strncpy( m_szScriptFile, filebase, sizeof( m_szScriptFile ) );
 
 		// Look up and add the .wav files for the sound entry
 
-		CSoundEmitterSystemBase::CSoundParametersInternal *p = soundemitter->InternalGetParametersForSound( slot );
+		CSoundParametersInternal *p = g_pSoundEmitterSystem->InternalGetParametersForSound( slot );
 		if ( p )
 		{
 			CWaveBrowser *wb = GetWorkspaceManager()->GetWaveBrowser();
 			Assert( wb );
 
-			int waveCount = p->soundnames.Count();
+			int waveCount = p->NumSoundNames();
 			for ( int wave = 0; wave < waveCount; wave++ )
 			{
-				char const *wavname = soundemitter->GetWaveName( p->soundnames[ wave ] );
+				char const *wavname = g_pSoundEmitterSystem->GetWaveName( p->GetSoundNames()[ wave ].symbol );
 				if ( wavname )
 				{
 					CWaveFile *wavefile = wb->FindEntry( wavname, false );
@@ -130,10 +132,10 @@ void CSoundEntry::SetName( char const *name )
 
 	// Get name out of sound emitter system
 	char filebase [ 64 ];
-	int slot = soundemitter->GetSoundIndex( name );
-	if ( soundemitter->IsValidIndex( slot ) )
+	int slot = g_pSoundEmitterSystem->GetSoundIndex( name );
+	if ( g_pSoundEmitterSystem->IsValidIndex( slot ) )
 	{
-		ExtractFileBase( soundemitter->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
+		Q_FileBase( g_pSoundEmitterSystem->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
 		Q_strncpy( m_szScriptFile, filebase, sizeof( m_szScriptFile ) );
 	}
 }
@@ -222,8 +224,8 @@ char const *CSoundEntry::GetScriptFile() const
 void CSoundEntry::SetScriptFile( char const *scriptfile )
 {
 	char filebase [ 64 ];
-	int slot = soundemitter->GetSoundIndex( GetName() );
-	ExtractFileBase( soundemitter->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
+	int slot = g_pSoundEmitterSystem->GetSoundIndex( GetName() );
+	Q_FileBase( g_pSoundEmitterSystem->GetSourceFileForSound( slot ), filebase, sizeof( filebase ) );
 
 	if ( !Q_stricmp( GetScriptFile(), filebase ) )
 		return;
@@ -231,12 +233,12 @@ void CSoundEntry::SetScriptFile( char const *scriptfile )
 	Q_strncpy( m_szScriptFile, filebase, sizeof( m_szScriptFile ) );
 }
 
-CSoundEmitterSystemBase::CSoundParametersInternal *CSoundEntry::GetSoundParameters()
+CSoundParametersInternal *CSoundEntry::GetSoundParameters()
 {
-	int soundindex = soundemitter->GetSoundIndex( GetName() );
-	if ( soundemitter->IsValidIndex( soundindex ) )
+	int soundindex = g_pSoundEmitterSystem->GetSoundIndex( GetName() );
+	if ( g_pSoundEmitterSystem->IsValidIndex( soundindex ) )
 	{
-		return soundemitter->InternalGetParametersForSound( soundindex );
+		return g_pSoundEmitterSystem->InternalGetParametersForSound( soundindex );
 	}
 	return NULL;
 }
@@ -306,6 +308,19 @@ char const *CSoundEntry::GetSentenceText( int wavindex )
 	}
 }
 
+void CSoundEntry::GetCCText( wchar_t *out, int maxchars )
+{
+	out[ 0 ] = 0;
+
+	if ( !g_pVGuiLocalize )
+		return;
+
+	const wchar_t *str = g_pVGuiLocalize->Find( GetName() );
+	if ( !str )
+		return;
+
+	wcsncpy( out, str, maxchars );
+}
 
 
 bool CSoundEntry::IsChildFirst( ITreeItem *child )

@@ -1,31 +1,19 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-//                 Half-Life Model Viewer (c) 1999 by Mete Ciragan
+// Purpose: 
 //
-// file:           ControlPanel.cpp
-// last modified:  May 29 1999, Mete Ciragan
-// copyright:      The programs and associated files contained in this
-//                 distribution were developed by Mete Ciragan. The programs
-//                 are not in the public domain, but they are freely
-//                 distributable without licensing fees. These programs are
-//                 provided without guarantee or warrantee expressed or
-//                 implied.
-//
-// version:        1.2
-//
-// email:          mete@swissquake.ch
-// web:            http://www.swissquake.ch/chumbalum-soft/
-//
+//=============================================================================//
 #include "ControlPanel.h"
 #include "ViewerSettings.h"
 #include "StudioModel.h"
+#include "IStudioRender.h"
 #include "MatSysWin.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mx/mx.h>
-#include <mx/mxBmp.h>
+#include <mxtk/mx.h>
+#include <mxtk/mxBmp.h>
 #include "FlexPanel.h"
-#include "scriplib.h"
 #include "mxExpressionTray.h"
 #include "PhonemeEditor.h"
 #include "hlfaceposer.h"
@@ -40,8 +28,12 @@
 #include "GestureTool.h"
 #include "RampTool.h"
 #include "SceneRampTool.h"
-#include "phonemeextractor.h"
+#include "phonemeextractor/PhonemeExtractor.h"
+#include "tier1/KeyValues.h"
 
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 extern char g_appTitle[];
 
 ControlPanel *g_pControlPanel = 0;
@@ -71,7 +63,7 @@ public:
 };
 
 ControlPanel::ControlPanel (mxWindow *parent)
-: IFacePoserToolWindow( "ControlPanel", "Control Panel" ), mxWindow( parent, 0, 0, 0, 0 )
+: IFacePoserToolWindow( "ControlPanel", "Control Panel" ), mxWindow( parent, 0, 0, 0, 0 ), tab( 0 )
 {
 	// create tabcontrol with subdialog windows
 	tab = new mxTab (this, 0, 0, 0, 0, IDC_TAB);
@@ -93,6 +85,7 @@ ControlPanel::ControlPanel (mxWindow *parent)
 	new mxLabel (wRender, 220, 25, 140, 20, "Model Spacing");
 
 	cbAllWindowsDriveSpeech = new mxCheckBox( wRender, 220, 45, 140, 20, "All tools drive mouth", IDC_TOOLSDRIVEMOUTH );
+	cbAllWindowsDriveSpeech->setChecked( g_viewerSettings.faceposerToolsDriveMouth );
 
 	cbGround = new mxCheckBox (wRender, 110, 5, 100, 20, "Ground", IDC_GROUND);
 	cbGround->setEnabled( true );
@@ -100,8 +93,8 @@ ControlPanel::ControlPanel (mxWindow *parent)
 	cbMovement->setEnabled( false );
 	cbBackground = new mxCheckBox (wRender, 110, 45, 100, 20, "Background", IDC_BACKGROUND);
 	cbBackground->setEnabled( false );
-	mxCheckBox *cbHitBoxes = new mxCheckBox (wRender, 110, 65, 100, 20, "Hit Boxes", IDC_HITBOXES);
-	mxCheckBox *cbBones = new mxCheckBox (wRender, 5, 65, 100, 20, "Bones", IDC_BONES);
+	new mxCheckBox (wRender, 110, 65, 100, 20, "Hit Boxes", IDC_HITBOXES);
+	new mxCheckBox (wRender, 5, 65, 100, 20, "Bones", IDC_BONES);
 	mxCheckBox *cbAttachments = new mxCheckBox (wRender, 5, 45, 100, 20, "Attachments", IDC_ATTACHMENTS);
 	cbAttachments->setEnabled( false );
 
@@ -117,13 +110,6 @@ ControlPanel::ControlPanel (mxWindow *parent)
 	mxToolTip::add (slSpeedScale, "Speed Scale");
 	lSpeedScale = new mxLabel( wSequence, 5, 50, 200, 18 );
 	lSpeedScale->setLabel( "Speed scale" );
-
-	slPrimaryBlend = new mxSlider (wSequence, 220, 5, 200, 18, IDC_PRIMARYBLEND);
-	slPrimaryBlend->setRange (0.0, 1.0);
-	mxToolTip::add (slPrimaryBlend, "Primary Blend");
-	slSecondaryBlend = new mxSlider (wSequence, 220, 32, 200, 18, IDC_SECONDARYBLEND);
-	slSecondaryBlend->setRange (0, 1.0);
-	mxToolTip::add (slSecondaryBlend, "Secondary Blend");
 
 	CControlPanelTabWindow *wBody = new CControlPanelTabWindow (this, 0, 0, 0, 0);
 	tab->add (wBody, "Body");
@@ -142,7 +128,7 @@ ControlPanel::ControlPanel (mxWindow *parent)
 	mxToolTip::add (cSkin, "Choose a skin family");
 }
 
-ControlPanel::~ControlPanel ()
+ControlPanel::~ControlPanel()
 {
 }
 
@@ -152,7 +138,7 @@ bool ControlPanel::CanClose( void )
 	for ( int i = 0 ; i < expressions->GetNumClasses(); i++ )
 	{
 		CExpClass *cl = expressions->GetClass( i );
-		if ( cl && !cl->IsOverrideClass() )
+		if ( cl )
 		{
 			workspacefiles->StoreFile( IWorkspaceFiles::EXPRESSION, cl->GetFileName() );
 		}
@@ -168,7 +154,10 @@ void ControlPanel::OnDelete()
 
 void ControlPanel::PositionControls( int width, int height )
 {
-	tab->setBounds( 0, GetCaptionHeight(), width, height );
+	if ( tab )
+	{
+		tab->setBounds( 0, GetCaptionHeight(), width, height );
+	}
 }
 
 void ControlPanel::redraw()
@@ -185,6 +174,8 @@ void ControlPanel::redraw()
 int
 ControlPanel::handleEvent (mxEvent *event)
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 	
 	if ( HandleToolEvent( event ) )
@@ -205,15 +196,20 @@ ControlPanel::handleEvent (mxEvent *event)
 			iret = 1;
 			switch (event->action)
 			{
+			case IDC_TOOLSDRIVEMOUTH:
+				{
+					g_viewerSettings.faceposerToolsDriveMouth = ((mxCheckBox *)event->widget)->isChecked();
+				}
+				break;
 			case IDC_TAB:
 				{
-					g_viewerSettings.showTexture = (tab->getSelectedIndex () == 3);
+					g_viewerSettings.showTexture = (tab->getSelectedIndex() == 3);
 				}
 				break;
 				
 			case IDC_RENDERMODE:
 				{
-					int index = cRenderMode->getSelectedIndex ();
+					int index = cRenderMode->getSelectedIndex();
 					if (index >= 0)
 					{
 						setRenderMode (index);
@@ -222,65 +218,65 @@ ControlPanel::handleEvent (mxEvent *event)
 				break;
 				
 			case IDC_GROUND:
-				setShowGround (((mxCheckBox *) event->widget)->isChecked ());
+				setShowGround (((mxCheckBox *) event->widget)->isChecked());
 				break;
 				
 			case IDC_MOVEMENT:
-				setShowMovement (((mxCheckBox *) event->widget)->isChecked ());
+				setShowMovement (((mxCheckBox *) event->widget)->isChecked());
 				break;
 				
 			case IDC_BACKGROUND:
-				setShowBackground (((mxCheckBox *) event->widget)->isChecked ());
+				setShowBackground (((mxCheckBox *) event->widget)->isChecked());
 				break;
 				
 			case IDC_HITBOXES:
-				g_viewerSettings.showHitBoxes = ((mxCheckBox *) event->widget)->isChecked ();
+				g_viewerSettings.showHitBoxes = ((mxCheckBox *) event->widget)->isChecked();
 				break;
 				
 			case IDC_PHYSICSMODEL:
-				g_viewerSettings.showPhysicsModel = ((mxCheckBox *) event->widget)->isChecked ();
+				g_viewerSettings.showPhysicsModel = ((mxCheckBox *) event->widget)->isChecked();
 				break;
 				
 			case IDC_BONES:
-				g_viewerSettings.showBones = ((mxCheckBox *) event->widget)->isChecked ();
+				g_viewerSettings.showBones = ((mxCheckBox *) event->widget)->isChecked();
 				break;
 				
 			case IDC_ATTACHMENTS:
-				g_viewerSettings.showAttachments = ((mxCheckBox *) event->widget)->isChecked ();
+				g_viewerSettings.showAttachments = ((mxCheckBox *) event->widget)->isChecked();
 				break;
 				
 			case IDC_SEQUENCE:
 				{
-					int index = cSequence->getSelectedIndex ();
+					int index = cSequence->getSelectedIndex();
 					if (index >= 0)
 					{
-						setSequence (index);
+						setSequence ( index );
 					}
 				}
 				break;
 			
 			case IDC_SPEEDSCALE:
 				{
-					g_viewerSettings.speedScale = ((mxSlider *) event->widget)->getValue ();
+					g_viewerSettings.speedScale = ((mxSlider *) event->widget)->getValue();
 					lSpeedScale->setLabel( va( "Speed scale %.2f", g_viewerSettings.speedScale ) );
 				}
 				break;
 				
 			case IDC_PRIMARYBLEND:
 				{
-					setBlend( 0, ((mxSlider *) event->widget)->getValue () );
+					setBlend( 0, ((mxSlider *) event->widget)->getValue() );
 				}
 				break;
 				
 			case IDC_SECONDARYBLEND:
 				{
-					setBlend( 1, ((mxSlider *) event->widget)->getValue () );
+					setBlend( 1, ((mxSlider *) event->widget)->getValue() );
 				}
 				break;
 				
 			case IDC_BODYPART:
 				{
-					int index = cBodypart->getSelectedIndex ();
+					int index = cBodypart->getSelectedIndex();
 					if (index >= 0)
 					{
 						setBodypart (index);
@@ -291,7 +287,7 @@ ControlPanel::handleEvent (mxEvent *event)
 				
 			case IDC_SUBMODEL:
 				{
-					int index = cSubmodel->getSelectedIndex ();
+					int index = cSubmodel->getSelectedIndex();
 					if (index >= 0)
 					{
 						setSubmodel (index);
@@ -302,7 +298,7 @@ ControlPanel::handleEvent (mxEvent *event)
 				
 			case IDC_CONTROLLER:
 				{
-					int index = cController->getSelectedIndex ();
+					int index = cController->getSelectedIndex();
 					if (index >= 0)
 						setBoneController (index);
 				}
@@ -310,20 +306,20 @@ ControlPanel::handleEvent (mxEvent *event)
 				
 			case IDC_CONTROLLERVALUE:
 				{
-					int index = cController->getSelectedIndex ();
+					int index = cController->getSelectedIndex();
 					if (index >= 0)
-						setBoneControllerValue (index, slController->getValue ());
+						setBoneControllerValue (index, slController->getValue());
 				}
 				break;
 				
 			case IDC_SKINS:
 				{
-					int index = cSkin->getSelectedIndex ();
+					int index = cSkin->getSelectedIndex();
 					if (index >= 0)
 					{
 						models->GetActiveStudioModel()->SetSkin (index);
 						g_viewerSettings.skin = index;
-						g_pMatSysWindow->redraw ();
+						g_pMatSysWindow->redraw();
 					}
 				}
 				break;
@@ -337,60 +333,39 @@ ControlPanel::handleEvent (mxEvent *event)
 	return iret;
 }
 
-void ControlPanel::dumpModelInfo () { }
+void ControlPanel::dumpModelInfo() { }
 
-void ControlPanel::OnModelChanged( const char *filename )
+void ControlPanel::ChangeModel( const char *filename )
 {
-	SaveViewerSettings( g_viewerSettings.modelFile );
+	HCURSOR hPrevCursor = SetCursor( LoadCursor( NULL, IDC_WAIT ) );
 
-	initSequences ();
-	initBodyparts ();
-	initBoneControllers ();
-	initSkins ();
-	initTextures ();
+	// init all the selection tabs based on the current model
+	initSequenceChoices();
+	initBodypartChoices();
+	initBoneControllerChoices();
+	initSkinChoices();
 
-	setModelInfo ();
+	setModelInfo();
 
-	if (!LoadViewerSettings( filename ))
-	{
-		InitViewerSettings( "faceposer" );
-		g_viewerSettings.speechapiindex = SPEECH_API_LIPSINC;
-		g_viewerSettings.sequence = 0;
-		g_viewerSettings.speedScale = 1.0f;
-	}
+	SetCloseCaptionLanguageId( g_viewerSettings.cclanguageid, true );
 
 	g_viewerSettings.m_iEditAttachment = -1;
 
-	strcpy( g_viewerSettings.modelFile, filename );
-	setSequence( g_viewerSettings.sequence );
-	setSpeed( g_viewerSettings.speedScale );
+	g_viewerSettings.enableIK = true;
+	g_viewerSettings.enableTargetIK = false;
 
-	int i;
-	for (i = 0; i < 32; i++)
-	{
-		g_viewerSettings.submodels[i] = 0;
-	}
-	for (i = 0; i < 8; i++)
-	{
-		g_viewerSettings.controllers[i] = 0;
-	}
+	setSequence( models->GetActiveStudioModel()->GetSequence() );
+	setSpeed( g_viewerSettings.speedScale );
 
 	mx_setcwd (mx_getpath (filename));
 
 	g_pFlexPanel->initFlexes();
 	
-	centerView ();
-	CenterOnFace();
+	//	centerView();
+	//	CenterOnFace();
 
-	g_pChoreoView->InvalidateTrackLookup();
-	g_pChoreoView->OnCheckSequenceLengths();
-	g_pExpressionTrayTool->ReloadBitmaps();
-	g_pExpressionTool->SetEvent( NULL );
-	g_pExpressionTool->redraw();
-	g_pGestureTool->redraw();
-	g_pRampTool->redraw();
-	g_pSceneRampTool->redraw();
-
+	IFacePoserToolWindow::ModelChanged();
+	
 	CExpClass *cl = expressions->GetActiveClass();
 	if ( cl )
 	{
@@ -399,6 +374,8 @@ void ControlPanel::OnModelChanged( const char *filename )
 
 	SetSuffix( va( " - %s.mdl", models->GetActiveModelName() ) );
 	redraw();
+
+	SetCursor( hPrevCursor );
 }
 
 
@@ -407,7 +384,7 @@ void
 ControlPanel::setRenderMode (int mode)
 {
 	g_viewerSettings.renderMode = mode;
-	g_pMatSysWindow->redraw ();
+	g_pMatSysWindow->redraw();
 }
 
 
@@ -445,15 +422,15 @@ ControlPanel::setShowBackground (bool b)
 
 
 void
-ControlPanel::initSequences ()
+ControlPanel::initSequenceChoices()
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		cSequence->removeAll ();
-		for (int i = 0; i < hdr->numseq; i++)
+		cSequence->removeAll();
+		for (int i = 0; i < hdr->GetNumSeq(); i++)
 		{
-			cSequence->add (hdr->pSeqdesc(i)->pszLabel());
+			cSequence->add (hdr->pSeqdesc(i).pszLabel());
 		}
 
 		cSequence->select (0);
@@ -467,32 +444,8 @@ ControlPanel::setSequence (int index)
 {
 	cSequence->select (index);
 	models->GetActiveStudioModel()->SetSequence(index);
-	g_viewerSettings.sequence = index;
 
 	initPoseParameters( );
-
-	float flMin, flMax;
-	if (models->GetActiveStudioModel()->GetPoseParameterRange( 0, &flMin, &flMax ))
-	{
-		slPrimaryBlend->setEnabled( true );
-		slPrimaryBlend->setRange( flMin, flMax );
-	}
-	else
-	{
-		slPrimaryBlend->setEnabled( false );
-	}
-	slPrimaryBlend->setValue( 0.0 );
-
-	if (models->GetActiveStudioModel()->GetPoseParameterRange( 1, &flMin, &flMax ))
-	{
-		slSecondaryBlend->setEnabled( true );
-		slPrimaryBlend->setRange( flMin, flMax );
-	}
-	else
-	{
-		slSecondaryBlend->setEnabled( false );
-	}
-	slSecondaryBlend->setValue( 0.0 );
 }
 
 
@@ -511,23 +464,23 @@ void ControlPanel::setBlend(int index, float value )
 
 
 void
-ControlPanel::initBodyparts ()
+ControlPanel::initBodypartChoices()
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
 		int i;
 		mstudiobodyparts_t *pbodyparts = hdr->pBodypart(0);
 
-		cBodypart->removeAll ();
-		if (hdr->numbodyparts > 0)
+		cBodypart->removeAll();
+		if (hdr->numbodyparts() > 0)
 		{
-			for (i = 0; i < hdr->numbodyparts; i++)
+			for (i = 0; i < hdr->numbodyparts(); i++)
 				cBodypart->add (pbodyparts[i].pszName());
 
 			cBodypart->select (0);
 
-			cSubmodel->removeAll ();
+			cSubmodel->removeAll();
 			for (i = 0; i < pbodyparts[0].nummodels; i++)
 			{
 				char str[64];
@@ -544,15 +497,15 @@ ControlPanel::initBodyparts ()
 void
 ControlPanel::setBodypart (int index)
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
 		//cBodypart->setEn
 		cBodypart->select (index);
-		if (index < hdr->numbodyparts)
+		if (index < hdr->numbodyparts())
 		{
 			mstudiobodyparts_t *pbodyparts = hdr->pBodypart(0);
-			cSubmodel->removeAll ();
+			cSubmodel->removeAll();
 		
 			for (int i = 0; i < pbodyparts[index].nummodels; i++)
 			{
@@ -571,34 +524,34 @@ ControlPanel::setBodypart (int index)
 void
 ControlPanel::setSubmodel (int index)
 {
-	models->GetActiveStudioModel()->SetBodygroup (cBodypart->getSelectedIndex (), index);
-	g_viewerSettings.submodels[cBodypart->getSelectedIndex ()] = index;
+	models->GetActiveStudioModel()->SetBodygroup (cBodypart->getSelectedIndex(), index);
 }
 
 
 
 void
-ControlPanel::initBoneControllers ()
+ControlPanel::initBoneControllerChoices()
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		cController->setEnabled (hdr->numbonecontrollers > 0);
-		slController->setEnabled (hdr->numbonecontrollers > 0);
-		cController->removeAll ();
+		cController->setEnabled (hdr->numbonecontrollers() > 0);
+		slController->setEnabled (hdr->numbonecontrollers() > 0);
+		cController->removeAll();
 
-		mstudiobonecontroller_t *pbonecontrollers = hdr->pBonecontroller(0);
-		for (int i = 0; i < hdr->numbonecontrollers; i++)
+		for (int i = 0; i < hdr->numbonecontrollers(); i++)
 		{
+			mstudiobonecontroller_t *pbonecontroller = hdr->pBonecontroller(i);
 			char str[32];
-			sprintf (str, "Controller %d", pbonecontrollers[i].inputfield);
+			sprintf (str, "Controller %d", pbonecontroller->inputfield);
 			cController->add (str);
 		}
 
-		if (hdr->numbonecontrollers > 0)
+		if (hdr->numbonecontrollers() > 0)
 		{
+			mstudiobonecontroller_t *pbonecontrollers = hdr->pBonecontroller(0);
 			cController->select (0);
-			slController->setRange (pbonecontrollers[0].start, pbonecontrollers[0].end);
+			slController->setRange (pbonecontrollers->start, pbonecontrollers->end);
 			slController->setValue (0);
 		}
 	}
@@ -609,11 +562,11 @@ ControlPanel::initBoneControllers ()
 void
 ControlPanel::setBoneController (int index)
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		mstudiobonecontroller_t *pbonecontrollers = hdr->pBonecontroller(0);
-		slController->setRange ( pbonecontrollers[index].start, pbonecontrollers[index].end);
+		mstudiobonecontroller_t *pbonecontroller = hdr->pBonecontroller(index);
+		slController->setRange ( pbonecontroller->start, pbonecontroller->end);
 		slController->setValue (0);
 	}
 }
@@ -623,25 +576,23 @@ ControlPanel::setBoneController (int index)
 void
 ControlPanel::setBoneControllerValue (int index, float value)
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		mstudiobonecontroller_t *pbonecontrollers = hdr->pBonecontroller(0);
-		models->GetActiveStudioModel()->SetController (pbonecontrollers[index].inputfield, value);
-	
-		g_viewerSettings.controllers[index] = value;
+		mstudiobonecontroller_t *pbonecontrollers = hdr->pBonecontroller(index);
+		models->GetActiveStudioModel()->SetController (pbonecontrollers->inputfield, value);
 	}
 }
 
 
 
 void
-ControlPanel::initPoseParameters ()
+ControlPanel::initPoseParameters()
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		for (int i = 0; i < hdr->numposeparameters; i++)
+		for (int i = 0; i < hdr->GetNumPoseParameters(); i++)
 		{
 			setBlend( i, 0.0 );
 		}
@@ -649,15 +600,15 @@ ControlPanel::initPoseParameters ()
 }
 
 void
-ControlPanel::initSkins ()
+ControlPanel::initSkinChoices()
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		cSkin->setEnabled (hdr->numskinfamilies > 0);
-		cSkin->removeAll ();
+		cSkin->setEnabled (hdr->numskinfamilies() > 0);
+		cSkin->removeAll();
 
-		for (int i = 0; i < hdr->numskinfamilies; i++)
+		for (int i = 0; i < hdr->numskinfamilies(); i++)
 		{
 			char str[32];
 			sprintf (str, "Skin %d", i + 1);
@@ -673,16 +624,16 @@ ControlPanel::initSkins ()
 
 
 void
-ControlPanel::setModelInfo ()
+ControlPanel::setModelInfo()
 {
 	static char str[2048];
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 
 	if (!hdr)
 		return;
 
 	int hbcount = 0;
-	for ( int s = 0; s < hdr->numhitboxsets; s++ )
+	for ( int s = 0; s < hdr->numhitboxsets(); s++ )
 	{
 		hbcount += hdr->iHitboxCount( s );
 	}
@@ -691,14 +642,12 @@ ControlPanel::setModelInfo ()
 		"Bones: %d\n"
 		"Bone Controllers: %d\n"
 		"Hit Boxes: %d in %d sets\n"
-		"Sequences: %d\n"
-		"Sequence Groups: %d\n",
-		hdr->numbones,
-		hdr->numbonecontrollers,
+		"Sequences: %d\n",
+		hdr->numbones(),
+		hdr->numbonecontrollers(),
 		hbcount,
-		hdr->numhitboxsets,
-		hdr->numseq,
-		hdr->numseqgroups
+		hdr->numhitboxsets(),
+		hdr->GetNumSeq()
 		);
 
 	lModelInfo1->setLabel (str);
@@ -707,62 +656,101 @@ ControlPanel::setModelInfo ()
 		"Textures: %d\n"
 		"Skin Families: %d\n"
 		"Bodyparts: %d\n"
-		"Attachments: %d\n"
-		"Transitions: %d\n",
-		hdr->numtextures,
-		hdr->numskinfamilies,
-		hdr->numbodyparts,
-		hdr->numattachments,
-		hdr->numtransitions);
+		"Attachments: %d\n",
+		hdr->numtextures(),
+		hdr->numskinfamilies(),
+		hdr->numbodyparts(),
+		hdr->GetNumAttachments());
 
 	lModelInfo2->setLabel (str);
 }
 
-
-
-void
-ControlPanel::initTextures ()
-{
-#if 0
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getTextureHeader ();
-	if (hdr)
-	{
-		cTextures->removeAll ();
-		mstudiotexture_t *ptextures = hdr->pTexture(0);
-		for (int i = 0; i < hdr->numtextures; i++)
-			cTextures->add ( hdr->pTexturename(i) );
-		cTextures->select (0);
-		g_viewerSettings.texture = 0;
-		if (hdr->numtextures > 0)
-			cbChrome->setChecked ((ptextures[0].flags & STUDIO_NF_CHROME) == STUDIO_NF_CHROME);
-	}
-#endif
-}
 
 void ControlPanel::CenterOnFace( void )
 {
 	if ( !models->GetActiveStudioModel() )
 		return;
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader();
+	StudioModel *mdl = models->GetActiveStudioModel();
+	if ( !mdl )
+		return;
+
+	CStudioHdr *hdr = mdl->GetStudioHdr();
 	if ( !hdr )
 		return;
 
 	setSpeed( 1.0f );
 
-	setSequence( 0 );
+	int oldSeq = models->GetActiveStudioModel()->GetSequence();
+
+	int seq = models->GetActiveStudioModel()->LookupSequence( "idle_suble" );
+	if ( seq == -1 )
+		seq = 0;
+
+	if ( seq != oldSeq )
+	{
+		Con_Printf( "Centering changed model sequence # to %d\n", seq );
+	}
+
+	setSequence( seq );
 	initPoseParameters( );
 
-	g_viewerSettings.rot.Init();
-	g_viewerSettings.trans.Init();
+	mdl->m_angles.Init();
+	mdl->m_origin.Init();
 
 	Vector size;
-	VectorSubtract( hdr->hull_max, hdr->hull_min, size );
+	VectorSubtract( hdr->hull_max(), hdr->hull_min(), size );
 
-	float eyeheight = hdr->hull_min.z + 0.9 * size.z;
+	float eyeheight = hdr->hull_min().z + 0.9 * size.z;
 
-	g_viewerSettings.trans.x = size.z * .6f;
-	g_viewerSettings.trans.z += eyeheight;
+	if ( hdr->GetNumAttachments() > 0 )
+	{
+		for (int i = 0; i < hdr->GetNumAttachments(); i++)
+		{
+			const mstudioattachment_t &attachment = hdr->pAttachment( i );
+			int iBone = hdr->GetAttachmentBone( i );
+
+			if ( Q_stricmp( attachment.pszName(), "eyes" ) )
+				continue;
+
+			mstudiobone_t *bone = hdr->pBone( iBone );
+			if ( !bone )
+				continue;
+
+			matrix3x4_t boneToPose;
+			MatrixInvert( bone->poseToBone, boneToPose );
+
+			matrix3x4_t attachmentPoseToLocal;
+			ConcatTransforms( boneToPose, attachment.local, attachmentPoseToLocal );
+
+			Vector localSpaceEyePosition;
+			VectorITransform( vec3_origin, attachmentPoseToLocal, localSpaceEyePosition );
+
+			// Not sure why this must be negative?
+			eyeheight = -localSpaceEyePosition.z + hdr->hull_min().z;
+			break;
+		}
+	}
+
+	KeyValues *seqKeyValues = new KeyValues("");
+	if ( seqKeyValues->LoadFromBuffer( mdl->GetFileName( ), mdl->GetKeyValueText( seq ) ) )
+	{
+		// Do we have a build point section?
+		KeyValues *pkvAllFaceposer = seqKeyValues->FindKey("faceposer");
+		if ( pkvAllFaceposer )
+		{
+			float flEyeheight = pkvAllFaceposer->GetFloat( "eye_height", -9999.0f );
+			if ( flEyeheight != -9999.0f )
+			{
+				eyeheight = flEyeheight;
+			}
+		}
+	}
+
+	seqKeyValues->deleteThis();
+
+	mdl->m_origin.x = size.z * .65f;
+	mdl->m_origin.z += eyeheight;
 
 	CUtlVector< StudioModel * > modellist;
 
@@ -789,12 +777,12 @@ void ControlPanel::CenterOnFace( void )
 	{
 		if ( models->GetStudioHeader( i ) == hdr )
 		{
-			g_viewerSettings.trans.y = -yoffset;
+			mdl->m_origin.y = -yoffset;
 		}
 		yoffset += ydelta;
 	}
 
-	g_pMatSysWindow->redraw ();
+	g_pMatSysWindow->redraw();
 }
 
 //-----------------------------------------------------------------------------
@@ -807,9 +795,10 @@ float ControlPanel::GetModelGap( void )
 }
 
 void
-ControlPanel::centerView ()
+ControlPanel::centerView()
 {
-	if ( !models->GetActiveStudioModel() )
+	StudioModel *pModel = models->GetActiveStudioModel();
+	if ( !pModel )
 		return;
 
 	Vector min, max;
@@ -823,16 +812,16 @@ ControlPanel::centerView ()
 		d = dy;
 	if (dz > d)
 		d = dz;
-	g_viewerSettings.trans[0] = d * 1.0f;
-	g_viewerSettings.trans[1] = 0;
-	g_viewerSettings.trans[2] = min[2] + dz / 2;
-	g_viewerSettings.rot[0] = 0.0f;
-	g_viewerSettings.rot[1] = 0.0f;
-	g_viewerSettings.rot[2] = 0.0f;
+	pModel->m_origin[0] = d * 1.0f;
+	pModel->m_origin[1] = 0;
+	pModel->m_origin[2] = min[2] + dz / 2;
+	pModel->m_angles[0] = 0.0f;
+	pModel->m_angles[1] = 0.0f;
+	pModel->m_angles[2] = 0.0f;
 	g_viewerSettings.lightrot.x = 0.f;
 	g_viewerSettings.lightrot.y = -180.0f;
 	g_viewerSettings.lightrot.z = 0.0f;
-	g_pMatSysWindow->redraw ();
+	g_pMatSysWindow->redraw();
 }
 
 bool ControlPanel::Close()
@@ -950,53 +939,6 @@ void ControlPanel::RedoExpression( int index )
 		// Show the updated data
 		active->SelectExpression( index );
 	}
-}
-
-void ControlPanel::DeleteExpressionOverride( int index )
-{
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
-
-	CExpression *exp = active->GetExpression( index );
-	if ( !exp )
-		return;
-
-	if ( !exp->HasOverride() )
-	{
-		Assert( 0 );
-		Con_Printf( "Expression %s has no override for model %s\n", exp->name, models->GetActiveModelName() );
-		return;
-	}
-
-	CExpression *override = exp->GetOverride();
-	if ( !override )
-	{
-		Assert( 0 );
-		Con_Printf( "Expression %s has no override for model %s\n", exp->name, models->GetActiveModelName() );
-		return;
-	}
-
-	// Remove from reference expression
-	exp->SetOverride( NULL );
-
-	// Now remove from overrides class
-	CExpClass *oc = active->GetOverrideClass();
-	if ( !oc )
-	{
-		Assert( 0 );
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Class %s doesn't have any associated override class\n", active->GetName() );
-		return;
-	}
-
-	Con_Printf( "Deleting override expression %s : %s\n", override->name, override->description );
-
-	oc->DeleteExpression( override->name );
-
-	// So overrides save when we save
-	active->SetDirty( true );
-
-	active->SelectExpression( index );
 }
 
 void ControlPanel::DeleteExpression( int index )

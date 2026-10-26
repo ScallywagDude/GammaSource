@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef CHOREOWIDGET_H
 #define CHOREOWIDGET_H
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 
 class CChoreoView;
 class CChoreoScene;

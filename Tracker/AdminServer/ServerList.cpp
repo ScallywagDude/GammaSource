@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "IServerRefreshResponse.h"
 #include "ServerList.h"
 //#include "ServerMsgHandlerDetails.h"

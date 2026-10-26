@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef EXPCLASS_H
 #define EXPCLASS_H
@@ -25,28 +25,18 @@ public:
 						CExpClass( const char *classname );
 	virtual 			~CExpClass( void );
 
-	bool				IsOverrideClass( void ) const;
-	void				SetIsOverrideClass( bool override );
-
-	bool				HasOverrideClass( void ) const;
-	void				SetOverrideClass( CExpClass *overrideClass );
-	CExpClass			*GetOverrideClass( void );
-
-	void				RemoveOverrides( void );
-	void				ApplyOverrides( void );
-
 	void				Save( void );
 	void				Export( void );
 
 	void				CheckBitmapConsistency( void );
 	void				ReloadBitmaps( void );
 
-	const char			*GetName( void );
-	const char			*GetFileName( void );
+	const char			*GetName() const;
+	const char			*GetBaseName() const;
+	const char			*GetFileName() const;
 	void				SetFileName( const char *filename );
 
-	CExpression			*AddExpression( const char *name, const char *description, float *flexsettings, float *flexweights, bool selectnewitem );
-	CExpression			*AddGroupExpression( const char *name, const char *description );
+	CExpression			*AddExpression( const char *name, const char *description, float *flexsettings, float *flexweights, bool selectnewitem, bool bDirtyClass );
 	CExpression			*FindExpression( const char *name );
 	int					FindExpressionIndex( CExpression *exp );
 	void				DeleteExpression( const char *name );
@@ -63,10 +53,6 @@ public:
 
 	void				SwapExpressionOrder( int exp1, int exp2 );
 
-	void				NewMarkovIndices( void );
-
-	CExpression			*FindBitmapForChecksum( const char *checksum );
-
 	// Get index of this class in the global class list
 	int					GetIndex( void );
 
@@ -74,14 +60,15 @@ public:
 
 private:
 
+	void				BuildValidChecksums( CUtlRBTree< CRC32_t > &tree );
+
+	char				m_szBaseName[ 128 ]; // name w/out any subdirectory names
 	char				m_szClassName[ 128 ];
 	char				m_szFileName[ 128 ];
 	bool				m_bDirty;
 	int					m_nSelectedExpression;
 	CUtlVector < CExpression > m_Expressions;
 
-	CExpClass			*m_pOverride;
-	bool				m_bIsOverride;
 	bool				m_bIsPhonemeClass;
 };
 #endif // EXPCLASS_H

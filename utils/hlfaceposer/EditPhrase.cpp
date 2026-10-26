@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #define UNICODE
 
 #include "resource.h"
 #include "EditPhrase.h"
-#include "mx/mx.h"
+#include "mxtk/mx.h"
 #include "mdlviewer.h"
 
 static CEditPhraseParams g_Params;
@@ -49,7 +49,7 @@ static BOOL CALLBACK EditPhraseDialogProc( HWND hwndDlg, UINT uMsg, WPARAM wPara
 		{
 		case IDOK:
 			g_Params.m_szInputText[ 0 ] = 0;
-			GetDlgItemTextW( hwndDlg, IDC_INPUTSTRING, g_Params.m_szInputText, sizeof( g_Params.m_szInputText ) );
+			GetDlgItemTextW( hwndDlg, IDC_INPUTSTRING, g_Params.m_szInputText, ARRAYSIZE( g_Params.m_szInputText ) );
 			EndDialog( hwndDlg, 1 );
 			break;
         case IDCANCEL:

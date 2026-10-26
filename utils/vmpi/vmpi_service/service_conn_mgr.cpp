@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "stdafx.h"
 #include "service_conn_mgr.h"
@@ -12,7 +12,7 @@
 #include "tcpsocket_helpers.h"
 
 
-#define SERVICECONNMGR_CONNECT_ATTEMPT_INTERVAL	5000
+#define SERVICECONNMGR_CONNECT_ATTEMPT_INTERVAL	1000
 
 
 
@@ -61,7 +61,7 @@ bool CServiceConnMgr::InitServer()
 	// Create a socket to listen on.
 	for ( int iPort=VMPI_SERVICE_FIRST_UI_PORT; iPort <= VMPI_SERVICE_LAST_UI_PORT; iPort++ )
 	{
-		m_pListenSocket = CreateTCPListenSocketEmu( iPort );
+		m_pListenSocket = CreateTCPListenSocketEmu( iPort, 5 );
 		if ( m_pListenSocket )
 			break;
 	}
@@ -149,10 +149,15 @@ void CServiceConnMgr::Update()
 
 		if ( pConn->m_pSocket->IsConnected() )
 		{
+			DWORD startTime = GetTickCount();
 			CUtlVector<unsigned char> data;
 			while ( pConn->m_pSocket->Recv( data ) )
 			{
 				HandlePacket( (char*)data.Base(), data.Count() );
+				
+				// Don't sit in this loop too long.
+				if ( (GetTickCount() - startTime) > 50 )
+					break;
 			}
 		}
 		else

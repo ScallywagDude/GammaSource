@@ -1,6 +1,18 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "quakedef.h"
 #include "server.h"
 #include "enginesingleuserfilter.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+void SV_DetermineMulticastRecipients( bool usepas, const Vector& origin, CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits );
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -16,28 +28,8 @@ CEngineRecipientFilter::CEngineRecipientFilter()
 void CEngineRecipientFilter::Reset( void )
 {
 	m_bReliable			= false;
-	m_nTruePlayerCount	= -1;
+	m_bInit				= false;
 	m_Recipients.RemoveAll();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Get a count of all possible players
-//-----------------------------------------------------------------------------
-void CEngineRecipientFilter::EnsureTruePlayerCount( void )
-{
-	if ( m_nTruePlayerCount != -1 )
-		return;
-
-	m_nTruePlayerCount = 0;
-	int i;
-	for ( i = 0; i <= svs.maxclients; i++ )
-	{
-		client_t *cl = &svs.clients[ i ];
-		if ( !cl->active )
-			continue;
-
-		m_nTruePlayerCount++;
-	}
 }
 
 void CEngineRecipientFilter::MakeReliable( void )
@@ -45,9 +37,10 @@ void CEngineRecipientFilter::MakeReliable( void )
 	m_bReliable = true;
 }
 
-bool CEngineRecipientFilter::IsReliable( void ) const
+
+void CEngineRecipientFilter::MakeInitMessage( void )
 {
-	return m_bReliable;
+	m_bInit = true;
 }
 
 int CEngineRecipientFilter::GetRecipientCount( void ) const
@@ -67,16 +60,17 @@ void CEngineRecipientFilter::AddAllPlayers( void )
 {
 	m_Recipients.RemoveAll();
 
-	int i;
-	for ( i = 0; i <= svs.maxclients; i++ )
+	for ( int i = 0; i < sv.GetClientCount(); i++ )
 	{
-		client_t *cl = &svs.clients[ i ];
-		if ( !cl->active )
+		IClient *cl = sv.GetClient( i );
+
+		if ( !cl->IsActive() )
 			continue;
 
-		m_Recipients.AddToTail( i + 1 );
+		m_Recipients.AddToTail( i+1 );
 	}
 }
+
 
 void CEngineRecipientFilter::AddRecipient( int index )
 {
@@ -93,31 +87,49 @@ void CEngineRecipientFilter::RemoveRecipient( int index )
 	m_Recipients.FindAndRemove( index );
 }
 
-void CEngineRecipientFilter::AddPlayersFromBitMask( unsigned int playerbits )
+void CEngineRecipientFilter::AddPlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits )
 {
-	int i;
-	for( i = 0; i < svs.maxclients; i++ )
+	for( int i = 0; i < sv.GetClientCount(); i++ )
 	{
-		if ( !( playerbits & (1<<i) ) )
+		if ( !playerbits[i] )
 			continue;
 
-		client_t *cl = &svs.clients[ i ];
-		if ( !cl->active )
+		IClient *cl = sv.GetClient( i );
+		if ( !cl->IsActive() )
 			continue;
 
 		AddRecipient( i + 1 );
 	}
 }
 
+bool CEngineRecipientFilter::IncludesPlayer(int playerindex)
+{
+	for( int i = 0; i < GetRecipientCount(); i++ )
+	{
+		if ( playerindex ==	GetRecipientIndex(i) )
+			return true;
+	}
+
+	return false;
+}
+
+void CEngineRecipientFilter::AddPlayersFromFilter(const IRecipientFilter *filter )
+{
+	for( int i = 0; i < filter->GetRecipientCount(); i++ )
+	{
+		AddRecipient( filter->GetRecipientIndex(i) );
+	}
+}
+
 void CEngineRecipientFilter::AddRecipientsByPVS( const Vector& origin )
 {
-	if ( svs.maxclients == 1 )
+	if ( sv.GetMaxClients() == 1 )
 	{
 		AddAllPlayers();
 	}
 	else
 	{
-		unsigned int playerbits = 0;
+		CBitVec< ABSOLUTE_PLAYER_LIMIT > playerbits;
 		SV_DetermineMulticastRecipients( false, origin, playerbits );
 		AddPlayersFromBitMask( playerbits );
 	}
@@ -125,23 +137,16 @@ void CEngineRecipientFilter::AddRecipientsByPVS( const Vector& origin )
 
 void CEngineRecipientFilter::AddRecipientsByPAS( const Vector& origin )
 {
-	if ( svs.maxclients == 1 )
+	if ( sv.GetMaxClients() == 1 )
 	{
 		AddAllPlayers();
 	}
 	else
 	{
-		unsigned int playerbits = 0;
+		CBitVec< ABSOLUTE_PLAYER_LIMIT > playerbits;
 		SV_DetermineMulticastRecipients( true, origin, playerbits );
 		AddPlayersFromBitMask( playerbits );
 	}
 }
 
-bool CEngineRecipientFilter::IsBroadcastMessage( void )
-{
-	EnsureTruePlayerCount();
-	if ( m_nTruePlayerCount == m_Recipients.Count() )
-		return true;
 
-	return false;
-}

@@ -1,13 +1,18 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: 
+// Purpose:	  
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "glquake.h"
+#include "tier0/platform.h"
+#include "qlimits.h"
 #include "sys.h"
 #include "baseautocompletefilelist.h"
+#include "utlsymbol.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Fills in a list of commands based on specified subdirectory and extension into the format:
@@ -25,8 +30,6 @@ int CBaseAutoCompleteFileList::AutoCompletionFunc( char const *partial, char com
 		substring = (char *)partial + strlen( cmdname ) + 1;
 	}
 
-	int current = 0;
-
 	// Search the directory structure.
 	char searchpath[MAX_QPATH];
 	if ( m_pszSubDir && m_pszSubDir[0] && Q_strcasecmp( m_pszSubDir, "NULL" ) )
@@ -38,7 +41,10 @@ int CBaseAutoCompleteFileList::AutoCompletionFunc( char const *partial, char com
 		Q_snprintf(searchpath,sizeof(searchpath),"*.%s", m_pszExtension );
 	}
 
-	char const *findfn = Sys_FindFirst( searchpath, NULL );
+	CUtlSymbolTable entries( 0, 0, true );
+	CUtlVector< CUtlSymbol > symbols;
+
+	char const *findfn = Sys_FindFirst( searchpath, NULL, 0 );
 	while ( findfn )
 	{
 		char sz[ MAX_QPATH ];
@@ -60,20 +66,32 @@ int CBaseAutoCompleteFileList::AutoCompletionFunc( char const *partial, char com
 
 		if ( add )
 		{
-			Q_snprintf( commands[ current ], sizeof( commands[ current ] ), "%s %s", cmdname, findfn );
-			// Remove .dem
-			commands[ current ][ strlen( commands[ current ] ) - 4 ] = 0;
-			current++;
+			CUtlSymbol sym = entries.AddString( findfn );
+
+			int idx = symbols.Find( sym );
+			if ( idx == symbols.InvalidIndex() )
+			{
+				symbols.AddToTail( sym );
+			}
 		}
 
-		findfn = Sys_FindNext( NULL );
+		findfn = Sys_FindNext( NULL, 0 );
 
 		// Too many
-		if ( current >= COMMAND_COMPLETION_MAXITEMS )
+		if ( symbols.Count() >= COMMAND_COMPLETION_MAXITEMS )
 			break;
 	}
 
 	Sys_FindClose();
 
-	return current;
+	for ( int i = 0; i < symbols.Count(); i++ )
+	{
+		char const *filename = entries.String( symbols[ i ] );
+
+		Q_snprintf( commands[ i ], sizeof( commands[ i ] ), "%s %s", cmdname, filename );
+		// Remove .dem
+		commands[ i ][ strlen( commands[ i ] ) - 4 ] = 0;
+	}
+
+	return symbols.Count();
 }

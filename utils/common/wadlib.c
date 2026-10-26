@@ -1,13 +1,10 @@
-/***
-*
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-****/
-
+//========= Copyright © 1996-2005, Valve LLC, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // wad2lib.c
 
 #include <stdio.h>

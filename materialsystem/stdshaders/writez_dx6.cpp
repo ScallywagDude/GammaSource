@@ -1,16 +1,18 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( WriteZ, WriteZ_DX6 )
 
-BEGIN_SHADER( WriteZ_DX6, 
-			  "Help for WriteZ_DX6" )
+BEGIN_SHADER_FLAGS( WriteZ_DX6, "Help for WriteZ_DX6", SHADER_NOT_EDITABLE )
 	BEGIN_SHADER_PARAMS
 	END_SHADER_PARAMS
 
@@ -32,7 +34,6 @@ BEGIN_SHADER( WriteZ_DX6,
 		}
 		DYNAMIC_STATE
 		{
-			pShaderAPI->FogMode( MATERIAL_FOG_NONE );
 		}
 		Draw();
 	}

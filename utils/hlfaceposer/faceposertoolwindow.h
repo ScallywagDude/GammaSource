@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef FACEPOSERTOOLWINDOW_H
 #define FACEPOSERTOOLWINDOW_H
@@ -11,8 +11,8 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
-#include "mx/mxWindow.h"
+#include <mxtk/mx.h>
+#include "mxtk/mxWindow.h"
 
 class CChoreoWidgetDrawHelper;
 
@@ -23,6 +23,7 @@ public:
 	virtual ~IFacePoserToolWindow( void );
 
 	virtual mxWindow *GetMxWindow( void );
+	virtual void	Shutdown() { }
 
 	virtual void	Think( float dt );
 	virtual bool	IsScrubbing( void ) const { return false; }
@@ -52,6 +53,7 @@ public:
 	void SetAutoProcess( bool autoprocess );
 	bool GetAutoProcess( void ) const;
 
+	virtual void	OnModelChanged();
 
 	static int GetToolCount( void );
 	static IFacePoserToolWindow *GetTool( int index );
@@ -60,12 +62,14 @@ public:
 	static void SetActiveTool( IFacePoserToolWindow *tool );
 	static IFacePoserToolWindow *s_pActiveTool;
 	static void ToolThink( float dt );
+	static void ModelChanged();
 	static bool IsAnyToolScrubbing( void );
 	static bool IsAnyToolProcessing( void );
 
 	static bool ShouldAutoProcess( void );
 
-	static void Init( void );
+	static void InitTools( void );
+	static void ShutdownTools( void );
 
 	static void	EnableToolRedraw( bool enabled );
 	static bool	s_bToolsCanDraw;

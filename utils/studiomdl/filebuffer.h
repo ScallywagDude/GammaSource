@@ -1,15 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef FILEBUFFER_H
 #define FILEBUFFER_H
 #ifdef _WIN32
 #pragma once
 #endif
+
+#include "tier1/smartptr.h"
+#include "tier2/p4helpers.h"
 
 class CFileBuffer
 {
@@ -38,13 +41,16 @@ public:
 #ifdef _DEBUG
 	void TestWritten( int EndOfFileOffset )
 	{
-		printf( "testing to make sure that the whole file has been written\n" );
+		if ( !g_quiet )
+		{
+			printf( "testing to make sure that the whole file has been written\n" );
+		}
 		int i;
 		for( i = 0; i < EndOfFileOffset; i++ )
 		{
 			if( !m_pUsed[i] )
 			{
-				printf( "offset %d not written!\n", i );
+				printf( "offset %d not written, end of file invalid!\n", i );
 				assert( 0 );
 			}
 		}
@@ -53,16 +59,19 @@ public:
 	
 	void WriteToFile( const char *fileName, int size )
 	{
+		CPlainAutoPtr< CP4File > spFile( g_p4factory->AccessFile( fileName ) );
+		spFile->Edit();
 		FILE *fp = fopen( fileName, "wb" );
 		if( !fp )
 		{
-			fprintf( stderr, "Can't open \"%s\" for writing!\n", fileName );
+			MdlWarning( "Can't open \"%s\" for writing!\n", fileName );
 			return;
 		}
 
 		fwrite( m_pData, 1, size, fp );
 		
 		fclose( fp );
+		spFile->Add();
 	}
 	
 	void WriteAt( int offset, void *data, int size, const char *name )

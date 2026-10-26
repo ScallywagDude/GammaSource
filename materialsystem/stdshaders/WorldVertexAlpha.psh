@@ -2,9 +2,6 @@ ps.1.1
 
 tex t0 ; basetexture
 tex t1 ; lightmap
-#if TEXKILL
-texkill t3
-#endif
 
 mov r0.a, 1-t1.a
 ;mov r0.rgb, t0   ; * 2 * (overbrightFactor/2)

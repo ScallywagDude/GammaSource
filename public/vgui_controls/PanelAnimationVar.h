@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef PANELANIMATIONVAR_H
 #define PANELANIMATIONVAR_H
@@ -10,15 +10,11 @@
 #pragma once
 #endif
 
-#include "UtlVector.h"
-
-namespace vgui
-{
-	class Panel;
-};
+#include "tier1/utlvector.h"
+#include <vgui_controls/Panel.h>
 
 #define DECLARE_PANELANIMATION( className )												\
-	static void AddToMap( char const *scriptname, char const *type, char const *var,	\
+	static void AddToAnimationMap( char const *scriptname, char const *type, char const *var,	\
 		char const *defaultvalue, bool array, PANELLOOKUPFUNC func )					\
 	{																					\
 		PanelAnimationMap *map = FindOrAddPanelAnimationMap( GetPanelClassName() );		\
@@ -34,7 +30,7 @@ namespace vgui
 		map->entries.AddToTail( entry );												\
 	}																					\
 																						\
-	static void ChainToMap( void )														\
+	static void ChainToAnimationMap( void )														\
 	{																					\
 		static bool chained = false;													\
 		if ( chained )																	\
@@ -55,30 +51,15 @@ namespace vgui
 	public:																				\
 		className##_Register()															\
 		{																				\
-			ThisClass::ChainToMap();													\
+			className::ChainToAnimationMap();													\
 		}																				\
 	};																					\
-	className##_Register m_RegisterClass;												\
+	className##_Register m_RegisterAnimationClass;												\
 																						\
 	virtual PanelAnimationMap *GetAnimMap()												\
 	{																					\
 		return FindOrAddPanelAnimationMap( GetPanelClassName() );						\
 	}
-
-#define DECLARE_CLASS_SIMPLE( className, baseClassName ) \
-	typedef baseClassName BaseClass; \
-	typedef className ThisClass;	\
-public:								\
-	DECLARE_PANELANIMATION( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return #baseClassName; }
-
-#define DECLARE_CLASS_SIMPLE_NOBASE( className ) \
-	typedef className ThisClass;	\
-public:							\
-	DECLARE_PANELANIMATION( className ); \
-	static char const *GetPanelClassName() { return #className; } \
-	static char const *GetPanelBaseClassName() { return NULL; }
 
 typedef void *( *PANELLOOKUPFUNC )( vgui::Panel *panel );
 
@@ -99,7 +80,7 @@ typedef void *( *PANELLOOKUPFUNC )( vgui::Panel *panel );
 			if ( !bAdded ) \
 			{ \
 				bAdded = true; \
-				AddToMap( scriptname, typealias, #name, defaultvalue, false, ThisClass::GetVar_##name ); \
+				AddToAnimationMap( scriptname, typealias, #name, defaultvalue, false, ThisClass::GetVar_##name ); \
 			} \
 		}												\
 		PanelAnimationVar_##name()						\
@@ -130,7 +111,7 @@ typedef void *( *PANELLOOKUPFUNC )( vgui::Panel *panel );
 			if ( !bAdded ) \
 			{ \
 				bAdded = true; \
-				AddToMap( scriptname, typealias, #name, defaultvalue, true, ThisClass::GetVar_##name ); \
+				AddToAnimationMap( scriptname, typealias, #name, defaultvalue, true, ThisClass::GetVar_##name ); \
 			} \
 		}												\
 		PanelAnimationVar_##name()						\

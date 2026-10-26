@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <windows.h>
 #include "tcpsocket.h"
@@ -29,6 +29,7 @@ public:
 		m_LocalPort = 0xFFFF;
 		m_pConnectSocket = NULL;
 		m_RecvPacketsEvent.Init( false, false );
+		m_bError = false;
 	}
 
 	virtual ~CThreadedTCPSocketEmu()
@@ -47,6 +48,12 @@ public:
 		{
 			m_pSocket->Release();
 			m_pSocket = NULL;
+		}
+		
+		if ( m_pConnectSocket )
+		{
+			m_pConnectSocket->Release();
+			m_pConnectSocket = NULL;
 		}
 	}
 
@@ -71,6 +78,7 @@ private:
 		csLock.Lock();
 
 		m_ErrorString.CopyArray( pErrorString, strlen( pErrorString ) + 1 );
+		m_bError = true;
 	}
 
 
@@ -145,7 +153,15 @@ public:
 
 	virtual bool	IsConnected()
 	{
-		return m_pSocket != NULL;
+		if ( m_bError )
+		{
+			Term();
+			return false;
+		}
+		else
+		{
+			return m_pSocket != NULL;
+		}
 	}
 
 	virtual void	GetDisconnectReason( CUtlVector<char> &reason )
@@ -225,6 +241,7 @@ private:
 
 	CCriticalSection m_ErrorStringCS;
 	CUtlVector<char> m_ErrorString;
+	bool m_bError; // Set to true when there's an error. Next chance we get in the main thread, we'll close the socket.
 };
 
 

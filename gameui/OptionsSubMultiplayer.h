@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef OPTIONSSUBMULTIPLAYER_H
 #define OPTIONSSUBMULTIPLAYER_H
@@ -12,80 +12,103 @@
 #endif
 
 #include <vgui_controls/PropertyPage.h>
+#include <vgui_controls/ImagePanel.h>
+#include "imageutils.h"
 
 class CLabeledCommandComboBox;
 class CBitmapImagePanel;
-class CPlayerModelPreviewPanel;
-namespace vgui { class Label; }
 
 class CCvarToggleCheckButton;
 class CCvarTextEntry;
 class CCvarSlider;
+
 class CMultiplayerAdvancedDialog;
+
+class COptionsSubMultiplayer;
+ 
+class CrosshairImagePanelBase : public vgui::ImagePanel
+{
+	DECLARE_CLASS_SIMPLE( CrosshairImagePanelBase, vgui::ImagePanel );
+public:
+	CrosshairImagePanelBase( Panel *parent, const char *name ) : BaseClass(parent, name) {}
+	virtual void ResetData() {}
+	virtual void ApplyChanges() {}
+	virtual void UpdateVisibility() {}
+};
 
 //-----------------------------------------------------------------------------
 // Purpose: multiplayer options property page
 //-----------------------------------------------------------------------------
 class COptionsSubMultiplayer : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( COptionsSubMultiplayer, vgui::PropertyPage );
+
 public:
 	COptionsSubMultiplayer(vgui::Panel *parent);
 	~COptionsSubMultiplayer();
 
-protected:
-	virtual void OnCommand(const char *command);
-	virtual void OnThink();
-	virtual void PerformLayout();
+	virtual vgui::Panel *CreateControlByName(const char *controlName);
 
+	MESSAGE_FUNC( OnControlModified, "ControlModified" );
+
+protected:
 	// Called when page is loaded.  Data should be reloaded from document into controls.
 	virtual void OnResetData();
 	// Called when the OK / Apply button is pressed.  Changed data should be written into document.
 	virtual void OnApplyChanges();
 
-	DECLARE_PANELMAP();
+	virtual void OnCommand( const char *command );
 
 private:
-	typedef vgui::PropertyPage BaseClass;
-
 	void InitModelList(CLabeledCommandComboBox *cb);
 	void InitLogoList(CLabeledCommandComboBox *cb);
 
 	void RemapModel();
 	void RemapLogo();
 
-	void OnTextChanged(vgui::Panel *panel);
-	void OnSliderMoved(KeyValues *data);
-	void OnApplyButtonEnable();
+	void ConversionError( ConversionErrorType nError );
 
-	void RemapPalette(char *filename, int topcolor, int bottomcolor);
-	void RemapLogoPalette(char *filename, int r, int g, int b);
+	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel );
+	MESSAGE_FUNC_CHARPTR( OnFileSelected, "FileSelected", fullpath );
 
 	void ColorForName(char const *pszColorName, int &r, int &g, int &b);
 
+	CCvarTextEntry *m_pNameTextEntry;
 	CBitmapImagePanel *m_pModelImage;
-	CPlayerModelPreviewPanel *m_pModelPreview;
-	vgui::Label *m_pPreviewLabel;
 	CLabeledCommandComboBox *m_pModelList;
+	char m_ModelName[128];
 
-	CBitmapImagePanel *m_pLogoImage;
+	vgui::ImagePanel *m_pLogoImage;
 	CLabeledCommandComboBox *m_pLogoList;
-    char m_LogoName[32];
+    char m_LogoName[128];
 
-	CLabeledCommandComboBox	*m_pColorList;
-
-    CCvarTextEntry *m_pNameTextEntry;
     CCvarSlider *m_pPrimaryColorSlider;
     CCvarSlider *m_pSecondaryColorSlider;
 	CCvarToggleCheckButton *m_pHighQualityModelCheckBox;
 
-	int	m_nTopColor;
-	int	m_nBottomColor;
+	// Mod specific general checkboxes
+	vgui::Dar< CCvarToggleCheckButton * > m_cvarToggleCheckButtons;
+
+	CCvarToggleCheckButton *m_pLockRadarRotationCheckbox;
+
+	CrosshairImagePanelBase *m_pCrosshairImage;
+
+	// --- client download filter
+	vgui::ComboBox	*m_pDownloadFilterCombo;
+
+	// Begin Spray Import Functions
+	ConversionErrorType WriteSprayVMT(const char *vtfPath);
+	void SelectLogo(const char *logoName);
+	// End Spray Import Functions
 
 	int	m_nLogoR;
 	int	m_nLogoG;
 	int	m_nLogoB;
 
+#ifndef _XBOX
 	vgui::DHANDLE<CMultiplayerAdvancedDialog> m_hMultiplayerAdvancedDialog;
+#endif
+	vgui::FileOpenDialog *m_hImportSprayDialog;
 };
 
 #endif // OPTIONSSUBMULTIPLAYER_H

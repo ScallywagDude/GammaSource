@@ -1,10 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include <mx/mx.h>
+//=============================================================================//
+#include <mxtk/mx.h>
 #include "resource.h"
 #include "ExpressionProperties.h"
 #include "mdlviewer.h"

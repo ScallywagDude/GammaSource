@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PRECACHE_H
 #define PRECACHE_H
@@ -13,20 +13,25 @@
 
 #include "networkstringtabledefs.h"
 
-#pragma pack(2)
+#define PRECACHE_USER_DATA_NUMBITS		2			// Only network two bits from flags field...
+
+#pragma pack(1)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 struct CPrecacheUserData
 {
-	unsigned short flags		: 2;
-	unsigned short filesize		: 14;  // (filesize>>10)
+	unsigned char flags : PRECACHE_USER_DATA_NUMBITS;
 };
 
 #pragma pack()
 
+
+
 class CSfxTable;
 struct model_t;
+
+//#define DEBUG_PRECACHE 1
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -67,7 +72,8 @@ private:
 	void			ResetStats( void );
 	void			Reference( void );
 
-	int				m_nType;
+	unsigned int	m_nType : 3;
+	unsigned int	m_uiRefcount : 29;
 	union precacheptr
 	{
 		model_t		*model;
@@ -75,13 +81,11 @@ private:
 		CSfxTable	*sound;
 		char const	*name;
 	} u;
-
-	unsigned int	m_uiRefcount;
+#if DEBUG_PRECACHE
 	float			m_flFirst;
 	float			m_flMostRecent;
+#endif
 };
-
-#define PRECACHE_DATASIZE ( sizeof( CPrecacheUserData ) )
 
 #define MODEL_PRECACHE_TABLENAME	"modelprecache"
 #define GENERIC_PRECACHE_TABLENAME	"genericprecache"

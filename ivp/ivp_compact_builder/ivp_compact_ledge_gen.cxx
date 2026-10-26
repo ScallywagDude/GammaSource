@@ -97,7 +97,7 @@ int IVP_Compact_Ledge_Generator::prepare_compact_ledge(IVP_U_Vector<IVP_Triangle
 		c_edge->set_start_point_index(edge->start_point->tmp.compact_index);
 
 		IVP_ASSERT(edge_hash->find((char *)&edge) == (void *)-1);
-		edge_hash->add((char *)&edge, (void *)(i * 4 + j + 1));	// for opposites
+		edge_hash->add((char *)&edge, (void *)(intp)(i * 4 + j + 1));	// for opposites
 		edge_cnt++;
 	    }
 	}
@@ -118,7 +118,7 @@ int IVP_Compact_Ledge_Generator::prepare_compact_ledge(IVP_U_Vector<IVP_Triangle
 	    for(j=0; j<3; e = e->next, j++){
 		IVP_Compact_Edge *c_edge = &c_tri->c_three_edges[j];
 		IVP_Tri_Edge *opp = e->opposite;
-		int opp_index = (int)edge_hash->find((char *)&opp);
+        intp opp_index = (intp)edge_hash->find((char *)&opp);
 		IVP_ASSERT(opp_index>=0);
 		int rel_index = opp_index - (i*4 + j + 1);
 		c_edge->set_opposite_index(rel_index);
@@ -205,10 +205,10 @@ IVP_RETURN_TYPE IVP_Compact_Ledge_Generator::validate()
 	int j;
 	for(j=0; j<3; edge=edge->next,j++){
 	    const IVP_Compact_Edge *c_edge = &c_tri->c_three_edges[j];
-	    
-	    int opp_index = (int)edge_hash->find((char *)&edge->opposite);
+
+        intp opp_index = (intp)edge_hash->find((char *)&edge->opposite);
 	    IVP_ASSERT(opp_index>=0);
-	    int rel_index = opp_index - (i*4 + j + 1);
+	    int rel_index = opp_index - (i*sizeof(IVP_Compact_Edge) + j + 1);
 	    IVP_ASSERT(rel_index == c_edge->get_opposite_index());
 
 	    const IVP_Compact_Poly_Point *c_po = IVP_CLS.give_object_coords(c_edge->get_opposite(),compact_ledge);

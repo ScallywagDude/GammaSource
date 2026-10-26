@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PLAYERSTATE_H
 #define PLAYERSTATE_H
@@ -14,7 +14,7 @@
 #include "edict.h"
 #include "networkvar.h"
 // Only care about this stuff in game/client .dlls
-#if defined( CLIENT_DLL ) || defined( GAME_DLL )
+#if defined( CLIENT_DLL )
 #include "predictable_entity.h"
 #endif
 
@@ -40,17 +40,22 @@ public:
 	string_t	netname;
 	// 0:nothing, 1:force view angles, 2:add avelocity
 	int			fixangle;
-	// delta for yaw for fixangle == 2
-	// Total is the total since last clear
-	float		anglechangetotal;
-	// final is the "final" sample
-	float		anglechangefinal;
+	// delta angle for fixangle == FIXANGLE_RELATIVE
+	QAngle		anglechange;
+	// flag to single the HLTV/Replay fake client, not transmitted
+	bool		hltv;
+	bool		replay;
+	int			frags;
+	int			deaths;
 #endif
 
 // NOTE:  Only care about this stuff in game/client dlls
 // Put at end in case it has any effect on size of structure
-#if defined( CLIENT_DLL ) || defined( GAME_DLL )
+#if defined( GAME_DLL )
 	DECLARE_SIMPLE_DATADESC();
+#endif
+
+#if defined( CLIENT_DLL )
 	DECLARE_PREDICTABLE();
 #endif
 };

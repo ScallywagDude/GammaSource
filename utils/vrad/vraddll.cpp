@@ -1,10 +1,11 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+//#include <strstrea.h>
 #include "vraddll.h"
 #include "bsplib.h"
 #include "vrad.h"
@@ -17,8 +18,9 @@ static CUtlVector<unsigned char> g_LastGoodLightData;
 static CUtlVector<unsigned char> g_FacesTouched;
 
 
-EXPOSE_SINGLE_INTERFACE( CVRadDLL, IVRadDLL, VRAD_INTERFACE_VERSION );
-
+static CVRadDLL g_VRadDLL;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CVRadDLL, IVRadDLL, VRAD_INTERFACE_VERSION, g_VRadDLL );
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CVRadDLL, ILaunchableDLL, LAUNCHABLE_DLL_INTERFACE_VERSION, g_VRadDLL );
 
 
 // ---------------------------------------------------------------------------- //
@@ -40,7 +42,8 @@ dat g_Dats[] =
 {
 	DATENTRY(dmodels),
 	DATENTRY(dvisdata),
-	DATENTRY(dlightdata),
+	DATENTRY(dlightdataLDR),
+	DATENTRY(dlightdataHDR),
 	DATENTRY(dentdata),
 	DATENTRY(dleafs),
 	DATENTRY(dplanes),
@@ -64,12 +67,7 @@ dat g_Dats[] =
 	DATENTRY(dareas),
 	DATENTRY(dareaportals),
 	DATENTRY(dworldlights),
-	DATENTRY(dportals),
-	DATENTRY(dclusters),
 	DATENTRY(dleafwaterdata),
-	DATENTRY(dportalverts),
-	DATENTRY(dclusterportals),
-	DATENTRY(g_DispLightmapAlpha),
 	DATENTRY(g_ClipPortalVerts),
 	DATENTRY(g_CubemapSamples),
 	DATENTRY(g_TexDataStringData),
@@ -136,8 +134,8 @@ void CVRadDLL::Release()
 
 void CVRadDLL::GetBSPInfo( CBSPInfo *pInfo )
 {
-	pInfo->dlightdata = dlightdata.Base();
-	pInfo->lightdatasize = dlightdata.Count();
+	pInfo->dlightdata = pdlightdata->Base();
+	pInfo->lightdatasize = pdlightdata->Count();
 
 	pInfo->dfaces = dfaces;
 	pInfo->m_pFacesTouched = g_FacesTouched.Base();
@@ -152,8 +150,8 @@ void CVRadDLL::GetBSPInfo( CBSPInfo *pInfo )
 	pInfo->dsurfedges = dsurfedges;
 	pInfo->numsurfedges = numsurfedges;
 
-	pInfo->texinfo = texinfo;
-	pInfo->numtexinfo = numtexinfo;
+	pInfo->texinfo = texinfo.Base();
+	pInfo->numtexinfo = texinfo.Count();
 
 	pInfo->g_dispinfo = g_dispinfo.Base();
 	pInfo->g_numdispinfo = g_dispinfo.Count();
@@ -161,11 +159,11 @@ void CVRadDLL::GetBSPInfo( CBSPInfo *pInfo )
 	pInfo->dtexdata = dtexdata;
 	pInfo->numtexdata = numtexdata;
 
-	pInfo->texDataStringData = g_TexDataStringData;
-	pInfo->nTexDataStringData = g_nTexDataStringData;
+	pInfo->texDataStringData = g_TexDataStringData.Base();
+	pInfo->nTexDataStringData = g_TexDataStringData.Count();
 
-	pInfo->texDataStringTable = g_TexDataStringTable;
-	pInfo->nTexDataStringTable = g_nTexDataStringTable;
+	pInfo->texDataStringTable = g_TexDataStringTable.Base();
+	pInfo->nTexDataStringTable = g_TexDataStringTable.Count();
 }
 
 
@@ -196,7 +194,7 @@ bool CVRadDLL::DoIncrementalLight( char const *pVMFFile )
 	if( RadWorld_Go() )
 	{
 		// Save off the last finished lighting results for the BSP.
-		g_LastGoodLightData.CopyArray( dlightdata.Base(), dlightdata.Count() );
+		g_LastGoodLightData.CopyArray( pdlightdata->Base(), pdlightdata->Count() );
 		if( g_pIncremental )
 			g_pIncremental->GetFacesTouched( g_FacesTouched );
 
@@ -217,7 +215,7 @@ bool CVRadDLL::Serialize()
 
 	if( g_LastGoodLightData.Count() > 0 )
 	{
-		dlightdata.CopyArray( g_LastGoodLightData.Base(), g_LastGoodLightData.Count() );
+		pdlightdata->CopyArray( g_LastGoodLightData.Base(), g_LastGoodLightData.Count() );
 
 		if( g_pIncremental->Serialize() )
 		{

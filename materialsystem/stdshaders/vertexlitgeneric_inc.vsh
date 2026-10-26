@@ -6,6 +6,7 @@ sub VertexLitGeneric
 	local( $envmap ) = shift;
 	local( $envmapcameraspace ) = shift;
 	local( $envmapsphere ) = shift;
+	local( $decal ) = shift;
 
 	local( $worldPos, $worldNormal, $projPos );
 	local( $reflectionVector );
@@ -16,9 +17,12 @@ sub VertexLitGeneric
 	&AllocateRegister( \$worldPos );
 	&AllocateRegister( \$worldNormal );
 	&AllocateRegister( \$projPos );
-	if( $g_staticLightType eq "static" && $g_ambientLightType eq "none" &&
-		$g_localLightType1 eq "none" && $g_localLightType2 eq "none" && !$envmap )
+;	if( $g_staticLightType eq "static" && $g_ambientLightType eq "none" &&
+;		$g_localLightType1 eq "none" && $g_localLightType2 eq "none" && !$envmap )
+	if( 0 )
 	{
+		; NOTE: Don't do this optimization anymore since it would mean a gazillion combos
+		; of the flashlight shaders
 		; Special case for static prop lighting.  We can go directly from 
 		; world to proj space for position, with the exception of z, which 
 		; is needed for fogging *if* height fog is enabled.
@@ -39,7 +43,12 @@ sub VertexLitGeneric
 	}
 	else
 	{
-		&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+		&SkinPositionAndNormal( $worldPos, $worldNormal );
+
+		if( $SKINNING == 1 )
+		{
+			&Normalize( $worldNormal );
+		}
 
 		;------------------------------------------------------------------------------
 		; Transform the position from world to view space
@@ -61,8 +70,7 @@ sub VertexLitGeneric
 	;------------------------------------------------------------------------------
 	; Lighting
 	;------------------------------------------------------------------------------
-	&DoLighting( $g_staticLightType, $g_ambientLightType, $g_localLightType1, 
-				 $g_localLightType2, $worldPos, $worldNormal );
+	&DoLighting( $worldPos, $worldNormal );
 
 	if( !$envmap )
 	{
@@ -73,8 +81,8 @@ sub VertexLitGeneric
 	; Texture coordinates
 	;------------------------------------------------------------------------------
 
-	dp4 oT0.x, $vTexCoord0, c90		; FIXME
-	dp4 oT0.y, $vTexCoord0, c91		; FIXME
+	dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+	dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 	if( $envmap )
 	{
@@ -104,26 +112,33 @@ sub VertexLitGeneric
 		}
 
 		; envmap mask
-		dp4 oT2.x, $vTexCoord0, c92	; FIXME
-		dp4 oT2.y, $vTexCoord0, c93 ; FIXME
+		dp4 oT2.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_2
+		dp4 oT2.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_3
 
 		&FreeRegister( \$worldNormal );
 	}
 	else
 	{
-		; YUCK!  This is to make texcoords continuous for mat_softwaretl
-		mov oT1, $cZero
-		mov oT2, $cZero
+		if ( $decal )
+		{
+			&AllocateRegister( \$temp );
+			mov $temp, $vTexCoord0
+			sub oT1.xyz, $temp.xyz, $vTexCoord1.xyz
+			sub oT2.xyz, $vTexCoord2.xyz, $temp.xyz
+			&FreeRegister( \$temp );
+		}
+		else
+		{
+			; YUCK!  This is to make texcoords continuous for mat_softwaretl
+			mov oT1, $cZero
+			mov oT2, $cZero
+		}
 	}
 
 	if( $detail )
 	{
-		dp4 oT3.x, $vTexCoord0, c94
-		dp4 oT3.y, $vTexCoord0, c95
-	}
-	else
-	{
-		&DoHeightClip( $worldPos, "oT3" );
+		dp4 oT3.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_4
+		dp4 oT3.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_5
 	}
 	&FreeRegister( \$worldPos );
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\d1_trainstation_01.bsp",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\maps\\d1_trainstation_01.bsp",
+    "validated_matching_lumps": [
+      6,
+      10,
+      1,
+      3,
+      4,
+      5,
+      16
+    ],
+    "sky_flag_leaves": 1674,
+    "revision": 2
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\e3_hydra.bsp",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\maps\\e3_hydra.bsp",
+    "validated_matching_lumps": [
+      6,
+      10,
+      1,
+      3,
+      4,
+      5,
+      16
+    ],
+    "sky_flag_leaves": 273,
+    "revision": 2
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\e3_strider.bsp",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\maps\\e3_strider.bsp",
+    "validated_matching_lumps": [
+      6,
+      10,
+      1,
+      3,
+      4,
+      5,
+      16
+    ],
+    "sky_flag_leaves": 1057,
+    "revision": 2
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\testroom_physprop.bsp",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\maps\\testroom_physprop.bsp",
+    "validated_matching_lumps": [
+      6,
+      10,
+      1,
+      3,
+      4,
+      5,
+      16
+    ],
+    "sky_flag_leaves": 83,
+    "revision": 2
+  }
+]

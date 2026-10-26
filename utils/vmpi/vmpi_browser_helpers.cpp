@@ -1,11 +1,11 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "vmpi_browser_helpers.h"
 
 

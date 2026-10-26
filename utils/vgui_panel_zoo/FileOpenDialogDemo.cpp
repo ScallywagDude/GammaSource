@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_FileOpenDialog.h>
+#include <VGUI/IVGui.h>
+#include <vgui_controls/Controls.h>
+#include <Keyvalues.h>
+#include <vgui_controls/FileOpenDialog.h>
 
 using namespace vgui;
 
@@ -54,7 +54,7 @@ void FileOpenDemo::SetVisible(bool status)
 		if (!m_hFileDialog.Get())
 		{
 			// Pop up the dialog
-			FileOpenDialog *pFileDialog = new FileOpenDialog (NULL, "Find the TestFile");
+			FileOpenDialog *pFileDialog = new FileOpenDialog (NULL, "Find the TestFile", true);
 			m_hFileDialog = pFileDialog;
 			m_hFileDialog->AddActionSignalTarget(this);
 		}
@@ -77,7 +77,7 @@ MessageMapItem_t FileOpenDemo::m_MessageMap[] =
 	MAP_MESSAGE_CONSTCHARPTR(FileOpenDemo, "FileSelected", OnFileSelected, "fullpath"), 
 };
 
-IMPLEMENT_PANELMAP(FileOpenDemo, BaseClass);
+IMPLEMENT_PANELMAP(FileOpenDemo, DemoPage);
 
 
 Panel* FileOpenDemo_Create(Panel *parent)

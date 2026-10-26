@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This is an example of a material that modifies vertex data
 // in the shader. NOTE: Every pass is given a clean set of vertex data.
@@ -12,12 +12,14 @@
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
 
-BEGIN_SHADER( DebugModifyVertex, 
-			  "Help for DebugModifyVertex" )
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+BEGIN_SHADER_FLAGS( DebugModifyVertex, "Help for DebugModifyVertex", SHADER_NOT_EDITABLE )
 	BEGIN_SHADER_PARAMS
 		SHADER_PARAM( WAVE, SHADER_PARAM_TYPE_FLOAT, "1.0", "wave amplitude" )
 	END_SHADER_PARAMS
@@ -29,19 +31,20 @@ BEGIN_SHADER( DebugModifyVertex,
 
 	SHADER_DRAW
 	{
-		if( g_pHardwareConfig->GetNumTextureUnits() >= 2 )
+		if( g_pHardwareConfig->GetSamplerCount() >= 2 )
 		{
 			// lightmap
 			SHADOW_STATE
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->EnableVertexDataPreprocess( true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 );
+				FogToFogColor();
 			}
 
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 
 				float amp = params[WAVE]->GetFloatValue();
 				float currTime = pShaderAPI->CurrentTime();
@@ -53,7 +56,6 @@ BEGIN_SHADER( DebugModifyVertex,
 												pPos[2] + amp * sin( currTime + pPos[2] / 4 + 4 * 3.14 / 3 ) );
 					MeshBuilder()->AdvanceVertex();
 				}
-				FogToFogColor();
 			}
 			Draw();
 
@@ -62,10 +64,11 @@ BEGIN_SHADER( DebugModifyVertex,
 			{
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_COLOR | 
 					SHADER_DRAW_TEXCOORD0 );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 
 				// Notice here that since we didn't modify the position, and this is a second
 				// pass, the position has been reset to it's initial, unmodified position
@@ -78,7 +81,6 @@ BEGIN_SHADER( DebugModifyVertex,
 											( sin( currTime + pPos[2] ) + 1.0F) * 0.5 );
 					MeshBuilder()->AdvanceVertex();
 				}
-				FogToFogColor();
 			}
 			Draw();
 		}
@@ -89,5 +91,3 @@ BEGIN_SHADER( DebugModifyVertex,
 		}
 	}
 END_SHADER
-
-

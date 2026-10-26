@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // socket_tests.cpp : Defines the entry point for the console application.
 //
 
@@ -41,7 +48,7 @@ void TestChannels( IChannel *pChannel1, IChannel *pChannel2, int maxPacketSize, 
 {
 	for ( int iTest=0; iTest < nTests; iTest++ )
 	{
-		float t = (float)rand() / RAND_MAX;
+		float t = (float)rand() / VALVE_RAND_MAX;
 		int testSize = (int)( t * (maxPacketSize-1) ) + 1;
 		
 		CUtlVector<unsigned char> rnd1, rnd2;

@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LABEL_H
 #define LABEL_H
@@ -17,13 +12,13 @@
 #pragma once
 #endif
 
-#include <UtlVector.h>
-#include <vgui/VGUI.h>
-#include <vgui_controls/Panel.h>
+#include "utlvector.h"
+#include "vgui/VGUI.h"
+#include "vgui_controls/Panel.h"
+#include "vgui_controls/PHandle.h"
 
 namespace vgui
 {
-class TextImage;
 
 //-----------------------------------------------------------------------------
 // Purpose: Contains and displays a set of images
@@ -31,6 +26,8 @@ class TextImage;
 //-----------------------------------------------------------------------------
 class Label : public Panel
 {
+	DECLARE_CLASS_SIMPLE( Label, Panel );
+
 public:
 	// Constructors
 	Label(Panel *parent, const char *panelName, const char *text);
@@ -42,11 +39,11 @@ public:
 	virtual void SetText(const char *tokenName);
 
 	// Set unicode text directly
-	virtual void SetText(const wchar_t *unicodeString);
+	virtual void SetText(const wchar_t *unicodeString, bool bClearUnlocalizedSymbol = false );
 
 	// Get the current text
-	virtual void GetText(char *textOut, int bufferLen);
-	virtual void GetText(wchar_t *textOut, int bufferLen);
+	virtual void GetText(OUT_Z_BYTECAP(bufferLen) char *textOut, int bufferLen);
+	virtual void GetText(OUT_Z_BYTECAP(bufLenInBytes) wchar_t *textOut, int bufLenInBytes);
 
 	// Content alignment
 	// Get the size of the content within the label
@@ -71,6 +68,7 @@ public:
 	virtual void SetEnabled(bool state);
 	// Additional offset at the Start of the text (from whichever sides it is aligned)
 	virtual void SetTextInset(int xInset, int yInset);		
+	virtual void GetTextInset(int *xInset, int *yInset );
 
 	// Text colors
 	virtual void SetFgColor(Color color);
@@ -88,7 +86,6 @@ public:
 		CS_NORMAL,
 		CS_DULL,
 		CS_BRIGHT,
-		CS_LIGHT,
 	};
 	virtual void SetTextColorState(EColorState state);
 
@@ -99,6 +96,7 @@ public:
 	// Hotkey
 	virtual Panel *HasHotkey(wchar_t key);
 	virtual void SetHotkey(wchar_t key);
+	virtual wchar_t GetHotKey();
 
 	// Labels can be associated with controls, and alter behaviour based on the associates behaviour
 	// If the associate is disabled, so are we
@@ -115,6 +113,7 @@ public:
 	virtual IImage *GetImageAtIndex(int index);
 	virtual int GetImageCount();
 	virtual void ClearImages();
+	virtual void ResetToSimpleTextImage();
 	// fixes the layout bounds of the image within the label
 	virtual void SetImageBounds(int index, int x, int width);
 
@@ -137,7 +136,6 @@ public:
 				"text" - text contained in the label
 	*/
 
-	DECLARE_PANELMAP();
 	/* CUSTOM MESSAGE HANDLING
 		"SetText"
 			input:	"text"	- label text is set to be this string
@@ -153,16 +151,21 @@ public:
 		Content = 8,
 	};
 
+	void SetWrap( bool bWrap );
+	void SetCenterWrap( bool bWrap );
+
+	void SetAllCaps( bool bAllCaps );
+
 protected:
 	virtual void PerformLayout();
 	virtual wchar_t CalculateHotkey(const char *text);
 	virtual wchar_t CalculateHotkey(const wchar_t *text);
 	virtual void ComputeAlignment(int &tx0, int &ty0, int &tx1, int &ty1);
 	virtual void Paint();
-	virtual void OnSetText(const wchar_t *text);
+	MESSAGE_FUNC_PARAMS( OnSetText, "SetText", params );
 	virtual void DrawDashedLine(int x0, int y0, int x1, int y1, int dashLen, int gapLen);
-	virtual void OnRequestFocus(Panel *subFocus, Panel *defaultPanel);
-	virtual void OnHotkeyPressed();
+	virtual void OnRequestFocus(VPANEL subFocus, VPANEL defaultPanel);
+	MESSAGE_FUNC( OnHotkeyPressed, "Hotkey" );
 	virtual void OnMousePressed(MouseCode code);
 	virtual void OnSizeChanged(int wide, int tall);
 
@@ -174,6 +177,10 @@ protected:
 	virtual void GetSettings( KeyValues *outResourceData );
 	virtual void ApplySettings( KeyValues *inResourceData );
 	virtual const char *GetDescription( void );
+
+	MESSAGE_FUNC_PARAMS( OnDialogVariablesChanged, "DialogVariables", dialogVariables );
+
+	void HandleAutoSizing( void );
 
 private:
 	void Init();
@@ -197,15 +204,20 @@ private:
 	int		   _textImageIndex;	// index in the image array that the default _textimage resides
 	EColorState _textColorState;
 
-	Panel	  *_associate;
+	PHandle		_associate;
 	char	  *_associateName;
 
 	char	  *_fontOverrideName;
 
 	wchar_t	   _hotkey;		// the hotkey contained in the text
 
-protected: // Derived labels use the public panel behavior alias.
-	typedef vgui::Panel BaseClass;
+	bool	m_bWrap;
+	bool	m_bCenterWrap;
+	bool	m_bAllCaps;
+	bool	m_bAutoWideToContents;
+	bool	m_bAutoWideDirty;
+	bool	m_bUseProportionalInsets;
+
 };
 
 } // namespace vgui

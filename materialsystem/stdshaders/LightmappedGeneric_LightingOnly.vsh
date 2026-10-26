@@ -1,11 +1,13 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
-;	 c90-c91 = Base texture transform
-;    c92-c93 = Mask texture transform
-;	 c94	 = Modulation color 
+;	 $SHADER_SPECIFIC_CONST_0-$SHADER_SPECIFIC_CONST_1 = Base texture transform
+;    $SHADER_SPECIFIC_CONST_2-$SHADER_SPECIFIC_CONST_3 = Mask texture transform
+;	 $SHADER_SPECIFIC_CONST_4	 = Modulation color 
 ;------------------------------------------------------------------------------
 
 &AllocateRegister( \$projPos );
@@ -23,7 +25,7 @@ mov oPos, $projPos
 ;------------------------------------------------------------------------------
 
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2

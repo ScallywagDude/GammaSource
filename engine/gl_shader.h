@@ -1,37 +1,78 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef GL_SHADER_H
 #define GL_SHADER_H
+
+#ifdef _WIN32
 #pragma once
+#endif
 
-#include "quakedef.h"
 
-struct decal_t;
+void Shader_BeginRendering ();
+bool Shader_Connect( bool bSetProxyFactory );
+void Shader_Disconnect();
+void Shader_SwapBuffers();
 
-void R_ShaderDrawWorld( void );
-void R_ShaderSceneBegin( void );
-void R_ShaderSceneEnd( void );
-void R_ShaderForceLightmapRebuild( void );
-void R_ShaderDrawDecal( decal_t *decal, float *inVerts, int numVerts );
-void LoadShaderSystem( void );
-bool ShaderSystemLoaded( void );
+#include "mathlib/vector.h"
+#include "convar.h"
 
-void MaterialSystem_RegisterLightmapSurfaces( void );
+extern	Vector		modelorg;
+extern VMatrix g_BrushToWorldMatrix;
+
+//
+// screen size info
+//
+class	IMaterial;
+extern	IMaterial*	g_materialEmpty;
+
+extern	IMaterial*	g_materialWireframe;
+
+extern	IMaterial*	g_materialTranslucentSingleColor;
+extern	IMaterial*	g_materialTranslucentVertexColor;
+
+extern	IMaterial*	g_materialWorldWireframe;
+extern	IMaterial*	g_materialWorldWireframeZBuffer;
+extern	IMaterial*	g_materialBrushWireframe;
+extern	IMaterial*	g_materialDecalWireframe;
+extern	IMaterial*	g_materialDebugLightmap;
+extern	IMaterial*	g_materialDebugLightmapZBuffer;
+extern	IMaterial*	g_materialDebugLuxels;
+extern	IMaterial*	g_materialLeafVisWireframe;
+extern	IMaterial*	g_pMaterialWireframeVertexColor;
+extern	IMaterial*	g_pMaterialWireframeVertexColorIgnoreZ;
+extern	IMaterial*  g_pMaterialLightSprite;
+extern	IMaterial*  g_pMaterialShadowBuild;
+extern	IMaterial*  g_pMaterialMRMWireframe;
+extern	IMaterial*  g_pMaterialWriteZ;
+extern	IMaterial*	g_pMaterialWaterDuDv;
+extern	IMaterial*	g_pMaterialWaterFirstPass;
+extern	IMaterial*	g_pMaterialWaterSecondPass;
+extern	IMaterial*	g_pMaterialAmbientCube;
+extern	IMaterial*	g_pMaterialDebugFlat;
+extern	IMaterial*	g_pMaterialDepthWrite[2][2];
+extern	IMaterial*	g_pMaterialSSAODepthWrite[2][2];
+
+extern	ConVar	r_norefresh;
+extern  ConVar	r_lightmapcolorscale;
+extern	ConVar	r_decals;
+extern	ConVar	mp_decals;
+extern	ConVar	r_lightmap;
+extern	ConVar	r_lightstyle;
+extern	ConVar	r_dynamic;
+extern  ConVar	r_unloadlightmaps;
+
+extern  ConVar  r_lod_noupdate;
+
+extern	ConVar	mat_fullbright;
+extern	ConVar	mat_drawflat;
+extern	ConVar	mat_reversedepth;
+extern  ConVar	mat_norendering;
 
 #endif // GL_SHADER_H

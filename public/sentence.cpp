@@ -1,17 +1,92 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+
+#if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
+
 #include <assert.h>
 #include "commonmacros.h"
 #include "basetypes.h"
 #include "sentence.h"
 #include "utlbuffer.h"
 #include <stdlib.h>
-#include "vector.h"
-#include "mathlib.h"
+#include "mathlib/vector.h"
+#include "mathlib/mathlib.h"
 #include <ctype.h>
+#include "checksum_crc.h"
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: converts an english string to unicode
 //-----------------------------------------------------------------------------
 int ConvertANSIToUnicode(const char *ansi, wchar_t *unicode, int unicodeBufferSize);
+
+#if PHONEME_EDITOR
+void CEmphasisSample::SetSelected( bool isSelected )
+{
+	selected = isSelected;
+}
+void CPhonemeTag::SetSelected( bool isSelected )
+{
+	m_bSelected = isSelected;
+}
+bool CPhonemeTag::GetSelected() const
+{
+	return m_bSelected;
+}
+void CPhonemeTag::SetStartAndEndBytes( unsigned int start, unsigned int end )
+{
+	m_uiStartByte = start;
+	m_uiEndByte = end;
+}
+unsigned int CPhonemeTag::GetStartByte() const
+{
+	return m_uiStartByte;
+}
+unsigned int CPhonemeTag::GetEndByte() const
+{
+	return m_uiEndByte;
+}
+void CWordTag::SetSelected( bool isSelected )
+{
+	m_bSelected = isSelected;
+}
+bool CWordTag::GetSelected() const
+{
+	return m_bSelected;
+}
+void CWordTag::SetStartAndEndBytes( unsigned int start, unsigned int end )
+{
+	m_uiStartByte = start;
+	m_uiEndByte = end;
+}
+unsigned int CWordTag::GetStartByte() const
+{
+	return m_uiStartByte;
+}
+unsigned int CWordTag::GetEndByte() const
+{
+	return m_uiEndByte;
+}
+#else
+// xbox doesn't store this data
+void CEmphasisSample::SetSelected( bool isSelected ) {}
+void CPhonemeTag::SetSelected( bool isSelected ) {}
+bool CPhonemeTag::GetSelected() const { return false; }
+void CPhonemeTag::SetStartAndEndBytes( unsigned int start, unsigned int end ) {}
+unsigned int CPhonemeTag::GetStartByte() const { return 0; }
+unsigned int CPhonemeTag::GetEndByte() const { return 0; }
+void CWordTag::SetSelected( bool isSelected ) {}
+bool CWordTag::GetSelected() const { return false; }
+void CWordTag::SetStartAndEndBytes( unsigned int start, unsigned int end ) {}
+unsigned int CWordTag::GetStartByte() const { return 0; }
+unsigned int CWordTag::GetEndByte() const { return 0; }
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -20,13 +95,12 @@ CWordTag::CWordTag( void )
 {
 	m_pszWord = NULL;
 
-	m_uiStartByte = 0;
-	m_uiEndByte = 0;
+	SetStartAndEndBytes( 0, 0 );
 
 	m_flStartTime = 0.0f;
 	m_flEndTime = 0.0f;
 
-	m_bSelected = false;
+	SetSelected( false );
 }
 
 //-----------------------------------------------------------------------------
@@ -38,13 +112,12 @@ CWordTag::CWordTag( const CWordTag& from )
 	m_pszWord = NULL;
 	SetWord( from.m_pszWord );
 
-	m_uiStartByte = from.m_uiStartByte;
-	m_uiEndByte = from.m_uiEndByte;
+	SetStartAndEndBytes( from.GetStartByte(), from.GetEndByte() );
 
 	m_flStartTime = from.m_flStartTime;
 	m_flEndTime = from.m_flEndTime;
 
-	m_bSelected = from.m_bSelected;
+	SetSelected( from.GetSelected() );
 
 	for ( int p = 0; p < from.m_Phonemes.Size(); p++ )
 	{
@@ -59,15 +132,14 @@ CWordTag::CWordTag( const CWordTag& from )
 //-----------------------------------------------------------------------------
 CWordTag::CWordTag( const char *word )
 {
-	m_uiStartByte = 0;
-	m_uiEndByte = 0;
+	SetStartAndEndBytes( 0, 0 );
 
 	m_flStartTime = 0.0f;
 	m_flEndTime = 0.0f;
 
 	m_pszWord = NULL;
 
-	m_bSelected = false;
+	SetSelected( false );
 
 	SetWord( word );
 }
@@ -109,49 +181,94 @@ int CWordTag::IndexOfPhoneme( CPhonemeTag *tag )
 void CWordTag::SetWord( const char *word )
 {
 	delete[] m_pszWord;
-	m_pszWord = new char[ strlen( word ) + 1 ];
-	strcpy( m_pszWord, word );
+	m_pszWord = NULL;
+	if ( !word || !word[ 0 ] )
+		return;
+
+	int len = strlen( word ) + 1;
+	m_pszWord = new char[ len ];
+	Assert( m_pszWord );
+	Q_strncpy( m_pszWord, word, len );
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : const char
+//-----------------------------------------------------------------------------
+const char *CWordTag::GetWord() const
+{
+	return m_pszWord ? m_pszWord : "";
+}
+
+
+unsigned int CWordTag::ComputeDataCheckSum()
+{
+	int i;
+	int c;
+	CRC32_t crc;
+	CRC32_Init( &crc );
+
+	// Checksum the text
+	if ( m_pszWord != NULL )
+	{
+		CRC32_ProcessBuffer( &crc, m_pszWord, Q_strlen( m_pszWord ) );
+	}
+	// Checksum phonemes
+	c = m_Phonemes.Count();
+	for ( i = 0; i < c; ++i )
+	{
+		CPhonemeTag *phoneme = m_Phonemes[ i ];
+		unsigned int phonemeCheckSum = phoneme->ComputeDataCheckSum();
+		CRC32_ProcessBuffer( &crc, &phonemeCheckSum, sizeof( unsigned int ) );
+	}
+	// Checksum timestamps
+	CRC32_ProcessBuffer( &crc, &m_flStartTime, sizeof( float ) );
+	CRC32_ProcessBuffer( &crc, &m_flEndTime, sizeof( float ) );
+
+	CRC32_Final( &crc );
+
+	return ( unsigned int )crc;
+}
+
+CBasePhonemeTag::CBasePhonemeTag()
+{
+	m_flStartTime = 0;
+	m_flEndTime = 0;
+
+	m_nPhonemeCode = 0;
+}
+
+CBasePhonemeTag::CBasePhonemeTag( const CBasePhonemeTag& from )
+{
+	memcpy( this, &from, sizeof(*this) );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 CPhonemeTag::CPhonemeTag( void )
 {
-	m_szPhoneme[ 0 ] = 0;
+	m_szPhoneme = NULL;
 
-	m_uiStartByte = 0;
-	m_uiEndByte = 0;
+	SetStartAndEndBytes( 0, 0 );
 
-	m_flStartTime = 0.0f;
-	m_flEndTime = 0.0f;
-
-	m_flVolume = 1.0f;
-
-	m_bSelected = false;
-
-	m_nPhonemeCode = 0;
+	SetSelected( false );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : from - 
 //-----------------------------------------------------------------------------
-CPhonemeTag::CPhonemeTag( const CPhonemeTag& from )
+CPhonemeTag::CPhonemeTag( const CPhonemeTag& from ) :
+	BaseClass( from )
 {
-	m_uiStartByte = from.m_uiStartByte;
-	m_uiEndByte = from.m_uiEndByte;
+	SetStartAndEndBytes( from.GetStartByte(), from.GetEndByte() );
 
-	m_flStartTime = from.m_flStartTime;
-	m_flEndTime = from.m_flEndTime;
+	SetSelected( from.GetSelected() );
 
-	m_flVolume = from.m_flVolume;
-
-	m_bSelected = from.m_bSelected;
-
-	m_nPhonemeCode = from.m_nPhonemeCode;
-
-	strcpy( m_szPhoneme, from.m_szPhoneme );
+	m_szPhoneme = NULL;
+	SetTag( from.GetTag() );
 }
 
 //-----------------------------------------------------------------------------
@@ -160,18 +277,16 @@ CPhonemeTag::CPhonemeTag( const CPhonemeTag& from )
 //-----------------------------------------------------------------------------
 CPhonemeTag::CPhonemeTag( const char *phoneme )
 {
-	m_uiStartByte = 0;
-	m_uiEndByte = 0;
+	SetStartAndEndBytes( 0, 0 );
 
-	m_flStartTime = 0.0f;
-	m_flEndTime = 0.0f;
+	SetStartTime( 0.0f );
+	SetEndTime( 0.0f );
 
-	m_flVolume = 1.0f;
+	SetSelected( false );
 
-	m_bSelected = false;
+	SetPhonemeCode( 0 );
 
-	m_nPhonemeCode = 0;
-
+	m_szPhoneme = NULL;
 	SetTag( phoneme );
 }
 
@@ -180,6 +295,7 @@ CPhonemeTag::CPhonemeTag( const char *phoneme )
 //-----------------------------------------------------------------------------
 CPhonemeTag::~CPhonemeTag( void )
 {
+	delete[] m_szPhoneme;
 }
 
 //-----------------------------------------------------------------------------
@@ -188,8 +304,42 @@ CPhonemeTag::~CPhonemeTag( void )
 //-----------------------------------------------------------------------------
 void CPhonemeTag::SetTag( const char *phoneme )
 {
-	assert( strlen( phoneme ) <= MAX_PHONEME_LENGTH - 1 );
-	strcpy( m_szPhoneme, phoneme );
+	delete m_szPhoneme;
+	m_szPhoneme = NULL;
+	if ( !phoneme || !phoneme [ 0 ] )
+		return;
+
+	int len = Q_strlen( phoneme ) + 1;
+	m_szPhoneme = new char[ len ];
+	Assert( m_szPhoneme );
+	Q_strncpy( m_szPhoneme, phoneme, len );
+}
+
+char const *CPhonemeTag::GetTag() const
+{
+	return m_szPhoneme ? m_szPhoneme : "";
+}
+
+
+unsigned int CPhonemeTag::ComputeDataCheckSum()
+{
+	CRC32_t crc;
+	CRC32_Init( &crc );
+
+	// Checksum the text
+	CRC32_ProcessBuffer( &crc, m_szPhoneme, Q_strlen( m_szPhoneme ) );
+	int phonemeCode = GetPhonemeCode();
+	CRC32_ProcessBuffer( &crc, &phonemeCode, sizeof( int ) );
+
+	// Checksum timestamps
+	float startTime = GetStartTime();
+	float endTime = GetEndTime();
+	CRC32_ProcessBuffer( &crc, &startTime, sizeof( float ) );
+	CRC32_ProcessBuffer( &crc, &endTime, sizeof( float ) );
+
+	CRC32_Final( &crc );
+
+	return ( unsigned int )crc;
 }
 
 //-----------------------------------------------------------------------------
@@ -197,27 +347,47 @@ void CPhonemeTag::SetTag( const char *phoneme )
 //-----------------------------------------------------------------------------
 struct CCLanguage
 {
-	int			type;
-	char const	*name;
+	int				type;
+	char const		*name;
+	unsigned char	r, g, b;  // For faceposer, indicator color for this language
 };
 
 static CCLanguage g_CCLanguageLookup[] =
 {
-	{ CC_ENGLISH,	"english" },
-	{ CC_FRENCH,	"french" },
-	{ CC_GERMAN,	"german" },
-	{ CC_SPANISH,	"spanish" },
-	{ CC_ITALIAN,	"italian" },
-	{ CC_KOREAN,	"korean" },
-	{ CC_JAPANESE,	"japanese" },
+	{ CC_ENGLISH,	"english",		0,		0,		0 },
+	{ CC_FRENCH,	"french",		150,	0,		0 },
+	{ CC_GERMAN,	"german",		0,		150,	0 },
+	{ CC_ITALIAN,	"italian",		0,		150,	150 },
+	{ CC_KOREAN,	"koreana",		150,	0,		150 },
+	{ CC_SCHINESE,	"schinese",		150,	0,		150 },
+	{ CC_SPANISH,	"spanish",		0,		0,		150 },
+	{ CC_TCHINESE,	"tchinese",		150,	0,		150 },
+	{ CC_JAPANESE,	"japanese",		250,	150,	0 },
+	{ CC_RUSSIAN,	"russian",		0,		250,	150 },
+	{ CC_THAI,		"thai",			0 ,		150,	250 },
+	{ CC_PORTUGUESE,"portuguese",	0 ,		0,		150 },	
 };
+
+void CSentence::ColorForLanguage( int language, unsigned char& r, unsigned char& g, unsigned char& b )
+{
+	r = g = b = 0;
+
+	if ( language < 0 || language >= CC_NUM_LANGUAGES )
+	{
+		return;
+	}
+
+	r = g_CCLanguageLookup[ language ].r;
+	g = g_CCLanguageLookup[ language ].g;
+	b = g_CCLanguageLookup[ language ].b;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : language - 
 // Output : char const
 //-----------------------------------------------------------------------------
-char const *CCloseCaptionPhrase::NameForLanguage( int language )
+char const *CSentence::NameForLanguage( int language )
 {
 	if ( language < 0 || language >= CC_NUM_LANGUAGES )
 		return "unknown_language";
@@ -232,7 +402,7 @@ char const *CCloseCaptionPhrase::NameForLanguage( int language )
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CCloseCaptionPhrase::LanguageForName( char const *name )
+int CSentence::LanguageForName( char const *name )
 {
 	int l;
 	for ( l = 0; l < CC_NUM_LANGUAGES; l++ )
@@ -248,250 +418,17 @@ int CCloseCaptionPhrase::LanguageForName( char const *name )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CCloseCaptionPhrase::CCloseCaptionPhrase( void )
-{
-	Init();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : from - 
-//-----------------------------------------------------------------------------
-CCloseCaptionPhrase::CCloseCaptionPhrase( const CCloseCaptionPhrase& from )
-{
-	m_pszStream = NULL;
-	SetStream( from.m_pszStream );
-	m_flStartTime = from.m_flStartTime;
-	m_flEndTime = from.m_flEndTime;
-	m_bSelected = from.m_bSelected;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *word - 
-//-----------------------------------------------------------------------------
-CCloseCaptionPhrase::CCloseCaptionPhrase( const wchar_t *phrase )
-{
-	Init();
-	SetStream( phrase );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-CCloseCaptionPhrase::~CCloseCaptionPhrase( void )
-{
-	delete[] m_pszStream;
-}
-
-void CCloseCaptionPhrase::Init( void )
-{
-	m_flStartTime = 0.0f;
-	m_flEndTime = 0.0f;
-	m_pszStream = NULL;
-	m_bSelected = false;
-}
-
-void CCloseCaptionPhrase::SetStream( const wchar_t *stream )
-{
-	delete[] m_pszStream;
-	m_pszStream = new wchar_t[ wcslen( stream ) + 1 ];
-	wchar_t const *in;
-	wchar_t *out;
-	in = stream;
-	out = m_pszStream;
-
-	// Removing leading spaces
-	while ( *in && *in == L' ' )
-	{
-		in++;
-	}
-
-	// Copy body
-	while ( *in )
-	{
-		*out++ = *in++;
-	}
-
-	// Terminate
-	*out = L'\0';
-
-	// Back up one character and check for and remove trailing spaces
-	--out;
-	while ( *out == L' ' && out >= m_pszStream )
-	{
-		*out-- = L'\0';
-	}
-}
-
-wchar_t const *CCloseCaptionPhrase::GetStream( void ) const
-{
-	return m_pszStream ? m_pszStream : L"";
-}
-
-void CCloseCaptionPhrase::SetSelected( bool selected )
-{
-	m_bSelected = selected;
-}
-
-bool CCloseCaptionPhrase::GetSelected( void ) const
-{
-	return m_bSelected;
-}
-
-void CCloseCaptionPhrase::SetStartTime( float st )
-{
-	m_flStartTime = st;
-}
-
-float CCloseCaptionPhrase::GetStartTime( void ) const
-{
-	return m_flStartTime;
-}
-
-void CCloseCaptionPhrase::SetEndTime( float et )
-{
-	m_flEndTime = et;
-}
-
-float CCloseCaptionPhrase::GetEndTime( void ) const
-{
-	return m_flEndTime;
-}
-
-int CCloseCaptionPhrase::CountTokens( void ) const
-{
-	int count = 0;
-	wchar_t token[ 1024 ];
-	wchar_t const *in = GetStream();
-
-	while ( in )
-	{
-		in = ParseToken( in, token, sizeof( token ) );
-		if ( wcslen( token ) > 0 )
-		{
-			count++;
-		}
-		if ( !in || *in == L'\0' )
-			break;
-	}
-
-	return count;
-}
-
-wchar_t const *CCloseCaptionPhrase::ParseToken( wchar_t const *in, wchar_t *token, int tokensize ) const
-{
-	if ( !in )
-		return NULL;
-
-	// Strip leading spaces
-	while ( *in != L'\0' && *in == L' ' )
-	{
-		in++;
-	}
-
-	if ( *in == L'\0' )
-		return NULL;
-
-	wchar_t *out = token;
-
-	// Check specially for command token
-	if ( *in == L'<' )
-	{
-		while ( *in && *in != L'>' )
-		{
-			*out++ = *in++;
-		}
-
-		if ( !*in )
-		{
-			*out = L'\0';
-			return NULL;
-		}
-
-		*out++ = *in++;
-		*out = L'\0';
-		return in;
-	}
-	
-	if ( iswpunct( *in ) )
-	{
-		*out++ = *in++;
-		*out = L'\0';
-		return in;
-	}
-
-	while ( *in && *in != L' ' && *in != L'<' && !iswpunct( *in ) )
-	{
-		*out++ = *in++;
-	}
-
-	*out = L'\0';
-
-	return in;
-}
-
-wchar_t const *CCloseCaptionPhrase::GetToken( int token_number ) const
-{
-	int count = 0;
-	static wchar_t token[ 1024 ];
-	wchar_t const *in = GetStream();
-
-	token[ 0 ] = L'\0';
-
-	while ( in )
-	{
-		in = ParseToken( in, token, sizeof( token ) );
-		if ( wcslen( token ) > 0 )
-		{
-			if ( count == token_number )
-				break;
-			count++;
-		}
-		if ( !in || *in == L'\0' )
-			break;
-	}
-
-	return token;
-}
-
-bool CCloseCaptionPhrase::SplitCommand( wchar_t const *in, wchar_t *cmd, wchar_t *args ) const
-{
-	if ( in[0] != L'<' )
-		return false;
-
-	args[ 0 ] = 0;
-	cmd[ 0 ]= 0;
-	wchar_t *out = cmd;
-	in++;
-	while ( *in != L'\0' && *in != L':' && *in != L'>' )
-	{
-		*out++ = *in++;
-	}
-	*out = L'\0';
-
-	if ( *in != L':' )
-		return true;
-
-	in++;
-	out = args;
-	while ( *in != L'\0' && *in != L'>' )
-	{
-		*out++ = *in++;
-	}
-	*out = L'\0';
-
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 CSentence::CSentence( void )
 {
+#if PHONEME_EDITOR
 	m_nResetWordBase = 0;
-	m_szText[ 0 ] = 0;
+	m_szText = 0;
+	m_uCheckSum = 0;
+#endif
 	m_bShouldVoiceDuck = false;
+	m_bStoreCheckSum = false;
+	m_bIsValid = false;
+	m_bIsCached = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -500,6 +437,9 @@ CSentence::CSentence( void )
 CSentence::~CSentence( void )
 {
 	Reset();
+#if PHONEME_EDITOR
+	delete[] m_szText;
+#endif
 }
 
 
@@ -514,8 +454,8 @@ void CSentence::ParsePlaintext( CUtlBuffer& buf )
 		if ( !stricmp( token, "}" ) )
 			break;
 
-		strcat( text, token );
-		strcat( text, " " );
+		Q_strncat( text, token, sizeof( text ), COPY_ALL_CHARACTERS );
+		Q_strncat( text, " ", sizeof( text ), COPY_ALL_CHARACTERS );
 	}
 
 	SetText( text );
@@ -537,7 +477,7 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 			break;
 
 		buf.GetString( token );
-		strcpy( word, token );
+		Q_strncpy( word, token, sizeof( word ) );
 
 		buf.GetString( token );
 		start = atof( token );
@@ -564,13 +504,12 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 			// Parse phoneme
 			int code;
 			char phonemename[ 256 ];
-			float start, end;
 			float volume;
 
 			code = atoi( token );
 
 			buf.GetString( token );
-			strcpy( phonemename, token );
+			Q_strncpy( phonemename, token, sizeof( phonemename ) );
 			buf.GetString( token );
 			start = atof( token );
 			buf.GetString( token );
@@ -580,11 +519,10 @@ void CSentence::ParseWords( CUtlBuffer& buf )
 
 			CPhonemeTag *pt = new CPhonemeTag();
 			assert( pt );
-			pt->m_nPhonemeCode = code;
-			strcpy( pt->m_szPhoneme, phonemename );
-			pt->m_flStartTime = start;
-			pt->m_flEndTime = end;
-			pt->m_flVolume = volume;
+			pt->SetPhonemeCode( code );
+			pt->SetTag( phonemename );
+			pt->SetStartTime( start );
+			pt->SetEndTime( end );
 
 			AddPhonemeTag( wt, pt );
 		}
@@ -601,14 +539,14 @@ void CSentence::ParseEmphasis( CUtlBuffer& buf )
 			break;
 
 		char t[ 256 ];
-		strcpy( t, token );
+		Q_strncpy( t, token, sizeof( t ) );
 		buf.GetString( token );
 
 		char value[ 256 ];
-		strcpy( value, token );
+		Q_strncpy( value, token, sizeof( value ) );
 
 		CEmphasisSample sample;
-		sample.selected = false;
+		sample.SetSelected( false );
 		sample.time = atof( t );
 		sample.value = atof( value );
 
@@ -618,6 +556,7 @@ void CSentence::ParseEmphasis( CUtlBuffer& buf )
 	}
 }
 
+// This is obsolete, so it doesn't do anything with the data which is parsed.
 void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 {
 	char token[ 4096 ];
@@ -633,12 +572,6 @@ void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 		if ( !stricmp( token, "}" ) )
 			break;
 
-		char language_name[ 128 ];
-		int language_id;
-		strcpy( language_name, token );
-		language_id = CCloseCaptionPhrase::LanguageForName( language_name );
-		Assert( language_id != -1 );
-
 		buf.GetString( token );
 		if ( stricmp( token, "{" ) )
 			break;
@@ -646,7 +579,6 @@ void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 		buf.GetString( token );
 		while ( 1 )
 		{
-
 			if ( !stricmp( token, "}" ) )
 				break;
 
@@ -654,14 +586,13 @@ void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 				break;
 
 			char cc_type[32];
-			char cc_stream[ 512 ];
+			char cc_stream[ 4096 ];
 			int cc_length;
-			float start, end;
 
 			memset( cc_stream, 0, sizeof( cc_stream ) );
 
 			buf.GetString( token );
-			strcpy( cc_type, token );
+			Q_strncpy( cc_type, token, sizeof( cc_type ) );
 
 			bool unicode = false;
 			if ( !stricmp( cc_type, "unicode" ) )
@@ -681,37 +612,13 @@ void CSentence::ParseCloseCaption( CUtlBuffer& buf )
 			buf.Get( cc_stream, cc_length );
 			cc_stream[ cc_length ] = 0;
 			
-			wchar_t converted[ 256 ];
-			// FIXME: Do unicode parsing, raw data parsing
-			if ( unicode )
-			{
-				memcpy( converted, cc_stream, cc_length );
-				cc_length /= 2;
-				converted[ cc_length ] = L'\0';
-			}
-			else
-			{
-#ifndef SWDS // FIXME!!!!!!
-				ConvertANSIToUnicode( cc_stream, converted, sizeof( converted ) );
-#endif
-			}
-			
 			// Skip space
 			buf.GetChar();
 			buf.GetString( token );
-			start = atof( token );
 			buf.GetString( token );
-			end = atof( token );
 
-			CCloseCaptionPhrase *phrase = new CCloseCaptionPhrase( converted );
-			phrase->SetStartTime( start );
-			phrase->SetEndTime( end );
-			//phrase->SetType( cc_type );
-
-			AddCloseCaptionPhrase( language_id, phrase );
 			buf.GetString( token );
 		}
-
 	}
 }
 
@@ -724,15 +631,22 @@ void CSentence::ParseOptions( CUtlBuffer& buf )
 		if ( !stricmp( token, "}" ) )
 			break;
 
+		if ( Q_strlen( token ) == 0 )
+			break;
+
 		char key[ 256 ];
-		strcpy( key, token );
+		Q_strncpy( key, token, sizeof( key ) );
 		char value[ 256 ];
 		buf.GetString( token );
-		strcpy( value, token );
+		Q_strncpy( value, token, sizeof( value ) );
 
 		if ( !strcmpi( key, "voice_duck" ) )
 		{
 			SetVoiceDuck( atoi(value) ? true : false );
+		}
+		else if ( !strcmpi( key, "checksum" ) )
+		{
+			SetDataCheckSum( (unsigned int)atoi( value ) );
 		}
 	}
 }
@@ -752,9 +666,13 @@ void CSentence::ParseDataVersionOnePointZero( CUtlBuffer& buf )
 		buf.GetString( token );
 		if ( strlen( token ) <= 0 )
 			break;
+		
+		// end of block, return
+		if ( !V_strcmp( token, "}" ) )
+			break;
 
 		char section[ 256 ];
-		strcpy( section, token );
+		Q_strncpy( section, token, sizeof( section ) );
 
 		buf.GetString( token );
 		if ( stricmp( token, "{" ) )
@@ -774,6 +692,8 @@ void CSentence::ParseDataVersionOnePointZero( CUtlBuffer& buf )
 		}		
 		else if ( !stricmp( section, "CLOSECAPTION" ) )
 		{
+			// NOTE:  CLOSECAPTION IS NO LONGER VALID
+			// This just skips the section of data.
 			ParseCloseCaption( buf );
 		}
 		else if ( !stricmp( section, "OPTIONS" ) )
@@ -783,11 +703,261 @@ void CSentence::ParseDataVersionOnePointZero( CUtlBuffer& buf )
 	}
 }
 
+// This is a compressed save of just the data needed to drive phonemes in the engine (no word / sentence text, etc )
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : buf - 
+//-----------------------------------------------------------------------------
+void CSentence::CacheSaveToBuffer( CUtlBuffer& buf, int version )
+{
+	Assert( !buf.IsText() );
+	Assert( m_bIsCached );
+
+	int i;
+	unsigned short pcount = GetRuntimePhonemeCount();
+
+	// header
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		buf.PutChar( version );
+		buf.PutChar( 0 );
+		buf.PutChar( 0 );
+		buf.PutChar( 0 );
+		buf.PutInt( pcount );
+	}
+	else
+	{
+		buf.PutChar( version );
+		buf.PutShort( pcount );
+	}
+
+	// phoneme
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			const CBasePhonemeTag *phoneme = GetRuntimePhoneme( i );
+			Assert( phoneme );
+			buf.PutInt( phoneme->GetPhonemeCode() );
+			buf.PutFloat( phoneme->GetStartTime() );
+			buf.PutFloat( phoneme->GetEndTime() );
+		}
+	}
+	else
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			const CBasePhonemeTag *phoneme = GetRuntimePhoneme( i );
+			Assert( phoneme );
+			buf.PutShort( phoneme->GetPhonemeCode() );
+			buf.PutFloat( phoneme->GetStartTime() );
+			buf.PutFloat( phoneme->GetEndTime() );
+		}
+	}
+
+	// emphasis samples and voice duck
+	int c = m_EmphasisSamples.Count();
+	Assert( c <= 32767 );
+
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		buf.PutInt( c );
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample *sample = &m_EmphasisSamples[i];
+			Assert( sample );
+			buf.PutFloat( sample->time );
+			buf.PutFloat( sample->value );
+		}
+		buf.PutInt( GetVoiceDuck() ? 1 : 0 );
+	}
+	else
+	{
+		buf.PutShort( c );
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample *sample = &m_EmphasisSamples[i];
+			Assert( sample );
+			buf.PutFloat( sample->time );
+			short scaledValue = clamp( (short)( sample->value * 32767 ), (short)0, (short)32767 );
+			buf.PutShort( scaledValue );
+		}
+		buf.PutChar( GetVoiceDuck() ? 1 : 0 );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : buf - 
+//-----------------------------------------------------------------------------
+void CSentence::CacheRestoreFromBuffer( CUtlBuffer& buf )
+{
+	Assert( !buf.IsText() );
+
+	Reset();
+
+	m_bIsCached = true;
+
+	// determine format
+	int version = buf.GetChar();
+	if ( version != CACHED_SENTENCE_VERSION && version != CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		// Uh oh, version changed...
+		m_bIsValid = false;
+		return;
+	}
+
+	unsigned short pcount;
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		buf.GetChar();
+		buf.GetChar();
+		buf.GetChar();
+		pcount = buf.GetInt();
+	}
+	else
+	{
+		pcount = (unsigned short)buf.GetShort();
+	}
+
+	// phonemes
+	CPhonemeTag pt;
+	int i;
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			int code = buf.GetInt();
+			float st = buf.GetFloat();
+			float et = buf.GetFloat();
+
+			pt.SetPhonemeCode( code );
+			pt.SetStartTime( st );
+			pt.SetEndTime( et );
+			AddRuntimePhoneme( &pt );
+		}
+	}
+	else
+	{
+		for ( i = 0; i < pcount; ++i )
+		{
+			unsigned short code = buf.GetShort();
+			float st = buf.GetFloat();
+			float et = buf.GetFloat();
+
+			pt.SetPhonemeCode( code );
+			pt.SetStartTime( st );
+			pt.SetEndTime( et );
+			AddRuntimePhoneme( &pt );
+		}
+	}
+
+	// emphasis samples and voice duck
+	int c;
+	if ( version == CACHED_SENTENCE_VERSION_ALIGNED )
+	{
+		c = buf.GetInt();
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample sample;
+			sample.SetSelected( false );
+			sample.time = buf.GetFloat();
+			sample.value = buf.GetFloat();
+			m_EmphasisSamples.AddToTail( sample );
+		}
+		SetVoiceDuck( buf.GetInt() == 0 ? false : true );
+	}
+	else
+	{
+		c = buf.GetShort();
+		for ( i = 0; i < c; i++ )
+		{
+			CEmphasisSample sample;
+			sample.SetSelected( false );
+			sample.time = buf.GetFloat();
+			sample.value = (float)buf.GetShort() / 32767.0f;
+			m_EmphasisSamples.AddToTail( sample );
+		}
+		SetVoiceDuck( buf.GetChar() == 0 ? false : true );
+	}
+
+	m_bIsValid = true;
+}
+
+int CSentence::GetRuntimePhonemeCount() const
+{
+	return m_RunTimePhonemes.Count();
+}
+
+const CBasePhonemeTag *CSentence::GetRuntimePhoneme( int i ) const
+{
+	Assert( m_bIsCached );
+	return m_RunTimePhonemes[ i ];
+}
+
+void CSentence::ClearRuntimePhonemes()
+{
+	while ( m_RunTimePhonemes.Count() > 0 )
+	{
+		CBasePhonemeTag *tag = m_RunTimePhonemes[ 0 ];
+		delete tag;
+		m_RunTimePhonemes.Remove( 0 );
+	}
+}
+
+void CSentence::AddRuntimePhoneme( const CPhonemeTag *src )
+{
+	Assert( m_bIsCached );
+
+	CBasePhonemeTag *tag = new CBasePhonemeTag();
+	*tag = *src;
+
+	m_RunTimePhonemes.AddToTail( tag );
+}
+
+void CSentence::MakeRuntimeOnly()
+{
+	m_bIsCached = true;
+#if PHONEME_EDITOR
+	delete m_szText;
+	m_szText = NULL;
+
+	int c = m_Words.Count();
+	for ( int i = 0; i < c; ++i )
+	{
+		CWordTag *word = m_Words[ i ];
+		Assert( word );
+		int pcount = word->m_Phonemes.Count();
+		for ( int j = 0; j < pcount; ++j )
+		{
+			CPhonemeTag *phoneme = word->m_Phonemes[ j ];
+			assert( phoneme );
+
+			AddRuntimePhoneme( phoneme );
+		}
+	}
+
+	// Remove all existing words
+	while ( m_Words.Count() > 0 )
+	{
+		CWordTag *word = m_Words[ 0 ];
+		delete word;
+		m_Words.Remove( 0 );
+	}
+#endif
+	m_bIsValid = true;
+}
+
+
 void CSentence::SaveToBuffer( CUtlBuffer& buf )
 {
+#if PHONEME_EDITOR
+	Assert( !m_bIsCached );
+
 	int i, j;
 
 	buf.Printf( "VERSION 1.0\n" );
+
 	buf.Printf( "PLAINTEXT\n" );
 	buf.Printf( "{\n" );
 	buf.Printf( "%s\n", GetText() );
@@ -800,7 +970,7 @@ void CSentence::SaveToBuffer( CUtlBuffer& buf )
 		Assert( word );
 
 		buf.Printf( "WORD %s %.3f %.3f\n", 
-			word->m_pszWord[ 0 ] ? word->m_pszWord : "???",
+			word->GetWord(),
 			word->m_flStartTime,
 			word->m_flEndTime );
 
@@ -810,12 +980,11 @@ void CSentence::SaveToBuffer( CUtlBuffer& buf )
 			CPhonemeTag *phoneme = word->m_Phonemes[ j ];
 			Assert( phoneme );
 
-			buf.Printf( "%i %s %.3f %.3f %.3f\n", 
-				phoneme->m_nPhonemeCode, 
-				phoneme->m_szPhoneme[ 0 ] ? phoneme->m_szPhoneme : "???",
-				phoneme->m_flStartTime,
-				phoneme->m_flEndTime,
-				phoneme->m_flVolume );
+			buf.Printf( "%i %s %.3f %.3f 1\n", 
+				phoneme->GetPhonemeCode(), 
+				phoneme->GetTag(),
+				phoneme->GetStartTime(),
+				phoneme->GetEndTime() );
 		}
 
 		buf.Printf( "}\n" );
@@ -833,47 +1002,17 @@ void CSentence::SaveToBuffer( CUtlBuffer& buf )
 	}
 
 	buf.Printf( "}\n" );
-	buf.Printf( "CLOSECAPTION\n" );
-	buf.Printf( "{\n" );
-
-	for ( int l = 0; l < CC_NUM_LANGUAGES; l++ )
-	{
-		int count = GetCloseCaptionPhraseCount( l );
-		if ( count == 0 && l == CC_ENGLISH )
-		{
-			SetCloseCaptionFromText( l );
-			count = GetCloseCaptionPhraseCount( l );
-		}
-
-		if ( count <= 0 )
-			continue;
-
-		buf.Printf( "%s\n", CCloseCaptionPhrase::NameForLanguage( l ) );
-		buf.Printf( "{\n" );
-
-		for ( int j = 0 ; j < count; j++ )
-		{
-			CCloseCaptionPhrase *phrase = GetCloseCaptionPhrase( l, j );
-			Assert( phrase );
-
-			int len = wcslen( phrase->GetStream() );
-			len <<= 1; // double because it's a wchar_t
-
-			buf.Printf( "PHRASE unicode %i ", len );
-			buf.Put( phrase->GetStream(), len );
-			buf.Printf( " %.3f %.3f\n",
-				phrase->GetStartTime(),
-				phrase->GetEndTime() );
-		}
-
-		buf.Printf( "}\n" );
-	}
-	buf.Printf( "}\n" );
-
 	buf.Printf( "OPTIONS\n" );
 	buf.Printf( "{\n" );
 	buf.Printf( "voice_duck %d\n", GetVoiceDuck() ? 1 : 0 );
+	if ( m_bStoreCheckSum )
+	{
+		buf.Printf( "checksum %d\n", m_uCheckSum );
+	}
 	buf.Printf( "}\n" );
+#else
+	Assert( 0 );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -883,12 +1022,23 @@ void CSentence::SaveToBuffer( CUtlBuffer& buf )
 //-----------------------------------------------------------------------------
 void CSentence::InitFromDataChunk( void *data, int size )
 {
-	Reset();
-
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 	buf.EnsureCapacity( size );
 	buf.Put( data, size );
 	buf.SeekPut( CUtlBuffer::SEEK_HEAD, size );
+
+	InitFromBuffer( buf );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : buf - 
+//-----------------------------------------------------------------------------
+void CSentence::InitFromBuffer( CUtlBuffer& buf )
+{
+	Assert( buf.IsText() );
+
+	Reset();
 
 	char token[ 4096 ];
 	buf.GetString( token );
@@ -900,6 +1050,7 @@ void CSentence::InitFromDataChunk( void *data, int size )
 	if ( atof( token ) == 1.0f )
 	{
 		ParseDataVersionOnePointZero( buf );
+		m_bIsValid = true;
 	}
 	else
 	{
@@ -914,7 +1065,12 @@ void CSentence::InitFromDataChunk( void *data, int size )
 //-----------------------------------------------------------------------------
 int CSentence::GetWordBase( void )
 {
+#if PHONEME_EDITOR
 	return m_nResetWordBase;
+#else
+	Assert( 0 );
+	return 0;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -922,12 +1078,15 @@ int CSentence::GetWordBase( void )
 //-----------------------------------------------------------------------------
 void CSentence::ResetToBase( void )
 {
+#if PHONEME_EDITOR
 	// Delete everything after m_nResetWordBase
 	while ( m_Words.Size() > m_nResetWordBase )
 	{
 		delete m_Words[ m_Words.Size() - 1 ];
 		m_Words.Remove( m_Words.Size() - 1 );
 	}
+#endif
+	ClearRuntimePhonemes();
 }
 
 //-----------------------------------------------------------------------------
@@ -935,7 +1094,9 @@ void CSentence::ResetToBase( void )
 //-----------------------------------------------------------------------------
 void CSentence::MarkNewPhraseBase( void )
 {
+#if PHONEME_EDITOR
 	m_nResetWordBase = max( m_Words.Size(), 0 );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -943,6 +1104,7 @@ void CSentence::MarkNewPhraseBase( void )
 //-----------------------------------------------------------------------------
 void CSentence::Reset( void )
 {
+#if PHONEME_EDITOR
 	m_nResetWordBase = 0;
 
 	while ( m_Words.Size() > 0 )
@@ -950,35 +1112,11 @@ void CSentence::Reset( void )
 		delete m_Words[ 0 ];
 		m_Words.Remove( 0 );
 	}
-
+#endif
 	m_EmphasisSamples.RemoveAll();
 
-	ResetCloseCaptionAll();
+	ClearRuntimePhonemes();
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CSentence::ResetCloseCaptionAll( void )
-{
-	for ( int l = 0; l < CC_NUM_LANGUAGES; l++ )
-	{
-		ResetCloseCaption( l );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CSentence::ResetCloseCaption( int language )
-{
-	while ( m_CloseCaption[ language ].Size() > 0 )
-	{
-		delete m_CloseCaption[ language ][ 0 ];
-		m_CloseCaption[ language ].Remove( 0 );
-	}
-}
-
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -995,7 +1133,9 @@ void CSentence::AddPhonemeTag( CWordTag *word, CPhonemeTag *tag )
 //-----------------------------------------------------------------------------
 void CSentence::AddWordTag( CWordTag *tag )
 {
+#if PHONEME_EDITOR
 	m_Words.AddToTail( tag );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1005,11 +1145,13 @@ void CSentence::AddWordTag( CWordTag *tag )
 int CSentence::CountPhonemes( void )
 {
 	int c = 0;
+#if PHONEME_EDITOR
 	for( int i = 0; i < m_Words.Size(); i++ )
 	{
 		CWordTag *word = m_Words[ i ];
 		c += word->m_Phonemes.Size();
 	}
+#endif
 	return c;
 }
 
@@ -1020,6 +1162,7 @@ int CSentence::CountPhonemes( void )
 //-----------------------------------------------------------------------------
 CWordTag *CSentence::EstimateBestWord( float time )
 {
+#if PHONEME_EDITOR
 	CWordTag *bestWord = NULL;
 
 	for( int i = 0; i < m_Words.Size(); i++ )
@@ -1051,7 +1194,7 @@ CWordTag *CSentence::EstimateBestWord( float time )
 	{
 		return m_Words[ m_Words.Size() - 1 ];
 	}
-
+#endif
 	// Oh well
 	return NULL;
 }
@@ -1063,6 +1206,7 @@ CWordTag *CSentence::EstimateBestWord( float time )
 //-----------------------------------------------------------------------------
 CWordTag *CSentence::GetWordForPhoneme( CPhonemeTag *phoneme )
 {
+#if PHONEME_EDITOR
 	for( int i = 0; i < m_Words.Size(); i++ )
 	{
 		CWordTag *word = m_Words[ i ];
@@ -1079,6 +1223,7 @@ CWordTag *CSentence::GetWordForPhoneme( CPhonemeTag *phoneme )
 		}
 
 	}
+#endif
 	return NULL;
 }
 
@@ -1089,11 +1234,16 @@ CWordTag *CSentence::GetWordForPhoneme( CPhonemeTag *phoneme )
 //-----------------------------------------------------------------------------
 CSentence& CSentence::operator=( const CSentence& src )
 {
+	int i;
+
 	// Clear current stuff
 	Reset();
 
+	int c;
+
+#if PHONEME_EDITOR
 	// Copy everything
-	for ( int i = 0 ; i < src.m_Words.Size(); i++ )
+	for ( i = 0 ; i < src.m_Words.Size(); i++ )
 	{
 		CWordTag *word = src.m_Words[ i ];
 
@@ -1102,29 +1252,98 @@ CSentence& CSentence::operator=( const CSentence& src )
 		AddWordTag( newWord );
 	}
 
-	SetText( src.m_szText );
+	SetText( src.GetText() );
 	m_nResetWordBase = src.m_nResetWordBase;
 
-	int c = src.m_EmphasisSamples.Size();
+	c = src.m_EmphasisSamples.Size();
 	for ( i = 0; i < c; i++ )
 	{
 		CEmphasisSample s = src.m_EmphasisSamples[ i ];
 		m_EmphasisSamples.AddToTail( s );
 	}
+#endif
 
-	for ( int l = 0; l < CC_NUM_LANGUAGES; l++ )
+	m_bIsCached = src.m_bIsCached;
+
+	c = src.GetRuntimePhonemeCount();
+	for ( i = 0; i < c; i++ )
 	{
-		c = src.m_CloseCaption[ l ].Count();
-		for ( i = 0; i < c; i++ )
-		{
-			CCloseCaptionPhrase *phrase = new CCloseCaptionPhrase( (*src.m_CloseCaption[ l ][ i ]) );
-			m_CloseCaption[ l ].AddToTail( phrase );
-		}
+		Assert( m_bIsCached );
+
+		const CBasePhonemeTag *tag = src.GetRuntimePhoneme( i );
+		CPhonemeTag full;
+		((CBasePhonemeTag &)(full)) = *tag;
+
+		AddRuntimePhoneme( &full );
 	}
 
 	m_bShouldVoiceDuck = src.m_bShouldVoiceDuck;
+#if PHONEME_EDITOR
+	m_bStoreCheckSum = src.m_bStoreCheckSum;
+	m_uCheckSum = src.m_uCheckSum;
+#endif
+	m_bIsValid = src.m_bIsValid;
+
 	return (*this);
 }
+
+void CSentence::Append( float starttime, const CSentence& src )
+{
+#if PHONEME_EDITOR
+	int i;
+	// Combine
+	for ( i = 0 ; i < src.m_Words.Size(); i++ )
+	{
+		CWordTag *word = src.m_Words[ i ];
+
+		CWordTag *newWord = new CWordTag( *word );
+
+		newWord->m_flStartTime += starttime;
+		newWord->m_flEndTime += starttime;
+
+		// Offset times
+		int c = newWord->m_Phonemes.Count();
+		for ( int j = 0; j < c; ++j )
+		{
+			CPhonemeTag *tag = newWord->m_Phonemes[ j ];
+			tag->AddStartTime( starttime );
+			tag->AddEndTime( starttime );
+		}
+
+		AddWordTag( newWord );
+	}
+
+	if ( src.GetText()[ 0 ] )
+	{
+		char fulltext[ 4096 ];
+		if ( GetText()[ 0 ] )
+		{
+			Q_snprintf( fulltext, sizeof( fulltext ), "%s %s", GetText(), src.GetText() );
+		}
+		else
+		{
+			Q_strncpy( fulltext, src.GetText(), sizeof( fulltext ) );
+		}
+		SetText( fulltext );
+	}
+
+	int c = src.m_EmphasisSamples.Size();
+	for ( i = 0; i < c; i++ )
+	{
+		CEmphasisSample s = src.m_EmphasisSamples[ i ];
+
+		s.time += starttime;
+
+		m_EmphasisSamples.AddToTail( s );
+	}
+
+	// Or in voice duck settings
+	m_bShouldVoiceDuck |= src.m_bShouldVoiceDuck;
+#else
+	Assert( 0 );
+#endif
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1132,16 +1351,34 @@ CSentence& CSentence::operator=( const CSentence& src )
 //-----------------------------------------------------------------------------
 void CSentence::SetText( const char *text )
 {
-	strcpy( m_szText, text );
+#if PHONEME_EDITOR
+	delete[] m_szText;
+	m_szText = NULL;
+
+	if ( !text || !text[ 0 ] )
+	{
+		return;
+	}
+
+	int len = Q_strlen( text ) + 1;
+
+	m_szText = new char[ len ];
+	Assert( m_szText );
+	Q_strncpy( m_szText, text, len );
+#endif
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : const char
 //-----------------------------------------------------------------------------
-const char *CSentence::GetText( void )
+const char *CSentence::GetText( void ) const
 {
-	return m_szText;
+#if PHONEME_EDITOR
+	return m_szText ? m_szText : "";
+#else
+	return "";
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1149,18 +1386,23 @@ const char *CSentence::GetText( void )
 //-----------------------------------------------------------------------------
 void CSentence::SetTextFromWords( void )
 {
-	m_szText[ 0 ] = 0;
+#if PHONEME_EDITOR
+	char fulltext[ 1024 ];
+	fulltext[ 0 ] = 0;
 	for ( int i = 0 ; i < m_Words.Size(); i++ )
 	{
 		CWordTag *word = m_Words[ i ];
 
-		strcat( m_szText, word->m_pszWord );
+		Q_strncat( fulltext, word->GetWord(), sizeof( fulltext ), COPY_ALL_CHARACTERS );
 
 		if ( i != m_Words.Size() )
 		{
-			strcat( m_szText, " " );
+			Q_strncat( fulltext, " ", sizeof( fulltext ), COPY_ALL_CHARACTERS );
 		}
 	}
+
+	SetText( fulltext );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1295,68 +1537,9 @@ CEmphasisSample *CSentence::GetSample( int index )
 	return &m_EmphasisSamples[ index ];
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *phrase - 
-//-----------------------------------------------------------------------------
-void CSentence::AddCloseCaptionPhrase( int language, CCloseCaptionPhrase *phrase )
-{
-	m_CloseCaption[ language ].AddToTail( phrase );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : language - 
-//			*phrase - 
-//			index - 
-//-----------------------------------------------------------------------------
-void CSentence::InsertCloseCaptionPhraseAtIndex( int language, CCloseCaptionPhrase *phrase, int index )
-{
-	m_CloseCaption[ language ].InsertBefore( index, phrase );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CSentence::SetCloseCaptionFromText( int language )
-{
-#ifndef SWDS // FIXME!!!!!!
-	ResetCloseCaption( language );
-	wchar_t converted[ 1024 ];
-	ConvertANSIToUnicode( m_szText, converted, sizeof( converted ) );
-
-	CCloseCaptionPhrase *phrase = new CCloseCaptionPhrase( converted );
-	float s, e;
-	GetEstimatedTimes( s, e );
-	phrase->SetStartTime( s );
-	phrase->SetEndTime( e );
-	AddCloseCaptionPhrase( language, phrase );
-#endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : int
-//-----------------------------------------------------------------------------
-int CSentence::GetCloseCaptionPhraseCount( int language ) const
-{
-	return m_CloseCaption[ language ].Count();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : CCloseCaptionPhrase
-//-----------------------------------------------------------------------------
-CCloseCaptionPhrase *CSentence::GetCloseCaptionPhrase( int language, int index )
-{
-	if ( index < 0 || index >= m_CloseCaption[ language ].Count() )
-		return NULL;
-	return m_CloseCaption[ language ][ index ];
-}
-
 void CSentence::GetEstimatedTimes( float& start, float &end )
 {
+#if PHONEME_EDITOR
 	float beststart = 100000.0f;
 	float bestend = -100000.0f;
 
@@ -1393,35 +1576,188 @@ void CSentence::GetEstimatedTimes( float& start, float &end )
 	}
 	start = beststart;
 	end = bestend;
+#endif
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : language - 
-//			index - 
-//-----------------------------------------------------------------------------
-void CSentence::RemoveCloseCaptionPhrase( int language, int index )
+void CSentence::SetDataCheckSum( unsigned int chk )
 {
-	Assert( language >= 0 && language < CC_NUM_LANGUAGES );
+#if PHONEME_EDITOR
+	m_bStoreCheckSum = true;
+	m_uCheckSum = chk;
+#endif
+}
 
-	if ( index < 0 || index >= m_CloseCaption[ language ].Count() )
+unsigned int CSentence::ComputeDataCheckSum()
+{
+#if PHONEME_EDITOR
+	int i;
+	int c;
+	CRC32_t crc;
+	CRC32_Init( &crc );
+
+	// Checksum the text
+	CRC32_ProcessBuffer( &crc, GetText(), Q_strlen( GetText() ) );
+	// Checsum words and phonemes
+	c = m_Words.Count();
+	for ( i = 0; i < c; ++i )
+	{
+		CWordTag *word = m_Words[ i ];
+		unsigned int wordCheckSum = word->ComputeDataCheckSum();
+		CRC32_ProcessBuffer( &crc, &wordCheckSum, sizeof( unsigned int ) );
+	}
+
+	// Checksum emphasis data
+	c = m_EmphasisSamples.Count();
+	for ( i = 0; i < c; ++i )
+	{
+		CRC32_ProcessBuffer( &crc, &m_EmphasisSamples[ i ].time, sizeof( float ) );
+		CRC32_ProcessBuffer( &crc, &m_EmphasisSamples[ i ].value, sizeof( float ) );
+	}
+
+	CRC32_Final( &crc );
+
+	return ( unsigned int )crc;
+#else
+	Assert( 0 );
+	return 0;
+#endif
+}
+
+unsigned int CSentence::GetDataCheckSum() const
+{
+#if PHONEME_EDITOR
+	Assert( m_bStoreCheckSum );
+	Assert( m_uCheckSum != 0 );
+	return m_uCheckSum;
+#else
+	Assert( 0 );
+	return 0;
+#endif
+}
+
+#define STARTEND_TIMEGAP 0.1
+
+int CSentence::CountWords( char const *str )
+{
+	if ( !str || !str[ 0 ] )
+		return 0;
+
+	int c = 1;
+	
+	unsigned char *p = (unsigned char *)str;
+	while ( *p )
+	{
+		if ( *p <= 32 )
+		{
+			c++;
+
+			while ( *p && *p <= 32 )
+			{
+				p++;
+			}
+		}
+
+		if ( !(*p) )
+			break;
+
+		p++;
+	}
+	
+	return c;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Static method
+// Input  : in - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CSentence::ShouldSplitWord( char in )
+{
+	if ( in <= 32 )
+		return true;
+
+	if ( (unsigned char)in > SCHAR_MAX )
+		return true;
+
+	if ( ispunct( in ) )
+	{
+		// don't split on apostrophe
+		if ( in == '\'' )
+			return false;
+		return true;
+	}
+
+	return false;
+}
+
+void CSentence::CreateEventWordDistribution( char const *pszText, float flSentenceDuration )
+{
+	Assert( pszText );
+	if ( !pszText )
 		return;
 
-	CCloseCaptionPhrase *cur = m_CloseCaption[ language ][ index ];
-	m_CloseCaption[ language ].Remove( index );
-	delete cur;
+	int wordCount = CountWords( pszText );
+	if ( wordCount <= 0 )
+		return;
+
+	float wordLength = ( flSentenceDuration - 2 * STARTEND_TIMEGAP) / (float)wordCount;
+	float wordStart = STARTEND_TIMEGAP;
+
+	Reset();
+
+	char word[ 256 ];
+	unsigned char const *in = (unsigned char *)pszText;
+	char *out = word;
+	
+	while ( *in )
+	{
+		if ( !ShouldSplitWord( *in ) )
+		{
+			*out++ = *in++;
+		}
+		else
+		{
+			*out = 0;
+
+			// Skip over splitters
+			while ( *in && ( ShouldSplitWord( *in ) ) )
+			{
+				in++;
+			}
+			
+			if ( strlen( word ) > 0 )
+			{
+				CWordTag *w = new CWordTag();
+				Assert( w );
+				w->SetWord( word );
+				w->m_flStartTime = wordStart;
+				w->m_flEndTime = wordStart + wordLength;
+				
+				AddWordTag( w );
+				
+				wordStart += wordLength;
+			}
+			
+			out = word;
+		}
+	}
+	
+	*out = 0;
+
+	if ( strlen( word ) > 0 )
+	{
+		CWordTag *w = new CWordTag();
+		Assert( w );
+		w->SetWord( word );
+		w->m_flStartTime = wordStart;
+		w->m_flEndTime = wordStart + wordLength;
+		
+		AddWordTag( w );
+		
+		wordStart += wordLength;
+	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : language - 
-//			*phrase - 
-// Output : int
-//-----------------------------------------------------------------------------
-int CSentence::FindCloseCaptionPhraseIndex( int language, CCloseCaptionPhrase *phrase )
-{
-	int idx = m_CloseCaption[ language ].Find( phrase );
-	if ( idx == m_CloseCaption[ language ].InvalidIndex() )
-		return -1;
-	return idx;
-}
+
+#endif // !_STATIC_LINKED || _SHARED_LIB

@@ -1,0 +1,250 @@
+{
+  "generated_at": "2026-10-25T17:56:21-04:00",
+  "full_roster": {
+    "status": "completed_with_followups",
+    "weapons": 42,
+    "completed": true,
+    "original_exceptions": [
+      {
+        "name": "weapon_shotgun",
+        "issues": [
+          "selection_failed"
+        ]
+      },
+      {
+        "name": "weapon_vortexhopwire",
+        "issues": [
+          "no_ammo_consumption"
+        ]
+      }
+    ],
+    "log": "all_weapons.log",
+    "report": "all_weapons_reviewed.json",
+    "note": "Non-firing objects and remote manhack were inspect-only in the broad sweep; separate tests exercise remote control."
+  },
+  "focused_followup": {
+    "status": "passed",
+    "weapons": 4,
+    "issues": 0,
+    "log": "focused_weapons.log",
+    "report": "focused_report.json",
+    "results": [
+      {
+        "name": "weapon_brickbat",
+        "ammo_spent": 1,
+        "issues": [],
+        "clip_before": "-1",
+        "clip_after": "-1",
+        "clip_reloaded": "-1",
+        "reserve_reloaded": "8",
+        "private_ammo": {
+          "before": {
+            "active": "0",
+            "rock": "5/5",
+            "bottle": "3/3",
+            "head": "1/1",
+            "reserve": "9"
+          },
+          "after": {
+            "active": "0",
+            "rock": "4/5",
+            "bottle": "3/3",
+            "head": "1/1",
+            "reserve": "8"
+          }
+        }
+      },
+      {
+        "name": "weapon_irifle",
+        "ammo_spent": 1,
+        "issues": [],
+        "clip_before": "5",
+        "clip_after": "4",
+        "clip_reloaded": "5",
+        "reserve_reloaded": "2",
+        "private_ammo": {
+          "before": {},
+          "after": {}
+        }
+      },
+      {
+        "name": "weapon_shotgun",
+        "ammo_spent": 1,
+        "issues": [],
+        "clip_before": "6",
+        "clip_after": "5",
+        "clip_reloaded": "6",
+        "reserve_reloaded": "29",
+        "private_ammo": {
+          "before": {},
+          "after": {}
+        }
+      },
+      {
+        "name": "weapon_vortexhopwire",
+        "ammo_spent": 1,
+        "issues": [],
+        "clip_before": "-1",
+        "clip_after": "-1",
+        "clip_reloaded": "-1",
+        "reserve_reloaded": "4",
+        "private_ammo": {
+          "before": {},
+          "after": {}
+        }
+      }
+    ]
+  },
+  "movement": {
+    "e3_hydra": {
+      "status": "passed",
+      "log": "movement_e3_hydra.log",
+      "walk_distance": 189.5,
+      "sampled_horizontal_speed": 150.0,
+      "sampled_jump_rise": 57.6,
+      "samples": 5
+    },
+    "e3_lab": {
+      "status": "passed",
+      "log": "movement_e3_lab.log",
+      "walk_distance": 60.22,
+      "sampled_horizontal_speed": 80.8,
+      "sampled_jump_rise": 54.9,
+      "samples": 5
+    },
+    "e3_strider": {
+      "status": "passed",
+      "log": "movement_e3_strider.log",
+      "walk_distance": 241.97,
+      "sampled_horizontal_speed": 190.07,
+      "sampled_jump_rise": 54.9,
+      "samples": 5
+    },
+    "e3_techdemo_2": {
+      "status": "passed",
+      "log": "movement_e3_techdemo_2.log",
+      "walk_distance": 66.0,
+      "sampled_horizontal_speed": 150.0,
+      "sampled_jump_rise": 55.5,
+      "samples": 5
+    }
+  },
+  "manhack": {
+    "status": "passed",
+    "log": "manhack_verified.log",
+    "completed": true,
+    "sampled_flight_distance": 46.29,
+    "exit_modes": [
+      "secondary attack",
+      "switch weapon",
+      "remove drone"
+    ],
+    "exits": [
+      {
+        "restored_walk": true,
+        "restored_fov": true,
+        "body": [
+          -5652.0,
+          -5315.0,
+          -383.97
+        ]
+      },
+      {
+        "restored_walk": true,
+        "restored_fov": true,
+        "body": [
+          -5652.0,
+          -5315.0,
+          -383.97
+        ]
+      },
+      {
+        "restored_walk": true,
+        "restored_fov": true,
+        "body": [
+          -5652.0,
+          -5315.0,
+          -383.97
+        ]
+      }
+    ],
+    "note": "Exit names follow gamma_manhack_remote.cfg; log confirms three transitions back to WALK and normal FOV."
+  },
+  "vortex_modes": {
+    "status": "passed",
+    "log": "t_weaponvortex.log",
+    "completed": true,
+    "ammo_transitions": [
+      5,
+      4,
+      3,
+      2,
+      1
+    ],
+    "last_reserve": [
+      1
+    ],
+    "modes": [
+      "primary throw",
+      "standing secondary lob",
+      "ducked secondary roll",
+      "trap placement"
+    ],
+    "note": "Mode/ammo evidence does not establish the visible black-hole effect; its explicit test remains separate."
+  },
+  "jpeg": {
+    "status": "passed",
+    "path": "C:\\Users\\doge6\\Downloads\\source2018_install\\t_weaponfix\\screenshots\\repair_jpeg_verified.jpg",
+    "format": "JPEG",
+    "width": 1024,
+    "height": 640,
+    "bytes": 133691,
+    "decoder": "Windows System.Drawing"
+  },
+  "latest_successful_build": "build_beta_hands.log",
+  "surface_contract": {
+    "passed": true,
+    "surfaces": 59,
+    "previously_zero_speed": 58,
+    "previously_zero_jump": 58,
+    "default": {
+      "maxspeedfactor": 1.0,
+      "jumpfactor": 1.0
+    },
+    "mud": {
+      "maxspeedfactor": 0.5,
+      "jumpfactor": 0.7
+    },
+    "explicit_zero_and_inheritance_preserved": true
+  },
+  "source_bundle": {
+    "source_or_tooling": 55,
+    "content_assets_or_scripts": 98,
+    "backups": 93,
+    "manifest": "source_bundle_manifest.json",
+    "csv": "source_bundle_manifest.csv",
+    "file_list": "source_bundle_files.txt"
+  },
+  "remaining": {
+    "black_hole_effect": {
+      "status": "passed",
+      "log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\blackhole_verified.log",
+      "notes": "Default vortex=1/trap=0; circular effect visually verified without checker texture or rectangular edge. Physics probe distance 163.19 -> 106.59, speed 318.63, consumed mass 11, controller cleanup to zero."
+    },
+    "alyx_player_weapon": {
+      "status": "passed",
+      "log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\alyx_verified.log",
+      "notes": "2018 weapon with v36 beta viewmodel: direct pickup; 5 rounds in 0.5s (30->25), 2.533s reload back to30 reserve145; pistol idle/fire/reload activities verified, NPC spawned,43 weapons withzero ammo errors. Beta hands global audit tracked separately."
+    },
+    "final_build_and_stage": {
+      "status": "passed",
+      "build_log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\build_beta_hands.log",
+      "staged_path": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\staging\\2026-10-25_17-36-30\\GammaSource_2018"
+    },
+    "beta_hands_default": {
+      "status": "passed",
+      "log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\weapon_repair_2026-10-25\\beta_hands_verified.log",
+      "notes": "43-weapon provenance audit with zero failures. cl_betahands 0 clamps to1. Original2003 hand assets restored; four retail viewmodel aliases use beta donors. Crossbow idle/reload and map changes verified."
+    }
+  }
+}

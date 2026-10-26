@@ -14,9 +14,8 @@ tex t0
 tex t1
 
 ; Blend between white and lightmap color based on total alpha
-
 mul_x2 r1.rgb, c0, t1		; Apply overbright to lightmap
-+ mov_sat r1.a, v0				; opacity == vertex opacity (no alpha in texture)
++ mov_sat r1.a, v0		; opacity == vertex opacity (no alpha in texture)
 
 lrp r0.rgb, t0.a, c1, r1	; Blend between self-illum + lightmap
 + mov r0.a, c2.a

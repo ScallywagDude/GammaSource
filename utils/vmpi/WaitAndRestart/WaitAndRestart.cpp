@@ -1,43 +1,136 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // WaitAndRestart.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
+#include "vmpi_defs.h"
+
+
+void PrintLog( const char *pMsg, ... )
+{
+#ifdef VMPI_SERVICE_LOGS
+	char str[4096];
+	va_list marker;
+	
+	va_start( marker, pMsg );
+	_vsnprintf( str, sizeof( str ), pMsg, marker );
+	va_end( marker );
+	
+	printf( "%s", str );
+	
+	static FILE *fp = fopen( "c:\\vmpi_WaitAndRestart.log", "wt" );
+	if ( fp )
+	{
+		fprintf( fp, "%s", str );
+		fflush( fp );
+	}
+#endif
+}
+
+
+char* GetLastErrorString()
+{
+	static char err[2048];
+	
+	LPVOID lpMsgBuf;
+	FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
+	strncpy( err, (char*)lpMsgBuf, sizeof( err ) );
+	LocalFree( lpMsgBuf );
+
+	err[ sizeof( err ) - 1 ] = 0;
+	return err;
+}
 
 
 int main( int argc, char* argv[] )
 {
-	if ( argc < 3 )
+Sleep(5000);
+	if ( argc < 4 )
 	{
-		printf( "WaitAndRestart <seconds to wait> command line...\n" );
+		PrintLog( "WaitAndRestart <seconds to wait> <working directory> command line...\n" );
 		return 1;
 	}
 
-	DWORD timeToWait = (DWORD)atoi( argv[1] );
-	printf( "\n\nWaiting for %d seconds to launch ' ", timeToWait );
-	for ( int i=2; i < argc; i++ )
-	{
-		printf( "%s ", argv[i] );
-	}
-	printf( "'\n\nPress a key to cancel... " );
+	PrintLog( "WaitAndRestart <seconds to wait> <working directory> command line...\n" );
 
+
+	const char *pTimeToWait = argv[1];
+	const char *pWorkingDir = argv[2];
 	
-	DWORD startTime = GetTickCount();
-	while ( GetTickCount() - startTime < (timeToWait*1000) )
+	// If a * precedes the time-to-wait arg, then it's a process ID and we wait for that process to exit.
+	if ( pTimeToWait[0] == '*' )
 	{
-		if ( kbhit() )
-			return 2;
+		++pTimeToWait;
+		DWORD dwProcessId;
+		sscanf( pTimeToWait, "%lu", &dwProcessId );
 		
-		Sleep( 100 );
+		PrintLog( "Waiting for process %lu to exit. Press a key to cancel...\n", dwProcessId );
+		
+		HANDLE hProcess = OpenProcess( PROCESS_QUERY_INFORMATION | SYNCHRONIZE, false, dwProcessId );
+		if ( hProcess )
+		{
+			while ( 1 )
+			{
+				DWORD val = WaitForSingleObject( hProcess, 100 );
+				if ( val == WAIT_OBJECT_0 )
+				{
+					break;
+				}
+				else if ( val == WAIT_ABANDONED )
+				{
+					PrintLog( "Got WAIT_ABANDONED (error). Waiting 5 seconds, then continuing.\n" );
+					Sleep( 5000 );
+					break;
+				}
+
+				if ( kbhit() )
+					return 2;
+			}
+			PrintLog( "Process %lu terminated. Continuing.\n", dwProcessId );
+		}
+		else
+		{
+			PrintLog( "Process %lu not running. Continuing.\n", dwProcessId );
+		}
+		
+		CloseHandle( hProcess );
+	}
+	else
+	{
+		DWORD timeToWait = (DWORD)atoi( argv[1] );
+		
+		PrintLog( "\n\nWaiting for %d seconds to launch ' ", timeToWait );
+		PrintLog( "%s> ", pWorkingDir );
+		for ( int i=3; i < argc; i++ )
+		{
+			PrintLog( "%s ", argv[i] );
+		}
+		PrintLog( "'\n\nPress a key to cancel... " );
+
+		DWORD startTime = GetTickCount();
+		while ( GetTickCount() - startTime < (timeToWait*1000) )
+		{
+			if ( kbhit() )
+				return 2;
+			
+			Sleep( 100 );
+		}
 	}
 
 	// Ok, launch it!
 	char commandLine[1024] = {0};
-	for ( i=2; i < argc; i++ )
+	for ( int i=3; i < argc; i++ )
 	{
-		Q_strncat( commandLine, "\"", sizeof( commandLine ) );
-		Q_strncat( commandLine, argv[i], sizeof( commandLine ) );
-		Q_strncat( commandLine, "\" ", sizeof( commandLine ) );
+		Q_strncat( commandLine, "\"", sizeof( commandLine ), COPY_ALL_CHARACTERS );
+		Q_strncat( commandLine, argv[i], sizeof( commandLine ), COPY_ALL_CHARACTERS );
+		Q_strncat( commandLine, "\" ", sizeof( commandLine ), COPY_ALL_CHARACTERS );
 	}
 	
 	STARTUPINFO si;
@@ -53,19 +146,19 @@ int main( int argc, char* argv[] )
 		NULL,						// security
 		NULL,
 		FALSE,
-		CREATE_NEW_CONSOLE,			// flags
+		0,							// flags
 		NULL,						// environment
-		NULL,						// current directory
+		pWorkingDir,						// current directory
 		&si,
 		&pi ) )
 	{
-		printf( "Process started.\n" );
+		PrintLog( "Process started.\n" );
 		CloseHandle( pi.hThread );	// We don't care what the process does.
 		CloseHandle( pi.hProcess );
 	}
 	else
 	{
-		printf( "CreateProcess error!\n" );
+		PrintLog( "CreateProcess error!\n%s", GetLastErrorString() );
 	}
 
 	return 0;

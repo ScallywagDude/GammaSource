@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef EXPRESSION_H
 #define EXPRESSION_H
@@ -35,15 +35,7 @@ public:
 class CExpression;
 class CExpClass;
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-class CMarkovGroup
-{
-public:
-	int					expression;
-	int					weight;
-};
+typedef unsigned int CRC32_t;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -51,12 +43,6 @@ public:
 class CExpression
 {
 public:
-	typedef enum
-	{
-		TYPE_NORMAL = 0,
-		TYPE_MARKOV
-	} EXPRESSIONTYPE;
-
 						CExpression	( void );
 						~CExpression ( void );
 
@@ -74,7 +60,8 @@ public:
 	int					UndoCurrent( void );
 
 	const char 			*GetBitmapFilename( int modelindex );
-	const char			*GetBitmapCheckSum( void );
+	const char			*GetBitmapCheckSum();
+	CRC32_t				GetBitmapCRC();
 	void				CreateNewBitmap( int modelindex );
 
 	void				PushUndoInformation( void );
@@ -86,46 +73,16 @@ public:
 	void				SetSelected( bool selected );
 	bool				GetSelected( void );
 
-	void				SetType( EXPRESSIONTYPE etype );
-	EXPRESSIONTYPE		GetType( void );
-
-	void				AddToGroup( CExpression *expression, int weight );
-	void				RemoveFromGroup( CExpression *expression );
-	void				SetWeight( CExpression *expression, int weight );
-	void				ClearGroup( void );
-	CMarkovGroup		*FindExpressionInGroup( CExpression *expression );
-
-	CMarkovGroup		*GetCurrentGroup( void );
-	void				NextGroup( void );
-	void				PrevGroup( void );
-
-	CMarkovGroup		*GetGroup( int num );
-	int					GetNumGroups( void );
-	int					GetCurrentGroupIndex( void );
-
-	int					GetCurrentMarkovGroupIndex( void );
-	void				NewMarkovIndex( void );
-
 	float				*GetSettings( void );
 	float				*GetWeights( void );
 
-	// Walk markov group to get to underlying CExpression * 
-	//  (if not markov, returns this pointer)
-	CExpression			*GetExpression( void );
-
 	bool				GetDirty( void );
 	void				SetDirty( bool dirty );
-
-	bool				HasOverride( void ) const;
-	CExpression			*GetOverride( void );
-	void				SetOverride( CExpClass *overrideClass );
 
 	void				Revert( void );
 
 	CExpClass			*GetExpressionClass( void );
 	void				SetExpressionClass( char const *classname );
-
-	EXPRESSIONTYPE		type;
 
 	// name of expression
 	char				name[32];			
@@ -142,11 +99,6 @@ public:
 
 	bool				m_bSelected;
 
-	CUtlVector< CMarkovGroup >	m_Group;
-	int					m_nCurrentGroup;
-
-	int					m_nMarkovIndex;
-
 	bool				m_bDirty;
 
 private:
@@ -157,9 +109,6 @@ private:
 	char				expressionclass[ 128 ];
 
 	void WipeRedoInformation(  void );
-
-	CExpClass			*m_pOverrideClass;
-
 };
 
 #endif // EXPRESSION_H

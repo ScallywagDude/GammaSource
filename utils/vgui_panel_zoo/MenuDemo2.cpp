@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "MenuDemo.h"
 
@@ -30,7 +30,7 @@ MenuDemo2::MenuDemo2(Panel *parent, const char *name) : MenuDemo(parent, name)
 
 	// Lets also make it so this menu opens up above the button
 	// instead of below it
-	m_pMenuButton->SetOpenDirection(MenuButton::UP);
+	m_pMenuButton->SetOpenDirection(Menu::UP);
 }
 
 

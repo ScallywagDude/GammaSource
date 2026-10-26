@@ -1,18 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "PlayerContextMenu.h"
 
-#include <VGUI_Controls.h>
-#include <VGUI_IInput.h>
-#include <VGUI_IPanel.h>
-#include <VGUI_ISurface.h>
-#include <VGUI_KeyValues.h>
+#include <vgui/IInput.h>
+#include <vgui/IPanel.h>
+#include <vgui/ISurface.h>
+#include <KeyValues.h>
 
 using namespace vgui;
 
@@ -38,8 +36,8 @@ void CPlayerContextMenu::ShowMenu(Panel *target, unsigned int playerID)
 {
 	DeleteAllItems();
 		
-	AddMenuItem("Kick", "&Kick Player", new KeyValues("Kick", "playerID", playerID), CPlayerContextMenu::parent);
-	AddMenuItem("Ban", "&Ban Player", new KeyValues("Ban", "playerID", playerID), CPlayerContextMenu::parent);
+	AddMenuItem("Kick", "#Player_Menu_Kick", new KeyValues("Kick", "playerID", playerID), CPlayerContextMenu::parent);
+	AddMenuItem("Ban", "#Player_Menu_Ban", new KeyValues("Ban", "playerID", playerID), CPlayerContextMenu::parent);
 	//addMenuItem("Status", "&Player Status", new KeyValues("Status", "playerID", playerID), CPlayerContextMenu::parent);
 
 	MakePopup();

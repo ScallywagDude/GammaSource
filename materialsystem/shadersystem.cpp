@@ -1,36 +1,45 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $Header: $
-// $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #include "shadersystem.h"
 #include <stdlib.h>
 #include "materialsystem_global.h"
 #include "filesystem.h"
-#include "utldict.h"
+#include "tier1/utldict.h"
 #include "shaderlib/ShaderDLL.h"
 #include "texturemanager.h"
 #include "itextureinternal.h"
 #include "IHardwareConfigInternal.h"
-#include "utlstack.h"
-#include "utlbuffer.h"
-#include "vmatrix.h"
+#include "tier1/utlstack.h"
+#include "tier1/utlbuffer.h"
+#include "mathlib/vmatrix.h"
 #include "imaterialinternal.h"
-#include "vstdlib/strtools.h"
-#include "vstdlib/ICommandLine.h"
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
+#include "shaderlib/cshader.h"
+#include "tier1/convar.h"
+#include "tier1/KeyValues.h"
+#include "shader_dll_verify.h"
+#include "tier0/vprof.h"
 
 // NOTE: This must be the last file included!
 #include "tier0/memdbgon.h"
+#include "mat_stub.h"
 
 
+//#define DEBUG_DEPTH 1
+
+CDummyTextureInternal g_BitchCubemapTexture("bitch_cubemap");
+
+//-----------------------------------------------------------------------------
+// Lovely convars
+//-----------------------------------------------------------------------------
+static ConVar mat_showenvmapmask( "mat_showenvmapmask", "0" );
+static ConVar mat_debugdepth( "mat_debugdepth", "0" );
+extern ConVar mat_supportflashlight;
 
 //-----------------------------------------------------------------------------
 // Implementation of the shader system
@@ -41,34 +50,49 @@ public:
 	CShaderSystem();
 
 	// Methods of IShaderSystem
-	virtual void		BindTexture( TextureStage_t stage, ITexture *pTexture, int nFrame );
+	virtual ShaderAPITextureHandle_t GetShaderAPITextureBindHandle( ITexture *pTexture, int nFrameVar, int nTextureChannel = 0 );
+
+	virtual void		BindTexture( Sampler_t sampler1, ITexture *pTexture, int nFrame = 0 );
+	virtual void		BindTexture( Sampler_t sampler1, Sampler_t sampler2, ITexture *pTexture, int nFrame = 0 );
+
 	virtual void		TakeSnapshot( );
-	virtual void		DrawSnapshot( );
+	virtual void		DrawSnapshot( bool bMakeActualDrawCall = true );
 	virtual bool		IsUsingGraphics() const;
+	virtual bool		CanUseEditorMaterials() const;
 
 	// Methods of IShaderSystemInternal
 	virtual void		Init();
 	virtual void		Shutdown();
+	virtual void		ModInit();
+	virtual void		ModShutdown();
+
 	virtual bool		LoadShaderDLL( const char *pFullPath );
+	virtual bool		LoadShaderDLL( const char *pFullPath, const char *pPathID, bool bModShaderDLL );
 	virtual void		UnloadShaderDLL( const char *pFullPath );
+
 	virtual IShader*	FindShader( char const* pShaderName );
 	virtual void		CreateDebugMaterials();
 	virtual void		CleanUpDebugMaterials();
-	virtual char const* ShaderStateString( int i );
+	virtual char const* ShaderStateString( int i ) const;
+	virtual int			ShaderStateCount( ) const;
 
 	virtual void		InitShaderParameters( IShader *pShader, IMaterialVar **params, const char *pMaterialName );
-	virtual void		InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName );
+	virtual void		InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName, const char *pTextureGroupName );
 	virtual bool		InitRenderState( IShader *pShader, int numParams, IMaterialVar **params, ShaderRenderState_t* pRenderState, char const* pMaterialName );
 	virtual void		CleanupRenderState( ShaderRenderState_t* pRenderState );
-	virtual void		DrawElements( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pShaderState );
+	virtual void		DrawElements( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pShaderState, VertexCompressionType_t vertexCompression, uint32 nVarChangeID );
+
+	// Used to iterate over all shaders for editing purposes
+	virtual int			ShaderCount() const;
+	virtual int			GetShaders( int nFirstShader, int nMaxCount, IShader **ppShaderList ) const;
 
 	// Methods of IShaderInit
-	virtual void		LoadTexture( IMaterialVar *pTextureVar ); 
-	virtual void		LoadBumpMap( IMaterialVar *pTextureVar );
-	virtual void		LoadCubeMap( IMaterialVar **ppParams, IMaterialVar *pTextureVar );
+	virtual void		LoadTexture( IMaterialVar *pTextureVar, const char *pTextureGroupName, int nAdditionalCreationFlags = 0 );
+	virtual void		LoadBumpMap( IMaterialVar *pTextureVar, const char *pTextureGroupName );
+	virtual void		LoadCubeMap( IMaterialVar **ppParams, IMaterialVar *pTextureVar, int nAdditionalCreationFlags = 0 );
 
 	// Used to prevent re-entrant rendering from warning messages
-	void BufferSpew( const char *pMsg );
+	void				BufferSpew( SpewType_t spewType, const Color &c, const char *pMsg );
 
 private:
 	struct ShaderDLLInfo_t
@@ -77,12 +101,22 @@ private:
 		CSysModule *m_hInstance;
 		IShaderDLLInternal *m_pShaderDLL;
 		ShaderDLL_t m_hShaderDLL;
+		
+		// True if this is a mod's shader DLL, in which case it's not allowed to 
+		// override any existing shader names.
+		bool m_bModShaderDLL;
 		CUtlDict< IShader *, unsigned short >	m_ShaderDict; 
 	};
 
 private:
+	// hackhack: remove this when VAC2 is online.
+	void VerifyBaseShaderDLL( CSysModule *pModule );
+
 	// Load up the shader DLLs...
 	void LoadAllShaderDLLs();
+
+	// Load the "mshader_" DLLs.
+	void LoadModShaderDLLs( int dxSupportLevel );
 
 	// Unload all the shader DLLs...
 	void UnloadAllShaderDLLs();
@@ -119,27 +153,21 @@ private:
 	// Used to prevent re-entrant rendering from warning messages
 	void PrintBufferedSpew( void );
 
-	// returns various vertex formats
-	VertexFormat_t GetVertexFormat( MaterialVertexFormat_t vfmt );
-
 	// Gets at the current snapshot
 	StateSnapshot_t CurrentStateSnapshot();
 
 	// Draws using a particular material..
-	void DrawUsingMaterial( IMaterialInternal *pMaterial );
+	void DrawUsingMaterial( IMaterialInternal *pMaterial, VertexCompressionType_t vertexCompression );
 
 	// Copies material vars
-	void CopyMaterialVarToDebugShader( IMaterialInternal *pDebugMaterial, IShader *pShader, IMaterialVar **ppParams, const char *pVarName );
+	void CopyMaterialVarToDebugShader( IMaterialInternal *pDebugMaterial, IShader *pShader, IMaterialVar **ppParams, const char *pSrcVarName, const char *pDstVarName = NULL );
 
 	// Debugging draw methods...
-	void DrawMeasureFillRate( ShaderRenderState_t* pRenderState, int mod );
-	void DrawNormalMap( IShader *pShader, IMaterialVar **ppParams );
-	void DrawUnlitOnly( IMaterialVar **params, bool usesVertexShader );
-	void DrawVertexLitOnly( bool usesVertexShader );
-	void DrawLightmappedOnly( bool usesVertexShader );
-	void DrawBumpedLightmapOnly( IShader *pShader, IMaterialVar **ppParams );
-	void DrawBumpedModelLightingOnly( IShader *pShader, IMaterialVar **ppParams );
-	void DrawElementsLightingOnly( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pRenderState );
+	void DrawMeasureFillRate( ShaderRenderState_t* pRenderState, int mod, VertexCompressionType_t vertexCompression );
+	void DrawNormalMap( IShader *pShader, IMaterialVar **ppParams, VertexCompressionType_t vertexCompression );
+	bool DrawEnvmapMask( IShader *pShader, IMaterialVar **ppParams, ShaderRenderState_t* pRenderState, VertexCompressionType_t vertexCompression );
+
+	int GetModulationSnapshotCount( IMaterialVar **params );
 
 private:
 	// List of all DLLs containing shaders
@@ -147,6 +175,7 @@ private:
 
 	// Used to prevent re-entrant rendering from warning messages
 	SpewOutputFunc_t m_SaveSpewOutput;
+
 	CUtlBuffer m_StoredSpew;
 
 	// Render state we're drawing with
@@ -160,26 +189,19 @@ private:
 	enum
 	{
 		MATERIAL_FILL_RATE = 0,
-		MATERIAL_FILL_RATE_DX6,
 		MATERIAL_DEBUG_NORMALMAP,
-		MATERIAL_DEBUG_NORMALMAP_MODEL,
-		MATERIAL_DEBUG_LIGHTMAP_VS,
-		MATERIAL_DEBUG_LIGHTMAP_FF,
-		MATERIAL_DEBUG_BUMPED_LIGHTMAP,
-		MATERIAL_DEBUG_UNLIT_FF,
-		MATERIAL_DEBUG_UNLIT_FF_MODEL,
-		MATERIAL_DEBUG_UNLIT_VS,
-		MATERIAL_DEBUG_UNLIT_VS_MODEL,
-		MATERIAL_DEBUG_VERTEXLIT_FF,
-		MATERIAL_DEBUG_VERTEXLIT_VS,
-		MATERIAL_DEBUG_BUMPED_VERTEXLIT,
-		MATERIAL_DEBUG_BUMPED_VERTEXLIT_SELF_ILLUM,
+		MATERIAL_DEBUG_ENVMAPMASK,
+		MATERIAL_DEBUG_DEPTH,
+		MATERIAL_DEBUG_DEPTH_DECAL,
+		MATERIAL_DEBUG_WIREFRAME,
 
 		MATERIAL_DEBUG_COUNT,
 	};
 
 	IMaterialInternal* m_pDebugMaterials[MATERIAL_DEBUG_COUNT];
 	static const char *s_pDebugShaderName[MATERIAL_DEBUG_COUNT];
+
+	bool			m_bForceUsingGraphicsReturnTrue;
 };
 
 
@@ -198,27 +220,17 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CShaderSystem, IShaderSystem,
 const char *CShaderSystem::s_pDebugShaderName[MATERIAL_DEBUG_COUNT]	=
 {
 	"FillRate",
-	"FillRate_Dx6",
 	"DebugNormalMap",
-	"DebugNormalMap",
-	"DebugLightmap",
-	"DebugLightmap",
-	"DebugBumpedLightmap",
-	"DebugUnlit",
-	"DebugUnlit",
-	"DebugUnlit",
-	"DebugUnlit",
-	"DebugVertexLit",
-	"DebugVertexLit",
-	"DebugBumpedVertexLit",
-	"DebugBumpedVertexLit",
+	"DebugDrawEnvmapMask",
+	"DebugDepth",
+	"DebugDepth",
+	"Wireframe_DX9"
 };
-
 
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CShaderSystem::CShaderSystem() : m_StoredSpew( 0, 512, true )
+CShaderSystem::CShaderSystem() : m_StoredSpew( 0, 512, 0 ), m_bForceUsingGraphicsReturnTrue( false )
 {
 }
 
@@ -230,8 +242,14 @@ void CShaderSystem::Init()
 {
 	m_SaveSpewOutput = NULL;
 	
-	int i;
-	for ( i = 0; i < MATERIAL_DEBUG_COUNT; ++i )
+	m_bForceUsingGraphicsReturnTrue = false;
+	if ( CommandLine()->FindParm( "-noshaderapi" ) ||
+		 CommandLine()->FindParm( "-makereslists" ) )
+	{
+		m_bForceUsingGraphicsReturnTrue = true;
+	}
+
+	for ( int i = 0; i < MATERIAL_DEBUG_COUNT; ++i )
 	{
 		m_pDebugMaterials[i] = NULL;
 	}
@@ -246,42 +264,81 @@ void CShaderSystem::Shutdown()
 
 
 //-----------------------------------------------------------------------------
+// Load/unload mod-specific shader DLLs
+//-----------------------------------------------------------------------------
+void CShaderSystem::ModInit()
+{
+	// Load up standard shader DLLs...
+	int dxSupportLevel = HardwareConfig()->GetMaxDXSupportLevel();
+	Assert( dxSupportLevel >= 60 );
+	dxSupportLevel /= 10;
+
+	LoadModShaderDLLs( dxSupportLevel );
+}
+
+
+void CShaderSystem::ModShutdown()
+{
+	// Unload only MOD dlls
+	for ( int i = m_ShaderDLLs.Count(); --i >= 0; )
+	{
+		if ( m_ShaderDLLs[i].m_bModShaderDLL )
+		{
+			UnloadShaderDLL(i);
+			delete[] m_ShaderDLLs[i].m_pFileName;
+			m_ShaderDLLs.Remove( i );
+		}
+	}
+}
+
+
+//-----------------------------------------------------------------------------
 // Load up the shader DLLs...
 //-----------------------------------------------------------------------------
 void CShaderSystem::LoadAllShaderDLLs( )
 {
 	UnloadAllShaderDLLs();
 
-	GetShaderDLLInternal()->Connect( Sys_GetFactoryThis() );
+	GetShaderDLLInternal()->Connect( Sys_GetFactoryThis(), true );
 
-	// Loads local shaders
+	// Loads local defined or statically linked shaders
 	int i = m_ShaderDLLs.AddToHead();
-	m_ShaderDLLs[i].m_pFileName = new char[ 1 ];
-	m_ShaderDLLs[i].m_pFileName[0] = 0;
-	m_ShaderDLLs[i].m_hInstance = NULL;
-	m_ShaderDLLs[i].m_pShaderDLL = GetShaderDLLInternal();
+
+	m_ShaderDLLs[i].m_pFileName     = new char[1];
+	m_ShaderDLLs[i].m_pFileName[0]  = 0;
+	m_ShaderDLLs[i].m_hInstance     = NULL;
+	m_ShaderDLLs[i].m_pShaderDLL    = GetShaderDLLInternal();
+	m_ShaderDLLs[i].m_bModShaderDLL = false;
 
 	// Add the shaders to the dictionary of shaders...
 	SetupShaderDictionary( i );
 
-	// Always load the debug shader DLL
-	LoadShaderDLL( "stdshader_dbg.dll" );
+	// 360 has the the debug shaders in its dx9 dll
+	if ( IsPC() || !IsX360() )
+	{
+		// Always need the debug shaders
+		LoadShaderDLL( "stdshader_dbg" DLL_EXT_STRING );
+	}
 
 	// Load up standard shader DLLs...
-	int dxSupportLevel = HardwareConfig()->GetDXSupportLevel();
+	int dxSupportLevel = HardwareConfig()->GetMaxDXSupportLevel();
 	Assert( dxSupportLevel >= 60 );
 	dxSupportLevel /= 10;
 
+	// 360 only supports its dx9 dll
+	int dxStart = IsX360() ? 9 : 6;
 	char buf[32];
-	for ( i = 6; i <= dxSupportLevel; ++i )
+	for ( i = dxStart; i <= dxSupportLevel; ++i )
 	{
-		Q_snprintf( buf, 32, "stdshader_dx%d.dll", i );
+		Q_snprintf( buf, sizeof( buf ), "stdshader_dx%d%s", i, DLL_EXT_STRING );
 		LoadShaderDLL( buf );
 	}
 
 	const char *pShaderName = NULL;
+#ifdef _DEBUG
 	pShaderName = CommandLine()->ParmValue( "-shader" );
-	if( !pShaderName )
+#endif
+	if ( !pShaderName )
 	{
 		pShaderName = HardwareConfig()->GetHWSpecificShaderDLLName();
 	}
@@ -294,9 +351,66 @@ void CShaderSystem::LoadAllShaderDLLs( )
 	// For fast-iteration debugging
 	if ( CommandLine()->FindParm( "-testshaders" ) )
 	{
-		LoadShaderDLL( "shader_test.dll" );
+		LoadShaderDLL( "shader_test" DLL_EXT_STRING );
 	}
 #endif
+}
+
+const char *COM_GetModDirectory()
+{
+	static char modDir[MAX_PATH];
+	if ( Q_strlen( modDir ) == 0 )
+	{
+		const char *gamedir = CommandLine()->ParmValue("-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
+		Q_strncpy( modDir, gamedir, sizeof(modDir) );
+		if ( strchr( modDir, '/' ) || strchr( modDir, '\\' ) )
+		{
+			Q_StripLastDir( modDir, sizeof(modDir) );
+			int dirlen = Q_strlen( modDir );
+			Q_strncpy( modDir, gamedir + dirlen, sizeof(modDir) - dirlen );
+		}
+	}
+
+	return modDir;
+}
+
+void CShaderSystem::LoadModShaderDLLs( int dxSupportLevel )
+{
+	if ( IsX360() )
+		return;
+
+	// Don't do this for Valve mods. They don't need them, and attempting to load them is an opportunity for cheaters to get their code into the process
+	const char *pGameDir = COM_GetModDirectory();
+	if ( !Q_stricmp( pGameDir, "hl2" ) || !Q_stricmp( pGameDir, "cstrike" ) || !Q_stricmp( pGameDir, "cstrike_beta" ) ||
+		!Q_stricmp( pGameDir, "hl2mp" ) || !Q_stricmp( pGameDir, "lostcoast" ) || !Q_stricmp( pGameDir, "episodic" ) ||
+		!Q_stricmp( pGameDir, "portal" ) || !Q_stricmp( pGameDir, "ep2" ) || !Q_stricmp( pGameDir, "dod" ) ||
+		!Q_stricmp( pGameDir, "tf" ) || !Q_stricmp( pGameDir, "tf_beta" ) || !Q_stricmp( pGameDir, "hl1" ) )
+	{
+		return;
+	}
+
+	const char *pModShaderPathID = "GAMEBIN";
+
+	// First load the ones with dx_ prefix.
+	char buf[256];
+
+	int dxStart = 6;
+	for ( int i = dxStart; i <= dxSupportLevel; ++i )
+	{
+		Q_snprintf( buf, sizeof( buf ), "game_shader_dx%d%s", i, DLL_EXT_STRING );
+		LoadShaderDLL( buf, pModShaderPathID, true );
+	}
+
+	// Now load the ones with any dx_ prefix.
+	FileFindHandle_t findHandle;
+	const char *pFilename = g_pFullFileSystem->FindFirstEx( "game_shader_generic*", pModShaderPathID, &findHandle );
+	while ( pFilename )
+	{
+		Q_snprintf( buf, sizeof( buf ), "%s%s", pFilename, DLL_EXT_STRING );
+		LoadShaderDLL( buf, pModShaderPathID, true );
+
+		pFilename = g_pFullFileSystem->FindNext( findHandle );
+	}
 }
 
 
@@ -315,21 +429,79 @@ void CShaderSystem::UnloadAllShaderDLLs()
 	}
 
 	m_ShaderDLLs.RemoveAll();
-
-	GetShaderDLLInternal()->Disconnect( );
 }
 
+bool CShaderSystem::LoadShaderDLL( const char *pFullPath )
+{
+	return LoadShaderDLL( pFullPath, NULL, false );
+}
+
+// HACKHACK: remove me when VAC2 is online.
+#if defined( _WIN32 ) && !defined( _X360 )
+// Instead of including windows.h
+extern "C"
+{
+	extern void * __stdcall GetProcAddress( void *hModule, const char *pszProcName );
+};
+#endif
+
+void CShaderSystem::VerifyBaseShaderDLL( CSysModule *pModule )
+{
+//#if defined( _WIN32 ) && !defined( _X360 )
+#if 0
+	const char *pErrorStr = "Corrupt save data settings.";
+
+	unsigned char *testData1 = new unsigned char[SHADER_DLL_VERIFY_DATA_LEN1];
+
+	ShaderDLLVerifyFn fn = (ShaderDLLVerifyFn)GetProcAddress( (void *)pModule, SHADER_DLL_FNNAME_1 );
+	if ( !fn )
+		Error( pErrorStr );
+
+	IShaderDLLVerification *pVerify;
+	char *pPtr = (char*)(void*)&pVerify;
+	pPtr -= SHADER_DLL_VERIFY_DATA_PTR_OFFSET;
+	fn( pPtr );
+
+	// Test the first CRC.
+	CRC32_t testCRC;
+	CRC32_Init( &testCRC );
+	CRC32_ProcessBuffer( &testCRC, testData1, SHADER_DLL_VERIFY_DATA_LEN1 );
+	CRC32_ProcessBuffer( &testCRC, &pModule, 4 );
+	CRC32_ProcessBuffer( &testCRC, &pVerify, 4 );
+	CRC32_Final( &testCRC );
+	if ( testCRC != pVerify->Function1( testData1 - SHADER_DLL_VERIFY_DATA_PTR_OFFSET ) )
+		Error( pErrorStr );
+
+	// Test the next one.
+	unsigned char digest[MD5_DIGEST_LENGTH];
+	MD5Context_t md5Context;
+	MD5Init( &md5Context );
+	MD5Update( &md5Context, testData1 + SHADER_DLL_VERIFY_DATA_PTR_OFFSET, SHADER_DLL_VERIFY_DATA_LEN1 - SHADER_DLL_VERIFY_DATA_PTR_OFFSET );
+	MD5Final( digest, &md5Context );
+	pVerify->Function2( 2, 3, 3 ); // fn2 is supposed to place the result in testData1.
+	if ( memcmp( digest, testData1, MD5_DIGEST_LENGTH ) != 0 )
+		Error( pErrorStr );
+
+	pVerify->Function5();
+
+	delete [] testData1;
+#endif
+}
 
 //-----------------------------------------------------------------------------
 // Methods related to reading in shader DLLs
 //-----------------------------------------------------------------------------
-bool CShaderSystem::LoadShaderDLL( const char *pFullPath )
+bool CShaderSystem::LoadShaderDLL( const char *pFullPath, const char *pPathID, bool bModShaderDLL )
 {
 	if ( !pFullPath && !pFullPath[0] )
 		return true;
 
 	// Load the new shader
-	CSysModule *hInstance = g_pFileSystem->LoadModule(pFullPath);
+	bool bValidatedDllOnly = true;
+	if ( bModShaderDLL )
+		bValidatedDllOnly = false;
+
+	CSysModule *hInstance = g_pFullFileSystem->LoadModule( pFullPath, pPathID, bValidatedDllOnly );
 	if ( !hInstance )
 		return false;
 
@@ -337,21 +509,28 @@ bool CShaderSystem::LoadShaderDLL( const char *pFullPath )
 	CreateInterfaceFn factory = Sys_GetFactory( hInstance );
 	if (!factory)
 	{
-		g_pFileSystem->UnloadModule( hInstance );
+		g_pFullFileSystem->UnloadModule( hInstance );
 		return false;
 	}
 
 	IShaderDLLInternal *pShaderDLL = (IShaderDLLInternal*)factory( SHADER_DLL_INTERFACE_VERSION, NULL );
 	if ( !pShaderDLL )
 	{
-		g_pFileSystem->UnloadModule( hInstance );
+		g_pFullFileSystem->UnloadModule( hInstance );
 		return false;
 	}
 
-	// Allow the DLL to try to connect to interfaces it needs
-	if ( !pShaderDLL->Connect( Sys_GetFactoryThis() ) )
+	// Make sure it's a valid base shader DLL if necessary.
+	//HACKHACK get rid of this when VAC2 comes online.
+	if ( !bModShaderDLL )
 	{
-		g_pFileSystem->UnloadModule( hInstance );
+		VerifyBaseShaderDLL( hInstance );
+	}
+
+	// Allow the DLL to try to connect to interfaces it needs
+	if ( !pShaderDLL->Connect( Sys_GetFactoryThis(), false ) )
+	{
+		g_pFullFileSystem->UnloadModule( hInstance );
 		return false;
 	}
 
@@ -374,6 +553,7 @@ bool CShaderSystem::LoadShaderDLL( const char *pFullPath )
 	// Ok, the shader DLL's good!
 	m_ShaderDLLs[nShaderDLLIndex].m_hInstance = hInstance;
 	m_ShaderDLLs[nShaderDLLIndex].m_pShaderDLL = pShaderDLL;
+	m_ShaderDLLs[nShaderDLLIndex].m_bModShaderDLL = bModShaderDLL;
 	
 	// Add the shaders to the dictionary of shaders...
 	SetupShaderDictionary( nShaderDLLIndex );
@@ -383,7 +563,6 @@ bool CShaderSystem::LoadShaderDLL( const char *pFullPath )
 
 	return true;
 }
-
 
 //-----------------------------------------------------------------------------
 // Finds an already loaded shader DLL
@@ -399,7 +578,6 @@ int CShaderSystem::FindShaderDLL( const char *pFullPath )
 	return -1;
 }
 
-
 //-----------------------------------------------------------------------------
 // Unloads a particular shader DLL
 //-----------------------------------------------------------------------------
@@ -411,13 +589,13 @@ void CShaderSystem::UnloadShaderDLL( int nShaderDLLIndex )
 	// FIXME: Do some sort of fixup of materials to determine which
 	// materials are referencing shaders in this DLL?
 	CleanupShaderDictionary( nShaderDLLIndex );
-	m_ShaderDLLs[nShaderDLLIndex].m_pShaderDLL->Disconnect();
+	IShaderDLLInternal *pShaderDLL = m_ShaderDLLs[nShaderDLLIndex].m_pShaderDLL;
+	pShaderDLL->Disconnect( pShaderDLL == GetShaderDLLInternal() );
 	if ( m_ShaderDLLs[nShaderDLLIndex].m_hInstance )
 	{
-		g_pFileSystem->UnloadModule( m_ShaderDLLs[nShaderDLLIndex].m_hInstance );
+		g_pFullFileSystem->UnloadModule( m_ShaderDLLs[nShaderDLLIndex].m_hInstance );
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Unloads a particular shader DLL
@@ -435,45 +613,62 @@ void CShaderSystem::UnloadShaderDLL( const char *pFullPath )
 
 
 //-----------------------------------------------------------------------------
-// returns strings associated with the shader state flags...
+// Make sure these match the bits in imaterial.h
 //-----------------------------------------------------------------------------
-char const* CShaderSystem::ShaderStateString( int i )
+static const char* s_pShaderStateString[] =
 {
-	// Make sure these match the bits in imaterial.h
-	static char* s_pShaderStateString[] =
-	{
-		"$debug",
-		"$no_fullbright",
-		"$no_draw",
-		"$use_in_fillrate_mode",
+	"$debug",
+	"$no_fullbright",
+	"$no_draw",
+	"$use_in_fillrate_mode",
 
-		"$vertexcolor",
-		"$vertexalpha",
-		"$selfillum",
-		"$additive",
-		"$alphatest",
-		"$multipass",
-		"$znearer",
-		"$model",
-		"$flat",
-		"$nocull",
-		"$nofog",
-		"$ignorez",
-		"$decal",
-		"$envmapsphere",
-		"$noalphamod",
-		"$envmapcameraspace",
-		"$nooverbright",
-		"$basealphaenvmapmask",
-		"$translucent",
-		"$normalmapalphaenvmapmask",
-		"$softwareskin",
-		"$opaquetexture",
-		"$envmapmode",
+	"$vertexcolor",
+	"$vertexalpha",
+	"$selfillum",
+	"$additive",
+	"$alphatest",
+	"$multipass",
+	"$znearer",
+	"$model",
+	"$flat",
+	"$nocull",
+	"$nofog",
+	"$ignorez",
+	"$decal",
+	"$envmapsphere",
+	"$noalphamod",
+	"$envmapcameraspace",
+	"$basealphaenvmapmask",
+	"$translucent",
+	"$normalmapalphaenvmapmask",
+	"$softwareskin",
+	"$opaquetexture",
+	"$envmapmode",
+	"$nodecal",
+	"$halflambert",
+	"$wireframe",
+	"$allowalphatocoverage",
 
-		""			// last one must be null
-	};
+	""			// last one must be null
+};
 
+
+//-----------------------------------------------------------------------------
+// returns strings associated with the shader state flags...
+// If you modify this, make sure and modify MaterialVarFlags_t in imaterial.h
+//-----------------------------------------------------------------------------
+int CShaderSystem::ShaderStateCount( ) const
+{
+	return sizeof( s_pShaderStateString ) / sizeof( char* ) - 1;
+}
+
+
+//-----------------------------------------------------------------------------
+// returns strings associated with the shader state flags...
+// If you modify this, make sure and modify MaterialVarFlags_t in imaterial.h
+//-----------------------------------------------------------------------------
+char const* CShaderSystem::ShaderStateString( int i ) const
+{
 	return s_pShaderStateString[i];
 }
 
@@ -487,35 +682,43 @@ void CShaderSystem::SetupShaderDictionary( int nShaderDLLIndex )
 	// I'm not sure if that makes this system any less secure than it already is
 	int i;
 	ShaderDLLInfo_t &info = m_ShaderDLLs[nShaderDLLIndex];
-	info.m_hShaderDLL = g_pShaderAPI->AddShaderDLL();
 	int nCount = info.m_pShaderDLL->ShaderCount();
 	for ( i = 0; i < nCount; ++i )
 	{
 		IShader *pShader = info.m_pShaderDLL->GetShader( i );
-		pShader->SetShaderDLLHandle( info.m_hShaderDLL );
-		info.m_ShaderDict.Insert( pShader->GetName(), pShader );
-	}
+		const char *pShaderName = pShader->GetName();
 
-	// Install precompiled shaders into the shader DLL
-	nCount = info.m_pShaderDLL->ShaderDictionaryCount();
-	for ( i = 0; i < nCount; ++i )
-	{
-		IPrecompiledShaderDictionary *pDict = info.m_pShaderDLL->GetShaderDictionary( i );
-		g_pShaderAPI->AddShaderDictionary( nShaderDLLIndex, pDict );
+#ifdef POSIX
+		if (CommandLine()->FindParm("-glmspew"))
+			printf("CShaderSystem::SetupShaderDictionary: %s", pShaderName );
+#endif
+		
+		// Make sure it doesn't try to override another shader DLL's names.
+		if ( info.m_bModShaderDLL )
+		{
+			for ( int iTestDLL=0; iTestDLL < m_ShaderDLLs.Count(); iTestDLL++ )
+			{
+				ShaderDLLInfo_t *pTestDLL = &m_ShaderDLLs[iTestDLL];
+				if ( !pTestDLL->m_bModShaderDLL )
+				{
+					if ( pTestDLL->m_ShaderDict.Find( pShaderName ) != pTestDLL->m_ShaderDict.InvalidIndex() )
+					{ 
+						Error( "Game shader '%s' trying to override a base shader '%s'.", info.m_pFileName, pShaderName );
+					}
+				}
+			}
+		}
+
+		info.m_ShaderDict.Insert( pShaderName, pShader );
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Cleans up the shader dictionary.
 //-----------------------------------------------------------------------------
 void CShaderSystem::CleanupShaderDictionary( int nShaderDLLIndex )
 {
-	// Remove precompiled shaders from the shader DLL
-	ShaderDLLInfo_t &info = m_ShaderDLLs[nShaderDLLIndex];
-	g_pShaderAPI->RemoveShaderDLL( info.m_hShaderDLL );
 }
-
 
 //-----------------------------------------------------------------------------
 // Finds a shader in the shader dictionary
@@ -539,6 +742,53 @@ IShader* CShaderSystem::FindShader( char const* pShaderName )
 
 
 //-----------------------------------------------------------------------------
+// Used to iterate over all shaders for editing purposes
+//-----------------------------------------------------------------------------
+int CShaderSystem::ShaderCount() const
+{
+	return GetShaders( 0, 65536, NULL );
+}
+
+int CShaderSystem::GetShaders( int nFirstShader, int nMaxCount, IShader **ppShaderList ) const
+{
+	CUtlSymbolTable	uniqueNames( 0, 512, true ); 
+
+	int nCount = 0;
+	int nActualCount = 0;
+	for ( int i = m_ShaderDLLs.Count(); --i >= 0; )
+	{
+		const ShaderDLLInfo_t &info = m_ShaderDLLs[i];
+		for ( unsigned short j = info.m_ShaderDict.First(); 
+			j != info.m_ShaderDict.InvalidIndex();
+			j = info.m_ShaderDict.Next( j ) )
+		{
+			// Don't add shaders twice
+			const char *pShaderName = info.m_ShaderDict.GetElementName( j );
+			if ( uniqueNames.Find( pShaderName ) != UTL_INVAL_SYMBOL )
+				continue;
+
+			// Indicate we've seen this shader
+			uniqueNames.AddString( pShaderName );
+
+			++nActualCount;
+			if ( nActualCount > nFirstShader )
+			{
+				if ( ppShaderList )
+				{
+					ppShaderList[ nCount ] = info.m_ShaderDict[j];
+				}
+				++nCount;
+				if ( nCount >= nMaxCount )
+					return nCount;
+			}
+		}
+	}
+
+	return nCount;
+}
+
+	
+//-----------------------------------------------------------------------------
 //
 // Methods of IShaderInit lie below
 //
@@ -552,8 +802,8 @@ inline StateSnapshot_t CShaderSystem::CurrentStateSnapshot()
 {
 	Assert( m_pRenderState );
 	Assert( m_nRenderPass < MAX_RENDER_PASSES );
-	Assert( m_nRenderPass < m_pRenderState->m_Snapshots[m_nModulation].m_nPassCount );
-	return m_pRenderState->m_Snapshots[m_nModulation].m_Snapshot[m_nRenderPass];
+	Assert( m_nRenderPass < m_pRenderState->m_pSnapshots[m_nModulation].m_nPassCount );
+	return m_pRenderState->m_pSnapshots[m_nModulation].m_Snapshot[m_nRenderPass];
 }
 
 
@@ -565,49 +815,23 @@ void CShaderSystem::CreateDebugMaterials()
 	if (m_pDebugMaterials[0])
 		return;
 
+	KeyValues *pVMTKeyValues[MATERIAL_DEBUG_COUNT];
+
 	int i;
 	for ( i = 0; i < MATERIAL_DEBUG_COUNT; ++i )
 	{
-		char shaderName[64];
-		sprintf( shaderName, "___%s_%d.vmt", s_pDebugShaderName[i], i );
-		m_pDebugMaterials[i] = IMaterialInternal::Create( shaderName, false );
-		m_pDebugMaterials[i]->SetShader( s_pDebugShaderName[i] );
-		m_pDebugMaterials[i]->IncrementReferenceCount();
-		MaterialSystem()->AddMaterialToMaterialList( m_pDebugMaterials[i] );
+		pVMTKeyValues[i] = new KeyValues( s_pDebugShaderName[i] );
 	}
-
-	bool bFound;
-	IMaterialVar *pMaterialVar;
 	
-	m_pDebugMaterials[MATERIAL_DEBUG_NORMALMAP_MODEL]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-	
-	pMaterialVar = m_pDebugMaterials[MATERIAL_DEBUG_LIGHTMAP_FF]->FindVar( "$fixedfunction", &bFound );
-	pMaterialVar->SetIntValue( 1 );
-	
-	pMaterialVar = m_pDebugMaterials[MATERIAL_DEBUG_UNLIT_FF]->FindVar( "$fixedfunction", &bFound );
-	pMaterialVar->SetIntValue( 1 );
-
-	pMaterialVar = m_pDebugMaterials[MATERIAL_DEBUG_UNLIT_FF_MODEL]->FindVar( "$fixedfunction", &bFound );
-	pMaterialVar->SetIntValue( 1 );
-	m_pDebugMaterials[MATERIAL_DEBUG_UNLIT_FF_MODEL]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-
-	m_pDebugMaterials[MATERIAL_DEBUG_UNLIT_VS_MODEL]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-
-	pMaterialVar = m_pDebugMaterials[MATERIAL_DEBUG_VERTEXLIT_FF]->FindVar( "$fixedfunction", &bFound );
-	pMaterialVar->SetIntValue( 1 );
-	m_pDebugMaterials[MATERIAL_DEBUG_VERTEXLIT_FF]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-
-	m_pDebugMaterials[MATERIAL_DEBUG_VERTEXLIT_VS]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-
-	m_pDebugMaterials[MATERIAL_DEBUG_BUMPED_VERTEXLIT]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
-
-	pMaterialVar = m_pDebugMaterials[MATERIAL_DEBUG_BUMPED_VERTEXLIT_SELF_ILLUM]->FindVar( "$hasselfillum", &bFound );
-	pMaterialVar->SetIntValue( 1 );
-	m_pDebugMaterials[MATERIAL_DEBUG_BUMPED_VERTEXLIT_SELF_ILLUM]->SetMaterialVarFlag( MATERIAL_VAR_MODEL, true );
+	pVMTKeyValues[MATERIAL_DEBUG_DEPTH_DECAL]->SetInt( "$decal", 1 );
 
 	for ( i = 0; i < MATERIAL_DEBUG_COUNT; ++i )
 	{
-		m_pDebugMaterials[i]->Refresh();
+		char shaderName[64];
+		Q_snprintf( shaderName, sizeof( shaderName ), "___%s_%d.vmt", s_pDebugShaderName[i], i );
+		m_pDebugMaterials[i] = static_cast<IMaterialInternal*>(MaterialSystem()->CreateMaterial( shaderName, pVMTKeyValues[i] ));
+		if( m_pDebugMaterials[i] )
+			m_pDebugMaterials[i] = m_pDebugMaterials[i]->GetRealTimeVersion();
 	}
 }
 
@@ -622,7 +846,14 @@ void CShaderSystem::CleanUpDebugMaterials()
 		for ( int i = 0; i < MATERIAL_DEBUG_COUNT; ++i )
 		{
 			m_pDebugMaterials[i]->DecrementReferenceCount();
-			MaterialSystem()->RemoveMaterial( m_pDebugMaterials[i] );
+			if ( m_pDebugMaterials[i]->InMaterialPage() )
+			{
+				MaterialSystem()->RemoveMaterialSubRect( m_pDebugMaterials[i] );
+			}
+			else
+			{
+				MaterialSystem()->RemoveMaterial( m_pDebugMaterials[i] );
+			}
 			m_pDebugMaterials[i] = NULL;
 		}
 	}
@@ -633,30 +864,54 @@ void CShaderSystem::CleanUpDebugMaterials()
 // Deal with buffering of spew while doing shader draw so that we don't get 
 // recursive spew during precache due to fonts not being loaded, etc.
 //-----------------------------------------------------------------------------
-void CShaderSystem::BufferSpew( const char *pMsg )
+CThreadFastMutex g_StgoredSpewMutex;
+void CShaderSystem::BufferSpew( SpewType_t spewType, const Color &c, const char *pMsg )
 {
-	if ( m_StoredSpew.TellPut() > 0 )
-	{
-		// Write over the trailing '0'
-		m_StoredSpew.SeekPut( CUtlBuffer::SEEK_CURRENT, -1 );
-	}
-
+	AUTO_LOCK( g_StgoredSpewMutex );
+	m_StoredSpew.PutInt( spewType );
+	m_StoredSpew.PutChar( c.r() );
+	m_StoredSpew.PutChar( c.g() );
+	m_StoredSpew.PutChar( c.b() );
+	m_StoredSpew.PutChar( c.a() );
 	m_StoredSpew.PutString( pMsg );
-	m_StoredSpew.PutChar( 0 );
 }
 
 void CShaderSystem::PrintBufferedSpew( void )
 {
-	if( m_StoredSpew.TellPut() > 0 )
+	AUTO_LOCK( g_StgoredSpewMutex );
+	while ( m_StoredSpew.GetBytesRemaining() > 0 )
 	{
-		Warning( (char*)m_StoredSpew.PeekGet() );
-		m_StoredSpew.SeekPut( CUtlBuffer::SEEK_HEAD, 0 );
+		SpewType_t spewType	= (SpewType_t)m_StoredSpew.GetInt();
+		
+		unsigned char r, g, b, a;
+		r = m_StoredSpew.GetChar();
+		g = m_StoredSpew.GetChar();
+		b = m_StoredSpew.GetChar();
+		a = m_StoredSpew.GetChar();
+
+		Color c( r, g, b, a );
+		
+		int nLen = m_StoredSpew.PeekStringLength();
+		if ( nLen )
+		{
+			char *pBuf = (char*)_alloca( nLen );
+			m_StoredSpew.GetStringManualCharCount( pBuf, nLen );
+			ColorSpewMessage( spewType, &c, "%s", pBuf );
+		}
+		else
+		{
+			break;
+		}
 	}
+
+	m_StoredSpew.Clear();
 }
 
 static SpewRetval_t MySpewOutputFunc( SpewType_t spewType, char const *pMsg )
 {
-	s_ShaderSystem.BufferSpew( pMsg );
+	AUTO_LOCK( g_StgoredSpewMutex );
+	Color c = *GetSpewOutputColor();
+	s_ShaderSystem.BufferSpew( spewType, c, pMsg );
 
 	switch( spewType )
 	{
@@ -680,24 +935,31 @@ void CShaderSystem::PrepForShaderDraw( IShader *pShader,
 	IMaterialVar** ppParams, ShaderRenderState_t* pRenderState, int nModulation )
 {
 	Assert( !m_pRenderState );
-	Assert( !m_SaveSpewOutput );
-	m_SaveSpewOutput = GetSpewOutputFunc();
-	SpewOutputFunc( MySpewOutputFunc );
+
+	// 360 runs the console remotely, spew cannot cause the matsys to be reentrant
+	// 360 sidesteps the other negative affect that *all* buffered spew redirects as warning text
+	if ( IsPC() || !IsX360() )
+	{
+		Assert( !m_SaveSpewOutput );
+		m_SaveSpewOutput = GetSpewOutputFunc();
+		SpewOutputFunc( MySpewOutputFunc );
+	}
 
 	m_pRenderState = pRenderState;
 	m_nModulation = nModulation;
 	m_nRenderPass = 0;
-	m_hShaderDLL = pShader->GetShaderDLLHandle();
-	g_pShaderAPI->SetShaderDLL( m_hShaderDLL );
 }
 
 void CShaderSystem::DoneWithShaderDraw()
 {
-	SpewOutputFunc( m_SaveSpewOutput );
-	PrintBufferedSpew();
-	m_SaveSpewOutput = NULL;
+	if ( IsPC() || !IsX360() )
+	{
+		SpewOutputFunc( m_SaveSpewOutput );
+		PrintBufferedSpew();
+		m_SaveSpewOutput = NULL;
+	}
+
 	m_pRenderState = NULL;
-	g_pShaderAPI->SetShaderDLL( -1 );
 }
 
 
@@ -736,6 +998,9 @@ void CShaderSystem::InitShaderParameters( IShader *pShader, IMaterialVar **param
 		case SHADER_PARAM_TYPE_TEXTURE:
 			// Do nothing; we'll be loading in a string later
 			break;
+		case SHADER_PARAM_TYPE_STRING:
+			// Do nothing; we'll be loading in a string later
+			break;
 		case SHADER_PARAM_TYPE_MATERIAL:
 			params[i]->SetMaterialValue( NULL );
 			break;
@@ -768,6 +1033,14 @@ void CShaderSystem::InitShaderParameters( IShader *pShader, IMaterialVar **param
 				params[i]->SetMatrixValue( identity );
 			}
 			break;
+		case SHADER_PARAM_TYPE_MATRIX4X2:
+			{
+				VMatrix identity;
+				MatrixSetIdentity( identity );
+				params[i]->SetMatrixValue( identity );
+			}
+			break;
+
 
 		default:
 			Assert(0);
@@ -779,11 +1052,11 @@ void CShaderSystem::InitShaderParameters( IShader *pShader, IMaterialVar **param
 //-----------------------------------------------------------------------------
 // Call the SHADER_INIT block of the shaders
 //-----------------------------------------------------------------------------
-void CShaderSystem::InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName )
+void CShaderSystem::InitShaderInstance( IShader *pShader, IMaterialVar **params, const char *pMaterialName, const char *pTextureGroupName )
 {
 	// Let the derived class do its thing
 	PrepForShaderDraw( pShader, params, 0, 0 );
-	pShader->InitShaderInstance( params, ShaderSystem(), pMaterialName );
+	pShader->InitShaderInstance( params, ShaderSystem(), pMaterialName, pTextureGroupName );
 	DoneWithShaderDraw();
 }
 
@@ -849,7 +1122,7 @@ void CShaderSystem::ComputeRenderStateFlagsFromSnapshot( ShaderRenderState_t* pR
 	// shadow state. I still want to use it to compute shadow state though
 	// because it's somewhat complicated code that I'd rather precache.
 
-	StateSnapshot_t snapshot = pRenderState->m_Snapshots[0].m_Snapshot[0];
+	StateSnapshot_t snapshot = pRenderState->m_pSnapshots[0].m_Snapshot[0];
 
 	// Automatically compute if the snapshot is transparent or not
 	if ( g_pShaderAPI->IsTranslucent( snapshot ) )
@@ -885,9 +1158,6 @@ void CShaderSystem::ComputeRenderStateFlagsFromSnapshot( ShaderRenderState_t* pR
 		Assert( !( pRenderState->m_Flags & SHADER_OPACITY_TRANSLUCENT ) );
 	}
 #endif
-
-	if ( g_pShaderAPI->UsesAmbientCube( snapshot ) )
-		pRenderState->m_Flags |= SHADER_USES_AMBIENT_CUBE_STAGE0;
 }
 
 
@@ -897,6 +1167,20 @@ void CShaderSystem::ComputeRenderStateFlagsFromSnapshot( ShaderRenderState_t* pR
 #ifdef _DEBUG
 #pragma warning (disable:4189)
 #endif
+
+int CShaderSystem::GetModulationSnapshotCount( IMaterialVar **params )
+{
+	int nSnapshotCount = SnapshotTypeCount();
+	if ( !MaterialSystem()->CanUseEditorMaterials() )
+	{
+		if( !IsFlag2Set( params, MATERIAL_VAR2_NEEDS_BAKED_LIGHTING_SNAPSHOTS ) )
+		{
+			nSnapshotCount /= 2;
+		}
+	}
+
+	return nSnapshotCount;
+}
 
 void CShaderSystem::InitStateSnapshots( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pRenderState )
 {
@@ -914,12 +1198,27 @@ void CShaderSystem::InitStateSnapshots( IShader *pShader, IMaterialVar **params,
 	float color[3];
 	params[COLOR]->GetVecValue( color, 3 );
 	alpha = params[ALPHA]->GetFloatValue( );
-
+	bool bBakedLighting = IsFlag2Set( params, MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+	bool bFlashlight = IsFlag2Set( params, MATERIAL_VAR2_USE_FLASHLIGHT );
+	bool bEditor = IsFlag2Set( params, MATERIAL_VAR2_USE_EDITOR );
+//	bool bSupportsFlashlight = IsFlag2Set( params, MATERIAL_VAR2_SUPPORTS_FLASHLIGHT );
 	float white[3] = { 1, 1, 1 };
 	float grey[3] = { .5, .5, .5 };
 
-	for (int i = 0; i < 4; ++i)
+	int nSnapshotCount = GetModulationSnapshotCount( params );
+
+	// If the current mod does not use the flashlight, skip all flashlight snapshots (saves a ton of memory)
+	bool bModUsesFlashlight = ( mat_supportflashlight.GetInt() != 0 );
+
+	for (int i = 0; i < nSnapshotCount; ++i)
 	{
+		if ( ( i & SHADER_USING_FLASHLIGHT ) &&
+			 !bModUsesFlashlight )
+		{
+			pRenderState->m_pSnapshots[i].m_nPassCount = 0;
+			continue;
+		}
+
 		// Set modulation to force particular code paths
 		if (i & SHADER_USING_COLOR_MODULATION)
 		{
@@ -939,81 +1238,115 @@ void CShaderSystem::InitStateSnapshots( IShader *pShader, IMaterialVar **params,
 			params[ALPHA]->SetFloatValue( white[0] );
 		}
 
+		if ( i & SHADER_USING_FLASHLIGHT )
+		{
+//			if ( !bSupportsFlashlight )
+//			{
+//				pRenderState->m_pSnapshots[i].m_nPassCount = 0;
+//				continue;
+//			}
+			SET_FLAGS2( MATERIAL_VAR2_USE_FLASHLIGHT );
+		}
+		else
+		{
+			CLEAR_FLAGS2( MATERIAL_VAR2_USE_FLASHLIGHT );
+		}
+
+		if ( i & SHADER_USING_EDITOR )
+		{
+			SET_FLAGS2( MATERIAL_VAR2_USE_EDITOR );
+		}
+		else
+		{
+			CLEAR_FLAGS2( MATERIAL_VAR2_USE_EDITOR );
+		}
+
+		if ( i & SHADER_USING_FIXED_FUNCTION_BAKED_LIGHTING )
+		{
+			SET_FLAGS2( MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+		}
+		else
+		{
+			CLEAR_FLAGS2( MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+		}
+
 		PrepForShaderDraw( pShader, params, pRenderState, i );
 
 		// Now snapshot how we're going to draw
-		pRenderState->m_Snapshots[i].m_nPassCount = 0;
-		pShader->DrawElements( params, i, g_pShaderShadow, 0 );
-
+		pRenderState->m_pSnapshots[i].m_nPassCount = 0;
+		pShader->DrawElements( params, i, g_pShaderShadow, 0, VERTEX_COMPRESSION_NONE, &(pRenderState->m_pSnapshots[i].m_pContextData[0] ) );
 		DoneWithShaderDraw();
 	}
 
 	// Restore alpha + color modulation
 	params[COLOR]->SetVecValue( color, 3 );
 	params[ALPHA]->SetFloatValue( alpha );
+	if( bBakedLighting )
+	{
+		SET_FLAGS2( MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+	}
+	else
+	{
+		CLEAR_FLAGS2( MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING );
+	}
+
+	if( bEditor )
+	{
+		SET_FLAGS2( MATERIAL_VAR2_USE_EDITOR );
+	}
+	else
+	{
+		CLEAR_FLAGS2( MATERIAL_VAR2_USE_EDITOR );
+	}
+
+	if( bFlashlight )
+	{
+		SET_FLAGS2( MATERIAL_VAR2_USE_FLASHLIGHT );
+	}
+	else
+	{
+		CLEAR_FLAGS2( MATERIAL_VAR2_USE_FLASHLIGHT );
+	}
 }
 
 #ifdef _DEBUG
 #pragma warning (default:4189)
 #endif
 
-
 //-----------------------------------------------------------------------------
-// returns various vertex formats
+// Helper to count texture coordinates
 //-----------------------------------------------------------------------------
-VertexFormat_t CShaderSystem::GetVertexFormat( MaterialVertexFormat_t vfmt )
+static int NumTextureCoordinates( VertexFormat_t vertexFormat )
 {
-	VertexFormat_t fmt;
-	switch (vfmt)
+	// FIXME: this is a duplicate of the function in meshdx8.cpp
+	int nTexCoordCount = 0;
+	for ( int i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i )
 	{
-	case MATERIAL_VERTEX_FORMAT_MODEL:
-		// These are the formats used by all models.
-		// We basically guarantee pos, color, normal, 1 2D texcoord, 3 bones
-		// and tangent space specification and that's it.
-
-		if (!HardwareConfig()->SupportsVertexAndPixelShaders())
-		{
-			// 48 bytes...
-			// only specify 2 bone weights 'cause the third is implied
-			fmt = VERTEX_POSITION | VERTEX_COLOR | VERTEX_NORMAL | 
-				VERTEX_NUM_TEXCOORDS(1) | VERTEX_TEXCOORD_SIZE(0, 2) | 
-				VERTEX_BONEWEIGHT(2) | VERTEX_BONE_INDEX;
-		}
-		else
-		{
-			// 64 bytes
-			// The third bone weight is calculated in the vertex shader.
-			// VERTEX_USERDATA_SIZE(4) is for tangentS plus a -1,1 sign value.
-			fmt = VERTEX_POSITION | VERTEX_COLOR | VERTEX_NORMAL | VERTEX_USERDATA_SIZE(4) |
-				VERTEX_NUM_TEXCOORDS(1) | VERTEX_TEXCOORD_SIZE(0, 2) | 
-				VERTEX_BONEWEIGHT(2) | VERTEX_BONE_INDEX;
-		}
-		break;
-	case MATERIAL_VERTEX_FORMAT_COLOR:
-		// This is the format for the color stream for static props
-		fmt = VERTEX_SPECULAR;
-		break;
-	default:
-		fmt = VERTEX_POSITION;
-		Assert(0);
-		break;
+		if ( TexCoordSize( i, vertexFormat ) == 0 )
+			continue;
+		++nTexCoordCount;
 	}
-	return fmt;
+	return nTexCoordCount;
 }
-
 
 //-----------------------------------------------------------------------------
 // Displays the vertex format
 //-----------------------------------------------------------------------------
 static void OutputVertexFormat( VertexFormat_t format )
 {
+	// FIXME: this is a duplicate of the function in meshdx8.cpp
+	VertexCompressionType_t compressionType = CompressionType( format );
+
 	if( format & VERTEX_POSITION )
 	{
 		Warning( "VERTEX_POSITION|" );
 	}
 	if( format & VERTEX_NORMAL )
 	{
-		Warning( "VERTEX_NORMAL|" );
+		if ( compressionType == VERTEX_COMPRESSION_ON )
+			Warning( "VERTEX_NORMAL[COMPRESSED]|" );
+		else
+			Warning( "VERTEX_NORMAL|" );
 	}
 	if( format & VERTEX_COLOR )
 	{
@@ -1039,51 +1372,55 @@ static void OutputVertexFormat( VertexFormat_t format )
 	{
 		Warning( "VERTEX_FORMAT_VERTEX_SHADER|" );
 	}
+	Warning( "\nBone weights: %d\n", NumBoneWeights( format ) );
+	Warning( "user data size: %d (%s)\n", UserDataSize( format ),
+		( CompressionType( format ) == VERTEX_COMPRESSION_ON ? "compressed" : "uncompressed" ) );
+	Warning( "num tex coords: %d\n", NumTextureCoordinates( format ) );
+	// NOTE: This doesn't print texcoord sizes.
 }
 
 
-//-----------------------------------------------------------------------------
-// Checks if it's a valid format
-//-----------------------------------------------------------------------------
-static bool IsValidVertexFormat( VertexFormat_t format, VertexFormat_t usage )
+#ifdef _DEBUG
+static bool IsVertexFormatSubsetOfVertexformat( VertexFormat_t subset, VertexFormat_t superset )
 {
-	int flags = VertexFlags( usage ) & ~VertexFlags(format);
-	if (flags != 0)
-	{
-		Warning( "Format needs: " );
-		OutputVertexFormat( format );
-		Warning( "\nFormat has: " );
-		OutputVertexFormat( usage );
-		Warning( "\nFormat missing: " );
-		OutputVertexFormat( flags );
-		Warning( "\n" );
-		return false;
-	}
+	subset &= ~VERTEX_FORMAT_USE_EXACT_FORMAT;
+	superset &= ~VERTEX_FORMAT_USE_EXACT_FORMAT;
 
-	if (NumBoneWeights(usage) > NumBoneWeights(format))
-	{
-		// If we want 3 bones, the third one is implied by the first two, so it's
-		// OK to only have two bones in the real format.
-		if( !( NumBoneWeights( usage ) == 3 && NumBoneWeights( format ) == 2 ) )
-		{
-			return false;
-		}
-	}
-
-	if (UserDataSize(usage) > UserDataSize(format))
+	// Test the flags
+	if( VertexFlags( subset ) & VertexFlags( ~superset ) )
 		return false;
 
-	int numTexCoord = NumTextureCoordinates(usage);
-	if (numTexCoord > NumTextureCoordinates(format))
+	// Test bone weights
+	if( NumBoneWeights( subset ) > NumBoneWeights( superset ) )
+		return false;
+	
+	// Test user data size
+	if( UserDataSize( subset ) > UserDataSize( superset ) )
 		return false;
 
-	for (int i = 0; i < numTexCoord; ++i)
+	// Test the texcoord dimensions
+	for( int i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; i++ )
 	{
-		if (TexCoordSize(i, usage) != TexCoordSize(i, format))
+		if( TexCoordSize( i, subset ) > TexCoordSize( i, superset ) )
 			return false;
 	}
 
 	return true;
+}
+#endif
+
+
+//-----------------------------------------------------------------------------
+// Adds state snapshots to the render list
+//-----------------------------------------------------------------------------
+static void AddSnapshotsToList( RenderPassList_t *pPassList, int &nSnapshotID, StateSnapshot_t *pSnapshots )
+{
+	int nNumPassSnapshots = pPassList->m_nPassCount;
+	for( int i = 0; i < nNumPassSnapshots; ++i )
+	{
+		pSnapshots[nSnapshotID] = pPassList->m_Snapshot[i];
+		nSnapshotID++;
+	}
 }
 
 
@@ -1095,59 +1432,62 @@ bool CShaderSystem::ComputeVertexFormatFromSnapshot( IMaterialVar **params, Shad
 	// When computing the usage, use the snapshot that has no alpha or color
 	// modulation. We need the usage + format to be the same for all
 	// combinations of alpha + color modulation, though, or we are asking for
-	// trouble.
-
-	int numSnapshots = pRenderState->m_Snapshots[0].m_nPassCount;
-	StateSnapshot_t* pSnapshots = (StateSnapshot_t*)stackalloc( 
-		numSnapshots * sizeof(StateSnapshot_t) ); 
-	for (int i = 0; i < numSnapshots; ++i)
+	// trouble.	
+	int nModulationSnapshotCount = GetModulationSnapshotCount( params );
+	int numSnapshots = pRenderState->m_pSnapshots[0].m_nPassCount;
+	if (nModulationSnapshotCount >= SHADER_USING_FLASHLIGHT)
 	{
-		pSnapshots[i] = pRenderState->m_Snapshots[0].m_Snapshot[i];
+		numSnapshots += pRenderState->m_pSnapshots[SHADER_USING_FLASHLIGHT].m_nPassCount;
+	}
+	if ( MaterialSystem()->CanUseEditorMaterials() )
+	{
+		numSnapshots += pRenderState->m_pSnapshots[SHADER_USING_EDITOR].m_nPassCount;
 	}
 
-	pRenderState->m_VertexUsage = g_pShaderAPI->ComputeVertexUsage( 
-		numSnapshots, pSnapshots );
+	StateSnapshot_t* pSnapshots = (StateSnapshot_t*)stackalloc( 
+		numSnapshots * sizeof(StateSnapshot_t) ); 
+
+	int snapshotID = 0;
+	AddSnapshotsToList( &pRenderState->m_pSnapshots[0], snapshotID, pSnapshots );
+	if (nModulationSnapshotCount >= SHADER_USING_FLASHLIGHT)
+	{
+		AddSnapshotsToList( &pRenderState->m_pSnapshots[SHADER_USING_FLASHLIGHT], snapshotID, pSnapshots );
+	}
+	if ( MaterialSystem()->CanUseEditorMaterials() )
+	{
+		AddSnapshotsToList( &pRenderState->m_pSnapshots[SHADER_USING_EDITOR], snapshotID, pSnapshots );
+	}
+
+	Assert( snapshotID == numSnapshots );
+
+	pRenderState->m_VertexUsage = g_pShaderAPI->ComputeVertexUsage( numSnapshots, pSnapshots );
+	pRenderState->m_MorphFormat = g_pShaderAPI->ComputeMorphFormat( numSnapshots, pSnapshots );
 
 #ifdef _DEBUG
 	// Make sure all modulation combinations match vertex usage
-	for (int mod = 1; mod < 4; ++mod)
+	for ( int mod = 1; mod < nModulationSnapshotCount; ++mod )
 	{
-		int numSnapshotsTest = pRenderState->m_Snapshots[mod].m_nPassCount;
+		int numSnapshotsTest = pRenderState->m_pSnapshots[mod].m_nPassCount;
 		StateSnapshot_t* pSnapshotsTest = (StateSnapshot_t*)_alloca( 
 			numSnapshotsTest * sizeof(StateSnapshot_t) );
 
 		for (int i = 0; i < numSnapshotsTest; ++i)
 		{
-			pSnapshotsTest[i] = pRenderState->m_Snapshots[mod].m_Snapshot[i];
+			pSnapshotsTest[i] = pRenderState->m_pSnapshots[mod].m_Snapshot[i];
 		}
 
-		int usageTest = g_pShaderAPI->ComputeVertexUsage( 
-			numSnapshotsTest, pSnapshotsTest );
-		Assert( (usageTest & 0x7FFFFFFF) == (pRenderState->m_VertexUsage & 0x7FFFFFFF) );
+		VertexFormat_t usageTest = g_pShaderAPI->ComputeVertexUsage( numSnapshotsTest, pSnapshotsTest );
+		Assert( IsVertexFormatSubsetOfVertexformat( usageTest, pRenderState->m_VertexUsage ) );
 	}
 #endif
 
-	// If we're not rendering models, just pick a vertex format
-	// that has good alignment and contains all fields in vertex usage.
-	if ( (params[FLAGS]->GetIntValue() & MATERIAL_VAR_MODEL) == 0 )
+	if ( IsPC() )
 	{
-		pRenderState->m_VertexFormat = g_pShaderAPI->ComputeVertexFormat( 
-			numSnapshots, pSnapshots );
+		pRenderState->m_VertexFormat = g_pShaderAPI->ComputeVertexFormat( numSnapshots, pSnapshots );
 	}
 	else
 	{
-		pRenderState->m_VertexFormat = GetVertexFormat( MATERIAL_VERTEX_FORMAT_MODEL );
-
-		// Makes fixed-function shaders work with DX8 parts
-		// assuming skinning rules aren't violated by the data
-		if (pRenderState->m_VertexUsage & VERTEX_FORMAT_VERTEX_SHADER)
-			pRenderState->m_VertexFormat |= VERTEX_FORMAT_VERTEX_SHADER;
-
-		if (!IsValidVertexFormat(pRenderState->m_VertexFormat, pRenderState->m_VertexUsage ))
-		{
-			// Bad format! something's screwy...
-			return false;
-		}
+		pRenderState->m_VertexFormat = pRenderState->m_VertexUsage;
 	}
 
 	return true;
@@ -1169,7 +1509,7 @@ bool CShaderSystem::InitRenderState( IShader *pShader, int numParams, IMaterialV
 	InitStateSnapshots( pShader, params, pRenderState );
 
 	// Compute other infomation for the render state based on snapshots
-	if (pRenderState->m_Snapshots[0].m_nPassCount == 0)
+	if (pRenderState->m_pSnapshots[0].m_nPassCount == 0)
 	{
 		Warning( "Material \"%s\":\n   No render states in shader \"%s\"\n", pMaterialName, pShader->GetName() );
 		return false;
@@ -1194,15 +1534,19 @@ void CShaderSystem::CleanupRenderState( ShaderRenderState_t* pRenderState )
 {
 	if (pRenderState)
 	{
-#ifdef _DEBUG
-		// Make sure we don't use these again...
-		memset( pRenderState, 0xdd, sizeof(ShaderRenderState_t) );
-#endif
-
+		int nSnapshotCount = SnapshotTypeCount();
+		// kill context data
 		// Indicate no passes for any of the snapshot lists
-		for ( int i = 0; i < 4; ++i )
+		RenderPassList_t *pTemp = pRenderState->m_pSnapshots;
+		for(int i = 0; i < nSnapshotCount; i++ )
 		{
-			pRenderState->m_Snapshots[i].m_nPassCount = 0;
+			for(int j = 0 ; j < pRenderState->m_pSnapshots[i].m_nPassCount; j++ )
+				if ( pTemp[i].m_pContextData[j] )
+				{
+					delete pTemp[i].m_pContextData[j];
+					pTemp[i].m_pContextData[j] = NULL;
+				}
+			pRenderState->m_pSnapshots[i].m_nPassCount = 0;
 		}
 	}
 }
@@ -1211,33 +1555,62 @@ void CShaderSystem::CleanupRenderState( ShaderRenderState_t* pRenderState )
 //-----------------------------------------------------------------------------
 // Does the rendering!
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawElements( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pRenderState )
+void CShaderSystem::DrawElements( IShader *pShader, IMaterialVar **params, 
+								  ShaderRenderState_t* pRenderState,
+								  VertexCompressionType_t vertexCompression, 
+								  uint32 nMaterialVarChangeTimeStamp )
 {
+	VPROF("CShaderSystem::DrawElements");
+
+	g_pShaderAPI->InvalidateDelayedShaderConstants();
 	// Compute modulation...
-	int mod = pShader->ComputeModulationFlags( params );
+	int mod = pShader->ComputeModulationFlags( params, g_pShaderAPI );
 
 	// No snapshots? do nothing.
-	if (pRenderState->m_Snapshots[mod].m_nPassCount == 0)
+	if ( pRenderState->m_pSnapshots[mod].m_nPassCount == 0 )
 		return;
 
 	// If we're rendering a model, gotta have skinning matrices
 	int materialVarFlags = params[FLAGS]->GetIntValue();
-	if (materialVarFlags & MATERIAL_VAR_MODEL)
+	if ( (( materialVarFlags & MATERIAL_VAR_MODEL ) != 0) ||
+		( IsFlag2Set( params, MATERIAL_VAR2_SUPPORTS_HW_SKINNING ) && ( g_pShaderAPI->GetCurrentNumBones() > 0 )) )
 	{
 		g_pShaderAPI->SetSkinningMatrices( );
 	}
 
-	if ( (g_config.bMeasureFillRate || g_config.bVisualizeFillRate)
-		&& ((materialVarFlags & MATERIAL_VAR_USE_IN_FILLRATE_MODE) == 0) )
+	// FIXME: need one conditional that we calculate once a frame for debug or not with everything debug under that.
+#ifndef DX_TO_GL_ABSTRACTION
+	if (  ( ( g_config.bMeasureFillRate || g_config.bVisualizeFillRate ) &&
+		( ( materialVarFlags & MATERIAL_VAR_USE_IN_FILLRATE_MODE ) == 0 ) ) )
 	{
-		DrawMeasureFillRate( pRenderState, mod );
+		DrawMeasureFillRate( pRenderState, mod, vertexCompression );
 	}
-	else if( g_config.bShowNormalMap && IsFlag2Set( params, MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP ) )
+	else 
+#endif
+		if( ( g_config.bShowNormalMap || g_config.nShowMipLevels == 2 ) && 
+		( IsFlag2Set( params, MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP ) ||
+		  IsFlag2Set( params, MATERIAL_VAR2_DIFFUSE_BUMPMAPPED_MODEL ) ) )
 	{
-		DrawNormalMap( pShader, params );
+		DrawNormalMap( pShader, params, vertexCompression );
 	}
-	else if (!g_config.bLightingOnly ||
-			 ((materialVarFlags & MATERIAL_VAR_NO_DEBUG_OVERRIDE) != 0) )
+#if defined(DEBUG_DEPTH)
+	else if ( mat_debugdepth.GetInt() && ((materialVarFlags & MATERIAL_VAR_NO_DEBUG_OVERRIDE) == 0) )
+	{
+		int nIndex = 0;
+		if ( IsFlagSet( params, MATERIAL_VAR_DECAL ) )
+		{
+			nIndex |= 0x1;
+		}
+		IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ MATERIAL_DEBUG_DEPTH + nIndex ];
+		if ( !g_pShaderAPI->IsDepthWriteEnabled( pRenderState->m_Snapshots[mod].m_Snapshot[0] )	)
+		{
+			pDebugMaterial = m_pDebugMaterials[MATERIAL_DEBUG_WIREFRAME];
+		}
+
+		DrawUsingMaterial( pDebugMaterial, vertexCompression );
+	}
+#endif
+	else
 	{
 		g_pShaderAPI->SetDefaultState();
 
@@ -1246,19 +1619,23 @@ void CShaderSystem::DrawElements( IShader *pShader, IMaterialVar **params, Shade
 		{
 			g_pShaderAPI->ShadeMode( SHADER_FLAT );
 		}
-	
+
 		PrepForShaderDraw( pShader, params, pRenderState, mod );
 		g_pShaderAPI->BeginPass( CurrentStateSnapshot() );
-		pShader->DrawElements( params, mod, 0, g_pShaderAPI );
+		
+		CBasePerMaterialContextData ** pContextDataPtr = 
+			&( m_pRenderState->m_pSnapshots[m_nModulation].m_pContextData[m_nRenderPass] );
+
+		if ( *pContextDataPtr && ( (*pContextDataPtr)->m_nVarChangeID != nMaterialVarChangeTimeStamp ) )
+		{
+			(*pContextDataPtr)->m_bMaterialVarsChanged = true;
+			(*pContextDataPtr)->m_nVarChangeID = nMaterialVarChangeTimeStamp;
+		}
+
+		pShader->DrawElements( 
+			params, mod, 0, g_pShaderAPI, vertexCompression,
+			&( m_pRenderState->m_pSnapshots[m_nModulation].m_pContextData[m_nRenderPass] ) );
 		DoneWithShaderDraw();
-	}
-	else if (g_config.bLightingOnly)
-	{
-		DrawElementsLightingOnly( pShader, params, pRenderState );
-	}
-	else
-	{
-		Assert( 0 );
 	}
 
 	MaterialSystem()->ForceDepthFuncEquals( false );
@@ -1270,7 +1647,21 @@ void CShaderSystem::DrawElements( IShader *pShader, IMaterialVar **params, Shade
 //-----------------------------------------------------------------------------
 bool CShaderSystem::IsUsingGraphics() const
 {
-	return g_pShaderAPI->IsUsingGraphics();
+	// YWB Hack if running with -noshaderapi/-makereslists this forces materials to "precache" which means they will resolve their .vtf files for
+	//  things like normal/height/dudv maps...
+	if ( m_bForceUsingGraphicsReturnTrue )
+		return true;
+
+	return g_pShaderDevice->IsUsingGraphics();
+}
+
+
+//-----------------------------------------------------------------------------
+// Are we using the editor materials?
+//-----------------------------------------------------------------------------
+bool CShaderSystem::CanUseEditorMaterials() const
+{
+	return MaterialSystem()->CanUseEditorMaterials();
 }
 
 
@@ -1280,7 +1671,16 @@ bool CShaderSystem::IsUsingGraphics() const
 void CShaderSystem::TakeSnapshot( )
 {
 	Assert( m_pRenderState );
-	RenderPassList_t& snapshotList = m_pRenderState->m_Snapshots[m_nModulation];
+	Assert( m_nModulation < SnapshotTypeCount() );
+
+	if( g_pHardwareConfig->SupportsPixelShaders_2_b() )
+	{
+		//enable linear->gamma srgb conversion lookup texture
+		g_pShaderShadow->EnableTexture( SHADER_SAMPLER15, true );
+		g_pShaderShadow->EnableSRGBRead( SHADER_SAMPLER15, true );
+	}
+	
+	RenderPassList_t& snapshotList = m_pRenderState->m_pSnapshots[m_nModulation];
 
 	// Take a snapshot...
 	snapshotList.m_Snapshot[snapshotList.m_nPassCount] = g_pShaderAPI->TakeSnapshot();
@@ -1291,16 +1691,20 @@ void CShaderSystem::TakeSnapshot( )
 //-----------------------------------------------------------------------------
 // Draws a snapshot
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawSnapshot( )
+void CShaderSystem::DrawSnapshot( bool bMakeActualDrawCall )
 {
 	Assert( m_pRenderState );
-	RenderPassList_t& snapshotList = m_pRenderState->m_Snapshots[m_nModulation];
+	RenderPassList_t& snapshotList = m_pRenderState->m_pSnapshots[m_nModulation];
 
 	int nPassCount = snapshotList.m_nPassCount;
 	Assert( m_nRenderPass < nPassCount );
 
-	g_pShaderAPI->RenderPass( );
+	if ( bMakeActualDrawCall )
+	{
+		g_pShaderAPI->RenderPass( m_nRenderPass, nPassCount );
+	}
 
+	g_pShaderAPI->InvalidateDelayedShaderConstants();
 	if (++m_nRenderPass < nPassCount)
 	{
 		g_pShaderAPI->BeginPass( CurrentStateSnapshot() );
@@ -1319,16 +1723,17 @@ void CShaderSystem::DrawSnapshot( )
 //-----------------------------------------------------------------------------
 // Draws a using a particular material..
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawUsingMaterial( IMaterialInternal *pMaterial )
+void CShaderSystem::DrawUsingMaterial( IMaterialInternal *pMaterial, VertexCompressionType_t vertexCompression )
 {
 	ShaderRenderState_t *pRenderState = pMaterial->GetRenderState();
 	g_pShaderAPI->SetDefaultState( );
 
 	IShader *pShader = pMaterial->GetShader();
-	int nMod = pShader->ComputeModulationFlags( pMaterial->GetShaderParams() );
+	int nMod = pShader->ComputeModulationFlags( pMaterial->GetShaderParams(), g_pShaderAPI );
 	PrepForShaderDraw( pShader, pMaterial->GetShaderParams(), pRenderState, nMod );
-	g_pShaderAPI->BeginPass( pRenderState->m_Snapshots[nMod].m_Snapshot[0] );
-	pShader->DrawElements( pMaterial->GetShaderParams(), nMod, 0, g_pShaderAPI );
+	g_pShaderAPI->BeginPass( pRenderState->m_pSnapshots[nMod].m_Snapshot[0] );
+	pShader->DrawElements( pMaterial->GetShaderParams(), nMod, 0, g_pShaderAPI, vertexCompression, 
+						   &( pRenderState->m_pSnapshots[nMod].m_pContextData[0] ) );
 	DoneWithShaderDraw( );
 }
 
@@ -1336,15 +1741,15 @@ void CShaderSystem::DrawUsingMaterial( IMaterialInternal *pMaterial )
 //-----------------------------------------------------------------------------
 // Copies material vars
 //-----------------------------------------------------------------------------
-void CShaderSystem::CopyMaterialVarToDebugShader( IMaterialInternal *pDebugMaterial, IShader *pShader, IMaterialVar **ppParams, const char *pVarName )
+void CShaderSystem::CopyMaterialVarToDebugShader( IMaterialInternal *pDebugMaterial, IShader *pShader, IMaterialVar **ppParams, const char *pSrcVarName, const char *pDstVarName )
 {
 	bool bFound;
-	IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( pVarName, &bFound );
+	IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( pDstVarName ? pDstVarName : pSrcVarName, &bFound );
 	Assert( bFound );
 
 	for( int i = pShader->GetNumParams(); --i >= 0; )
 	{
-		if( !Q_stricmp( ppParams[i]->GetName( ), pVarName ) )
+		if( !Q_stricmp( ppParams[i]->GetName( ), pSrcVarName ) )
 		{
 			pMaterialVar->CopyFrom( ppParams[i] );
 			return;
@@ -1358,27 +1763,28 @@ void CShaderSystem::CopyMaterialVarToDebugShader( IMaterialInternal *pDebugMater
 //-----------------------------------------------------------------------------
 // Draws the puppy in fill rate mode...
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawMeasureFillRate( ShaderRenderState_t* pRenderState, int mod )
+void CShaderSystem::DrawMeasureFillRate( ShaderRenderState_t* pRenderState, int mod, VertexCompressionType_t vertexCompression )
 {
-	int nPassCount = pRenderState->m_Snapshots[mod].m_nPassCount;
+	int nPassCount = pRenderState->m_pSnapshots[mod].m_nPassCount;
 
-	bool bUsesVertexShader = (VertexFlags(pRenderState->m_VertexFormat) & VERTEX_FORMAT_VERTEX_SHADER) != 0;
-	IMaterialInternal *pMaterial = m_pDebugMaterials[ bUsesVertexShader ? MATERIAL_FILL_RATE : MATERIAL_FILL_RATE_DX6 ];
+	// We require the use of a vertex shader rather than fixed function transforms
+	Assert( (VertexFlags(pRenderState->m_VertexFormat) & VERTEX_FORMAT_VERTEX_SHADER) != 0 );
+
+	IMaterialInternal *pMaterial = m_pDebugMaterials[ MATERIAL_FILL_RATE ];
 
 	bool bFound;
 	IMaterialVar *pMaterialVar = pMaterial->FindVar( "$passcount", &bFound );
 	pMaterialVar->SetIntValue( nPassCount );
-	DrawUsingMaterial( pMaterial );
+	DrawUsingMaterial( pMaterial, vertexCompression );
 }
 
 
 //-----------------------------------------------------------------------------
 // Draws normalmaps
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawNormalMap( IShader *pShader, IMaterialVar **ppParams )
+void CShaderSystem::DrawNormalMap( IShader *pShader, IMaterialVar **ppParams, VertexCompressionType_t vertexCompression )
 {
-	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ 
-		IsFlagSet( ppParams, MATERIAL_VAR_MODEL ) ? MATERIAL_DEBUG_NORMALMAP_MODEL : MATERIAL_DEBUG_NORMALMAP ];
+	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[MATERIAL_DEBUG_NORMALMAP];  
 	
 	if( !g_config.m_bFastNoBump )
 	{
@@ -1395,154 +1801,64 @@ void CShaderSystem::DrawNormalMap( IShader *pShader, IMaterialVar **ppParams )
 		pMaterialVar->SetUndefined();
 	}
 
-	DrawUsingMaterial( pDebugMaterial );
+	DrawUsingMaterial( pDebugMaterial, vertexCompression );
 }
 
-
 //-----------------------------------------------------------------------------
-// Draws vertex lit only.
+// Draws envmapmask
 //-----------------------------------------------------------------------------
-void CShaderSystem::DrawVertexLitOnly( bool usesVertexShader )
+bool CShaderSystem::DrawEnvmapMask( IShader *pShader, IMaterialVar **ppParams, 
+								   ShaderRenderState_t* pRenderState, VertexCompressionType_t vertexCompression )
 {
-	int nShaderIndex;
-	if ( g_config.bSoftwareLighting || (!usesVertexShader) )
-	{
-		nShaderIndex = MATERIAL_DEBUG_VERTEXLIT_FF;
-	}
-	else
-	{
-		nShaderIndex = MATERIAL_DEBUG_VERTEXLIT_VS;
-	}
-	DrawUsingMaterial( m_pDebugMaterials[nShaderIndex] );
-}
-
-
-//-----------------------------------------------------------------------------
-// Draws bumped vertex lit only.
-//-----------------------------------------------------------------------------
-void CShaderSystem::DrawBumpedModelLightingOnly( IShader *pShader, IMaterialVar **ppParams )
-{
-	bool bHasSelfIllum = IsFlagSet( ppParams, MATERIAL_VAR_SELFILLUM );
-	int nShaderIndex = bHasSelfIllum ? MATERIAL_DEBUG_BUMPED_VERTEXLIT_SELF_ILLUM : MATERIAL_DEBUG_BUMPED_VERTEXLIT; 
-	
-	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ nShaderIndex ];	
-	if( !g_config.m_bFastNoBump )
-	{
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpmap" );
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpframe" );
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumptransform" );
-	}
-	else
-	{
-		bool bFound;
-		IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( "$bumpmap", &bFound );
-		Assert( bFound );
-
-		pMaterialVar->SetUndefined();
-	}
-
-	CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$selfillumtint" );
-
-	bool bFound;
-	IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( "$hasselfillum", &bFound );
-	Assert( bFound );
-	pMaterialVar->SetIntValue( bHasSelfIllum );
-
-	DrawUsingMaterial( pDebugMaterial );
-}
-
-
-//-----------------------------------------------------------------------------
-// Draws lightmapped only.
-//-----------------------------------------------------------------------------
-void CShaderSystem::DrawLightmappedOnly( bool usesVertexShader )
-{
-	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ usesVertexShader ? MATERIAL_DEBUG_LIGHTMAP_VS : MATERIAL_DEBUG_LIGHTMAP_FF ];
-	DrawUsingMaterial( pDebugMaterial );
-}
-
-
-//-----------------------------------------------------------------------------
-// Draws bumped lightmapped only.
-//-----------------------------------------------------------------------------
-void CShaderSystem::DrawBumpedLightmapOnly( IShader *pShader, IMaterialVar **ppParams )
-{
-	if (!HardwareConfig()->SupportsVertexAndPixelShaders())
-	{
-		Assert( 0 );
-	}
-
-	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ MATERIAL_DEBUG_BUMPED_LIGHTMAP ];
-	if( !g_config.m_bFastNoBump )
-	{
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpmap" );
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpframe" );
-		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumptransform" );
-	}
-	else
-	{
-		bool bFound;
-		IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( "$bumpmap", &bFound );
-		Assert( bFound );
-
-		pMaterialVar->SetUndefined();
-	}
-
-	DrawUsingMaterial( pDebugMaterial );
-}
-
-
-//-----------------------------------------------------------------------------
-// Draws unlit only.for models
-//-----------------------------------------------------------------------------
-void CShaderSystem::DrawUnlitOnly( IMaterialVar **params, bool usesVertexShader )
-{
-	int nShaderIndex;
-	if ( usesVertexShader )
-	{
-		nShaderIndex = IsFlagSet( params, MATERIAL_VAR_MODEL ) ? 
-			MATERIAL_DEBUG_UNLIT_VS_MODEL : MATERIAL_DEBUG_UNLIT_VS;
-	}
-	else
-	{
-		nShaderIndex = IsFlagSet( params, MATERIAL_VAR_MODEL ) ? 
-			MATERIAL_DEBUG_UNLIT_FF_MODEL : MATERIAL_DEBUG_UNLIT_FF;
-	}
-	DrawUsingMaterial( m_pDebugMaterials[nShaderIndex] );
-}
-
-
-//-----------------------------------------------------------------------------
-// Draws the puppy with lighting only...
-//-----------------------------------------------------------------------------
-void CShaderSystem::DrawElementsLightingOnly( IShader *pShader, IMaterialVar **params, ShaderRenderState_t* pRenderState )
-{
+	// FIXME!  Make this work with fixed function.
 	int vertexFormat = pRenderState->m_VertexFormat;
 	bool bUsesVertexShader = (VertexFlags(vertexFormat) & VERTEX_FORMAT_VERTEX_SHADER) != 0;
+	if( !bUsesVertexShader )
+	{
+		Assert( 0 );
+		return false;
+	}
+	IMaterialInternal *pDebugMaterial = m_pDebugMaterials[ MATERIAL_DEBUG_ENVMAPMASK ];
 
-	// Deal with lighting only
-	if( g_config.bBumpmap && IsFlag2Set( params, MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP ) )
+	bool bFound;
+	IMaterialVar *pMaterialVar = pDebugMaterial->FindVar( "$showalpha", &bFound );
+	Assert( bFound );
+
+	if( IsFlagSet( ppParams, MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK ) )
 	{
-		DrawBumpedLightmapOnly( pShader, params );
+		// $bumpmap
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpmap", "$basetexture" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumpframe", "$frame" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$bumptransform", "$basetexturetransform" );
+		pMaterialVar->SetIntValue( 1 );
 	}
-	else if( IsFlag2Set( params, MATERIAL_VAR2_LIGHTING_LIGHTMAP ) )
+	else if( IsFlagSet( ppParams, MATERIAL_VAR_BASEALPHAENVMAPMASK ) )
 	{
-		DrawLightmappedOnly( bUsesVertexShader );
-	}
-	else if( g_config.bBumpmap && IsFlag2Set( params, MATERIAL_VAR2_DIFFUSE_BUMPMAPPED_MODEL ) )
-	{
-		DrawBumpedModelLightingOnly( pShader, params );
-	}
-	else if( IsFlag2Set( params, MATERIAL_VAR2_LIGHTING_VERTEX_LIT ) )
-	{
-		DrawVertexLitOnly( bUsesVertexShader );
+		// $basealphaenvmapmask
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$basetexture" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$frame" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$basetexturetransform" );
+		pMaterialVar->SetIntValue( 1 );
 	}
 	else
 	{
-		DrawUnlitOnly( params, bUsesVertexShader );
+		// $envmapmask
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$envmapmask", "$basetexture" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$envmapmaskframe", "$frame" );
+		CopyMaterialVarToDebugShader( pDebugMaterial, pShader, ppParams, "$envmapmasktransform", "$basetexturetransform" );
+		pMaterialVar->SetIntValue( 0 );
+	}
+
+	if( pDebugMaterial->FindVar( "$basetexture", NULL )->IsTexture() )
+	{
+		DrawUsingMaterial( pDebugMaterial, vertexCompression );
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
-
 
 //-----------------------------------------------------------------------------
 //
@@ -1551,22 +1867,58 @@ void CShaderSystem::DrawElementsLightingOnly( IShader *pShader, IMaterialVar **p
 //-----------------------------------------------------------------------------
 
 
+ShaderAPITextureHandle_t CShaderSystem::GetShaderAPITextureBindHandle( ITexture *pTexture, int nFrame, int nTextureChannel )
+{
+	Assert( !IsTextureInternalEnvCubemap( static_cast<ITextureInternal*>(pTexture) ) );
+
+	// Bind away baby
+	if( pTexture )
+	{
+		// This is ugly. Basically, this is yet another way that textures can be bound. They don't get bound here, 
+		// but the return is only used to bind them for semistatic command buffer building, which doesn't go through
+		// CTexture::Bind for whatever reason. So let's request the mipmaps here. If you run into this, in a situation
+		// where we shouldn't be doing the request, we could relocate this code to the appropriate callsites instead. 
+		ITextureInternal* pTex = assert_cast< ITextureInternal* >( pTexture );
+		TextureManager()->RequestAllMipmaps( pTex );		
+
+		return pTex->GetTextureHandle( nFrame, nTextureChannel );
+	}
+	else
+		return INVALID_SHADERAPI_TEXTURE_HANDLE;
+}
+
 //-----------------------------------------------------------------------------
 // Binds a texture
 //-----------------------------------------------------------------------------
-void CShaderSystem::BindTexture( TextureStage_t stage, ITexture *pTexture, int nFrame )
+void CShaderSystem::BindTexture( Sampler_t sampler1, ITexture *pTexture, int nFrame /* = 0 */ )
 {
-	if ( pTexture != ( ITexture * )-1 )
+	// The call to IMaterialVar::GetTextureValue should have converted this to a real thing
+	Assert( !IsTextureInternalEnvCubemap( static_cast<ITextureInternal*>(pTexture) ) );
+
+	// Bind away baby
+	if( pTexture )
 	{
-		// Bind away baby
-		if( pTexture )
-		{
-			static_cast<ITextureInternal*>(pTexture)->Bind( stage, nFrame );
-		}
+		static_cast<ITextureInternal*>(pTexture)->Bind( sampler1, nFrame );
 	}
-	else
+}
+
+
+void CShaderSystem::BindTexture( Sampler_t sampler1, Sampler_t sampler2, ITexture *pTexture, int nFrame /* = 0 */ )
+{
+	// The call to IMaterialVar::GetTextureValue should have converted this to a real thing
+	Assert( !IsTextureInternalEnvCubemap( static_cast<ITextureInternal*>(pTexture) ) );
+
+	// Bind away baby
+	if( pTexture )
 	{
-		static_cast<ITextureInternal*>(MaterialSystem()->GetLocalCubemap())->Bind( stage, nFrame );
+		if ( sampler2 == Sampler_t(-1) )
+		{
+			static_cast<ITextureInternal*>(pTexture)->Bind( sampler1, nFrame );
+		}
+		else
+		{
+			static_cast<ITextureInternal*>(pTexture)->Bind( sampler1, nFrame, sampler2 );
+		}
 	}
 }
 
@@ -1577,11 +1929,10 @@ void CShaderSystem::BindTexture( TextureStage_t stage, ITexture *pTexture, int n
 //
 //-----------------------------------------------------------------------------
 
-
 //-----------------------------------------------------------------------------
 // Loads a texture
 //-----------------------------------------------------------------------------
-void CShaderSystem::LoadTexture( IMaterialVar *pTextureVar )
+void CShaderSystem::LoadTexture( IMaterialVar *pTextureVar, const char *pTextureGroupName, int nAdditionalCreationFlags /* = 0 */ )
 {
 	if (pTextureVar->GetType() != MATERIAL_VAR_TYPE_STRING)
 	{
@@ -1595,13 +1946,26 @@ void CShaderSystem::LoadTexture( IMaterialVar *pTextureVar )
 
 	// In this case, we have to convert the string into a texture value
 	const char *pName = pTextureVar->GetStringValue();
+	
+	// Fix cases where people stupidly put a slash at the front of the vtf filename in a vmt. Causes trouble elsewhere.
+	if ( pName[0] == CORRECT_PATH_SEPARATOR || pName[1] == CORRECT_PATH_SEPARATOR ) 
+		++pName;
 
 	ITextureInternal *pTexture;
-	pTexture = TextureManager()->FindOrLoadTexture( pName );
+
+	// Force local cubemaps when using the editor
+	if ( MaterialSystem()->CanUseEditorMaterials() && ( stricmp( pName, "env_cubemap" ) == 0 ) )
+	{
+		pTexture = &g_BitchCubemapTexture;
+	}
+	else
+	{
+		pTexture = static_cast< ITextureInternal * >( MaterialSystem()->FindTexture( pName, pTextureGroupName, false, nAdditionalCreationFlags ) );
+	}
 
 	if( !pTexture )
 	{
-		if( !g_pShaderAPI->IsUsingGraphics() && ( stricmp( pName, "env_cubemap" ) != 0 ) )
+		if( !g_pShaderDevice->IsUsingGraphics() && ( stricmp( pName, "env_cubemap" ) != 0 ) )
 		{
 			Warning( "Shader_t::LoadTexture: texture \"%s.vtf\" doesn't exist\n", pName );
 		}
@@ -1615,7 +1979,7 @@ void CShaderSystem::LoadTexture( IMaterialVar *pTextureVar )
 //-----------------------------------------------------------------------------
 // Loads a bumpmap
 //-----------------------------------------------------------------------------
-void CShaderSystem::LoadBumpMap( IMaterialVar *pTextureVar )
+void CShaderSystem::LoadBumpMap( IMaterialVar *pTextureVar, const char *pTextureGroupName )
 {
 	Assert( pTextureVar );
 
@@ -1630,8 +1994,8 @@ void CShaderSystem::LoadBumpMap( IMaterialVar *pTextureVar )
 	}
 
 	// Convert a string to the actual texture
-	ITextureInternal *pTexture;
-	pTexture = TextureManager()->FindOrLoadTexture( pTextureVar->GetStringValue(), true );
+	ITexture *pTexture;
+	pTexture = MaterialSystem()->FindTexture( pTextureVar->GetStringValue(), pTextureGroupName, false, 0 );
 
 	// FIXME: Make a bumpmap error texture
 	if (!pTexture)
@@ -1646,12 +2010,12 @@ void CShaderSystem::LoadBumpMap( IMaterialVar *pTextureVar )
 //-----------------------------------------------------------------------------
 // Loads a cubemap
 //-----------------------------------------------------------------------------
-void CShaderSystem::LoadCubeMap( IMaterialVar **ppParams, IMaterialVar *pTextureVar )
+void CShaderSystem::LoadCubeMap( IMaterialVar **ppParams, IMaterialVar *pTextureVar, int nAdditionalCreationFlags /* = 0 */ )
 {
-	if( !HardwareConfig()->SupportsCubeMaps() )
+	if ( !HardwareConfig()->SupportsCubeMaps() )
 		return;
 	
-	if (pTextureVar->GetType() != MATERIAL_VAR_TYPE_STRING)
+	if ( pTextureVar->GetType() != MATERIAL_VAR_TYPE_STRING )
 	{
 		// This here will cause 'UNDEFINED' material vars
 		if (pTextureVar->GetType() != MATERIAL_VAR_TYPE_TEXTURE)
@@ -1661,21 +2025,28 @@ void CShaderSystem::LoadCubeMap( IMaterialVar **ppParams, IMaterialVar *pTexture
 		return;
 	}
 
-	if( stricmp( pTextureVar->GetStringValue(), "env_cubemap" ) == 0 )
+	if ( stricmp( pTextureVar->GetStringValue(), "env_cubemap" ) == 0 )
 	{
-		// garymcthack 
-		// don't have to load anything here. . just set the texture value to something
+		// don't have to load anything here. . just set the texture value to DummyTexture
 		// special that says to use the cubemap entity.
-		pTextureVar->SetTextureValue( ( ITexture * )-1 );
+		pTextureVar->SetTextureValue( &g_BitchCubemapTexture );
 		SetFlags2( ppParams, MATERIAL_VAR2_USES_ENV_CUBEMAP );
 	}
 	else
 	{
-		ITextureInternal *pTexture;
-		pTexture = TextureManager()->FindOrLoadTexture( pTextureVar->GetStringValue(), false );
+		ITexture *pTexture;
+		char textureName[MAX_PATH];
+		Q_strncpy( textureName, pTextureVar->GetStringValue(), MAX_PATH );
+		if ( HardwareConfig()->GetHDRType() != HDR_TYPE_NONE )
+		{
+			// Overload the texture name to ".hdr.vtf" (instead of .vtf) if we are running with 
+			// HDR enabled.
+			Q_strncat( textureName, ".hdr", MAX_PATH, COPY_ALL_CHARACTERS );
+		}
+		pTexture = MaterialSystem()->FindTexture( textureName, TEXTURE_GROUP_CUBE_MAP, false, nAdditionalCreationFlags );
 
 		// FIXME: Make a cubemap error texture
-		if (!pTexture)
+		if ( !pTexture )
 		{
 			pTexture = TextureManager()->ErrorTexture();
 		}

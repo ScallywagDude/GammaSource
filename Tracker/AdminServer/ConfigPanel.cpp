@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,21 +6,20 @@
 //=============================================================================
 
 #include "ConfigPanel.h"
-#include "Info.h"
-#include "serverpage.h"
+//#include "Info.h"
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISystem.h>
-#include <VGUI_ISurface.h>
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_Button.h>
-#include <VGUI_ToggleButton.h>
-#include <VGUI_CheckButton.h>
-#include <VGUI_MessageBox.h>
-#include <VGUI_RadioButton.h>
+#include <vgui/ISystem.h>
+#include <vgui/ISurface.h>
+#include <vgui/IVGui.h>
+#include <KeyValues.h>
+
+#include <vgui_controls/Label.h>
+#include <vgui_controls/TextEntry.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/ToggleButton.h>
+#include <vgui_controls/CheckButton.h>
+#include <vgui_controls/MessageBox.h>
+#include <vgui_controls/RadioButton.h>
 
 #include <stdio.h>
 
@@ -31,14 +30,17 @@ static const long RETRY_TIME = 10000;		// refresh server every 10 seconds
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CConfigPanel::CConfigPanel(bool autorefresh,bool savercon,int refreshtime,
-							bool graphs, int graphsrefreshtime,bool getlogs) : Frame(NULL, "ConfigPanel")
+CConfigPanel::CConfigPanel(vgui::Panel *parent, bool autorefresh,bool savercon,int refreshtime,
+							bool graphs, int graphsrefreshtime,bool getlogs) : Frame(parent, "ConfigPanel")
 {
-	SetMinimumSize(320,320);
+	196, 181, 80,
+
+	SetMinimumSize(400,240);
+	SetSizeable(false);
 	MakePopup();
 
-	m_pOkayButton = new Button(this, "Okay", "&Okay");
-	m_pCloseButton = new Button(this, "Close", "&Close");
+	m_pOkayButton = new Button(this, "Okay", "#Okay_Button");
+	m_pCloseButton = new Button(this, "Close", "#Close_Button");
 
 	m_pRefreshCheckButton = new CheckButton(this, "RefreshCheckButton", "");
 
@@ -51,9 +53,9 @@ CConfigPanel::CConfigPanel(bool autorefresh,bool savercon,int refreshtime,
 
 	m_pLogsButton = new CheckButton(this, "LogsButton", "");
 
-	SetTitle("Admin Configuration",true);
+	SetTitle("My servers - Options",true);
 
-	LoadControlSettings("Admin\\ConfigPanel.res");
+	LoadControlSettings("Admin\\ConfigPanel.res", "PLATFORM");
 
 	m_pRefreshCheckButton->SetSelected(autorefresh);
 	m_pRconCheckButton->SetSelected(savercon);
@@ -155,43 +157,25 @@ void CConfigPanel::OnCommand(const char *command)
 		m_pRefreshTextEntry->GetText(timeText,20);
 		sscanf(timeText,"%i",&time);
 	
-		memset(timeText,0x0,sizeof(timeText));
-		m_pGraphsRefreshTimeTextEntry->GetText(timeText,20);
+		memset(timeText, 0x0, sizeof(timeText));
+		m_pGraphsRefreshTimeTextEntry->GetText(timeText, 20);
 		sscanf(timeText,"%i",&timeGraphs);
 
 
 		if(time>0 && time < 9999 && timeGraphs>0 && timeGraphs< 9999) 
 		{
 
-			VInternetDlg::GetInstance()->SetConfig(m_pRefreshCheckButton->IsSelected(),
-													m_pRconCheckButton->IsSelected(),
-													time,
-													m_pGraphsButton->IsSelected(),
-													timeGraphs,
-													m_pLogsButton->IsSelected());
 			OnClose();
 
 		}
 		else
 		{
-			MessageBox *dlg = new MessageBox ("Config", "Time value is out of range. (0<x<9999)");
+			MessageBox *dlg = new MessageBox ("#Config_Panel", "#Config_Time_Error");
 			dlg->DoModal();
 		}
 	}
 	else if(!stricmp(command,"close") )
 	{
-		OnClose();
+		Close();
 	}
-
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Message map
-//-----------------------------------------------------------------------------
-MessageMapItem_t CConfigPanel::m_MessageMap[] =
-{
-	MAP_MESSAGE_PTR( CConfigPanel, "ButtonToggled", OnButtonToggled, "panel" ),
-	MAP_MESSAGE_PTR( CConfigPanel, "RadioButtonChecked", OnButtonToggled, "panel" ),
-};
-
-IMPLEMENT_PANELMAP( CConfigPanel, Frame );

@@ -1,12 +1,22 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
+#pragma warning (disable:4127)
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#pragma warning (default:4127)
+
 #include "iphelpers.h"
 #include "basetypes.h"
 #include <assert.h>
 #include "utllinkedlist.h"
 #include "utlvector.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 
 
 // This automatically calls WSAStartup for the app at startup.
@@ -320,9 +330,19 @@ public:
 
 		// This helps a lot if the stream is sending really fast.
 		int rcvBuf = 1024*1024*2;
-		int ret = setsockopt( m_Socket, SOL_SOCKET, SO_RCVBUF, (char*)&rcvBuf, sizeof( rcvBuf ) );
+		setsockopt( m_Socket, SOL_SOCKET, SO_RCVBUF, (char*)&rcvBuf, sizeof( rcvBuf ) );
 
-		return setsockopt( m_Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mr, sizeof( mr ) ) == 0;
+		if ( setsockopt( m_Socket, IPPROTO_IP, IP_ADD_MEMBERSHIP, (char*)&mr, sizeof( mr ) ) == 0 )
+		{
+			// Remember this so we do IP_DEL_MEMBERSHIP on shutdown.
+			m_bMulticastGroupMembership = true;
+			m_MulticastGroupMREQ = mr;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
 	}
 	
 	virtual bool	Broadcast( const void *pData, const int len, const unsigned short port )
@@ -438,17 +458,28 @@ private:
 	{
 		if ( m_Socket != INVALID_SOCKET )
 		{
+			if ( m_bMulticastGroupMembership )
+			{
+				// Undo our multicast group membership.
+				setsockopt( m_Socket, IPPROTO_IP, IP_DROP_MEMBERSHIP, (char*)&m_MulticastGroupMREQ, sizeof( m_MulticastGroupMREQ ) );
+			}
+
 			closesocket( m_Socket );
 			m_Socket = INVALID_SOCKET;
 		}
 
 		m_bSetupToBroadcast = false;
+		m_bMulticastGroupMembership = false;
 	}
 
 
 private:
 
 	SOCKET			m_Socket;
+	
+	bool			m_bMulticastGroupMembership; // Did we join a multicast group?
+	ip_mreq			m_MulticastGroupMREQ;
+
 	bool			m_bSetupToBroadcast;
 	double			m_flLastRecvTime;
 	bool			m_bListenSocket;
@@ -489,7 +520,7 @@ bool ConvertStringToIPAddr( const char *pStr, CIPAddr *pOut )
 {
 	char ipStr[512];
 
-	char *pColon = strchr( pStr, ':' );
+	const char *pColon = strchr( pStr, ':' );
 	if ( pColon )
 	{
 		int toCopy = pColon - pStr;
@@ -513,30 +544,12 @@ bool ConvertStringToIPAddr( const char *pStr, CIPAddr *pOut )
 	if ( ipStr[0] >= '0' && ipStr[0] <= '9' )
 	{
 		// It's numbers.
-		const char *pCurPos = pStr;
-		for ( int i=0; i < 4; i++ )
-		{
-			while ( *pCurPos == ' ' || *pCurPos == ':' )
-				++pCurPos;
-
-			if ( *pCurPos == 0 )
-				return false;
-
-			int val = 0;
-			while ( *pCurPos >= '0' && *pCurPos < '9' )
-			{
-				val *= 10;
-				val += *pCurPos - '0';
-			}
-
-			if ( val >= 256 )
-			{
-				assert( false );
-				return false;
-			}
-
-			pOut->ip[i] = (unsigned char)val;
-		}
+		int ip[4];
+		sscanf( ipStr, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3] );
+		pOut->ip[0] = (unsigned char)ip[0];
+		pOut->ip[1] = (unsigned char)ip[1];
+		pOut->ip[2] = (unsigned char)ip[2];
+		pOut->ip[3] = (unsigned char)ip[3];
 	}
 	else
 	{

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -31,6 +31,10 @@ public:
 	virtual void		GetSocketAddress( int socket, netadr_t *a ) = 0;
 
 	virtual bool		CompareAdr( netadr_t *a, netadr_t *b ) =0;
+
+	// return the IP of the local host
+	virtual void	GetLocalIP(netadr_t *a)=0;
+
 };
 
 extern INetAPI *net;

@@ -1,0 +1,72 @@
+//========= GammaSource ============//
+//
+// Vertex shader for the 2002-2003 Predator (screen refraction + envmap) and
+// JellyFish (view-angle gradient glow) shaders, rewritten in HLSL from the
+// original predator.vsh / predator_envmap.vsh / JellyFish.vsh.
+//
+//=================================//
+
+//	DYNAMIC: "COMPRESSED_VERTS"		"0..1"
+//	DYNAMIC: "SKINNING"				"0..1"
+
+#include "common_vs_fxc.h"
+
+static const bool g_bSkinning = SKINNING ? true : false;
+
+// xy = refraction amount (Predator), z = gradient offset (JellyFish time * pulse rate)
+const float4 cGammaParams : register( SHADER_SPECIFIC_CONST_0 );
+
+struct VS_INPUT
+{
+	float4 vPos				: POSITION;
+	float4 vBoneWeights		: BLENDWEIGHT;
+	float4 vBoneIndices		: BLENDINDICES;
+	float4 vNormal			: NORMAL;
+	float4 vTexCoord0		: TEXCOORD0;
+};
+
+struct VS_OUTPUT
+{
+	float4 vProjPos			: POSITION;
+	float  vFog				: FOG;
+	float3 vRefractXYW		: TEXCOORD0;	// screen-space refraction coords * w
+	float3 vReflect			: TEXCOORD1;	// world-space reflection vector
+	float2 vTexCoord		: TEXCOORD2;
+	float2 vGradient		: TEXCOORD3;	// JellyFish gradient lookup
+};
+
+VS_OUTPUT main( const VS_INPUT v )
+{
+	VS_OUTPUT o = ( VS_OUTPUT )0;
+
+	float3 vObjNormal;
+	DecompressVertex_Normal( v.vNormal, vObjNormal );
+
+	float3 worldPos, worldNormal;
+	SkinPositionAndNormal( g_bSkinning, v.vPos, vObjNormal, v.vBoneWeights, v.vBoneIndices, worldPos, worldNormal );
+	worldNormal = normalize( worldNormal );
+
+	float4 vProjPos = mul( float4( worldPos, 1 ), cViewProj );
+	o.vProjPos = vProjPos;
+	o.vFog = CalcFog( worldPos, vProjPos, FOGTYPE_RANGE );
+
+	// Predator: screen position, nudged along the projected normal (2003: projPos.xy*0.5+0.5
+	// minus normal*amount, then y flipped). Kept multiplied by w for a perspective-correct divide.
+	float2 vProjNormal = mul( float4( worldNormal, 0 ), cViewProj ).xy;
+	float w = vProjPos.w;
+	o.vRefractXYW.x = ( vProjPos.x + w ) * 0.5f - vProjNormal.x * cGammaParams.x * w;
+	o.vRefractXYW.y = ( w - vProjPos.y ) * 0.5f + vProjNormal.y * cGammaParams.y * w;
+	o.vRefractXYW.z = w;
+
+	// Envmap: reflection of the eye vector about the normal
+	float3 vEyeToVert = worldPos - cEyePos;
+	o.vReflect = reflect( vEyeToVert, worldNormal );
+
+	o.vTexCoord = v.vTexCoord0.xy;
+
+	// JellyFish: dot( normal, vertex-to-eye ) + time picks the glow colour
+	float3 vVertToEye = normalize( cEyePos - worldPos );
+	o.vGradient = float2( dot( vVertToEye, worldNormal ) + cGammaParams.z, 0.5f );
+
+	return o;
+}

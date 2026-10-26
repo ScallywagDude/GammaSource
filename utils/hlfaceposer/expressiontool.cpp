@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdio.h>
 #include "hlfaceposer.h"
 #include "ExpressionTool.h"
@@ -17,15 +24,15 @@
 #include "FlexPanel.h"
 #include "mxExpressionTray.h"
 #include "ExpressionProperties.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "faceposer_models.h"
 #include "UtlBuffer.h"
-#include "FileSystem.h"
-#include "cmdlib.h"
-#include "scriplib.h"
+#include "filesystem.h"
 #include "iscenetokenprocessor.h"
 #include "MatSysWin.h"
 #include "choreoviewcolors.h"
+#include "scriplib.h"
+#include "EdgeProperties.h"
 
 ExpressionTool *g_pExpressionTool = 0;
 
@@ -37,7 +44,7 @@ ExpressionTool *g_pExpressionTool = 0;
 // 10% per step
 #define TIME_ZOOM_STEP 2
 
-void SetupFlexControllerTracks( studiohdr_t *hdr, CChoreoEvent *event );
+void SetupFlexControllerTracks( CStudioHdr *hdr, CChoreoEvent *event );
 
 class CExpressionToolWorkspace : public mxWindow
 {
@@ -85,6 +92,7 @@ public:
 
 	void				OnSortByUsed( void );
 	void				OnSortByName( void );
+
 private:
 
 	int					GetItemUnderMouse( int mx, int my );
@@ -223,6 +231,9 @@ void CExpressionToolWorkspace::OnSortByName( void )
 
 void CExpressionToolWorkspace::DrawEventEnd( CChoreoWidgetDrawHelper& drawHelper )
 {
+	if ( !g_pExpressionTool )
+		return;
+
 	CChoreoEvent *e = g_pExpressionTool->GetSafeEvent();
 	if ( !e )
 		return;
@@ -274,9 +285,6 @@ int CExpressionToolWorkspace::GetItemUnderMouse( int mx, int my )
 void CExpressionToolWorkspace::MouseToToolMouse( int& mx, int& my, char *reason )
 {
 	POINT pt;
-
-	int oldmx = mx;
-
 	pt.x = mx;
 	pt.y = my;
 
@@ -289,13 +297,17 @@ void CExpressionToolWorkspace::MouseToToolMouse( int& mx, int& my, char *reason 
 
 int	CExpressionToolWorkspace::handleEvent( mxEvent *event )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	switch ( event->event )
 	{
 	case mxEvent::MouseDown:
 		{
-			SetFocus( (HWND)getParent()->getHandle() );
+			HWND wnd = (HWND)getParent()->getHandle();
+			SetFocus( wnd );
+			SetWindowPos( wnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
 
 			{
 				int mx = (short)event->x;
@@ -431,16 +443,22 @@ int	CExpressionToolWorkspace::handleEvent( mxEvent *event )
 		{
 			if ( event->modifiers & mxEvent::KeyShift )
 			{
-				// Zoom time in  / out
-				if ( event->height > 0 )
+				CChoreoScene *scene = g_pChoreoView->GetScene();
+				if ( scene )
 				{
-					g_pExpressionTool->SetTimeZoomScale( min( g_pExpressionTool->GetTimeZoomScale() + TIME_ZOOM_STEP, MAX_TIME_ZOOM ) );
+					int tz = g_pChoreoView->GetTimeZoom( g_pExpressionTool->GetToolName() );
+
+					// Zoom time in  / out
+					if ( event->height > 0 )
+					{
+						g_pChoreoView->SetTimeZoom( g_pExpressionTool->GetToolName(), min( tz + TIME_ZOOM_STEP, MAX_TIME_ZOOM ), false );
+					}
+					else
+					{
+						g_pChoreoView->SetTimeZoom( g_pExpressionTool->GetToolName(), min( tz - TIME_ZOOM_STEP, MAX_TIME_ZOOM ), false );
+					}
+					g_pExpressionTool->RepositionHSlider();
 				}
-				else
-				{
-					g_pExpressionTool->SetTimeZoomScale( max( g_pExpressionTool->GetTimeZoomScale() - TIME_ZOOM_STEP, TIME_ZOOM_STEP ) );
-				}
-				g_pExpressionTool->RepositionHSlider();
 				redraw();
 				iret = 1;
 				return iret;
@@ -776,7 +794,7 @@ void CExpressionToolWorkspace::OnDeleteColumn()
 	int deleteframestart;
 	int deleteframeend;
 
-	char *sep = strstr( params.m_szInputText, "-" );
+	char *sep = Q_strstr( params.m_szInputText, "-" );
 	if ( sep )
 	{
 		*sep = 0;
@@ -862,24 +880,26 @@ void CExpressionToolWorkspace::MoveSelectedSamples( float dfdx, float dfdy, bool
 		if ( !track )
 			continue;
 
-		int edittype = item->GetEditType();
-
-		for ( int i = 0; i < (int)track->GetNumSamples( edittype ); i++ )
+		// If the track is a combo type track, then move any underlying selected samples, too
+		for ( int edittype = 0; edittype <= ( track->IsComboType() ? 1 : 0 ); edittype++ )
 		{
-			CExpressionSample *sample = track->GetSample( i, edittype );
-			if ( !sample || !sample->selected )
-				continue;
-
-			sample->time += dfdx;
-			sample->time = clamp( sample->time, 0.0f, eventduration );
-
-			if ( snap )
+			for ( int i = 0; i < (int)track->GetNumSamples( edittype ); i++ )
 			{
-				sample->time = FacePoser_SnapTime( sample->time );
-			}
+				CExpressionSample *sample = track->GetSample( i, edittype );
+				if ( !sample || !sample->selected )
+					continue;
 
-			sample->value -= dfdy;
-			sample->value = clamp( sample->value, 0.0f, 1.0f );
+				sample->time += dfdx;
+				sample->time = clamp( sample->time, 0.0f, eventduration );
+
+				if ( snap )
+				{
+					sample->time = FacePoser_SnapTime( sample->time );
+				}
+
+				sample->value -= dfdy;
+				sample->value = clamp( sample->value, 0.0f, 1.0f );
+			}
 		}
 				
 		track->Resort();
@@ -998,7 +1018,7 @@ ExpressionTool::ExpressionTool( mxWindow *parent )
 
 	m_pWorkspace = new CExpressionToolWorkspace( this );
 
-	m_szEvent[0]		= 0;
+	m_nFocusEventGlobalID = -1;
 
 	m_flScrub			= 0.0f;
 	m_flScrubTarget		= 0.0f;
@@ -1027,9 +1047,8 @@ ExpressionTool::ExpressionTool( mxWindow *parent )
 	m_flPixelsPerSecond = 500.0f;
 
 	m_flLastDuration = 0.0f;
-	m_nTimeZoom = 100;
 	m_nScrollbarHeight	= 12;
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	m_pHorzScrollBar = new mxScrollbar( this, 0, 0, 18, 100, IDC_FLEXHSCROLL, mxScrollbar::Horizontal );
 	m_pHorzScrollBar->setVisible( false );
@@ -1072,9 +1091,11 @@ void ExpressionTool::SetEvent( CChoreoEvent *event )
 			{
 				m_flLastDuration = dur;
 				m_nLastHPixelsNeeded = -1;
-				m_nLeftOffset = 0;
+				m_flLeftOffset = 0.0f;
 				InvalidateLayout();
 			}
+
+			m_nFocusEventGlobalID = event->GetGlobalID();
 		}
 		m_bInSetEvent = false;
 		return;
@@ -1084,14 +1105,14 @@ void ExpressionTool::SetEvent( CChoreoEvent *event )
 
 	m_pWorkspace->HideTimelines();
 
-	m_szEvent[ 0 ] = 0;
+	m_nFocusEventGlobalID = -1;
 	if ( event )
 	{
-		strcpy( m_szEvent, event->GetName() );
-	
+		m_nFocusEventGlobalID = event->GetGlobalID();
+
 		if ( models->GetActiveStudioModel() )
 		{
-			studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+			CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 			if ( hdr )
 			{
 				// Force re-lookup
@@ -1130,7 +1151,7 @@ void ExpressionTool::SetEvent( CChoreoEvent *event )
 		m_flLastDuration = 0.0f;
 	}
 
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	InvalidateLayout();
 
@@ -1191,6 +1212,8 @@ void ExpressionTool::Paste( CFlexAnimationTrack *destination )
 				destination->AddSample( s->time, s->value, t );
 			}
 		}
+
+		destination->Resort( t );
 	}
 	g_pChoreoView->PushRedo( "Paste" );
 }
@@ -1200,6 +1223,9 @@ void ExpressionTool::Paste( CFlexAnimationTrack *destination )
 //-----------------------------------------------------------------------------
 CChoreoEvent *ExpressionTool::GetSafeEvent( void )
 {
+	if ( m_nFocusEventGlobalID == -1 )
+		return NULL;
+
 	if ( !g_pChoreoView )
 		return NULL;
 
@@ -1207,14 +1233,14 @@ CChoreoEvent *ExpressionTool::GetSafeEvent( void )
 	if ( !scene )
 		return NULL;
 
-	// Find event by name
+	// look to see if it's focused any any event
 	for ( int i = 0; i < scene->GetNumEvents() ; i++ )
 	{
 		CChoreoEvent *e = scene->GetEvent( i );
 		if ( !e || e->GetType() != CChoreoEvent::FLEXANIMATION )
 			continue;
 
-		if ( !stricmp( m_szEvent, e->GetName() ) )
+		if ( e->GetGlobalID() == m_nFocusEventGlobalID )
 		{
 			DoTrackLookup( e );
 			return e;
@@ -1876,6 +1902,9 @@ void ExpressionTool::ShowContextMenu( mxEvent *event, bool include_track_menus )
 		heightMenu->add( va( "Reset '%s'", track->GetFlexControllerName() ) , IDC_ET_RESET_ITEM_SIZE );
 		heightMenu->add( "Reset All", IDC_ET_RESET_ALL_ITEM_SIZES );
 		pop->addMenu( "Height", heightMenu );
+
+		pop->addSeparator();
+		pop->add( "Edge Properties...", IDC_ET_EDGEPROPERTIES );
 	}
 	pop->addSeparator();
 
@@ -1900,13 +1929,32 @@ void ExpressionTool::ShowContextMenu( mxEvent *event, bool include_track_menus )
 		tagmenu->add( "Insert...", IDC_INSERT_TIMING_TAG );
 	}
 
-	if ( IsMouseOverSelection( (short)event->x, (short)event->y ) )
+	bool bMouseOverSelection = IsMouseOverSelection( (short)event->x, (short)event->y );
+
+	if ( bMouseOverSelection || HasCopiedColumn() )
 	{
 		mxPopupMenu *selectionMenu = new mxPopupMenu();
-		selectionMenu->add( "Delete samples", IDC_ET_SELECTION_DELETE );
-		selectionMenu->add( "Delete samples and shift remainder", IDC_ET_SELECTION_EXCISE );
+
+		if ( bMouseOverSelection ) 
+		{
+			selectionMenu->add( "Copy samples", IDC_ET_SELECTION_COPY );
+		}
+
+		if ( HasCopiedColumn() )
+		{
+			selectionMenu->add( "Paste samples", IDC_ET_SELECTION_PASTE );
+		}
+
+		if ( bMouseOverSelection )
+		{
+			selectionMenu->addSeparator();
+			selectionMenu->add( "Delete samples", IDC_ET_SELECTION_DELETE );
+			selectionMenu->add( "Delete samples and shift remainder", IDC_ET_SELECTION_EXCISE );
+		}
 		pop->addMenu( "Column", selectionMenu );
 	}
+
+
 
 	pop->addMenu( "Timing Tags", tagmenu );
 
@@ -2180,6 +2228,8 @@ void ExpressionTool::OnMouseMove( mxEvent *event )
 
 int	ExpressionTool::handleEvent( mxEvent *event )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
@@ -2205,16 +2255,26 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseWheeled:
 		{
-			// Zoom time in  / out
-			if ( event->height > 0 )
+			CChoreoScene *scene = g_pChoreoView->GetScene();
+			if ( scene )
 			{
-				m_nTimeZoom = min( m_nTimeZoom + TIME_ZOOM_STEP, MAX_TIME_ZOOM );
+				int tz = g_pChoreoView->GetTimeZoom( GetToolName() );
+				bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+				int stepMultipiler = shiftdown ? 5 : 1;
+
+				// Zoom time in  / out
+				if ( event->height > 0 )
+				{
+					tz = min( tz + TIME_ZOOM_STEP * stepMultipiler, MAX_TIME_ZOOM );
+				}
+				else
+				{
+					tz = max( tz - TIME_ZOOM_STEP * stepMultipiler, TIME_ZOOM_STEP );
+				}
+
+				g_pChoreoView->SetPreservedTimeZoom( this, tz );
 			}
-			else
-			{
-				m_nTimeZoom = max( m_nTimeZoom - TIME_ZOOM_STEP, TIME_ZOOM_STEP );
-			}
-			RepositionHSlider();
+			//RepositionHSlider();
 			m_pWorkspace->redraw();
 			redraw();
 			iret = 1;
@@ -2222,7 +2282,7 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseDown:
 		{
-			bool ctrldown = ( event->modifiers & mxEvent::KeyCtrl ) ? true : false;
+//			bool ctrldown = ( event->modifiers & mxEvent::KeyCtrl ) ? true : false;
 			bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
 
 			iret = 1;
@@ -2365,8 +2425,8 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 				{
 					ApplyBounds( mx, my );
 
-					int dx = mx - m_nStartX;
-					int dy = my = m_nStartY;
+//					int dx = mx - m_nStartX;
+//					int dy = my = m_nStartY;
 
 					if ( w2() > 0 )
 					{
@@ -2381,8 +2441,8 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 				{
 					ApplyBounds( mx, my );
 
-					int dx = mx - m_nStartX;
-					int dy = my = m_nStartY;
+//					int dx = mx - m_nStartX;
+//					int dy = my = m_nStartY;
 
 					// Compute dx, dy and apply to sections
 					//Con_Printf( "dx == %i\n", dx );
@@ -2444,6 +2504,12 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 			case IDC_ET_SELECTION_EXCISE:
 				OnDeleteSelection( true );
 				break;
+			case IDC_ET_SELECTION_COPY:
+				OnCopyColumn();
+				break;
+			case IDC_ET_SELECTION_PASTE:
+				OnPasteColumn();
+				break;
 			case IDC_ET_SORT_BY_USED:
 				OnSortByUsed();
 				break;
@@ -2481,10 +2547,10 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 				m_pWorkspace->ExpandValid();
 				break;
 			case IDC_COPY_TO_FLEX:
-				OnCopyToFlex();
+				OnCopyToFlex( true );
 				break;
 			case IDC_COPY_FROM_FLEX:
-				OnCopyFromFlex();
+				OnCopyFromFlex( false );
 				break;
 			case IDC_NEW_EXPRESSION_FROM_FLEXANIMATION:
 				OnNewExpression();
@@ -2717,6 +2783,11 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 					OnScaleSamples();
 				}
 				break;
+			case IDC_ET_EDGEPROPERTIES:
+				{
+					OnEdgeProperties();
+				}
+				break;
 			}
 		}
 		break;
@@ -2731,10 +2802,16 @@ int	ExpressionTool::handleEvent( mxEvent *event )
 
 			if ( !iret )
 			{
-				if ( event->key == VK_ESCAPE )
+				switch ( event->key )
 				{
-					DeselectAll();
-					iret = 1;
+				default:
+					break;
+				case VK_ESCAPE:
+					{
+						DeselectAll();
+						iret = 1;
+					}
+					break;
 				}
 			}
 		}
@@ -2766,7 +2843,7 @@ void ExpressionTool::AddFlexTimingTag( int mx )
 
 	if ( event->GetType() != CChoreoEvent::FLEXANIMATION )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Timing Tag:  Can only tag FLEXANIMATION events\n" );
+		Con_ErrorPrintf( "Timing Tag:  Can only tag FLEXANIMATION events\n" );
 		return;
 	}
 
@@ -2783,7 +2860,7 @@ void ExpressionTool::AddFlexTimingTag( int mx )
 
 	if ( strlen( params.m_szInputText ) <= 0 )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Timing Tag Name:  No name entered!\n" );
+		Con_ErrorPrintf( "Timing Tag Name:  No name entered!\n" );
 		return;
 	}
 	
@@ -3143,17 +3220,17 @@ void ExpressionTool::OnNewExpression( void )
 	if ( !e )
 		return;
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "ExpressionTool::OnNewExpression:  Can't create new face pose, must load a model first!\n" );
+		Con_ErrorPrintf( "ExpressionTool::OnNewExpression:  Can't create new face pose, must load a model first!\n" );
 		return;
 	}
 
 	CExpClass *active = expressions->GetActiveClass();
 	if ( !active )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "ExpressionTool::OnNewExpression:  Can't create new face pose, must load an expression file first!\n" );
+		Con_ErrorPrintf( "ExpressionTool::OnNewExpression:  Can't create new face pose, must load an expression file first!\n" );
 		return;
 	}
 
@@ -3222,31 +3299,30 @@ void ExpressionTool::OnNewExpression( void )
 	if ( ( strlen( params.m_szName ) <= 0 ) ||
 		!stricmp( params.m_szName, "unnamed" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid name\n" );
+		Con_ErrorPrintf( "You must type in a valid name\n" );
 		return;
 	}
 
 	if ( ( strlen( params.m_szDescription ) <= 0 ) ||
    	   !stricmp( params.m_szDescription, "description" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid description\n" );
+		Con_ErrorPrintf( "You must type in a valid description\n" );
 		return;
 	}
 
-	active->AddExpression( params.m_szName, params.m_szDescription, settings, weights, true );
+	active->AddExpression( params.m_szName, params.m_szDescription, settings, weights, true, true );
 }
 
-static int FindFlexControllerIndexByName( StudioModel *model, char const *searchname )
+LocalFlexController_t FindFlexControllerIndexByName( StudioModel *model, char const *searchname )
 {
 	if ( !model )
-		return -1;
+		return LocalFlexController_t(-1);
 
-	studiohdr_t *hdr = model->getStudioHeader();
+	CStudioHdr *hdr = model->GetStudioHdr();
 	if ( !hdr )
-		return -1;
+		return LocalFlexController_t(-1);
 
-	int i;
-	for ( i = 0; i < hdr->numflexcontrollers; i++ )
+	for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++ )
 	{
 		char const *name = hdr->pFlexcontroller( i )->pszName();
 		if ( !name )
@@ -3257,13 +3333,33 @@ static int FindFlexControllerIndexByName( StudioModel *model, char const *search
 
 		return i;
 	}
-	return -1;
+	return LocalFlexController_t(-1);
 }
 
-void ExpressionTool::OnCopyToFlex( void )
+void ExpressionTool::OnCopyToFlex( bool isEdited )
+{
+	// local time in the expression tool for the last mouse click
+	float t = GetTimeValueForMouse( m_nClickedX );
+
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return;
+
+	float scenetime = e->GetStartTime() + t;
+
+	OnCopyToFlex( scenetime, isEdited );
+
+	return;
+}
+
+
+void ExpressionTool::OnCopyToFlex( float scenetime, bool isEdited )
 {
 	CChoreoEvent *e = GetSafeEvent();
 	if ( !e )
+		return;
+
+	if ( scenetime < e->GetStartTime() || scenetime > e->GetEndTime() )
 		return;
 
 	bool needundo = false;
@@ -3294,12 +3390,7 @@ void ExpressionTool::OnCopyToFlex( void )
 		active->SetDirty( true );
 	}
 
-	float t = GetTimeValueForMouse( m_nClickedX );
-
-	// Get spline intensity for controller
-	float faketime = e->GetStartTime() + t;
-
-	g_pFlexPanel->ResetSliders( false );
+	g_pFlexPanel->ResetSliders( false, true );
 
 	StudioModel *model = models->GetActiveStudioModel();
 
@@ -3314,47 +3405,21 @@ void ExpressionTool::OnCopyToFlex( void )
 			continue;
 
 		// Map track flex controller to global name
-		if ( track->IsComboType() )
+		for ( int side = 0; side < 1 + track->IsComboType(); side++ )
 		{
-			for ( int side = 0; side < 2; side++ )
-			{
-				int controller = track->GetFlexControllerIndex( side );
-				if ( controller != -1 )
-				{
-					// Get spline intensity for controller
-					float flIntensity = track->GetIntensity( faketime, side );
-
-					g_pFlexPanel->SetSlider( controller, flIntensity );
-					g_pFlexPanel->SetInfluence( controller, 1.0f );
-					if( model )
-					{
-						int raw = track->GetRawFlexControllerIndex( side );
-						if ( raw != -1 )
-						{
-							model->SetFlexController( raw, flIntensity );
-						}
-					}
-					if ( settings && weights )
-					{
-						settings[ controller ] = flIntensity;
-						weights[ controller ] = 1.0f;
-					}
-				}
-			}
-		}
-		else
-		{
-			int controller = track->GetFlexControllerIndex( 0 );
+			int controller = track->GetFlexControllerIndex( side );
 			if ( controller != -1 )
 			{
 				// Get spline intensity for controller
-				float flIntensity = track->GetIntensity( faketime, 0 );
+				float flIntensity = track->GetIntensity( scenetime, side );
+
 				g_pFlexPanel->SetSlider( controller, flIntensity );
 				g_pFlexPanel->SetInfluence( controller, 1.0f );
+				g_pFlexPanel->SetEdited( controller, isEdited );
 				if( model )
 				{
-					int raw = track->GetRawFlexControllerIndex( 0 );
-					if ( raw != -1 )
+					LocalFlexController_t raw = track->GetRawFlexControllerIndex( side );
+					if ( raw != LocalFlexController_t(-1) )
 					{
 						model->SetFlexController( raw, flIntensity );
 					}
@@ -3374,19 +3439,136 @@ void ExpressionTool::OnCopyToFlex( void )
 	}
 }
 
-void ExpressionTool::OnCopyFromFlex( void )
+void ExpressionTool::OnCopyFromFlex( bool isEdited )
+{
+	// local time in the expression tool for the last mouse click
+	float t = GetTimeValueForMouse( m_nClickedX );
+
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return;
+
+	float scenetime = e->GetStartTime() + t;
+
+	OnCopyFromFlex( scenetime, isEdited );
+
+	return;
+}
+
+void ExpressionTool::OnSetSingleKeyFromFlex( char const *sliderName )
 {
 	CChoreoEvent *e = GetSafeEvent();
 	if ( !e || !e->GetDuration() )
 		return;
 
-	float t = GetTimeValueForMouse( m_nClickedX );
+	float scenetime = g_pChoreoView->GetScene()->GetTime();
+	
+	if ( scenetime < e->GetStartTime() || scenetime > e->GetEndTime() )
+		return;
+
+	scenetime = FacePoser_SnapTime( scenetime );
+
+	float relativetime = scenetime - e->GetStartTime();
 
 	// Get spline intensity for controller
-	float relativetime = t;
-	float faketime = e->GetStartTime() + relativetime;
 
-	faketime = FacePoser_SnapTime( faketime );
+	float				setting;
+	float				influence;
+	float				minvalue, maxvalue;
+
+	g_pChoreoView->SetDirty( true );
+	g_pChoreoView->PushUndo( "Set Single Key" );
+
+	for (int j = 0; j < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; j++)
+	{
+		if ( !g_pFlexPanel->IsValidSlider( j ) )
+			continue;
+
+		if ( Q_stricmp( g_pFlexPanel->getLabel(), sliderName ) )
+			continue;
+
+		setting			= g_pFlexPanel->GetSliderRawValue( j );
+		influence		= g_pFlexPanel->GetInfluence( j );
+
+		// g_pFlexPanel->SetEdited( j, isEdited );
+
+		g_pFlexPanel->GetSliderRange( j, minvalue, maxvalue );
+
+		bool found = false;
+		for ( int i = 0 ; i < e->GetNumFlexAnimationTracks() && !found; i++ )
+		{
+			CFlexAnimationTrack *track = e->GetFlexAnimationTrack( i );
+			if ( !track )
+				continue;
+
+			for ( int side = 0; side < 1 + track->IsComboType(); side++ )
+			{
+				if ( track->GetFlexControllerIndex( side ) != j )
+					continue;
+
+				float normalized = setting;
+				if ( side == 0 )
+				{
+					if ( minvalue != maxvalue )
+					{
+						normalized = ( setting - minvalue ) / ( maxvalue - minvalue );
+					}
+					if (track->IsInverted())
+					{
+						normalized = 1.0 - normalized;
+					}
+				}
+
+				found = true;
+
+				int nSampleCount = track->GetNumSamples( side );
+
+				int j = 0;
+				for ( ; j < nSampleCount; ++j )
+				{
+					CExpressionSample *s = track->GetSample( j, side );
+					if ( s->time == relativetime )
+						break;
+				}
+
+				if ( j >= nSampleCount )
+				{
+					track->AddSample( relativetime, normalized, side );
+					track->Resort( side );
+				}
+				else
+				{
+					CExpressionSample *s = track->GetSample( j, side );
+					s->value = normalized;
+				}
+				
+				track->SetTrackActive( true );
+
+				break;
+			}
+		}
+	}
+
+	g_pChoreoView->PushRedo( "Set Single Key" );
+
+	m_pWorkspace->redraw();
+	redraw();
+}
+
+void ExpressionTool::OnCopyFromFlex( float scenetime, bool isEdited )
+{
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e || !e->GetDuration() )
+		return;
+
+	if ( scenetime < e->GetStartTime() || scenetime > e->GetEndTime() )
+		return;
+
+	scenetime = FacePoser_SnapTime( scenetime );
+
+	float relativetime = scenetime - e->GetStartTime();
+
+	// Get spline intensity for controller
 
 	float				setting;
 	float				influence;
@@ -3397,9 +3579,14 @@ void ExpressionTool::OnCopyFromFlex( void )
 
 	for (int j = 0; j < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; j++)
 	{
+		if ( !g_pFlexPanel->IsValidSlider( j ) )
+			continue;
+
 		setting			= g_pFlexPanel->GetSliderRawValue( j );
 		//setting = g_pFlexPanel->GetSlider( j );
 		influence		= g_pFlexPanel->GetInfluence( j );
+
+		g_pFlexPanel->SetEdited( j, isEdited );
 
 		g_pFlexPanel->GetSliderRange( j, minvalue, maxvalue );
 
@@ -3409,16 +3596,6 @@ void ExpressionTool::OnCopyFromFlex( void )
 			continue;
 		}
 
-		float normalized = setting;
-		if ( minvalue != maxvalue )
-		{
-			normalized = ( setting - minvalue ) / ( maxvalue - minvalue );
-			if ( maxvalue != 1.0f )
-			{
-				normalized = 1.0f - normalized;
-			}
-		}
-
 		bool found = false;
 		for ( int i = 0 ; i < e->GetNumFlexAnimationTracks() && !found; i++ )
 		{
@@ -3426,28 +3603,31 @@ void ExpressionTool::OnCopyFromFlex( void )
 			if ( !track )
 				continue;
 
-			if ( track->IsComboType() )
+			for ( int side = 0; side < 1 + track->IsComboType(); side++ )
 			{
-				for ( int side = 0; side < 2; side++ )
-				{
-					if ( track->GetFlexControllerIndex( side ) != j )
-						continue;
-
-					found = true;
-
-					track->AddSample( relativetime, normalized, side );
-					track->SetTrackActive( true );
-					break;
-				}
-			}
-			else
-			{
-				if ( track->GetFlexControllerIndex( 0 ) != j )
+				if ( track->GetFlexControllerIndex( side ) != j )
 					continue;
 
+				float normalized = setting;
+				if ( side == 0 )
+				{
+					if ( minvalue != maxvalue )
+					{
+						normalized = ( setting - minvalue ) / ( maxvalue - minvalue );
+					}
+					if (track->IsInverted())
+					{
+						normalized = 1.0 - normalized;
+					}
+				}
+
 				found = true;
-				track->AddSample( relativetime, normalized, 0 );
+
+				track->AddSample( relativetime, normalized, side );
+				track->Resort( side );
 				track->SetTrackActive( true );
+
+				break;
 			}
 		}
 	}
@@ -3547,6 +3727,10 @@ bool ExpressionTool::SetFlexAnimationTrackFromExpression( int mx, int my, CExpCl
 
 				track->AddSample( relativetime, mag * leftinfluence, 0 );
 				track->AddSample( relativetime, leftright, 1 );
+
+				track->Resort( 0 );
+				track->Resort( 1 );
+
 				track->SetTrackActive( true );
 			}
 		}
@@ -3560,6 +3744,9 @@ bool ExpressionTool::SetFlexAnimationTrackFromExpression( int mx, int my, CExpCl
 			if ( inf )
 			{
 				track->AddSample( relativetime, s, 0 );
+
+				track->Resort( 0 );
+
 				track->SetTrackActive( true );
 			}
 		}
@@ -3586,27 +3773,19 @@ void ExpressionTool::OnExportFlexAnimation( void )
 		return;
 
 	// Create flexanimations dir
-	CreatePath( va( "%s/flexanimations/foo", GetGameDirectory() ) );
+	CreatePath( "flexanimations/foo" );
 
-	// Show file io
-	const char *fullpath = mxGetSaveFileName( 
-		0, 
-		FacePoser_MakeWindowsSlashes( va( "%s/flexanimations/", GetGameDirectory() ) ), 
-		"*.vfa" );
-	if ( !fullpath || !fullpath[ 0 ] )
-		return;
-
-	// Strip game directory and slash
 	char fafilename[ 512 ];
+	if ( !FacePoser_ShowSaveFileNameDialog( fafilename, sizeof( fafilename ), "flexanimations", "*.vfa" ) )
+	{
+		return;
+	}
 
-	filesystem->FullPathToRelativePath( fullpath, fafilename );
-
-	StripExtension( fafilename );
-	DefaultExtension( fafilename, ".vfa" );
+	Q_DefaultExtension( fafilename, ".vfa", sizeof( fafilename ) );
 
 	Con_Printf( "Exporting events to %s\n", fafilename );
 
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	CChoreoScene::FileSaveFlexAnimations( buf, 0, event );
 
@@ -3629,15 +3808,17 @@ void ExpressionTool::OnImportFlexAnimation( void )
 	if ( !event )
 		return;
 
-	// Show file io
-	const char *fullpath = mxGetOpenFileName( 
-		0, 
-		FacePoser_MakeWindowsSlashes( va( "%s/flexanimations/", GetGameDirectory() ) ), 
-		"*.vfa" );
-	if ( !fullpath || !fullpath[ 0 ] )
+	char fafilename[ 512 ];
+	if ( !FacePoser_ShowOpenFileNameDialog( fafilename, sizeof( fafilename ), "flexanimations", "*.vfa" ) )
+	{
 		return;
-	if ( !FPFullpathFileExists( fullpath ) )
+	}
+
+	if ( !filesystem->FileExists( fafilename ) )
 		return;
+
+	char fullpath[ 512 ];
+	filesystem->RelativePathToFullPath( fafilename, "MOD", fullpath, sizeof( fullpath ) );
 
 	LoadScriptFile( (char *)fullpath );
 
@@ -4064,11 +4245,11 @@ void ExpressionTool::RepositionHSlider( void )
 	}
 	m_pHorzScrollBar->setBounds( 0, h2() - m_nScrollbarHeight, w2(), m_nScrollbarHeight );
 
-	m_nLeftOffset = max( 0, m_nLeftOffset );
-	m_nLeftOffset = min( pixelsneeded, m_nLeftOffset );
+	m_flLeftOffset = max( 0.f, m_flLeftOffset );
+	m_flLeftOffset = min( (float)pixelsneeded, m_flLeftOffset );
 
 	m_pHorzScrollBar->setRange( 0, pixelsneeded );
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_pHorzScrollBar->setValue( m_flLeftOffset );
 	m_pHorzScrollBar->setPagesize( w2() );
 
 	m_nLastHPixelsNeeded = pixelsneeded;
@@ -4080,7 +4261,7 @@ void ExpressionTool::RepositionHSlider( void )
 //-----------------------------------------------------------------------------
 float ExpressionTool::GetPixelsPerSecond( void )
 {
-	return m_flPixelsPerSecond * GetTimeZoomScale();
+	return m_flPixelsPerSecond * (float)g_pChoreoView->GetTimeZoom( GetToolName() ) / 100.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -4089,8 +4270,8 @@ float ExpressionTool::GetPixelsPerSecond( void )
 //-----------------------------------------------------------------------------
 void ExpressionTool::MoveTimeSliderToPos( int x )
 {
-	m_nLeftOffset = x;
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_flLeftOffset = x;
+	m_pHorzScrollBar->setValue( m_flLeftOffset );
 	InvalidateRect( (HWND)m_pHorzScrollBar->getHandle(), NULL, TRUE );
 	InvalidateLayout();
 }
@@ -4146,26 +4327,14 @@ int ExpressionTool::GetPixelForTimeValue( float time, bool *clipped /*=NULL*/ )
 	return pixel;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float ExpressionTool::GetTimeZoomScale( void )
-{
-	return ( float )m_nTimeZoom / 100.0f;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : scale - 
-//-----------------------------------------------------------------------------
-void ExpressionTool::SetTimeZoomScale( int scale )
-{
-	m_nTimeZoom = scale;
-}
-
 void ExpressionTool::OnChangeScale( void )
 {
+	CChoreoScene *scene = g_pChoreoView->GetScene();
+	if ( !scene )
+	{
+		return;
+	}
+
 	// Zoom time in  / out
 	CInputParams params;
 	memset( &params, 0, sizeof( params ) );
@@ -4173,16 +4342,16 @@ void ExpressionTool::OnChangeScale( void )
 	strcpy( params.m_szDialogTitle, "Change Zoom" );
 	strcpy( params.m_szPrompt, "New scale (e.g., 2.5x):" );
 
-	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)m_nTimeZoom / 100.0f );
+	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)g_pChoreoView->GetTimeZoom( GetToolName() ) / 100.0f );
 
 	if ( !InputProperties( &params ) )
 		return;
 
-	m_nTimeZoom = clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM );
+	g_pChoreoView->SetTimeZoom( GetToolName(), clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM ), false );
 
 	m_nLastHPixelsNeeded = -1;
 	InvalidateLayout();
-	Con_Printf( "Zoom factor %i %%\n", m_nTimeZoom );
+	Con_Printf( "Zoom factor %i %%\n", g_pChoreoView->GetTimeZoom( GetToolName() ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -4192,9 +4361,33 @@ void ExpressionTool::OnChangeScale( void )
 //-----------------------------------------------------------------------------
 void ExpressionTool::GetStartAndEndTime( float& st, float& ed )
 {
-	st = m_nLeftOffset / GetPixelsPerSecond();
-	ed = st + (float)w2() / GetPixelsPerSecond();
+	st = m_flLeftOffset / GetPixelsPerSecond();
+	int left, right;
+	GetWorkspaceLeftRight( left, right );
+	if ( right <= left )
+	{
+		ed = st;
+	}
+	else
+	{
+        ed = st + (float)( right - left ) / GetPixelsPerSecond();
+	}
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  :  - 
+// Output : float
+//-----------------------------------------------------------------------------
+float ExpressionTool::GetEventEndTime()
+{
+	CChoreoEvent *ev = GetSafeEvent();
+	if ( !ev )
+		return 1.0f;
+
+	return ev->GetDuration();
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -4285,7 +4478,7 @@ void ExpressionTool::OnDeleteSelection( bool excise_time )
 
 	int i, t;
 
-	char *undotext = excise_time ? "Excise column" : "Delete column";
+	char const *undotext = excise_time ? "Excise column" : "Delete column";
 
 	float shift_left_time = m_flSelection[ 1 ] - m_flSelection[ 0 ];
 	Assert( shift_left_time > 0.0f );
@@ -4394,7 +4587,7 @@ void ExpressionTool::OnScaleSamples()
 		Con_Printf( "Can't scale to %.2f\n", scale_factor );
 	}
 
-	char *undotext = "Scale samples";
+	char const *undotext = "Scale samples";
 
 	g_pChoreoView->SetDirty( true );
 	g_pChoreoView->PushUndo( undotext );
@@ -4431,4 +4624,193 @@ void ExpressionTool::OnScaleSamples()
 
 	m_pWorkspace->redraw();
 	redraw();
+}
+
+void ExpressionTool::OnModelChanged()
+{
+	SetEvent( NULL );
+	redraw();
+}
+
+void ExpressionTool::OnEdgeProperties()
+{
+	TimelineItem *item = m_pWorkspace->GetClickedItem();
+	if ( !item )
+		return;
+
+	CFlexAnimationTrack *track = item->GetSafeTrack();
+	if ( !track )
+		return;
+
+	CEdgePropertiesParams params;
+	Q_memset( &params, 0, sizeof( params ) );
+	Q_strcpy( params.m_szDialogTitle, "Edge Properties" );
+
+	params.SetFromFlexTrack( track );
+
+	if ( !EdgeProperties( &params ) )
+	{
+		return;
+	}
+
+	char const *undotext = "Change Edge Properties";
+	
+	g_pChoreoView->SetDirty( true );
+	g_pChoreoView->PushUndo( undotext );
+
+	// Apply changes.
+	params.ApplyToTrack( track );
+
+	g_pChoreoView->PushRedo( undotext );
+
+	m_pWorkspace->redraw();
+	redraw();
+}
+
+float ExpressionTool::GetScrubberSceneTime()
+{
+	CChoreoEvent *ev = GetSafeEvent();
+	if ( !ev )
+		return 0.0f;
+
+	float curtime = GetScrub();
+	curtime += ev->GetStartTime();
+	return curtime;
+}
+
+void ExpressionTool::GetTimelineItems( CUtlVector< TimelineItem * >& list )
+{
+	for ( int i = 0; i < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; i++ )
+	{
+		TimelineItem *item = m_pWorkspace->GetItem( i );
+		if ( !item )
+			continue;
+
+		list.AddToTail( item );
+	}
+}
+
+
+
+bool ExpressionTool::HasCopiedColumn()
+{
+	return m_ColumnCopy.m_bActive;
+}
+
+void ExpressionTool::OnCopyColumn()
+{
+	m_ColumnCopy.Reset();
+
+	m_ColumnCopy.m_bActive = true;
+	m_ColumnCopy.m_flCopyTimes[ 0 ] = m_flSelection[ 0 ];
+	m_ColumnCopy.m_flCopyTimes[ 1 ] = m_flSelection[ 1 ];
+
+	for ( int controller = 0; controller < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; ++controller )
+	{
+		TimelineItem *item = m_pWorkspace->GetItem( controller );
+		if ( !item )
+			continue;
+
+		CFlexAnimationTrack *track = item->GetSafeTrack();
+		if ( !track )
+			continue;
+
+		for ( int t = 0; t < 2; t++ )
+		{
+			for ( int i = track->GetNumSamples( t ) - 1; i >= 0 ; i-- )
+			{
+				CExpressionSample *sample = track->GetSample( i, t );
+				if ( !sample->selected )
+					continue;
+
+				// Add to dictionary
+				CExpressionSample copy( *sample );
+				copy.selected = false;
+
+				int tIndex = m_ColumnCopy.m_Data.Find( track->GetFlexControllerName() );
+				if ( tIndex == m_ColumnCopy.m_Data.InvalidIndex() )
+				{
+					tIndex = m_ColumnCopy.m_Data.Insert( track->GetFlexControllerName() );
+				}
+
+				CColumnCopier::CTrackData &data = m_ColumnCopy.m_Data[ tIndex ];
+				data.m_Samples[ t ].AddToTail( copy );
+			}
+		}
+	}
+}
+
+void ExpressionTool::OnPasteColumn()
+{
+	if ( !m_ColumnCopy.m_bActive )
+	{
+		Msg( "Nothing to paste\n" );
+		return;
+	}
+
+	float flPasteTime = GetTimeForClickedPos();
+
+	float flPasteEndTime = flPasteTime + m_ColumnCopy.m_flCopyTimes[ 1 ] - m_ColumnCopy.m_flCopyTimes[ 0 ];
+
+	// Clear selection and redraw()
+	DeselectAll();
+
+	// Select everthing in the paste region so we can delete the existing stuff
+	SelectPoints( flPasteTime, flPasteEndTime );
+
+	int i, t;
+
+	char const *undotext = "Paste column";
+
+	g_pChoreoView->SetDirty( true );
+	g_pChoreoView->PushUndo( undotext );
+
+	for ( int controller = 0; controller < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; controller++ )
+	{
+		TimelineItem *item = m_pWorkspace->GetItem( controller );
+		if ( !item )
+			continue;
+
+		CFlexAnimationTrack *track = item->GetSafeTrack();
+		if ( !track )
+			continue;
+
+		int tIndex = m_ColumnCopy.m_Data.Find( track->GetFlexControllerName() );
+
+		for ( t = 0; t < 2; t++ )
+		{
+			// Remove all selected samples
+			for ( i = track->GetNumSamples( t ) - 1; i >= 0 ; i-- )
+			{
+				CExpressionSample *sample = track->GetSample( i, t );
+				if ( !sample->selected )
+					continue;
+
+				track->RemoveSample( i, t );
+			}
+
+			// Now add the new samples, if any in the time selection
+			if ( tIndex != m_ColumnCopy.m_Data.InvalidIndex() )
+			{
+				CColumnCopier::CTrackData &data = m_ColumnCopy.m_Data[ tIndex ];
+
+				for ( int j = 0; j < data.m_Samples[ t ].Count(); ++j )
+				{
+					CExpressionSample *s = &data.m_Samples[ t ][ j ];
+					CExpressionSample *newSample = track->AddSample( s->time - m_ColumnCopy.m_flCopyTimes[ 0 ] + flPasteTime, s->value, t );
+					newSample->selected = true;
+				}
+			}
+			track->Resort( t );
+		}
+
+		item->DrawSelf();
+	}
+
+	g_pChoreoView->PushRedo( undotext );
+}
+
+void ExpressionTool::ClearColumnCopy()
+{
+	m_ColumnCopy.Reset();
 }

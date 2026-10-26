@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:		A registry of strings and associated ints
 //
@@ -14,7 +9,8 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include <stdio.h>
 #include <string.h>
@@ -24,6 +20,7 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+#if !defined(_STATIC_LINKED) || defined(CLIENT_DLL)
 
 //-----------------------------------------------------------------------------
 // Purpose: This class wraps the containers that do the actual work
@@ -67,9 +64,7 @@ int	CStringRegistry::GetStringID( const char *stringText )
 //-----------------------------------------------------------------------------
 char const *CStringRegistry::GetStringText( int stringID )
 {
-	int count = m_pStringList->Count();
-
-	for( unsigned short index = 0 ; index < count ; index++ )
+	for( unsigned short index = m_pStringList->First() ; index != m_pStringList->InvalidIndex(); index = m_pStringList->Next( index ) )
 	{
 		if ( (*m_pStringList)[index] == stringID )
 		{
@@ -130,3 +125,21 @@ CStringRegistry::CStringRegistry(void)
 {
 	m_pStringList = new StringTable_t;
 }
+
+
+unsigned short CStringRegistry::First() const
+{
+	return m_pStringList->First();
+}
+
+unsigned short CStringRegistry::Next( unsigned short key ) const
+{
+	return m_pStringList->Next( key );
+}
+
+unsigned short CStringRegistry::InvalidIndex() const
+{
+	return m_pStringList->InvalidIndex();
+}
+
+#endif // _STATIC_LINKED && CLIENT_DLL

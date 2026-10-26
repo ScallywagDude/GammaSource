@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MPI_STATS_H
 #define MPI_STATS_H
@@ -51,6 +51,9 @@ void StatsDB_InitStatsDatabase(
 
 // The database gives back a unique ID for the job.
 unsigned long StatsDB_GetUniqueJobID();
+
+// Get the worker ID (used for the JobWorkerID fields in the database).
+unsigned long VMPI_Stats_GetJobWorkerID();
 
 
 #endif // MPI_STATS_H

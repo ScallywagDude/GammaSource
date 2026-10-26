@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <assert.h>
 #include "stdafx.h"
 #include <stdio.h>
@@ -245,7 +245,7 @@ static bool IsType( char *input, char *test )
 	if ( !pMatch )
 		return false;
 
-	int nLen = strlen(test);
+	size_t nLen = strlen(test);
 	if ( ( pMatch[nLen] != 0 ) && (pMatch[nLen] != ' ') )
 		return false;
 
@@ -348,6 +348,12 @@ void CClass::ReportTypeMismatches( CClassVariable *var, CTypeDescriptionField *t
 			return;
 	}
 
+	if ( !strcmp( td->m_szType, "FIELD_MODELINDEX" ) || !strcmp( td->m_szType, "FIELD_MATERIALINDEX" ) )
+	{
+		if ( !strcmp( t, "FIELD_INTEGER" ) )
+			return;
+	}
+
 	if ( !strcmp( td->m_szType, "FIELD_POSITION_VECTOR" ) )
 	{
 		if ( !strcmp( t, "FIELD_VECTOR" ) )
@@ -425,6 +431,7 @@ bool CClass::CheckForMissingTypeDescriptionFields( int& missingcount, bool creat
 
 		char const *t = TranslateSimpleType( var );
 
+		vprint( 0, "//\tClass %s:\n", m_szName );
 		if ( var->m_bIsArray && 
 			(
 				stricmp( var->m_szType, "char" ) ||
@@ -433,22 +440,22 @@ bool CClass::CheckForMissingTypeDescriptionFields( int& missingcount, bool creat
 		{
 			if ( *t )
 			{
-				vprint( 0, "\tDEFINE_ARRAY( %s, %s, %s, %s ),\n", m_szName, goodname, t, var->m_szArraySize );
+				vprint( 0, "\tDEFINE_ARRAY( %s, %s, %s ),\n", goodname, t, var->m_szArraySize );
 			}
 			else
 			{
-				vprint( 0, "\t// DEFINE_ARRAY( %s, %s, %s, %s ),\n", m_szName, goodname, var->m_szType, var->m_szArraySize );
+				vprint( 0, "\t// DEFINE_ARRAY( %s, %s, %s ),\n", goodname, var->m_szType, var->m_szArraySize );
 			}
 		}
 		else
 		{
 			if ( *t )
 			{
-				vprint( 0, "\tDEFINE_FIELD( %s, %s, %s ),\n", m_szName, goodname, t );
+				vprint( 0, "\tDEFINE_FIELD( %s, %s ),\n", goodname, t );
 			}
 			else
 			{
-				vprint( 0, "\t// DEFINE_FIELD( %s, %s, %s ),\n", m_szName, goodname, var->m_szType );
+				vprint( 0, "\t// DEFINE_FIELD( %s, %s ),\n", goodname, var->m_szType );
 			}
 		}
 	}
@@ -589,6 +596,7 @@ bool CClass::CheckForMissingPredictionFields( int& missingcount, bool createtds 
 				{
 					char const *t = TranslateSimpleType( var );
 
+					vprint( 0, "//\tClass %s:\n", m_szName );
 					if ( var->m_bIsArray && 
 						(
 							stricmp( var->m_szType, "char" ) ||
@@ -597,22 +605,22 @@ bool CClass::CheckForMissingPredictionFields( int& missingcount, bool createtds 
 					{
 						if ( *t )
 						{
-							vprint( 0, "\tDEFINE_ARRAY( %s, %s, %s, %s ),\n", m_szName, goodname, t, var->m_szArraySize );
+							vprint( 0, "\tDEFINE_ARRAY( %s, %s, %s ),\n", goodname, t, var->m_szArraySize );
 						}
 						else
 						{
-							vprint( 0, "\t// DEFINE_ARRAY( %s, %s, %s, %s ),\n", m_szName, goodname, var->m_szType, var->m_szArraySize );
+							vprint( 0, "\t// DEFINE_ARRAY( %s, %s, %s ),\n", goodname, var->m_szType, var->m_szArraySize );
 						}
 					}
 					else
 					{
 						if ( *t )
 						{
-							vprint( 0, "\tDEFINE_FIELD( %s, %s, %s ),\n", m_szName, goodname, t );
+							vprint( 0, "\tDEFINE_FIELD( %s, %s ),\n", goodname, t );
 						}
 						else
 						{
-							vprint( 0, "\t// DEFINE_FIELD( %s, %s, %s ),\n", m_szName, goodname, var->m_szType );
+							vprint( 0, "\t// DEFINE_FIELD( %s, %s ),\n", goodname, var->m_szType );
 						}
 					}
 				}
@@ -636,7 +644,7 @@ public:
 	CClassVariable *var;
 };
 
-#include "UtlDict.h"
+#include "utldict.h"
 CUtlDict< MissingType, unsigned short > missing_types;
 
 bool IsMissingType( CClass *cl, CClassVariable *var )
@@ -859,7 +867,9 @@ bool CClass::ParseNetworkVar( char *&input, int protection )
 {
 	MemberVarParse_t var;
 
-	if ( !strcmp( com_token, "CNetworkVar" ) || !strcmp( com_token, "CNetworkVarEmbedded" ) )
+	if ( !strcmp( com_token, "CNetworkVar" ) || 
+		!strcmp( com_token, "CNetworkVarForDerived" ) || 
+		!strcmp( com_token, "CNetworkVarEmbedded" ) )
 	{
 		input = CC_ParseToken( input );
 		Assert( !strcmp( com_token, "(") );
@@ -883,7 +893,35 @@ bool CClass::ParseNetworkVar( char *&input, int protection )
 		return true;
 	}
 
-	if ( !strcmp( com_token, "CNetworkVector" ) || !strcmp( com_token, "CNetworkQAngle" ) )
+	if ( !strcmp( com_token, "CNetworkHandle" ) || !strcmp( com_token, "CNetworkHandleForDerived" ) )
+	{
+		input = CC_ParseToken( input );
+		Assert( !strcmp( com_token, "(") );
+
+		input = CC_ParseToken( input );
+		strcpy( var.m_pType, "CHandle<" );
+		do
+		{
+			strcat( var.m_pType, com_token );
+			strcat( var.m_pType, " " );
+			input = CC_ParseToken( input );
+		} while( strcmp( com_token, ",") );
+		strcat( var.m_pType, ">" );
+
+		input = CC_ParseToken( input );
+		do
+		{
+			strcat( var.m_pName, com_token );
+			input = CC_ParseToken( input );
+		} while( strcmp( com_token, ")") );
+
+		AddVariable( protection, "EHANDLE", var.m_pName, false );
+		return true;
+	}
+
+	if ( !strcmp( com_token, "CNetworkVector" ) || 
+		!strcmp( com_token, "CNetworkVectorForDerived" ) || 
+		!strcmp( com_token, "CNetworkQAngle" ) )
 	{
 		input = CC_ParseToken( input );
 		Assert( !strcmp( com_token, "(") );
@@ -938,7 +976,7 @@ bool CClass::ParseNetworkVar( char *&input, int protection )
 		return true;
 	}
 
-	if ( !strcmp( com_token, "CNetworkArray" ) )
+	if ( !strcmp( com_token, "CNetworkArray" ) || !strcmp( com_token, "CNetworkArrayForDerived" ) )
 	{
 		input = CC_ParseToken( input );
 		Assert( !strcmp( com_token, "(") );
@@ -1311,21 +1349,21 @@ bool CClass::ParseProtection( char *&input, int &protection )
 	{
 		protection = 0;
 		input = CC_ParseToken( input );
-		assert( !stricmp( com_token, ":" ) );
+		Assert( !stricmp( com_token, ":" ) );
 		return true;
 	}
 	else if ( !stricmp( com_token, "protected" ) )
 	{
 		protection = 1;
 		input = CC_ParseToken( input );
-		assert( !stricmp( com_token, ":" ) );
+		Assert( !stricmp( com_token, ":" ) );
 		return true;
 	}
 	else if ( !stricmp( com_token, "private" ) )
 	{
 		protection = 2;
 		input = CC_ParseToken( input );
-		assert( !stricmp( com_token, ":" ) );
+		Assert( !stricmp( com_token, ":" ) );
 		return true;
 	}
 
@@ -1392,4 +1430,152 @@ char *CClass::ParseClassDeclaration( char *input )
 	} while ( nestcount != 0 && ( strlen( com_token ) >= 0 ) );
 
 	return input;
+}
+
+static bool ShouldHungarianCheck( char const *name )
+{
+	if ( !Q_strncmp( name, "m_", 2 ) ||
+		 !Q_strncmp( name, "g_", 2 ) ||
+		 !Q_strncmp( name, "s_", 2 ) )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+enum Required
+{
+	NEVER = 0,
+	ALWAYS
+};
+
+struct Impermissible
+{
+	char const *prefix;
+	char const *mustinclude;
+	int			required;  // if true, then must match to be permitted
+};
+
+static Impermissible g_Permissibles[] =
+{
+	{  "fl",		"float",		ALWAYS },
+	{  "b",			"bool",			ALWAYS },
+	{  "n",			"int",			ALWAYS },
+	{  "isz",		"string_t",		ALWAYS },
+	{  "i",			"float",		NEVER },
+	{  "i",			"bool",			NEVER },
+	{  "i",			"short",		NEVER },
+	{  "i",			"long",			NEVER },
+	{  "ui",		"int",			ALWAYS },
+	{  "sz",		"char",			ALWAYS },
+	{  "ch",		"char",			ALWAYS },
+	{  "uch",		"float",		NEVER },
+	{  "uch",		"int",			NEVER },
+	{  "uch",		"short",		NEVER },
+	{  "uch",		"long",			NEVER },
+	{  "s",			"short",		ALWAYS },
+	{  "us",		"short",		ALWAYS },
+	{  "l",			"long",			ALWAYS },
+	{  "ul",		"long",			ALWAYS },
+//	{  "f",			"int",			NEVER },
+//	{  "f",			"short",		NEVER },
+//	{  "f",			"int",			NEVER },
+	{  "a",			"UtlVector",	ALWAYS },
+	{  "h",			"handle",		ALWAYS },
+	{  "p",			"*",			ALWAYS },
+};
+
+void CClass::CheckForHungarianErrors( int& warnings )
+{
+	int testcount = sizeof( g_Permissibles ) / sizeof( g_Permissibles[ 0 ] );
+
+	for ( int i = 0; i < m_nVarCount; i++ )
+	{
+		CClassVariable *var = m_Variables[ i ];
+
+		// Only check m_, s_, and g_ variables for now
+		if ( !ShouldHungarianCheck( var->m_szName ) )
+		{
+			continue;
+		}
+
+		bool isstatic = false;
+		char *p = var->m_szType;
+		while ( 1 )
+		{
+			p = CC_ParseToken( p );
+			if ( strlen( com_token ) <= 0 )
+				break;
+			if ( !stricmp( com_token, "static" ) )
+			{
+				isstatic = true;
+				break;
+			}
+		}
+
+		// Check for errors
+		for ( int j = 0; j < testcount; ++j )
+		{
+			Impermissible *tst = &g_Permissibles[ j ];
+
+			bool match = !Q_strncmp( var->m_szName + 2, tst->prefix, Q_strlen( tst->prefix ) ) ? true : false;
+			if ( !match )
+				continue;
+
+			// The first character after the prefix must be upper case or we skip...
+			int nextchar = 2 + Q_strlen( tst->prefix );
+
+			if ( !isupper( var->m_szName[ nextchar ] ) )
+				continue;
+
+			bool typeFound = Q_stristr( var->m_szType, tst->mustinclude ) ? true : false;
+
+			switch ( tst->required )
+			{
+			default:
+			case ALWAYS:
+				{
+					if ( !typeFound )
+					{
+						vprint( 1, "%s might have wrong type %s\n", var->m_szName, var->m_szType );
+						++warnings;
+					}
+					else
+					{
+						return;
+					}
+				}
+				break;
+			case NEVER:
+				{
+					if ( typeFound )
+					{
+						vprint( 1, "%s might have wrong type %s\n", var->m_szName, var->m_szType );
+						++warnings;
+					}
+					else
+					{
+						return;
+					}
+				}
+				break;
+			}
+		}
+
+
+		if ( !Q_strncmp( var->m_szName, "m_f", 3 ) &&
+			 Q_strncmp( var->m_szName, "m_fl", 4 ) && isupper( var->m_szName[3] ) )
+		{
+			// If it's a "flag" and not a "float" type, it better be a bool or an int
+			if ( !Q_stristr( var->m_szType, "bool" ) &&
+				 !Q_strstr( var->m_szType, "int" ) )
+			{
+				vprint( 1, "%s might have wrong type %s\n", var->m_szName, var->m_szType );
+				++warnings;
+				return;
+			}
+		}
+	}
+
 }

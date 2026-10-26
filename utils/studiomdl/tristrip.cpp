@@ -1,12 +1,10 @@
-/***
-*
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-****/
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 // tristrip - convert triangle list into tristrips and fans
 
@@ -22,7 +20,7 @@
 #include "cmdlib.h"
 #include "lbmlib.h"
 #include "scriplib.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "..\..\engine\studio.h"
 #include "studiomdl.h"
 

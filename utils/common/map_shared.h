@@ -1,9 +1,8 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MAP_SHARED_H
 #define MAP_SHARED_H
@@ -30,10 +29,9 @@ class CMapError
 {
 public:
 
-	void BrushState( int entityIndex, int brushIndex )
+	void BrushState( int brushID )
 	{
-		m_entityIndex = entityIndex;
-		m_brushIndex = brushIndex;
+		m_brushID = brushID;
 	}
 
 	void BrushSide( int side )
@@ -43,12 +41,12 @@ public:
 
 	void TextureState( const char *pTextureName )
 	{
-		strncpy( m_textureName, pTextureName, 80 );
+		Q_strncpy( m_textureName, pTextureName, sizeof( m_textureName ) );
 	}
 
 	void ClearState( void )
 	{
-		BrushState( -1, 0 );
+		BrushState( 0 );
 		BrushSide( 0 );
 		TextureState( "Not a Parse error!" );
 	}
@@ -59,7 +57,7 @@ public:
 	//-----------------------------------------------------------------------------
 	void ReportError( const char *pErrorString )
 	{
-		Error( "%s\nEntity %i, Brush %i, Side %i\nTexture: %s\n", pErrorString, m_entityIndex, m_brushIndex, m_sideIndex, m_textureName );
+		Error( "Brush %i: %s\nSide %i\nTexture: %s\n", m_brushID, pErrorString, m_sideIndex, m_textureName );
 	}
 
 	//-----------------------------------------------------------------------------
@@ -68,17 +66,15 @@ public:
 	//-----------------------------------------------------------------------------
 	void ReportWarning( const char *pWarningString )
 	{
-		printf( "Entity %i, Brush %i, Side %i: %s\n", m_entityIndex, m_brushIndex, m_sideIndex, pWarningString );
+		printf( "Brush %i, Side %i: %s\n", m_brushID, m_sideIndex, pWarningString );
 	}
 
 private:
 
-	int		m_entityIndex;
-	int		m_brushIndex;
+	int		m_brushID;
 	int		m_sideIndex;
 	char	m_textureName[80];
 };
-
 
 
 extern CMapError g_MapError;
@@ -91,6 +87,5 @@ ChunkFileResult_t LoadEntityKeyCallback( const char *szKey, const char *szValue,
 // Used by VRAD incremental lighting - only load ents from the file and
 // fill in the global entities/num_entities array.
 bool LoadEntsFromMapFile( char const *pFilename );
-
 
 #endif // MAP_SHARED_H

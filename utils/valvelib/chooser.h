@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_CHOOSER_H__132A47A9_C09B_41B3_9222_861583CB901A__INCLUDED_)
 #define AFX_CHOOSER_H__132A47A9_C09B_41B3_9222_861583CB901A__INCLUDED_
 

@@ -1,11 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 SOFTWARE_VERTEX_SHADER( myHappyLittleSoftwareVertexShader )
 {
@@ -20,9 +23,13 @@ SOFTWARE_VERTEX_SHADER( myHappyLittleSoftwareVertexShader )
 
 FORWARD_DECLARE_SOFTWARE_VERTEX_SHADER( myHappyLittleSoftwareVertexShader );
 
-BEGIN_SHADER( DebugSoftwareVertexShader,
-			  "blah" )
+BEGIN_SHADER_FLAGS( DebugSoftwareVertexShader, "blah", SHADER_NOT_EDITABLE )
 	BEGIN_SHADER_PARAMS
+		SHADER_PARAM_OVERRIDE( BASETEXTURE, SHADER_PARAM_TYPE_TEXTURE, "shadertest/basetexture", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( FRAME, SHADER_PARAM_TYPE_INTEGER, "0", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( BASETEXTURETRANSFORM, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( COLOR, SHADER_PARAM_TYPE_COLOR, "{255 255 255}", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( ALPHA, SHADER_PARAM_TYPE_FLOAT, "1.0", "unused", SHADER_PARAM_NOT_EDITABLE )
 	END_SHADER_PARAMS
 
 	SHADER_INIT

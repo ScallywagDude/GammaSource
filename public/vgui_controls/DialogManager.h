@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DIALOGMANAGER_H
 #define DIALOGMANAGER_H
@@ -17,7 +12,7 @@
 #pragma once
 #endif
 
-#include <UtlLinkedList.h>
+#include <utllinkedlist.h>
 #include <KeyValues.h>
 #include <vgui_controls/PHandle.h>
 
@@ -28,21 +23,21 @@ namespace vgui
 // Purpose: utility class, maps a set of ID's to dialogs
 //			used to manage sets of similar dialogs (object property dialogs, etc.)
 //-----------------------------------------------------------------------------
-template <class TDialog>
+template <class TDialog, class I = int>
 class DialogManager
 {
 public:
 	// new dialog factory function
-	typedef TDialog *(*CreateNewDialogFunc_t)(int dialogID);
+	typedef TDialog *(*CreateNewDialogFunc_t)(I dialogID);
 
 	// constructor
 	DialogManager(CreateNewDialogFunc_t createDialogFunc);
 
 	// finds the dialog by the specified ID
-	TDialog *FindDialog( int dialogID, bool bCreate);
+	TDialog *FindDialog(I dialogID, bool bCreate);
 
 	// opens the dialog; creating it if specified
-	void ActivateDialog(int dialogID, bool bCreate);
+	TDialog *ActivateDialog(I dialogID, bool bCreate);
 
 	// closes all the dialogs
 	void CloseAll();
@@ -50,6 +45,10 @@ public:
 	// closes and deletes all the dialogs
 	void CloseAndDeleteAll();
 
+	// returns number of active dialogs
+	int Count();
+
+	// sets parent to use
 	void SetParent( vgui::VPANEL parent );
 
 private:
@@ -58,7 +57,7 @@ private:
 
 	struct DialogItem_t
 	{
-		int id;
+		I id;
 		DHANDLE<TDialog> dlg;
 	};
 
@@ -69,15 +68,16 @@ private:
 
 
 // constructor
-template <class TDialog>
-inline DialogManager<TDialog>::DialogManager(CreateNewDialogFunc_t createDialogFunc)
+template <class TDialog, class I>
+inline DialogManager<TDialog, I>::DialogManager(CreateNewDialogFunc_t createDialogFunc)
 {
 	m_CreateFunc = createDialogFunc;
+	m_pVGUIParentPanel = NULL;
 }
 
 // finds the dialog; creating it if necessary
-template <class TDialog>
-inline TDialog *DialogManager<TDialog>::FindDialog(int dialogID, bool bCreate)
+template <class TDialog, class I>
+inline TDialog *DialogManager<TDialog, I>::FindDialog(I dialogID, bool bCreate)
 {
 	for (int i = 0; i < m_Dialogs.MaxElementIndex(); i++)
 	{
@@ -98,6 +98,7 @@ inline TDialog *DialogManager<TDialog>::FindDialog(int dialogID, bool bCreate)
 		{
 			m_Dialogs[newIndex].dlg = new TDialog(NULL, dialogID);
 		}
+		Assert(m_pVGUIParentPanel);
 		m_Dialogs[newIndex].dlg->SetParent( m_pVGUIParentPanel );
 
 		m_Dialogs[newIndex].id = dialogID;
@@ -109,19 +110,36 @@ inline TDialog *DialogManager<TDialog>::FindDialog(int dialogID, bool bCreate)
 }
 
 // opens the dialog; creating it if necessary
-template <class TDialog>
-inline void DialogManager<TDialog>::ActivateDialog(int dialogID, bool bCreate)
+template <class TDialog, class I>
+inline TDialog *DialogManager<TDialog, I>::ActivateDialog(I dialogID, bool bCreate)
 {
 	TDialog *dlg = FindDialog(dialogID, bCreate);
 	if (dlg)
 	{
 		dlg->Activate();
 	}
+	return dlg;
+}
+
+// count
+template <class TDialog, class I>
+inline int DialogManager<TDialog, I>::Count()
+{
+	// validate all the indexes first
+	for (int i = 0; i < m_Dialogs.MaxElementIndex(); i++)
+	{
+		if (ValidateIndex(i))
+		{
+		}
+	}
+
+	// return the (remaining) count
+	return m_Dialogs.Count();
 }
 
 // closes all the dialogs
-template <class TDialog>
-inline void DialogManager<TDialog>::CloseAll()
+template <class TDialog, class I>
+inline void DialogManager<TDialog, I>::CloseAll()
 {
 	for (int i = 0; i < m_Dialogs.MaxElementIndex(); i++)
 	{
@@ -133,8 +151,8 @@ inline void DialogManager<TDialog>::CloseAll()
 }
 
 // closes and deletes all the dialogs
-template <class TDialog>
-inline void DialogManager<TDialog>::CloseAndDeleteAll()
+template <class TDialog, class I>
+inline void DialogManager<TDialog, I>::CloseAndDeleteAll()
 {
 	CloseAll();
 	for (int i = 0; i < m_Dialogs.MaxElementIndex(); i++)
@@ -148,8 +166,8 @@ inline void DialogManager<TDialog>::CloseAndDeleteAll()
 }
 
 // checks if a dialog is valid; if it has been deleted, removes the entry
-template <class TDialog>
-inline bool DialogManager<TDialog>::ValidateIndex(int index)
+template <class TDialog, class I>
+inline bool DialogManager<TDialog, I>::ValidateIndex(int index)
 {
 	if (m_Dialogs.IsValidIndex(index))
 	{
@@ -166,8 +184,8 @@ inline bool DialogManager<TDialog>::ValidateIndex(int index)
 	return false;
 }
 
-template <class TDialog>
-inline void DialogManager<TDialog>::SetParent( vgui::VPANEL parent )
+template <class TDialog, class I>
+inline void DialogManager<TDialog, I>::SetParent( vgui::VPANEL parent )
 {
 	m_pVGUIParentPanel = parent;
 }

@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
@@ -15,7 +17,7 @@ dp4 $projPos.w, $vPos, $cModelViewProj3
 mov oPos, $projPos
 
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2
@@ -29,8 +31,8 @@ free $worldPos
 ; Texture coordinates
 ;------------------------------------------------------------------------------
 
-dp4 oT0.x, $vTexCoord0, c90
-dp4 oT0.y, $vTexCoord0, c91
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 
 

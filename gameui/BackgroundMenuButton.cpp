@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "BackgroundMenuButton.h"
 
@@ -61,8 +61,12 @@ void CBackgroundMenuButton::ApplySchemeSettings(IScheme *pScheme)
 	SetDepressedBorder(NULL);
 	SetKeyFocusBorder(NULL);
 	SetTextInset(0, 0);
+	SetAlpha(0);
 
-	SetArmedSound("sound/UI/buttonrollover.wav");
-	SetDepressedSound("sound/UI/buttonclick.wav");
-	SetReleasedSound("sound/UI/buttonclickrelease.wav");
+	/*
+	// sounds disabled for this button (since it's so big now)
+	SetArmedSound("UI/buttonrollover.wav");
+	SetDepressedSound("UI/buttonclick.wav");
+	SetReleasedSound("UI/buttonclickrelease.wav");
+	*/
 }

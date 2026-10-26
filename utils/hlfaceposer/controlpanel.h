@@ -1,26 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-//                 Half-Life Model Viewer (c) 1999 by Mete Ciragan
+// Purpose: 
 //
-// file:           ControlPanel.h
-// last modified:  May 29 programs and associated files contained in this
-//                 distribution were developed by Mete Ciragan. The programs
-//                 are not in the public domain, but they are freely
-//                 distributable without licensing fees. These programs are
-//                 provided without guarantee or warrantee expressed or
-//                 implied.
-//
-// version:        1.2
-//
-// email:          mete@swissquake.ch
-// web:            http://www.swissquake.ch/chumbalum-soft/
-//
-#ifndef INCLUDED_CONTROLPANEL
-#define INCLUDED_CONTROLPANEL
+//=============================================================================//
 
-
+#ifndef CONTROLPANEL_H
+#define CONTROLPANEL_H
+#ifdef _WIN32
+#pragma once
+#endif
 
 #ifndef INCLUDED_MXWINDOW
-#include <mx/mxWindow.h>
+#include <mxtk/mxWindow.h>
 #endif
 
 #include "faceposertoolwindow.h"
@@ -51,6 +42,7 @@
 
 #define IDC_EXPRESSIONCLASS			5001
 #define IDC_EXPRESSIONTRAY			5002
+#define IDC_ANIMATIONBROWSER		5003
 
 class mxTab;
 class mxChoice;
@@ -80,7 +72,6 @@ class ControlPanel : public mxWindow, public IFacePoserToolWindow
 	mxChoice *cSequence;
 	mxSlider *slSpeedScale;
 	mxLabel *lSpeedScale;
-	mxSlider *slPrimaryBlend, *slSecondaryBlend;
 	mxChoice *cBodypart, *cController, *cSubmodel;
 	mxSlider *slController;
 	mxChoice *cSkin;
@@ -107,7 +98,7 @@ public:
 	virtual void		Think( float dt );
 
 	void dumpModelInfo ();
-	void OnModelChanged( const char *filename );
+	void ChangeModel( const char *filename );
 
 	void setRenderMode (int mode);
 	void setShowGround (bool b);
@@ -115,7 +106,7 @@ public:
 	void setShowBackground (bool b);
 	void setHighlightBone( int index );
 
-	void initSequences ();
+	void initSequenceChoices( );
 	void setSequence (int index);
 
 	void setSpeed( float value );
@@ -123,19 +114,17 @@ public:
 	void initPoseParameters ();
 	void setBlend(int index, float value );
 
-	void initBodyparts ();
+	void initBodypartChoices();
 	void setBodypart (int index);
 	void setSubmodel (int index);
 
-	void initBoneControllers ();
+	void initBoneControllerChoices();
 	void setBoneController (int index);
 	void setBoneControllerValue (int index, float value);
 
-	void initSkins ();
+	void initSkinChoices();
 
 	void setModelInfo ();
-
-	void initTextures ();
 
 	void centerView ();
 
@@ -160,7 +149,6 @@ public:
 	void RedoExpression( int index );
 
 	void DeleteExpression( int index );
-	void DeleteExpressionOverride( int index );
 
 	float GetModelGap( void );
 
@@ -170,4 +158,4 @@ public:
 
 extern ControlPanel		*g_pControlPanel;
 
-#endif // INCLUDED_CONTROLPANEL
+#endif // CONTROLPANEL_H

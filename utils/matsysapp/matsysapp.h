@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef GLAPP_H
 #define GLAPP_H
@@ -57,6 +52,7 @@ public:
 					~MaterialSystemApp();
 
 	void			Term();
+	void			QuitNextFrame();
 
 	// Post a message to shutdown the app.
 	void			AppShutdown();
@@ -68,7 +64,7 @@ public:
 	bool			FindParameter(const char *s);
 	const char*		FindParameterArg(const char *s);
 
-	void			SetTitleText(const char *fmt, ...);
+	void			SetTitleText(PRINTF_FORMAT_STRING const char *fmt, ...);
 
 	// Make the matsysapp window the top window.
 	void			MakeWindowTopmost();
@@ -122,7 +118,6 @@ public:
 	int              m_iResCount;
 
     int              m_iVidMode;
-	CSysModule		*m_pFileSystemDLL;
 };
 
 
@@ -151,10 +146,10 @@ extern bool g_bCaptureOnFocus;	// The app needs to define this to control how ma
 // ---------------------------------------------------------------------------------------- //
 
 // Show an error dialog and quit.
-bool Sys_Error(const char *pMsg, ...);
+bool Sys_Error(PRINTF_FORMAT_STRING const char *pMsg, ...);
 
 // Print to the trace window.
-void con_Printf(const char *pMsg, ...);
+void con_Printf(PRINTF_FORMAT_STRING const char *pMsg, ...);
 
 // Returns true if the key is down.
 bool MSA_IsKeyDown(char key);

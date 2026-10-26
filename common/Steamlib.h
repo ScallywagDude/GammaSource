@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // Steam header file includes all definitions for Grid.lib
 #ifndef INCLUDED_STEAMLIBAPI_H
 #define INCLUDED_STEAMLIBAPI_H

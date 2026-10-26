@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,14 +9,14 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( OVERLAYTEXT_H )
 #define OVERLAYTEXT_H
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include "vector.h"
+#include "mathlib/vector.h"
 
 class  OverlayText_t
 {
@@ -36,9 +31,8 @@ public:
 		flYPos = 0;
 		text[ 0 ] = 0;
 		m_flEndTime = 0.0f;
-		m_nCreationMessage = -1;	
 		m_nServerCount = -1;
-		m_nCreationFrame = -1;
+		m_nCreationTick = -1;
 		r = g = b = a = 255;
 	}
 
@@ -52,10 +46,8 @@ public:
 	float			flYPos;
 	char			text[512];
 	float			m_flEndTime;			// When does this text go away
-	int				m_nCreationMessage;		// If message has duration 0, then this is the
-											//  message when it was created, which is used instead of an endtime
-	int				m_nCreationFrame;		// If message has duration -1, then this is the frame when it was created
-	int				m_nServerCount;
+	int				m_nCreationTick;		// If > 0, show only one server frame
+	int				m_nServerCount;			// compare server spawn count to remove stale overlays
 	int				r;
 	int				g;
 	int				b;

@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 &AllocateRegister( \$projPos );
@@ -14,7 +16,7 @@ mov oPos, $projPos
 ; Fog
 ;------------------------------------------------------------------------------
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2
@@ -30,13 +32,12 @@ mov oD0, $vColor
 ;------------------------------------------------------------------------------
 ; Texture coordinates
 ;------------------------------------------------------------------------------
-dp4 r0.x, $vTexCoord0, c90
-dp4 r0.y, $vTexCoord0, c91
+dp4 r0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+dp4 r0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 ; Jittered versions
 mov oT0, r0
-add oT1, r0, c92
-sub oT2, r0, c92
-add oT3, r0, c93
-sub oT4, r0, c93
-
+add oT1, r0, $SHADER_SPECIFIC_CONST_2
+sub oT2, r0, $SHADER_SPECIFIC_CONST_2
+add oT3, r0, $SHADER_SPECIFIC_CONST_3
+sub oT4, r0, $SHADER_SPECIFIC_CONST_3

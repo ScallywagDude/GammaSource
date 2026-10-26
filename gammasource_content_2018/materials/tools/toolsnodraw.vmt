@@ -1,0 +1,8 @@
+// GammaSource 2018 build: never drawn (2003 brush entities keep their nodraw faces)
+"LightmappedGeneric"
+{
+	"$basetexture" "Tools/toolsnodraw"
+	"$no_draw" 1
+	"%compilenodraw" 1
+}
+

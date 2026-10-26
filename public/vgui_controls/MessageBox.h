@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MESSAGEBOX_H
 #define MESSAGEBOX_H
@@ -28,14 +23,13 @@
 namespace vgui
 {
 
-class Label;
-class Button;
-
 //-----------------------------------------------------------------------------
 // Purpose: Popup discardable message box
 //-----------------------------------------------------------------------------
 class MessageBox : public Frame
 {
+	DECLARE_CLASS_SIMPLE( MessageBox, Frame );
+
 public:
 	// title - Text to be displayed in the title bar of the window
 	// text - Text message in the message box
@@ -54,7 +48,8 @@ public:
 	// Set a string command to be sent when the OK button is pressed
 	// Use AddActionSignalTarget() to mark yourself as a recipient of the command
 	virtual void SetCommand(const char *command);
-	
+	virtual void SetCommand(KeyValues *command);
+
 	// Set the visibility of the OK button.
 	virtual void SetOKButtonVisible(bool state);
 
@@ -62,29 +57,39 @@ public:
 	virtual void SetOKButtonText(const char *buttonText);
 	virtual void SetOKButtonText(const wchar_t *wszButtonText);
 
+	// Cancel button (off by default)
+	void SetCancelButtonVisible(bool state);
+ 	void SetCancelButtonText(const char *buttonText);
+	void SetCancelButtonText(const wchar_t *wszButtonText);
+	void SetCancelCommand( KeyValues *command );
+
 	// Toggles visibility of the close box.
 	virtual void DisableCloseButton(bool state);
 
+	virtual void OnCommand( const char *pCommand );
+
+	// Shows the message box over the cursor
+	void ShowMessageBoxOverCursor( bool bEnable );
+
 protected:
 	virtual void PerformLayout();
-	virtual void OnClose();
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 
 protected:
 	Button				*m_pOkButton;
+	Button				*m_pCancelButton;
 	Label				*m_pMessageLabel;
 
 private:
-	virtual void OnShutdownRequest();
+	MESSAGE_FUNC( OnShutdownRequest, "ShutdownRequest" );
 
 	void Init();
 	
-	KeyValues			*m_OkCommand;
+	KeyValues *m_OkCommand;
+	KeyValues *m_CancelCommand;
 	vgui::Frame *m_pFrameOver;
-
-	DECLARE_PANELMAP();
-
-	typedef Frame BaseClass;
+	bool m_bNoAutoClose : 1;
+	bool m_bShowMessageBoxOverCursor : 1;
 };
 
 } // namespace vgui

@@ -1,9 +1,4 @@
-//========= (C) Copyright 1999-2001 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,18 +9,24 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef TRACE_H
 #define TRACE_H
-#pragma once
 
-#include "mathlib.h"
+#ifdef _WIN32
+#pragma once
+#endif
+
+
+#include "mathlib/mathlib.h"
 
 // Note: These flags need to match the bspfile.h DISPTRI_TAG_* flags.
 #define DISPSURF_FLAG_SURFACE		(1<<0)
 #define DISPSURF_FLAG_WALKABLE		(1<<1)
 #define DISPSURF_FLAG_BUILDABLE		(1<<2)
+#define DISPSURF_FLAG_SURFPROP1		(1<<3)
+#define DISPSURF_FLAG_SURFPROP2		(1<<4)
 
 //=============================================================================
 // Base Trace Structure
@@ -36,14 +37,12 @@ class CBaseTrace
 {
 public:
 
-	// Returns true if you hit a displacement surface.
+	// Displacement flags tests.
 	bool IsDispSurface( void )				{ return ( ( dispFlags & DISPSURF_FLAG_SURFACE ) != 0 ); }
-
-	// Returns true if the displacement surface is walkable.
 	bool IsDispSurfaceWalkable( void )		{ return ( ( dispFlags & DISPSURF_FLAG_WALKABLE ) != 0 ); }
-
-	// Returns true if the displacement surface is buildable (currently tf2 specific).
 	bool IsDispSurfaceBuildable( void )		{ return ( ( dispFlags & DISPSURF_FLAG_BUILDABLE ) != 0 ); }
+	bool IsDispSurfaceProp1( void )			{ return ( ( dispFlags & DISPSURF_FLAG_SURFPROP1 ) != 0 ); }
+	bool IsDispSurfaceProp2( void )			{ return ( ( dispFlags & DISPSURF_FLAG_SURFPROP2 ) != 0 ); }
 
 public:
 
@@ -57,8 +56,14 @@ public:
 	int				contents;				// contents on other side of surface hit
 	unsigned short	dispFlags;				// displacement flags for marking surfaces with data
 
-	qboolean		allsolid;				// if true, plane is not valid
-	qboolean		startsolid;				// if true, the initial point was in a solid area
+	bool			allsolid;				// if true, plane is not valid
+	bool			startsolid;				// if true, the initial point was in a solid area
+
+	CBaseTrace() = default;
+
+private:
+	// No copy constructors allowed
+	CBaseTrace(const CBaseTrace& vOther);
 };
 
 #endif // TRACE_H

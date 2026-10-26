@@ -1,15 +1,10 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( SERVER_H )
 #define SERVER_H
 #ifdef _WIN32
@@ -26,161 +21,114 @@
 #include "quakedef.h"
 #include "engine/IEngineSound.h"
 #include "precache.h"
-#include "packedentityarray.h"
+#include "sv_client.h"
+#include "baseserver.h"
+#include <ihltvdirector.h>
 
 
 class CGameTrace;
 class ITraceFilter;
+class CEventInfo;
 typedef CGameTrace trace_t;
 typedef int TABLEID;
+class IChangeInfoAccessor;
+class CPureServerWhitelist;
 
-//struct trace_t;
 
-typedef struct svchannel_s    // Room associations for this server
-{
-	char		        szServerChannel[16];
-	qboolean            bIsDefault;  // Can't be deleted if true (unless bLeaveDefault is false to clear channel func.)
-	struct svchannel_s *pNext;
-} svchannel_t;
+// find a server class
+ServerClass* SV_FindServerClass( const char *pName );
+ServerClass* SV_FindServerClass( int index );
 
-#define	STATFRAMES	100
-struct svstats_t
-{
-	double	active;
-	double	idle;
-	int		count;
-	int		packets;
-
-	double	latched_active;
-	double	latched_idle;
-	int		latched_packets;
-};
-
-struct modinfo_t
-{
-	qboolean bIsMod;
-	char szInfo[ 256 ];
-	char szDL  [ 256 ];
-	char szHLVersion[ 32 ];
-	int version;
-	int size;
-	qboolean svonly;
-	qboolean cldll;
-};
-
-//-----------------------------------------------------------------------------
-// Purpose: For players on the server, deals with logo download requests
-//-----------------------------------------------------------------------------
-struct CLogoRequest
-{
-	int				playerslot;
-	int				playerid;
-	CRC32_t			logo;
-	int				servercount;
-};
-
-// server_static_t
-struct server_static_t
-{
-	int			maxclients;         // Current max #
-	int			maxclientslimit;    // Max allowed on server.
-	int			spawncount;			// Number of servers spawned since start,
-									// used to check late spawns (e.g., when d/l'ing lots of
-									// data)
-
-	qboolean    dll_initialized;    // Have we loaded the game dll.
-
-	struct client_s	*clients;		// array of up to [maxclients] client slots.
-	
-	svstats_t	stats;
-
-	CRC32_t		sendtable_crc;		// Checksum of networked parts of sendtable
-};
 
 //=============================================================================
 
 // Max # of master servers this server can be associated with
-enum server_state_t
+
+class CGameServer : public CBaseServer
 {
-	ss_dead,     // No server.
-	ss_loading,  // Spawning
-	ss_active   // Running
-};
 
-
-#define MAX_MULTICAST		2500
-
-class CServerState
-{
 public:
-	// Clear out memory for this structure
-	void		Clear( void );
+	CGameServer();
+	virtual ~CGameServer();
+
+
+public: // IServer implementation
+
+	bool	IsPausable( void ) const;
+	void	Init( bool isDedicated );
+	void	Clear( void );
+	void	Shutdown( void );
+	void	SetMaxClients(int number);
+
+public: 
+	void	InitMaxClients( void );
+	bool	SpawnServer( const char *szMapName, const char *szMapFile, const char *startspot );
+	void	SetQueryPortFromSteamServer();
+	void	CopyPureServerWhitelistToStringTable();
+	void 	RemoveClientFromGame( CBaseClient *client );
+	void	SendClientMessages ( bool bSendSnapshots );
+	void	FinishRestore();
+	void	BroadcastSound( SoundInfo_t &sound, IRecipientFilter &filter );
+	bool	IsLevelMainMenuBackground( void )	{ return m_bIsLevelMainMenuBackground; }
+
+	// This is true when we start a level and sv_pure is set to 1.
+	bool	IsInPureServerMode() const;
+	CPureServerWhitelist * GetPureServerWhitelist() const;
+	
+	inline  CGameClient *Client( int i ) { return static_cast<CGameClient*>(m_Clients[i]); };
+
+protected :
+
+	// Reload the whitelist files for pure server mode.
+	void		ReloadWhitelist( const char *pMapName );
+
+	CBaseClient *CreateNewClient( int slot );
+	bool		FinishCertificateCheck( netadr_t &adr, int nAuthProtocol, const char *szRawCertificate, int clientChallenge );
+	void		SendClientDatagrams ( int clientCount, CGameClient** clients, CFrameSnapshot* pSnapshot );
+	void		CopyTempEntities( CFrameSnapshot* pSnapshot );
+	void		AssignClassIds();
+
+	virtual void UpdateMasterServerPlayers();
 
 	// Data
 public:
-	server_state_t	state;			// some actions are only valid during load
 
-	qboolean	active;				// false if only a net client
-	qboolean	paused;
-	qboolean	loadgame;			// handle connections specially
+	bool		m_bLoadgame;			// handle connections specially
 	
-	float		gettime() const;
-
-	int			tickcount;
+	char		m_szStartspot[64];
 	
-	char		name[64];			// map name
-	char		startspot[64];
-	char		modelname[64];		// maps/<name>.bsp, for model_precache[0]
-
-
-	CRC32_t		clientSideDllCRC; // The dll that this server is expecting clients to be using.
-
-	char		*lightstyles[MAX_LIGHTSTYLES];
 	int			num_edicts;
 	int			max_edicts;
+	int			free_edicts; // how many edicts in num_edicts are free, in use is num_edicts - free_edicts
 	edict_t		*edicts;			// Can array index now, edict_t is fixed
+	IChangeInfoAccessor *edictchangeinfo; // HACK to allow backward compat since we can't change edict_t layout
+
+	int			m_nMaxClientsLimit;    // Max allowed on server.
 	
-	PackedEntities	baselines;		// parallel array to sv.edicts, storing entity baselines
-	
-
-	// Unreliable data to send to clients.
-	bf_write	datagram;
-	byte		datagram_buf[NET_MAX_PAYLOAD];
-
-	// Reliable data to send to clients.
-	bf_write	reliable_datagram;	// copied to all clients at end of frame
-	byte		reliable_datagram_buf[NET_MAX_PAYLOAD];
-
-	bf_write	multicast;
-	byte		multicast_buf[MAX_MULTICAST];	// Longest multicast message
-
 	bool		allowsignonwrites;
+	bool	    dll_initialized;    // Have we loaded the game dll.
 
-	bf_write	signon;
-	byte		signon_buffer[ NET_MAX_PAYLOAD ];
+	bool		m_bIsLevelMainMenuBackground;	// true if the level running only as the background to the main menu
 
-	bf_write	signon_fullsendtables;
-	byte		signon_fullsendtables_buffer[ NET_MAX_PAYLOAD ];
+	CUtlVector<CEventInfo*>	m_TempEntities;		// temp entities
 
-	int			serverclasses;		// number of unique server classes
-	int			serverclassbits;	// log2 of serverclasses
+	bf_write			m_FullSendTables;
+	CUtlMemory<byte>	m_FullSendTablesBuffer;
 
-	// Reset every frame after sending messages to clients.  Allows clients to sort by
-	//  svc_sound message to reconstruct the correct encoding order because we actually
-	//  send the reliable buffer before the unreliable and start/stop sounds that occur
-	//  same frame but are in different buffers can arrive and be processed out of order, otherwise.
-	int			sound_sequence;
+	bool		m_bLoadedPlugins;
 
-	CUtlVector< CLogoRequest >		pending_logos;
+public:
 
 	// New style precache lists are done this way
 	void		CreateEngineStringTables( void );
 
-	TABLEID		GetModelPrecacheTable( void ) const;
-	TABLEID		GetGenericPrecacheTable( void ) const;
-	TABLEID		GetSoundPrecacheTable( void ) const;
-	TABLEID		GetDecalPrecacheTable( void ) const;
-	TABLEID		GetInstanceBaselineTable() const;
+	INetworkStringTable *GetModelPrecacheTable( void ) const;
+	INetworkStringTable *GetGenericPrecacheTable( void ) const;
+	INetworkStringTable *GetSoundPrecacheTable( void ) const;
+	INetworkStringTable *GetDecalPrecacheTable( void ) const;
+	
+	INetworkStringTable *GetDynamicModelsTable( void ) const { return m_pDynamicModelsTable; }
+
 
 	// Accessors to model precaching stuff
 	int			PrecacheModel( char const *name, int flags, model_t *model = NULL );
@@ -199,181 +147,28 @@ public:
 	int			PrecacheDecal( char const *name, int flags );
 	int			LookupDecalIndex( char const *name );
 
-	void		DumpPrecacheStats( TABLEID table );
+	void		DumpPrecacheStats( INetworkStringTable *table );
+
+	bool		IsHibernating() const;
+	void		UpdateHibernationState();
 
 private:
+	void		SetHibernating( bool bHibernating );
+
 	CPrecacheItem	model_precache[ MAX_MODELS ];
 	CPrecacheItem	generic_precache[ MAX_GENERIC ];
 	CPrecacheItem	sound_precache[ MAX_SOUNDS ];
 	CPrecacheItem	decal_precache[ MAX_BASE_DECALS ];
 
-	TABLEID			m_hModelPrecacheTable;	
-	TABLEID			m_hSoundPrecacheTable;
-	TABLEID			m_hGenericPrecacheTable;
-	TABLEID			m_hDecalPrecacheTable;
-	TABLEID			m_hInstanceBaselineTable;
-};
+	INetworkStringTable *m_pModelPrecacheTable;	
+	INetworkStringTable *m_pSoundPrecacheTable;
+	INetworkStringTable *m_pGenericPrecacheTable;
+	INetworkStringTable *m_pDecalPrecacheTable;
 
+	INetworkStringTable *m_pDynamicModelsTable;
 
-// -------------------------------------------------------------------------------------------------- //
-// client_frame_t
-// -------------------------------------------------------------------------------------------------- //
-
-class CFrameSnapshot;
-
-class client_frame_t
-{
-public:
-
-						client_frame_t();
-						~client_frame_t();
-
-	// Accessors to snapshots. The data is protected because the snapshots are reference-counted.
-	CFrameSnapshot*		GetSnapshot() const;
-	void				SetSnapshot( CFrameSnapshot *pSnapshot );
-
-	int					GetNumEntities() const;
-
-
-public:
-
-	// Time world sample was sent to client.
-	double				senttime;       
-	// Realtime when client ack'd the update.
-	float				raw_ping;
-	// Ping value adjusted for client/server framerate issues
-	float				latency;     
-	 // Internal lag (i.e., local client should = 0 ping)
-	float               frame_time;    
-
-	// State of entities this frame from the POV of the client.
-	PackedEntities		entities;       
-
-	// Used by server to indicate if the entity was in the player's pvs
-	unsigned char 		entity_in_pvs[ PAD_NUMBER( MAX_EDICTS, 8 ) ];
-
-private:
-
-	// Index of snapshot entry that stores the entities that were active and the serial numbers
-	//  for the frame number this packed entity corresponds to
-	CFrameSnapshot		*m_pSnapshot;
-};
-
-
-inline CFrameSnapshot* client_frame_t::GetSnapshot() const
-{
-	return m_pSnapshot;
-}
-
-inline int client_frame_t::GetNumEntities() const
-{
-	return entities.num_entities;
-}
-
-
-
-// -------------------------------------------------------------------------------------------------- //
-// client_t
-// -------------------------------------------------------------------------------------------------- //
-
-typedef struct client_s
-{
-	// ------------------------------------------------------------ //
-	// Voice stuff.
-	// ------------------------------------------------------------ //
-	bool			m_bLoopback;		// Does this client want to hear his own voice?
-	unsigned long	m_VoiceStreams[MAX_CLIENTS / 32 + 1];	// Which other clients does this guy's voice stream go to?
-
-
-
-	qboolean		active;				// false = client is free
-	qboolean		spawned;			// false = don't send datagrams
-	qboolean        connected;          // On server, getting data.
-
-//===== NETWORK ============
-	netchan_t		netchan;            // The client's net connection.
-	int				chokecount;         // Number of packets choked at the server because the client - server
-										//  network channel is backlogged with too much data.
-	int				delta_sequence;		// -1 = no compression.  This is where the server is creating the
-										// compressed info from.
-	int				acknowledged_tickcount; // tracks host_tickcount based on what client has ack'd receiving
-	int				tabledef_acknowledged_tickcount; // tracks host_tickcount based on what client has ack'd receiving
-	int				GetMaxAckTickCount() const;
-
-	// This is used when we send out a nodelta packet to put the client in a state where we wait 
-	// until we get an ack from them on this packet.
-	// This is for 3 reasons:
-	// 1. A client requesting a nodelta packet means they're screwed so no point in deluging them with data.
-	//    Better to send the uncompressed data at a slow rate until we hear back from them (if at all).
-	// 2. Since the nodelta packet deletes all client entities, we can't ever delta from a packet previous to it.
-	// 3. It can eat up a lot of CPU on the server to keep building nodelta packets while waiting for
-	//    a client to get back on its feet.
-	int							m_ForceWaitForAck;
-	bool						m_bResendNoDelta;
-
-	// This is set each frame if we're using the single player optimized path so if they disable that path,
-	// it knows to send an uncompressed packet.
-	bool m_bUsedLocalNetworkBackdoor;
-	
-	qboolean		fakeclient;			// JAC: This client is a fake player controlled by the game DLL
-
-	// The datagram is written to after every frame, but only cleared
-	//  when it is sent out to the client.  overflow is tolerated.
-	bf_write		datagram;
-	byte			datagram_buf[NET_MAX_PAYLOAD];
-
-	double			connection_started;	// Or time of disconnect for zombies
-	
-	// Time when we should send next world state update ( datagram )
-	double          next_messagetime;   
-	// Default time to wait for next message
-	double          next_messageinterval;  
-
-	qboolean		send_message;		// Set on frames a datagram arrived on
-	qboolean		skip_message;		// Defer message sending for one frame
-
-	client_frame_t	*frames; // updates can be deltad from here
-	int				numframes;
-
-	CEventState		events;   // Per edict events
-
-	// Identity information.
-	edict_t			*edict;				// EDICT_NUM(clientnum+1)
-
-	const edict_t	*pViewEntity;		// View Entity (camera or the client itself)
-
-	int				userid;				// identifying number on server
-	char			userinfo[MAX_INFO_STRING];		// infostring
-	qboolean		sendinfo;
-	char            hashedcdkey[SIGNED_GUID_LEN + 1]; // MD5 hash is 32 hex #'s, plus trailing 0
-
-	char			name[32];			// for printing to other people
-		
-	int				entityId;			// ID # in save structure
-
-	// Spray point logo
-	CRC32_t			logo;
-	bool			request_logo;		// True if logo request should be made at SV_New_f
-
-	// Client sends this during connection, so we can see if
-	//  we need to send sendtable info or if the .dll matches
-	CRC32_t			sendtable_crc;		
-} client_t;
-
-
-inline int client_t::GetMaxAckTickCount() const
-{
-	if ( acknowledged_tickcount > tabledef_acknowledged_tickcount )
-		return acknowledged_tickcount;
-	else
-		return tabledef_acknowledged_tickcount;
-}
-
-
-enum sv_delta_t
-{ 
-	sv_packet_nodelta = 0, 
-	sv_packet_delta
+	CPureServerWhitelist *m_pPureServerWhitelist;
+	bool m_bHibernating; 	// Are we hibernating.  Hibernation makes server process consume approx 0 CPU when no clients are connected
 };
 
 //============================================================================
@@ -381,103 +176,25 @@ enum sv_delta_t
 class IServerGameDLL;
 class IServerGameEnts;
 class IServerGameClients;
+class IServerGameTags;
 extern IServerGameDLL	*serverGameDLL;
+extern int g_iServerGameDLLVersion;
 extern IServerGameEnts *serverGameEnts;
+
 extern IServerGameClients *serverGameClients;
+extern int g_iServerGameClientsVersion;	// This matches the number at the end of the interface name (so for "ServerGameClients004", this would be 4).
+
+extern IHLTVDirector *serverGameDirector;
+
+extern IServerGameTags *serverGameTags;
 
 // Master server address struct for use in building heartbeats
 extern	ConVar	skill;
 extern	ConVar	deathmatch;
 extern	ConVar	coop;
-extern  ConVar  sv_lan;
 
-extern	server_static_t	svs;				// persistant server info
-extern	CServerState	sv;					// local server
+extern	CGameServer	sv;				// local server
+extern	CGameClient	*host_client;	// current processing client
 
-extern	client_t	*host_client;
-
-extern	edict_t		*sv_player;
-
-extern modinfo_t gmodinfo;
-//===========================================================
-
-// sv_main.c
-
-void SV_Frame( bool send_client_updates );
-void SV_Init (void);
-void SV_Shutdown( void );
-
-void SV_InitGameDLL( void );
-void SV_ShutdownGameDLL( void );
-
-void SV_SendClientCommands (char *fmt, ...);
-void SV_ReplicateConVarChange( ConVar const *var, char const *newValue );
-void SV_ClearPacketEntities( PackedEntities *frame );
-void SV_ExtractFromUserinfo (client_t *cl);
-char *SV_ExtractNameFromUserinfo( client_t *cl );
-void SV_ClearMemory( void );
-
-void SV_ResetModInfo( void );
-
-class IRecipientFilter;
-void SV_StartSound ( IRecipientFilter& filter, edict_t *pSoundEmittingEntity, int iChannel, const char *pSample, 
-	float flVolume, soundlevel_t iSoundLevel, int iFlags, int iPitch, const Vector *pOrigin = NULL, float soundtime = 0.0f );
-
-void SV_DropClient (client_t *cl, qboolean crash, char *fmt, ... );
-void SV_FullClientUpdate(client_t *cl, bf_write *sb);
-
-void SV_CheckTimeouts (void);
-float SV_CalcLatency (client_t *cl, int numsamples = 0 );
-float SV_CalcPing( client_t *cl, int numsamples = 1 );
-int SV_CalcPacketLoss (client_t *cl);
-
-void SV_CountPlayers( int * );
-void SV_New_f (void);
-
-int SV_ModelIndex (const char *name);
-int SV_FindOrAddModel (const char *name, bool preload );
-int SV_SoundIndex (const char *name);
-int SV_FindOrAddSound(const char *name, bool preload );
-int SV_GenericIndex(const char *name);
-int SV_FindOrAddGeneric(const char *name, bool preload );
-int SV_DecalIndex(const char *name);
-int SV_FindOrAddDecal(const char *name, bool preload );
-
-void SV_ClientPrintf (const char *fmt, ...);
-void SV_BroadcastPrintf (const char *fmt, ...);
-
-void SV_Physics( bool simulating );
-void SV_GameRenderDebugOverlays();
-
-class IServerEntity;
-
-void SV_ExecuteClientMessage (client_t *cl);
-
-void SV_WriteClientdataToMessage( client_t *ent, bf_write *msg );
-
-void SV_BroadcastCommand (char *fmt, ...);
-
-int  SV_SpawnServer( char *level, char *startspot );
-
-void SV_ActivateServer();
-bool IsSinglePlayerGame( void );
-
-void SV_DetermineMulticastRecipients( bool usepas, const Vector& origin, unsigned int& playerbits );
-
-// sv_redirect.cpp
-enum redirect_t
-{
-	RD_NONE = 0,
-	RD_CLIENT,
-	RD_PACKET
-};
-
-qboolean SV_RedirectActive( void );
-void SV_RedirectAddText( const char *txt );
-void SV_RedirectStart( redirect_t rd, netadr_t *addr );
-void SV_RedirectEnd( void );
-
-// sv_rcom.cpp
-void SV_Rcom( netadr_t *net_from );
 
 #endif // SERVER_H

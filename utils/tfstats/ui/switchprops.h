@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_SWITCHPROPS_H__D6AFABE1_5BD5_11D3_A5CF_005004039597__INCLUDED_)
 #define AFX_SWITCHPROPS_H__D6AFABE1_5BD5_11D3_A5CF_005004039597__INCLUDED_
 

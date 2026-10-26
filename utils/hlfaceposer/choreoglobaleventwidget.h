@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef CHOREOGLOBALEVENTWIDGET_H
 #define CHOREOGLOBALEVENTWIDGET_H
 #ifdef _WIN32

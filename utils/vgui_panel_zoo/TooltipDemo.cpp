@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Controls.h>
-#include <VGUI_ToggleButton.h>
+#include <VGUI/IVGui.h>
+#include <KeyValues.h>
+#include <vgui_controls/ToggleButton.h>
+#include <vgui_controls/Tooltip.h>
 
 using namespace vgui;
 
@@ -30,7 +30,7 @@ class TooltipsDemo: public DemoPage
 TooltipsDemo::TooltipsDemo(Panel *parent, const char *name) : DemoPage(parent, name)
 {
 	ToggleButton *pButton = new ToggleButton (this, "RadioDesc5", "");
-	pButton->SetTooltipFormatToSingleLine();
+	pButton->GetTooltip()->SetTooltipFormatToSingleLine();
 
 	LoadControlSettings("Demo/SampleToolTips.res");
 }

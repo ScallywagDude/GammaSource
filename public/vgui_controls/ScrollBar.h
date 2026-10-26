@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SCROLLBAR_H
 #define SCROLLBAR_H
@@ -32,6 +27,8 @@ class ScrollBarSlider;
 //-----------------------------------------------------------------------------
 class ScrollBar : public Panel
 {
+	DECLARE_CLASS_SIMPLE( ScrollBar, Panel );
+
 public:
 	ScrollBar(Panel *parent, const char *panelName, bool vertical);
 
@@ -85,6 +82,22 @@ public:
 	// Set the slider's Paint enabled.
 	virtual void   SetPaintEnabled(bool state);
 
+	// Sets the scrollbar buttons visible or not
+	virtual void    SetScrollbarButtonsVisible(bool visible);
+
+	void			SetAutohideButtons( bool bAutohide ) { m_bAutoHideButtons = bAutohide; }
+
+	void			UseImages( const char *pszUpArrow, const char *pszDownArrow, const char *pszLine, const char *pszBox );
+
+	/* MESSAGES SENT:
+		"ScrollBarSliderMoved"
+			"position" - new value of the slider
+	*/
+
+	void			SetOverriddenButtons( Button *pB1, Button *pB2 ) { m_pOverriddenButtons[0] = pB1; m_pOverriddenButtons[1] = pB2; }
+
+	virtual void	ApplySettings( KeyValues *pInResourceData );
+
 protected:
 
 	virtual void PerformLayout();
@@ -92,10 +105,12 @@ protected:
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual void OnSizeChanged(int wide, int tall);
 
-	DECLARE_PANELMAP();
-
-	virtual void OnSliderMoved(int value);
+	MESSAGE_FUNC_INT( OnSliderMoved, "ScrollBarSliderMoved", position );
 	virtual void RespondToScrollArrow(int const direction);
+
+	virtual void UpdateButtonsForImages( void );
+	virtual void UpdateSliderImages( void );
+	Button		 *GetDepressedButton( int iIndex );
 
 private:
 	Button* _button[2];
@@ -103,6 +118,14 @@ private:
 	int     _buttonPressedScrollValue;
 	int		_scrollDelay; // used to control delays in scrolling
 	bool	_respond;
+	bool	m_bNoButtons;
+	CPanelAnimationVar( bool, m_bAutoHideButtons, "autohide_buttons", "0" );
+
+	vgui::ImagePanel	*m_pUpArrow;
+	vgui::ImagePanel	*m_pLine;
+	vgui::ImagePanel	*m_pDownArrow;
+	vgui::ImagePanel	*m_pBox;
+	Button	*m_pOverriddenButtons[2];
 };
 
 }

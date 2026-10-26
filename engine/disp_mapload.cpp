@@ -1,40 +1,36 @@
-//=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "glquake.h"
-#include "gl_cvars.h"
+#include "render_pch.h"
+#include "modelloader.h"
 #include "gl_model_private.h"
 #include "gl_lightmap.h"
 #include "disp.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "gl_rsurf.h"
 #include "gl_matsysiface.h"
-#include "enginestats.h"
-#include "r_local.h"
 #include "zone.h"
 #include "materialsystem/imesh.h"
-#include "vector.h"
+#include "materialsystem/ivballoctracker.h"
+#include "mathlib/vector.h"
 #include "iscratchpad3d.h"
 #include "tier0/fasttimer.h"
 #include "lowpassstream.h"
 #include "con_nprint.h"
+#include "tier2/tier2.h"
 #include "tier0/dbg.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 void BuildTagData( CCoreDispInfo *pCoreDisp, CDispInfo *pDisp );
+void SmoothDispSurfNormals( CCoreDispInfo **ppListBase, int nListSize );
 
 // This makes sure that whoever is creating and deleting CDispInfos frees them all
 // (and calls their destructors) before the module is gone.
@@ -107,20 +103,19 @@ static CDispGroup* AddCombo( CUtlVector<CDispGroup*> &combos, int idLMPage, IMat
 static inline CDispInfo* GetModelDisp( model_t const *pWorld, int i )
 {
 	return static_cast< CDispInfo* >(
-		DispInfo_IndexArray( pWorld->brush.hDispInfos, i ) );
+		DispInfo_IndexArray( pWorld->brush.pShared->hDispInfos, i ) );
 }			
 
 
 static void BuildDispSurfInit( 
 	model_t *pWorld, 
 	CCoreDispInfo *pBuildDisp,
-	int worldSurfID )
+	SurfaceHandle_t worldSurfID )
 {
 	if( !IS_SURF_VALID( worldSurfID ) )
 		return;
 	ASSERT_SURF_VALID( worldSurfID );
 	
-	int	   surfFlag = 0;
 	Vector surfPoints[4];
 	Vector surfNormals[4];
 	Vector2D surfTexCoords[4];
@@ -129,18 +124,20 @@ static void BuildDispSurfInit(
 	if ( MSurf_VertCount( worldSurfID ) != 4 )
 		return;
 
+#ifndef SWDS
+	BuildMSurfaceVerts( pWorld->brush.pShared, worldSurfID, surfPoints, surfTexCoords, surfLightCoords );
+#endif
+	BuildDispGetSurfNormals( surfPoints, surfNormals );
+
+	CCoreDispSurface *pDispSurf = pBuildDisp->GetSurface();
+
+	int surfFlag = pDispSurf->GetFlags();
 	int nLMVects = 1;
 	if( MSurf_Flags( worldSurfID ) & SURFDRAW_BUMPLIGHT )
 	{
 		surfFlag |= CCoreDispInfo::SURF_BUMPED;
 		nLMVects = NUM_BUMP_VECTS + 1;
 	}
-#ifndef SWDS
-	BuildMSurfaceVerts( pWorld, worldSurfID, surfPoints, surfTexCoords, surfLightCoords );
-#endif
-	BuildDispGetSurfNormals( surfPoints, surfNormals );
-
-	CCoreDispSurface *pDispSurf = pBuildDisp->GetSurface();
 
 	pDispSurf->SetPointCount( 4 );
 	for( int i = 0; i < 4; i++ )
@@ -149,14 +146,18 @@ static void BuildDispSurfInit(
 		pDispSurf->SetPointNormal( i, surfNormals[i] );
 		pDispSurf->SetTexCoord( i, surfTexCoords[i] );
 
-		pDispSurf->SetSAxis( MSurf_TexInfo( worldSurfID )->textureVecsTexelsPerWorldUnits[0].AsVector3D() );
-		pDispSurf->SetTAxis( MSurf_TexInfo( worldSurfID )->textureVecsTexelsPerWorldUnits[1].AsVector3D() );
-
 		for( int j = 0; j < nLMVects; j++ )
 		{
 			pDispSurf->SetLuxelCoord( j, i, surfLightCoords[i][j] );
 		}
 	}
+
+	Vector vecS = MSurf_TexInfo( worldSurfID )->textureVecsTexelsPerWorldUnits[0].AsVector3D();
+	Vector vecT = MSurf_TexInfo( worldSurfID )->textureVecsTexelsPerWorldUnits[1].AsVector3D();
+	VectorNormalize( vecS );
+	VectorNormalize( vecT );
+	pDispSurf->SetSAxis( vecS );
+	pDispSurf->SetTAxis( vecT );
 
 	pDispSurf->SetFlags( surfFlag );
 	pDispSurf->FindSurfPointStartIndex();
@@ -195,6 +196,16 @@ static void BuildDispSurfInit(
 #endif
 }
 
+VertexFormat_t ComputeDisplacementStaticMeshVertexFormat( const IMaterial * pMaterial, const CDispGroup *pCombo, const ddispinfo_t *pMapDisps )
+{
+	VertexFormat_t vertexFormat = pMaterial->GetVertexFormat();
+
+	// FIXME: set VERTEX_FORMAT_COMPRESSED if there are no artifacts and if it saves enough memory (use 'mem_dumpvballocs')
+	vertexFormat &= ~VERTEX_FORMAT_COMPRESSED;
+	// FIXME: check for and strip unused vertex elements (TANGENT_S/T?)
+
+	return vertexFormat;
+}
 
 void AddEmptyMesh( 
 	model_t *pWorld,
@@ -205,9 +216,13 @@ void AddEmptyMesh(
 	int nTotalVerts, 
 	int nTotalIndices )
 {
+	CMatRenderContextPtr pRenderContext( materials );
+
 	CGroupMesh *pMesh = new CGroupMesh;
 	pCombo->m_Meshes.AddToTail( pMesh );
-	pMesh->m_pMesh = materialSystemInterface->CreateStaticMesh( pCombo->m_pMaterial, !r_DispUseStaticMeshes.GetBool() );
+
+	VertexFormat_t vertexFormat = ComputeDisplacementStaticMeshVertexFormat( pCombo->m_pMaterial, pCombo, pMapDisps );
+	pMesh->m_pMesh = pRenderContext->CreateStaticMesh( vertexFormat, TEXTURE_GROUP_STATIC_VERTEX_BUFFER_DISP );
 	pMesh->m_pGroup = pCombo;
 	pMesh->m_nVisible = 0;
 
@@ -263,46 +278,51 @@ void FillStaticBuffer(
 	
 	CMeshBuilder builder;
 	builder.BeginModify( pMesh->m_pMesh, pDisp->m_iVertOffset, nVerts, 0, 0 );
-
-		SurfaceCtx_t ctx;
-		SurfSetupSurfaceContext( ctx, pDisp->GetParent() );
-
-		for( int i=0; i < nVerts; i++ )
+	
+	SurfaceCtx_t ctx;
+	SurfSetupSurfaceContext( ctx, pDisp->GetParent() );
+	
+	for( int i=0; i < nVerts; i++ )
+	{
+		// NOTE: position comes from our system-memory buffer so when you're restoring
+		//       static buffers (from alt+tab), it includes changes from terrain mods.
+		const Vector &vPos = pCoreDisp->GetVert( i );
+		builder.Position3f( vPos.x, vPos.y, vPos.z );
+		
+		const Vector &vNormal = pCoreDisp->GetNormal( i );
+		builder.Normal3f( vNormal.x, vNormal.y, vNormal.z );
+		
+		Vector vec;
+		pCoreDisp->GetTangentS( i, vec );
+		builder.TangentS3f( VectorExpand( vec ) );
+		
+		pCoreDisp->GetTangentT( i, vec );
+		builder.TangentT3f( VectorExpand( vec ) );
+		
+		Vector2D texCoord;
+		pCoreDisp->GetTexCoord( i, texCoord );
+		builder.TexCoord2f( 0, texCoord.x, texCoord.y );
+		
+		Vector2D lightCoord;
 		{
-			// NOTE: position comes from our system-memory buffer so when you're restoring
-			//       static buffers (from alt+tab), it includes changes from terrain mods.
-			const Vector &vPos = pCoreDisp->GetVert( i );
-			builder.Position3f( vPos.x, vPos.y, vPos.z );
-
-			const Vector &vNormal = pCoreDisp->GetNormal( i );
-			builder.Normal3f( vNormal.x, vNormal.y, vNormal.z );
-
-			Vector vec;
-			pCoreDisp->GetTangentS( i, vec );
-			builder.TangentS3f( VectorExpand( vec ) );
-
-			pCoreDisp->GetTangentT( i, vec );
-			builder.TangentT3f( VectorExpand( vec ) );
-
-			Vector2D texCoord;
-			pCoreDisp->GetTexCoord( i, texCoord );
-			builder.TexCoord2f( 0, texCoord.x, texCoord.y );
-
-			Vector2D lightCoord;
-			{
-				pCoreDisp->GetLuxelCoord( 0, i, lightCoord );
-				builder.TexCoord2f( 1, lightCoord.x, lightCoord.y );
-			}
-
-			if( nLightmaps > 1 )
-			{
-				SurfComputeLightmapCoordinate( ctx, pDisp->GetParent(), pDisp->m_Verts[i].m_vPos, lightCoord );
-				builder.TexCoord2f( 2, ctx.m_BumpSTexCoordOffset, 0.0f );
-			}
-
-			builder.AdvanceVertex();
+			pCoreDisp->GetLuxelCoord( 0, i, lightCoord );
+			builder.TexCoord2f( DISP_LMCOORDS_STAGE, lightCoord.x, lightCoord.y );
 		}
-
+		
+		float flAlpha = ( ( CCoreDispInfo * )pCoreDisp )->GetAlpha( i );
+		flAlpha *= ( 1.0f / 255.0f );
+		flAlpha = clamp( flAlpha, 0.0f, 1.0f );
+		builder.Color4f( 1.0f, 1.0f, 1.0f, flAlpha );
+		
+		if( nLightmaps > 1 )
+		{
+			SurfComputeLightmapCoordinate( ctx, pDisp->GetParent(), pDisp->m_Verts[i].m_vPos, lightCoord );
+			builder.TexCoord2f( 2, ctx.m_BumpSTexCoordOffset, 0.0f );
+		}
+		
+		builder.AdvanceVertex();
+	}
+	
 	builder.EndModify();
 #endif
 }
@@ -333,7 +353,7 @@ void CDispInfo::CopyMapDispData( const ddispinfo_t *pBuildDisp )
 
 void DispInfo_CreateMaterialGroups( model_t *pWorld, const MaterialSystem_SortInfo_t *pSortInfos )
 {
-	for ( int iDisp=0; iDisp < pWorld->brush.numDispInfos; iDisp++ )
+	for ( int iDisp=0; iDisp < pWorld->brush.pShared->numDispInfos; iDisp++ )
 	{
 		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
 
@@ -343,6 +363,7 @@ void DispInfo_CreateMaterialGroups( model_t *pWorld, const MaterialSystem_SortIn
 		if( !pCombo )
 			pCombo = AddCombo( g_DispGroups, idLMPage, MSurf_TexInfo( pDisp->m_ParentSurfID )->material );
 
+		MEM_ALLOC_CREDIT();
 		pCombo->m_DispInfos.AddToTail( iDisp );
 	}
 }
@@ -356,10 +377,11 @@ void DispInfo_LinkToParentFaces( model_t *pWorld, const ddispinfo_t *pMapDisps, 
 		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
 
 		// Set its parent.
-		Assert( pMapDisp->m_iMapFace >= 0 && pMapDisp->m_iMapFace < pWorld->brush.numsurfaces );
-		Assert( MSurf_Flags( pMapDisp->m_iMapFace, pWorld ) & SURFDRAW_HAS_DISP );
-		pWorld->brush.surfaces1[pMapDisp->m_iMapFace].pDispInfo = pDisp;
-		pDisp->SetParent( pMapDisp->m_iMapFace );
+		SurfaceHandle_t surfID = SurfaceHandleFromIndex( pMapDisp->m_iMapFace );
+		Assert( pMapDisp->m_iMapFace >= 0 && pMapDisp->m_iMapFace < pWorld->brush.pShared->numsurfaces );
+		Assert( MSurf_Flags( surfID ) & SURFDRAW_HAS_DISP );
+		surfID->pDispInfo = pDisp;
+		pDisp->SetParent( surfID );
 	}
 }
 
@@ -406,71 +428,126 @@ void DispInfo_CreateEmptyStaticBuffers( model_t *pWorld, const ddispinfo_t *pMap
 	}
 }
 
-
-bool DispInfo_SetupFromMapDisp( 
-	model_t *pWorld, 
-	int iDisp, 
-	const ddispinfo_t *pMapDisp, 
-	const CDispVert *pVerts,
-	const CDispTri *pTris,
-	const MaterialSystem_SortInfo_t *pSortInfos,
-	bool bRestoring )
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pWorld - 
+//			iDisp - 
+//			*pMapDisp - 
+//			*pCoreDisp - 
+//			*pVerts - 
+//			pWorld - 
+//			iDisp - 
+// Output : Returns true on success, false on failure.
+// Information: Setup the CCoreDispInfo using the ddispinfo_t and have it translate the data
+// into a format we'll copy into the rendering structures. This roundaboutness is because
+// of legacy code. It should all just be stored in the map file, but it's not a high priority right now.
+//-----------------------------------------------------------------------------
+bool DispInfo_CreateFromMapDisp( model_t *pWorld, int iDisp, const ddispinfo_t *pMapDisp, CCoreDispInfo *pCoreDisp, const CDispVert *pVerts,
+								 const CDispTri *pTris,const MaterialSystem_SortInfo_t *pSortInfos, bool bRestoring )
 {
+	// Get the matching CDispInfo to fill in.
 	CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
 
-	// Setup the CCoreDispInfo using the ddispinfo_t and have it translate the data
-	// into a format we'll copy into the rendering structures. This roundaboutness is because
-	// of legacy code. It should all just be stored in the map file, but it's not a high priority right now.
-	CCoreDispInfo coreDisp;
-	coreDisp.GetSurface()->SetPointStart( pMapDisp->startPosition );
-
-	coreDisp.InitDispInfo( pMapDisp->power, pMapDisp->minTess, pMapDisp->smoothingAngle, pVerts, pTris );
-	coreDisp.SetNeighborData( pMapDisp->m_EdgeNeighbors, pMapDisp->m_CornerNeighbors );
+	// Initialize the core disp info with data from the map displacement.
+	pCoreDisp->GetSurface()->SetPointStart( pMapDisp->startPosition );
+	pCoreDisp->InitDispInfo( pMapDisp->power, pMapDisp->minTess, pMapDisp->smoothingAngle, pVerts, pTris );
+	pCoreDisp->SetNeighborData( pMapDisp->m_EdgeNeighbors, pMapDisp->m_CornerNeighbors );
 
 	// Copy the allowed verts list.
-	ErrorIfNot( 
-		coreDisp.GetAllowedVerts().GetNumDWords() == sizeof( pMapDisp->m_AllowedVerts ) / 4,
-		("DispInfo_StoreMapData: size mismatch in 'allowed verts' list")
-		);
-	
-	for ( int j=0; j < coreDisp.GetAllowedVerts().GetNumDWords(); j++ )
-		coreDisp.GetAllowedVerts().SetDWord( j, pMapDisp->m_AllowedVerts[j] );
-
-	BuildDispSurfInit( pWorld, &coreDisp, pDisp->GetParent() );
-	
-	if ( !coreDisp.Create() )
+	ErrorIfNot( pCoreDisp->GetAllowedVerts().GetNumDWords() == sizeof( pMapDisp->m_AllowedVerts ) / 4, ( "DispInfo_StoreMapData: size mismatch in 'allowed verts' list" ) );
+	for ( int iVert = 0; iVert < pCoreDisp->GetAllowedVerts().GetNumDWords(); ++iVert )
 	{
-		return false;
+		pCoreDisp->GetAllowedVerts().SetDWord( iVert, pMapDisp->m_AllowedVerts[iVert] );
 	}
 
+	// Build the reset of the intermediate data from the initial map displacement data.
+	BuildDispSurfInit( pWorld, pCoreDisp, pDisp->GetParent() );	
+	if ( !pCoreDisp->Create() )
+		return false;
+
 	// Save the point start index - needed for overlays.
-	pDisp->m_iPointStart = coreDisp.GetSurface()->GetPointStartIndex();
+	pDisp->m_iPointStart = pCoreDisp->GetSurface()->GetPointStartIndex();
 
 	// Now setup the CDispInfo.
-	pDisp->m_Index = (unsigned short)iDisp;
+	pDisp->m_Index = static_cast<unsigned short>( iDisp );
 
 	// Store ddispinfo_t data.
 	pDisp->CopyMapDispData( pMapDisp );
 
 	// Store CCoreDispInfo data.	
-	if( !pDisp->CopyCoreDispData( pWorld, pSortInfos, &coreDisp, bRestoring ) )
+	if( !pDisp->CopyCoreDispData( pWorld, pSortInfos, pCoreDisp, bRestoring ) )
 		return false;
 
 	// Initialize all the active and other verts after setting up neighbors.
 	pDisp->InitializeActiveVerts();
-	pDisp->m_ErrorVerts.Copy( pDisp->m_ActiveVerts );
 	pDisp->m_iLightmapSamplePositionStart = pMapDisp->m_iLightmapSamplePositionStart;
-
-	// Now copy the CCoreDisp's data into the static buffer.
-	FillStaticBuffer( pDisp->m_pMesh, pDisp, &coreDisp, pVerts, pDisp->NumLightMaps() );
-
-	// Now build the tagged data for visualization.
-	BuildTagData( &coreDisp, pDisp );
 
 	return true;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pWorld - 
+//			iDisp - 
+//			*pCoreDisp - 
+//			*pVerts - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+void DispInfo_CreateStaticBuffersAndTags( model_t *pWorld, int iDisp, CCoreDispInfo *pCoreDisp, const CDispVert *pVerts )
+{
+	// Get the matching CDispInfo to fill in.
+	CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
 
+	// Now copy the CCoreDisp's data into the static buffer.
+	FillStaticBuffer( pDisp->m_pMesh, pDisp, pCoreDisp, pVerts, pDisp->NumLightMaps() );
+
+	// Now build the tagged data for visualization.
+	BuildTagData( pCoreDisp, pDisp );
+}
+
+// On the xbox, we lock the meshes ahead of time.
+void SetupMeshReaders( model_t *pWorld, int nDisplacements )
+{
+	for ( int iDisp=0; iDisp < nDisplacements; iDisp++ )
+	{
+		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
+		
+		MeshDesc_t desc;
+		memset( &desc, 0, sizeof( desc ) );
+		
+		desc.m_VertexSize_Position = sizeof( CDispRenderVert );
+		desc.m_VertexSize_TexCoord[0] = sizeof( CDispRenderVert );
+		desc.m_VertexSize_TexCoord[DISP_LMCOORDS_STAGE] = sizeof( CDispRenderVert );
+		desc.m_VertexSize_Normal = sizeof( CDispRenderVert );
+		desc.m_VertexSize_TangentS = sizeof( CDispRenderVert );
+		desc.m_VertexSize_TangentT = sizeof( CDispRenderVert );
+
+		CDispRenderVert *pBaseVert = pDisp->m_Verts.Base();
+		desc.m_pPosition = (float*)&pBaseVert->m_vPos;
+		desc.m_pTexCoord[0] = (float*)&pBaseVert->m_vTexCoord;
+		desc.m_pTexCoord[DISP_LMCOORDS_STAGE] = (float*)&pBaseVert->m_LMCoords;
+		desc.m_pNormal = (float*)&pBaseVert->m_vNormal;
+		desc.m_pTangentS = (float*)&pBaseVert->m_vSVector;
+		desc.m_pTangentT = (float*)&pBaseVert->m_vTVector;
+
+		desc.m_nIndexSize = 1;
+		desc.m_pIndices = pDisp->m_Indices.Base();
+		
+		pDisp->m_MeshReader.BeginRead_Direct( desc, pDisp->NumVerts(), pDisp->m_nIndices );
+	}		
+}
+
+void UpdateDispBBoxes( model_t *pWorld, int nDisplacements )
+{
+	for ( int iDisp=0; iDisp < nDisplacements; iDisp++ )
+	{
+		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
+		pDisp->UpdateBoundingBox();
+	}
+}		
+
+
+#include "tier0/memdbgoff.h"
 bool DispInfo_LoadDisplacements( model_t *pWorld, bool bRestoring )
 {
 	const MaterialSystem_SortInfo_t *pSortInfos = materialSortInfoArray;
@@ -482,16 +559,21 @@ bool DispInfo_LoadDisplacements( model_t *pWorld, bool bRestoring )
 	// Setup the world's list of displacements.
 	if ( bRestoring )
 	{
-
 		/* Breakpoint-able: */
-		if(pWorld->brush.numDispInfos != nDisplacements)
+		if (pWorld->brush.pShared->numDispInfos != nDisplacements)
 		{ 
 			volatile int a = 0; a = a + 1; 
 		}
 
+		if ( !pWorld->brush.pShared->numDispInfos && nDisplacements )
+		{
+			// Attempting to restore displacements before displacements got loaded
+			return false;
+		}
+
 		ErrorIfNot( 
-			pWorld->brush.numDispInfos == nDisplacements,
-			("DispInfo_LoadDisplacments: dispcounts (%d and %d) don't match.", pWorld->brush.numDispInfos, nDisplacements)
+			pWorld->brush.pShared->numDispInfos == nDisplacements,
+			("DispInfo_LoadDisplacments: dispcounts (%d and %d) don't match.", pWorld->brush.pShared->numDispInfos, nDisplacements)
 			);
 
 		ErrorIfNot(
@@ -502,99 +584,159 @@ bool DispInfo_LoadDisplacements( model_t *pWorld, bool bRestoring )
 	else
 	{
 		// Create the displacements.
-		pWorld->brush.numDispInfos = nDisplacements;
-		pWorld->brush.hDispInfos = DispInfo_CreateArray( pWorld->brush.numDispInfos );
+		pWorld->brush.pShared->numDispInfos = nDisplacements;
+		pWorld->brush.pShared->hDispInfos = DispInfo_CreateArray( pWorld->brush.pShared->numDispInfos );
 
 		// Load lightmap alphas.
+		{
+		MEM_ALLOC_CREDIT();
 		g_DispLMAlpha.SetSize( nLuxels );
-		CMapLoadHelper::LoadLumpData( LUMP_DISP_LIGHTMAP_ALPHAS, 0, nLuxels, g_DispLMAlpha.Base() );
+		}
+		CMapLoadHelper lhDispLMAlphas( LUMP_DISP_LIGHTMAP_ALPHAS );
+		lhDispLMAlphas.LoadLumpData( 0, nLuxels, g_DispLMAlpha.Base() );
 	
 		// Load lightmap sample positions.
+		{
+		MEM_ALLOC_CREDIT();
 		g_DispLightmapSamplePositions.SetSize( nSamplePositionBytes );
-		CMapLoadHelper::LoadLumpData( LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS, 0, nSamplePositionBytes, g_DispLightmapSamplePositions.Base() );
+		}
+		CMapLoadHelper lhDispLMPositions( LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS );
+		lhDispLMPositions.LoadLumpData( 0, nSamplePositionBytes, g_DispLightmapSamplePositions.Base() );
 	}
 
-	
 	// Free old data.
 	DispInfo_ReleaseMaterialSystemObjects( pWorld );
-
 	
-	// Load the displacement info structures into temporary space.
+	// load the displacement info structures into temporary space
+	// using temporary storage that is not the stack for compatibility with console stack
+#ifndef _X360
 	ddispinfo_t tempDisps[MAX_MAP_DISPINFO];
+#else
+	CUtlMemory< ddispinfo_t > m_DispInfoBuf( 0, MAX_MAP_DISPINFO );
+	ddispinfo_t *tempDisps = m_DispInfoBuf.Base();
+#endif
 	ErrorIfNot( 
 		nDisplacements <= MAX_MAP_DISPINFO,
 		("DispInfo_LoadDisplacements: nDisplacements (%d) > MAX_MAP_DISPINFO (%d)", nDisplacements, MAX_MAP_DISPINFO)
 		);
-	CMapLoadHelper::LoadLumpData( LUMP_DISPINFO, 0, nDisplacements * sizeof( ddispinfo_t ), tempDisps );
+	CMapLoadHelper lhDispInfo( LUMP_DISPINFO );
+	lhDispInfo.LoadLumpData( 0, nDisplacements * sizeof( ddispinfo_t ), tempDisps );
 
-	
 	// Now hook up the displacements to their parents.
 	DispInfo_LinkToParentFaces( pWorld, tempDisps, nDisplacements );
-
 
 	// First, create "groups" (or "combos") which contain all the displacements that 
 	// use the same material and lightmap.
 	DispInfo_CreateMaterialGroups( pWorld, pSortInfos );
 
 	// Now make the static buffers for each material/lightmap combo.
+	if ( g_VBAllocTracker )
+		g_VBAllocTracker->TrackMeshAllocations( "DispInfo_LoadDisplacements" );
 	DispInfo_CreateEmptyStaticBuffers( pWorld, tempDisps );
-
-
+	if ( g_VBAllocTracker )
+		g_VBAllocTracker->TrackMeshAllocations( NULL );
 
 	// Now setup each displacement one at a time.
+	// using temporary storage that is not the stack for compatibility with console stack
+#ifndef _X360
 	CDispVert tempVerts[MAX_DISPVERTS];
+#else
+	CUtlMemory< CDispVert > m_DispVertsBuf( 0, MAX_DISPVERTS );
+	CDispVert *tempVerts = m_DispVertsBuf.Base();
+#endif
+
+#ifndef _X360
 	CDispTri tempTris[MAX_DISPTRIS];
+#else
+	// using temporary storage that is not the stack for compatibility with console stack
+	CUtlMemory< CDispTri > m_DispTrisBuf( 0, MAX_DISPTRIS );
+	CDispTri *tempTris = m_DispTrisBuf.Base();
+#endif
+
 	int iCurVert = 0;
 	int iCurTri = 0;
 
-	for ( int iDisp=0; iDisp < nDisplacements; iDisp++ )
+	// Core displacement list.
+	CUtlVector<CCoreDispInfo*> aCoreDisps;
+	int iDisp = 0;
+	for ( iDisp = 0; iDisp < nDisplacements; ++iDisp )
 	{
+		CCoreDispInfo *pCoreDisp = new CCoreDispInfo;
+		aCoreDisps.AddToTail( pCoreDisp );
+	}
+	
+	CMapLoadHelper lhDispVerts( LUMP_DISP_VERTS );
+	CMapLoadHelper lhDispTris( LUMP_DISP_TRIS );
+
+	for ( iDisp = 0; iDisp < nDisplacements; ++iDisp )
+	{
+		// Get the current map displacement.
 		ddispinfo_t *pMapDisp = &tempDisps[iDisp];
-		
+		if ( !pMapDisp )
+			continue;
+
 		// Load the vertices from the file.
 		int nVerts = NUM_DISP_POWER_VERTS( pMapDisp->power );
 		ErrorIfNot( nVerts <= MAX_DISPVERTS, ( "DispInfo_LoadDisplacements: invalid vertex count (%d)", nVerts ) );
-		CMapLoadHelper::LoadLumpData( LUMP_DISP_VERTS, iCurVert * sizeof(CDispVert), nVerts*sizeof(CDispVert), tempVerts );
+		lhDispVerts.LoadLumpData( iCurVert * sizeof(CDispVert), nVerts*sizeof(CDispVert), tempVerts );
 		iCurVert += nVerts;
 
-		// Load the vertices from the file.
+		// Load the triangle indices from the file.
 		int nTris = NUM_DISP_POWER_TRIS( pMapDisp->power );
 		ErrorIfNot( nTris <= MAX_DISPTRIS, ( "DispInfo_LoadDisplacements: invalid tri count (%d)", nTris ) );
-		CMapLoadHelper::LoadLumpData( LUMP_DISP_TRIS, iCurTri * sizeof(CDispTri), nTris*sizeof(CDispTri), tempTris );
+		lhDispTris.LoadLumpData( iCurTri * sizeof(CDispTri), nTris*sizeof(CDispTri), tempTris );
 		iCurTri += nTris;
 	
-		// Now initialize the CDispInfo.
-		if ( !DispInfo_SetupFromMapDisp( pWorld, iDisp, pMapDisp, tempVerts, tempTris, 
-			pSortInfos, bRestoring ) )
+		// Now create the CoreDispInfo and the base CDispInfo.
+		if ( !DispInfo_CreateFromMapDisp( pWorld, iDisp, pMapDisp, aCoreDisps[iDisp], tempVerts, tempTris, pSortInfos, bRestoring ) )
 			return false;
 	}	
 
+	// Smooth Normals.
+	SmoothDispSurfNormals( aCoreDisps.Base(), nDisplacements );
+
+	// Fill in the static buffers.
+	for ( iDisp = 0; iDisp < nDisplacements; ++iDisp )
+	{
+		DispInfo_CreateStaticBuffersAndTags( pWorld, iDisp, aCoreDisps[iDisp], tempVerts );
+		
+		// Copy over the now blended normals
+		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
+		pDisp->CopyCoreDispVertData( aCoreDisps[iDisp], pDisp->m_BumpSTexCoordOffset );
+
+	}
+
+	// Destroy core displacement list.
+	aCoreDisps.PurgeAndDeleteElements();
+
 	// If we're not using LOD, then maximally tesselate all the displacements and
 	// make sure they never change.
-	if ( r_DispEnableLOD.GetInt() == 0 )
+	for ( iDisp=0; iDisp < nDisplacements; iDisp++ )
 	{
-		for ( int iDisp=0; iDisp < nDisplacements; iDisp++ )
-		{
-			CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
-			
-			pDisp->m_ActiveVerts = pDisp->m_AllowedVerts;
-			pDisp->m_bForceRebuild = false;
-			pDisp->m_bFullyTesselated = true;
-		}
-
-		for ( iDisp=0; iDisp < nDisplacements; iDisp++ )
-		{
-			CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
-			pDisp->TesselateDisplacement();			
-		}		
+		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
+		
+		pDisp->m_ActiveVerts = pDisp->m_AllowedVerts;
 	}
+
+	for ( iDisp=0; iDisp < nDisplacements; iDisp++ )
+	{
+		CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
+		pDisp->TesselateDisplacement();			
+	}		
+
+	SetupMeshReaders( pWorld, nDisplacements );
+
+	UpdateDispBBoxes( pWorld, nDisplacements );
 
 	return true;
 }
+#include "tier0/memdbgon.h"
 
 
 void DispInfo_ReleaseMaterialSystemObjects( model_t *pWorld )
 {
+	CMatRenderContextPtr pRenderContext( materials );
+
 	// Free all the static meshes.
 	for( int iGroup=0; iGroup < g_DispGroups.Size(); iGroup++ )
 	{
@@ -604,7 +746,7 @@ void DispInfo_ReleaseMaterialSystemObjects( model_t *pWorld )
 		{
 			CGroupMesh *pMesh = pGroup->m_Meshes[iMesh];
 
-			materialSystemInterface->DestroyStaticMesh( pMesh->m_pMesh );
+			pRenderContext->DestroyStaticMesh( pMesh->m_pMesh );
 		}
 
 		pGroup->m_Meshes.PurgeAndDeleteElements();
@@ -616,12 +758,12 @@ void DispInfo_ReleaseMaterialSystemObjects( model_t *pWorld )
 	// Clear pointers in the dispinfos.
 	if( pWorld )
 	{
-		for( int iDisp=0; iDisp < pWorld->brush.numDispInfos; iDisp++ )
+		for( int iDisp=0; iDisp < pWorld->brush.pShared->numDispInfos; iDisp++ )
 		{
 			CDispInfo *pDisp = GetModelDisp( pWorld, iDisp );
 			if ( !pDisp )
 			{
-				Assert( 0 );
+				AssertOnce( 0 );
 				continue;
 			}
 			
@@ -638,11 +780,9 @@ void DispInfo_ReleaseMaterialSystemObjects( model_t *pWorld )
 
 CDispInfo::CDispInfo()
 {
-	m_ParentSurfID = -1;
+	m_ParentSurfID = SURFACE_HANDLE_INVALID;
 
     m_bTouched = false;
-
-	m_pNext = NULL;
 
 	++g_ConstructorChecker.m_nConstructedObjects;
 
@@ -653,13 +793,9 @@ CDispInfo::CDispInfo()
 
 	m_pPowerInfo = NULL;
 
-	m_bRetesselate = false;
 	m_ViewerSphereCenter.Init( 1e24, 1e24, 1e24 );
 	
 	m_bInUse = false;
-	m_bFullyTesselated = false;
-	m_bForceRebuild = false;
-	m_bForceRetesselate = false;
 
 	m_pNodeInfo = 0;
 
@@ -667,7 +803,6 @@ CDispInfo::CDispInfo()
 
 	m_Tag = NULL;
 	m_pDispArray = NULL;
-	m_pLeafLinkHead = NULL;
 
 	m_FirstDecal = DISP_DECAL_HANDLE_INVALID;
 	m_FirstShadowDecal = DISP_SHADOW_HANDLE_INVALID;
@@ -677,8 +812,6 @@ CDispInfo::CDispInfo()
 		m_EdgeNeighbors[i].SetInvalid();
 		m_CornerNeighbors[i].SetInvalid();
 	}
-
-	m_nExtraDependencies = 0;
 }
 
 
@@ -686,6 +819,9 @@ CDispInfo::~CDispInfo()
 {
 	if (m_pNodeInfo)
 		delete[] m_pNodeInfo;
+
+	delete[] m_pWalkIndices;
+	delete[] m_pBuildIndices;
 
 	--g_ConstructorChecker.m_nConstructedObjects;
 
@@ -696,21 +832,31 @@ CDispInfo::~CDispInfo()
 }
 
 
-void CDispInfo::AddExtraDependency( int iNeighborDisp )
+void CDispInfo::CopyCoreDispVertData( const CCoreDispInfo *pCoreDisp, float bumpSTexCoordOffset )
 {
-	if( FindExtraDependency( m_ExtraDependencies, m_nExtraDependencies, iNeighborDisp ) )
-		return;
+#ifndef SWDS
+	if( NumLightMaps() <= 1 )
+	{
+		bumpSTexCoordOffset = 0.0f;
+	}
+	// Copy vertex positions (for backfacing tests).
+	m_Verts.SetSize( m_pPowerInfo->m_MaxVerts );
+	m_BumpSTexCoordOffset = bumpSTexCoordOffset;
+	for( int i=0; i < NumVerts(); i++ )
+	{
+		pCoreDisp->GetVert( i, m_Verts[i].m_vPos );
+		m_Verts[i].m_vOriginalPos = m_Verts[i].m_vPos;
 
-	if( m_nExtraDependencies < MAX_EXTRA_DEPENDENCIES )
-	{
-		m_ExtraDependencies[m_nExtraDependencies++] = iNeighborDisp;
-	}
-	else
-	{
-		Assert( !"CDispInfo::AddExtraCornerNeighbor: overflowed neighbor array" );
-	}
+		pCoreDisp->GetTexCoord( i, m_Verts[i].m_vTexCoord );
+		pCoreDisp->GetLuxelCoord( 0, i, m_Verts[i].m_LMCoords );
+
+		// mat_normals needs this as well as the dynamic lighting code
+		pCoreDisp->GetNormal( i, m_Verts[i].m_vNormal );
+		pCoreDisp->GetTangentS( i, m_Verts[i].m_vSVector );
+		pCoreDisp->GetTangentT( i, m_Verts[i].m_vTVector );
+	} 
+#endif
 }
-
 
 bool CDispInfo::CopyCoreDispData( 
 	model_t *pWorld,
@@ -718,50 +864,45 @@ bool CDispInfo::CopyCoreDispData(
 	const CCoreDispInfo *pCoreDisp,
 	bool bRestoring )
 {
-	// Make sure we get rebuilt and tesselated next frame.
-	m_bForceRebuild = true;
-
-	// When restoring, leave all this data the same.
-	if( bRestoring )
-		return true;
-
 	m_idLMPage = pSortInfos[MSurf_MaterialSortID( GetParent() )].lightmapPageID;
 
-	const CCoreDispSurface *pSurface = pCoreDisp->GetSurface();
-	for( int iTexCoord=0; iTexCoord < 4; iTexCoord++ )
-	{
-		pSurface->GetTexCoord( iTexCoord, m_BaseSurfaceTexCoords[iTexCoord] );
-	}
-
+#ifndef SWDS
 	SurfaceCtx_t ctx;
 	SurfSetupSurfaceContext( ctx, GetParent() );
+#endif
 
-	// Copy vertex positions (for backfacing tests).
-	m_Verts.SetSize( m_pPowerInfo->m_MaxVerts );
-	for( int i=0; i < NumVerts(); i++ )
+	// Restoring is only for alt+tabbing, which can't happen on consoles
+	if ( IsPC() && bRestoring )
 	{
-		pCoreDisp->GetVert( i, m_Verts[i].m_vPos );
-		m_Verts[i].m_vOriginalPos = m_Verts[i].m_vPos; 
-
-		pCoreDisp->GetTexCoord( i, m_Verts[i].m_vTexCoord );
-		pCoreDisp->GetLuxelCoord( 0, i, m_Verts[i].m_LMCoords );
-
-		// Only do this in debug because only mat_normals needs it
-		pCoreDisp->GetNormal( i, m_Verts[i].m_vNormal );
-		pCoreDisp->GetTangentS( i, m_Verts[i].m_vSVector );
-		pCoreDisp->GetTangentT( i, m_Verts[i].m_vTVector );
-
+#ifndef SWDS
+		// When restoring, have to recompute lightmap coords
 		if( NumLightMaps() > 1 )
 		{
-			Vector2D lightCoord;
-			SurfComputeLightmapCoordinate( ctx, GetParent(), m_Verts[i].m_vPos, lightCoord );
-			m_Verts[i].m_BumpSTexCoordOffset = ctx.m_BumpSTexCoordOffset;
+			m_BumpSTexCoordOffset = ctx.m_BumpSTexCoordOffset;
 		}
-	} 
+		else
+		{
+			m_BumpSTexCoordOffset = 0.0f;
+		}
+		for( int i=0; i < NumVerts(); i++ )
+		{
+			pCoreDisp->GetLuxelCoord( 0, i, m_Verts[i].m_LMCoords );
+		}
+#endif // SWDS
+		return true;
+	}
 
+	// When restoring, leave all this data the same.
+	const CCoreDispSurface *pSurface = pCoreDisp->GetSurface();
+	for( int index=0; index < 4; index++ )
+	{
+		pSurface->GetTexCoord( index, m_BaseSurfaceTexCoords[index] );
+		m_BaseSurfacePositions[index] = pSurface->GetPoint( index );
+	}
 
-	// Update the bounding box.
-	UpdateBoundingBox();
+#ifndef SWDS
+	CopyCoreDispVertData( pCoreDisp, ctx.m_BumpSTexCoordOffset );
+#endif
 
 	// Copy neighbor info.
 	for ( int iEdge=0; iEdge < 4; iEdge++ )
@@ -842,4 +983,338 @@ void BuildTagData( CCoreDispInfo *pCoreDisp, CDispInfo *pDisp )
 
 	pDisp->m_nWalkIndexCount = nWalkCount;
 	pDisp->m_nBuildIndexCount = nBuildCount;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pDisp - 
+//			&vecPoint - 
+// Output : int
+//-----------------------------------------------------------------------------
+int FindNeighborCornerVert( CCoreDispInfo *pDisp, const Vector &vecPoint )
+{
+	CDispUtilsHelper *pDispHelper = pDisp;
+
+	int iClosest = 0;
+	float flClosest = 1e24;
+	for ( int iCorner = 0; iCorner < 4; ++iCorner )
+	{
+
+		// Has it been touched?
+		CVertIndex viCornerVert = pDispHelper->GetPowerInfo()->GetCornerPointIndex( iCorner );
+		int iCornerVert = pDispHelper->VertIndexToInt( viCornerVert );
+		const Vector &vecCornerVert = pDisp->GetVert( iCornerVert );
+
+		float flDist = vecCornerVert.DistTo( vecPoint );
+		if ( flDist < flClosest )
+		{
+			iClosest = iCorner;
+			flClosest = flDist;
+		}
+	}
+
+	if ( flClosest <= 0.1f )
+		return iClosest;
+	else
+		return -1;
+}
+
+// sets a new normal/tangentS, recomputes tangent T
+void UpdateTangentSpace(CCoreDispInfo *pDisp, int iVert, const Vector &vNormal, const Vector &vTanS)
+{
+	Vector tanT;
+	pDisp->SetNormal( iVert, vNormal );
+	CrossProduct( vTanS, vNormal, tanT );
+	pDisp->SetTangentS(iVert, vTanS);
+	pDisp->SetTangentT(iVert, tanT);
+}
+
+void UpdateTangentSpace(CCoreDispInfo *pDisp, const CVertIndex &index, const Vector &vNormal, const Vector &vTanS)
+{
+	UpdateTangentSpace(pDisp, pDisp->VertIndexToInt(index), vNormal, vTanS);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : **ppListBase - 
+//			nListSize - 
+//-----------------------------------------------------------------------------
+void BlendSubNeighbors( CCoreDispInfo **ppListBase, int nListSize )
+{
+	// Loop through all of the displacements in the list.
+	for ( int iDisp = 0; iDisp < nListSize; ++iDisp )
+	{
+		// Get the current displacement.
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
+		if ( !pDisp )
+			continue;
+
+		// Loop through all the edges of the displacement.
+		for ( int iEdge = 0; iEdge < 4; ++iEdge )
+		{
+			// Find valid neighbors along the edge.
+			CDispNeighbor *pEdge = pDisp->GetEdgeNeighbor( iEdge );
+			if ( !pEdge )
+				continue;
+
+			// Check to see if we have sub-neighbors - defines a t-junction in this world.  If not,
+			// then the normal blend edges function will catch it all.
+			if ( !pEdge->m_SubNeighbors[0].IsValid() || !pEdge->m_SubNeighbors[1].IsValid() )
+				continue;
+
+			// Get the mid-point of the current displacement.
+			CVertIndex viMidPoint = pDisp->GetEdgeMidPoint( iEdge );
+			int iMidPoint = pDisp->VertIndexToInt( viMidPoint );
+
+			const Vector &vecMidPoint = pDisp->GetVert( iMidPoint );
+
+			// Get the current sub-neighbors along the edge.
+			CCoreDispInfo *pNeighbor1 = ppListBase[pEdge->m_SubNeighbors[0].GetNeighborIndex()];
+			CCoreDispInfo *pNeighbor2 = ppListBase[pEdge->m_SubNeighbors[1].GetNeighborIndex()];
+
+			// Get the current sub-neighbor corners.
+			int iCorners[2];
+			iCorners[0] = FindNeighborCornerVert( pNeighbor1, vecMidPoint );
+			iCorners[1] = FindNeighborCornerVert( pNeighbor2, vecMidPoint );
+			if ( iCorners[0] != -1 && iCorners[1] != -1 )
+			{
+				CVertIndex viCorners[2] = { pNeighbor1->GetCornerPointIndex( iCorners[0] ),pNeighbor2->GetCornerPointIndex( iCorners[1] ) };
+
+				// Accumulate the normals at the mid-point of the primary edge and corners of the sub-neighbors.
+				Vector vecAverage = pDisp->GetNormal( iMidPoint );
+				vecAverage += pNeighbor1->GetNormal( viCorners[0] );
+				vecAverage += pNeighbor2->GetNormal( viCorners[1] );
+
+				// Re-normalize.
+				VectorNormalize( vecAverage );
+				Vector vAvgTanS = pDisp->GetTangentS(iMidPoint);
+				vAvgTanS += pNeighbor1->GetTangentS(viCorners[0]);
+				vAvgTanS += pNeighbor2->GetTangentS(viCorners[1]);
+				VectorNormalize(vAvgTanS);
+				//vecAverage.Init( 0.0f, 0.0f, 1.0f );
+
+				// Set the new normal value back.
+				UpdateTangentSpace( pDisp, iMidPoint, vecAverage, vAvgTanS );
+				UpdateTangentSpace( pNeighbor1, viCorners[0], vecAverage, vAvgTanS );
+				UpdateTangentSpace( pNeighbor2, viCorners[1], vecAverage, vAvgTanS );
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pDisp - 
+//			iNeighbors[512] - 
+// Output : int
+//-----------------------------------------------------------------------------
+int GetAllNeighbors( const CCoreDispInfo *pDisp, int iNeighbors[512] )
+{
+	int nNeighbors = 0;
+
+	// Check corner neighbors.
+	for ( int iCorner=0; iCorner < 4; iCorner++ )
+	{
+		const CDispCornerNeighbors *pCorner = pDisp->GetCornerNeighbors( iCorner );
+
+		for ( int i=0; i < pCorner->m_nNeighbors; i++ )
+		{
+			if ( nNeighbors < 512 )
+				iNeighbors[nNeighbors++] = pCorner->m_Neighbors[i];
+		}
+	}
+
+	for ( int iEdge=0; iEdge < 4; iEdge++ )
+	{
+		const CDispNeighbor *pEdge = pDisp->GetEdgeNeighbor( iEdge );
+
+		for ( int i=0; i < 2; i++ )
+		{
+			if ( pEdge->m_SubNeighbors[i].IsValid() )
+				if ( nNeighbors < 512 )
+					iNeighbors[nNeighbors++] = pEdge->m_SubNeighbors[i].GetNeighborIndex();
+		}
+	}
+
+	return nNeighbors;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : **ppListBase - 
+//			listSize - 
+//-----------------------------------------------------------------------------
+void BlendCorners( CCoreDispInfo **ppListBase, int nListSize )
+{
+	CUtlVector<int> nbCornerVerts;
+
+	for ( int iDisp = 0; iDisp < nListSize; ++iDisp )
+	{
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
+
+		int iNeighbors[512];
+		int nNeighbors = GetAllNeighbors( pDisp, iNeighbors );
+
+		// Make sure we have room for all the neighbors.
+		nbCornerVerts.RemoveAll();
+		nbCornerVerts.EnsureCapacity( nNeighbors );
+		nbCornerVerts.AddMultipleToTail( nNeighbors );
+		
+		// For each corner.
+		for ( int iCorner=0; iCorner < 4; iCorner++ )
+		{
+			// Has it been touched?
+			CVertIndex cornerVert = pDisp->GetCornerPointIndex( iCorner );
+			int iCornerVert = pDisp->VertIndexToInt( cornerVert );
+			const Vector &vCornerVert = pDisp->GetVert( iCornerVert );
+
+			// For each displacement sharing this corner..
+			Vector vAverage = pDisp->GetNormal( iCornerVert );
+			Vector vAvgTanS;
+			pDisp->GetTangentS( iCornerVert, vAvgTanS );
+
+			for ( int iNeighbor=0; iNeighbor < nNeighbors; iNeighbor++ )
+			{
+				int iNBListIndex = iNeighbors[iNeighbor];
+				CCoreDispInfo *pNeighbor = ppListBase[iNBListIndex];
+				
+				// Find out which vert it is on the neighbor.
+				int iNBCorner = FindNeighborCornerVert( pNeighbor, vCornerVert );
+				if ( iNBCorner == -1 )
+				{
+					nbCornerVerts[iNeighbor] = -1; // remove this neighbor from the list.
+				}
+				else
+				{
+					CVertIndex viNBCornerVert = pNeighbor->GetCornerPointIndex( iNBCorner );
+					int iNBVert = pNeighbor->VertIndexToInt( viNBCornerVert );
+					nbCornerVerts[iNeighbor] = iNBVert;
+					vAverage += pNeighbor->GetNormal( iNBVert );
+					vAvgTanS += pNeighbor->GetTangentS( iNBVert );
+				}
+			}
+
+
+			// Blend all the neighbor normals with this one.
+			VectorNormalize( vAverage );
+			VectorNormalize( vAvgTanS );
+			UpdateTangentSpace(pDisp, iCornerVert, vAverage, vAvgTanS );
+
+			for ( int iNeighbor=0; iNeighbor < nNeighbors; iNeighbor++ )
+			{
+				int iNBListIndex = iNeighbors[iNeighbor];
+				if ( nbCornerVerts[iNeighbor] == -1 )
+					continue;
+
+				CCoreDispInfo *pNeighbor = ppListBase[iNBListIndex];
+				UpdateTangentSpace(pNeighbor, nbCornerVerts[iNeighbor], vAverage, vAvgTanS);
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : **ppListBase - 
+//			listSize - 
+//-----------------------------------------------------------------------------
+void BlendEdges( CCoreDispInfo **ppListBase, int nListSize )
+{
+	// Loop through all the displacements in the list.
+	for ( int iDisp = 0; iDisp < nListSize; ++iDisp )
+	{
+		// Get the current displacement.
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
+		if ( !pDisp )
+			continue;
+
+		// Loop through all of the edges on a displacement.
+		for ( int iEdge = 0; iEdge < 4; ++iEdge )
+		{
+			// Get the current displacement edge.
+			CDispNeighbor *pEdge = pDisp->GetEdgeNeighbor( iEdge );
+			if ( !pEdge )
+				continue;
+
+			// Check for sub-edges.
+			for ( int iSubEdge = 0; iSubEdge < 2; ++iSubEdge )
+			{
+				// Get the current sub-edge.
+				CDispSubNeighbor *pSubEdge = &pEdge->m_SubNeighbors[iSubEdge];
+				if ( !pSubEdge->IsValid() )
+					continue;
+
+				// Get the current neighbor.
+				CCoreDispInfo *pNeighbor = ppListBase[pSubEdge->GetNeighborIndex()];
+				if ( !pNeighbor )
+					continue;
+
+				// Get the edge dimension.
+				int iEdgeDim = g_EdgeDims[iEdge];
+
+				CDispSubEdgeIterator it;
+				it.Start( pDisp, iEdge, iSubEdge, true );
+
+				// Get setup on the first corner vert.
+				it.Next();
+				CVertIndex viPrevPos = it.GetVertIndex();
+				while ( it.Next() )
+				{
+					// Blend the two.
+					if ( !it.IsLastVert() )
+					{
+						Vector vecAverage = pDisp->GetNormal( it.GetVertIndex() ) + pNeighbor->GetNormal( it.GetNBVertIndex() );
+						Vector vAvgTanS = pDisp->GetTangentS( it.GetVertIndex() ) + pNeighbor->GetTangentS( it.GetNBVertIndex() );
+						VectorNormalize( vecAverage );
+						VectorNormalize( vAvgTanS );
+						UpdateTangentSpace(pDisp, it.GetVertIndex(), vecAverage, vAvgTanS );
+						UpdateTangentSpace(pNeighbor, it.GetNBVertIndex(), vecAverage, vAvgTanS );
+					}
+
+					// Now blend the in-between verts (if this edge is high-res).
+					int iPrevPos = viPrevPos[!iEdgeDim];
+					int iCurPos = it.GetVertIndex()[!iEdgeDim];
+					for ( int iTween = iPrevPos+1; iTween < iCurPos; iTween++ )
+					{
+						float flPercent = RemapVal( iTween, iPrevPos, iCurPos, 0, 1 );
+						Vector vecNormal;
+						VectorLerp( pDisp->GetNormal( viPrevPos ), pDisp->GetNormal( it.GetVertIndex() ), flPercent, vecNormal );
+						VectorNormalize( vecNormal );
+						Vector vAvgTanS;
+						VectorLerp( pDisp->GetTangentS( viPrevPos ), pDisp->GetTangentS( it.GetVertIndex() ), flPercent, vAvgTanS );
+						VectorNormalize( vAvgTanS );
+
+						CVertIndex viTween;
+						viTween[iEdgeDim] = it.GetVertIndex()[iEdgeDim];
+						viTween[!iEdgeDim] = iTween;
+						UpdateTangentSpace(pDisp, viTween, vecNormal, vAvgTanS);
+					}
+			
+					viPrevPos = it.GetVertIndex();
+				}
+			}
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : **pListBase - 
+//			listSize - 
+// NOTE: todo - this is almost the same code as found in vrad, should probably
+//              move it up into common code at some point if the feature
+//              continues to get used
+//-----------------------------------------------------------------------------
+void SmoothDispSurfNormals( CCoreDispInfo **ppListBase, int nListSize )
+{
+	// Setup helper list for iteration.
+	for ( int iDisp = 0; iDisp < nListSize; ++iDisp )
+	{
+		ppListBase[iDisp]->SetDispUtilsHelperInfo( ppListBase, nListSize );
+	}
+
+	// Blend normals along t-junctions, corners, and edges.
+	BlendSubNeighbors( ppListBase, nListSize );
+	BlendCorners( ppListBase, nListSize );
+	BlendEdges( ppListBase, nListSize );
 }

@@ -1,20 +1,20 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+#include "hlfaceposer.h"
 #include <windows.h>
 #include <stdio.h>
-#include <mx/mxWindow.h>
-#include <mx/mxScrollBar.h>
+#include <mxtk/mxWindow.h>
+#include <mxtk/mxScrollBar.h>
 #include "mxexpressiontray.h"
 #include "expressions.h"
 #include "expclass.h"
 #include "ControlPanel.h"
 #include "FlexPanel.h"
-#include "hlfaceposer.h"
-#include <mx/mxPopupMenu.h>
+#include <mxtk/mxPopupMenu.h>
 #include "ChoreoView.h"
 #include "StudioModel.h"
 #include "ExpressionProperties.h"
@@ -24,6 +24,8 @@
 #include "choreowidgetdrawhelper.h"
 #include "ExpressionTool.h"
 #include "faceposer_models.h"
+#include "tier0/icommandline.h"
+#include "filesystem.h"
 
 #define MAX_THUMBNAILSIZE 256
 #define MIN_THUMBNAILSIZE 64
@@ -70,9 +72,6 @@ mxExpressionTray::mxExpressionTray( mxWindow *parent, int id /*=0*/ )
 	m_nDragCell = -1;
 
 	CreateButtons();
-
-	m_pShowOverrides = new mxCheckBox( this, 0, 0, 100, 18, "Show overrides", IDC_SHOW_OVERRIDES );
-	m_pShowOverrides->setChecked( true );
 
 	g_pExpressionClass = new mxExpressionTab( this, 5, 5, 500, 20, IDC_EXPRESSIONCLASS );
 
@@ -154,14 +153,6 @@ void mxExpressionTray::Select( int exp, bool deselect /*=true*/ )
 			if ( exp )
 			{
 				exp->SetSelected( true );
-				if (exp->GetType() == CExpression::TYPE_MARKOV)
-				{
-					for ( int i = 0; i < exp->m_Group.Size(); i++ )
-					{
-						CExpression *exp2 = active->GetExpression( exp->m_Group[ i ].expression );
-						exp2->SetSelected( true );
-					}
-				}
 			}
 		}
 	}
@@ -188,7 +179,7 @@ void mxExpressionTray::AddButton( const char *name, const char *tooltip, const c
 	btn->m_pImage = new mxbitmapdata_t;
 	Assert( btn->m_pImage );
 	btn->m_pImage->valid = false;
-	LoadBitmapFromFile( va( "%s/%s", GetGameDirectory(), bitmap ), *btn->m_pImage );
+	LoadBitmapFromFile( bitmap, *btn->m_pImage );
 
 	btn->m_fnCallback = pfnCallback;
 
@@ -414,64 +405,6 @@ void mxExpressionTray::DrawExpressionDescription( CChoreoWidgetDrawHelper& helpe
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *exp - 
-//			membernum - 
-//			*member - 
-//			x - 
-//			y - 
-//			w - 
-//			h - 
-//-----------------------------------------------------------------------------
-void mxExpressionTray::DrawMarkovGroup( CExpression *exp, int membernum, CMarkovGroup *member, CChoreoWidgetDrawHelper& helper, int x, int y, int w, int h )
-{
-	if ( !member )
-		return;
-
-	CExpClass *cl = exp->GetExpressionClass();
-	if ( !cl )
-	{
-		Assert( 0 );
-		return;
-	}
-
-	CExpression *me = cl->GetExpression( member->expression );
-
-	int textheight = 11;
-
-	RECT textRect;
-	textRect.left = x + 5;
-	textRect.top = y + 5;
-	textRect.right = textRect.left + w - 5;
-	textRect.bottom = textRect.top + textheight;
-
-	int weight = 0;
-	for ( int i = 0; i < exp->GetNumGroups(); i++ )
-	{
-		CMarkovGroup *markov = exp->GetGroup( i );
-		if ( markov )
-		{
-			weight += markov->weight;
-		}
-	}
-
-	helper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 240, 240, 175 ), textRect, "%sTotal Weight %i ", exp->GetDirty() ? "   " : "", weight );
-
-	OffsetRect( &textRect, 0, textheight + 3 );
-
-	helper.DrawLine( x + 3, textRect.top - 2, x + w - 6, textRect.top - 2, RGB( 240, 240, 220 ), 1 );
-
-	helper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 240, 240, 175 ), textRect, "%i/%i %s - %i", membernum + 1, exp->GetNumGroups(), me->name, member->weight);
-
-	if ( weight != 0 )
-	{
-		OffsetRect( &textRect, 0, textheight );
-		helper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 250, 250, 250 ), textRect, "Prob. %.2f %%", 100.0f * ( (float)member->weight / (float)weight ) );
-	}
-
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : dc - 
 //			current - 
 //			rcx - 
@@ -511,30 +444,10 @@ void mxExpressionTray::DrawThumbNail( CExpClass *active, CExpression *current, C
 
 	helper.DrawFilledRect( GetSysColor( COLOR_BTNFACE ), rcx, rcy, rcw + rcx, rch + rcy );
 
-	if ( current->GetType() == CExpression::TYPE_NORMAL )
+	if ( current->m_Bitmap[ models->GetActiveModelIndex() ].valid )
 	{
-		if ( current->m_Bitmap[ models->GetActiveModelIndex() ].valid )
-		{
-			DrawBitmapToDC( dc, rcx, rcy, rcw, rch - m_nDescriptionHeight, current->m_Bitmap[ models->GetActiveModelIndex() ] );
-			helper.DrawOutlinedRect( RGB( 127, 127, 127 ), PS_SOLID, 1, rcx, rcy, rcx + rcw, rcy + rch - m_nDescriptionHeight );
-		}
-	}
-	else
-	{
-		CMarkovGroup *markov = current->GetCurrentGroup();
-		CExpression *me = markov ? active->GetExpression( markov->expression ) : NULL;
-
-		if ( markov && me->m_Bitmap[ models->GetActiveModelIndex() ].valid )
-		{
-			DrawBitmapToDC( dc, rcx, rcy, rcw, rch - m_nDescriptionHeight, me->m_Bitmap[ models->GetActiveModelIndex() ] );
-		}
-
-		helper.DrawOutlinedRect( RGB( 63, 63, 200 ), PS_SOLID, 1, rcx, rcy, rcx + rcw, rcy + rch - m_nDescriptionHeight );
-
-		if ( markov )
-		{
-			DrawMarkovGroup( current, current->m_nCurrentGroup, markov, helper, rcx, rcy, rcw, rch - m_nDescriptionHeight );
-		}
+		DrawBitmapToDC( dc, rcx, rcy, rcw, rch - m_nDescriptionHeight, current->m_Bitmap[ models->GetActiveModelIndex() ] );
+		helper.DrawOutlinedRect( RGB( 127, 127, 127 ), PS_SOLID, 1, rcx, rcy, rcx + rcw, rcy + rch - m_nDescriptionHeight );
 	}
 
 	DrawDirtyFlag( helper, current, rcx, rcy, rcw, rch );
@@ -581,18 +494,6 @@ void mxExpressionTray::DrawThumbNail( CExpClass *active, CExpression *current, C
 			DrawExpressionFocusRect( helper, rcx, rcy, rcw, rch - m_nDescriptionHeight, RGB( 127, 127, 220 ) );
 		}
 	}
-
-	if ( current->HasOverride() )
-	{
-		RECT rc;
-		rc.left =  rcx + 5;
-		rc.top = rcy + rch - 52;
-		rc.right = rc.left + rcw;
-		rc.bottom = rc.top + 15;
-
-		helper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 100, 220, 255 ), rc, "++ Has overide" );
-	}
-
 }
 
 void mxExpressionTray::redraw()
@@ -600,7 +501,6 @@ void mxExpressionTray::redraw()
 	if ( !ToolCanDraw() )
 		return;
 
-	bool showOverrides = m_pShowOverrides->isChecked();
 	bool updateSelection = false;
 
 	CExpClass *active = expressions->GetActiveClass();
@@ -654,24 +554,6 @@ void mxExpressionTray::redraw()
 				break;
 
 			DrawThumbNail( active, current, helper, rcx, rcy, rcw, rch, c, selected, updateSelection );
-
-			if ( showOverrides && current->HasOverride() )
-			{
-				CExpression *override = current->GetOverride();
-				if ( override )
-				{
-					DrawThumbNail( active, override, helper, rcx, rcy, rcw, rch, c, selected, false );
-
-					// Arial 10, 900
-					RECT rc;
-					rc.left =  rcx + 5;
-					rc.top = rcy + 5;
-					rc.right = rc.left + rcw;
-					rc.bottom = rc.top + 15;
-
-					helper.DrawColoredText( "Arial", 10, 900, RGB( 50, 200, 255 ), rc, "++ Overide" );
-				}
-			}
 
 			c++;
 		}
@@ -818,111 +700,22 @@ void mxExpressionTray::ShowRightClickMenu( int mx, int my )
 	{
 		exp = active->GetExpression( m_nClickedCell );
 	}
-	CExpression *selectedGroup = NULL;
-
-	int numselected = CountSelected();
 
 	pop->add( "New Expression...", IDC_CONTEXT_NEWEXP );
 	if ( exp )
 	{
 		pop->addSeparator();
 		pop->add( va( "Edit '%s'...", exp->name ), IDC_CONTEXT_EDITEXP );
-		if ( exp->GetType() != CExpression::TYPE_MARKOV )
-		{
-			pop->add( va( "Save '%s'", exp->name ), IDC_CONTEXT_SAVEEXP );
+		pop->add( va( "Save '%s'", exp->name ), IDC_CONTEXT_SAVEEXP );
 
-			if ( exp->CanUndo() || exp->CanRedo() )
-			{
-				pop->add( va( "Revert '%s'", exp->name ), IDC_CONTEXT_REVERT );
-			}
+		if ( exp->CanUndo() || exp->CanRedo() )
+		{
+			pop->add( va( "Revert '%s'", exp->name ), IDC_CONTEXT_REVERT );
 		}
 		pop->addSeparator();
 		pop->add( va( "Delete '%s'", exp->name ), IDC_CONTEXT_DELETEXP );
 		pop->addSeparator();
 		pop->add( va( "Re-create thumbnail for '%s'", exp->name ), IDC_CONTEXT_CREATEBITMAP );
-
-		// Determine if the clicked item is a member of a group
-		if ( exp->GetType() == CExpression::TYPE_NORMAL )
-		{
-			for ( int i = 0; i < active->GetNumExpressions(); i++ )
-			{
-				CExpression *group = active->GetExpression( i );
-				if ( !group || group->GetType() != CExpression::TYPE_MARKOV )
-					continue;
-
-				if ( !group->GetSelected() )
-					continue;
-
-				selectedGroup = group;
-				break;
-			}
-		}
-		else
-		{
-			CMarkovGroup *subexp = exp->GetCurrentGroup();
-			if ( subexp )
-			{
-				CExpression *sub = active->GetExpression( subexp->expression );
-				if ( sub )
-				{
-					pop->add( va( "Remove '%s' from group '%s'", sub->name, exp->name ), IDC_CONTEXT_REMOVEFROMGROUP );
-					pop->add( va( "Change weight of '%s' in group '%s'", sub->name, exp->name ), IDC_CONTEXT_CHANGEWEIGHT );
-				}
-			}
-		}
-
-	}
-
-	bool needGroupSep = true;
-	if ( numselected >= 2 && 
-		( !exp || ( exp && exp->GetType() != CExpression::TYPE_MARKOV ) ) )
-	{
-		needGroupSep = false;
-		pop->addSeparator();
-		pop->add( va( "Create Group..." ), IDC_CONTEXT_CREATEGROUP );
-		if ( exp && selectedGroup && !selectedGroup->FindExpressionInGroup( exp ) )
-		{
-			pop->add( va( "Add '%s' to group '%s'", exp->name, selectedGroup->name ), IDC_CONTEXT_ADDTOGROUP );
-		}
-	}
-
-	// Determine if the clicked item is a member of a group
-	if ( selectedGroup && exp && selectedGroup->FindExpressionInGroup( exp ) )
-	{
-		if ( needGroupSep )
-		{
-			pop->addSeparator();
-		}
-		pop->add( va( "Remove '%s' from group '%s'", exp->name, selectedGroup->name ), IDC_CONTEXT_REMOVEFROMGROUP );
-		pop->add( va( "Change weight of '%s' in group '%s'", exp->name, selectedGroup->name ), IDC_CONTEXT_CHANGEWEIGHT );
-	}
-
-	// Show override menu if appropriate
-	if ( exp )
-	{
-		mxPopupMenu *override = NULL;
-
-		if ( exp->GetType() != CExpression::TYPE_MARKOV )
-		{
-			override = new mxPopupMenu();
-			override->add( va( "Save '%s' as override for model '%s'", exp->name, models->GetActiveModelName() ), IDC_CONTEXT_SAVEEXP_OVERRIDE );
-		}
-
-		if ( exp->HasOverride() )
-		{
-			if ( !override )
-			{
-				override = new mxPopupMenu();
-			}
-
-			override->add( va( "Delete '%s' override for model '%s'", exp->name, models->GetActiveModelName() ), IDC_CONTEXT_DELETEXP_OVERRIDE );
-		}
-
-		if ( override )
-		{
-			pop->addSeparator();
-			pop->addMenu( "Override", override );
-		}
 	}
 
 	pop->popup( this, mx, my );
@@ -953,6 +746,8 @@ static bool IsWindowOrChild( mxWindow *parent, HWND test )
 
 int mxExpressionTray::handleEvent (mxEvent *event)
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
@@ -985,26 +780,6 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 					}
 				}
 				break;
-			case IDC_SHOW_OVERRIDES:
-				{
-					redraw();
-				}
-				break;
-			case IDC_CONTEXT_ADDTOGROUP:
-				{
-					AddToGroup();
-				}
-				break;
-			case IDC_CONTEXT_REMOVEFROMGROUP:
-				{
-					RemoveFromGroup();
-				}
-				break;
-			case IDC_CONTEXT_CHANGEWEIGHT:
-				{
-					ChangeWeight();
-				}
-				break;
 			case IDC_CONTEXT_NEWEXP:
 				g_pFlexPanel->NewExpression();
 				break;
@@ -1026,27 +801,10 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 					g_pFlexPanel->SaveExpression( m_nClickedCell );
 				}
 				break;
-			case IDC_CONTEXT_SAVEEXP_OVERRIDE:
-				if ( m_nClickedCell != -1 )
-				{
-					g_pFlexPanel->SaveExpressionOverride( m_nClickedCell );
-				}
-				break;
 			case IDC_CONTEXT_DELETEXP:
 				if ( m_nClickedCell != -1 )
 				{
 					g_pControlPanel->DeleteExpression( m_nClickedCell );
-				}
-				break;
-			case IDC_CONTEXT_DELETEXP_OVERRIDE:
-				if ( m_nClickedCell != -1 )
-				{
-					g_pControlPanel->DeleteExpressionOverride( m_nClickedCell );
-				}
-				break;
-			case IDC_CONTEXT_CREATEGROUP:
-				{
-					CreateContextGroup();
 				}
 				break;
 			case IDC_TRAYSCROLL:
@@ -1116,7 +874,9 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 							CExpression *exp = active->GetExpression( m_nClickedCell );
 							if ( exp )
 							{
+								active->SelectExpression( m_nClickedCell );
 								exp->CreateNewBitmap( models->GetActiveModelIndex() );
+								redraw();
 							}
 						}
 					}
@@ -1278,7 +1038,6 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 	case mxEvent::Size:
 		{
 			int width = w2();
-			int height = h2();
 
 			int ch = GetCaptionHeight();
 
@@ -1287,8 +1046,6 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 			m_pABButton->setBounds( width - 60, 4 + ch, 60, 16 );
 			m_pThumbnailIncreaseButton->setBounds( width - 60 - 40, 4 + ch, 16, 16 );
 			m_pThumbnailDecreaseButton->setBounds( width - 60 - 20, 4 + ch, 16, 16 );
-
-			m_pShowOverrides->setBounds( 10, 24 + ch, 100, 20 );
 
 			m_nTopOffset = 0;
 			RepositionSlider();
@@ -1306,31 +1063,6 @@ int mxExpressionTray::handleEvent (mxEvent *event)
 			pt.y = event->y;
 
 			ScreenToClient( (HWND)getHandle(), &pt );
-
-			int cell = GetCellUnderPosition( pt.x, pt.y );
-			CExpClass *active = expressions->GetActiveClass();
-			if ( active )
-			{
-				if ( cell >= 0 && cell < active->GetNumExpressions() )
-				{
-					// See if it's a markov group
-					// 
-					CExpression *exp = active->GetExpression( cell );
-					if ( exp && exp->GetType() == CExpression::TYPE_MARKOV )
-					{
-						if ( event->height < 0 )
-						{
-							exp->NextGroup();
-						}
-						else
-						{
-							exp->PrevGroup();
-						}
-						redraw();
-						break;
-					}
-				}
-			}
 
 			if ( event->height < 0 )
 			{
@@ -1362,244 +1094,6 @@ void mxExpressionTray::ET_Undo( int cell )
 void mxExpressionTray::ET_Redo( int cell )
 {
 	g_pControlPanel->RedoExpression( cell );
-}
-
-void mxExpressionTray::CreateContextGroup( void )
-{
-	// Get name and description for group
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
-	if ( !hdr )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't create new face pose group, must load a model first!\n" );
-		return;
-	}
-
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-	{
-		Con_Printf( "Must open an expression class file first\n" );
-		return;
-	}
-
-	if ( CountSelected() < 2 )
-	{
-		Con_Printf( "Must select two or more expressions to create a group\n" );
-		return;
-	}
-
-	CExpressionParams params;
-	memset( &params, 0, sizeof( params ) );
-
-	strcpy( params.m_szDialogTitle, "Add Expression Group" );
-	strcpy( params.m_szName, "" );
-	strcpy( params.m_szDescription, "" );
-
-	if ( !ExpressionProperties( &params ) )
-		return;
-
-	if ( ( strlen( params.m_szName ) <= 0 ) ||
-		!stricmp( params.m_szName, "unnamed" ) )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid name\n" );
-		return;
-	}
-
-	if ( ( strlen( params.m_szDescription ) <= 0 ) ||
-   	   !stricmp( params.m_szDescription, "description" ) )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid description\n" );
-		return;
-	}
-
-	CExpression *exp = active->AddGroupExpression( params.m_szName, params.m_szDescription );
-	Assert( exp );
-	if ( !exp )
-		return;
-
-	// Now add selected expressions to it
-	for ( int i = 0; i < active->GetNumExpressions(); i++ )
-	{
-		CExpression *e = active->GetExpression( i );
-		if ( !e )
-			continue;
-		if ( !e->GetSelected() )
-			continue;
-
-		exp->AddToGroup( e, 100 );
-
-		active->SetDirty( true );
-	}
-
-	redraw();
-}
-
-void mxExpressionTray::AddToGroup( void )
-{
-	// Get clicked cell
-	if ( m_nClickedCell < 0 )
-		return;
-
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
-
-	CExpression *exp = active->GetExpression( m_nClickedCell );
-	if ( !exp )
-		return;
-
-	// Determine if the clicked item is a member of a group
-	if ( exp->GetType() == CExpression::TYPE_NORMAL )
-	{
-		for ( int i = 0; i < active->GetNumExpressions(); i++ )
-		{
-			CExpression *group = active->GetExpression( i );
-			if ( !group || group->GetType() != CExpression::TYPE_MARKOV )
-				continue;
-
-			if ( !group->GetSelected() )
-				continue;
-
-			if ( !group->FindExpressionInGroup( exp ) )
-			{
-				active->SetDirty( true );
-
-				group->AddToGroup( exp, 100 );
-				group->SetDirty( true );
-				Select( i );
-				break;
-			}
-		}
-	}
-
-	redraw();
-}
-
-void mxExpressionTray::RemoveFromGroup( void )
-{
-	// Get clicked cell
-	if ( m_nClickedCell < 0 )
-		return;
-
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
-
-	CExpression *exp = active->GetExpression( m_nClickedCell );
-	if ( !exp )
-		return;
-
-	// Determine if the clicked item is a member of a group
-	if ( exp->GetType() == CExpression::TYPE_NORMAL )
-	{
-		for ( int i = 0; i < active->GetNumExpressions(); i++ )
-		{
-			CExpression *group = active->GetExpression( i );
-			if ( !group || group->GetType() != CExpression::TYPE_MARKOV )
-				continue;
-
-			if ( !group->GetSelected() )
-				continue;
-
-			if ( group->FindExpressionInGroup( exp ) )
-			{
-				active->SetDirty( true );
-
-				group->RemoveFromGroup( exp );
-				group->SetDirty( true );
-				Select( i );
-				break;
-			}
-		}
-	}
-	else
-	{
-		CMarkovGroup *markov = exp->GetCurrentGroup();
-		if ( markov )
-		{
-			exp->RemoveFromGroup( active->GetExpression( markov->expression ) );
-			exp->SetDirty( true );
-			active->SetDirty( true );
-		}
-
-	}
-
-	redraw();
-}
-
-void mxExpressionTray::ChangeWeightOfExpressionInGroup( CExpClass *active, CExpression *exp, CExpression *group )
-{
-	CMarkovGroup *markov = group->FindExpressionInGroup( exp );
-	if ( !markov )
-		return;
-
-	// Ask user for new weighting
-	CInputParams params;
-	memset( &params, 0, sizeof( params ) );
-
-	sprintf( params.m_szDialogTitle, "Edit Weight For %s in %s", exp->name, group->name );
-	strcpy( params.m_szPrompt, "Weight ( default 100 ):" );
-
-	sprintf( params.m_szInputText, "%i", markov->weight );
-
-	if ( !InputProperties( &params ) )
-		return;
-
-	int newWeight = atoi( params.m_szInputText );
-	if ( newWeight <= 0 )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Edit weight, invalid weight %i!\n", atoi( params.m_szInputText ) );
-		return;
-	}
-
-	active->SetDirty( true );
-	markov->weight = newWeight;
-	group->SetDirty( true );
-}
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void mxExpressionTray::ChangeWeight( void )
-{
-	// Get clicked cell
-	if ( m_nClickedCell < 0 )
-		return;
-
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
-
-	CExpression *exp = active->GetExpression( m_nClickedCell );
-	if ( !exp )
-		return;
-
-	// Determine if the clicked item is a member of a group
-	if ( exp->GetType() == CExpression::TYPE_NORMAL )
-	{
-		for ( int i = 0; i < active->GetNumExpressions(); i++ )
-		{
-			CExpression *group = active->GetExpression( i );
-			if ( !group || group->GetType() != CExpression::TYPE_MARKOV )
-				continue;
-
-			if ( !group->GetSelected() )
-				continue;
-
-			ChangeWeightOfExpressionInGroup( active, exp, group );
-			group->SetDirty( true );
-		}
-	}
-	else
-	{
-		CMarkovGroup *markov = exp->GetCurrentGroup();
-		if ( markov )
-		{
-			ChangeWeightOfExpressionInGroup( active, active->GetExpression( markov->expression ), exp );
-			exp->SetDirty( true );
-		}
-
-	}
-
-	redraw();
 }
 
 //-----------------------------------------------------------------------------
@@ -1649,45 +1143,14 @@ void mxExpressionTray::RestoreThumbnailSize( void )
 
 	m_nSnapshotHeight = m_nSnapshotWidth + m_nDescriptionHeight;
 
-	Con_Printf( "Thumbnail size %i x %i\n", m_nSnapshotWidth, m_nSnapshotWidth );
-
 	redraw();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool mxExpressionTray::GetOverridesShowing( void )
-{
-	if ( !m_pShowOverrides )
-	{
-		Assert( 0 );
-		return false;
-	}
-
-	return m_pShowOverrides->isChecked();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : state - 
-//-----------------------------------------------------------------------------
-void mxExpressionTray::SetOverridesShowing( bool state )
-{
-	if ( !m_pShowOverrides )
-	{
-		Assert( 0 );
-		return;
-	}
-
-	m_pShowOverrides->setChecked( state );
 }
 
 void mxExpressionTray::ReloadBitmaps( void )
 {
 	CExpClass *cl;
 	int c = expressions->GetNumClasses();
+	EnableStickySnapshotMode();
 	for ( int i = 0 ; i < c; i++ )
 	{
 		cl = expressions->GetClass( i );
@@ -1696,5 +1159,54 @@ void mxExpressionTray::ReloadBitmaps( void )
 
 		cl->ReloadBitmaps();
 	}
+	DisableStickySnapshotMode();
 	redraw();
+}
+
+bool IsUsingPerPlayerExpressions()
+{
+	bool bPerPlayerExpressions = false;
+	if ( CommandLine()->CheckParm( "-perplayerexpressions" ) )
+	{
+		bPerPlayerExpressions = true;
+	}
+	else
+	{
+		// Returns the search path, each path is separated by ;s. Returns the length of the string returned
+		char pSearchPath[2048];
+		if ( g_pFullFileSystem->GetSearchPath( "GAME", false, pSearchPath, sizeof(pSearchPath) ) )
+		{
+			Q_FixSlashes( pSearchPath );
+			if ( Q_stristr( pSearchPath, "\\tf" ) )
+			{
+				bPerPlayerExpressions = true;
+			}
+		}
+	}
+	return bPerPlayerExpressions;
+}
+
+void mxExpressionTray::OnModelChanged()
+{
+	if ( IsUsingPerPlayerExpressions() )
+	{
+		Msg( "Closing current phoneme set\n" );
+
+		if ( !g_pControlPanel->Closeall() )
+			return;
+
+		// See if per-model overrides exist for this model
+		char fn[ MAX_PATH ];
+		Q_snprintf( fn, sizeof( fn ), "expressions/%s/phonemes/phonemes.txt", models->GetActiveModelName() );
+
+		// Load appropriate classes
+		char rootDir[ MAX_PATH ];
+		Q_snprintf( rootDir, sizeof( rootDir ), "%s/phonemes/", models->GetActiveModelName() );
+		FacePoser_SetPhonemeRootDir( rootDir );
+
+		FacePoser_EnsurePhonemesLoaded();
+	}
+
+	ReloadBitmaps();
+	RestoreThumbnailSize();
 }

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LOADGAMEDIALOG_H
 #define LOADGAMEDIALOG_H
@@ -11,38 +11,44 @@
 #pragma once
 #endif
 
-#include "taskframe.h"
-
-namespace vgui
-{
-	class ListPanel;
-}
+#include "BaseSaveGameDialog.h"
+#include "SaveGameDialog.h"
+#include "SaveGameBrowserDialog.h"
+#include "BasePanel.h"
+#include "vgui_controls/KeyRepeat.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Displays game loading options
 //-----------------------------------------------------------------------------
-class CLoadGameDialog : public CTaskFrame
+class CLoadGameDialog : public CBaseSaveGameDialog
 {
+	DECLARE_CLASS_SIMPLE( CLoadGameDialog, CBaseSaveGameDialog );
+
 public:
-	static const int SAVEGAME_MAPNAME_LEN;
-	static const int SAVEGAME_COMMENT_LEN;
-	static const int SAVEGAME_ELAPSED_LEN;
-
 	CLoadGameDialog(vgui::Panel *parent);
 	~CLoadGameDialog();
 
-	virtual void	OnCommand( const char *command );
-	virtual void	OnClose();
-protected:
-
-	void			CreateSavedGamesList( void );
-	void			ScanSavedGames( void );
-	bool			ParseSaveData( char const* pszFileName, char const* pszShortName, KeyValues *kv );
-
-	vgui::ListPanel		*m_pGameList;
-	typedef CTaskFrame BaseClass;
-
+	virtual void OnCommand( const char *command );
 };
 
+//
+//
+//
+
+class CLoadGameDialogXbox : public CSaveGameBrowserDialog
+{
+	DECLARE_CLASS_SIMPLE( CLoadGameDialogXbox, CSaveGameBrowserDialog );
+
+public:
+					CLoadGameDialogXbox( vgui::Panel *parent );
+	virtual void	ApplySchemeSettings( vgui::IScheme *pScheme );
+	virtual void	OnCommand(const char *command);
+	virtual void	PerformSelectedAction( void );
+	virtual void	PerformDeletion( void );
+	virtual void	UpdateFooterOptions( void );
+
+private:
+	void			DeleteSaveGame( const SaveGameDescription_t *pSaveDesc );
+};
 
 #endif // LOADGAMEDIALOG_H

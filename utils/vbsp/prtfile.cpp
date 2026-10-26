@@ -1,6 +1,13 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vbsp.h"
-
+#include "collisionutils.h"
 /*
 ==============================================================================
 
@@ -13,9 +20,15 @@ Save out name.prt for qvis to read
 
 #define	PORTALFILE	"PRT1"
 
-FILE	*pf;
+struct cluster_portals_t
+{
+	CUtlVector<portal_t *>	portals;
+};
+
 int		num_visclusters;				// clusters the player can be in
 int		num_visportals;
+
+int g_SkyCluster = -1;
 
 void WriteFloat (FILE *f, vec_t v)
 {
@@ -25,183 +38,250 @@ void WriteFloat (FILE *f, vec_t v)
 		fprintf (f,"%f ",v);
 }
 
-dportal_t *AddBSPPortal( portal_t *p, Vector& normal, float dist, qboolean backwards )
-{
-	int			i;
-	dportal_t	*bspPortal;
-	winding_t	*w;
-
-	bspPortal = dportals + numportals;
-	numportals++;
-
-	w = p->winding;
-
-	if ( numportals >= MAX_MAP_PORTALS )
-	{
-		Error( "Too many portals\n" );
-	}
-
-	if ( backwards )
-	{
-		bspPortal->cluster[0] = p->nodes[1]->cluster;
-		bspPortal->cluster[1] = p->nodes[0]->cluster;
-	}
-	else
-	{
-		bspPortal->cluster[0] = p->nodes[0]->cluster;
-		bspPortal->cluster[1] = p->nodes[1]->cluster;
-	}
-
-	bspPortal->planenum = FindFloatPlane( normal, dist );
-	bspPortal->numportalverts = w->numpoints;
-	bspPortal->firstportalvert = numportalverts;	// bottom of list
-	
-	// append poly to list
-	for ( i = 0; i < w->numpoints; i++ )
-	{
-		dportalverts[numportalverts] = GetVertexnum( w->p[i] );
-		numportalverts++;
-		if ( numportalverts >= MAX_MAP_PORTALVERTS )
-		{
-			Error( "Too many portal verts" );
-		}
-	}
-
-	return bspPortal;
-}
-
 
 /*
 =================
 WritePortalFile_r
 =================
 */
-void WritePortalFile_r (node_t *node)
+void WritePortalFile(FILE *pFile, const CUtlVector<cluster_portals_t> &list)
 {
-	int			i, s;	
 	portal_t	*p;
 	winding_t	*w;
 	Vector		normal;
 	vec_t		dist;
 
-	// decision node
-	if (node->planenum != PLANENUM_LEAF)
+	for ( int clusterIndex = 0; clusterIndex < list.Count(); clusterIndex++ )
 	{
-		WritePortalFile_r (node->children[0]);
-		WritePortalFile_r (node->children[1]);
-		return;
-	}
-	
-	if (node->contents & CONTENTS_SOLID)
-		return;
-
-	for (p = node->portals ; p ; p=p->next[s])
-	{
-		w = p->winding;
-		s = (p->nodes[1] == node);
-		if (w && p->nodes[0] == node)
+		for ( int j = 0; j < list[clusterIndex].portals.Count(); j++ )
 		{
-			qboolean backwards;
-
-			// Check visibility through this portal -- if not an open portal, it's a visible, solid face/polygon, so skip it
-			if (!Portal_VisFlood (p))
-				continue;
-		// write out to the file
-		
-		// sometimes planes get turned around when they are very near
-		// the changeover point between different axis.  interpret the
-		// plane the same way vis will, and flip the side orders if needed
+			p = list[clusterIndex].portals[j];
+			w = p->winding;
+			// write out to the file
+			
+			// sometimes planes get turned around when they are very near
+			// the changeover point between different axis.  interpret the
+			// plane the same way vis will, and flip the side orders if needed
 			// FIXME: is this still relevent?
 			WindingPlane (w, normal, &dist);
 			if ( DotProduct (p->plane.normal, normal) < 0.99 )
 			{	// backwards...
-				fprintf (pf,"%i %i %i ",w->numpoints, p->nodes[1]->cluster, p->nodes[0]->cluster);
-				backwards = true;
+				fprintf (pFile,"%i %i %i ",w->numpoints, p->nodes[1]->cluster, p->nodes[0]->cluster);
 			}
 			else
 			{
-				fprintf (pf,"%i %i %i ",w->numpoints, p->nodes[0]->cluster, p->nodes[1]->cluster);
-				backwards = false;
+				fprintf (pFile,"%i %i %i ",w->numpoints, p->nodes[0]->cluster, p->nodes[1]->cluster);
 			}
 			
-			AddBSPPortal( p, normal, dist, backwards );
-
-			for (i=0 ; i<w->numpoints ; i++)
+			for (int i=0 ; i<w->numpoints ; i++)
 			{
-				fprintf (pf,"(");
-				WriteFloat (pf, w->p[i][0]);
-				WriteFloat (pf, w->p[i][1]);
-				WriteFloat (pf, w->p[i][2]);
-				fprintf (pf,") ");
+				fprintf (pFile,"(");
+				WriteFloat (pFile, w->p[i][0]);
+				WriteFloat (pFile, w->p[i][1]);
+				WriteFloat (pFile, w->p[i][2]);
+				fprintf (pFile,") ");
 			}
-			fprintf (pf,"\n");
+			fprintf (pFile,"\n");
+		}
+	}
+}
+
+struct viscluster_t
+{
+	bspbrush_t *pBrushes;
+	int clusterIndex;
+	int leafCount;
+	int leafStart;
+};
+
+static CUtlVector<viscluster_t> g_VisClusters;
+
+// add to the list of brushes the merge leaves into single vis clusters
+void AddVisCluster( entity_t *pFuncVisCluster )
+{
+	viscluster_t tmp;
+	Vector clipMins, clipMaxs;
+	clipMins[0] = clipMins[1] = clipMins[2] = MIN_COORD_INTEGER;
+	clipMaxs[0] = clipMaxs[1] = clipMaxs[2] = MAX_COORD_INTEGER;
+
+	// build the map brushes out into the minimum non-overlapping set of brushes
+	bspbrush_t *pBSPBrush = MakeBspBrushList( pFuncVisCluster->firstbrush, pFuncVisCluster->firstbrush + pFuncVisCluster->numbrushes, 
+		clipMins, clipMaxs, NO_DETAIL);
+	tmp.pBrushes = ChopBrushes( pBSPBrush );
+
+	// store the entry in the list
+	tmp.clusterIndex = -1;
+	tmp.leafCount = 0;
+	tmp.leafStart = 0;
+
+#if DEBUG_VISUALIZE_CLUSTERS
+	int debug = atoi(ValueForKey(pFuncVisCluster,"debug"));
+	if ( debug )
+	{
+		Msg("Debug vis cluster %d\n", g_VisClusters.Count() );
+	}
+#endif
+
+	g_VisClusters.AddToTail( tmp );
+	
+	// clear out this entity so it won't get written to the bsp
+	pFuncVisCluster->epairs = NULL;
+	pFuncVisCluster->numbrushes = 0;
+}
+
+// returns the total overlapping volume of intersection between the node and the brush list
+float VolumeOfIntersection( bspbrush_t *pBrushList, node_t *pNode )
+{
+	float volume = 0.0f;
+	for ( bspbrush_t *pBrush = pBrushList; pBrush; pBrush = pBrush->next )
+	{
+		if ( IsBoxIntersectingBox( pNode->mins, pNode->maxs, pBrush->mins, pBrush->maxs ) )
+		{
+			bspbrush_t *pIntersect = IntersectBrush( pNode->volume, pBrush );
+			if ( pIntersect )
+			{
+				volume += BrushVolume( pIntersect );
+				FreeBrush( pIntersect );
+			}
 		}
 	}
 
+	return volume;
 }
 
-/*
-================
-FillLeafNumbers_r
-
-All of the leafs under node will have the same cluster
-================
-*/
-void FillLeafNumbers_r (node_t *node, int num)
+// Search for a forced cluster that this node is within
+// NOTE: Returns the first one found, these won't merge themselves together
+int GetVisCluster( node_t *pNode )
 {
-	if (node->planenum == PLANENUM_LEAF)
+	float maxVolume = BrushVolume(pNode->volume) * 0.10f;		// needs to cover at least 10% of the volume to overlap
+	int maxIndex = -1;
+	// UNDONE: This could get slow
+	for ( int i = g_VisClusters.Count(); --i >= 0; )
 	{
-		if (node->contents & CONTENTS_SOLID)
-			node->cluster = -1;
-		else
-			node->cluster = num;
-		return;
+		float volume = VolumeOfIntersection( g_VisClusters[i].pBrushes, pNode );
+		if ( volume > maxVolume )
+		{
+			volume = maxVolume;
+			maxIndex = i;
+		}
 	}
-	node->cluster = num;
-	FillLeafNumbers_r (node->children[0], num);
-	FillLeafNumbers_r (node->children[1], num);
+	return maxIndex;
 }
-
 /*
 ================
 NumberLeafs_r
 ================
 */
-void NumberLeafs_r (node_t *node)
+void BuildVisLeafList_r (node_t *node, CUtlVector<node_t *> &leaves)
 {
-	portal_t	*p;
-
 	if (node->planenum != PLANENUM_LEAF)
 	{	// decision node
 		node->cluster = -99;
-		NumberLeafs_r (node->children[0]);
-		NumberLeafs_r (node->children[1]);
+		BuildVisLeafList_r (node->children[0], leaves);
+		BuildVisLeafList_r (node->children[1], leaves);
 		return;
 	}
 	
-	// either a leaf or a detail cluster
-
 	if ( node->contents & CONTENTS_SOLID )
 	{	// solid block, viewpoint never inside
 		node->cluster = -1;
 		return;
 	}
+	leaves.AddToTail(node);
+}
 
-	FillLeafNumbers_r (node, num_visclusters);
-	num_visclusters++;
-
-	// count the portals
-	for (p = node->portals ; p ; )
+// Give each leaf in the list of empty leaves a vis cluster number
+// some are within func_viscluster volumes and will be merged together
+// every other leaf gets its own unique number
+void NumberLeafs( const CUtlVector<node_t *> &leaves )
+{
+	for ( int i = 0; i < leaves.Count(); i++ )
 	{
-		if (p->nodes[0] == node)		// only write out from first leaf
+		node_t *node = leaves[i];
+		int visCluster = GetVisCluster( node );
+		if ( visCluster >= 0 )
 		{
-			if (Portal_VisFlood (p))
-				num_visportals++;
-			p = p->next[0];
+			if ( g_VisClusters[visCluster].clusterIndex < 0 )
+			{
+				g_VisClusters[visCluster].clusterIndex = num_visclusters;
+				num_visclusters++;
+			}
+			g_VisClusters[visCluster].leafCount++;
+			node->cluster = g_VisClusters[visCluster].clusterIndex;
 		}
 		else
-			p = p->next[1];		
+		{
+			if ( !g_bSkyVis && Is3DSkyboxArea( node->area ) )
+			{
+				if ( g_SkyCluster < 0 )
+				{
+					// allocate a cluster for the sky
+					g_SkyCluster = num_visclusters;
+					num_visclusters++;
+				}
+				node->cluster = g_SkyCluster;
+			}
+			else
+			{
+				node->cluster = num_visclusters;
+				num_visclusters++;
+			}
+		}
 	}
+
+#if DEBUG_VISUALIZE_CLUSTERS
+	for ( int i = 0; i < g_VisClusters.Count(); i++ )
+	{
+		char name[256];
+		sprintf(name, "u:\\main\\game\\ep2\\maps\\vis_%02d.gl", i );
+		FileHandle_t fp = g_pFileSystem->Open( name, "w" );
+		Msg("Writing %s\n", name );
+		for ( bspbrush_t *pBrush = g_VisClusters[i].pBrushes; pBrush; pBrush = pBrush->next )
+		{
+			for (int i =  0; i < pBrush->numsides; i++ )
+				OutputWindingColor( pBrush->sides[i].winding, fp, 0, 255, 0 );
+		}
+		for ( int j = 0; j < leaves.Count(); j++ )
+		{
+			if ( leaves[j]->cluster == g_VisClusters[i].clusterIndex )
+			{
+				bspbrush_t *pBrush = leaves[j]->volume;
+				for (int k = 0; k < pBrush->numsides; k++ )
+					OutputWindingColor( pBrush->sides[k].winding, fp, 64 + (j&31), 64, 64 - (j&31) );
+			}
+		}
+		g_pFileSystem->Close(fp);
+	}
+#endif
+}
+
+// build a list of all vis portals that connect clusters
+int BuildPortalList( CUtlVector<cluster_portals_t> &portalList, const CUtlVector<node_t *> &leaves )
+{
+	int portalCount = 0;
+	for ( int i = 0; i < leaves.Count(); i++ )
+	{
+		node_t *node = leaves[i];
+		// count the portals
+		for (portal_t *p = node->portals ; p ; )
+		{
+			if (p->nodes[0] == node)		// only write out from first leaf
+			{
+				if ( p->nodes[0]->cluster != p->nodes[1]->cluster )
+				{
+					if (Portal_VisFlood (p))
+					{
+						portalCount++;
+						portalList[node->cluster].portals.AddToTail(p);
+					}
+				}
+				p = p->next[0];
+			}
+			else
+				p = p->next[1];		
+		}
+	}
+	return portalCount;
 }
 
 
@@ -235,45 +315,6 @@ void SaveClusters_r (node_t *node)
 	SaveClusters_r (node->children[1]);
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Build dclusterportals and dclusters
-//-----------------------------------------------------------------------------
-void SaveClusterPortalList( void )
-{
-	int i, j;
-	unsigned short *list = dclusterportals;
-	dportal_t *p;
-
-	// SaveClusters_r counts this, store it in the model
-	numclusters = clusterleaf;
-	
-	// clear the cluster portal list so we can build it
-	numclusterportals = 0;
-
-	// Go through each cluster, find all portals leading into or out of it and add them
-	// its cluster list in dclusterportals
-	for ( i = 0; i < numclusters; i++ )
-	{
-		dclusters[i].numportals = 0;
-		dclusters[i].firstportal = numclusterportals;
-
-		p = dportals;
-		for ( j = 0; j < numportals; j++ )
-		{
-			if ( p->cluster[0] == i || p->cluster[1] == i )
-			{
-				dclusters[i].numportals++;
-				*list = (unsigned short )j;
-				list++;
-				numclusterportals++;
-			}
-			p++;
-		}
-		if ( numclusterportals > numportals*2 )
-			Error( "numclusterportals != numportals * 2" );
-	}
-}
-
 /*
 ================
 WritePortalFile
@@ -283,7 +324,7 @@ void WritePortalFile (tree_t *tree)
 {
 	char	filename[1024];
 	node_t *headnode;
-	int start = I_FloatTime();
+	int start = Plat_FloatTime();
 
 	qprintf ("--- WritePortalFile ---\n");
 
@@ -299,11 +340,16 @@ void WritePortalFile (tree_t *tree)
 
 // set the cluster field in every leaf and count the total number of portals
 	num_visclusters = 0;
-	num_visportals = 0;
-	NumberLeafs_r (headnode);
-	
+	Msg("Building visibility clusters...\n");
+	CUtlVector<node_t *> leaves;
+	BuildVisLeafList_r( headnode, leaves );
+
+	NumberLeafs (leaves);
+	CUtlVector<cluster_portals_t> portalList;
+	portalList.SetCount( num_visclusters );
+	num_visportals = BuildPortalList( portalList, leaves );
 // write the file
-	pf = fopen (filename, "w");
+	FILE *pf = fopen (filename, "w");
 	if (!pf)
 		Error ("Error opening %s", filename);
 		
@@ -314,7 +360,7 @@ void WritePortalFile (tree_t *tree)
 	qprintf ("%5i visclusters\n", num_visclusters);
 	qprintf ("%5i visportals\n", num_visportals);
 
-	WritePortalFile_r (headnode);
+	WritePortalFile(pf, portalList);
 
 	fclose (pf);
 
@@ -323,8 +369,6 @@ void WritePortalFile (tree_t *tree)
 	clusterleaf = 1;
 	SaveClusters_r (headnode);
 
-	SaveClusterPortalList();
-
-	Msg("done (%d)\n", (int)(I_FloatTime() - start) );
+	Msg("done (%d)\n", (int)(Plat_FloatTime() - start) );
 }
 

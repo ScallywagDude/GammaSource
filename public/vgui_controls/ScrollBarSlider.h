@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef SCROLLBARSLIDER_H
 #define SCROLLBARSLIDER_H
@@ -23,7 +18,6 @@
 namespace vgui
 {
 
-enum MouseCode;
 class IBorder;
 
 //-----------------------------------------------------------------------------
@@ -31,6 +25,8 @@ class IBorder;
 //-----------------------------------------------------------------------------
 class ScrollBarSlider : public Panel
 {
+	DECLARE_CLASS_SIMPLE( ScrollBarSlider, Panel );
+
 public:
 	ScrollBarSlider(Panel *parent, const char *panelName, bool vertical);
 
@@ -65,6 +61,11 @@ public:
 	virtual void OnMouseDoublePressed(MouseCode code);
 	virtual void OnMouseReleased(MouseCode code);
 
+	// Return true if this slider is actually drawing itself
+	virtual bool IsSliderVisible( void );
+
+	virtual void ApplySettings( KeyValues *pInResourceData );
+
 protected:
 	virtual void Paint();
 	virtual void PaintBackground();
@@ -86,8 +87,6 @@ private:
 	int _rangeWindow;
 	int _buttonOffset;
 	IBorder *_ScrollBarSliderBorder;
-
-    typedef Panel BaseClass;
 };
 
 } // namespace vgui

@@ -1,14 +1,24 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "..\Tracker\Common\winlite.h"
+#include "winlite.h"
 #include "Sys_Utils.h"
 #include "EngineInterface.h"
+#include "tier0/vcrmode.h"
 
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+
+#ifdef WIN32
 const unsigned int SYS_NO_ERROR = NO_ERROR;
 const unsigned int SYS_ERROR_INVALID_HANDLE = ERROR_INVALID_HANDLE;
 
@@ -39,7 +49,7 @@ const unsigned int SYS_WAIT_ABANDONED = WAIT_ABANDONED;
 
 unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds)
 {
-	return ::WaitForSingleObject((HANDLE)mutexHandle, milliseconds);
+	return VCRHook_WaitForSingleObject((HANDLE)mutexHandle, milliseconds);
 }
 
 unsigned int Sys_RegisterWindowMessage(const char *msgName)
@@ -57,24 +67,30 @@ void Sys_EnumWindows(void *callbackFunction, int lparam)
 	::EnumWindows((WNDENUMPROC)callbackFunction, lparam);
 }
 
+#ifndef _XBOX
 void Sys_GetWindowText(WHANDLE wnd, char *buffer, int bufferSize)
 {
 	::GetWindowText((HWND)wnd, buffer, bufferSize - 1);
 }
+#endif
 
 void Sys_PostMessage(WHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
 {
 	::PostMessageA((HWND)wnd, msg, wParam, lParam);
 }
 
+#ifndef _XBOX
 void Sys_SetCursorPos(int x, int y)
 {
 	::SetCursorPos(x, y);
 //	engine->SetCursorPos(x,y); // SRC version
 }
+#endif
 
+#ifndef _XBOX
 static ATOM staticWndclassAtom = 0;
 static WNDCLASS staticWndclass = { NULL };
+#endif
 
 static LRESULT CALLBACK staticProc(HWND hwnd,UINT msg,WPARAM wparam,LPARAM lparam)
 {
@@ -106,4 +122,59 @@ void Sys_DestroyWindow(WHANDLE wnd)
 {
 	//::DestroyWindow((HWND)wnd);
 }
+
+#elif defined( POSIX )
+const unsigned int SYS_NO_ERROR = 0;
+const unsigned int SYS_ERROR_INVALID_HANDLE = 0;
+const unsigned int SYS_WAIT_OBJECT_0 = 0;
+const unsigned int SYS_WAIT_ABANDONED = 0;
+
+
+void Sys_SetLastError(unsigned long error)
+{
+	errno = error;
+}
+
+unsigned long Sys_GetLastError()
+{
+	return errno;
+}
+
+
+WHANDLE Sys_CreateMutex(const char *mutexName)
+{
+	Assert( !"Implement me" );
+	return 0;
+}
+
+void Sys_ReleaseMutex(WHANDLE mutexHandle)
+{
+	Assert( !"Implement me" );
+}
+
+void Sys_PostMessage(WHANDLE wnd, unsigned int msg, unsigned int wParam, unsigned int lParam)
+{
+	Assert( !"Implement me" );
+}
+
+unsigned int Sys_RegisterWindowMessage(const char *msgName)
+{
+	Assert( !"Implement me" );
+	return 0;
+}
+
+unsigned int Sys_WaitForSingleObject(WHANDLE mutexHandle, int milliseconds)
+{
+	return SYS_WAIT_ABANDONED;
+}
+
+void Sys_EnumWindows(void *callbackFunction, int lparam)
+{
+	Assert( !"Implement me" );
+}
+
+
+#else
+#error
+#endif
 

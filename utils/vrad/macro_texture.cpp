@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "macro_texture.h"
 #include "bsplib.h"
 #include "cmdlib.h"
 #include "vtf/vtf.h"
-#include "utldict.h"
-#include "utlbuffer.h"
-#include "imageloader.h"
+#include "tier1/utldict.h"
+#include "tier1/utlbuffer.h"
+#include "bitmap/imageformat.h"
 
 
 class CMacroTextureData
@@ -83,7 +83,8 @@ CMacroTextureData* LoadMacroTextureFile( const char *pFilename )
 void InitMacroTexture( const char *pBSPFilename )
 {
 	// Get the world bounds (same ones used by minimaps and level designers know how to use).
-	for (int i = 0; i < num_entities; ++i)
+	int i = 0;
+	for (i; i < num_entities; ++i)
 	{
 		char* pEntity = ValueForKey(&entities[i], "classname");
 		if( !strcmp(pEntity, "worldspawn") )
@@ -103,8 +104,8 @@ void InitMacroTexture( const char *pBSPFilename )
 
 	// Load the macro texture that is mapped onto everything.
 	char mapName[512], vtfFilename[512];
-	ExtractFileBase( pBSPFilename, mapName, sizeof( mapName ) );
-	Q_snprintf( vtfFilename, sizeof( vtfFilename ), "%smaterials/macro/%s/base.vtf", gamedir, mapName );
+	Q_FileBase( pBSPFilename, mapName, sizeof( mapName ) );
+	Q_snprintf( vtfFilename, sizeof( vtfFilename ), "materials/macro/%s/base.vtf", mapName );
 	g_pGlobalMacroTextureData = LoadMacroTextureFile( vtfFilename );
 
 	

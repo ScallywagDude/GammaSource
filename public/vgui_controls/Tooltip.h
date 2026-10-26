@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Creates a Message box with a question in it and yes/no buttons
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef TOOLTIP_H
 #define TOOLTIP_H
@@ -18,45 +13,62 @@
 #endif
 
 #include <vgui/VGUI.h>
-#include <UtlVector.h>
-
-//-----------------------------------------------------------------------------
-// Purpose: Creates A Message box with a question in it and yes/no buttons
-//-----------------------------------------------------------------------------
+#include <vgui_controls/Controls.h>
+#include <utlvector.h>
 
 namespace vgui
 {
 
-class TextEntry;
-class Panel;
-
-class Tooltip 
+//-----------------------------------------------------------------------------
+// Purpose: Tooltip for a panel - shows text when cursor hovers over a panel
+//-----------------------------------------------------------------------------
+class BaseTooltip
 {
 public:
+	BaseTooltip(Panel *parent, const char *text = NULL);
 
-	Tooltip(Panel *parent, const char *text = NULL);
-	~Tooltip();
+	virtual void SetText(const char *text);
+	virtual const char *GetText();
 
-	void SetText(const char *text);
-	const char *GetText();
-	void ShowTooltip(Panel *currentPanel);
-	void HideTooltip();
-	void SizeTextWindow();
+	virtual void ShowTooltip(Panel *currentPanel);
+	virtual void HideTooltip();
+
+	bool		 ShouldLayout( void );
+	virtual void PerformLayout() { return; }
+	virtual void PositionWindow( Panel *pTipPanel );
+
 	void ResetDelay();
-	void PerformLayout();
-
-	void SetDisplayMode(bool displayOnOneLine);
-	void SetTooltipDelay( int tooltipDelay );
+	void SetTooltipFormatToSingleLine();
+	void SetTooltipFormatToMultiLine();
+	void SetTooltipDelay(int tooltipDelayMilliseconds);
 	int GetTooltipDelay();
+	void SetEnabled( bool bState );
 
 private:
-	virtual void ApplySchemeSettings(IScheme *pScheme);
-
+	Panel *m_pParent;
+	virtual void ApplySchemeSettings(IScheme *pScheme) {};
+protected:
 	CUtlVector<char> m_Text;
-	static int _delay; // delay that counts down
-	static int _tooltipDelay; // delay before tooltip comes up.
-	bool _makeVisible;
-	bool _displayOnOneLine;
+	int _delay;			// delay that counts down
+	int _tooltipDelay;	// delay before tooltip comes up.
+	bool _makeVisible : 1;
+	bool _displayOnOneLine : 1;
+	bool _isDirty : 1;
+	bool _enabled : 1;
+};
+
+class TextTooltip : public BaseTooltip
+{
+public:
+	TextTooltip(Panel *parent, const char *text = NULL);
+	~TextTooltip();
+
+	virtual void SetText(const char *text);
+	virtual void ShowTooltip(Panel *currentPanel);
+	virtual void HideTooltip();
+	virtual void SizeTextWindow();
+	virtual void PerformLayout();
+	virtual void ApplySchemeSettings(IScheme *pScheme);
 };
 
 };

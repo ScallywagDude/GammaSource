@@ -1,16 +1,11 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CMODEL_H
 #define CMODEL_H
@@ -34,7 +29,7 @@ COLLISION DETECTION
 */
 
 #include "bspflags.h"
-//#include "Vector.h"
+//#include "mathlib/vector.h"
 
 // gi.BoxEdicts() can return a list of either solid or trigger entities
 // FIXME: eliminate AREA_ distinction?
@@ -65,16 +60,15 @@ struct csurface_t
 
 struct Ray_t
 {
-	Vector  m_Start;	// starting point, centered within the extents
-	Vector  m_Delta;	// direction + length of the ray
-	Vector  m_StartOffset;	// Add this to m_Start to get the actual ray start
-	Vector  m_Extents;	// Describes an axis aligned box extruded along a ray
+	VectorAligned  m_Start;	// starting point, centered within the extents
+	VectorAligned  m_Delta;	// direction + length of the ray
+	VectorAligned  m_StartOffset;	// Add this to m_Start to get the actual ray start
+	VectorAligned  m_Extents;	// Describes an axis aligned box extruded along a ray
 	bool	m_IsRay;	// are the extents zero?
 	bool	m_IsSwept;	// is delta != 0?
 
 	void Init( Vector const& start, Vector const& end )
 	{
-		Assert( &end );
 		VectorSubtract( end, start, m_Delta );
 
 		m_IsSwept = (m_Delta.LengthSqr() != 0);
@@ -89,7 +83,6 @@ struct Ray_t
 
 	void Init( Vector const& start, Vector const& end, Vector const& mins, Vector const& maxs )
 	{
-		Assert( &end );
 		VectorSubtract( end, start, m_Delta );
 
 		m_IsSwept = (m_Delta.LengthSqr() != 0);
@@ -103,6 +96,24 @@ struct Ray_t
 		m_StartOffset *= 0.5f;
 		VectorAdd( start, m_StartOffset, m_Start );
 		m_StartOffset *= -1.0f;
+	}
+
+	// compute inverse delta
+	Vector InvDelta() const
+	{
+		Vector vecInvDelta;
+		for ( int iAxis = 0; iAxis < 3; ++iAxis )
+		{
+			if ( m_Delta[iAxis] != 0.0f )
+			{
+				vecInvDelta[iAxis] = 1.0f / m_Delta[iAxis];
+			}
+			else
+			{
+				vecInvDelta[iAxis] = FLT_MAX;
+			}
+		}
+		return vecInvDelta;
 	}
 
 private:

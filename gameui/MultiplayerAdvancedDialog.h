@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MULTIPLAYERADVANCEDDIALOG_H
 #define MULTIPLAYERADVANCEDDIALOG_H
@@ -11,15 +11,27 @@
 #pragma once
 #endif
 
-#include <vgui_controls/PropertyPage.h>
-#include "TaskFrame.h"
-#include "ScriptObject.h"
+#include <vgui_controls/Frame.h>
+#include "scriptobject.h"
+#include <vgui/KeyCode.h>
 
 class CPanelListPanel;
 
-class CMultiplayerAdvanced 
+//-----------------------------------------------------------------------------
+// Purpose: Displays a game-specific list of options
+//-----------------------------------------------------------------------------
+class CMultiplayerAdvancedDialog : public vgui::Frame
 {
-protected:
+	DECLARE_CLASS_SIMPLE( CMultiplayerAdvancedDialog, vgui::Frame ); 
+
+public:
+	CMultiplayerAdvancedDialog(vgui::Panel *parent);
+	~CMultiplayerAdvancedDialog();
+
+	virtual void Activate();
+
+private:
+
 	void CreateControls();
 	void DestroyControls();
 	void GatherCurrentValues();
@@ -30,35 +42,11 @@ protected:
 	mpcontrol_t *m_pList;
 
 	CPanelListPanel *m_pListPanel;
-};
-
-
-class CMultiplayerAdvancedDialog : public CTaskFrame, public CMultiplayerAdvanced
-{
-	typedef CTaskFrame BaseClass;
-
-public:
-	CMultiplayerAdvancedDialog(vgui::Panel *parent);
-	~CMultiplayerAdvancedDialog();
 
 	virtual void OnCommand( const char *command );
 	virtual void OnClose();
-
+	virtual void OnKeyCodeTyped(vgui::KeyCode code);
 };
 
-
-class CMultiplayerAdvancedPage : public vgui::PropertyPage, public CMultiplayerAdvanced
-{
-	typedef vgui::PropertyPage BaseClass;
-
-public:
-	CMultiplayerAdvancedPage(vgui::Panel *parent);
-	~CMultiplayerAdvancedPage();
-
-	virtual void OnResetData();
-	virtual void OnApplyChanges();
-
-
-};
 
 #endif // MULTIPLAYERADVANCEDDIALOG_H

@@ -1,34 +1,31 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
-#include "cl_DemoEditorPanel.h"
+//=============================================================================//
+#include "client_pch.h"
+#include "cl_demoeditorpanel.h"
 #include "cl_demoactionmanager.h"
 #include "cl_demoaction.h"
-#include "vid.h"
-#include "demo.h"
 #include <vgui_controls/Button.h>
 #include <vgui_controls/CheckButton.h>
-#include <KeyValues.h>
 #include <vgui_controls/Label.h>
 
 #include <vgui_controls/Controls.h>
 #include <vgui/ISystem.h>
 #include <vgui/ISurface.h>
 #include <vgui_controls/PropertySheet.h>
-#include <vgui/IVgui.h>
+#include <vgui/IVGui.h>
 #include <vgui_controls/FileOpenDialog.h>
 #include <vgui_controls/ProgressBar.h>
 #include <vgui_controls/ListPanel.h>
 #include <vgui_controls/MenuButton.h>
 #include <vgui_controls/Menu.h>
-
-#include "filesystem.h"
-#include "filesystem_engine.h"
 #include "cl_demoactioneditors.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 using namespace vgui;
 
@@ -72,7 +69,7 @@ CNewActionButton::CNewActionButton(Panel *parent, const char *panelName, const c
 	
 	m_pMenu->MakePopup();
 	MenuButton::SetMenu(m_pMenu);
-	SetOpenDirection(MenuButton::UP);
+	SetOpenDirection(Menu::UP);
 }
 
 //-----------------------------------------------------------------------------
@@ -110,9 +107,9 @@ CDemoEditorPanel::CDemoEditorPanel( vgui::Panel *parent ) : Frame( parent, "Demo
 
 	SetPos( xpos, ypos );
 
-	m_pActions->AddColumnHeader(0, "actionname", "Action", m_pActions->GetWide() / 3 , true, RESIZABLE, RESIZABLE);
-	m_pActions->AddColumnHeader(1, "actiontype", "Type", m_pActions->GetWide() / 3, true, RESIZABLE, RESIZABLE);
-	m_pActions->AddColumnHeader(2, "actionstart", "Start", m_pActions->GetWide() / 3, true, RESIZABLE, RESIZABLE);
+	m_pActions->AddColumnHeader(0, "actionname", "Action", m_pActions->GetWide() / 3);
+	m_pActions->AddColumnHeader(1, "actiontype", "Type", m_pActions->GetWide() / 3);
+	m_pActions->AddColumnHeader(2, "actionstart", "Start", m_pActions->GetWide() / 3);
 	OnRefresh();
 
 	SetVisible( true );
@@ -184,7 +181,7 @@ bool CDemoEditorPanel::IsNewActionCommand( char const *command )
 //-----------------------------------------------------------------------------
 void CDemoEditorPanel::CreateNewAction( char const *actiontype )
 {
-	if ( m_hCurrentEditor != NULL )
+	if ( m_hCurrentEditor != 0 )
 		return;
 
 	DEMOACTION type = CBaseDemoAction::TypeForName( actiontype );
@@ -198,7 +195,7 @@ void CDemoEditorPanel::CreateNewAction( char const *actiontype )
 		demoaction->SetDirty( true );
 
 		m_hCurrentEditor = CBaseDemoAction::CreateActionEditor( action->GetType(), this, action, true );
-		if ( m_hCurrentEditor != NULL )
+		if ( m_hCurrentEditor != 0 )
 		{
 			m_hCurrentEditor->SetVisible( true );
 			m_hCurrentEditor->SetSize( 400, 300 );
@@ -285,9 +282,9 @@ void CDemoEditorPanel::PopulateActionList()
 		default:
 		case ACTION_USES_NEITHER:
 			break;
-		case ACTION_USES_FRAME:
+		case ACTION_USES_TICK:
 			{
-				item->SetString( "actionstart", va( "Frame %i", action->GetStartFrame() ) );
+				item->SetString( "actionstart", va( "Tick %i", action->GetStartTick() ) );
 			}
 			break;
 		case ACTION_USES_TIME:
@@ -303,7 +300,7 @@ void CDemoEditorPanel::PopulateActionList()
 
 void CDemoEditorPanel::OnEdit()
 {
-	if ( m_hCurrentEditor != NULL )
+	if ( m_hCurrentEditor != 0 )
 		return;
 
 	int numselected = m_pActions->GetSelectedItemsCount();
@@ -317,7 +314,7 @@ void CDemoEditorPanel::OnEdit()
 	CBaseDemoAction *action = demoaction->GetAction( row );
 
 	m_hCurrentEditor = CBaseDemoAction::CreateActionEditor( action->GetType(), this, action, false );
-	if ( m_hCurrentEditor != NULL )
+	if ( m_hCurrentEditor != 0 )
 	{
 		m_hCurrentEditor->SetVisible( true );
 		m_hCurrentEditor->SetSize( 400, 300 );

@@ -1,0 +1,15 @@
+"Refract"
+{
+ "$model" "0"
+ "$basetexture" "_rt_FullFrameFB"
+ "$normalmap" "effects/gamma_vortex/normal"
+ "$refractamount" "0.1"
+ "$refracttint" "[1 1 1]"
+ "$bluramount" "0"
+ "$bumpframe" "0"
+ "$translucent" "1"
+ "$nofog" "1"
+ "$nowritez" "1"
+ "$vertexcolormodulate" "1"
+ "$forcerefract" "1"
+}

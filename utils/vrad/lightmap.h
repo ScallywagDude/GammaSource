@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,13 +9,13 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LIGHTMAP_H
 #define LIGHTMAP_H
 #pragma once
 
-#include "bumpvects.h"
+#include "mathlib/bumpvects.h"
 #include "bsplib.h"
 
 typedef struct
@@ -77,7 +72,7 @@ struct facelight_t
 	// irregularly shaped light sample data, clipped by face and luxel grid
 	int			numsamples;
 	sample_t	*sample;			
-	Vector		*light[MAXLIGHTMAPS][NUM_BUMP_VECTS+1];	// result of direct illumination, indexed by sample
+	LightingValue_t *light[MAXLIGHTMAPS][NUM_BUMP_VECTS+1];	// result of direct illumination, indexed by sample
 
 	// regularly spaced lightmap grid
 	int			numluxels;			
@@ -104,18 +99,9 @@ struct lightinfo_t
 
 	Vector	modelorg;		// for origined bmodels
 
-	Vector	textureOrigin;
-	Vector	worldToTextureSpace[2];	// s = (world - texorg) . worldtotex[0]
-	Vector	textureToWorldSpace[2];	// world = texorg + s * textoworld[0]
-
 	Vector	luxelOrigin;
-	Vector	worldToLuxelSpace[2]; // s = (world - texorg) . worldtotex[0]
-	Vector	luxelToWorldSpace[2]; // world = texorg + s * textoworld[0]
-	
-	//	vec_t	exactmins[2], exactmaxs[2]; not used anymore.
-	
-	int		lightmapTextureMinsInLuxels[2];
-	int		lightmapTextureSizeInLuxels[2];
+	Vector	worldToLuxelSpace[2]; // s = (world - luxelOrigin) . worldToLuxelSpace[0], t = (world - luxelOrigin) . worldToLuxelSpace[1]
+	Vector	luxelToWorldSpace[2]; // world = luxelOrigin + s * luxelToWorldSpace[0] + t * luxelToWorldSpace[1]
 
 	int		facenum;
 	dface_t	*face;
@@ -124,7 +110,7 @@ struct lightinfo_t
 	int		hasbumpmap;
 };
 
-struct SampleInfo_t
+struct SSE_SampleInfo_t
 {
 	int		m_FaceNum;
 	int		m_WarnFace;
@@ -134,18 +120,22 @@ struct SampleInfo_t
 	int		m_LightmapHeight;
 	int		m_LightmapSize;
 	int		m_NormalCount;
-	int		m_Cluster;
 	int		m_iThread;
 	texinfo_t	*m_pTexInfo;
 	bool	m_IsDispFace;
-	Vector	m_Point;
-	Vector	m_PointNormal[ NUM_BUMP_VECTS + 1 ];
-};
 
+	int          m_NumSamples;
+	int          m_NumSampleGroups;
+	int	        m_Clusters[4];
+	FourVectors	m_Points;
+	FourVectors	m_PointNormals[ NUM_BUMP_VECTS + 1 ];
+};
 
 extern void InitLightinfo( lightinfo_t *l, int facenum );
 
 void FreeDLights();
+
+void ExportDirectLightsToWorldLights();
 
 
 #endif // LIGHTMAP_H

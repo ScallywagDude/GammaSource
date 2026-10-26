@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CREATEMULTIPLAYERGAMEDIALOG_H
 #define CREATEMULTIPLAYERGAMEDIALOG_H
@@ -14,6 +14,7 @@
 #include <vgui_controls/PropertyDialog.h>
 
 class CCreateMultiplayerGameServerPage;
+class CCreateMultiplayerGameGameplayPage;
 class CCreateMultiplayerGameBotPage;
 
 //-----------------------------------------------------------------------------
@@ -21,23 +22,25 @@ class CCreateMultiplayerGameBotPage;
 //-----------------------------------------------------------------------------
 class CCreateMultiplayerGameDialog : public vgui::PropertyDialog
 {
+	DECLARE_CLASS_SIMPLE( CCreateMultiplayerGameDialog,  vgui::PropertyDialog );
+
 public:
 	CCreateMultiplayerGameDialog(vgui::Panel *parent);
 	~CCreateMultiplayerGameDialog();
 
 protected:
-	virtual void OnOK();
-	virtual void OnClose();
-	virtual void SetTitle(const char *title, bool surfaceTitle);
+	virtual bool OnOK(bool applyOnly);
+	virtual void OnKeyCodePressed( vgui::KeyCode code );
 
 private:
-	typedef vgui::PropertyDialog BaseClass;
-
 	CCreateMultiplayerGameServerPage *m_pServerPage;
+	CCreateMultiplayerGameGameplayPage *m_pGameplayPage;
 	CCreateMultiplayerGameBotPage *m_pBotPage;
 
-	// for loading/saving bot config
-	KeyValues *m_pBotSavedData;
+	bool m_bBotsEnabled;
+
+	// for loading/saving game config
+	KeyValues *m_pSavedData;
 };
 
 

@@ -1,22 +1,12 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $Workfile:     $
-// $Date:         $
-// $NoKeywords: $
-//=============================================================================
+//=====================================================================================//
 
 #include <math.h>
-#include "bumpvects.h"
+#include "mathlib/bumpvects.h"
 #include "colorspace.h"
-// HL2MODERN_GAMMA_INPUT_GUARD
-#include "../modernize/lighting_parameters.h"
 #include "materialsystem_global.h"
 #include "IHardwareConfigInternal.h"
 #include "materialsystem/materialsystem_config.h"
@@ -24,7 +14,6 @@
 // NOTE: This has to be the last file included
 #include "tier0/memdbgon.h"
 
-static unsigned char	texGammaTable[256];		// convert from texGamma to screenGamma
 //static float			texLightToLinear[256];	// texlight (0..255) to linear (0..4)
 static float			textureToLinear[256];	// texture (0..255) to linear (0..1)
 static int				linearToTexture[1024];	// linear (0..1) to texture (0..255)
@@ -35,8 +24,6 @@ static int				linearToLightmap[4096];	// linear (0..4) to screen corrected textu
 void ColorSpace::SetGamma( float screenGamma, float texGamma, 
 						   float overbright, bool allowCheats, bool linearFrameBuffer )
 {
-	// HL2MODERN_SANITIZED_GAMMA_TABLE_INPUTS
-	HL2ModernLighting::SanitizeGammaParameters( screenGamma, texGamma, overbright );
 	int		i, inf;
 	float	g1, g3;
 	float	g;
@@ -78,16 +65,6 @@ void ColorSpace::SetGamma( float screenGamma, float texGamma,
 	else 
 	{
 		g3 = 0.125f - (brightness * brightness) * 0.075f;
-	}
-
-	for (i=0 ; i<256 ; i++)
-	{
-		inf = ( int )( 255 * pow ( i/255.0f, g1 ) );
-		if (inf < 0)
-			inf = 0;
-		if (inf > 255)
-			inf = 255;
-		texGammaTable[i] = inf;
 	}
 
 	for (i=0 ; i<1024 ; i++)
@@ -146,11 +123,10 @@ void ColorSpace::SetGamma( float screenGamma, float texGamma,
 	// Can't do overbright without texcombine
 	// UNDONE: Add GAMMA ramp to rectify this
 
-	if ( (!HardwareConfig()) || !HardwareConfig()->HasTextureEnvCombine() )
+	if ( !HardwareConfig() )
 	{
 		overbright = 1.0f;
 	}
-	
 	if ( overbright == 2.0 )
 	{
 		overbrightFactor = 0.5;
@@ -163,9 +139,6 @@ void ColorSpace::SetGamma( float screenGamma, float texGamma,
 	{
 		overbrightFactor = 1.0;
 	}
-	
-	g_config.overbright = overbright;
-	g_ooOverbright = overbrightFactor;
 	
 	for (i=0 ; i<4096 ; i++)
 	{
@@ -188,7 +161,7 @@ float ColorSpace::TextureToLinear( int c )
 	if (c < 0)
 		return 0;
 	if (c > 255)
-		return 1.f;
+		return 1.0f;
 
 	return textureToLinear[c];
 }
@@ -225,3 +198,15 @@ int ColorSpace::LinearToScreenGamma( float f )
 
 	return linearToScreen[i];
 }
+
+
+uint16 ColorSpace::LinearFloatToCorrectedShort( float in )
+{
+	uint16 out;
+	in = min( in * 4096.0, 65535.0 );
+	out = max( in, 0.0f );
+
+	return out;
+}
+
+

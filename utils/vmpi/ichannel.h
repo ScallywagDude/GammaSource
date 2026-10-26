@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ICHANNEL_H
 #define ICHANNEL_H
@@ -12,7 +12,7 @@
 #endif
 
 
-#include "utlvector.h"
+#include "tier1/utlvector.h"
 
 
 class IChannel

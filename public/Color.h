@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef COLOR_H
 #define COLOR_H
@@ -16,6 +11,8 @@
 #ifdef _WIN32
 #pragma once
 #endif
+
+#include "tier1/strtools.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Basic handler for an rgb set of colors
@@ -27,51 +24,79 @@ public:
 	// constructors
 	Color()
 	{
-		SetColor(0, 0, 0, 0);
+		Q_memset( _color, 0, sizeof _color );
 	}
-	Color(int r,int g,int b)
+	Color(int _r,int _g,int _b)
 	{
-		SetColor(r, g, b, 0);
+		SetColor(_r, _g, _b, 0);
 	}
-	Color(int r,int g,int b,int a)
+	Color(int _r,int _g,int _b,int _a)
 	{
-		SetColor(r, g, b, a);
+		SetColor(_r, _g, _b, _a);
 	}
-	
+
 	// set the color
 	// r - red component (0-255)
 	// g - green component (0-255)
 	// b - blue component (0-255)
 	// a - alpha component, controls transparency (0 - transparent, 255 - opaque);
-	void SetColor(int r, int g, int b, int a)
+	void SetColor(int _r, int _g, int _b, int _a = 0)
 	{
-		_color[0] = (unsigned char)r;
-		_color[1] = (unsigned char)g;
-		_color[2] = (unsigned char)b;
-		_color[3] = (unsigned char)a;
+		_color[0] = (unsigned char)_r;
+		_color[1] = (unsigned char)_g;
+		_color[2] = (unsigned char)_b;
+		_color[3] = (unsigned char)_a;
 	}
 
-	void GetColor(int &r, int &g, int &b, int &a) const
+	void GetColor(int &_r, int &_g, int &_b, int &_a) const
 	{
-		r = _color[0];
-		g = _color[1];
-		b = _color[2];
-		a = _color[3];
+		_r = _color[0];
+		_g = _color[1];
+		_b = _color[2];
+		_a = _color[3];
 	}
-	
+
+	void SetRawColor( int color32 )
+	{
+		Q_memcpy( _color, &color32, sizeof _color );
+	}
+
+	int GetRawColor() const
+	{
+		int color;
+		Q_memcpy( &color, _color, sizeof _color );
+		return color;
+	}
+
+	inline int r() const	{ return _color[0]; }
+	inline int g() const	{ return _color[1]; }
+	inline int b() const	{ return _color[2]; }
+	inline int a() const	{ return _color[3]; }
+
 	unsigned char &operator[](int index)
 	{
 		return _color[index];
 	}
 
-	bool operator == (Color &rhs) const
+	const unsigned char &operator[](int index) const
 	{
-		return (_color[0] == rhs._color[0] && _color[1] == rhs._color[1] && _color[2] == rhs._color[2] && _color[3] == rhs._color[3]);
+		return _color[index];
 	}
 
-	bool operator != (Color &rhs) const
+	bool operator == (const Color &rhs) const
+	{
+		return Q_memcmp( this, &rhs, sizeof(Color) ) == 0;
+	}
+
+	bool operator != (const Color &rhs) const
 	{
 		return !(operator==(rhs));
+	}
+
+	Color &operator=( const Color &rhs )
+	{
+		SetRawColor( rhs.GetRawColor() );
+		return *this;
 	}
 
 private:

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 #include <stdio.h>
 #include "hlfaceposer.h"
 #include "choreoactorwidget.h"
@@ -14,7 +14,8 @@
 #include "mxBitmapButton.h"
 #include "choreoviewcolors.h"
 #include "choreochannel.h"
-#include "cmdlib.h"
+#include "filesystem.h"
+#include "StudioModel.h"
 
 #define ACTOR_NAME_HEIGHT 26
 //-----------------------------------------------------------------------------
@@ -151,7 +152,7 @@ void CChoreoActorWidget::Layout( RECT& rc )
 {
 	setBounds( rc.left, rc.top, rc.right - rc.left, rc.bottom - rc.top );
 
-	int buttonSize = 12;
+	int buttonSize = 16;
 	int ypos = rc.top + ( ACTOR_NAME_HEIGHT - buttonSize )/ 2;
 
 	m_btnOpen->setBounds( rc.left + 2, ypos, buttonSize, buttonSize );
@@ -254,9 +255,9 @@ void CChoreoActorWidget::redraw( CChoreoWidgetDrawHelper& drawHelper )
 
 	RECT rcName = rcText;
 
-	rcName.left += 14;
+	rcName.left += 18;
 	char n[ 512 ];
-	strcpy( n, actor->GetName() );
+	V_strcpy_safe( n, actor->GetName() );
 
 	drawHelper.DrawColoredText( "Arial", 
 		m_pView->GetFontSize() + 5, 
@@ -278,7 +279,7 @@ void CChoreoActorWidget::redraw( CChoreoWidgetDrawHelper& drawHelper )
 			COLOR_CHOREO_ACTORNAME_INACTIVE, rcInactive, n );
 	}
 
-	rcName.left -= 14;
+	rcName.left -= 18;
 
 
 	if ( actor->GetFacePoserModelName()[0] )
@@ -290,7 +291,7 @@ void CChoreoActorWidget::redraw( CChoreoWidgetDrawHelper& drawHelper )
 		int fontsize = m_pView->GetFontSize() - 2;
 
 		char shortname[ 512 ];
-		ExtractFileBase (actor->GetFacePoserModelName(), shortname, sizeof( shortname ) );
+		Q_FileBase (actor->GetFacePoserModelName(), shortname, sizeof( shortname ) );
 		strcat( shortname, ".mdl" );
 
 		int len = drawHelper.CalcTextWidth( "Arial", fontsize, FW_NORMAL, shortname );

@@ -1,3 +1,4 @@
+; STATIC: "NORMALMAPALPHAENVMAPMASK" "0..1"
 ps.1.1
 
 ;------------------------------------------------------------------------------
@@ -43,18 +44,23 @@ dp3_sat	r1, v0_bx2, t0_bx2
 mul r1.rgb, r0, r0					; color squared
 +mul r0.a, 1-r1.a, 1-r1.a			; squared
 
-lrp	r0.rgb, c1, r1, r0				; blend between color and color * color
+lrp r0.rgb, c1, r1, r0				; blend between color and color * color
 +mul r0.a, r0.a, r0.a				; quartic
 
-dp3	r1.rgb, r0, c3					; color greyscaled
+dp3 r1.rgb, r0, c3				; color greyscaled
 +mul r0.a, r0.a, 1-r1.a				; quintic
 
 ; FIXME - these should be able to pair (I think), but don't on nvidia for some reason.
-lrp	r0.rgb, c2, r0, r1				; blend between color and greyscale
+; (I think) cannot pair due to use of >2 constants in single stage
+lrp	r0.rgb, c2, r0, r1 			; blend between color and greyscale
 mad r0.a, r0.a, c6.a, c4.a			; Take Fresnel R(0) into consideration
 
 mul r0.rgb, r0, r0.a				; multiply output color by result of fresnel calc
-+mov r0.a, t0.a						; output alpha from the texture
 
+#if NORMALMAPALPHAENVMAPMASK
++mul r0.a, c0.a, t0.a				; Fade amount * alpha from the texture
+#else
++mov r0.a, c0.a					; Just use the fade amount
+#endif
 
 

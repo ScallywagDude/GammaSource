@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{EAF87ED3-DB61-5168-B753-05C12B65810C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>stdshader_dbg</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="ModernShaderTools">
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'=='' and '$(HL2_MODERN_PERL)'!=''">$(HL2_MODERN_PERL)</HL2ModernPerl>
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'==''">perl</HL2ModernPerl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>stdshader_dbg</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;STDSHADER_DBG_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Release\vstdlib.lib;..\..\shaderlib\build\Release\shaderlib.lib;..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>stdshader_dbg</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;STDSHADER_DBG_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Debug\vstdlib.lib;..\..\shaderlib\build\Debug\shaderlib.lib;..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\BaseVSShader.cpp" />
+    <ClCompile Include=".\debugbumpedlightmap.cpp" />
+    <ClCompile Include=".\debugbumpedvertexlit.cpp" />
+    <ClCompile Include=".\debugfbtexture.cpp" />
+    <ClCompile Include=".\debuglightingonly.cpp" />
+    <ClCompile Include=".\debuglightmap.cpp" />
+    <ClCompile Include=".\debugluxel.cpp" />
+    <ClCompile Include=".\debugmodifyvertex.cpp" />
+    <ClCompile Include=".\debugnormalmap.cpp" />
+    <ClCompile Include=".\debugsoftwarevertexshader.cpp" />
+    <ClCompile Include=".\debugtangentspace.cpp" />
+    <ClCompile Include=".\debugunlit.cpp" />
+    <ClCompile Include=".\debugvertexlit.cpp" />
+    <ClCompile Include=".\fillrate.cpp" />
+    <ClCompile Include=".\fillrate_dx6.cpp" />
+    <ClCompile Include="..\..\public\mathlib.cpp" />
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp" />
+    <ClCompile Include="..\..\public\vmatrix.cpp" />
+    <ClCompile Include=".\stdshader_dbg.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\BaseVSShader.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include=".\vertexlit_lighting_only_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLit_and_unlit_Generic_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedLightmap.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\DebugTangentSpace.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\fillrate.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\LightingOnly.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_LightingOnly.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">UnlitGeneric_inc.vsh;macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">UnlitGeneric_inc.vsh;macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_LightingOnly.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpTimesBase.vsh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\vsh_prep.pl -dx9 %(Filename).vsh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">macros.vsh;..\..\devtools\bin\vsa9.exe;..\..\devtools\bin\vsh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedLightmap_LightingOnly_OverBright1.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\BumpmappedLightmap_LightingOnly_OverBright2.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\fillrate.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_LightingOnly_Overbright1.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\LightmappedGeneric_LightingOnly_Overbright2.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\unlitgeneric.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\UnlitGeneric_NoTexture.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpLightingOnly_TwentyPercent_Overbright1.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\VertexLitGeneric_DiffBumpLightingOnly_TwentyPercent_Overbright2.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_lightingonly_overbright1.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlitgeneric_lightingonly_overbright2.psh">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\psh_prep.pl -dx9 %(Filename).psh</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">pshtmp9\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\..\devtools\bin\psa9.exe;..\..\devtools\bin\psh_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".\stdshader_dbg.txt" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\shaderlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\tier0\tier0.vcxproj">
+      <Project>{6FF36EA7-9968-563F-A949-77D0A5E5E6E8}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vstdlib\vstdlib.vcxproj">
+      <Project>{A2B5AD75-6625-5F92-AAF0-648CB23FAF16}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

@@ -1,9 +1,10 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include <stdio.h>
 #include <time.h>
@@ -13,20 +14,23 @@
 using namespace vgui;
 
 #include <KeyValues.h>
+#include <vgui/ILocalize.h>
 #include <vgui_controls/ComboBox.h>
 #include <vgui_controls/CheckButton.h>
 #include <vgui_controls/Label.h>
 #include <vgui_controls/TextEntry.h>
 
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "PanelListPanel.h"
-#include "ScriptObject.h"
+#include "scriptobject.h"
 #include <tier0/vcrmode.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
-extern void UTIL_StripInvalidCharacters( char *pszInput );
+#define OPTIONS_DIR "cfg"
+#define DEFAULT_OPTIONS_FILE OPTIONS_DIR "/settings_default.scr"
+#define OPTIONS_FILE OPTIONS_DIR "/settings.scr"
 
 //-----------------------------------------------------------------------------
 // Purpose: class for loading/saving server config file
@@ -34,7 +38,7 @@ extern void UTIL_StripInvalidCharacters( char *pszInput );
 class CServerDescription : public CDescription
 {
 public:
-	CServerDescription( CPanelListPanel *panel );
+	CServerDescription( void );
 
 	void WriteScriptHeader( FileHandle_t fp );
 	void WriteFileHeader( FileHandle_t fp ); 
@@ -45,11 +49,12 @@ public:
 //-----------------------------------------------------------------------------
 CCreateMultiplayerGameGameplayPage::CCreateMultiplayerGameGameplayPage(vgui::Panel *parent, const char *name) : PropertyPage(parent, name)
 {
+	SetSize( 10, 10 ); // Quiet "parent not sized yet" spew
 	m_pOptionsList = new CPanelListPanel(this, "GameOptions");
 
-	m_pDescription = new CServerDescription(m_pOptionsList);
-	m_pDescription->InitFromFile( "settings.scr" );
-	m_pDescription->TransferCurrentValues( NULL );
+	m_pDescription = new CServerDescription();
+	m_pDescription->InitFromFile( DEFAULT_OPTIONS_FILE );
+	m_pDescription->InitFromFile( OPTIONS_FILE );
 	m_pList = NULL;
 
 	LoadControlSettings("Resource/CreateMultiplayerGameGameplayPage.res");
@@ -62,6 +67,66 @@ CCreateMultiplayerGameGameplayPage::CCreateMultiplayerGameGameplayPage(vgui::Pan
 //-----------------------------------------------------------------------------
 CCreateMultiplayerGameGameplayPage::~CCreateMultiplayerGameGameplayPage()
 {
+	delete m_pDescription;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+int CCreateMultiplayerGameGameplayPage::GetMaxPlayers()
+{
+	return atoi(GetValue("maxplayers", "32"));
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+const char *CCreateMultiplayerGameGameplayPage::GetPassword()
+{
+	return GetValue("sv_password", "");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+const char *CCreateMultiplayerGameGameplayPage::GetHostName()
+{
+	return GetValue("hostname", "Half-Life");	
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+const char *CCreateMultiplayerGameGameplayPage::GetValue(const char *cvarName, const char *defaultValue)
+{
+	for (mpcontrol_t *mp = m_pList; mp != NULL; mp = mp->next)
+	{
+		Panel *control = mp->pControl;
+		if (control && !stricmp(mp->GetName(), cvarName))
+		{
+			KeyValues *data = new KeyValues("GetText");
+			static char buf[128];
+			if (control && control->RequestInfo(data))
+			{
+				strncpy(buf, data->GetString("text", defaultValue), sizeof(buf) - 1);
+			}
+			else
+			{
+				// no value found, copy in default text
+				strncpy(buf, defaultValue, sizeof(buf) - 1);
+			}
+
+			// ensure null termination of string
+			buf[sizeof(buf) - 1] = 0;
+
+			// free
+			data->deleteThis();
+			return buf;
+		}
+
+	}
+
+	return defaultValue;
 }
 
 //-----------------------------------------------------------------------------
@@ -81,11 +146,12 @@ void CCreateMultiplayerGameGameplayPage::OnApplyChanges()
 		m_pDescription->WriteToConfig();
 
 		// save out in the settings file
-		fp = filesystem()->Open( "settings.scr", "wb" );
+		g_pFullFileSystem->CreateDirHierarchy( OPTIONS_DIR, "GAME" );
+		fp = g_pFullFileSystem->Open( OPTIONS_FILE, "wb", "GAME" );
 		if ( fp )
 		{
 			m_pDescription->WriteToScriptFile( fp );
-			filesystem()->Close( fp );
+			g_pFullFileSystem->Close( fp );
 		}
 	}
 }
@@ -128,7 +194,13 @@ void CCreateMultiplayerGameGameplayPage::LoadGameOptionsList()
 
 	while ( pObj )
 	{
-		pCtrl = new mpcontrol_t( objParent, "mpcontrol_t" );
+		if ( pObj->type == O_OBSOLETE )
+		{
+			pObj = pObj->pNext;
+			continue;
+		}
+
+		pCtrl = new mpcontrol_t( objParent, pObj->cvarname );
 		pCtrl->type = pObj->type;
 
 		switch ( pCtrl->type )
@@ -141,12 +213,12 @@ void CCreateMultiplayerGameGameplayPage::LoadGameOptionsList()
 			break;
 		case O_STRING:
 		case O_NUMBER:
-			pEdit = new TextEntry( pCtrl, "DescTextEntry");
+			pEdit = new TextEntry( pCtrl, "DescEdit");
 			pEdit->InsertString(pObj->defValue);
 			pCtrl->pControl = (Panel *)pEdit;
 			break;
 		case O_LIST:
-			pCombo = new ComboBox( pCtrl, "DescComboBox", 5, false );
+			pCombo = new ComboBox( pCtrl, "DescEdit", 5, false );
 
 			pListItem = pObj->pListItems;
 			while ( pListItem )
@@ -172,7 +244,7 @@ void CCreateMultiplayerGameGameplayPage::LoadGameOptionsList()
 		}
 
 		pCtrl->pScrObj = pObj;
-		pCtrl->SetSize( 100, 28 );
+		pCtrl->SetSize( 100, scheme()->GetProportionalScaledValue(28) );
 		//pCtrl->SetBorder( scheme()->GetBorder(1, "DepressedButtonBorder") );
 		m_pOptionsList->AddItem( pCtrl );
 
@@ -221,7 +293,8 @@ void CCreateMultiplayerGameGameplayPage::GatherCurrentValues()
 	CScriptListItem *pItem;
 
 	char szValue[256];
-	char strValue[ 256 ];
+	char strValue[256];
+	wchar_t w_szStrValue[256];
 
 	pList = m_pList;
 	while ( pList )
@@ -239,49 +312,70 @@ void CCreateMultiplayerGameGameplayPage::GatherCurrentValues()
 		{
 		case O_BOOL:
 			pBox = (CheckButton *)pList->pControl;
-			sprintf( szValue, "%s", pBox->IsSelected() ? "1" : "0" );
+			Q_snprintf( szValue, sizeof( szValue ), "%s", pBox->IsSelected() ? "1" : "0" );
 			break;
 		case O_NUMBER:
 			pEdit = ( TextEntry * )pList->pControl;
 			pEdit->GetText( strValue, sizeof( strValue ) );
-			sprintf( szValue, "%s", strValue );
+			Q_snprintf( szValue, sizeof( szValue ), "%s", strValue );
 			break;
 		case O_STRING:
 			pEdit = ( TextEntry * )pList->pControl;
 			pEdit->GetText( strValue, sizeof( strValue ) );
-			sprintf( szValue, "%s", strValue );
+			Q_snprintf( szValue, sizeof( szValue ), "%s", strValue );
 			break;
 		case O_LIST:
 			pCombo = ( ComboBox *)pList->pControl;
-			pCombo->GetText( strValue, sizeof( strValue ) );
+			pCombo->GetText( w_szStrValue, sizeof( w_szStrValue ) / sizeof( wchar_t ) );
 			
 			pItem = pObj->pListItems;
-			int n = (int)pObj->fdefValue;
 
 			while ( pItem )
 			{
-				if ( !stricmp( pItem->szItemText, strValue ) )
+				wchar_t *wLocalizedString = NULL;
+				wchar_t w_szStrTemp[256];
+				
+				// Localized string?
+				if ( pItem->szItemText[0] == '#' )
 				{
+					wLocalizedString = g_pVGuiLocalize->Find( pItem->szItemText );
+				}
+
+				if ( wLocalizedString )
+				{
+					// Copy the string we found into our temp array
+					V_wcscpy_safe( w_szStrTemp, wLocalizedString );
+				}
+				else
+				{
+					// Just convert what we have to Unicode
+					g_pVGuiLocalize->ConvertANSIToUnicode( pItem->szItemText, w_szStrTemp, sizeof( w_szStrTemp ) );
+				}
+
+				if ( _wcsicmp( w_szStrTemp, w_szStrValue ) == 0 )
+				{
+					// Found a match!
 					break;
 				}
+
 				pItem = pItem->pNext;
 			}
 
 			if ( pItem )
 			{
-				sprintf( szValue, "%s", pItem->szValue );
+				Q_snprintf( szValue, sizeof( szValue ), "%s", pItem->szValue );
 			}
-			else  //Couln't find index
+			else  //Couldn't find index
 			{
-				sprintf( szValue, "%s", pObj->defValue );
+				Q_snprintf( szValue, sizeof( szValue ), "%s", pObj->defValue );
 			}
 			break;
 		}
 
 		// Remove double quotes and % characters
-		UTIL_StripInvalidCharacters( szValue );
+		UTIL_StripInvalidCharacters( szValue, sizeof( szValue ) );
 
-		strcpy( strValue, szValue );
+		Q_strncpy( strValue, szValue, sizeof( strValue ) );
 
 		pObj->SetCurValue( strValue );
 
@@ -293,7 +387,7 @@ void CCreateMultiplayerGameGameplayPage::GatherCurrentValues()
 //-----------------------------------------------------------------------------
 // Purpose: Constructor, load/save server settings object
 //-----------------------------------------------------------------------------
-CServerDescription::CServerDescription(CPanelListPanel *panel) : CDescription(panel)
+CServerDescription::CServerDescription( void ) : CDescription()
 {
 	setHint( "// NOTE:  THIS FILE IS AUTOMATICALLY REGENERATED, \r\n"
 "//DO NOT EDIT THIS HEADER, YOUR COMMENTS WILL BE LOST IF YOU DO\r\n"
@@ -337,25 +431,25 @@ void CServerDescription::WriteScriptHeader( FileHandle_t fp )
 {
     char am_pm[] = "AM";
     tm newtime;
-	g_pVCR->Hook_LocalTime( &newtime );
+	VCRHook_LocalTime( &newtime );
 
     if( newtime.tm_hour > 12 )        /* Set up extension. */
-		strcpy( am_pm, "PM" );
+		Q_strncpy( am_pm, "PM", sizeof( am_pm ) );
 	if( newtime.tm_hour > 12 )        /* Convert from 24-hour */
 		newtime.tm_hour -= 12;    /*   to 12-hour clock.  */
 	if( newtime.tm_hour == 0 )        /*Set hour to 12 if midnight. */
 		newtime.tm_hour = 12;
 
-	filesystem()->FPrintf( fp, (char *)getHint() );
+	g_pFullFileSystem->FPrintf( fp, (char *)getHint() );
 
 // Write out the comment and Cvar Info:
-	filesystem()->FPrintf( fp, "// Half-Life Server Configuration Layout Script (stores last settings chosen, too)\r\n" );
-	filesystem()->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
-	filesystem()->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "// Half-Life Server Configuration Layout Script (stores last settings chosen, too)\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
+	g_pFullFileSystem->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
 
-	filesystem()->FPrintf( fp, "VERSION %.1f\r\n\r\n", SCRIPT_VERSION );
+	g_pFullFileSystem->FPrintf( fp, "VERSION %.1f\r\n\r\n", SCRIPT_VERSION );
 
-	filesystem()->FPrintf( fp, "DESCRIPTION SERVER_OPTIONS\r\n{\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "DESCRIPTION SERVER_OPTIONS\r\n{\r\n" );
 }
 
 //-----------------------------------------------------------------------------
@@ -365,17 +459,17 @@ void CServerDescription::WriteFileHeader( FileHandle_t fp )
 {
     char am_pm[] = "AM";
     tm newtime;
-	g_pVCR->Hook_LocalTime( &newtime );
+	VCRHook_LocalTime( &newtime );
 
     if( newtime.tm_hour > 12 )        /* Set up extension. */
-		strcpy( am_pm, "PM" );
+		Q_strncpy( am_pm, "PM", sizeof( am_pm ) );
 	if( newtime.tm_hour > 12 )        /* Convert from 24-hour */
 		newtime.tm_hour -= 12;    /*   to 12-hour clock.  */
 	if( newtime.tm_hour == 0 )        /*Set hour to 12 if midnight. */
 		newtime.tm_hour = 12;
 
-	filesystem()->FPrintf( fp, "// Half-Life Server Configuration Settings\r\n" );
-	filesystem()->FPrintf( fp, "// DO NOT EDIT, GENERATED BY HALF-LIFE\r\n" );
-	filesystem()->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
-	filesystem()->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "// Half-Life Server Configuration Settings\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "// DO NOT EDIT, GENERATED BY HALF-LIFE\r\n" );
+	g_pFullFileSystem->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
+	g_pFullFileSystem->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
 }

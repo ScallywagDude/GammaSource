@@ -1,17 +1,19 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( Shadow, Shadow_DX6 )
 
-BEGIN_SHADER( Shadow_DX6,
-			  "Help for Shadow_DX6" )
+BEGIN_SHADER_FLAGS( Shadow_DX6, "Help for Shadow_DX6", SHADER_NOT_EDITABLE )
 
 	BEGIN_SHADER_PARAMS
 	END_SHADER_PARAMS
@@ -45,8 +47,8 @@ or
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
 
 			// To accomplish shadow fading, subtract vertex alpha from texture alpha
 			// color channel isn't used...
@@ -70,20 +72,18 @@ or
 			EnableAlphaBlending( SHADER_BLEND_DST_COLOR, SHADER_BLEND_ZERO );
 			pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_COLOR | 
 				SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_TEXCOORD1 );
+			// We need to fog to *white* regardless of overbrighting...
+			FogToWhite();
 		}
 		DYNAMIC_STATE
 		{
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-			BindTexture( SHADER_TEXTURE_STAGE1, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER1, BASETEXTURE, FRAME );
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE1, BASETEXTURETRANSFORM );
 
 			// The constant color is the shadow color...
 			SetColorState( COLOR );
-
-			// We need to fog to *white* regardless of overbrighting...
-			pShaderAPI->FogMode( pShaderAPI->GetSceneFogMode() );
-			pShaderAPI->FogColor3f( 1.0f, 1.0f, 1.0f );
 		}
 		Draw( );
 	}

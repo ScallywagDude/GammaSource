@@ -1,13 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
+
 #include "basetypes.h"
 #include "traceinit.h"
 #include "utlvector.h"
 #include "sys.h"
+#include "common.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -35,8 +38,8 @@ public:
 		int			sequence;
 		bool		warningprinted;
 		// Profiling data
-		double		inittime;
-		double		shutdowntime;
+		float		inittime;
+		float		shutdowntime;
 	};
 
 								CInitTracker( void );
@@ -76,7 +79,7 @@ CInitTracker::~CInitTracker( void )
 			InitFunc *f = m_Funcs[ l ][ i ];
 			if ( f->referencecount )
 			{
-				Sys_Printf( "Missing shutdown function for %s : %s\n", f->initname, f->shutdownname );
+				Msg( "Missing shutdown function for %s : %s\n", f->initname, f->shutdownname );
 			}
 			delete f;
 		}
@@ -114,7 +117,7 @@ void CInitTracker::Shutdown( const char *shutdown, int listnum )
 {
 	if( !m_nNumFuncs[ listnum ] )
 	{
-		Sys_Printf( "Mismatched shutdown function %s\n", shutdown );
+		Msg( "Mismatched shutdown function %s\n", shutdown );
 		return;
 	}
 	
@@ -132,13 +135,13 @@ void CInitTracker::Shutdown( const char *shutdown, int listnum )
 		if ( !f->warningprinted )
 		{
 			f->warningprinted = true;
-			//Sys_Printf( "Shutdown function %s called out of order, expecting %s\n", shutdown, f->shutdownname );
+			//Msg( "Shutdown function %s called out of order, expecting %s\n", shutdown, f->shutdownname );
 		}
 	}
 
 	for ( i = 0; i < m_nNumFuncs[ listnum ]; i++ )
 	{
-		InitFunc *f = m_Funcs[ listnum ][ i ];
+		f = m_Funcs[ listnum ][ i ];
 
 		if ( !stricmp( f->shutdownname, shutdown ) )
 		{
@@ -149,7 +152,7 @@ void CInitTracker::Shutdown( const char *shutdown, int listnum )
 		}
 	}
 
-	Sys_Printf( "Shutdown function %s not in list!!!\n", shutdown );
+	Msg( "Shutdown function %s not in list!!!\n", shutdown );
 }
 
 //-----------------------------------------------------------------------------
@@ -160,6 +163,8 @@ void CInitTracker::Shutdown( const char *shutdown, int listnum )
 void TraceInit( const char *i, const char *s, int listnum )
 {
 	g_InitTracker.Init( i, s, listnum );
+
+	COM_TimestampedLog( "%s", i );
 }
 
 //-----------------------------------------------------------------------------

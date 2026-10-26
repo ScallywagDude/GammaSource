@@ -1,9 +1,9 @@
-//========= Copyright (c) 1996-2002, Valve LLC, All rights reserved. ==========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VPHYSICS_SAVERESTORE_H
 #define VPHYSICS_SAVERESTORE_H
@@ -53,12 +53,12 @@ public:
 
 extern CVPhysPtrSaveRestoreOps g_VPhysPtrSaveRestoreOps;
 
+#define DEFINE_VPHYSPTR(name) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef,name), 0 }, 1, FTYPEDESC_SAVE, NULL, &g_VPhysPtrSaveRestoreOps, NULL }
 
-#define DEFINE_VPHYSPTR(type,name) \
-	{ FIELD_CUSTOM, #name, { offsetof(type,name), 0 }, 1, FTYPEDESC_SAVE, NULL, &g_VPhysPtrSaveRestoreOps, NULL }
+#define DEFINE_VPHYSPTR_ARRAY(name,count) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef,name), 0 }, count, FTYPEDESC_SAVE, NULL, &g_VPhysPtrSaveRestoreOps, NULL }
 
-#define DEFINE_VPHYSPTR_ARRAY(type,name,count) \
-	{ FIELD_CUSTOM, #name, { offsetof(type,name), 0 }, count, FTYPEDESC_SAVE, NULL, &g_VPhysPtrSaveRestoreOps, NULL }
 
 //-----------------------------------------------------------------------------
 
@@ -69,13 +69,14 @@ public:
 	void Restore( const SaveRestoreFieldInfo_t &fieldInfo, IRestore *pRestore );
 
 private:
-	typedef CUtlVector<int> VPhysPtrVector;
+	typedef CUtlVector<intp> VPhysPtrVector;
 };
 
 extern CVPhysPtrUtlVectorSaveRestoreOps g_VPhysPtrUtlVectorSaveRestoreOps;
 
-#define DEFINE_VPHYSPTR_UTLVECTOR(type,name) \
-	{ FIELD_CUSTOM, #name, { offsetof(type,name), 0 }, 1, FTYPEDESC_SAVE, NULL, &g_VPhysPtrUtlVectorSaveRestoreOps, NULL }
+#define DEFINE_VPHYSPTR_UTLVECTOR(name) \
+	{ FIELD_CUSTOM, #name, { offsetof(classNameTypedef,name), 0 }, 1, FTYPEDESC_SAVE, NULL, &g_VPhysPtrUtlVectorSaveRestoreOps, NULL }
+
 
 //-----------------------------------------------------------------------------
 

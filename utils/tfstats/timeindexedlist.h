@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Interface AND implementation of CTimeIndexedList
 //
@@ -14,14 +9,13 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef TIMEINDEXEDLIST_H
 #define TIMEINDEXEDLIST_H
 #ifdef WIN32
 #pragma once
 #endif
 #include <list>
-#include <map>
 #include "TFStatsApplication.h"
 #include "util.h"
 //------------------------------------------------------------------------------------------------------
@@ -38,8 +32,8 @@ class CTimeIndexedList
 public:
 	static time_t PENDING;
 	typedef struct{T data;time_t start; time_t end;} listtype;
-	typedef typename std::list<listtype>::iterator iterator;
-	typedef typename std::map<T,time_t>::iterator accumulatorIterator;
+	typedef std::list<listtype>::iterator iterator;
+	typedef std::map<T,time_t>::iterator accumulatorIterator;
 	typedef std::map<T,time_t> accumulator;
 	typedef std::list<listtype> timelist;
 	
@@ -77,25 +71,25 @@ CTimeIndexedList<T>::CTimeIndexedList()
 //------------------------------------------------------------------------------------------------------
 // Function:	CTimeIndexedList<T>::accumulate
 // Purpose:	
-// Output:	typename CTimeIndexedList<T>::accumulator
+// Output:	CTimeIndexedList<T>::accumulator
 //------------------------------------------------------------------------------------------------------
 template<class T>
-typename CTimeIndexedList<T>::accumulator CTimeIndexedList<T>::accumulate()
+CTimeIndexedList<T>::accumulator CTimeIndexedList<T>::accumulate()
 {
-	typename CTimeIndexedList<T>::accumulator accum; //maps from a value of T, to the time that value was played
+	CTimeIndexedList<T>::accumulator accum; //maps from a value of T, to the time that value was played
 	
 /*
 	//iterate through for debugging purposes
 	{
 
-		typename CTimeIndexedList<T>::iterator it=theList.begin();
+		CTimeIndexedList<T>::iterator it=theList.begin();
 		for (it;it!=theList.end();++it)
 		{
 			CTimeIndexedList<T>::listtype lt=*it;
 		}
 	}
 */	
-	typename CTimeIndexedList<T>::iterator it=theList.begin();	
+	CTimeIndexedList<T>::iterator it=theList.begin();	
 	for (it;it!=theList.end();++it)
 	{
 		time_t start=it->start;
@@ -134,7 +128,7 @@ void CTimeIndexedList<T>::add(time_t a,T b)
 	if (!theList.empty())
 	{
 		//find the last element and fix up its end-time (if it's pending)
-		typename CTimeIndexedList<T>::iterator last=theList.end();
+		CTimeIndexedList<T>::iterator last=theList.end();
 		last--;
 		listtype lt=*last;
 
@@ -161,7 +155,7 @@ void CTimeIndexedList<T>::add(time_t a,T b)
 template <class T>
 T CTimeIndexedList<T>::atTime(time_t tm,T errorvalue)
 {
-	typename CTimeIndexedList<T>::iterator it;
+	CTimeIndexedList<T>::iterator it;
 	if (theList.empty())
 		return errorvalue;
 
@@ -194,13 +188,13 @@ T CTimeIndexedList<T>::favourite(T errorvalue)
 	if (theList.empty())
 		return errorvalue;
 
-	typename CTimeIndexedList<T>::accumulator accum=accumulate();
+	CTimeIndexedList<T>::accumulator accum=accumulate();
 
 	//now scan that intermediate map, and determine the element with the longest duration
-	typename CTimeIndexedList<T>::accumulatorIterator accumiter=accum.begin();
+	CTimeIndexedList<T>::accumulatorIterator accumiter=accum.begin();
 
 	time_t maxtime=0;
-	typename CTimeIndexedList<T>::accumulatorIterator fave=accumiter;
+	CTimeIndexedList<T>::accumulatorIterator fave=accumiter;
 
 	T t= fave->first;
 	for (accumiter;accumiter!=accum.end();++accumiter)
@@ -229,7 +223,7 @@ T CTimeIndexedList<T>::favourite(T errorvalue)
 template <class T>
 bool CTimeIndexedList<T>::contains(const T& t)
 {
-	typename CTimeIndexedList<T>::iterator it=theList.begin();
+	CTimeIndexedList<T>::iterator it=theList.begin();
 	for (it=theList.begin();it!=theList.end();++it)
 	{
 		if (it->data==t)
@@ -244,19 +238,19 @@ time_t CTimeIndexedList<T>::howLong(const T& t)
 	if (theList.begin()==theList.end())
 		return 0;
 
-	typename CTimeIndexedList<T>::accumulator accum=accumulate(); //maps from a value of T, to the time that value was played
+	CTimeIndexedList<T>::accumulator accum=accumulate(); //maps from a value of T, to the time that value was played
 	
 	return accum[t];
 }
 
 template <class T>
-typename CTimeIndexedList<T>::iterator CTimeIndexedList<T>::begin()
+CTimeIndexedList<T>::iterator CTimeIndexedList<T>::begin()
 {
 	return theList.begin();
 }
 
 template <class T>
-typename CTimeIndexedList<T>::iterator CTimeIndexedList<T>::end()
+CTimeIndexedList<T>::iterator CTimeIndexedList<T>::end()
 {
 	return theList.end();
 }
@@ -275,7 +269,7 @@ int CTimeIndexedList<T>::numDifferent()
 		return 0;
 
 	 //maps from a value of T, to the time that value was played
-	typename CTimeIndexedList<T>::accumulator accum=accumulate();
+	CTimeIndexedList<T>::accumulator accum=accumulate();
 
 	return accum.size();
 }
@@ -289,7 +283,7 @@ void CTimeIndexedList<T>::cut(time_t t)
 	if (!theList.empty())
 	{
 		//find the last element and fix up its end-time (if it's pending)
-		typename CTimeIndexedList<T>::iterator last=theList.end();
+		CTimeIndexedList<T>::iterator last=theList.end();
 		last--;
 
 		if (last->end==PENDING)
@@ -301,7 +295,7 @@ void CTimeIndexedList<T>::cut(time_t t)
 template<class T>
 void CTimeIndexedList<T>::remove(T b)
 {
-	typename CTimeIndexedList<T>::iterator it=theList.begin();
+	CTimeIndexedList<T>::iterator it=theList.begin();
 	
 	while(it!=theList.end())
 	{
@@ -322,14 +316,14 @@ bool CTimeIndexedList<T>::anythingAtTime(time_t tm)
 	//iterate through for debugging purposes
 	{
 
-		typename CTimeIndexedList<T>::iterator it=theList.begin();
+		CTimeIndexedList<T>::iterator it=theList.begin();
 		for (it;it!=theList.end();++it)
 		{
 			CTimeIndexedList<T>::listtype lt=*it;
 		}
 	}
 	*/
-	typename CTimeIndexedList<T>::iterator it;
+	CTimeIndexedList<T>::iterator it;
 	if (theList.empty())
 		return false;
 

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
  
 #include <stdarg.h>
 #include "dt_send.h"
@@ -12,20 +12,22 @@
 #include "dt_encode.h"
 #include "convar.h"
 #include "commonmacros.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "tier0/dbg.h"
+#include "dt_stack.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 
-#define MAX_TOTAL_SENDTABLE_PROPS	1024
-#define PROPINDEX_NUMBITS 10
+#define PROPINDEX_NUMBITS 12
+#define MAX_TOTAL_SENDTABLE_PROPS	(1 << PROPINDEX_NUMBITS)
 
 
-ConVar g_CV_DTWatchEnt( "dtwatchent", "-1", 0 );
-ConVar g_CV_DTWatchVar( "dtwatchvar", "", 0 );
-ConVar g_CV_DTWarning( "dtwarning", "0", 0 );
+ConVar g_CV_DTWatchEnt( "dtwatchent", "-1", 0, "Watch this entities data table encoding." );
+ConVar g_CV_DTWatchVar( "dtwatchvar", "", 0, "Watch the named variable." );
+ConVar g_CV_DTWarning( "dtwarning", "0", 0, "Print data table warnings?" );
+ConVar g_CV_DTWatchClass( "dtwatchclass", "", 0, "Watch all fields encoded with this table." );
 
 
 
@@ -53,165 +55,6 @@ public:
 };
 
 
-// ------------------------------------------------------------------------------------ //
-// CDeltaBitsWriter.
-// ------------------------------------------------------------------------------------ //
-
-// OLD.. THIS CAN BE REMOVED ANYTIME.
-// #define TRACK_PROP_DELTA_BITS
-#if defined( TRACK_PROP_DELTA_BITS )
-	bool g_bTrackProps = false;
-
-	int g_nProps = 0;
-	int g_TotalPropDiff = 0;
-	int g_MaxPropDiff = 0;
-	int g_MinPropDiff = 10000;
-
-	int g_nTotalDeltaBits = 0;
-
-	class CChecker
-	{
-	public:
-		~CChecker()
-		{
-			float avgDiff = (float)g_TotalPropDiff / g_nProps;
-			float avgBits = (float)g_nTotalDeltaBits / g_nProps;
-		}
-	} asdf;
-#endif
-
-
-CDeltaBitsWriter::CDeltaBitsWriter( bf_write *pBuf )
-{
-	m_pBuf = pBuf;
-	m_iLastProp = -1;
-}
-
-
-CDeltaBitsWriter::~CDeltaBitsWriter()
-{
-	// Write a final zero bit, signifying that there are no more properties in the buffer.
-	m_pBuf->WriteOneBit( 0 );
-}
-
-
-int CDeltaBitsWriter::WritePropIndex( int iProp )
-{
-	int diff = iProp - m_iLastProp;
-	m_iLastProp = iProp;
-
-	m_pBuf->WriteOneBit( 1 );
-	int nBitsToEncode = 1;
-
-	--diff; // It's always at least 1 so subtract 1.
-	int iIteration=1;
-	bool bForceContinue;
-	do
-	{
-		int maxVal = (1 << iIteration)-1;
-		int val;
-		if ( diff >= maxVal )
-		{
-			val = maxVal;
-			bForceContinue = true; // must go through once more, even if the next value is a zero.
-		}
-		else
-		{
-			bForceContinue = false;
-			val = diff;
-		}
-
-		m_pBuf->WriteUBitLong( val, iIteration );
-		nBitsToEncode += iIteration;
-
-		diff -= val;
-		++iIteration;
-	} while ( diff || bForceContinue );
-
-#if defined( TRACK_PROP_DELTA_BITS )
-	if ( g_bTrackProps )
-	{
-		g_TotalPropDiff += diff;
-		++g_nProps;
-	
-		if ( diff > g_MaxPropDiff )
-			g_MaxPropDiff = diff;
-		
-		if ( diff < g_MinPropDiff )
-			g_MinPropDiff = diff;
-	}
-	g_nTotalDeltaBits += nBitsToEncode;
-#endif
-
-	return nBitsToEncode;
-}
-
-
-// ------------------------------------------------------------------------------------ //
-// CDeltaBitsReader.
-// ------------------------------------------------------------------------------------ //
-
-CDeltaBitsReader::CDeltaBitsReader( bf_read *pBuf )
-{
-	m_pBuf = pBuf;
-	m_bFinished = false;
-	m_iLastProp = -1;
-}
-
-
-CDeltaBitsReader::~CDeltaBitsReader()
-{
-	// Make sure they read to the end unless they specifically said they don't care.
-	if ( m_pBuf )
-	{
-		Assert( m_bFinished );
-	}
-}
-
-
-bool CDeltaBitsReader::ReadNextPropIndex( int *iProp )
-{
-	Assert( !m_bFinished );
-
-	if ( m_pBuf->ReadOneBit() )
-	{
-		*iProp = m_iLastProp + 1;
-		int iIteration = 1;
-		while ( 1 )
-		{
-			int val = m_pBuf->ReadUBitLong( iIteration );
-			*iProp += val;
-
-			if ( val == (1 << iIteration)-1 )
-			{
-				// Ok, there's more.
-				++iIteration;
-			}
-			else
-			{
-				// No more.. break out.
-				break;
-			}
-		}
-
-		m_iLastProp = *iProp;
-		return true;
-	}
-	else
-	{
-		m_bFinished = true;
-		return false;
-	}
-}
-
-
-void CDeltaBitsReader::ForceFinished()
-{
-	m_bFinished = true;
-	m_pBuf = NULL;
-}
-
-
 // ----------------------------------------------------------------------------- //
 // CSendNode.
 // ----------------------------------------------------------------------------- //
@@ -222,7 +65,8 @@ CSendNode::CSendNode()
 	m_pTable = NULL;
 	
 	m_iFirstRecursiveProp = m_nRecursiveProps = 0;
-	m_iFirstProp = m_nProps = 0;
+
+	m_DataTableProxyIndex = DATATABLE_PROXY_INDEX_INVALID; // set it to a questionable value.
 }
 
 CSendNode::~CSendNode()
@@ -239,10 +83,17 @@ CSendNode::~CSendNode()
 // CSendTablePrecalc
 // ----------------------------------------------------------------------------- //
 
-CSendTablePrecalc::CSendTablePrecalc()
+bool PropOffsetLT( const unsigned short &a, const unsigned short &b )
+{
+	return a < b;
+}
+
+CSendTablePrecalc::CSendTablePrecalc() : 
+	m_PropOffsetToIndexMap( 0, 0, PropOffsetLT )
 {
 	m_pDTITable = NULL;
 	m_pSendTable = 0;
+	m_nDataTableProxies = 0;
 }
 
 
@@ -304,26 +155,46 @@ static bool SendTable_GetPropsExcluded( const SendTable *pTable, ExcludeProp *pE
 
 
 // Set the datatable proxy indices in all datatable SendProps.
-static void SetDataTableProxyIndices_R( SendTable *pMainTable, SendTable *pCurTable )
+static void SetDataTableProxyIndices_R( 
+	CSendTablePrecalc *pMainTable, 
+	CSendNode *pCurTable,
+	CBuildHierarchyStruct *bhs )
 {
-	for ( int i=0; i < pCurTable->GetNumProps(); i++ )
+	for ( int i=0; i < pCurTable->GetNumChildren(); i++ )
 	{
-		SendProp *pProp = pCurTable->GetProp( i );
-	
-		if ( pProp->GetType() != DPT_DataTable )
-			continue;
+		CSendNode *pNode = pCurTable->GetChild( i );
+		const SendProp *pProp = bhs->m_pDatatableProps[pNode->m_iDatatableProp];
 
 		if ( pProp->GetFlags() & SPROP_PROXY_ALWAYS_YES )
 		{
-			pProp->SetDataTableProxyIndex( DATATABLE_PROXY_INDEX_NOPROXY );
+			pNode->SetDataTableProxyIndex( DATATABLE_PROXY_INDEX_NOPROXY );
 		}
 		else
 		{
-			pProp->SetDataTableProxyIndex( pMainTable->GetNumDataTableProxies() );
+			pNode->SetDataTableProxyIndex( pMainTable->GetNumDataTableProxies() );
 			pMainTable->SetNumDataTableProxies( pMainTable->GetNumDataTableProxies() + 1 );
 		}
 
-		SetDataTableProxyIndices_R( pMainTable, pProp->GetDataTable() );
+		SetDataTableProxyIndices_R( pMainTable, pNode, bhs );
+	}
+}
+
+// Set the datatable proxy indices in all datatable SendProps.
+static void SetRecursiveProxyIndices_R( 
+	SendTable *pBaseTable,
+	CSendNode *pCurTable,
+	int &iCurProxyIndex )
+{
+	if ( iCurProxyIndex >= CDatatableStack::MAX_PROXY_RESULTS )
+		Error( "Too many proxies for datatable %s.", pBaseTable->GetName() );
+
+	pCurTable->SetRecursiveProxyIndex( iCurProxyIndex );
+	iCurProxyIndex++;
+	
+	for ( int i=0; i < pCurTable->GetNumChildren(); i++ )
+	{
+		CSendNode *pNode = pCurTable->GetChild( i );
+		SetRecursiveProxyIndices_R( pBaseTable, pNode, iCurProxyIndex );
 	}
 }
 
@@ -332,19 +203,16 @@ void SendTable_BuildHierarchy(
 	CSendNode *pNode,
 	const SendTable *pTable, 
 	CBuildHierarchyStruct *bhs
-	 )
-{
-	pNode->m_pTable = pTable;
-	pNode->m_iFirstRecursiveProp = bhs->m_nProps;
-	
-	Assert( bhs->m_nPropProxies < 255 );
-	unsigned char curPropProxy = bhs->m_nPropProxies;
-	++bhs->m_nPropProxies;
+	);
 
-	const SendProp *pNonDatatableProps[MAX_TOTAL_SENDTABLE_PROPS];
-	int nNonDatatableProps = 0;
-	
-	// First add all the child datatables.
+
+void SendTable_BuildHierarchy_IterateProps(
+	CSendNode *pNode,
+	const SendTable *pTable, 
+	CBuildHierarchyStruct *bhs,
+	const SendProp *pNonDatatableProps[MAX_TOTAL_SENDTABLE_PROPS],
+	int &nNonDatatableProps )
+{
 	int i;
 	for ( i=0; i < pTable->m_nProps; i++ )
 	{
@@ -359,54 +227,183 @@ void SendTable_BuildHierarchy(
 
 		if ( pProp->GetType() == DPT_DataTable )
 		{
-			// Setup a child datatable reference.
-			CSendNode *pChild = new CSendNode;
+			if ( pProp->GetFlags() & SPROP_COLLAPSIBLE )
+			{
+				// This is a base class.. no need to make a new CSendNode (and trigger a bunch of
+				// unnecessary send proxy calls in the datatable stacks).
+				SendTable_BuildHierarchy_IterateProps( 
+					pNode,
+					pProp->GetDataTable(), 
+					bhs, 
+					pNonDatatableProps, 
+					nNonDatatableProps );
+			}
+			else
+			{
+				// Setup a child datatable reference.
+				CSendNode *pChild = new CSendNode;
 
-			// Setup a datatable prop for this node to reference (so the recursion
-			// routines can get at the proxy).
-			ErrorIfNot( bhs->m_nDatatableProps < ARRAYSIZE( bhs->m_pDatatableProps ), 
-				("Overflowed datatable prop list in SendTable '%s'.", pTable->GetName()) 
-			);
-			
-			bhs->m_pDatatableProps[bhs->m_nDatatableProps] = pProp;
-			pChild->m_iDatatableProp = bhs->m_nDatatableProps;
-			++bhs->m_nDatatableProps;
+				// Setup a datatable prop for this node to reference (so the recursion
+				// routines can get at the proxy).
+				if ( bhs->m_nDatatableProps >= ARRAYSIZE( bhs->m_pDatatableProps ) )
+					Error( "Overflowed datatable prop list in SendTable '%s'.", pTable->GetName() );
+				
+				bhs->m_pDatatableProps[bhs->m_nDatatableProps] = pProp;
+				pChild->m_iDatatableProp = bhs->m_nDatatableProps;
+				++bhs->m_nDatatableProps;
 
-			pNode->m_Children.AddToTail( pChild );
+				pNode->m_Children.AddToTail( pChild );
 
-			// Recurse into the new child datatable.
-			SendTable_BuildHierarchy( pChild, pProp->GetDataTable(), bhs );
+				// Recurse into the new child datatable.
+				SendTable_BuildHierarchy( pChild, pProp->GetDataTable(), bhs );
+			}
 		}
 		else
 		{
-			ErrorIfNot( nNonDatatableProps < ARRAYSIZE( pNonDatatableProps ),
-				("SendTable_BuildHierarchy: overflowed non-datatable props with '%s'.", pProp->GetName())
-			);
+			if ( nNonDatatableProps >= MAX_TOTAL_SENDTABLE_PROPS )
+				Error( "SendTable_BuildHierarchy: overflowed non-datatable props with '%s'.", pProp->GetName() );
 			
 			pNonDatatableProps[nNonDatatableProps] = pProp;
 			++nNonDatatableProps;
 		}
 	}
+}
+
+
+void SendTable_BuildHierarchy( 
+	CSendNode *pNode,
+	const SendTable *pTable, 
+	CBuildHierarchyStruct *bhs
+	)
+{
+	pNode->m_pTable = pTable;
+	pNode->m_iFirstRecursiveProp = bhs->m_nProps;
+	
+	Assert( bhs->m_nPropProxies < 255 );
+	unsigned char curPropProxy = bhs->m_nPropProxies;
+	++bhs->m_nPropProxies;
+
+	const SendProp *pNonDatatableProps[MAX_TOTAL_SENDTABLE_PROPS];
+	int nNonDatatableProps = 0;
+	
+	// First add all the child datatables.
+	SendTable_BuildHierarchy_IterateProps(
+		pNode,
+		pTable,
+		bhs,
+		pNonDatatableProps,
+		nNonDatatableProps );
 
 	
 	// Now add the properties.
-	pNode->m_iFirstProp = bhs->m_nProps;
 
 	// Make sure there's room, then just copy the pointers from the loop above.
 	ErrorIfNot( bhs->m_nProps + nNonDatatableProps < ARRAYSIZE( bhs->m_pProps ),
 		("SendTable_BuildHierarchy: overflowed prop buffer.")
 	);
 	
-	for ( i=0; i < nNonDatatableProps; i++ )
+	for ( int i=0; i < nNonDatatableProps; i++ )
 	{
 		bhs->m_pProps[bhs->m_nProps] = pNonDatatableProps[i];
 		bhs->m_PropProxyIndices[bhs->m_nProps] = curPropProxy;
 		++bhs->m_nProps;
 	}
 
-	pNode->m_nProps = nNonDatatableProps;
 	pNode->m_nRecursiveProps = bhs->m_nProps - pNode->m_iFirstRecursiveProp;
 }
+
+void SendTable_SortByPriority(CBuildHierarchyStruct *bhs)
+{
+	int i, start = 0;
+
+	while( true )
+	{
+		for ( i = start; i < bhs->m_nProps; i++ )
+		{
+			const SendProp *p = bhs->m_pProps[i];
+			unsigned char c = bhs->m_PropProxyIndices[i];
+
+			if ( p->GetFlags() & SPROP_CHANGES_OFTEN )
+			{
+				bhs->m_pProps[i] = bhs->m_pProps[start];
+				bhs->m_PropProxyIndices[i] = bhs->m_PropProxyIndices[start];
+				bhs->m_pProps[start] = p;
+				bhs->m_PropProxyIndices[start] = c;
+				start++;
+				break;
+			}
+		}
+
+		if ( i == bhs->m_nProps )
+			return; 
+	}
+}
+
+
+void CalcPathLengths_R( CSendNode *pNode, CUtlVector<int> &pathLengths, int curPathLength, int &totalPathLengths )
+{
+	pathLengths[pNode->GetRecursiveProxyIndex()] = curPathLength;
+	totalPathLengths += curPathLength;
+	
+	for ( int i=0; i < pNode->GetNumChildren(); i++ )
+	{
+		CalcPathLengths_R( pNode->GetChild( i ), pathLengths, curPathLength+1, totalPathLengths );
+	}
+}
+
+
+void FillPathEntries_R( CSendTablePrecalc *pPrecalc, CSendNode *pNode, CSendNode *pParent, int &iCurEntry )
+{
+	// Fill in this node's path.
+	CSendTablePrecalc::CProxyPath &outProxyPath = pPrecalc->m_ProxyPaths[ pNode->GetRecursiveProxyIndex() ];
+	outProxyPath.m_iFirstEntry = (unsigned short)iCurEntry;
+
+	// Copy all the proxies leading to the parent.
+	if ( pParent )
+	{
+		CSendTablePrecalc::CProxyPath &parentProxyPath = pPrecalc->m_ProxyPaths[pParent->GetRecursiveProxyIndex()];
+		outProxyPath.m_nEntries = parentProxyPath.m_nEntries + 1;
+
+		for ( int i=0; i < parentProxyPath.m_nEntries; i++ )
+			pPrecalc->m_ProxyPathEntries[iCurEntry++] = pPrecalc->m_ProxyPathEntries[parentProxyPath.m_iFirstEntry+i];
+		
+		// Now add this node's own proxy.
+		pPrecalc->m_ProxyPathEntries[iCurEntry].m_iProxy = pNode->GetRecursiveProxyIndex();
+		pPrecalc->m_ProxyPathEntries[iCurEntry].m_iDatatableProp = pNode->m_iDatatableProp;
+		++iCurEntry;
+	}
+	else
+	{
+		outProxyPath.m_nEntries = 0;
+	}
+
+	for ( int i=0; i < pNode->GetNumChildren(); i++ )
+	{
+		FillPathEntries_R( pPrecalc, pNode->GetChild( i ), pNode, iCurEntry );
+	}
+}
+
+
+void SendTable_GenerateProxyPaths( CSendTablePrecalc *pPrecalc, int nProxyIndices )
+{
+	// Initialize the array.
+	pPrecalc->m_ProxyPaths.SetSize( nProxyIndices );
+	for ( int i=0; i < nProxyIndices; i++ )
+		pPrecalc->m_ProxyPaths[i].m_iFirstEntry = pPrecalc->m_ProxyPaths[i].m_nEntries = 0xFFFF;
+	
+	// Figure out how long the path down the tree is to each node.
+	int totalPathLengths = 0;
+	CUtlVector<int> pathLengths;
+	pathLengths.SetSize( nProxyIndices );
+	memset( pathLengths.Base(), 0, sizeof( pathLengths[0] ) * nProxyIndices );
+	CalcPathLengths_R( pPrecalc->GetRootNode(), pathLengths, 0, totalPathLengths );
+	
+	// 
+	int iCurEntry = 0;
+	pPrecalc->m_ProxyPathEntries.SetSize( totalPathLengths );
+	FillPathEntries_R( pPrecalc, pPrecalc->GetRootNode(), NULL, iCurEntry );
+}
+
 
 bool CSendTablePrecalc::SetupFlatPropertyArray()
 {
@@ -428,16 +425,23 @@ bool CSendTablePrecalc::SetupFlatPropertyArray()
 	bhs.m_nProps = bhs.m_nDatatableProps = 0;
 	bhs.m_nPropProxies = 0;
 	SendTable_BuildHierarchy( GetRootNode(), pTable, &bhs );
+
+	SendTable_SortByPriority( &bhs );
 	
 	// Copy the SendProp pointers into the precalc.	
+	MEM_ALLOC_CREDIT();
 	m_Props.CopyArray( bhs.m_pProps, bhs.m_nProps );
 	m_DatatableProps.CopyArray( bhs.m_pDatatableProps, bhs.m_nDatatableProps );
 	m_PropProxyIndices.CopyArray( bhs.m_PropProxyIndices, bhs.m_nProps );
 
 	// Assign the datatable proxy indices.
-	pTable->SetNumDataTableProxies( 0 );
-	SetDataTableProxyIndices_R( pTable, pTable );
+	SetNumDataTableProxies( 0 );
+	SetDataTableProxyIndices_R( this, GetRootNode(), &bhs );
+	
+	int nProxyIndices = 0;
+	SetRecursiveProxyIndices_R( pTable, GetRootNode(), nProxyIndices );
 
+	SendTable_GenerateProxyPaths( this, nProxyIndices );
 	return true;
 }
 
@@ -453,23 +457,22 @@ bool AreBitArraysEqual(
 	void const *pvBits2,
 	int nBits ) 
 {
-	int i, nBytes, bit1, bit2;
+	unsigned int const *pBits1 = (unsigned int const *)pvBits1;
+	unsigned int const *pBits2 = (unsigned int const *)pvBits2;
 
-	unsigned char const *pBits1 = (unsigned char*)pvBits1;
-	unsigned char const *pBits2 = (unsigned char*)pvBits2;
-
-	// Compare bytes.
-	nBytes = nBits >> 3;
-	if( memcmp( pBits1, pBits2, nBytes ) != 0 )
-		return false;
-
-	// Compare remaining bits.
-	for(i=nBytes << 3; i < nBits; i++)
+	// Compare words.
+	int nWords = nBits >> 5;
+	for ( int i = 0 ; i < nWords; ++i )
 	{
-		bit1 = pBits1[i >> 3] & (1 << (i & 7));
-		bit2 = pBits2[i >> 3] & (1 << (i & 7));
-		if(bit1 != bit2)
+		if ( pBits1[i] != pBits2[i] )
 			return false;
+	}
+
+	if ( nBits & 31 )
+	{
+		// Compare remaining bits.
+		unsigned int mask = (1 << (nBits & 31)) - 1;
+		return ((pBits1[nWords] ^ pBits2[nWords]) & mask) == 0;
 	}
 
 	return true;
@@ -486,14 +489,23 @@ bool CompareBitArrays(
 	)
 {
 	if( nBits1 >= 0 && nBits1 == nBits2 )
-		return AreBitArraysEqual( pPacked1, pPacked2, nBits1 );
+	{
+		if ( pPacked1 == pPacked2 )
+		{
+			return true;
+		}
+		else
+		{
+			return AreBitArraysEqual( pPacked1, pPacked2, nBits1 );
+		}
+	}
 	else
 		return false;
 }
 
 // Looks at the DTWatchEnt and DTWatchProp console variables and returns true
 // if the user wants to watch this property.
-bool ShouldWatchThisProp(int objectID, const char *pPropName)
+bool ShouldWatchThisProp( const SendTable *pTable, int objectID, const char *pPropName )
 {
 	if(g_CV_DTWatchEnt.GetInt() != -1 &&
 		g_CV_DTWatchEnt.GetInt() == objectID)
@@ -508,6 +520,20 @@ bool ShouldWatchThisProp(int objectID, const char *pPropName)
 			return true;
 		}
 	}
+
+	if ( g_CV_DTWatchClass.GetString()[ 0 ] && Q_stristr( pTable->GetName(), g_CV_DTWatchClass.GetString() ) )
+		return true;
+
+	return false;
+}
+
+bool Sendprop_UsingDebugWatch()
+{
+	if ( g_CV_DTWatchEnt.GetInt() != -1 )
+		return true;
+
+	if ( g_CV_DTWatchClass.GetString()[ 0 ] )
+		return true; 
 
 	return false;
 }

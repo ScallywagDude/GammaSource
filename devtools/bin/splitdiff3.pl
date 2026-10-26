@@ -20,7 +20,8 @@ for( $i = 0; $i < scalar( @input ); $i++ )
 		print MERGEDTHEIRS $1;
 		next;
 	}
-	if( $line =~ m/^=======/ )
+	# Make sure that we are in a split block so that comments with ======= don't mess us up.
+	if( $line =~ m/^(.*)=======$/ && $first == 1 )
 	{
 		$first = 0;
 		$second = 1;

@@ -1,26 +1,29 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "CreateTokenDialog.h"
+#include "LocalizationDialog.h"
 
-#include <VGUI_TextEntry.h>
-#include <VGUI_Button.h>
-#include <VGUI_MessageBox.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Controls.h>
-#include <VGUI_ILocalize.h>
+#include "vgui_controls/TextEntry.h"
+#include "vgui_controls/Button.h"
+#include "vgui_controls/MessageBox.h"
+#include "tier1/KeyValues.h"
+#include "vgui/ILocalize.h"
 
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
 // Purpose: Cosntructor
 //-----------------------------------------------------------------------------
-CCreateTokenDialog::CCreateTokenDialog() : Frame(NULL, "CreateTokenDialog")
+CCreateTokenDialog::CCreateTokenDialog( CLocalizationDialog *pLocalizationDialog ) : Frame(NULL, "CreateTokenDialog"),
+	m_pLocalizationDialog( m_pLocalizationDialog )
 {
+	Assert( m_pLocalizationDialog );
+
 	MakePopup();
 
 	SetTitle("Create New Token - Localizer", true);
@@ -83,10 +86,10 @@ void CCreateTokenDialog::OnOK()
 {
 	// get the data
 	char tokenName[1024], tokenValue[1024];
-	m_pTokenName->GetText(0, tokenName, 1023);
-	m_pTokenValue->GetText(0, tokenValue, 1023);
+	m_pTokenName->GetText( tokenName, sizeof( tokenName ) );
+	m_pTokenValue->GetText( tokenValue, sizeof( tokenValue ) );
 
-	if (strlen(tokenName) < 4)
+	if ( Q_strlen( tokenName ) < 4 )
 	{
 		MessageBox *box = new MessageBox("Create Token Error", "Could not create token.\nToken names need to be at least 4 characters long.");
 		box->DoModal();
@@ -95,8 +98,8 @@ void CCreateTokenDialog::OnOK()
 	{
 		// create the token
 		wchar_t unicodeString[1024];
-		vgui::localize()->ConvertANSIToUnicode(tokenValue, unicodeString, sizeof(unicodeString) / sizeof(wchar_t));
-		vgui::localize()->AddString(tokenName, unicodeString);
+		g_pVGuiLocalize->ConvertANSIToUnicode(tokenValue, unicodeString, sizeof(unicodeString) / sizeof(wchar_t));
+		g_pVGuiLocalize->AddString(tokenName, unicodeString, m_pLocalizationDialog->GetFileName() );
 
 		// notify the dialog creator
 		PostActionSignal(new KeyValues("TokenCreated", "name", tokenName));

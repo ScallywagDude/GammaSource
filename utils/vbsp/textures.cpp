@@ -1,36 +1,35 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-//=============================================================================
+//=============================================================================//
 
 #include "vbsp.h"
 #include "utilmatlib.h"
 #include "physdll.h"
 #include <assert.h>
 #include <malloc.h>
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "materialpatch.h"
+#include "KeyValues.h"
 
 void LoadSurfaceProperties( void );
 
 IPhysicsSurfaceProps *physprops = NULL;
 
-extern void COM_FixSlashes( char *pname );
-
 int		nummiptex;
 textureref_t	textureref[MAX_MAP_TEXTURES];
+
+bool g_bHasWater = false;
 
 extern qboolean onlyents;
 
 dtexdata_t *GetTexData( int index )
 {
+	if ( index < 0 )
+		return NULL;
 	Assert( !onlyents );
 	return &dtexdata[ index ];
 }
@@ -52,7 +51,7 @@ int	FindMiptex (const char *name)
 {
 	int		i;
 	MaterialSystemMaterial_t matID;
-	const char *propVal;
+	const char *propVal, *propVal2;
 	int opacity;
 	bool found;
 		
@@ -64,7 +63,7 @@ int	FindMiptex (const char *name)
 		}
 	}
 	if (nummiptex == MAX_MAP_TEXTURES)
-		Error ("MAX_MAP_TEXTURES");
+		Error ("Too many unique textures, max %d", MAX_MAP_TEXTURES);
 	strcpy (textureref[i].name, name);
 
 	textureref[i].lightmapWorldUnitsPerLuxel = 0.0f;
@@ -87,6 +86,11 @@ int	FindMiptex (const char *name)
 		StringIsTrue( propVal ) )
 	{
 		textureref[i].flags |= SURF_SKY | SURF_NOLIGHT;
+	}
+	else if( ( propVal = GetMaterialVar( matID, "%compile2DSky" ) ) &&
+		StringIsTrue( propVal ) )
+	{
+		textureref[i].flags |= SURF_SKY | SURF_SKY2D | SURF_NOLIGHT;
 	}
 	// handle hint brushes
 	else if ( ( propVal = GetMaterialVar( matID, "%compileHint" ) ) &&
@@ -114,6 +118,12 @@ int	FindMiptex (const char *name)
 		textureref[i].contents |= CONTENTS_PLAYERCLIP | CONTENTS_MONSTERCLIP;
 		textureref[i].flags |= SURF_NODRAW | SURF_NOLIGHT;
 	}
+	else if ( ( propVal = GetMaterialVar( matID, "%playerClip" ) ) &&
+		StringIsTrue( propVal ) )
+	{
+		textureref[i].contents |= CONTENTS_PLAYERCLIP;
+		textureref[i].flags |= SURF_NODRAW | SURF_NOLIGHT;
+	}
 	// handle npc clip brushes
 	else if ( ( propVal = GetMaterialVar( matID, "%compileNpcClip" ) ) &&
 		StringIsTrue( propVal ) )
@@ -121,17 +131,27 @@ int	FindMiptex (const char *name)
 		textureref[i].contents |= CONTENTS_MONSTERCLIP;
 		textureref[i].flags |= SURF_NODRAW | SURF_NOLIGHT;
 	}
+	// handle surface lights which are meant to 
+	else if ( ( propVal = GetMaterialVar( matID, "%compileNoChop" ) ) &&
+		StringIsTrue( propVal ) )
+	{
+		textureref[i].flags |= SURF_NOCHOP;
+	}
 	// handle triggers
 	else if ( ( propVal = GetMaterialVar( matID, "%compileTrigger" ) ) &&
 		StringIsTrue( propVal ) )
 	{
-		textureref[i].flags |= SURF_NOLIGHT;
+		textureref[i].flags |= ( SURF_NOLIGHT | SURF_TRIGGER );
+		if ( g_NodrawTriggers )
+		{
+			textureref[i].flags |= SURF_NODRAW;
+		}
 	}
-	else if ( ( propVal = GetMaterialVar( matID, "%compilePlayerControlClip" ) ) &&
-		StringIsTrue( propVal ) )
+	// handle nolight surfs (except water)
+	else if ( (( propVal = GetMaterialVar( matID, "%compileNoLight" ) ) && StringIsTrue( propVal )) && 
+		!(( propVal2 = GetMaterialVar( matID, "%compileWater" ) ) && StringIsTrue( propVal2 ) ) )
 	{
-		textureref[i].contents |= CONTENTS_DETAIL | CONTENTS_MIST;
-		textureref[i].flags |= SURF_NODRAW | SURF_NOLIGHT;
+		textureref[i].flags |= SURF_NOLIGHT;
 	}
 	else
 	{
@@ -144,10 +164,10 @@ int	FindMiptex (const char *name)
 		}
 
 		// handle wet materials
-		if ( ( propVal = GetMaterialVar( matID, "%compileWet" ) ) &&
+		if ( ( propVal = GetMaterialVar( matID, "%noPortal" ) ) &&
 			StringIsTrue( propVal ) )
 		{
-			textureref[i].flags |= SURF_WET;
+			textureref[i].flags |= SURF_NOPORTAL;
 		}
 
 		if ( ( propVal = GetMaterialVar( matID, "%compilePassBullets" ) ) && StringIsTrue( propVal ) )
@@ -171,7 +191,6 @@ int	FindMiptex (const char *name)
 		{
 			textureref[i].flags |= SURF_NOLIGHT;
 		}
-
 		// handle nodraw faces/brushes
 		if ( ( propVal = GetMaterialVar( matID, "%compileNoDraw" ) ) && StringIsTrue( propVal ) )
 		{								    
@@ -191,12 +210,18 @@ int	FindMiptex (const char *name)
 
 		bool checkWindow = true;
 		// handle non solid
-		if ( ( propVal = GetMaterialVar( matID, "%compileNonsolid" ) ) &&
-			StringIsTrue( propVal ) )
+		if ( ( propVal = GetMaterialVar( matID, "%compileNonsolid" ) ) && StringIsTrue( propVal ) )
 		{
 			textureref[i].contents = CONTENTS_OPAQUE;
-			
 			// Non-Solid can't be a window either!
+			checkWindow = false;
+		}
+		// handle block LOS
+		if ( ( propVal = GetMaterialVar( matID, "%compileBlockLOS" ) ) && StringIsTrue( propVal ) )
+		{
+			textureref[i].contents = CONTENTS_BLOCKLOS;
+
+			// BlockLOS can't be a window either!
 			checkWindow = false;
 		}
 
@@ -206,20 +231,41 @@ int	FindMiptex (const char *name)
 			textureref[i].contents |= CONTENTS_DETAIL;
 		}
 
+		bool bKeepLighting = ( ( propVal = GetMaterialVar( matID, "%compileKeepLight" ) ) &&
+			StringIsTrue( propVal ) );
+
 		// handle materials that want to be treated as water.
 		if ( ( propVal = GetMaterialVar( matID, "%compileWater" ) ) &&
 			StringIsTrue( propVal ) )
 		{
 			textureref[i].contents &= ~(CONTENTS_SOLID|CONTENTS_DETAIL);
 			textureref[i].contents |= CONTENTS_WATER;
-			textureref[i].flags |= SURF_WARP;
+			textureref[i].flags |= SURF_WARP | SURF_NOSHADOWS | SURF_NODECALS;
+
+			if ( g_DisableWaterLighting && !bKeepLighting )
+			{
+				textureref[i].flags |= SURF_NOLIGHT;
+			}
+
+			// Set this so that we can check at the end of the process the presence of a a WaterLODControl entity.
+			g_bHasWater = true;
 		}
+		const char *pShaderName = GetMaterialShaderName(matID);
+		if ( !bKeepLighting && !Q_strncasecmp( pShaderName, "water", 5 ) || !Q_strncasecmp( pShaderName, "UnlitGeneric", 12 ) )
+		{
+			//if ( !(textureref[i].flags & SURF_NOLIGHT) )
+			//	Warning("Forcing lit materal %s to nolight\n", name );
+			textureref[i].flags |= SURF_NOLIGHT;
+		}
+
 		if ( ( propVal = GetMaterialVar( matID, "%compileSlime" ) ) &&
 			StringIsTrue( propVal ) )
 		{
 			textureref[i].contents &= ~(CONTENTS_SOLID|CONTENTS_DETAIL);
 			textureref[i].contents |= CONTENTS_SLIME;
-			//textureref[i].flags |= SURF_WARP;
+			textureref[i].flags |= SURF_NODECALS;
+			// Set this so that we can check at the end of the process the presence of a a WaterLODControl entity.
+			g_bHasWater = true;
 		}
 	
 		opacity = GetMaterialShaderPropertyInt( matID, UTILMATLIB_OPACITY );
@@ -241,7 +287,10 @@ int	FindMiptex (const char *name)
 			}
 			
 		}
-
+		if ( textureref[i].flags & SURF_NOLIGHT )
+		{
+			textureref[i].flags &= ~SURF_BUMPLIGHT;
+		}
 	}
 
 	nummiptex++;
@@ -294,7 +343,6 @@ int g_SurfaceProperties[MAX_MAP_TEXDATA];
 
 int GetSurfaceProperties( MaterialSystemMaterial_t matID, const char *pMatName )
 {
-	const char *pName = NULL;
 	const char *pPropString = NULL;
 	int surfaceIndex = -1;
 
@@ -318,7 +366,6 @@ int GetSurfaceProperties( MaterialSystemMaterial_t matID, const char *pMatName )
 
 int GetSurfaceProperties2( MaterialSystemMaterial_t matID, const char *pMatName )
 {
-	const char *pName = NULL;
 	const char *pPropString = NULL;
 	int surfaceIndex = -1;
 
@@ -372,7 +419,7 @@ int FindAliasedTexData( const char *pName_, dtexdata_t *sourceTexture )
 	output = numtexdata;
 	if ( numtexdata >= MAX_MAP_TEXDATA )
 	{
-		Error( "MAX_MAP_TEXDATA" );
+		Error( "Too many unique texture mappings, max = %d\n", MAX_MAP_TEXDATA );
 	}
 	pTexData = GetTexData( output );
 	numtexdata++;
@@ -398,47 +445,57 @@ int FindAliasedTexData( const char *pName_, dtexdata_t *sourceTexture )
 	return output;
 }
 
+
+//-----------------------------------------------------------------------------
+// Finds a texdata for the specified name, returns -1 if not found
+//-----------------------------------------------------------------------------
+int FindTexData( const char *pName )
+{
+	// Make sure the texdata doesn't already exist.
+	for( int i = 0; i < numtexdata; i++ )
+	{
+		char const *pTexDataName = TexDataStringTable_GetString( GetTexData( i )->nameStringTableID );
+		if ( !Q_stricmp( pTexDataName, pName ) )
+			return i;
+	}
+	return -1;
+}
+
+
+
 //-----------------------------------------------------------------------------
 // Purpose: Finds or adds a texdata for the specified name
 // Input  : *pName - texture name
 // Output : int index into dtexdata array
 //-----------------------------------------------------------------------------
-int FindTexData( const char *pName_ )
+int FindOrCreateTexData( const char *pName_ )
 {
 	char *pName = ( char * )_alloca( strlen( pName_ ) + 1 );
 	strcpy( pName, pName_ );
-	int i, output;
-	bool found;
-	dtexdata_t *pTexData;
-	MaterialSystemMaterial_t matID;
 
-	for ( i = 0; i < numtexdata; i++ )
-	{
-		char const *tableName = TexDataStringTable_GetString( GetTexData( i )->nameStringTableID );
+	int nOutput = FindTexData( pName );
+	if ( nOutput >= 0 )
+		return nOutput;
 
-		if ( !strcmp( pName, tableName ) )
-		{
-			return i;
-		}
-	}
-
-	output = numtexdata;
+	// Didn't find it, add a new one
+	nOutput = numtexdata;
 	if ( numtexdata >= MAX_MAP_TEXDATA )
 	{
-		Error( "MAX_MAP_TEXDATA" );
+		Error( "Too many unique texture mappings, max = %d\n", MAX_MAP_TEXDATA );
 	}
-	pTexData = GetTexData( output );
+	dtexdata_t *pTexData = GetTexData( nOutput );
 	numtexdata++;
-
 
 	// Save the name of the material.
 	pTexData->nameStringTableID = TexDataStringTable_AddOrFindString( pName );
+
 	// Get the width, height, view_width, view_height, and reflectivity from the material system.
-	matID = FindOriginalMaterial( pName, &found );
-	if( matID == MATERIAL_NOT_FOUND || (!found) )
+	bool bFound;
+	MaterialSystemMaterial_t matID = FindOriginalMaterial( pName, &bFound );
+	if ( matID == MATERIAL_NOT_FOUND || (!bFound) )
 	{
 		qprintf( "WARNING: material not found: \"%s\"\n", pName );
-		return -1;
+		return nOutput;
 	}
 
 	GetMaterialDimensions( matID, &pTexData->width, &pTexData->height );
@@ -446,7 +503,7 @@ int FindTexData( const char *pName_ )
 	pTexData->view_height = pTexData->height;  // undone: what is this?
 	
 	GetMaterialReflectivity( matID, pTexData->reflectivity.Base() );
-	g_SurfaceProperties[output] = GetSurfaceProperties( matID, pName );
+	g_SurfaceProperties[nOutput] = GetSurfaceProperties( matID, pName );
 
 #if 0
 	Msg( "reflectivity: %f %f %f\n", 
@@ -455,7 +512,7 @@ int FindTexData( const char *pName_ )
 		pTexData->reflectivity[2] );
 #endif
 
-	return output;
+	return nOutput;
 }
 
 int AddCloneTexData( dtexdata_t *pExistingTexData, char const *cloneTexDataName )
@@ -472,60 +529,42 @@ int AddCloneTexData( dtexdata_t *pExistingTexData, char const *cloneTexDataName 
 	return newIndex;
 }
 
+
+//-----------------------------------------------------------------------------
+// Finds a texinfo that exactly matches the passed in texinfo
+//-----------------------------------------------------------------------------
+int FindTexInfo( const texinfo_t &searchTexInfo )
+{
+	for( int i = 0; i < texinfo.Count(); i++ )
+	{
+		// Just an early-out for performance
+		if ( texinfo[i].texdata != searchTexInfo.texdata )
+			continue;
+
+		if ( !memcmp( &texinfo[i], &searchTexInfo, sizeof( texinfo_t ) ) )
+			return i;
+	}
+
+	return -1;
+}
+
+
+//-----------------------------------------------------------------------------
+// Finds or creates a texinfo that exactly matches the passed in texinfo
+//-----------------------------------------------------------------------------
 int FindOrCreateTexInfo( const texinfo_t &searchTexInfo )
 {
-	if ( numtexinfo >= MAX_MAP_TEXINFO )
-	{
-		Error( "Map has too many texinfos, MAX_MAP_TEXINFO == %i\n", MAX_MAP_TEXINFO );
-	}
-
-	texinfo_t *tc = texinfo;
-	int i, j, k;
-	for (i=0 ; i<numtexinfo ; i++, tc++)
-	{
-		if (tc->flags != searchTexInfo.flags)
-			continue;
-		bool skip = false;
-		for (j=0 ; j<2 && !skip ; j++)
-		{
-			if ( tc->texdata != searchTexInfo.texdata )
-			{
-				skip = true;
-				break;
-			}
-			for (k=0 ; k<4 && !skip; k++)
-			{
-				if (tc->textureVecsTexelsPerWorldUnits[j][k] != 
-					searchTexInfo.textureVecsTexelsPerWorldUnits[j][k])
-				{
-					skip = true;
-					break;
-				}
-				if( tc->lightmapVecsLuxelsPerWorldUnits[j][k] != 
-					searchTexInfo.lightmapVecsLuxelsPerWorldUnits[j][k] )
-				{
-					skip = true;
-					break;
-				}
-			}
-		}
-		
-		if ( skip )
-		{
-			continue;
-		}
-	
+	int i = FindTexInfo( searchTexInfo );
+	if ( i >= 0 )
 		return i;
-	}
 
-	*tc = searchTexInfo;
+	i = texinfo.AddToTail( searchTexInfo );
 
 	if ( onlyents )
 	{
-		Error( "FindOrCreateTexInfo:  Tried to create new texinfo during -onlyents compile!\n" );
+		Error( "FindOrCreateTexInfo:  Tried to create new texinfo during -onlyents compile!\nMust compile without -onlyents" );
 	}
 
-	numtexinfo++;
 	return i;
 }
 
@@ -535,8 +574,8 @@ int TexinfoForBrushTexture (plane_t *plane, brush_texture_t *bt, const Vector& o
 	int		sv, tv;
 	vec_t	ang, sinv, cosv;
 	vec_t	ns, nt;
-	texinfo_t	tx, *tc;
-	int		i, j, k;
+	texinfo_t	tx;
+	int		i, j;
 
 	if (!bt->name[0])
 		return 0;
@@ -554,6 +593,9 @@ int TexinfoForBrushTexture (plane_t *plane, brush_texture_t *bt, const Vector& o
 	if (!bt->textureWorldUnitsPerTexel[1])
 		bt->textureWorldUnitsPerTexel[1] = 1;
 
+
+	float shiftScaleU = 1.0f / 16.0f;
+	float shiftScaleV = 1.0f / 16.0f;
 
 	if (g_nMapFileVersion < 220)
 	{
@@ -621,6 +663,9 @@ int TexinfoForBrushTexture (plane_t *plane, brush_texture_t *bt, const Vector& o
 		tx.lightmapVecsLuxelsPerWorldUnits[1][0] = bt->VAxis[0] / bt->lightmapWorldUnitsPerLuxel;
 		tx.lightmapVecsLuxelsPerWorldUnits[1][1] = bt->VAxis[1] / bt->lightmapWorldUnitsPerLuxel;
 		tx.lightmapVecsLuxelsPerWorldUnits[1][2] = bt->VAxis[2] / bt->lightmapWorldUnitsPerLuxel;
+
+		shiftScaleU = bt->textureWorldUnitsPerTexel[0] / bt->lightmapWorldUnitsPerLuxel;
+		shiftScaleV = bt->textureWorldUnitsPerTexel[1] / bt->lightmapWorldUnitsPerLuxel;
 	}
 
 	tx.textureVecsTexelsPerWorldUnits[0][3] = bt->shift[0] + 
@@ -628,72 +673,38 @@ int TexinfoForBrushTexture (plane_t *plane, brush_texture_t *bt, const Vector& o
 	tx.textureVecsTexelsPerWorldUnits[1][3] = bt->shift[1] + 
 		DOT_PRODUCT( origin, tx.textureVecsTexelsPerWorldUnits[1] );
 	
-	tx.lightmapVecsLuxelsPerWorldUnits[0][3] = bt->shift[0] +
+	tx.lightmapVecsLuxelsPerWorldUnits[0][3] = shiftScaleU * bt->shift[0] +
 		DOT_PRODUCT( origin, tx.lightmapVecsLuxelsPerWorldUnits[0] );
-	tx.lightmapVecsLuxelsPerWorldUnits[1][3] = bt->shift[1] +
+	tx.lightmapVecsLuxelsPerWorldUnits[1][3] = shiftScaleV * bt->shift[1] +
 		DOT_PRODUCT( origin, tx.lightmapVecsLuxelsPerWorldUnits[1] );
 	
 	tx.flags = bt->flags;
+	tx.texdata = FindOrCreateTexData( bt->name );
 
-	//
 	// find the texinfo
-	//
-	if ( numtexinfo >= MAX_MAP_TEXINFO )
-	{
-		Error( "Map has too many texinfos, MAX_MAP_TEXINFO == %i\n", MAX_MAP_TEXINFO );
-	}
-
-	tc = texinfo;
-	tx.texdata = FindTexData( bt->name );
-	for (i=0 ; i<numtexinfo ; i++, tc++)
-	{
-		if (tc->flags != tx.flags)
-			continue;
-		bool skip = false;
-		for (j=0 ; j<2 && !skip; j++)
-		{
-			if ( tc->texdata != tx.texdata )
-			{
-				skip = true;
-				break;
-			}
-			for (k=0 ; k<4 && !skip; k++)
-			{
-				if (tc->textureVecsTexelsPerWorldUnits[j][k] != tx.textureVecsTexelsPerWorldUnits[j][k])
-				{
-					skip = true;
-					break;
-				}
-				if( tc->lightmapVecsLuxelsPerWorldUnits[j][k] != tx.lightmapVecsLuxelsPerWorldUnits[j][k] )
-				{
-					skip = true;
-					break;
-				}
-			}
-		}
-
-		if ( skip )
-		{
-			continue;
-		}
-
-		return i;
-	}
-
-	*tc = tx;
-
-	if ( onlyents )
-	{
-		Error( "FindOrCreateTexInfo:  Tried to create new texinfo during -onlyents compile!\n" );
-	}
-
-	numtexinfo++;
-
-	return i;
+	return FindOrCreateTexInfo( tx );
 }
 
 
-static const char *pMaterialFilename = "scripts/surfaceproperties.txt";
+void LoadSurfacePropFile( const char *pMaterialFilename )
+{
+	FileHandle_t fp = g_pFileSystem->Open( pMaterialFilename, "rb" );
+
+	if ( fp == FILESYSTEM_INVALID_HANDLE )
+	{
+		return;
+	}
+
+	int len = g_pFileSystem->Size( fp );
+
+	char *pText = new char[len];
+	g_pFileSystem->Read( pText, len, fp );
+	g_pFileSystem->Close( fp );
+
+	physprops->ParseSurfaceData( pMaterialFilename, pText );
+
+	delete[] pText;
+}
 //-----------------------------------------------------------------------------
 // Purpose: Loads the surface properties database into the physics DLL
 //-----------------------------------------------------------------------------
@@ -705,32 +716,22 @@ void LoadSurfaceProperties( void )
 
 	physprops = (IPhysicsSurfaceProps *)physicsFactory( VPHYSICS_SURFACEPROPS_INTERFACE_VERSION, NULL );
 
-	char buf[1024];
-	strcpy( buf, gamedir );
-	strcat( buf, pMaterialFilename );
-	FILE *fp = fopen( buf, "rb" );
-
-	if ( !fp )
+	const char *SURFACEPROP_MANIFEST_FILE = "scripts/surfaceproperties_manifest.txt";
+	KeyValues *manifest = new KeyValues( SURFACEPROP_MANIFEST_FILE );
+	if ( manifest->LoadFromFile( g_pFileSystem, SURFACEPROP_MANIFEST_FILE, "GAME" ) )
 	{
-		// try base game dir
-		strcpy( buf, basegamedir );
-		strcat( buf, pMaterialFilename );
-		fp = fopen( buf, "rb" );
-		if ( !fp )
-			return;
+		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		{
+			if ( !Q_stricmp( sub->GetName(), "file" ) )
+			{
+				// Add
+				LoadSurfacePropFile( sub->GetString() );
+				continue;
+			}
+		}
 	}
 
-	fseek( fp, 0, SEEK_END );
-
-	int len = ftell(fp);
-	fseek( fp, 0, SEEK_SET );
-
-	char *pText = new char[len];
-	fread( pText, len, 1, fp );
-	fclose( fp );
-
-	physprops->ParseSurfaceData( pMaterialFilename, pText );
-
-	delete[] pText;
+	manifest->deleteThis();
 }
+
 

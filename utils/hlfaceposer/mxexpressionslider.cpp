@@ -1,13 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <stdio.h>
 #include <windows.h>
 #include "mxExpressionSlider.h"
-#include "mathlib.h"
+#include "expressiontool.h"
+#include "mathlib/mathlib.h"
 #include "hlfaceposer.h"
 #include "choreowidgetdrawhelper.h"
 
@@ -31,6 +32,9 @@ mxExpressionSlider::mxExpressionSlider (mxWindow *parent, int x, int y, int w, i
 
 	m_flSetting[ 0 ] = 0.0;
 	m_flSetting[ 1 ] = 0.0;
+
+	m_bIsEdited[ 0 ] = false;
+	m_bIsEdited[ 1 ] = false;
 
 	m_bDraggingThumb = false;
 	m_nCurrentBar = 0;
@@ -87,10 +91,14 @@ void mxExpressionSlider::BoundValue( void )
 	
 void mxExpressionSlider::setValue( int barnum, float value )
 {
+	if (m_flSetting[ barnum ] == value && m_bIsEdited[ barnum ] == false)
+		return;
+
+	m_flSetting[ barnum ] = value;
+	m_bIsEdited[ barnum ] = false;
+
 	if (m_bPaired)
 	{
-		m_flSetting[ barnum ] = value;
-
 		if (m_flSetting[ 0 ] < m_flSetting[ 1 ])
 		{
 			m_flCurrent[ 0 ] = m_flSetting[ 1 ];
@@ -111,8 +119,11 @@ void mxExpressionSlider::setValue( int barnum, float value )
 	{
 		m_flCurrent[ barnum ] = value;
 	}
+
 	BoundValue();
-	redraw();
+	// FIXME: delay this until all sliders are set
+	if (!m_bPaired || barnum == 1)
+		redraw();
 }
 
 void mxExpressionSlider::setRange( int barnum, float min, float max, int ticks /*= 100*/ )
@@ -131,8 +142,13 @@ void mxExpressionSlider::setRange( int barnum, float min, float max, int ticks /
 
 void mxExpressionSlider::setInfluence( float value )
 {
-	m_pInfluence->setChecked( value > 0.5f ? true : false );
-	redraw();
+	bool bWasChecked = m_pInfluence->isChecked( );
+	bool bNowChecked = value > 0.0f ? true : false;
+	if (bNowChecked != bWasChecked)
+	{
+		m_pInfluence->setChecked( bNowChecked );
+		redraw();
+	}
 }
 
 float mxExpressionSlider::getRawValue( int barnum ) const
@@ -173,6 +189,20 @@ float mxExpressionSlider::getMaxValue( int barnum ) const
 float mxExpressionSlider::getInfluence(  ) const
 {
 	return m_pInfluence->isChecked() ? 1.0f : 0.0f;
+}
+
+void mxExpressionSlider::setEdited( int barnum, bool isEdited )
+{
+	if (m_bIsEdited[ barnum ] == isEdited)
+		return;
+	
+	m_bIsEdited[ barnum ] = isEdited;
+	redraw();
+}
+
+bool mxExpressionSlider::isEdited( int barnum ) const
+{
+	return (m_bIsEdited[ barnum ]);
 }
 
 void mxExpressionSlider::GetSliderRect( RECT& rc )
@@ -305,10 +335,7 @@ void mxExpressionSlider::DrawThumb( int barnum, HDC& dc )
 	{
 	default:
 	case MAGNITUDE_BAR:
-
-		if ( m_flCurrent[ barnum ] != m_flMin[ barnum ] )
 		{
-			// float frac = ( m_flCurrent[ barnum ] - m_flMin[ barnum ] ) / (  m_flMax[ barnum ] - m_flMin[ barnum ] );
 			float frac;
 			if (m_flCurrent[ barnum ] < 0)
 			{
@@ -334,14 +361,10 @@ void mxExpressionSlider::DrawThumb( int barnum, HDC& dc )
 
 			face = CreateSolidBrush( RGB( r, g, b ) );
 		}
-		else
-		{
-			face = CreateSolidBrush( GetSysColor( COLOR_3DFACE ) );
-		}
 		break;
 	case BALANCE_BAR:
 		{
-			float frac = ( m_flCurrent[ barnum ] - m_flMin[ barnum ] ) / (  m_flMax[ barnum ] - m_flMin[ barnum ] );
+			float frac = m_flCurrent[ barnum ];
 			frac = min( 1.0f, frac );
 			frac = max( 0.0f, frac );
 
@@ -471,7 +494,14 @@ void mxExpressionSlider::DrawTitle( HDC &dc )
 
 	COLORREF oldColor;
 
-	oldColor = SetTextColor( dc, GetSysColor( COLOR_BTNTEXT ) );
+	if (!isEdited( 0 ))
+	{
+		oldColor = SetTextColor( dc, GetSysColor( COLOR_BTNTEXT ) );
+	}
+	else
+	{
+		oldColor = SetTextColor( dc, RGB( 255, 0, 0 ) );
+	}
 	int oldMode = SetBkMode( dc, TRANSPARENT );
 	oldfont = (HFONT)SelectObject( dc, fnt );
 
@@ -556,6 +586,13 @@ void mxExpressionSlider::MoveThumb( int barnum, int xpos, bool finish )
 		m_flCurrent[ barnum ] = m_flMin[ barnum ] + ((float)curtick / (float)m_nTicks[ 0 ]) * (m_flMax[ barnum ] - m_flMin[ barnum ]);
 	}
 
+	// update equivalent setting
+	m_flSetting[ 0 ] = getValue( 0 );
+	m_flSetting[ 1 ] = getValue( 1 );
+
+	m_bIsEdited[ 0 ] = true;
+	m_bIsEdited[ 1 ] = true;
+
 	// Send message to parent
 	HWND parent = (HWND)( getParent() ? getParent()->getHandle() : NULL );
 	if ( parent )
@@ -593,28 +630,32 @@ int mxExpressionSlider::handleEvent( mxEvent *event )
 				break;
 			case IDC_INFLUENCE:
 				{
-				// FIXME:  DO something when clicked?
-				Con_Printf( "Clicked influence on %s\n", getLabel() );
+					SetFocus( (HWND)getHandle() );
 
-				// Send message to parent
-				HWND parent = (HWND)( getParent() ? getParent()->getHandle() : NULL );
-				if ( parent )
-				{
-					LPARAM lp;
-					WPARAM wp;
+					setEdited( 0, false );
+					setEdited( 1, false );
 
-					wp = MAKEWPARAM( SB_ENDSCROLL, m_nCurrentBar );
-					lp = (long)getHandle();
+					// Send message to parent
+					HWND parent = (HWND)( getParent() ? getParent()->getHandle() : NULL );
+					if ( parent )
+					{
+						LPARAM lp;
+						WPARAM wp;
 
-					SendMessage( parent, WM_HSCROLL, wp, lp );
-				}
-				break;
+						wp = MAKEWPARAM( SB_ENDSCROLL, m_nCurrentBar );
+						lp = (long)getHandle();
+
+						SendMessage( parent, WM_HSCROLL, wp, lp );
+					}
+					break;
 				}
 			}
 		}
 		break;
 	case mxEvent::MouseDown:
 		{
+			SetFocus( (HWND)getHandle() );
+
 			if ( !m_bDraggingThumb )
 			{
 				RECT rcThumb;
@@ -664,6 +705,16 @@ int mxExpressionSlider::handleEvent( mxEvent *event )
 				m_nCurrentBar = 0;
 			}
 			iret = 1;
+		}
+		break;
+	case mxEvent::KeyDown:
+		{
+			if ( event->key == VK_RETURN ||
+				 event->key == 'S' )
+			{
+				// See if there is an event in the flex animation window
+				g_pExpressionTool->OnSetSingleKeyFromFlex( getLabel() );
+			}
 		}
 		break;
 	}

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // faces.c
 
 #include "vbsp.h"
@@ -5,7 +12,7 @@
 #include "utilmatlib.h"
 #include <float.h>
 #include "mstristrip.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "materialpatch.h"
 /*
 
@@ -20,8 +27,8 @@
 #define	USE_HASHING
 
 #define	INTEGRAL_EPSILON	0.01
-#define	POINT_EPSILON		0.25
-#define	OFF_EPSILON			0.5
+#define	POINT_EPSILON		0.1
+#define	OFF_EPSILON			0.25
 
 int	c_merge;
 int	c_subdivide;
@@ -132,7 +139,7 @@ int	GetVertexnum (Vector& in)
 	
 // emit a vertex
 	if (numvertexes == MAX_MAP_VERTS)
-		Error ("numvertexes == MAX_MAP_VERTS");
+		Error ("Too many unique verts, max = %d (map has too much brush geometry)\n", MAX_MAP_VERTS);
 
 	dvertexes[numvertexes].point[0] = vert[0];
 	dvertexes[numvertexes].point[1] = vert[1];
@@ -169,7 +176,7 @@ int	GetVertexnum (Vector& v)
 		if ( fabs(v[i] - (int)(v[i]+0.5)) < INTEGRAL_EPSILON )
 			v[i] = (int)(v[i]+0.5);
 		if (v[i] < MIN_COORD_INTEGER || v[i] > MAX_COORD_INTEGER)
-			Error ("GetVertexnum: outside world");
+			Error ("GetVertexnum: outside world, vertex %.1f %.1f %.1f", v.x, v.y, v.z);
 	}
 
 	// search for an existing vertex match
@@ -187,7 +194,7 @@ int	GetVertexnum (Vector& v)
 
 	// new point
 	if (numvertexes == MAX_MAP_VERTS)
-		Error ("MAX_MAP_VERTS");
+		Error ("Too many unique verts, max = %d (map has too much brush geometry)\n", MAX_MAP_VERTS);
 	VectorCopy (v, dv->point);
 	numvertexes++;
 	c_uniqueverts++;
@@ -269,7 +276,7 @@ void EmitFaceVertexes (face_t **pListHead, face_t *f)
 		if (noweld)
 		{	// make every point unique
 			if (numvertexes == MAX_MAP_VERTS)
-				Error ("MAX_MAP_VERTS");
+				Error ("Too many unique verts, max = %d (map has too much brush geometry)\n", MAX_MAP_VERTS);
 			superverts[i] = numvertexes;
 			VectorCopy (w->p[i], dvertexes[numvertexes].point);
 			numvertexes++;
@@ -460,9 +467,115 @@ void TestEdge (vec_t start, vec_t end, int p1, int p2, int startvert)
 
 	// the edge p1 to p2 is now free of tjunctions
 	if (numsuperverts >= MAX_SUPERVERTS)
-		Error ("MAX_SUPERVERTS");
+		Error ("Edge with too many vertices due to t-junctions.  Max %d verts along an edge!\n", MAX_SUPERVERTS);
 	superverts[numsuperverts] = p1;
 	numsuperverts++;
+}
+
+
+// stores the edges that each vert is part of
+struct face_vert_table_t
+{
+	face_vert_table_t()
+	{
+		edge0 = -1;
+		edge1 = -1;
+	}
+
+	void AddEdge( int edge )
+	{
+		if ( edge0 == -1 )
+		{
+			edge0 = edge;
+		}
+		else
+		{
+			// can only have two edges
+			Assert(edge1==-1);
+			edge1 = edge;
+		}
+	}
+
+	bool HasEdge( int edge ) const
+	{
+		if ( edge >= 0 )
+		{
+			if ( edge0 == edge || edge1 == edge )
+				return true;
+		}
+		return false;
+	}
+	
+	int	edge0;
+	int	edge1;
+};
+
+// if these two verts share an edge, they must be collinear
+bool IsDiagonal( const face_vert_table_t &v0, const face_vert_table_t &v1 )
+{
+	if ( v1.HasEdge(v0.edge0) || v1.HasEdge(v0.edge1) )
+		return false;
+
+	return true;
+}
+
+
+void Triangulate_r( CUtlVector<int> &out, const CUtlVector<int> &inIndices, const CUtlVector<face_vert_table_t> &poly )
+{
+	Assert( inIndices.Count() > 2 );
+
+	// one triangle left, return
+	if ( inIndices.Count() == 3 )
+	{
+		for ( int i = 0; i < inIndices.Count(); i++ )
+		{
+			out.AddToTail( inIndices[i] );
+		}
+		return;
+	}
+
+	// check each pair of verts and see if they are diagonal (not on a shared edge)
+	// if so, split & recurse
+	for ( int i = 0; i < inIndices.Count(); i++ )
+	{
+		int count = inIndices.Count();
+
+		// i + count is myself, i + count-1 is previous, so we need to stop at i+count-2
+		for ( int j = 2; j < count-1; j++ )
+		{
+			// if these two form a diagonal, split the poly along 
+			// the diagonal and triangulate the two sub-polys
+			int index = inIndices[i];
+			int nextArray = (i+j)%count;
+			int nextIndex = inIndices[nextArray];
+			if ( IsDiagonal(poly[index], poly[nextIndex]) )
+			{
+				// add the poly up to the diagonal
+				CUtlVector<int> in1;
+				for ( int k = i; k != nextArray; k = (k+1)%count )
+				{
+					in1.AddToTail(inIndices[k]);
+				}
+				in1.AddToTail(nextIndex);
+
+				// add the rest of the poly starting with the diagonal
+				CUtlVector<int> in2;
+				in2.AddToTail(index);
+				for ( int l = nextArray; l != i; l = (l+1)%count )
+				{
+					in2.AddToTail(inIndices[l]);
+				}
+
+				// triangulate the sub-polys
+				Triangulate_r( out, in1, poly );
+				Triangulate_r( out, in2, poly );
+				return;
+			}
+		}
+	}
+
+	// didn't find a diagonal
+	Assert(0);
 }
 
 /*
@@ -485,6 +598,7 @@ void FixFaceEdges (face_t **pList, face_t *f)
 
 	numsuperverts = 0;
 
+	int originalPoints = f->numpoints;
 	for (i=0 ; i<f->numpoints ; i++)
 	{
 		p1 = f->vertexnums[i];
@@ -524,6 +638,7 @@ void FixFaceEdges (face_t **pList, face_t *f)
 		f->badstartvert = true;
 		c_badstartverts++;
 		base = 0;
+
 	}
 	else
 	{	// rotate the vertex order
@@ -532,6 +647,51 @@ void FixFaceEdges (face_t **pList, face_t *f)
 
 	// this may fragment the face if > MAXEDGES
 	FaceFromSuperverts (pList, f, base);
+
+	// if this is the world, then re-triangulate to sew cracks
+	if ( f->badstartvert && entity_num == 0 )
+	{
+		CUtlVector<face_vert_table_t> poly;
+		CUtlVector<int> inIndices;
+		CUtlVector<int> outIndices;
+		poly.AddMultipleToTail( numsuperverts );
+		for ( i = 0; i < originalPoints; i++ )
+		{
+			// edge may not have output any points.  Don't mark
+			if ( !count[i] )
+				continue;
+			// mark each edge the point is a member of
+			// we'll use this as a fast "is collinear" test
+			for ( int j = 0; j <= count[i]; j++ )
+			{
+				int polyIndex = (start[i] + j) % numsuperverts;
+				poly[polyIndex].AddEdge( i );
+			}
+		}
+		for ( i = 0; i < numsuperverts; i++ )
+		{
+			inIndices.AddToTail( i );
+		}
+		Triangulate_r( outIndices, inIndices, poly );
+		dprimitive_t &newPrim = g_primitives[g_numprimitives];
+		f->firstPrimID = g_numprimitives;
+		g_numprimitives++;
+		f->numPrims = 1;
+		newPrim.firstIndex = g_numprimindices;
+		newPrim.firstVert = g_numprimverts;
+		newPrim.indexCount = outIndices.Count();
+		newPrim.vertCount = 0;
+		newPrim.type = PRIM_TRILIST;
+		g_numprimindices += newPrim.indexCount;
+		if ( g_numprimitives > MAX_MAP_PRIMITIVES || g_numprimindices > MAX_MAP_PRIMINDICES )
+		{
+			Error("Too many t-junctions to fix up! (%d prims, max %d :: %d indices, max %d)\n", g_numprimitives, MAX_MAP_PRIMITIVES, g_numprimindices, MAX_MAP_PRIMINDICES );
+		}
+		for ( i = 0; i < outIndices.Count(); i++ )
+		{
+			g_primindices[newPrim.firstIndex + i] = outIndices[i];
+		}
+	}
 }
 
 /*
@@ -596,19 +756,21 @@ face_t *FixTjuncs (node_t *headnode, face_t *pLeafFaceList)
 	c_degenerate = 0;
 	c_facecollapse = 0;
 	c_tjunctions = 0;
-	if (!notjunc)
+	
+	if ( g_bAllowDetailCracks )
 	{
 		FixEdges_r (headnode);
-
-		// UNDONE: What we really want to do here is not add any world-only tjuncs to the details
-		// But you'd have to know which verts were in each set in the hash in order to build the
-		// proper edges for the leaf faces.
 		EmitLeafFaceVertexes( &pLeafFaceList );
 		FixLeafFaceEdges( &pLeafFaceList );
 	}
 	else
 	{
 		EmitLeafFaceVertexes( &pLeafFaceList );
+		if (!notjunc)
+		{
+			FixEdges_r (headnode);
+			FixLeafFaceEdges( &pLeafFaceList );
+		}
 	}
 
 
@@ -705,7 +867,7 @@ void IntSort( CUtlVector<int> &theList )
 int AddEdge( int v1, int v2, face_t *f )
 {
 	if (numedges >= MAX_MAP_EDGES)
-		Error ("numedges == MAX_MAP_EDGES");
+		Error ("Too many edges in map, max == %d", MAX_MAP_EDGES);
 
 	g_VertEdgeList[v1].AddToTail( numedges );
 	g_VertEdgeList[v2].AddToTail( numedges );
@@ -875,6 +1037,41 @@ winding_t *TryMergeWinding (winding_t *f1, winding_t *f2, Vector& planenormal)
 	return newf;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool OverlaysAreEqual( face_t *f1, face_t *f2 )
+{
+	// Check the overlay ids - see if they are the same.
+	if ( f1->originalface->aOverlayIds.Count() != f2->originalface->aOverlayIds.Count() )
+		return false;
+
+	int nOverlayCount = f1->originalface->aOverlayIds.Count();
+	for ( int iOverlay = 0; iOverlay < nOverlayCount; ++iOverlay )
+	{
+		int nOverlayId = f1->originalface->aOverlayIds[iOverlay];
+		if ( f2->originalface->aOverlayIds.Find( nOverlayId ) == -1 )
+			return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
+bool FaceOnWaterBrush( face_t *face )
+{
+	side_t *pSide = face->originalface;
+	if ( !pSide )
+		return false;
+
+	if ( pSide->contents & ( CONTENTS_WATER | CONTENTS_SLIME ) )
+		return true;
+
+	return false;
+}
+
 /*
 =============
 TryMerge
@@ -899,7 +1096,13 @@ face_t *TryMerge (face_t *f1, face_t *f2, Vector& planenormal)
 		return NULL;
 	if (f1->contents != f2->contents)
 		return NULL;
-    
+    if ( f1->originalface->smoothingGroups != f2->originalface->smoothingGroups )
+        return NULL;
+	if ( !OverlaysAreEqual( f1, f2 ) )
+		return NULL;
+	if ( nomergewater && ( FaceOnWaterBrush( f1 ) || FaceOnWaterBrush( f2 ) ) )
+		return NULL;
+
 	nw = TryMergeWinding (f1->w, f2->w, planenormal);
 	if (!nw)
 		return NULL;
@@ -936,7 +1139,7 @@ void MergeFaceList(face_t **pList)
 			if (f2->merged || f2->split[0] || f2->split[1])
 				continue;
 
-			plane = &mapplanes[f1->planenum];
+			plane = &g_MainMap->mapplanes[f1->planenum];
 			merged = TryMerge (f1, f2, plane->normal);
 			if (!merged)
 				continue;
@@ -1045,6 +1248,47 @@ void SubdivideFaceList(face_t **pFaceList)
 	}
 }
 
+
+//-----------------------------------------------------------------------------
+// Assigns the bottom material to the bottom face
+//-----------------------------------------------------------------------------
+static bool AssignBottomWaterMaterialToFace( face_t *f )
+{
+	// NOTE: This happens *after* cubemap fixup occurs, so we need to get the
+	// fixed-up bottom material for this
+	texinfo_t *pTexInfo = &texinfo[f->texinfo];
+	dtexdata_t *pTexData = GetTexData( pTexInfo->texdata );
+	const char *pMaterialName = TexDataStringTable_GetString( pTexData->nameStringTableID );
+
+	char pBottomMatName[512];
+	if ( !GetValueFromPatchedMaterial( pMaterialName, "$bottommaterial", pBottomMatName, 512 ) )
+	{
+		if( !Q_stristr( pMaterialName, "nodraw" ) && !Q_stristr( pMaterialName, "toolsskip" ) )
+		{
+			Warning("error: material %s doesn't have a $bottommaterial\n", pMaterialName );
+		}
+		return false;
+	}
+
+	//Assert( mapplanes[f->planenum].normal.z < 0 );
+	texinfo_t newTexInfo;
+	newTexInfo.flags = pTexInfo->flags;
+	int j, k;
+	for (j=0 ; j<2 ; j++)
+	{
+		for (k=0 ; k<4 ; k++)
+		{
+			newTexInfo.textureVecsTexelsPerWorldUnits[j][k] = pTexInfo->textureVecsTexelsPerWorldUnits[j][k];
+			newTexInfo.lightmapVecsLuxelsPerWorldUnits[j][k] = pTexInfo->lightmapVecsLuxelsPerWorldUnits[j][k];
+		}
+	}
+	newTexInfo.texdata = FindOrCreateTexData( pBottomMatName );
+	f->texinfo = FindOrCreateTexInfo( newTexInfo );
+
+	return true;
+}
+
+
 //===========================================================================
 
 int	c_nodefaces;
@@ -1087,9 +1331,23 @@ face_t *FaceFromPortal (portal_t *p, int pside)
 
     // save plane info
 	f->planenum = (side->planenum & ~1) | pside;
+	if ( entity_num != 0 )
+	{
+		// the brush model renderer doesn't use PLANEBACK, so write the real plane
+		// inside water faces can be flipped because they are generated on the inside of the brush
+		if ( p->nodes[pside]->contents & (CONTENTS_WATER|CONTENTS_SLIME) )
+		{
+			f->planenum = (side->planenum & ~1) | pside;
+		}
+		else
+		{
+			f->planenum = side->planenum;
+		}
+	}
 
     // save portal info
 	f->portal = p;
+	f->fogVolumeLeaf = NULL;
 
 	deltaContents = VisibleContents(p->nodes[!pside]->contents^p->nodes[pside]->contents);
 	
@@ -1101,44 +1359,23 @@ face_t *FaceFromPortal (portal_t *p, int pside)
 		return NULL;
 	}
 
+	if ( p->nodes[pside]->contents & MASK_WATER )
+	{
+		f->fogVolumeLeaf = p->nodes[pside];
+	}
+	else if ( p->nodes[!pside]->contents & MASK_WATER )
+	{
+		f->fogVolumeLeaf = p->nodes[!pside];
+	}
+
 	// If it's the underside of water, we need to figure out what material to use, etc.
 	if( ( p->nodes[pside]->contents & CONTENTS_WATER ) && deltaContents == CONTENTS_WATER )
 	{
-#if 0
-		FreeFace( f );
-		return NULL;
-#endif
-		
-		// garymcthack - stick in another function
-		texinfo_t *pTexInfo = &texinfo[f->texinfo];
-		dtexdata_t *pTexData = GetTexData( pTexInfo->texdata );
-		MaterialSystemMaterial_t matID = 
-			FindOriginalMaterial( TexDataStringTable_GetString( pTexData->nameStringTableID ), NULL, true );
-		const char *bottomMatName = GetMaterialVar( matID, "$bottommaterial" );	
-		if( !bottomMatName )
+		if ( !AssignBottomWaterMaterialToFace( f ) )
 		{
-			const char *pMaterialName = TexDataStringTable_GetString( pTexData->nameStringTableID );
-			if( !Q_stristr( pMaterialName, "nodraw" ) )
-			{
-				Warning("error: material %s doesn't have a $bottommaterial\n", 
-					 pMaterialName );
-			}
 			FreeFace( f );
 			return NULL;
 		}
-		texinfo_t newTexInfo;
-		newTexInfo.flags = pTexInfo->flags;
-		int j, k;
-		for (j=0 ; j<2 ; j++)
-		{
-			for (k=0 ; k<4 ; k++)
-			{
-				newTexInfo.textureVecsTexelsPerWorldUnits[j][k] = pTexInfo->textureVecsTexelsPerWorldUnits[j][k];
-				newTexInfo.lightmapVecsLuxelsPerWorldUnits[j][k] = pTexInfo->lightmapVecsLuxelsPerWorldUnits[j][k];
-			}
-		}
-		newTexInfo.texdata = FindTexData( bottomMatName );
-		f->texinfo = FindOrCreateTexInfo( newTexInfo );
 	}
 
     //
@@ -1312,7 +1549,7 @@ static void SubdivideFaceBySubdivSize( face_t *f, float subdivsize )
 	int xi, yi;
 	winding_t **windings = ( winding_t ** )new pwinding_t[xSteps * ySteps];
 	memset( windings, 0, sizeof( winding_t * ) * xSteps * ySteps );
-	int numWindings = 0;
+
 	for( yi = 0, y = yStart; y < yEnd; y += ( int )subdivsize, yi++ )
 	{
 		for( xi = 0, x = xStart; x < xEnd; x += ( int )subdivsize, xi++ )
@@ -1451,13 +1688,13 @@ static void SubdivideFaceBySubdivSize( face_t *f, float subdivsize )
 	WORD *pStripIndices = NULL;
 	Stripify( triListIndices.Size() / 3, triListIndices.Base(), &numTristripIndices, 
 		&pStripIndices );
-	assert( pStripIndices );
+	Assert( pStripIndices );
 
 	// FIXME: Should also call ComputeVertexPermutation and reorder the verts.
 
 	for( i = 0; i < numTristripIndices; i++ )
 	{
-		assert( pStripIndices[i] >= newPrim.firstVert && 
+		Assert( pStripIndices[i] >= newPrim.firstVert && 
 			pStripIndices[i] < newPrim.firstVert + newPrim.vertCount );
 		g_primindices[newPrim.firstIndex + newPrim.indexCount] = pStripIndices[i];
 		newPrim.indexCount++;
@@ -1489,7 +1726,7 @@ static void SubdivideFaceBySubdivSize( face_t *f, float subdivsize )
 
 void SubdivideFaceBySubdivSize( face_t *f )
 {
-	if( f->numpoints == 0 )
+	if( f->numpoints == 0 || f->split[0] || f->split[1] || f->merged || !f->w )
 	{
 		return;
 	}
@@ -1500,6 +1737,7 @@ void SubdivideFaceBySubdivSize( face_t *f )
 	const char *pMaterialName = TexDataStringTable_GetString( pTexData->nameStringTableID );
 	MaterialSystemMaterial_t matID = 
 		FindOriginalMaterial( pMaterialName, &bFound, false );
+
 	if( !bFound )
 	{
 		return;
@@ -1510,6 +1748,8 @@ void SubdivideFaceBySubdivSize( face_t *f )
 		float subdivSize = atof( subdivsizeString );
 		if( subdivSize > 0.0f )
 		{
+			// NOTE: Subdivision is unsupported and should be phased out
+			Warning("Using subdivision on %s\n", pMaterialName );
 			SubdivideFaceBySubdivSize( f, subdivSize );
 		}
 	}

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CHOREOWIDGETDRAWHELPER_H
 #define CHOREOWIDGETDRAWHELPER_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "choreowidget.h"
 #include "utlvector.h"
 
@@ -28,28 +28,32 @@ public:
 				CChoreoWidgetDrawHelper( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor );
 				CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds );
 				CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds, COLORREF bgColor );
+
+				CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds, bool noPageFlip );
+
 	virtual		~CChoreoWidgetDrawHelper( void );
 
 	// Allow caller to draw onto the memory dc, too
 	HDC			GrabDC( void );
 
 	// Compute text size
-	int			CalcTextWidth( const char *font, int pointsize, int weight, const char *fmt, ... );
-	int			CalcTextWidth( HFONT font, const char *fmt, ... );
+	static int	CalcTextWidth( const char *font, int pointsize, int weight, PRINTF_FORMAT_STRING const char *fmt, ... );
+	static int	CalcTextWidth( HFONT font, PRINTF_FORMAT_STRING const char *fmt, ... );
 
-	int			CalcTextWidthW( const char *font, int pointsize, int weight, const wchar_t *fmt, ... );
-	int			CalcTextWidthW( HFONT font, const wchar_t *fmt, ... );
-	void		DrawColoredTextW( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, const wchar_t *fmt, ... );
-	void		DrawColoredTextW( HFONT font, COLORREF clr, RECT& rcText, const wchar_t *fmt, ... );
-	void		DrawColoredTextCharsetW( const char *font, int pointsize, int weight, DWORD charset, COLORREF clr, RECT& rcText, const wchar_t *fmt, ... );
+	static int	CalcTextWidthW( const char *font, int pointsize, int weight, PRINTF_FORMAT_STRING const wchar_t *fmt, ... );
+	static int	CalcTextWidthW( HFONT font, PRINTF_FORMAT_STRING const wchar_t *fmt, ... );
 
-	void		CalcTextRect( const char *font, int pointsize, int weight, int maxwidth, RECT& rcText, const char *fmt, ... );
+	void		DrawColoredTextW( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const wchar_t *fmt, ... );
+	void		DrawColoredTextW( HFONT font, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const wchar_t *fmt, ... );
+	void		DrawColoredTextCharsetW( const char *font, int pointsize, int weight, DWORD charset, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const wchar_t *fmt, ... );
+
+	void		CalcTextRect( const char *font, int pointsize, int weight, int maxwidth, RECT& rcText, PRINTF_FORMAT_STRING const char *fmt, ... );
 
 	// Draw text
-	void		DrawColoredText( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, const char *fmt, ... );
-	void		DrawColoredText( HFONT font, COLORREF clr, RECT& rcText, const char *fmt, ... );
-	void		DrawColoredTextCharset( const char *font, int pointsize, int weight, DWORD charset, COLORREF clr, RECT& rcText, const char *fmt, ... );
-	void		DrawColoredTextMultiline( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, const char *fmt, ... );
+	void		DrawColoredText( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const char *fmt, ... );
+	void		DrawColoredText( HFONT font, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const char *fmt, ... );
+	void		DrawColoredTextCharset( const char *font, int pointsize, int weight, DWORD charset, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const char *fmt, ... );
+	void		DrawColoredTextMultiline( const char *font, int pointsize, int weight, COLORREF clr, RECT& rcText, PRINTF_FORMAT_STRING const char *fmt, ... );
 	// Draw a line
 	void		DrawColoredLine( COLORREF clr, int style, int width, int x1, int y1, int x2, int y2 );
 	void		DrawColoredPolyLine( COLORREF clr, int style, int width, CUtlVector< POINT >& points );
@@ -89,7 +93,7 @@ public:
 
 private:
 	// Internal initializer
-	void		Init( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor);
+	void		Init( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor, bool noPageFlip );
 
 	void		ClipToRects( void );
 
@@ -111,6 +115,8 @@ private:
 
 	CUtlVector < RECT > m_ClipRects;
 	HRGN		m_ClipRegion;
+
+	bool		m_bNoPageFlip;
 };
 
 #endif // CHOREOWIDGETDRAWHELPER_H

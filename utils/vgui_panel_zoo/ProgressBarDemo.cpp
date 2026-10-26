@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
+#include <VGUI/IVGui.h>
 
-#include <VGUI_ISystem.h>
-#include <VGUI_Controls.h>
-#include <VGUI_ProgressBar.h>
+#include <vgui/ISystem.h>
+#include <vgui_controls/Controls.h>
+#include <vgui_controls/ProgressBar.h>
 
 using namespace vgui;
 

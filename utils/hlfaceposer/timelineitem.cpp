@@ -1,18 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "hlfaceposer.h"
 #include <stdio.h>
 #include "TimelineItem.h"
 #include "choreowidgetdrawhelper.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "expressions.h"
 #include "StudioModel.h"
 #include "expclass.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "ExpressionTool.h"
 #include "choreoevent.h"
 #include "choreoscene.h"
@@ -23,8 +23,8 @@
 #include "faceposer_models.h"
 #include "MatSysWin.h"
 #include "choreoviewcolors.h"
-
-int RandomLong( int start, int end );
+#include "ifaceposersound.h"
+#include "curveeditorhelpers.h"
 
 extern double realtime;
 
@@ -41,6 +41,8 @@ extern double realtime;
 //-----------------------------------------------------------------------------
 TimelineItem::TimelineItem( mxWindow *workspace )
 {
+	m_pHelper = new CCurveEditorHelper< TimelineItem >( this );
+
 	m_pWorkspace = workspace;
 
 	m_nDragging = DRAGTYPE_NONE;
@@ -58,7 +60,7 @@ TimelineItem::TimelineItem( mxWindow *workspace )
 	SetCollapsed( false );
 	SetActive( false );
 
-	m_bUndoSetup = false;
+	m_nUndoSetup = 0;
 	m_rcBounds.top = 0;
 	m_rcBounds.bottom = 0;
 	m_rcBounds.left = 0;
@@ -71,6 +73,7 @@ TimelineItem::TimelineItem( mxWindow *workspace )
 
 TimelineItem::~TimelineItem( void )
 {
+	delete m_pHelper;
 }
 
 //-----------------------------------------------------------------------------
@@ -133,7 +136,33 @@ int TimelineItem::GetMouseForTime( float t, bool *clipped /*= NULL*/ )
 	return mx;
 }
 
-CExpressionSample *TimelineItem::GetSampleUnderMouse( mxEvent *event )
+int TimelineItem::NumSamples()
+{
+	CFlexAnimationTrack *track = GetSafeTrack();
+	if ( !track )
+		return 0;
+
+	// Aggregate both types of tracks together
+	return track->GetNumSamples( 0 ) + track->GetNumSamples( 1 );
+	// return track->GetNumSamples( m_nEditType );
+}
+
+CExpressionSample *TimelineItem::GetSample( int idx )
+{
+	CFlexAnimationTrack *track = GetSafeTrack();
+	if ( !track )
+		return NULL;
+
+	if ( idx >= track->GetNumSamples( 0 ) )
+	{
+		// Rebase and look at left/right track instead
+		idx -= track->GetNumSamples( 0 );
+		return track->GetSample( idx, 1 );
+	}
+	return track->GetSample( idx, 0 );
+}
+
+CExpressionSample *TimelineItem::GetSampleUnderMouse( int mx, int my, float tolerance /*= FP_TL_SELECTION_TOLERANCE*/ )
 {
 	CFlexAnimationTrack *track = GetSafeTrack();
 	if ( !track )
@@ -143,28 +172,36 @@ CExpressionSample *TimelineItem::GetSampleUnderMouse( mxEvent *event )
 	if ( !e )
 		return NULL;
 
-	float timeperpixel = 1.0f / g_pExpressionTool->GetPixelsPerSecond();
-	float closest_dist = 999999.f;
+	float closest_dist = 9999999.f;
 	CExpressionSample *bestsample = NULL;
 
 	// Add a sample point
-	float time = GetTimeForMouse( event->x + m_rcBounds.left );
+	int height = m_rcBounds.bottom - m_rcBounds.top;
+
+	mx += m_rcBounds.left;
 
 	for ( int i = 0; i < track->GetNumSamples( m_nEditType ); i++ )
 	{
 		CExpressionSample *sample = track->GetSample( i, m_nEditType );
 
-		float dist = fabs( sample->time - time );
+		bool clipped = false;
+		int px = GetMouseForTime( sample->time, &clipped );		
+		int py = height * ( 1.0f - sample->value ); 
+
+		int dx = px - mx;
+		int dy = py - my;
+
+		float dist = sqrt( (float)(dx * dx + dy * dy) );
 		if ( dist < closest_dist )
 		{
 			bestsample = sample;
 			closest_dist = dist;
 		}
-
 	}
 
 	// Not close to any of them!!!
-	if ( closest_dist > ( 5.0f * timeperpixel ) )
+	if ( ( tolerance != 0.0f ) && 
+		( closest_dist > tolerance ) )
 		return NULL;
 
 	return bestsample;
@@ -218,6 +255,8 @@ void TimelineItem::AddSample( CExpressionSample const& sample )
 	PreDataChanged( "Add sample point" );
 
 	track->AddSample( sample.time, sample.value, m_nEditType );
+	track->Resort( m_nEditType );
+
 	SetActive( true );
 
 	PostDataChanged( "Add sample point" );
@@ -226,27 +265,34 @@ void TimelineItem::AddSample( CExpressionSample const& sample )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void TimelineItem::CountSelected( void )
+int TimelineItem::CountSelected( void )
 {
-	m_nNumSelected = 0;
+	m_nNumSelected = m_pHelper->CountSelected( false );
+	return m_nNumSelected;
+}
 
-	CFlexAnimationTrack *track = GetSafeTrack();
-	if ( !track )
-		return;
+void TimelineItem::SetMousePositionForEvent( mxEvent *event )
+{
+	POINT pt;
+	GetCursorPos( &pt );
+	ScreenToClient( (HWND)m_pWorkspace->getHandle(), &pt );
 
-	for ( int i = 0; i < track->GetNumSamples( m_nEditType ); i++ )
-	{
-		CExpressionSample *sample = track->GetSample( i, m_nEditType );
-		if ( !sample || !sample->selected )
-			continue;
+	pt.x -= m_rcBounds.left;
+	pt.y -= m_rcBounds.top;
 
-		m_nNumSelected++;
-	}
+	event->x = pt.x;
+	event->y = pt.y;
 }
 
 int	TimelineItem::handleEvent( mxEvent *event )
 {
 	int iret = 0;
+
+	// Give helper a shot at the event
+	if ( m_pHelper->HelperHandleEvent( event ) )
+	{
+		return 1;
+	}
 
 	switch ( event->event )
 	{
@@ -254,6 +300,9 @@ int	TimelineItem::handleEvent( mxEvent *event )
 		{
 			switch ( event->key )
 			{
+			default:
+				iret = g_pChoreoView->HandleZoomKey( g_pExpressionTool, event->key );
+				break;
 			case VK_ESCAPE:
 				DeselectAll();
 				DrawSelf();
@@ -269,6 +318,62 @@ int	TimelineItem::handleEvent( mxEvent *event )
 			case 'V':
 				Paste();
 				DrawSelf();
+				break;
+			case 'J':
+				{
+					g_pExpressionTool->OnCopyToFlex( g_pExpressionTool->GetScrubberSceneTime(), true );
+				}
+				break;
+			case 'K':
+				{
+					g_pExpressionTool->OnCopyFromFlex( g_pExpressionTool->GetScrubberSceneTime(), false );
+				}
+				break;
+			case 188: // VK_OEM_COMMA:
+				{
+					g_pExpressionTool->SetScrubTargetTime( 0.0f );
+				}
+				break;
+			case 190: // VK_OEM_PERIOD:
+				{
+					CChoreoScene *scene = g_pChoreoView->GetScene();
+					if ( scene )
+					{
+						g_pExpressionTool->SetScrubTargetTime( scene->FindStopTime() );
+					}
+				}
+				break;
+			case VK_LEFT: 
+				{
+					CChoreoScene *scene = g_pChoreoView->GetScene();
+					if ( scene && scene->GetSceneFPS() > 0 )
+					{
+						float curscrub = g_pExpressionTool->GetScrub();
+						curscrub -= ( 1.0f / (float)scene->GetSceneFPS() );
+						curscrub = max( curscrub, 0.0f );
+						g_pExpressionTool->SetScrubTargetTime( curscrub );
+					}
+				}
+				break;
+			case VK_RIGHT: 
+				{
+					CChoreoScene *scene = g_pChoreoView->GetScene();
+					if ( scene && scene->GetSceneFPS() > 0 )
+					{
+						float curscrub = g_pExpressionTool->GetScrub();
+						curscrub += ( 1.0f / (float)scene->GetSceneFPS() );
+						curscrub = min( curscrub, scene->FindStopTime() );
+						g_pExpressionTool->SetScrubTargetTime( curscrub );
+					}
+				}
+				break;
+			case 191:
+				{
+					if ( g_pChoreoView->IsPlayingScene() )
+					{
+						g_pChoreoView->StopScene();
+					}
+				}
 				break;
 			}
 			iret = 1;
@@ -294,16 +399,19 @@ int	TimelineItem::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseDown:
 		{
+			sound->Flush();
+
 			SetFocus( (HWND)g_pExpressionTool->getHandle() );
 
-			int width = m_rcBounds.right - m_rcBounds.left;
 			int height = m_rcBounds.bottom - m_rcBounds.top;
 
 			bool rightbutton = ( event->buttons & mxEvent::MouseRightButton ) ? true : false;
 
 			if ( m_nDragging == DRAGTYPE_NONE )
 			{
-				CExpressionSample *sample = GetSampleUnderMouse( event );
+				bool ctrlDown = ( event->modifiers & mxEvent::KeyCtrl ) ? true : false;
+
+				CExpressionSample *sample = GetSampleUnderMouse( event->x, event->y, ctrlDown ? FP_TL_ADDSAMPLE_TOLERANCE : FP_TL_SELECTION_TOLERANCE );
 
 				if ( IsMouseOverGrowHandle( (short)event->x, (short)event->y ) )
 				{
@@ -445,11 +553,24 @@ int	TimelineItem::handleEvent( mxEvent *event )
 					DrawSelf();
 				}
 			}
+			else
+			{
+				// See if anything is selected
+				CountSelected();
+				if ( m_nNumSelected <= 0 && g_pExpressionTool->IsFocusItem( this ) )
+				{
+					// Nothing selected
+					// Draw auto highlight
+					DrawAutoHighlight( event );
+				}
+			}
 			iret = 1;
 		}
 		break;
 	case mxEvent::MouseUp:
 		{
+			bool overgrow = IsMouseOverGrowHandle( (short)event->x, (short)event->y );
+				
 			if ( m_nDragging != DRAGTYPE_NONE )
 			{
 				if ( m_nDragging == DRAGTYPE_SELECTION )
@@ -496,7 +617,10 @@ int	TimelineItem::handleEvent( mxEvent *event )
 			{
 				if ( realtime - m_flLastClickTime < DOUBLE_CLICK_TIME )
 				{
-					OnDoubleClicked();
+					if ( overgrow || IsCollapsed() )
+					{
+						OnDoubleClicked();
+					}
 				}
 
 				m_flLastClickTime = realtime;
@@ -609,9 +733,6 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 
 	g_pExpressionTool->GetStartAndEndTime( starttime, endtime );
 
-	float event_time = e->GetDuration();
-
-
 	CountSelected();
 	int scount = GetNumSelected();
 
@@ -632,11 +753,13 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 	DrawRelativeTags( drawHelper );
 	if ( !IsCollapsed() && track )
 	{
-		if ( track->IsComboType() && m_nEditType == 1 )
+		if ( m_nEditType == 1 )
 		{
+			float zero = track->GetZeroValue( m_nEditType, true );
+
 			drawHelper.DrawColoredLine( RGB( 180, 200, 220 ), PS_SOLID, 1, 
-				rcClient.left, ( rcClient.top + rcClient.bottom ) / 2,
-				rcClient.right, ( rcClient.top + rcClient.bottom ) / 2 );
+				rcClient.left, ( rcClient.top * zero + rcClient.bottom * (1 - zero)) ,
+				rcClient.right, ( rcClient.top * zero + rcClient.bottom  * (1 - zero)) );
 		}
 
 		drawHelper.DrawOutlinedRect( RGB( 100, 150, 200 ), PS_SOLID, 1, rcClient );
@@ -653,10 +776,9 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 		for ( int type = ( track->IsComboType() ? 1 : 0 ); type >= 0; type-- )
 		{
 			COLORREF lineColor = ( type == m_nEditType ) ? RGB( 0, 0, 255 ) : gray;
+			COLORREF shadowColor = ( type == m_nEditType ) ? RGB( 150, 150, 250 ) : gray;
 			COLORREF dotColor = ( type == m_nEditType ) ? RGB( 0, 0, 255 ) : gray;
 			COLORREF dotColorSelected = ( type == m_nEditType ) ? RGB( 240, 80, 20 ) : gray;
-
-			float fx = 0.0f;
 
 			int height = rcClient.bottom - rcClient.top;
 			int bottom = rcClient.bottom;
@@ -674,6 +796,71 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 
 			CUtlVector< POINT > segments;
 
+			/*
+			if (type == m_nEditType)
+			{
+				// draw hermite version of time step
+				float i0, i1, i2;
+				float time10hz = starttime;
+
+				i0 = track->GetFracIntensity( time10hz, type );
+				i1 = i0;
+				time10hz = starttime + 0.1;
+				i2 = track->GetFracIntensity( time10hz, type );;
+				
+				for ( float t = starttime; t <= stoptime; t += timestepperpixel )
+				{
+					while (t >= time10hz)
+					{
+						time10hz += 0.1;
+						i0 = i1;
+						i1 = i2;
+						i2 = track->GetFracIntensity( time10hz, type );;
+					}
+
+					float value = Hermite_Spline( i0, i1, i2, (t - time10hz + 0.1) / 0.1 );
+
+					int prevx, x;
+
+					bool clipped1, clipped2;
+					x = GetMouseForTime( t, &clipped1 );
+					prevx = GetMouseForTime( prev_t, &clipped2 );
+
+					//if ( !clipped1 && !clipped2 )
+					{
+						// Draw segment
+						//drawHelper.DrawColoredLine( lineColor, PS_SOLID, 1,
+						//	prevx, bottom - prev_value * height,
+						//	x, bottom - value * height );
+						
+						POINT pt;
+
+						if ( segments.Count() == 0 )
+						{
+							pt.x = prevx;	
+							pt.y = bottom - prev_value * height;
+
+							segments.AddToTail( pt );
+						}
+
+						pt.x = x;
+						pt.y = bottom - value * height;
+
+						segments.AddToTail( pt );
+					}
+
+					prev_t = t;
+					prev_value = value;
+				}
+
+				if ( segments.Count() >= 2  )
+				{
+					drawHelper.DrawColoredPolyLine( shadowColor, PS_SOLID, 1, segments );
+				}
+
+				segments.RemoveAll();
+			}
+			*/
 			for ( float t = starttime; t <= stoptime; t += timestepperpixel )
 			{
 				float value = track->GetFracIntensity( t, type );
@@ -693,7 +880,7 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 					
 					POINT pt;
 
-					if ( segments.Count == 0 )
+					if ( segments.Count() == 0 )
 					{
 						pt.x = prevx;	
 						pt.y = bottom - prev_value * height;
@@ -715,25 +902,26 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 			{
 				drawHelper.DrawColoredPolyLine( lineColor, PS_SOLID, 1, segments );
 			}
-			
+
 			for ( int sample = 0; sample < track->GetNumSamples( type ); sample++ )
 			{
-				CExpressionSample *start = track->GetBoundedSample( sample, type );
+				bool dummy;
+				CExpressionSample *start = track->GetBoundedSample( sample, dummy, type );
 
 				/*
 				int pixel = (int)( ( start->time / event_time ) * width + 0.5f);
 				int x = m_rcBounds.left + pixel;
 				float roundedfrac = (float)pixel / (float)width;
 				*/
-				float value = track->GetFracIntensity( start->time, type );
+				float value = start->value; // track->GetFracIntensity( start->time, type );
 				bool clipped = false;
 				int x = GetMouseForTime( start->time, &clipped );
 				if ( clipped )
 					continue;
 				int y = bottom - value * height;
 
-				int dotsize = 4;
-				int dotSizeSelected = 5;
+				int dotsize = 6;
+				int dotSizeSelected = 6;
 
 				COLORREF clr = dotColor;
 				COLORREF clrSelected = dotColorSelected;
@@ -744,6 +932,23 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 					start->selected ? dotSizeSelected : dotsize,
 					true );
 
+
+				if ( !start->selected )
+					continue;
+
+				if ( start->GetCurveType() == CURVE_DEFAULT )
+					continue;
+
+				// Draw curve type indicator...
+				char sz[ 128 ];
+				Q_snprintf( sz, sizeof( sz ), "%s", Interpolator_NameForCurveType( start->GetCurveType(), true ) );
+				RECT rc;
+				int fontSize = 9;
+				rc.top = clamp( y + 5, rcClient.top + 2, rcClient.bottom - 2 - fontSize );
+				rc.bottom = rc.top + fontSize + 1;
+				rc.left = x - 75;
+				rc.right = x + 175;
+				drawHelper.DrawColoredText( "Arial", fontSize, 500, shadowColor, rc, sz );
 			}
 		}
 	}
@@ -780,8 +985,6 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 
 		drawHelper.DrawColoredText( "Arial", 9, 500, RGB( 0, 0, 255 ), title, sz );
 	}
-
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
 
 	if ( track )
 	{
@@ -829,6 +1032,79 @@ void TimelineItem::Draw( CChoreoWidgetDrawHelper& drawHelper )
 
 			len = drawHelper.CalcTextWidth( "Arial", 9, 500, sz );
 			drawHelper.DrawColoredText( "Arial", 9, 500, RGB( 220, 0, 00 ), title, sz );
+		}
+	}
+}
+
+void TimelineItem::DrawAutoHighlight( mxEvent *event )
+{
+	if ( IsCollapsed() )
+		return;
+	
+	CFlexAnimationTrack *track = GetSafeTrack();
+	if ( !track )
+		return;
+
+	CExpressionSample *hover = GetSampleUnderMouse( event->x, event->y, 0.0f );
+	CChoreoWidgetDrawHelper drawHelper( m_pWorkspace, m_rcBounds, true );
+
+	RECT rcClient = m_rcBounds;
+
+	// Draw left/right underneath amount so go backbard
+	int type = m_nEditType;
+
+	COLORREF dotColor = RGB( 0, 0, 255 );
+	COLORREF dotColorSelected = RGB( 240, 80, 20 );
+	COLORREF clrHighlighted = RGB( 0, 200, 0 );
+
+	int height = rcClient.bottom - rcClient.top;
+	int bottom = rcClient.bottom;
+
+	int dotsize = 6;
+	int dotSizeSelected = 6;
+	int dotSizeHighlighted = 6;
+
+	COLORREF clr = dotColor;
+	COLORREF clrSelected = dotColorSelected;
+	COLORREF bgColor = RGB( 230, 230, 200 );
+
+	// Fixme, could look at 1st derivative and do more sampling at high rate of change?
+	// or near actual sample points!
+	for ( int sample = 0; sample < track->GetNumSamples( type ); sample++ )
+	{
+		bool dummy;
+		CExpressionSample *start = track->GetBoundedSample( sample, dummy, type );
+
+		float value = start->value;
+		bool clipped = false;
+		int x = GetMouseForTime( start->time, &clipped );
+		if ( clipped )
+			continue;
+		int y = bottom - value * height;
+
+		if ( hover == start )
+		{
+			drawHelper.DrawCircle( 
+				bgColor, 
+				x, y, 
+				dotSizeHighlighted,
+				true );
+
+			drawHelper.DrawCircle( 
+				clrHighlighted, 
+				x, y, 
+				dotSizeHighlighted,
+				false );
+
+
+		}
+		else
+		{
+			drawHelper.DrawCircle( 
+				start->selected ? clrSelected : clr, 
+				x, y, 
+				start->selected ? dotSizeSelected : dotsize,
+				true );
 		}
 	}
 }
@@ -923,7 +1199,7 @@ void TimelineItem::SetExpressionInfo( CFlexAnimationTrack *track, int flexnum )
 	m_szTrackName[ 0 ] = 0;
 	if ( track )
 	{
-		strcpy( m_szTrackName, track->GetFlexControllerName() );
+		V_strcpy_safe( m_szTrackName, track->GetFlexControllerName() );
 		SetActive( track->IsTrackActive() );
 	}
 
@@ -1060,6 +1336,9 @@ bool TimelineItem::IsValid( void )
 //-----------------------------------------------------------------------------
 CFlexAnimationTrack *TimelineItem::GetSafeTrack( void )
 {	
+	if ( !g_pExpressionTool )
+		return NULL;
+
 	CChoreoEvent *ev = g_pExpressionTool->GetSafeEvent();
 	if ( !ev )
 		return NULL;
@@ -1116,7 +1395,26 @@ void TimelineItem::SelectPoints( void )
 	rcSelection.top = m_nStartY < m_nLastY ? m_nStartY : m_nLastY;
 	rcSelection.bottom = m_nStartY < m_nLastY ? m_nLastY : m_nStartY;
 
-	InflateRect( &rcSelection, 3, 3 );
+	int selW = rcSelection.right - rcSelection.left;
+	int selH = rcSelection.bottom - rcSelection.top;
+
+	float tolerance = FP_TL_SELECTION_RECTANGLE_TOLERANCE;
+	// If they are just clicking and releasing in one spot, capture any items w/in a larger tolerance
+	if ( selW <= 2 && selH <= 2 )
+	{
+		tolerance = FP_TL_SELECTION_TOLERANCE;
+
+		CExpressionSample *sample = GetSampleUnderMouse( rcSelection.left + selW * 0.5f, rcSelection.top + selH * 0.5f );
+		if ( sample )
+		{
+			sample->selected = true;
+			return;
+		}
+	}
+	else
+	{
+		InflateRect( &rcSelection, 3, 3 );
+	}
 
 	int width = m_rcBounds.right - m_rcBounds.left;
 	int height = m_rcBounds.bottom - m_rcBounds.top;
@@ -1149,8 +1447,8 @@ void TimelineItem::SelectPoints( void )
 	float timestepperpixel = 1.0f / g_pExpressionTool->GetPixelsPerSecond();
 	float yfracstepperpixel = 1.0f / (float)height;
 
-	float epsx = 2*timestepperpixel;
-	float epsy = 2*yfracstepperpixel;
+	float epsx = tolerance*timestepperpixel;
+	float epsy = tolerance*yfracstepperpixel;
 
 	for ( int i = 0; i < track->GetNumSamples( m_nEditType ); i++ )
 	{
@@ -1162,11 +1460,11 @@ void TimelineItem::SelectPoints( void )
 		if ( sample->time - epsx > fright )
 			continue;
 
-		//if ( (1.0f - sample->value ) + epsy < ftop )
-		//	continue;
+		if ( (1.0f - sample->value ) + epsy < ftop )
+			continue;
 
-		//if ( (1.0f - sample->value ) - epsy > fbottom )
-		//	continue;
+		if ( (1.0f - sample->value ) - epsy > fbottom )
+			continue;
 
 		sample->selected = true;
 	}
@@ -1176,24 +1474,28 @@ void TimelineItem::SelectPoints( void )
 // Purpose: 
 // Input  : *undodescription - 
 //-----------------------------------------------------------------------------
-void TimelineItem::PreDataChanged( char *undodescription )
+void TimelineItem::PreDataChanged( char const *undodescription )
 {
-	Assert( !m_bUndoSetup );
-	m_bUndoSetup = true;
-	g_pChoreoView->SetDirty( true );
-	g_pChoreoView->PushUndo( undodescription );
+	if ( m_nUndoSetup  == 0 )
+	{
+		g_pChoreoView->SetDirty( true );
+		g_pChoreoView->PushUndo( undodescription );
+	}
+	++m_nUndoSetup;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *redodescription - 
 //-----------------------------------------------------------------------------
-void TimelineItem::PostDataChanged( char *redodescription )
+void TimelineItem::PostDataChanged( char const *redodescription )
 {
-	Assert( m_bUndoSetup );
-	m_bUndoSetup = false;
-	g_pChoreoView->PushRedo( redodescription );
-	DrawSelf();
+	--m_nUndoSetup;
+	if ( m_nUndoSetup == 0 )
+	{
+		g_pChoreoView->PushRedo( redodescription );
+		g_pExpressionTool->InvalidateLayout();
+	}
 }
 
 void TimelineItem::SetBounds( const RECT& rect )
@@ -1293,8 +1595,6 @@ void TimelineItem::DeletePoints( float start, float end )
 void TimelineItem::OnDoubleClicked()
 {
 	// Disabled for now by request of BillF
-return;
-
 	CFlexAnimationTrack *track = GetSafeTrack();
 	if ( !track )
 		return;
@@ -1448,4 +1748,16 @@ void TimelineItem::DrawGrowRect()
 	::DrawFocusRect( dc, &rcFocus );
 
 	ReleaseDC( NULL, dc );
+}
+
+void TimelineItem::GetWorkList( bool reflect, CUtlVector< TimelineItem * >& list )
+{
+	if ( !reflect )
+	{
+		list.AddToTail( this );
+	}
+	else
+	{
+		g_pExpressionTool->GetTimelineItems( list );
+	}
 }

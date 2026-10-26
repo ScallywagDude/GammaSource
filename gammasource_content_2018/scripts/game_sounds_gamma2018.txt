@@ -1,0 +1,38 @@
+// GammaSource 2018 build: sounds of the weapons added after the port
+
+// weapon_proto1 (game/server/gamma/weapon_proto1.cpp)
+"Weapon_Proto1.Single"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"1.0"
+	"soundlevel"	"SNDLVL_GUNFIRE"
+	"pitch"			"90,100"
+	"wave"			"weapons/gauss/fire1.wav"
+}
+
+"Weapon_Proto1.Ping"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"1.0"
+	"soundlevel"	"SNDLVL_90dB"
+	"pitch"			"100"
+	"wave"			"weapons/binoculars/signal.wav"
+}
+
+"Weapon_Proto1.Echo"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"0.6"
+	"soundlevel"	"SNDLVL_80dB"
+	"pitch"			"80,95"
+	"wave"			"weapons/binoculars/signal1.wav"
+}
+
+"Weapon_Proto1.Blast"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"1.0"
+	"soundlevel"	"SNDLVL_GUNFIRE"
+	"pitch"			"95,105"
+	"wave"			"weapons/gauss/electro2.wav"
+}

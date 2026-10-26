@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="IHVTest Release|Win32">
+      <Configuration>IHVTest Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="IHVTest Debug|Win32">
+      <Configuration>IHVTest Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{07E7A714-3641-55E6-9D7D-EE27E8A9A3A5}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>MaterialSystemIHVTest</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='IHVTest Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='IHVTest Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>MaterialSystem</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\common;..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;IHVTEST;DEFINE_MATERIALSYSTEM_INTERFACE;WIN32;_WINDOWS;_MBCS;_USRDLL;MATERIALSYSTEM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;..\vtf\build\Release\vtf.lib;..\vstdlib\build\Release\vstdlib.lib;..\lib\common\s3tc.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalLibraryDirectories>..;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>MaterialSystem</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='IHVTest Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\common;..\public;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;fopen=dont_use_fopen;IHVTEST;DEFINE_MATERIALSYSTEM_INTERFACE;WIN32;_WINDOWS;_MBCS;_USRDLL;MATERIALSYSTEM_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;..\vtf\build\Release\vtf.lib;..\vstdlib\build\Release\vstdlib.lib;..\lib\common\s3tc.lib;..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalLibraryDirectories>..;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\basetimesmod2xenvmap.cpp" />
+    <ClCompile Include=".\debugfbtexture.cpp" />
+    <ClCompile Include=".\debuglightingonly.cpp" />
+    <ClCompile Include=".\debugluxel.cpp" />
+    <ClCompile Include=".\debugmodifyvertex.cpp" />
+    <ClCompile Include=".\debugnormalmap.cpp" />
+    <ClCompile Include=".\debugsoftwarevertexshader.cpp" />
+    <ClCompile Include=".\debugtangentspace.cpp" />
+    <ClCompile Include=".\unlitgeneric.cpp" />
+    <ClCompile Include=".\unlitgeneric_dx6.cpp" />
+    <ClCompile Include=".\vertexlitgeneric.cpp" />
+    <ClCompile Include=".\vertexlitgeneric_dx6.cpp" />
+    <ClCompile Include=".\vertexlitgeneric_dx7.cpp" />
+    <ClCompile Include=".\wireframe.cpp" />
+    <ClCompile Include="..\public\characterset.cpp" />
+    <ClCompile Include=".\cmaterial.cpp" />
+    <ClCompile Include=".\cmaterialsystem.cpp" />
+    <ClCompile Include=".\cmaterialvar.cpp" />
+    <ClCompile Include=".\colorspace.cpp" />
+    <ClCompile Include="..\public\convar.cpp" />
+    <ClCompile Include="..\Public\crtmemdebug.cpp" />
+    <ClCompile Include=".\cshader.cpp" />
+    <ClCompile Include=".\ctexture.cpp" />
+    <ClCompile Include="..\public\filesystem_helpers.cpp" />
+    <ClCompile Include="..\Public\imageloader.cpp" />
+    <ClCompile Include=".\imagepacker.cpp" />
+    <ClCompile Include="..\Public\interface.cpp" />
+    <ClCompile Include=".\materialsystem_global.cpp" />
+    <ClCompile Include="..\Public\mathlib.cpp" />
+    <ClCompile Include=".\matsys_cvar.cpp" />
+    <ClCompile Include="..\Public\mempool.cpp" />
+    <ClCompile Include="..\Public\resource_file.cpp" />
+    <ClCompile Include=".\shader.cpp" />
+    <ClCompile Include=".\shadersystem.cpp" />
+    <ClCompile Include=".\texturemanager.cpp" />
+    <ClCompile Include="..\Public\tgaloader.cpp" />
+    <ClCompile Include="..\Public\tgawriter.cpp" />
+    <ClCompile Include="..\Public\utlbuffer.cpp" />
+    <ClCompile Include="..\Public\utlsymbol.cpp" />
+    <ClCompile Include="..\Public\vmatrix.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\materials\dxshaders\BaseTimesLightmapWet.psh" />
+    <None Include="..\..\materials\dxshaders\BumpmappedEnvmap.psh" />
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_LightingOnly_OverBright2.psh" />
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_OverBright1.psh" />
+    <None Include="..\..\materials\dxshaders\BumpmappedLightmap_OverBright2.psh" />
+    <None Include="..\..\materials\dxshaders\DebugFBTexture.psh" />
+    <None Include="..\..\materials\dxshaders\Eyes.psh" />
+    <None Include="..\..\materials\dxshaders\Eyes_Overbright2.psh" />
+    <None Include="..\..\materials\dxshaders\JellyFish.psh" />
+    <None Include="..\..\materials\dxshaders\LightingOnly.psh" />
+    <None Include="..\..\materials\dxshaders\LightingOnly_Overbright2.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_BaseAlphaMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_BaseTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_Detail.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_DetailNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_DetailSelfIlluminated.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMapNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_EnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMapNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLighting.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLightingNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_MultiplyByLightingSelfIllum.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_NoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminated.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\LightmappedGeneric_SelfIlluminatedMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\predator.psh" />
+    <None Include="..\..\materials\dxshaders\Predator_Envmap.psh" />
+    <None Include="..\..\materials\dxshaders\Predator_EnvmapTimesEnvmapMask.psh" />
+    <None Include="..\..\materials\dxshaders\ShadowModel.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_BaseAlphaMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_Detail.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailBaseAlphaMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapMask.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapMaskNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailEnvMapNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_DetailNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapMask.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapMaskNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_EnvMapNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitGeneric_NoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\UnlitTwoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_BaseAlphaMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_BaseAlphaMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_Detail.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailBaseAlphaMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailBaseAlphaMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminated.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DetailSelfIlluminatedMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright1.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright1_Translucent.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpLightingOnly_Overbright2_Translucent.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright1.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright1_Translucent.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_DiffBumpTimesBase_Overbright2_Translucent.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMapNoTexture.psh" />
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2.psh" />
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha.psh" />
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_MultByAlpha_ps14.psh" />
+    <None Include="..\..\hl2\materials\dxshaders\VertexLitGeneric_EnvmappedBumpmapV2_ps14.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_EnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMapNoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_MaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_NoTexture.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminated.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedMaskedEnvMap.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIlluminatedMaskedEnvMapV2.psh" />
+    <None Include="..\..\materials\dxshaders\VertexLitGeneric_SelfIllumOnly.psh" />
+    <None Include="..\..\materials\dxshaders\WaterReflect.psh" />
+    <None Include="..\..\materials\dxshaders\WaterRefract.psh" />
+    <None Include="..\..\materials\dxshaders\WorldTexture.psh" />
+    <None Include="..\..\materials\dxshaders\WorldVertexTransition.psh" />
+    <None Include="..\..\materials\dxshaders\WriteEnvMapMaskToAlphaBuffer.psh" />
+    <None Include="..\..\materials\dxshaders\WriteZWithHeightClipPlane.psh" />
+    <None Include="..\lib\public\vtf.lib" />
+    <None Include="..\lib\public\vstdlib.lib" />
+    <None Include="..\lib\common\s3tc.lib" />
+    <None Include="..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Public\amd3dx.h" />
+    <ClInclude Include="..\Public\basetypes.h" />
+    <ClInclude Include="..\Public\bumpvects.h" />
+    <ClInclude Include=".\ColorQuant.h" />
+    <ClInclude Include=".\ColorSpace.h" />
+    <ClInclude Include="..\Public\const.h" />
+    <ClInclude Include="..\Public\crtmemdebug.h" />
+    <ClInclude Include=".\CShader.h" />
+    <ClInclude Include="..\common\cstringhash.h" />
+    <ClInclude Include="..\public\dbg\dbg.h" />
+    <ClInclude Include="..\public\platform\fasttimer.h" />
+    <ClInclude Include="..\Public\FileSystem.h" />
+    <ClInclude Include="..\public\appframework\IAppSystem.h" />
+    <ClInclude Include="..\Public\ImageLoader.h" />
+    <ClInclude Include=".\ImagePacker.h" />
+    <ClInclude Include="..\public\materialsystem\imaterial.h" />
+    <ClInclude Include=".\IMaterialInternal.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialproxy.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialproxyfactory.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialsystem.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialsystemhardwareconfig.h" />
+    <ClInclude Include=".\IMaterialSystemInternal.h" />
+    <ClInclude Include="..\public\materialsystem\imaterialvar.h" />
+    <ClInclude Include="..\public\materialsystem\imesh.h" />
+    <ClInclude Include="..\Public\interface.h" />
+    <ClInclude Include=".\IShaderUtil.h" />
+    <ClInclude Include="..\public\materialsystem\itexture.h" />
+    <ClInclude Include=".\ITextureInternal.h" />
+    <ClInclude Include="..\public\materialsystem\materialsystem_config.h" />
+    <ClInclude Include=".\MaterialSystem_Global.h" />
+    <ClInclude Include="..\Public\MATHLIB.H" />
+    <ClInclude Include="..\Public\MemPool.h" />
+    <ClInclude Include="..\Public\PixelWriter.h" />
+    <ClInclude Include="..\public\platform\platform.h" />
+    <ClInclude Include="..\Public\resource_file.h" />
+    <ClInclude Include="..\Public\s3_intrf.h" />
+    <ClInclude Include=".\ShaderAPI.h" />
+    <ClInclude Include=".\ShaderSystem.h" />
+    <ClInclude Include="..\public\vstdlib\strtools.h" />
+    <ClInclude Include=".\TextureManager.h" />
+    <ClInclude Include="..\Public\TGALoader.h" />
+    <ClInclude Include="..\Public\TGAWriter.h" />
+    <ClInclude Include="..\public\UtlBuffer.h" />
+    <ClInclude Include="..\Public\UtlMemory.h" />
+    <ClInclude Include="..\Public\utlrbtree.h" />
+    <ClInclude Include="..\Public\utlsymbol.h" />
+    <ClInclude Include="..\Public\UtlVector.h" />
+    <ClInclude Include="..\Public\vector.h" />
+    <ClInclude Include="..\Public\vector2d.h" />
+    <ClInclude Include="..\Public\vector4d.h" />
+    <ClInclude Include="..\Public\vmatrix.h" />
+    <ClInclude Include="..\Public\vplane.h" />
+    <ClInclude Include="..\public\vstdlib\vstdlib.h" />
+    <ClInclude Include="..\public\vtf\vtf.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <ProjectReference Include="..\tier0\tier0.vcxproj">
+      <Project>{6FF36EA7-9968-563F-A949-77D0A5E5E6E8}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\vstdlib\vstdlib.vcxproj">
+      <Project>{A2B5AD75-6625-5F92-AAF0-648CB23FAF16}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\vtf\vtf.vcxproj">
+      <Project>{D040C154-8F12-5F61-87B0-EA29A8F90756}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

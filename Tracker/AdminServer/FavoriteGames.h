@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -37,8 +37,8 @@ public:
 	~CFavoriteGames();
 
 	// favorites list, loads/saves into keyvalues
-	void LoadFavoritesList(KeyValues *favoritesData,bool loadrcon);
-	void SaveFavoritesList(KeyValues *favoritesData,bool savercon);
+	void LoadFavoritesList(vgui::KeyValues *favoritesData,bool loadrcon);
+	void SaveFavoritesList(vgui::KeyValues *favoritesData,bool savercon);
 
 	// property page handlers
 //	virtual void OnPageShow();

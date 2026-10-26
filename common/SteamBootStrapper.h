@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 //*********** (C) Copyright 2000 Valve, L.L.C. All rights reserved. ***********
 //
@@ -93,14 +100,6 @@ namespace
 {
 // scalar and enumerated type definitions here
 }
-
-typedef enum
-{
-	eBootstrapperError					= -1,
-	eBootstrapperDontCheckForUpdate		= 0,
-	eBootstrapperCheckForUpdateAndRerun = 7
-
-} EBootStrapperClientAppResult;
 
 
 

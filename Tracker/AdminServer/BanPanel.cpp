@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,46 +9,57 @@
 
 #include "BanPanel.h"
 #include "PlayerContextMenu.h"
+#include "DialogAddBan.h"
 
+#include <vgui/Cursor.h>
+#include <vgui/ISystem.h>
+#include <vgui/ISurface.h>
+#include <vgui/ILocalize.h>
+#include <vgui/IVGui.h>
+#include <KeyValues.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISystem.h>
-#include <VGUI_ISurface.h>
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_Button.h>
-#include <VGUI_ToggleButton.h>
-#include <VGUI_RadioButton.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_ComboBox.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_PropertySheet.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/QueryBox.h>
+#include <vgui_controls/ListPanel.h>
+#include <vgui_controls/FileOpenDialog.h>
+
+#include "filesystem.h"
+
+#include "DialogCvarChange.h"
+#include "tokenline.h"
 
 using namespace vgui;
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CBanPanel::CBanPanel(vgui::Panel *parent, const char *name) : PropertyPage(parent, name)
 {
-	m_pParent=parent;
-	
-	m_pBanListPanel = new BanListPanel(this,"Ban list");
+	m_pBanListPanel = new ListPanel(this, "BanList");
+	m_pBanListPanel->AddColumnHeader(0, "type", "#Ban_List_Type", 150 );
+	m_pBanListPanel->AddColumnHeader(1, "id", "#Ban_List_ID", 200 );
+	m_pBanListPanel->AddColumnHeader(2, "time", "#Ban_List_Time", 200 );
+	m_pBanListPanel->SetSortColumn(2);
+	m_pBanListPanel->SetEmptyListText("#Ban_List_Empty");
 
-	m_pAddButton = new Button(this, "Add", "&Add");
-	m_pRemoveButton = new Button(this, "Remove", "&Remove");
-	m_pChangeButton = new Button(this, "Change", "&Change");
+	m_pAddButton = new Button(this, "Add", "#Ban_List_Add");
+	m_pRemoveButton = new Button(this, "Remove", "#Ban_List_Remove");
+	m_pChangeButton = new Button(this, "Change", "#Ban_List_Edit");
+	m_pImportButton = new Button(this, "Import", "#Ban_List_Import");
 
 	m_pAddButton->SetCommand(new KeyValues("addban"));
 	m_pRemoveButton->SetCommand(new KeyValues("removeban"));
 	m_pChangeButton->SetCommand(new KeyValues("changeban"));
+	m_pImportButton->SetCommand(new KeyValues("importban"));
 
 	m_pBanContextMenu = new CBanContextMenu(this);
 	m_pBanContextMenu->SetVisible(false);
 
+	m_flUpdateTime = 0.0f;
+	m_bPageViewed = false;
 
-	LoadControlSettings("Admin\\BanPanel.res");
+	LoadControlSettings("Admin/BanPanel.res", "PLATFORM");
 }
 
 //-----------------------------------------------------------------------------
@@ -56,7 +67,6 @@ CBanPanel::CBanPanel(vgui::Panel *parent, const char *name) : PropertyPage(paren
 //-----------------------------------------------------------------------------
 CBanPanel::~CBanPanel()
 {
-
 }
 
 //-----------------------------------------------------------------------------
@@ -64,115 +74,130 @@ CBanPanel::~CBanPanel()
 //-----------------------------------------------------------------------------
 void CBanPanel::OnPageShow()
 {
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Hides the page
-//-----------------------------------------------------------------------------
-void CBanPanel::OnPageHide()
-{
-}
-
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Relayouts the data
-//-----------------------------------------------------------------------------
-void CBanPanel::PerformLayout()
-{
-	BaseClass::PerformLayout();
-
-	int buttonWidth=65,gap=5;
-	int buttonHeight=20;
-
-	// setup the layout of the panels
-	m_pBanListPanel->SetBounds(5,5,GetWide()-10,GetTall()-buttonHeight-gap-4);
-
-	m_pAddButton->SetBounds(5,GetTall()-buttonHeight-3,buttonWidth,buttonHeight);
-	m_pRemoveButton->SetBounds(5+buttonWidth+gap,GetTall()-buttonHeight-3,buttonWidth,buttonHeight);
-	m_pChangeButton->SetBounds(5+(buttonWidth+gap)*2,GetTall()-buttonHeight-3,buttonWidth,buttonHeight);
-
-
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: Called when the game dir combo box is changed
-//-----------------------------------------------------------------------------
-void CBanPanel::OnTextChanged(Panel *panel, const char *text)
-{
-// BUG - TextEntry NEVER lets the enter key through... This doesn't work
-
-	if( text[strlen(text)-1]=='\n') // the enter key was just pressed :)
+	BaseClass::OnPageShow();
+	OnItemSelected();
+	if (!m_bPageViewed)
 	{
-	//	OnSendChat();
+		m_bPageViewed = true;
+		// force update on first page view
+		m_flUpdateTime = 0.0f;
 	}
 }
 
-
 //-----------------------------------------------------------------------------
-// Purpose: double click handler for the player list, doesn't do anything currently
-//----------------------------------------------------------------------------
-void CBanPanel::BanListPanel::OnMouseDoublePressed(vgui::MouseCode code)
-{	
-	// do nothing, what should the default be??
-/*	if (GetSelectedItemsCount())
-	{
-		unsigned int banD =GetSelectedItem(0);
-		PostMessage(m_pParent->GetVPanel(),  new KeyValues("addban", "banID", playerID));
-	}
-	*/
-	
+// Purpose: Requests new data set from server
+//-----------------------------------------------------------------------------
+void CBanPanel::OnResetData()
+{
+	RemoteServer().RequestValue(this, "banlist");
+	// update once every 5 minutes
+	m_flUpdateTime = (float)system()->GetFrameTime() + (60 * 5.0f);
 }
 
-
+//-----------------------------------------------------------------------------
+// Purpose: Checks to see if the page data should be refreshed
+//-----------------------------------------------------------------------------
+void CBanPanel::OnThink()
+{
+	if (m_flUpdateTime < system()->GetFrameTime())
+	{
+		OnResetData();
+	}
+}
 
 //-----------------------------------------------------------------------------
-// Purpose: this is currently unused, we go straight to the message map :)
-//----------------------------------------------------------------------------
-void CBanPanel::OnCommand(const char *command)
+// Purpose: Wrap g_pVGuiLocalize->Find() and not return NULL
+//-----------------------------------------------------------------------------
+static const wchar_t * LocalizeFind( const char *identifier, const wchar_t *defaultText )
 {
-	if (!stricmp(command, "addban"))
-	{
-			PostMessage(m_pParent->GetVPanel(),new KeyValues("addban", "banID",0));
-	}
+	const wchar_t *str = g_pVGuiLocalize->Find(identifier);
+	if ( !str )
+		str = defaultText;
+	return str;
+}
 
-	if( m_pBanListPanel->GetSelectedItemsCount())  // if a user is selected
+//-----------------------------------------------------------------------------
+// Purpose: Received response from server containing data
+//-----------------------------------------------------------------------------
+void CBanPanel::OnServerDataResponse(const char *value, const char *response)
+{
+	// build the list
+	if (!stricmp(value, "banlist"))
 	{
-		int playerID = m_pBanListPanel->GetItemData(m_pBanListPanel->GetSelectedItem(0))->userData;
-		if (!stricmp(command, "removeban"))
+		// clear current list
+		m_pBanListPanel->DeleteAllItems();
+
+		// scan through response for all items
+		int item = 0;
+		float banTime = 0.0f;
+		char id[64] = { 0 };
+		while (3 == sscanf(response, "%i %s : %f min\n", &item, id, &banTime))
 		{
-			PostMessage(m_pParent->GetVPanel(),new KeyValues("removeban", "playerID",playerID));
-		}
-		else if (!stricmp(command, "changeban"))
-		{
-			PostMessage(m_pParent->GetVPanel(),new KeyValues("changeban",  "playerID",playerID));
+			KeyValues *ban = new KeyValues("ban");
+
+			// determine type
+			if (IsIPAddress(id))
+			{
+				// ip address
+				ban->SetWString("type", LocalizeFind("#Ban_IP", L"IP Address"));
+			}
+			else
+			{
+				// must be a userID
+				ban->SetWString("type", LocalizeFind("#Ban_Auth_ID", L"AuthID"));
+			}
+			ban->SetString("id", id);
+
+			if (banTime > 0.0f)
+			{
+				ban->SetFloat("time", banTime);
+			}
+			else
+			{
+				ban->SetWString("time", LocalizeFind("#Ban_Permanent", L"permanent"));
+			}
+			
+			// add to list
+			m_pBanListPanel->AddItem(ban, 0, false, false);
+
+			// move to the next item
+			response = (const char *)strchr(response, '\n');
+			if (!response)
+				break;
+			response++;
 		}
 	}
-	
 }
 
-
-
-void CBanPanel::OnEffectPlayer(KeyValues *data)
+//-----------------------------------------------------------------------------
+// Purpose: Refreshes the list on the user hitting F5
+//-----------------------------------------------------------------------------
+void CBanPanel::OnKeyCodeTyped(vgui::KeyCode code)
 {
-	// you MUST make a copy, if you use the original you get a horrid crash
-	KeyValues *kv=data->MakeCopy();
-	PostMessage(m_pParent->GetVPanel(),kv);
+	if (code == KEY_F5)
+	{
+		OnResetData();
+	}
+	else
+	{
+		BaseClass::OnKeyCodeTyped(code);
+	}
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: opens context menu (user right clicked on a server)
 //-----------------------------------------------------------------------------
 void CBanPanel::OnOpenContextMenu(int row)
 {
+/* CONTEXT MENU CODE TEMPORARILY DISABLED UNTIL VERIFIED AS WORKING
 	if (m_pBanListPanel->IsVisible() && m_pBanListPanel->IsCursorOver()
-		&& m_pBanListPanel->GetSelectedItemsCount())
+		&& m_pBanListPanel->GetNumSelectedRows())
 	// show the ban changing menu IF its the visible panel and the cursor is
 	// over it 
 	{
 	
-		unsigned int banID =m_pBanListPanel->GetSelectedItem(0);
+		unsigned int banID =m_pBanListPanel->GetSelectedRow(0);
 			
 		// activate context menu
 		m_pBanContextMenu->ShowMenu(this, banID);
@@ -181,78 +206,211 @@ void CBanPanel::OnOpenContextMenu(int row)
 	{
 		m_pBanContextMenu->ShowMenu(this, -1);
 	}
+*/
 }
-
 
 //-----------------------------------------------------------------------------
-// Purpose: various function passthroughts for the list panel
-//----------------------------------------------------------------------------
-
-void CBanPanel::AddColumnHeader(int index, const char *columnName, const char *columnText, 
-		int width, bool isTextImage , bool sliderResizable , bool windowResizable )
+// Purpose: Manually adds a new ban
+//-----------------------------------------------------------------------------
+void CBanPanel::AddBan()
 {
-	m_pBanListPanel->AddColumnHeader(index,columnName,columnText,width,isTextImage,sliderResizable,windowResizable);	
+	CDialogAddBan *box = new CDialogAddBan(this);
+	box->AddActionSignalTarget(this);
+	box->Activate("addban", "", "");
 }
-
-void CBanPanel::SetSortFunc(int column, SortFunc *func) 
-{
-	m_pBanListPanel->SetSortFunc(column,func);
-}
-
-void CBanPanel::SetSortColumn(int column) 
-{
-	m_pBanListPanel->SetSortColumn(column);
-}
-
-int CBanPanel::GetSelectedItemsCount()
-{
-	return m_pBanListPanel->GetSelectedItemsCount();
-}
-
-int CBanPanel::GetSelectedItem(int selectionIndex)
-{
-	return m_pBanListPanel->GetSelectedItem(selectionIndex);
-}
-
-void CBanPanel::DeleteAllItems()
-{
-	m_pBanListPanel->DeleteAllItems();
-}
-
-int CBanPanel:: AddItem(KeyValues *data, unsigned int userData  )
-{
-	return m_pBanListPanel->AddItem(data,userData,false,false);
-}
-
-void CBanPanel::SortList( void )
-{
-	m_pBanListPanel->SortList();
-}
-
-vgui::ListPanelItem *CBanPanel::GetItemData( int itemIndex )
-{
-	return m_pBanListPanel->GetItemData(itemIndex);
-}
-
-KeyValues *CBanPanel::GetItem(int itemIndex)
-{
-	return m_pBanListPanel->GetItem(itemIndex);
-}
-
-
-
 
 //-----------------------------------------------------------------------------
-// Purpose: Message map
+// Purpose: prompts the user to remove an existing ban
 //-----------------------------------------------------------------------------
-MessageMapItem_t CBanPanel::m_MessageMap[] =
+void CBanPanel::RemoveBan()
+{
+	int itemID = m_pBanListPanel->GetSelectedItem(0);
+	if ( itemID == -1 )
+		return;
+
+	// ask the user whether or not they want to remove the ban
+	KeyValues *kv = m_pBanListPanel->GetItem(itemID);
+	if (kv != NULL)
+	{
+		// build the message
+		wchar_t id[256];
+		g_pVGuiLocalize->ConvertANSIToUnicode(kv->GetString("id"), id, sizeof(id));
+		wchar_t message[256];
+		g_pVGuiLocalize->ConstructString(message, sizeof(message), g_pVGuiLocalize->Find("#Ban_Remove_Msg"), 1, id);
+
+		// activate the confirmation dialog
+		QueryBox *box = new QueryBox(g_pVGuiLocalize->Find("#Ban_Title_Remove"), message);
+		box->SetOKCommand(new KeyValues("removebanbyid", "id", kv->GetString("id")));
+		box->AddActionSignalTarget(this);
+		box->DoModal();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: change the time length of a ban
+//-----------------------------------------------------------------------------
+void CBanPanel::ChangeBan()
 {	
-	MAP_MESSAGE_INT( CBanPanel, "OpenContextMenu", OnOpenContextMenu, "row" ),
+	int itemID = m_pBanListPanel->GetSelectedItem(0);
+	if (itemID == -1)
+		return;
 
-	MAP_MESSAGE_PARAMS( CBanPanel, "Addban", OnEffectPlayer ), // kick a player menu
-	MAP_MESSAGE_PARAMS( CBanPanel, "Removeban", OnEffectPlayer ),
-	MAP_MESSAGE_PARAMS( CBanPanel, "Changeban", OnEffectPlayer ),
+	KeyValues *kv = m_pBanListPanel->GetItem(itemID);
+	if (kv != NULL)
+	{	
+		char timeText[20];
+		float time = kv->GetFloat("time");
+		_snprintf(timeText, sizeof(timeText), "%0.2f", time);
 
-};
+		// open a dialog asking them what time to change the ban lenght to
+		CDialogCvarChange *box = new CDialogCvarChange(this);
+		box->AddActionSignalTarget(this);
+		box->SetTitle("#Ban_Title_Change", true);
+		box->Activate(kv->GetString("id"), timeText, "changeban", "#Ban_Change_Time");
+	}
+}
 
-IMPLEMENT_PANELMAP( CBanPanel, Frame );
+//-----------------------------------------------------------------------------
+// Purpose: Removes the specified ban
+//-----------------------------------------------------------------------------
+void CBanPanel::RemoveBanByID(const char *id)
+{
+	Assert(id && *id);
+	if (!id || !*id)
+		return;
+
+	// send down the command
+	char cmd[512];
+	_snprintf(cmd, sizeof(cmd) -1, "%s %s\n", IsIPAddress(id) ? "removeip" : "removeid", id);
+	RemoteServer().SendCommand(cmd);
+
+	// force the file to be written
+	if (IsIPAddress(id))
+	{
+		RemoteServer().SendCommand("writeip");
+	}
+	else
+	{
+		RemoteServer().SendCommand("writeid");
+	}
+
+	// refresh
+	OnResetData();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Changes a ban
+//-----------------------------------------------------------------------------
+void CBanPanel::ChangeBanTimeByID(const char *id, const char *newtime)
+{
+	Assert(id && *id);
+	if (!id || !*id)
+		return;
+
+	// if the newtime string is not valid, then set it to 0 (permanent ban)
+	if (!newtime || atof(newtime) < 0.001)
+	{
+		newtime = "0";
+	}
+
+	// send down the command
+	char cmd[512];
+	_snprintf(cmd, sizeof(cmd) -1, "%s %s %s\n", IsIPAddress(id) ? "addip" : "banid", newtime, id);
+	RemoteServer().SendCommand(cmd);
+	if (IsIPAddress(id))
+	{
+		RemoteServer().SendCommand("writeip");
+	}
+	else
+	{
+		RemoteServer().SendCommand("writeid");
+	}
+
+	// refresh
+	OnResetData();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Changes a ban
+//-----------------------------------------------------------------------------
+void CBanPanel::OnCvarChangeValue( KeyValues *kv )
+{
+	const char *idText = kv->GetString( "player", "" );
+	const char *durationText = kv->GetString( "value", "0" );
+
+	ChangeBanTimeByID( idText, durationText );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: called when a row on the list panel is selected.
+//-----------------------------------------------------------------------------
+void CBanPanel::OnItemSelected()
+{
+	int itemID = m_pBanListPanel->GetSelectedItem(0);
+	if (itemID == -1)
+	{
+		m_pRemoveButton->SetEnabled(false);
+		m_pChangeButton->SetEnabled(false);
+	}
+	else
+	{
+		m_pRemoveButton->SetEnabled(true);
+		m_pChangeButton->SetEnabled(true);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Asks the user for the ban file to import
+//-----------------------------------------------------------------------------
+void CBanPanel::ImportBanList()
+{
+	// Pop up the dialog
+	FileOpenDialog *pFileDialog = new FileOpenDialog(this, "#Ban_Find_Ban_File", true);
+	pFileDialog->AddFilter( "*.cfg", "#Config_files", true );
+	pFileDialog->AddFilter( "*.*", "#All_files", false );
+	pFileDialog->DoModal(true);
+	pFileDialog->Activate();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: When a file is selected print out its full path in the debugger
+//-----------------------------------------------------------------------------
+void CBanPanel::OnFileSelected(const char *fullpath)
+{
+	char line[255];
+	TokenLine tok;
+
+	// this can take a while, put up a waiting cursor
+	surface()->SetCursor(dc_hourglass);
+
+	// we don't use filesystem() here becuase we want to let the user pick
+	// a file from anywhere on their filesystem... so we use stdio
+	FILE *f = fopen(fullpath,"rb");
+	while (!feof(f) && fgets(line, 255, f))
+	{	
+		// parse each line of the config file adding the ban
+		tok.SetLine(line);
+		if (tok.CountToken() == 3)
+		{
+			// add the ban
+			const char *id = tok.GetToken(2);
+			ChangeBanTimeByID(id, "0");
+		}
+	}
+
+	// change the cursor back to normal and shutdown file
+	surface()->SetCursor(dc_user);
+	if (f) 
+	{
+		fclose(f);
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if the id string is an IP address, false if it's a WON or STEAM ID
+//-----------------------------------------------------------------------------
+bool CBanPanel::IsIPAddress(const char *id)
+{
+	int s1, s2, s3, s4;
+	return (4 == sscanf(id, "%d.%d.%d.%d", &s1, &s2, &s3, &s4));
+}

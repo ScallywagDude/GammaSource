@@ -1,16 +1,20 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Memory allocation!
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
+#include "pch_tier0.h"
+
+#ifndef STEAM
 
 #ifdef TIER0_VALIDATE_HEAP
 
 #include <malloc.h>
 #include "tier0/dbg.h"
 #include "tier0/memalloc.h"
-
+#include "mem_helpers.h"
 
 extern IMemAlloc *g_pActualAlloc;
 
@@ -33,13 +37,13 @@ public:
 	virtual void *Alloc( size_t nSize );
 	virtual void *Realloc( void *pMem, size_t nSize );
 	virtual void  Free( void *pMem );
-    virtual void *Expand( void *pMem, size_t nSize );
+    virtual void *Expand_NoLongerSupported( void *pMem, size_t nSize );
 
 	// Debug versions
     virtual void *Alloc( size_t nSize, const char *pFileName, int nLine );
     virtual void *Realloc( void *pMem, size_t nSize, const char *pFileName, int nLine );
     virtual void  Free( void *pMem, const char *pFileName, int nLine );
-    virtual void *Expand( void *pMem, size_t nSize, const char *pFileName, int nLine );
+    virtual void *Expand_NoLongerSupported( void *pMem, size_t nSize, const char *pFileName, int nLine );
 
 	// Returns size of a particular allocation
 	virtual size_t GetSize( void *pMem );
@@ -51,6 +55,7 @@ public:
 	virtual long CrtSetBreakAlloc( long lNewBreakAlloc );
 	virtual	int CrtSetReportMode( int nReportType, int nReportMode );
 	virtual int CrtIsValidHeapPointer( const void *pMem );
+	virtual int CrtIsValidPointer( const void *pMem, unsigned int size, int access );
 	virtual int CrtCheckMemory( void );
 	virtual int CrtSetDbgFlag( int nNewFlag );
 	virtual void CrtMemCheckpoint( _CrtMemState *pState );
@@ -61,6 +66,22 @@ public:
 	virtual int heapchk();
 
 	virtual void DumpStats() {}
+	virtual void DumpStatsFileBase( char const *pchFileBase ) {}
+
+	virtual bool IsDebugHeap()
+	{
+		return true;
+	}
+
+	virtual int GetVersion() { return MEMALLOC_VERSION; }
+
+	virtual void CompactHeap(); 
+	virtual MemAllocFailHandler_t SetAllocFailHandler( MemAllocFailHandler_t pfnMemAllocFailHandler );
+
+	virtual uint32 GetDebugInfoSize() { return 0; }
+	virtual void SaveDebugInfo( void *pvDebugInfo ) { }
+	virtual void RestoreDebugInfo( const void *pvDebugInfo ) {}	
+	virtual void InitDebugInfo( void *pvDebugInfo, const char *pchRootFileName, int nLine ) {}
 
 private:
 	struct HeapPrefix_t
@@ -77,6 +98,13 @@ private:
 	};
 
 private:
+	// Returns the actual debug info
+	void GetActualDbgInfo( const char *&pFileName, int &nLine );
+
+	// Updates stats
+	void RegisterAllocation( const char *pFileName, int nLine, size_t nLogicalSize, size_t nActualSize, unsigned nTime );
+	void RegisterDeallocation( const char *pFileName, int nLine, size_t nLogicalSize, size_t nActualSize, unsigned nTime );
+
 	HeapSuffix_t *Suffix( HeapPrefix_t *pPrefix );
 	void *AllocationStart( HeapPrefix_t *pBase );
 	HeapPrefix_t *PrefixFromAllocation( void *pAlloc );
@@ -221,6 +249,8 @@ bool CValidateAlloc::ValidateAllocation( HeapPrefix_t *pHeap )
 //-----------------------------------------------------------------------------
 void *CValidateAlloc::Alloc( size_t nSize )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	int nActualSize = nSize + sizeof(HeapPrefix_t) + sizeof(HeapSuffix_t);
 	HeapPrefix_t *pHeap = (HeapPrefix_t*)g_pActualAlloc->Alloc( nActualSize );
 	AddToList( pHeap, nSize );
@@ -229,6 +259,8 @@ void *CValidateAlloc::Alloc( size_t nSize )
 
 void *CValidateAlloc::Realloc( void *pMem, size_t nSize )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
@@ -241,19 +273,23 @@ void *CValidateAlloc::Realloc( void *pMem, size_t nSize )
 
 void CValidateAlloc::Free( void *pMem )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
 	g_pActualAlloc->Free( pHeap );
 }
 
-void *CValidateAlloc::Expand( void *pMem, size_t nSize )
+void *CValidateAlloc::Expand_NoLongerSupported( void *pMem, size_t nSize )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
 	int nActualSize = nSize + sizeof(HeapPrefix_t) + sizeof(HeapSuffix_t);
-	pHeap = (HeapPrefix_t*)g_pActualAlloc->Expand( pHeap, nActualSize );
+	pHeap = (HeapPrefix_t*)g_pActualAlloc->Expand_NoLongerSupported( pHeap, nActualSize );
 	AddToList( pHeap, nSize );
 
 	return AllocationStart( pHeap );
@@ -265,6 +301,8 @@ void *CValidateAlloc::Expand( void *pMem, size_t nSize )
 //-----------------------------------------------------------------------------
 void *CValidateAlloc::Alloc( size_t nSize, const char *pFileName, int nLine )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	int nActualSize = nSize + sizeof(HeapPrefix_t) + sizeof(HeapSuffix_t);
 	HeapPrefix_t *pHeap = (HeapPrefix_t*)g_pActualAlloc->Alloc( nActualSize, pFileName, nLine );
 	AddToList( pHeap, nSize );
@@ -273,6 +311,8 @@ void *CValidateAlloc::Alloc( size_t nSize, const char *pFileName, int nLine )
 
 void *CValidateAlloc::Realloc( void *pMem, size_t nSize, const char *pFileName, int nLine )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
@@ -285,19 +325,23 @@ void *CValidateAlloc::Realloc( void *pMem, size_t nSize, const char *pFileName, 
 
 void  CValidateAlloc::Free( void *pMem, const char *pFileName, int nLine )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
 	g_pActualAlloc->Free( pHeap, pFileName, nLine );
 }
 
-void *CValidateAlloc::Expand( void *pMem, size_t nSize, const char *pFileName, int nLine )
+void *CValidateAlloc::Expand_NoLongerSupported( void *pMem, size_t nSize, const char *pFileName, int nLine )
 {
+	Assert( heapchk() == _HEAPOK );
+	Assert( CrtCheckMemory() );
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	RemoveFromList( pHeap );
 
 	int nActualSize = nSize + sizeof(HeapPrefix_t) + sizeof(HeapSuffix_t);
-	pHeap = (HeapPrefix_t*)g_pActualAlloc->Expand( pHeap, nActualSize, pFileName, nLine );
+	pHeap = (HeapPrefix_t*)g_pActualAlloc->Expand_NoLongerSupported( pHeap, nActualSize, pFileName, nLine );
 	AddToList( pHeap, nSize );
 
 	return AllocationStart( pHeap );
@@ -309,6 +353,9 @@ void *CValidateAlloc::Expand( void *pMem, size_t nSize, const char *pFileName, i
 //-----------------------------------------------------------------------------
 size_t CValidateAlloc::GetSize( void *pMem )
 {
+	if ( !pMem )
+		return CalcHeapUsed();
+
 	HeapPrefix_t *pHeap	= PrefixFromAllocation( pMem );
 	return pHeap->m_nSize;
 }
@@ -344,6 +391,12 @@ int CValidateAlloc::CrtIsValidHeapPointer( const void *pMem )
 {
 	const HeapPrefix_t *pHeap = PrefixFromAllocation( pMem );
 	return g_pActualAlloc->CrtIsValidHeapPointer( pHeap );
+}
+
+int CValidateAlloc::CrtIsValidPointer( const void *pMem, unsigned int size, int access )
+{
+	const HeapPrefix_t *pHeap = PrefixFromAllocation( pMem );
+	return g_pActualAlloc->CrtIsValidPointer( pHeap, size, access );
 }
 
 int CValidateAlloc::CrtCheckMemory( void )
@@ -393,10 +446,40 @@ int CValidateAlloc::heapchk()
 
 #ifdef _WIN32
 	return bOk ? _HEAPOK : 0;
-#elif _LINUX
+#elif POSIX
 	return bOk;
+#else
+#error
 #endif
 }
 
+// Returns the actual debug info
+void CValidateAlloc::GetActualDbgInfo( const char *&pFileName, int &nLine )
+{
+	g_pActualAlloc->GetActualDbgInfo( pFileName, nLine );
+}
+
+// Updates stats
+void CValidateAlloc::RegisterAllocation( const char *pFileName, int nLine, size_t nLogicalSize, size_t nActualSize, unsigned nTime )
+{
+	g_pActualAlloc->RegisterAllocation( pFileName, nLine, nLogicalSize, nActualSize, nTime );
+}
+
+void CValidateAlloc::RegisterDeallocation( const char *pFileName, int nLine, size_t nLogicalSize, size_t nActualSize, unsigned nTime )
+{
+	g_pActualAlloc->RegisterDeallocation( pFileName, nLine, nLogicalSize, nActualSize, nTime );
+}
+
+void CValidateAlloc::CompactHeap()
+{
+	g_pActualAlloc->CompactHeap();
+}
+
+MemAllocFailHandler_t CValidateAlloc::SetAllocFailHandler( MemAllocFailHandler_t pfnMemAllocFailHandler )
+{
+	return g_pActualAlloc->SetAllocFailHandler( pfnMemAllocFailHandler );
+}
 
 #endif // TIER0_VALIDATE_HEAP
+
+#endif // STEAM

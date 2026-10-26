@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CREATEMULTIPLAYERGAMEGAMEPLAYPAGE_H
 #define CREATEMULTIPLAYERGAMEGAMEPLAYPAGE_H
@@ -26,10 +26,16 @@ public:
 	CCreateMultiplayerGameGameplayPage(vgui::Panel *parent, const char *name);
 	~CCreateMultiplayerGameGameplayPage();
 
+	// returns currently entered information about the server
+	int GetMaxPlayers();
+	const char *GetPassword();
+	const char *GetHostName();
+
 protected:
 	virtual void OnApplyChanges();
 
 private:
+	const char *GetValue(const char *cvarName, const char *defaultValue);
 	void LoadGameOptionsList();
 	void GatherCurrentValues();
 

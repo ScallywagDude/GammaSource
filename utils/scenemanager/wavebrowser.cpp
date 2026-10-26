@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "workspacebrowser.h"
@@ -17,7 +17,7 @@
 
 #include "workspacemanager.h"
 #include "wavebrowser.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "iscenemanagersound.h"
 #include "snd_wave_source.h"
 #include "cmdlib.h"
@@ -27,6 +27,8 @@
 #include "drawhelper.h"
 #include "ifileloader.h"
 #include "MultipleRequest.h"
+
+#include "soundchars.h"
 
 enum
 {
@@ -40,14 +42,19 @@ enum
 	IDC_SB_CHECKIN,
 	IDC_SB_PROPERTIES,
 	IDC_SB_ENABLEVOICEDUCKING,
-	IDC_SB_DISABLEVOICEDUCKING
+	IDC_SB_DISABLEVOICEDUCKING,
+
+	IDC_SB_EXPORTSENTENCE,
+	IDC_SB_IMPORTSENTENCE,
+
+	IDC_SB_GETSENTENCE,
 };
 
 enum
 {
 	COL_WAV = 0,
 	COL_DUCKED,
-	COL_SENTENCE,
+	COL_SENTENCE
 };
 
 class CWaveList : public mxListView
@@ -414,15 +421,17 @@ int CWaveBrowser::handleEvent( mxEvent *event )
 				break;
 			case IDC_SB_FILETREE:
 				{
-					bool rightmouse = ( event->flags == mxEvent::RightClicked ) ? true : false;
-					bool doubleclicked = ( event->flags == mxEvent::DoubleClicked ) ? true : false;
-
 					PopulateTree( m_pFileTree->GetSelectedPath() );
 				}
 				break;
 			case IDC_SB_PLAY:
 				{
 					OnPlay();
+				}
+				break;
+			case  IDC_SB_GETSENTENCE:
+				{
+					OnGetSentence();
 				}
 				break;
 			case IDC_SB_PROPERTIES:
@@ -448,6 +457,16 @@ int CWaveBrowser::handleEvent( mxEvent *event )
 			case IDC_SB_DISABLEVOICEDUCKING:
 				{
 					OnDisableVoiceDucking();
+				}
+				break;
+			case IDC_SB_IMPORTSENTENCE:
+				{
+					OnImportSentence();
+				}
+				break;
+			case IDC_SB_EXPORTSENTENCE:
+				{
+					OnExportSentence();
 				}
 				break;
 			}
@@ -770,7 +789,14 @@ void CWaveBrowser::ShowContextMenu( void )
 	{
 		pop->add( "Enable Voice Ducking", IDC_SB_ENABLEVOICEDUCKING ); 
 		pop->add( "Disable Voice Ducking", IDC_SB_DISABLEVOICEDUCKING ); 
+		pop->addSeparator();
 	}
+
+	pop->add( "Refresh sentence data", IDC_SB_GETSENTENCE );
+	pop->add( "Import Sentence Data", IDC_SB_IMPORTSENTENCE );
+	pop->add( "Export Sentence Data", IDC_SB_EXPORTSENTENCE );
+
+	pop->addSeparator();
 
 	pop->add( "Check out", IDC_SB_CHECKOUT );
 	pop->add( "Check in", IDC_SB_CHECKIN );
@@ -838,8 +864,9 @@ void CWaveBrowser::JumpToItem( CWaveFile *wav )
 	char *usepath = path + Q_strlen( "/sound/" );
 	PopulateTree( usepath );
 
+	int idx = 0;
 	int c = m_pListView->getItemCount();
-	for ( int idx = 0; idx < c; idx++ )
+	for ( ; idx < c; idx++ )
 	{
 		CWaveFile *item = (CWaveFile *)m_pListView->getUserData( idx, 0 );
 		if ( !Q_stricmp( item->GetFileName(), wav->GetFileName() ) )
@@ -856,11 +883,14 @@ void CWaveBrowser::JumpToItem( CWaveFile *wav )
 
 CWaveFile	*CWaveBrowser::FindEntry( char const *wavname, bool jump /*= false*/ )
 {
-	int idx = m_AllSounds.Find( wavname );
+	int idx = m_AllSounds.Find( PSkipSoundChars( wavname ) );
 	if ( idx != m_AllSounds.InvalidIndex() )
 	{
 		CWaveFile *wav = m_AllSounds[ idx ];
+#if defined( _DEBUG )
 		char const *name = wav->GetName();
+		NOTE_UNUSED( name );
+#endif
 
 		if ( jump )
 		{
@@ -927,7 +957,7 @@ void CWaveBrowser::OnEnableVoiceDucking()
 {
 	BuildSelectionList( m_CurrentSelection );
 	int count = m_CurrentSelection.Count();
-	if ( count <= 1 )
+	if ( count < 1 )
 		return;
 
 	MultipleRequestChangeContext();
@@ -948,7 +978,7 @@ void CWaveBrowser::OnDisableVoiceDucking()
 {
 	BuildSelectionList( m_CurrentSelection );
 	int count = m_CurrentSelection.Count();
-	if ( count <= 1 )
+	if ( count < 1 )
 		return;
 
 	MultipleRequestChangeContext();
@@ -962,5 +992,75 @@ void CWaveBrowser::OnDisableVoiceDucking()
 		}
 	}
 
+	GetWorkspaceManager()->RefreshBrowsers();
+}
+
+void CWaveBrowser::OnImportSentence()
+{
+	BuildSelectionList( m_CurrentSelection );
+	int count = m_CurrentSelection.Count();
+	if ( count < 1 )
+		return;
+
+	MultipleRequestChangeContext();
+
+	for ( int i = 0; i < count; i++ )
+	{
+		CWaveFile *item = m_CurrentSelection[ i ];
+
+		char relative[ 512 ];
+		item->GetPhonemeExportFile( relative, sizeof( relative ) );
+		if ( filesystem->FileExists( relative ) )
+		{
+			item->ImportValveDataChunk( relative );
+		}
+	}
+
+	GetWorkspaceManager()->RefreshBrowsers();
+}
+
+void CWaveBrowser::OnExportSentence()
+{
+	BuildSelectionList( m_CurrentSelection );
+	int count = m_CurrentSelection.Count();
+	if ( count < 1 )
+		return;
+
+	for ( int i = 0; i < count; i++ )
+	{
+		CWaveFile *item = m_CurrentSelection[ i ];
+
+		char relative[ 512 ];
+		item->GetPhonemeExportFile( relative, sizeof( relative ) );
+		if ( filesystem->FileExists( relative ) )
+		{
+			filesystem->RemoveFile( relative );
+		}
+
+		item->ExportValveDataChunk( relative );
+	}
+}
+
+
+void CWaveBrowser::OnGetSentence()
+{
+	BuildSelectionList( m_CurrentSelection );
+	if ( m_CurrentSelection.Count() < 1 )
+	{
+		Con_Printf( "No selection\n" );
+		return;
+	}
+
+	int c = m_CurrentSelection.Count();
+	for ( int i = c - 1; i >= 0 ; i-- )
+	{
+		CWaveFile *wav = m_CurrentSelection[ i ];
+		if ( !wav->HasLoadedSentenceInfo() )
+		{
+			wav->EnsureSentence();
+		}
+	}
+
+	// Repopulate things
 	GetWorkspaceManager()->RefreshBrowsers();
 }

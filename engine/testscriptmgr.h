@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef TESTSCRIPTMGR_H
 #define TESTSCRIPTMGR_H
@@ -13,7 +13,10 @@
 
 
 #include "filesystem.h"
-#include "utllinkedlist.h"
+#include "tier1/utllinkedlist.h"
+#include "tier1/utldict.h"
+
+class CCommand;
 
 
 // This represents a loop structure.
@@ -43,7 +46,8 @@ public:
 	void		CheckPoint( const char *pName );
 
 	// This pauses the script until execution reaches the specified checkpoint.
-	void		SetWaitCheckPoint( const char *pCheckPointName );
+	// If bOnce is true, then it won't start waiting if the specified checkpoint was already hit.
+	void		SetWaitCheckPoint( const char *pCheckPointName, bool bOnce=false );
 
 
 private:
@@ -55,11 +59,6 @@ private:
 
 	// Returns true if we're waiting for a checkpoint.
 	bool		IsCheckPointWaiting() const;
-
-
-	// Console command handlers.
-	friend void Test_Wait();
-	friend void Test_RunFrame();
 
 	void		SetWaitTime( float flSeconds );
 
@@ -81,11 +80,15 @@ private:
 
 
 	CUtlLinkedList<CLoopInfo*,int>	m_Loops;
-	
-	friend void Test_RunFrame();
-	friend void Test_StartLoop();
-	friend void Test_LoopCount();
-	friend void Test_LoopForNumSeconds();
+	CUtlDict<int, int> m_CheckPointsHit;	// Which checkpoints we've hit.
+
+	// Console command handlers.
+	friend void Test_Wait( const CCommand &args );
+	friend void Test_RunFrame( const CCommand &args );
+	friend void Test_StartLoop( const CCommand &args );
+	friend void Test_LoopCount( const CCommand &args );
+	friend void Test_Loop( const CCommand &args );
+	friend void Test_LoopForNumSeconds( const CCommand &args );
 };
 
 

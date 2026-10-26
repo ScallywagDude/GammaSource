@@ -1,12 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // FIXME!!  This version doesn't support vertexalpha to make it blend to white!!!
 DEFINE_FALLBACK_SHADER( Modulate, Modulate_DX6 )
@@ -54,28 +57,18 @@ BEGIN_SHADER( Modulate_DX6,
 
 			int drawFlags = SHADER_DRAW_POSITION;
 
-			if (params[BASETEXTURE]->IsDefined())
+			if (params[BASETEXTURE]->IsTexture())
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				drawFlags |= SHADER_DRAW_TEXCOORD0;
 			}
 
 			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
-				drawFlags |= SHADER_DRAW_COLOR;
-
-			pShaderShadow->DrawFlags( drawFlags );
-		}
-		DYNAMIC_STATE
-		{
-			if (params[BASETEXTURE]->IsDefined())
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
+				drawFlags |= SHADER_DRAW_COLOR;
 			}
 
-			// The constant color is the modulation color...
-			SetColorState( COLOR );
-
+			pShaderShadow->DrawFlags( drawFlags );
 			// We need to fog to *white* regardless of overbrighting...
 			if( bMod2X )
 			{
@@ -83,8 +76,20 @@ BEGIN_SHADER( Modulate_DX6,
 			}
 			else
 			{
-				FogToWhite();
+				FogToOOOverbright();
 			}
+		}
+		DYNAMIC_STATE
+		{
+			if (params[BASETEXTURE]->IsTexture())
+			{
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+				SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
+			}
+
+			// The constant color is the modulation color...
+			SetColorState( COLOR );
+
 		}
 		Draw( );
 	}

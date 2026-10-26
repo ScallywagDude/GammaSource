@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an interface for reading and writing heirarchical
 //			text files of key value pairs. The format of the file is as follows:
@@ -30,24 +30,24 @@
 // parsing application requires them to be.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <fcntl.h>
+#ifdef _WIN32
 #include <io.h>
+#endif
 #include <math.h>
-#include <sys\stat.h>
+#include <sys/stat.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "ChunkFile.h"
-#include "Vector.h"
-#include "Vector4D.h"
+#include "chunkfile.h"
+#include "mathlib/vector.h"
+#include "mathlib/vector4d.h"
+#include "tier1/strtools.h"
 
-//
-// Fixes an infinite loop that occurs when loading certain VMFs. The bug
-// occurs with Worldcraft built with DevStudio SP4.
-//
-#pragma optimize("g", off)
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 
 //-----------------------------------------------------------------------------
@@ -85,7 +85,7 @@ void CChunkHandlerMap::AddHandler(const char *pszChunkName, ChunkHandler_t pfnHa
 {
 	ChunkHandlerInfoNode_t *pNew = new ChunkHandlerInfoNode_t;
 
-	strcpy(pNew->Handler.szChunkName, pszChunkName);
+	Q_strncpy(pNew->Handler.szChunkName, pszChunkName, sizeof( pNew->Handler.szChunkName ));
 	pNew->Handler.pfnHandler = pfnHandler;
 	pNew->Handler.pData = pData;
 	pNew->pNext = NULL;
@@ -191,7 +191,7 @@ ChunkFileResult_t CChunkFile::BeginChunk(const char *pszChunkName)
 	// Write the chunk name and open curly.
 	//
 	char szBuf[MAX_KEYVALUE_LEN];
-	sprintf(szBuf, "%s\r\n%s{", pszChunkName, m_szIndent);
+	Q_snprintf(szBuf, sizeof( szBuf ), "%s\r\n%s{", pszChunkName, m_szIndent);
 	ChunkFileResult_t eResult = WriteLine(szBuf);
 
 	//
@@ -269,31 +269,31 @@ const char *CChunkFile::GetErrorText(ChunkFileResult_t eResult)
 	{
 		case ChunkFile_UnexpectedEOF:
 		{
-			strcpy(szError, "unexpected end of file");
+			Q_strncpy(szError, "unexpected end of file", sizeof( szError ) );
 			break;
 		}
 
 		case ChunkFile_UnexpectedSymbol:
 		{
-			sprintf(szError, "unexpected symbol '%s'", m_szErrorToken);
+			Q_snprintf(szError, sizeof( szError ), "unexpected symbol '%s'", m_szErrorToken);
 			break;
 		}
 
 		case ChunkFile_OpenFail:
 		{
-			strcpy(szError, strerror(errno));
+			Q_snprintf(szError, sizeof( szError ), "%s", strerror(errno)) ;
 			break;
 		}
 
 		case ChunkFile_StringTooLong:
 		{
-			strcpy(szError, "unterminated string or string too long");
+			Q_strncpy(szError, "unterminated string or string too long", sizeof( szError ) );
 			break;
 		}
 
 		default:
 		{
-			sprintf(szError, "error %d", eResult);
+			Q_snprintf(szError, sizeof( szError ), "error %d", eResult);
 		}
 	}
 
@@ -365,7 +365,7 @@ ChunkFileResult_t CChunkFile::HandleChunk(const char *szChunkName)
 				char szKey[MAX_KEYVALUE_LEN];
 				char szValue[MAX_KEYVALUE_LEN];
 
-				while ((eResult = ReadNext(szKey, szValue, eChunkType)) == ChunkFile_Ok)
+				while ((eResult = ReadNext(szKey, szValue, sizeof(szValue), eChunkType)) == ChunkFile_Ok)
 				{
 					if (eChunkType == ChunkType_Chunk)
 					{
@@ -466,10 +466,11 @@ void CChunkFile::PushHandlers(CChunkHandlerMap *pHandlerMap)
 //			returned in the eChunkType parameter.
 // Input  : szName - Name of key or chunk.
 //			szValue - If eChunkType is ChunkType_Key, contains the value of the key.
+//			nValueSize - Size of the buffer pointed to by szValue.
 //			eChunkType - ChunkType_Key or ChunkType_Chunk.
 // Output : Returns ChunkFile_Ok on success, an error code if a parsing error occurs.
 //-----------------------------------------------------------------------------
-ChunkFileResult_t CChunkFile::ReadNext(char *szName, char *szValue, ChunkType_t &eChunkType)
+ChunkFileResult_t CChunkFile::ReadNext(char *szName, char *szValue, int nValueSize, ChunkType_t &eChunkType)
 {
 	// HACK: pass in buffer sizes?
 	trtoken_t eTokenType = m_TokenReader.NextToken(szName, MAX_KEYVALUE_LEN);
@@ -504,7 +505,7 @@ ChunkFileResult_t CChunkFile::ReadNext(char *szName, char *szValue, ChunkType_t 
 						else
 						{
 							// Unexpected symbol.
-							strcpy(m_szErrorToken, szNext);
+							Q_strncpy(m_szErrorToken, szNext, sizeof( m_szErrorToken ) );
 							return(ChunkFile_UnexpectedSymbol);
 						}
 					}
@@ -513,7 +514,7 @@ ChunkFileResult_t CChunkFile::ReadNext(char *szName, char *szValue, ChunkType_t 
 					case IDENT:
 					{
 						// Key value pair.
-						strcpy(szValue, szNext);
+						Q_strncpy(szValue, szNext, nValueSize );
 						eChunkType = ChunkType_Key;
 						return(ChunkFile_Ok);
 					}
@@ -543,7 +544,7 @@ ChunkFileResult_t CChunkFile::ReadNext(char *szName, char *szValue, ChunkType_t 
 				else
 				{
 					// Unexpected symbol.
-					strcpy(m_szErrorToken, szName);
+					Q_strncpy(m_szErrorToken, szName, sizeof( m_szErrorToken ) );
 					return(ChunkFile_UnexpectedSymbol);
 				}
 			}
@@ -585,7 +586,7 @@ ChunkFileResult_t CChunkFile::ReadChunk(KeyHandler_t pfnKeyHandler, void *pData)
 		char szValue[MAX_KEYVALUE_LEN];
 		ChunkType_t eChunkType;
 
-		eResult = ReadNext(szName, szValue, eChunkType);
+		eResult = ReadNext(szName, szValue, sizeof(szValue), eChunkType);
 
 		if (eResult == ChunkFile_Ok)
 		{
@@ -687,9 +688,9 @@ bool CChunkFile::ReadKeyValueColor(const char *pszValue, unsigned char &chRed, u
 {
 	if (pszValue != NULL)
 	{
-		int r;
-		int g;
-		int b;
+		int r = 0;
+		int g = 0;
+		int b = 0;
 		
 		if (sscanf(pszValue, "%d %d %d", &r, &g, &b) == 3)
 		{
@@ -716,6 +717,23 @@ bool CChunkFile::ReadKeyValuePoint(const char *pszValue, Vector &Point)
 	if (pszValue != NULL)
 	{
 		return(sscanf(pszValue, "(%f %f %f)", &Point.x, &Point.y, &Point.z) == 3);
+	}
+
+	return(false);
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : pszValue - 
+//			pfVector - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CChunkFile::ReadKeyValueVector2(const char *pszValue, Vector2D &vec)
+{
+	if (pszValue != NULL)
+	{
+		return ( sscanf( pszValue, "[%f %f]", &vec.x, &vec.y) == 2 );
 	}
 
 	return(false);
@@ -766,7 +784,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValue(const char *pszKey, const char *pszV
 	if ((pszKey != NULL) && (pszValue != NULL))
 	{
 		char szTemp[MAX_KEYVALUE_LEN];
-		sprintf(szTemp, "\"%s\" \"%s\"", pszKey, pszValue);
+		Q_snprintf(szTemp, sizeof( szTemp ), "\"%s\" \"%s\"", pszKey, pszValue);
 		return(WriteLine(szTemp));
 	}
 
@@ -785,7 +803,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValueBool(const char *pszKey, bool bValue)
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"%d\"", pszKey, (int)bValue);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"%d\"", pszKey, (int)bValue);
 		return(WriteLine(szBuf));
 	}
 
@@ -804,7 +822,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValueInt(const char *pszKey, int nValue)
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"%d\"", pszKey, nValue);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"%d\"", pszKey, nValue);
 		return(WriteLine(szBuf));
 	}
 
@@ -823,7 +841,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValueFloat(const char *pszKey, float fValu
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"%g\"", pszKey, (double)fValue);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"%g\"", pszKey, (double)fValue);
 		return(WriteLine(szBuf));
 	}
 
@@ -844,7 +862,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValueColor(const char *pszKey, unsigned ch
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"%d %d %d\"", pszKey, (int)r, (int)g, (int)b);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"%d %d %d\"", pszKey, (int)r, (int)g, (int)b);
 		return(WriteLine(szBuf));
 	}
 
@@ -863,7 +881,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValuePoint(const char *pszKey, const Vecto
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"(%g %g %g)\"", pszKey, (double)Point[0], (double)Point[1], (double)Point[2]);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"(%g %g %g)\"", pszKey, (double)Point[0], (double)Point[1], (double)Point[2]);
 		return(WriteLine(szBuf));
 	}
 
@@ -873,16 +891,29 @@ ChunkFileResult_t CChunkFile::WriteKeyValuePoint(const char *pszKey, const Vecto
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : pszKey - 
-//			fVector - 
-// Output : 
+//-----------------------------------------------------------------------------
+ChunkFileResult_t CChunkFile::WriteKeyValueVector2(const char *pszKey, const Vector2D &vec)
+{
+	if (pszKey != NULL)
+	{
+		char szBuf[MAX_KEYVALUE_LEN];
+		Q_snprintf( szBuf, sizeof( szBuf ), "\"%s\" \"[%g %g]\"", pszKey, (double)vec.x, (double)vec.y );
+		return(WriteLine(szBuf));
+	}
+
+	return(ChunkFile_Ok);
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 //-----------------------------------------------------------------------------
 ChunkFileResult_t CChunkFile::WriteKeyValueVector3(const char *pszKey, const Vector &vec)
 {
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"[%g %g %g]\"", pszKey, (double)vec.x, (double)vec.y, (double)vec.z);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"[%g %g %g]\"", pszKey, (double)vec.x, (double)vec.y, (double)vec.z);
 		return(WriteLine(szBuf));
 	}
 
@@ -901,7 +932,7 @@ ChunkFileResult_t CChunkFile::WriteKeyValueVector4(const char *pszKey, const Vec
 	if (pszKey != NULL)
 	{
 		char szBuf[MAX_KEYVALUE_LEN];
-		sprintf(szBuf, "\"%s\" \"[%g %g %g %g]\"", pszKey, (double)vec.x, (double)vec.y, (double)vec.z, (double)vec.w);
+		Q_snprintf(szBuf, sizeof( szBuf ), "\"%s\" \"[%g %g %g %g]\"", pszKey, (double)vec.x, (double)vec.y, (double)vec.z, (double)vec.w);
 		return( WriteLine( szBuf ) );
 	}
 

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IVAUDIO_H
 #define IVAUDIO_H
@@ -27,6 +27,8 @@ public:
 class IAudioStream
 {
 public:
+	virtual ~IAudioStream() {}
+
 	// Decode another bufferSize output bytes from the stream
 	// returns number of bytes decoded
 	virtual int	Decode( void *pBuffer, unsigned int bufferSize ) = 0;
@@ -38,15 +40,22 @@ public:
 	// output channels (1=mono,2=stereo)
 	virtual int GetOutputChannels() = 0;
 
-	// seek?
+	// seek
+	virtual unsigned int GetPosition() = 0;
+
+	// NOTE: BUGBUG: Only supports seeking forward currently!
+	virtual void SetPosition( unsigned int position ) = 0;
+
 	// reset?
 };
 
 
-#define VAUDIO_INTERFACE_VERSION		"VAudio001"
+#define VAUDIO_INTERFACE_VERSION		"VAudio002"
 class IVAudio
 {
 public:
+	virtual ~IVAudio() {}
+
 	virtual IAudioStream	*CreateMP3StreamDecoder( IAudioStreamEvent *pEventHandler ) = 0;
 	virtual void			DestroyMP3StreamDecoder( IAudioStream *pDecoder ) = 0;
 };

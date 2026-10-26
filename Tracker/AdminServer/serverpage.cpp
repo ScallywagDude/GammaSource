@@ -1,4 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // The copyright to the contents herein is the property of Valve, L.L.C.
 // The contents may be used and/or copied only with the written permission of
@@ -15,7 +15,6 @@
 //
 // $NoKeywords: $
 //=============================================================================
-#include <vgui/VGUI.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
@@ -28,7 +27,7 @@
 #include <VGUI_IScheme.h>
 #include <VGUI_IVGui.h>
 #include <VGUI_MouseCode.h>
-#include "FileSystem.h"
+#include "filesystem.h"
 
 
 // vgui controls
@@ -53,7 +52,7 @@
 #include "ServerContextMenu.h"
 #include "socket.h"
 #include "util.h"
-#include "serverpage.h"
+#include "vinternetdlg.h"
 #include "dialogcvarchange.h"
 //#include "ModList.h"
 #include "DialogGameInfo.h"
@@ -128,8 +127,8 @@ VInternetDlg::VInternetDlg( unsigned int userid ) : Frame(NULL, "VInternetDlg")
 	char szDLL[_MAX_PATH];
 
 	// now load the net interface so we can use it
-	vgui::filesystem()->GetLocalPath("Friends/TrackerNET.dll", szDLL);
-	vgui::filesystem()->GetLocalCopy(szDLL);
+	g_pFullFileSystem->GetLocalPath("Friends/TrackerNET.dll", szDLL);
+	g_pFullFileSystem->GetLocalCopy(szDLL);
 	g_hTrackerNetModule = Sys_LoadModule(szDLL);
 
 	CreateInterfaceFn netFactory = Sys_GetFactory(g_hTrackerNetModule);
@@ -194,10 +193,10 @@ void VInternetDlg::Open( void )
 {	
 	m_pTabPanel->RequestFocus();
 	// if serverbrowser file is not there we will try to transfer the favorites list.
-	FileHandle_t f = filesystem()->Open("AdminServer.vdf", "rb");
+	FileHandle_t f = g_pFullFileSystem->Open("AdminServer.vdf", "rb");
 	if (f)
 	{
-		filesystem()->Close( f );
+		g_pFullFileSystem->Close( f );
 	}
 
 	
@@ -254,7 +253,7 @@ void VInternetDlg::LoadFilters()
   	}
 
 	m_pSavedData = new KeyValues ("Filters");
-	if (!m_pSavedData->LoadFromFile(filesystem(), "Admin\\AdminServer.vdf", "PLATFORM"))
+	if (!m_pSavedData->LoadFromFile(g_pFullFileSystem, "Admin\\AdminServer.vdf", true, "PLATFORM"))
 	{
 		// file not successfully loaded, create the default key
 		m_pSavedData->FindKey("List", true);
@@ -303,7 +302,7 @@ void VInternetDlg::SaveFilters()
 	// get the favorites list
 	KeyValues *favorites = m_pSavedData->FindKey("Favorites", true);
 	m_pFavoriteGames->SaveFavoritesList(favorites,m_bSaveRcon);
-	m_pSavedData->SaveToFile(filesystem(), "Admin\\AdminServer.vdf", "PLATFORM");
+	m_pSavedData->SaveToFile(g_pFullFileSystem, "Admin\\AdminServer.vdf", "PLATFORM");
 
 }
 
@@ -568,7 +567,7 @@ void VInternetDlg::OnManageServer(int serverID)
 	}
 }
 
-void VInternetDlg::OnPlayerDialog(KeyValues *data)
+void VInternetDlg::OnPlayerDialog(vgui::KeyValues *data)
 {
 	const char *type=data->GetString("type");
 	const char *playerName=data->GetString("player");

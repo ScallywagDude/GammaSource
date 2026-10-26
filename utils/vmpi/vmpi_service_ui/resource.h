@@ -1,5 +1,6 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //{{NO_DEPENDENCIES}}
-// Microsoft Developer Studio generated include file.
+// Microsoft Visual C++ generated include file.
 // Used by vmpi_service_ui.rc
 //
 #define IDC_MYICON                      2
@@ -26,6 +27,7 @@
 #define ID_SET_PASSWORD                 32771
 #define ID_IGNORECSXCOMPILES            32772
 #define ID_HIGHLIGHT_ICON_WHEN_BUSY     32773
+#define ID_SCREENSAVER_MODE             32774
 #define ID_ENABLE_WORKER                40001
 #define ID_DISABLE_WORKER               40003
 #define ID_EXIT_SERVICE                 40004
@@ -38,7 +40,7 @@
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        133
-#define _APS_NEXT_COMMAND_VALUE         32774
+#define _APS_NEXT_COMMAND_VALUE         32775
 #define _APS_NEXT_CONTROL_VALUE         1002
 #define _APS_NEXT_SYMED_VALUE           110
 #endif

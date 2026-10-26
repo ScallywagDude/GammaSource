@@ -1,46 +1,81 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
 // gl_warp.c -- sky and water polygons
 
-#include "glquake.h"
+#include "render_pch.h"
 #include "gl_water.h"
 #include "zone.h"
 #include "gl_model_private.h"
-#include "gl_texture.h"
 #include "gl_matsysiface.h"
 #include "utlvector.h"
-#include "materialsystem/IMesh.h"
-
+#include "materialsystem/imesh.h"
+#include "materialsystem/imaterial.h"
+#include "tier2/tier2.h"
+#include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "tier0/vprof.h"
 
-#define	SUBDIVIDE_SIZE	64
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-static ConVar	r_drawskybox(  "r_drawskybox", "1" );
-static ConVar	r_drawfullskybox( "r_drawfullskybox", "1" );
+#define SQRT3INV		(0.57735f)		// a little less than 1 / sqrt(3)
 
-void BoundPoly (int numverts, Vector *verts, Vector& mins, Vector& maxs)
+static ConVar	r_drawskybox(  "r_drawskybox", "1", FCVAR_CHEAT	);
+
+extern ConVar		mat_loadtextures;
+static IMaterial	*skyboxMaterials[6] = { NULL, NULL, NULL, NULL, NULL, NULL };
+
+// 1 = s, 2 = t, 3 = 2048
+int	st_to_vec[6][3] =
 {
-	int		i, j;
+	{3,-1,2},
+	{-3,1,2},
 
-	mins[0] = mins[1] = mins[2] = 9999;
-	maxs[0] = maxs[1] = maxs[2] = -9999;
-	for (i=0 ; i<numverts ; i++)
-		for (j=0 ; j<3 ; j++)
-		{
-			if (verts[i][j] < mins[j])
-				mins[j] = verts[i][j];
-			if (verts[i][j] > maxs[j])
-				maxs[j] = verts[i][j];
-		}
-}
+	{1,3,2},
+	{-1,-3,2},
 
-//=========================================================
+	{-2,-1,3},		// 0 degrees yaw, look straight up
+	{2,-1,-3}		// look straight down
+};
 
-/*
-==================
-R_LoadSkys
-==================
-*/
-extern ConVar	mat_loadtextures;
-static IMaterial		*skyboxMaterials[6] = { NULL, NULL, NULL, NULL, NULL, NULL };
+// s = [0]/[2], t = [1]/[2]
+
+int	skytexorder[6] = {0,2,1,3,4,5};
+#define SIGN(d)	((d)<0?-1:1)
+static int		gFakePlaneType[6] = {1,-1,2,-2,3,-3};
+
+// (This is pasted from vtf.cpp - just for reference. It shows how the faces
+// of the engine's skybox are oriented and mapped).
+//
+// The vert ordering is lower-left, top-left, top-right, bottom-right.
+//
+// These were constructed for the engine skybox, which looks like this
+// (assuming X goes forward, Y goes left, and Z goes up).
+//
+//				 6 ------------- 5
+//			   /  			   /  
+//			 /	 |			 /	 |
+//		   /	 |		   /	 |
+//		 2 ------------- 1		 |
+//		  		 |		  		 |
+//		 |		  		 |		  
+//		 |		 7 ------|------ 4
+//		 |	   /		 |	   /
+//		 |	 /			 |	 /
+//		   /			   /
+//		 3 ------------- 0
+//
+//int g_skybox_rightFaceVerts[4] = { 7, 6, 5, 4 };
+//int g_skybox_leftFaceVerts[4] = { 0, 1, 2, 3 };
+//int g_skybox_backFaceVerts[4] = { 3, 2, 6, 7 };
+//int g_skybox_frontFaceVerts[4] = { 4, 5, 1, 0 };
+//int g_skybox_upFaceVerts[4] = { 6, 2, 1, 5 };
+//int g_skybox_downFaceVerts[4] = { 3, 7, 4, 0 };
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -53,11 +88,10 @@ void R_UnloadSkys( void )
 	{
 		if( skyboxMaterials[i] )
 		{
-			GL_UnloadMaterial( skyboxMaterials[i] );
-			skyboxMaterials[i] = NULL;
+			skyboxMaterials[ i ]->DecrementReferenceCount();
+			skyboxMaterials[ i ] = NULL;
 		}
-	}
-	
+	}	
 }
 
 //-----------------------------------------------------------------------------
@@ -68,20 +102,31 @@ void R_UnloadSkys( void )
 bool R_LoadNamedSkys( const char *skyname )
 {
 	char		name[ MAX_OSPATH ];
-	bool		found;
 	IMaterial	*skies[ 6 ];
 	bool		success = true;
-	char		*skyboxsuffix[ 6 ] = { "rt", "bk", "lf", "ft", "up", "dn" };
+	const char	*skyboxsuffix[ 6 ] = { "rt", "bk", "lf", "ft", "up", "dn" };
 
+	bool bUseDx8Skyboxes = ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() < 90 );
 	for ( int i = 0; i < 6; i++ )
 	{
-		Q_snprintf (name, sizeof( name ), "skybox/%s%s", skyname, skyboxsuffix[i] );
-
-		skies[i] = materialSystemInterface->FindMaterial( name, &found );		
-		if( found )
+		skies[i] = NULL;
+		if ( bUseDx8Skyboxes )
 		{
-			continue;
+			Q_snprintf( name, sizeof( name ), "skybox/%s_dx80%s", skyname, skyboxsuffix[i] );
+			skies[i] = materials->FindMaterial( name, TEXTURE_GROUP_SKYBOX, false );
+			if( IsErrorMaterial( skies[i] ) )
+			{
+				skies[i] = NULL;
+			}
 		}
+
+		if ( skies[i] == NULL )
+		{
+			Q_snprintf( name, sizeof( name ), "skybox/%s%s", skyname, skyboxsuffix[i] );
+			skies[i] = materials->FindMaterial( name, TEXTURE_GROUP_SKYBOX );
+		}
+		if( !IsErrorMaterial( skies[i] ) )
+			continue;
 
 		success = false;
 		break;
@@ -93,7 +138,7 @@ bool R_LoadNamedSkys( const char *skyname )
 	}
 
 	// Increment references
-	for ( i = 0; i < 6; i++ )
+	for ( int i = 0; i < 6; i++ )
 	{
 		// Unload any old skybox
 		if ( skyboxMaterials[ i ] )
@@ -120,14 +165,14 @@ void R_LoadSkys( void )
 
 	char requestedsky[ 128 ];
 
-	ConVar *skyname = ( ConVar * )cv->FindVar( "sv_skyname" );
-	if ( skyname )
+	ConVarRef skyname( "sv_skyname" );
+	if ( skyname.IsValid() )
 	{
-		strcpy( requestedsky, skyname->GetString() );
+		Q_strncpy( requestedsky, skyname.GetString(), sizeof( requestedsky ) );
 	}
 	else
 	{
-		Con_DPrintf( "Unable to find skyname ConVar!!!\n" );
+		ConDMsg( "Unable to find skyname ConVar!!!\n" );
 		return;
 	}
 
@@ -138,15 +183,15 @@ void R_LoadSkys( void )
 		success = false;
 
 		// See if user requested other than the default
-		if ( stricmp( requestedsky, "sky_urb01" ) )
+		if ( Q_stricmp( requestedsky, "sky_urb01" ) )
 		{
 			// Try the default
-			skyname->SetValue( "sky_urb01" );
+			skyname.SetValue( "sky_urb01" );
 
 			// See if we could load that one now
-			if ( R_LoadNamedSkys( skyname->GetString() ) )
+			if ( R_LoadNamedSkys( skyname.GetString() ) )
 			{
-				Con_DPrintf( "Unable to load sky %s, but successfully loaded %s\n", requestedsky, skyname->GetString() );
+				ConDMsg( "Unable to load sky %s, but successfully loaded %s\n", requestedsky, skyname.GetString() );
 				success = true;
 			}
 		}
@@ -154,272 +199,14 @@ void R_LoadSkys( void )
 
 	if ( !success )
 	{
-		Con_DPrintf( "Unable to load sky %s\n", requestedsky );
+		ConDMsg( "Unable to load sky %s\n", requestedsky );
 	}
 }
 
-Vector	skyclip[6] = 
-{
-	Vector(1,1,0),
-	Vector(1,-1,0),
-	Vector(0,-1,1),
-	Vector(0,1,1),
-	Vector(1,0,1),
-	Vector(-1,0,1) 
-};
-int	c_sky;
-
-// 1 = s, 2 = t, 3 = 2048
-int	st_to_vec[6][3] =
-{
-	{3,-1,2},
-	{-3,1,2},
-
-	{1,3,2},
-	{-1,-3,2},
-
-	{-2,-1,3},		// 0 degrees yaw, look straight up
-	{2,-1,-3}		// look straight down
-
-//	{-1,2,3},
-//	{1,2,-3}
-};
-
-// s = [0]/[2], t = [1]/[2]
-int	vec_to_st[6][3] =
-{
-	{-2,3,1},
-	{2,3,-1},
-
-	{1,3,2},
-	{-1,3,-2},
-
-	{-2,-1,3},
-	{-2,1,-3}
-
-//	{-1,2,3},
-//	{1,2,-3}
-};
-
-float	skymins[2][6], skymaxs[2][6];
-// REVISIT: Do we want to spend this much CPU to save fill rate?
-void DrawSkyPolygon (int nump, Vector* vecs)
-{
-	Vector	v, av;
-	int		i,j;
-	float	s, t, dv;
-	int		axis;
-
-	c_sky++;
-
-	// decide which face it maps to
-	VectorCopy (vec3_origin, v);
-	for (i=0; i<nump ; i++)
-	{
-		v += vecs[i];
-	}
-	av[0] = fabsf(v[0]);
-	av[1] = fabsf(v[1]);
-	av[2] = fabsf(v[2]);
-	if (av[0] > av[1] && av[0] > av[2])
-	{
-		if (v[0] < 0)
-			axis = 1;
-		else
-			axis = 0;
-	}
-	else if (av[1] > av[2] && av[1] > av[0])
-	{
-		if (v[1] < 0)
-			axis = 3;
-		else
-			axis = 2;
-	}
-	else
-	{
-		if (v[2] < 0)
-			axis = 5;
-		else
-			axis = 4;
-	}
-
-	// project new texture coords
-	for (i=0 ; i<nump ; i++)
-	{
-		j = vec_to_st[axis][2];
-		if (j > 0)
-			dv = (vecs[i])[j-1];
-		else
-			dv = -(vecs[i])[-j-1];
-
-		j = vec_to_st[axis][0];
-		if (j < 0)
-			s = -(vecs[i])[-j-1] / dv;
-		else
-			s = (vecs[i])[j-1] / dv;
-		j = vec_to_st[axis][1];
-		if (j < 0)
-			t = -(vecs[i])[-j-1] / dv;
-		else
-			t = (vecs[i])[j-1] / dv;
-
-		if (s < skymins[0][axis])
-			skymins[0][axis] = s;
-		if (t < skymins[1][axis])
-			skymins[1][axis] = t;
-		if (s > skymaxs[0][axis])
-			skymaxs[0][axis] = s;
-		if (t > skymaxs[1][axis])
-			skymaxs[1][axis] = t;
-	}
-}
-
-
-// BUGBUG: The global optimizer nonsense is back!
-#define	MAX_CLIP_VERTS	64
-
-// NJS: Really should eliminate this pragma, or at least minimize it's impact as ClipSkyPolygon shows up 
-// as a profiler spike without optimization.
-#pragma optimize("g", off)
-static void ClipSkyPolygon (int nump, Vector* vecs, int stage)
-{
-	// A static array of the vectors to be passed, 
-	static  Vector newv[6][2][MAX_CLIP_VERTS];
-	int		newc[2];
-	bool	front, back;
-	float	d, e;
-	float	dists[MAX_CLIP_VERTS];
-	int		sides[MAX_CLIP_VERTS];
-	int		i, j;
-
-	Assert( nump <= MAX_CLIP_VERTS-2 );
- 
-// NJS: Without global optimization on here, this ends up being a huge CPU burner on a lot of maps, 
-// due to the rather braindead floating point, recursion, and branch generation code the compiler spews
-// when global optimization is disabled.  (Looking at the generated code, it looks like the compiler can't
-// see past each basic block without the globl optimizer)
-// Once we fix this global optimizer bug we should re-evaluate this function.
-#ifdef GLOBAL_OPTIMIZATION_BUG_FIXED
-	if (stage == 6)
-#endif
-	{	
-		// fully clipped, so draw it
-		DrawSkyPolygon (nump, vecs);
-		return;
-	}
-
-	front = back = false;
-	Vector& norm = skyclip[stage];
-	for (i=0; i<nump ; i++)
-	{
-		d = DotProduct (vecs[i], norm);
-		dists[i] = d;
-
-		if (d > ON_EPSILON)
-		{
-			front = true;
-			sides[i] = SIDE_FRONT;
-		}
-		else if (d < ON_EPSILON)
-		{
-			back = true;
-			sides[i] = SIDE_BACK;
-		}
-		else
-			sides[i] = SIDE_ON;
-	}
-
-	if (!front || !back)
-	{	// not clipped
-		ClipSkyPolygon(nump, vecs, stage+1);
-		return;
-	}
-
-	// clip it
-	sides[i] = sides[0];
-	dists[i] = dists[0];
-	vecs[i] = vecs[0];
-	newc[0] = newc[1] = 0;
-
-	for (i = 0; i<nump ; i++)
-	{
-		switch (sides[i])
-		{
-		case SIDE_FRONT:
-			newv[stage][0][newc[0]] = vecs[i];
-			newc[0]++;
-			break;
-		case SIDE_BACK:
-			newv[stage][1][newc[1]] = vecs[i];
-			newc[1]++;
-			break;
-		case SIDE_ON:
-			newv[stage][0][newc[0]] = vecs[i];
-			newc[0]++;
-			newv[stage][1][newc[1]] = vecs[i];
-			newc[1]++;
-			break;
-		}
-
-		if (sides[i] == SIDE_ON || sides[i+1] == SIDE_ON || sides[i+1] == sides[i])
-			continue;
-
-		d = dists[i] / (dists[i] - dists[i+1]);
-		for (j=0 ; j<3 ; j++)
-		{
-			e = (vecs[i])[j] + d*((vecs[i+1])[j] - (vecs[i])[j]);
-			newv[stage][0][newc[0]][j] = e;
-			newv[stage][1][newc[1]][j] = e;
-		}
-		newc[0]++;
-		newc[1]++;
-	}
-
-	// continue
-	ClipSkyPolygon(newc[0], newv[stage][0], stage+1);
-	ClipSkyPolygon(newc[1], newv[stage][1], stage+1);
-}
-#pragma optimize("", on)
-
-void R_AddSkySurface( int surfID )
-{
-	Vector	verts[MAX_CLIP_VERTS];
-
-	int count = MSurf_VertCount( surfID );
-	if ( count > MAX_CLIP_VERTS )
-		count = MAX_CLIP_VERTS;
-
-	// calculate vertex values for sky box
-	for ( int i = 0; i < count; i++ )
-	{
-		int vertIndex = host_state.worldmodel->brush.vertindices[MSurf_FirstVertIndex( surfID )+i];
-		VectorSubtract( host_state.worldmodel->brush.vertexes[vertIndex].position, r_origin, verts[i] );
-	}
-	ClipSkyPolygon( count, verts, 0 );
-}
-
-/*
-==============
-R_ClearSkyBox
-==============
-*/
-extern cplane_t	frustum[FRUSTUM_NUMPLANES];
-void R_ClearSkyBox (void)
-{
-	int		i;
-
-	for (i=0 ; i<6 ; i++)
-	{
-		skymins[0][i] = skymins[1][i] = 9999;
-		skymaxs[0][i] = skymaxs[1][i] = -9999;
-	}
-}
-
-
-#define SQRT3INV		(0.57735f)		// a little less than 1 / sqrt(3)
-
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 #pragma warning (disable : 4701)
-
 void MakeSkyVec( float s, float t, int axis, float zFar, Vector& position, Vector2D &texCoord )
 {
 	Vector		v, b;
@@ -448,7 +235,7 @@ void MakeSkyVec( float s, float t, int axis, float zFar, Vector& position, Vecto
 			v[j] = -b[-k - 1];
 		else
 			v[j] = b[k - 1];
-		v[j] += r_origin[j];
+		v[j] += CurrentViewOrigin()[j];
 	}
 
 	// avoid bilerp seam
@@ -469,47 +256,30 @@ void MakeSkyVec( float s, float t, int axis, float zFar, Vector& position, Vecto
 	texCoord[0] = s;
 	texCoord[1] = t;
 }
-
 #pragma warning (default : 4701)
 
-/*
-==============
-R_DrawSkyBox
-==============
-*/
-int	skytexorder[6] = {0,2,1,3,4,5};
-#define SIGN(d)				((d)<0?-1:1)
-static int	gFakePlaneType[6] = {1,-1,2,-2,3,-3};
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 void R_DrawSkyBox( float zFar, int nDrawFlags /*= 0x3F*/  )
 {
 	VPROF("R_DrawSkyBox");
+	tmZoneFiltered( TELEMETRY_LEVEL0, 50, TMZF_NONE, "%s %x", __FUNCTION__, nDrawFlags );
 
 	int		i;
 	Vector	normal;
 
-#ifdef USE_CONVARS
-	if( !r_drawskybox.GetInt() || !mat_loadtextures.GetInt() )
+	if ( !r_drawskybox.GetInt() || !mat_loadtextures.GetInt() )
 	{
 		return;
 	}
-#endif
 
-	if( r_drawfullskybox.GetInt() )
-	{
-		for( i = 0; i < 6; i++ )
-		{
-			skymins[0][i] = skymins[1][i] = -1.0f;
-			skymaxs[0][i] = skymaxs[1][i] = 1.0f;
-		}
-	}
+	CMatRenderContextPtr pRenderContext( materials );
 
 	for (i=0 ; i<6 ; i++, nDrawFlags >>= 1 )
 	{
 		// Don't draw this panel of the skybox if the flag isn't set:
-		if( ! (nDrawFlags & 1) )
-			continue;
-
-		if (skymins[0][i] >= skymaxs[0][i] || skymins[1][i] >= skymaxs[1][i])
+		if ( !(nDrawFlags & 1) )
 			continue;
 
 		VectorCopy( vec3_origin, normal );
@@ -539,24 +309,32 @@ void R_DrawSkyBox( float zFar, int nDrawFlags /*= 0x3F*/  )
 			normal[2] = -1;
 			break;
 		}
-		// Hack, try to find backfacing surfaces on the inside of the cube to avoid binding their texture
-		if ( DotProduct( vpn, normal ) < (-1 + 0.70710678) )
+
+		// Normals are reversed so looking at face dots to 1.0, looking away from is -1.0
+		// Reject backfacing surfaces on the inside of the cube to avoid binding their texture
+		// Assuming a 90 fov looking at face is 0 degrees, so reject at 107
+		if ( DotProduct( CurrentViewForward(), normal ) < -0.29289f )
 			continue;
 
 		Vector positionArray[4];
 		Vector2D texCoordArray[4];
 		if (skyboxMaterials[skytexorder[i]])
 		{
-			materialSystemInterface->Bind( skyboxMaterials[skytexorder[i]] );
+			pRenderContext->Bind( skyboxMaterials[skytexorder[i]] );
 
-			MakeSkyVec( skymins[0][i], skymins[1][i], i, zFar, positionArray[0], texCoordArray[0] );
-			MakeSkyVec( skymins[0][i], skymaxs[1][i], i, zFar, positionArray[1], texCoordArray[1] );
-			MakeSkyVec( skymaxs[0][i], skymaxs[1][i], i, zFar, positionArray[2], texCoordArray[2] );
-			MakeSkyVec( skymaxs[0][i], skymins[1][i], i, zFar, positionArray[3], texCoordArray[3] );
+			MakeSkyVec( -1.0f, -1.0f, i, zFar, positionArray[0], texCoordArray[0] );
+			MakeSkyVec( -1.0f, 1.0f, i, zFar, positionArray[1], texCoordArray[1] );
+			MakeSkyVec( 1.0f, 1.0f, i, zFar, positionArray[2], texCoordArray[2] );
+			MakeSkyVec( 1.0f, -1.0f, i, zFar, positionArray[3], texCoordArray[3] );
 
-			IMesh* pMesh = materialSystemInterface->GetDynamicMesh();
+			IMesh* pMesh = pRenderContext->GetDynamicMesh();
+
 			CMeshBuilder meshBuilder;
-			meshBuilder.Begin( pMesh, MATERIAL_QUADS, 1 );
+			meshBuilder.Begin( pMesh, MATERIAL_TRIANGLES, 4, 6 );
+
+			// meshbuilder Begin can fail if dynamic mesh is not available (eg, alt-tabbed away)
+			if ( meshBuilder.BaseVertexData() == NULL )
+				continue;
 
 			for (int j = 0; j < 4; ++j)
 			{
@@ -564,6 +342,8 @@ void R_DrawSkyBox( float zFar, int nDrawFlags /*= 0x3F*/  )
 				meshBuilder.TexCoord2fv( 0, texCoordArray[j].Base() );
 				meshBuilder.AdvanceVertex();
 			}
+			CIndexBuilder &indexBuilder = meshBuilder;
+			indexBuilder.FastQuad( 0 );
 		
 			meshBuilder.End();
 			pMesh->Draw();

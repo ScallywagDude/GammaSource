@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IVOICETWEAK_H
 #define IVOICETWEAK_H
@@ -17,6 +17,8 @@ typedef enum
 	MicrophoneVolume=0,			// values 0-1.
 	OtherSpeakerScale,			// values 0-1. Scales how loud other players are.
 	MicBoost,
+	SpeakingVolume,				// values 0-1.  Current voice volume received through Voice Tweak mode
+
 } VoiceTweakControl;
 
 
@@ -30,6 +32,8 @@ typedef struct IVoiceTweak_s
 	// Get/set control values.
 	void			(*SetControlFloat)(VoiceTweakControl iControl, float value);
 	float			(*GetControlFloat)(VoiceTweakControl iControl);
+
+	bool			(*IsStillTweaking)(); // This can return false if the user restarts the sound system during voice tweak mode
 } IVoiceTweak;
 
 

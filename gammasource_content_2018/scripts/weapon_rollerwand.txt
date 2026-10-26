@@ -1,0 +1,69 @@
+// Slam
+
+WeaponData
+{
+	"bucket_position_360"	"4"
+	"bucket_360"	"1"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Rollerwand"
+	"viewmodel"			"models/weapons/v_slam.mdl"
+	"playermodel"			"models/weapons/w_slam.mdl"
+	"anim_prefix"			"slam"
+	"bucket"			"1"
+	"bucket_position"		"4"
+
+	"clip_size"				"1"
+	"primary_ammo"			"None"
+	"secondary_ammo"		"None"
+	"default_clip2"			"1"
+
+	"weight"				"0"
+	"item_flags"			"0"
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"0"
+				"y"			"0"
+				"width"		"32"
+				"height"	"32"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"48"
+				"y"			"72"
+				"width"		"24"
+				"height"	"24"
+		}
+	
+		"weapon"
+		{
+			"file" "sprites/w_icons6b"
+			"x" "0"
+			"y" "0"
+			"width" "128"
+			"height" "64"
+		}
+
+		"weapon_s"
+		{
+			"file" "sprites/w_icons6b"
+			"x" "0"
+			"y" "0"
+			"width" "128"
+			"height" "64"
+		}
+	}
+}

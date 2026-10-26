@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DISPINFO_DEFS_H
 #define DISPINFO_DEFS_H
@@ -16,10 +16,13 @@
 #include "materialsystem/imesh.h"
 #include "convar.h"
 #include "bspfile.h"
+#include "filesystem.h"
 #include "decal_private.h"
 #include "mempool.h"
 #include "decal_clip.h"
 #include "bitvec.h"
+#include "Overlay.h"
+#include "zone.h"
 
 
 extern ConVar				r_DrawDisp;
@@ -27,6 +30,11 @@ extern ConVar				r_DrawDisp;
 
 class CDispInfo;
 class CDispGroup;
+
+
+// The texture stage that displacement lightmap coordinates go in.
+#define DISP_LMCOORDS_STAGE 1
+
 
 #define MAX_STATIC_BUFFER_VERTS		(8*1024)
 #define MAX_STATIC_BUFFER_INDICES	(8*1024)
@@ -133,18 +141,29 @@ public:
 	decal_t		*m_pDecal;
 	float		m_DecalWorldScale[2];
 	Vector		m_TextureSpaceBasis[3];
+	float		m_flSize;
 	DispDecalFragmentHandle_t	m_FirstFragment;
 };
 
+#pragma pack(1)
 class CDispDecalFragment
 {
 public:
-	enum				{ MAX_VERTS = 8 };
+	enum { MAX_VERTS = 6 };					// 3 decal verts clipped by 4 planes results in a maximum of 6 (not 8) verts
 
-	decal_t				*m_pDecal;
-	int					m_nVerts;
-	CDecalVert			m_pVerts[MAX_VERTS];
+	decal_t			*m_pDecal;				// Owning Decal	
+	unsigned char	m_nVerts;				// 
+	CDecalVert*		m_pVerts;				// m_pVerts[MAX_VERTS];
+
+	~CDispDecalFragment()
+	{
+		delete[] m_pVerts;
+		m_pVerts = NULL;
+	}
 };
+
+
+#pragma pack()
 
 
 typedef unsigned short DispShadowFragmentHandle_t;
@@ -171,8 +190,13 @@ public:
 	enum				{ MAX_VERTS = 12 };
 
 	int	m_nVerts;
-	Vector	m_Verts[MAX_VERTS];
-	Vector	m_TCoords[MAX_VERTS];
+	ShadowVertex_t*	m_ShadowVerts;
+
+	~CDispShadowFragment()
+	{
+		delete[] m_ShadowVerts;
+		m_ShadowVerts = NULL;
+	}
 };
 
 
@@ -180,21 +204,27 @@ public:
 class CDispRenderVert
 {
 public:
+
 	Vector			m_vPos;
-	Vector			m_vOriginalPos;	// position at map load time - used to limit the terrain mods
-
-	Vector2D		m_vTexCoord;
-	Vector2D		m_LMCoords;
-	float			m_BumpSTexCoordOffset;
-
+	Vector			m_vOriginalPos;	// GammaSource: map position, terrain mods are relative to it
 	// These are necessary for mat_normals to work
-	// But since only mat_normals needs them, I figure I'll only add this
-	// in debug builds for now, since it's a lot of memory
 	Vector			m_vNormal;
 	Vector			m_vSVector;
 	Vector			m_vTVector;
+	
+	Vector2D		m_vTexCoord;
+	Vector2D		m_LMCoords;
 };
 
+
+// This position is about OVERLAY_AVOID_FLICKER_NORMAL_OFFSET inches off the surface
+// and is used by overlays and shadows to avoid z-fighting.
+inline Vector GetOverlayPos( CMeshReader *pReader, int iVertIndex )
+{
+	Vector vNormal;
+	pReader->Normal( iVertIndex, vNormal );
+	return pReader->Position( iVertIndex ) + vNormal * OVERLAY_AVOID_FLICKER_NORMAL_OFFSET;
+}
 
 
 // --------------------------------------------------------------------------------- //
@@ -207,25 +237,14 @@ extern int					g_CoreDispNeighborOrientationMap[4][4];
 // --------------------------------------------------------------------------------- //
 // Global variables.
 // --------------------------------------------------------------------------------- //
-extern float						g_flDispToleranceSqr;
 extern CUtlVector<unsigned char>	g_DispLMAlpha;
-extern CUtlVector<unsigned char>	g_DispLightmapSamplePositions;
+extern CUtlVector<unsigned char, CHunkMemory<unsigned char> >	g_DispLightmapSamplePositions;
 extern CUtlVector<CDispGroup*>		g_DispGroups;
 
 
 // CVars.
-extern ConVar				r_DispUpdateAll;
-extern ConVar				r_DispFullRadius;
-extern ConVar				r_DispRadius;
-extern ConVar				r_DispTolerance;
-extern ConVar				r_DispLockLOD;
-extern ConVar				r_DispEnableLOD;
-extern ConVar				r_DispSetLOD;
 extern ConVar				r_DispWalkable;
 extern ConVar				r_DispBuildable;
-extern ConVar				r_DispUseStaticMeshes;
-
-extern CMemoryPool			g_DecalFragmentPool;
 
 // If this is true, then no backface removal is done.
 extern bool					g_bDispOrthoRender;

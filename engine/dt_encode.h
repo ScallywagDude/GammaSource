@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DATATABLE_ENCODE_H
 #define DATATABLE_ENCODE_H
@@ -22,10 +22,6 @@ public:
 		
 	// Copy everything except val.
 	void			CopyVars( const DecodeInfo *pOther );
-
-	// Setup the DecodeInfo to skip over props when you call Decode().
-	void			SetupForSkipping( const SendProp *pProp, bf_read *pIn );
-
 
 public:
 	
@@ -70,15 +66,20 @@ typedef struct
 		unsigned char *pRecvData, 
 		int objectID );
 
-	// Display debug output with the value of the property.
-	void			(*ShowRecvWatchInfo)( DecodeInfo const *pInfo, const char *pPropName );
-	void			(*ShowSendWatchInfo)( DVariant const *pVar, SendProp const *pProp, int objectID );
-
 	// Return a string with the name of the type ("DPT_Float", "DPT_Int", etc).
 	const char*		(*GetTypeNameString)();
 
-	// Returns true if the property would encode to zeros.
-	bool			(*IsAllZeros)( const unsigned char *pStruct, DVariant *pVar, const SendProp *pProp );
+	// Returns true if the property's value is zero.
+	// NOTE: this does NOT strictly mean that it would encode to zeros. If it were a float with
+	// min and max values, a value of zero could encode to some other integer value.
+	bool			(*IsZero)( const unsigned char *pStruct, DVariant *pVar, const SendProp *pProp );
+
+	// This writes a zero value in (ie: a value that would make IsZero return true).
+	void			(*DecodeZero)( DecodeInfo *pInfo );
+	
+	// This reades this property from stream p and returns true, if it's a zero value
+	bool			(*IsEncodedZero) ( const SendProp *pProp, bf_read *p );
+	void			(*SkipProp) ( const SendProp *pProp, bf_read *p );
 } PropTypeFns;
 
 

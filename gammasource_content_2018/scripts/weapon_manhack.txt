@@ -1,0 +1,79 @@
+// Ice Axe
+
+WeaponData
+{
+	"bucket_position_360"	"5"
+	"bucket_360"	"0"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Manhack"
+	"viewmodel"				"models/weapons/v_manhack.mdl"
+	"playermodel"			"models/weapons/v_manhack.mdl"
+	"anim_prefix"			"manhack"
+	"bucket"				"0"
+	"bucket_position"		"5"
+
+	"clip_size"				"-1"
+	"primary_ammo"			"None"
+	"secondary_ammo"		"None"
+
+	"weight"				"0"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons4b"
+				"x"			"128"
+				"y"			"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons4b"
+				"x"			"128"
+				"y"			"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/640hud7"
+				"x"			"0"
+				"y"			"72"
+				"width"		"24"
+				"height"	"24"
+		}
+		"ammo2"
+		{
+				"file"		"sprites/640hud7"
+				"x"			"48"
+				"y"			"72"
+				"width"		"24"
+				"height"	"24"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MYSQLDATABASE_H
 #define MYSQLDATABASE_H
@@ -13,7 +13,7 @@
 
 #include <windows.h>
 #include "ISQLDBReplyTarget.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "UtlLinkedList.h"
 
 class ISQLDBCommand;

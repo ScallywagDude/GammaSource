@@ -1,16 +1,15 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DATATABLE_INSTRUMENTATION_SERVER_H
 #define DATATABLE_INSTRUMENTATION_SERVER_H
 #ifdef _WIN32
 #pragma once
 #endif
-
 
 #include "tier0/fasttimer.h"
 #include "iservernetworkable.h"
@@ -55,7 +54,7 @@ CDTISendTable* ServerDTI_HookTable( SendTable *pTable );
 void ServerDTI_AddEntityEncodeEvent( SendTable *pTable, float distToPlayer );
 
 // Used to tell if the entity is using manual or auto mode.
-void ServerDTI_RegisterNetworkStateChange( SendTable *pTable, EntityChange_t changeType );
+void ServerDTI_RegisterNetworkStateChange( SendTable *pTable, bool bStateChanged );
 
 
 // ------------------------------------------------------------------------------------------ // 
@@ -95,14 +94,13 @@ inline CServerDTITimer::~CServerDTITimer()
 	}
 }
 
-inline void ServerDTI_RegisterNetworkStateChange( SendTable *pTable, EntityChange_t changeType )
+inline void ServerDTI_RegisterNetworkStateChange( SendTable *pTable, bool bStateChanged )
 {
 	if ( g_bServerDTIEnabled )
 	{
-		extern void _ServerDTI_RegisterNetworkStateChange( SendTable *pTable, EntityChange_t changeType );
-		_ServerDTI_RegisterNetworkStateChange( pTable, changeType );
+		extern void _ServerDTI_RegisterNetworkStateChange( SendTable *pTable, bool bStateChanged );
+		_ServerDTI_RegisterNetworkStateChange( pTable, bStateChanged );
 	}
 }
-
 
 #endif // DATATABLE_INSTRUMENTATION_SERVER_H

@@ -1,26 +1,16 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
 // $NoKeywords: $
-//=============================================================================
-#if !defined( GAME_H )
-#define GAME_H
+//===========================================================================//
+#ifndef IGAME_H
+#define IGAME_H
+
 #ifdef _WIN32
 #pragma once
-#else
-#define HWND int
 #endif
 
 class IGame
@@ -32,11 +22,27 @@ public:
 	virtual bool	Shutdown( void ) = 0;
 
 	virtual bool	CreateGameWindow( void ) = 0;
+	virtual void	DestroyGameWindow( void ) = 0;
 
-	virtual void	SleepUntilInput( int time ) = 0;
+	// This is used in edit mode to specify a particular game window (created by hammer)
+	virtual void	SetGameWindow( void* hWnd ) = 0;
 
-	virtual HWND	GetMainWindow( void ) = 0;
-	virtual HWND	*GetMainWindowAddress( void ) = 0;
+	// This is used in edit mode to override the default wnd proc associated w/
+	// the game window specified in SetGameWindow. 
+	virtual bool	InputAttachToGameWindow() = 0;
+	virtual void	InputDetachFromGameWindow() = 0;
+
+	virtual void	PlayStartupVideos( void ) = 0;
+
+        // This will be the SDL_Window* under SDL, the WindowRef under Mac, and
+        // the HWND on Win32.
+	virtual void*	GetMainWindow( void ) = 0;
+        // This will be the HWND under Direct3D, and the SDL_Window* or
+        // WindowRef under GL.
+	virtual void*	GetMainDeviceWindow( void ) = 0;
+
+	virtual void**	GetMainWindowAddress( void ) = 0;
+	virtual void	GetDesktopInfo( int &width, int &height, int &refreshrate ) = 0;
 
 	virtual void	SetWindowXY( int x, int y ) = 0;
 	virtual void	SetWindowSize( int w, int h ) = 0;
@@ -46,11 +52,9 @@ public:
 	// Not Alt-Tabbed away
 	virtual bool	IsActiveApp( void ) = 0;
 
-	virtual bool	IsMultiplayer( void ) = 0;
-
 	virtual void	DispatchAllStoredGameMessages() = 0;
 };
 
 extern IGame *game;
 
-#endif // GAME_H
+#endif // IGAME_H

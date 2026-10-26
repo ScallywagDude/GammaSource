@@ -25,8 +25,8 @@ Revision History:
 
 int _cdecl
 main(
-    int argc,
-    char ** argv
+    int,
+    char **
     )
 /*++
 
@@ -123,7 +123,7 @@ Return Value:
     }
 
     String = (LPSTR)SharedMem + sizeof(DWORD);
-    pThisPid = SharedMem;
+    pThisPid = (LPDWORD)SharedMem;
 
     LastPid = 0xffffffff;
     DidCR = TRUE;
@@ -160,6 +160,4 @@ Return Value:
         }
 
     }
-
-    return 0;
 }

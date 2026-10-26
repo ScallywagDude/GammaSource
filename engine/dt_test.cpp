@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // ---------------------------------------------------------------------------------------- //
 // This is a datatable test case. 
 // It is run in debug mode when the engine starts to catch any bugs in datatable code.
@@ -16,6 +23,7 @@
 // - Exclude props.
 // - Recursive datatables.
 // - Datatable proxies returning false.
+// - CUtlVectors of regular types (like floats) and data tables.
 // ---------------------------------------------------------------------------------------- //
 // Things it does not test:
 // - Quantization.
@@ -34,12 +42,16 @@
 // Eventually it would be nice to stress-test the entities with tests for:
 // - Misordered proxy callbacks and missing data.
 // ---------------------------------------------------------------------------------------- //
-
 #include "quakedef.h"
 #include "dt.h"
 #include "dt_send.h"
 #include "dt_recv.h"
 #include "tier0/dbg.h"
+#include "dt_utlvector_send.h"
+#include "dt_utlvector_recv.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // If datatables support these again, then uncomment this to have them tested.
 //#define SUPPORT_ARRAYS_OF_DATATABLES
@@ -63,6 +75,18 @@ public:
 };
 
 
+class CTestStruct
+{
+public:
+	int a,b;
+	float f;
+};
+
+
+#define MAX_STRUCTARRAY_ELEMENTS 11
+#define MAX_FLOATARRAY_ELEMENTS	18
+#define MAX_CHARARRAY_ELEMENTS	22
+
 
 // ------------------------------------------------------------------------------------------- //
 // DTTestServerSub and its DataTable.
@@ -72,12 +96,23 @@ class DTTestServerSub
 public:
 	float				m_FloatArray[3];
 	char				m_Strings[2][64];
+	
+	CUtlVector<CTestStruct> m_UtlVectorStruct;
+	CUtlVector<float> m_UtlVectorFloat;
+	CUtlVector<char> m_UtlVectorChar;
 };
 
-void SendProxy_DTTestServerSubString( const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_DTTestServerSubString( const SendProp *pProp, const void *pStruct, const void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	SendProxy_StringToString(pStruct, pData, pOut, iElement, objectID);
+	SendProxy_StringToString( pProp, pStruct, pData, pOut, iElement, objectID);
+
 }
+
+BEGIN_SEND_TABLE_NOBASE( CTestStruct, DT_TestStruct )
+	SendPropInt( SENDINFO_NOCHECK( a ) ),
+	SendPropInt( SENDINFO_NOCHECK( b ) ),
+	SendPropFloat( SENDINFO_NOCHECK( f ) )
+END_SEND_TABLE()
 
 BEGIN_SEND_TABLE_NOBASE(DTTestServerSub, DT_DTTestSub)
 	// - Auto type conversions (receiving an array of floats into an array of ints).
@@ -85,9 +120,21 @@ BEGIN_SEND_TABLE_NOBASE(DTTestServerSub, DT_DTTestSub)
 		SendPropFloat(SENDINFO_NOCHECK(m_FloatArray[0]), 0, SPROP_NOSCALE),
 		m_FloatArray),
 
+	SendPropUtlVectorDataTable( m_UtlVectorStruct, MAX_STRUCTARRAY_ELEMENTS, DT_TestStruct ),
+
 	SendPropArray(
 		SendPropString(SENDINFO_NOCHECK(m_Strings[0]), 0, SendProxy_DTTestServerSubString),
 		m_Strings ),
+
+	SendPropUtlVector(
+		SENDINFO_UTLVECTOR( m_UtlVectorChar ),
+		MAX_CHARARRAY_ELEMENTS,
+		SendPropInt( NULL, 0, sizeof( char ), 0 ) ),
+
+	SendPropUtlVector( 
+		SENDINFO_UTLVECTOR( m_UtlVectorFloat ),
+		MAX_FLOATARRAY_ELEMENTS,	// max elements
+		SendPropFloat( NULL, 0, 0, 0, SPROP_NOSCALE ) )
 END_SEND_TABLE()
 
 
@@ -128,34 +175,35 @@ public:
 	int				m_VLA[16];
 };
 
-void SendProxy_DTTestServerFloat( void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_DTTestServerFloat( const SendProp *pProp, void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	SendProxy_FloatToFloat(pStruct, pData, pOut, iElement, objectID);
+	SendProxy_FloatToFloat(pProp, pStruct, pData, pOut, iElement, objectID);
 }
 
-void SendProxy_DTTestServerVector( void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_DTTestServerVector( const SendProp *pProp, void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	SendProxy_VectorToVector(pStruct, pData, pOut, iElement, objectID);
+	SendProxy_VectorToVector(pProp, pStruct, pData, pOut, iElement, objectID);
 }
 
-void SendProxy_DTTestServerString( void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_DTTestServerString( const SendProp *pProp, void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	SendProxy_StringToString(pStruct, pData, pOut, iElement, objectID);
+	SendProxy_StringToString(pProp, pStruct, pData, pOut, iElement, objectID);
 }
 
-void SendProxy_DTTestServerInt( void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
+void SendProxy_DTTestServerInt( const SendProp *pProp, void *pStruct, void *pData, DVariant *pOut, int iElement, int objectID )
 {
-	SendProxy_Int32ToInt32(pStruct, pData, pOut, iElement, objectID);
+	SendProxy_Int32ToInt32(pProp, pStruct, pData, pOut, iElement, objectID);
 }
 
 bool g_bSendSub = true;
-void* SendProxy_DTTestServerSub( const void *pStruct, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
+void* SendProxy_DTTestServerSub( const SendProp *pProp, const void *pStruct, const void *pData, CSendProxyRecipients *pRecipients, int objectID )
 {
 	if( !g_bSendSub )
 		return NULL;
 	
-	return SendProxy_DataTableToDataTable( pStruct, pData, pRecipients, objectID );
+	return SendProxy_DataTableToDataTable( pProp, pStruct, pData, pRecipients, objectID );
 }
+REGISTER_SEND_PROXY_NON_MODIFIED_POINTER( SendProxy_DTTestServerSub );
 
 
 int ArrayLengthSendProxy_VLALength( const void *pStruct, int objectID )
@@ -214,6 +262,10 @@ class DTTestClientSub
 public:
 	char	m_Strings[2][64];
 	float	m_FloatArray[3];
+
+	CUtlVector<CTestStruct> m_UtlVectorStruct;
+	CUtlVector<float> m_UtlVectorFloat;
+	CUtlVector<char> m_UtlVectorChar;
 };
 
 void RecvProxy_DTTestClientSubString( const CRecvProxyData *pData, void *pStruct, void *pOut )
@@ -221,11 +273,25 @@ void RecvProxy_DTTestClientSubString( const CRecvProxyData *pData, void *pStruct
 	RecvProxy_StringToString( pData, pStruct, pOut );
 }
 
+BEGIN_RECV_TABLE_NOBASE( CTestStruct, DT_TestStruct )
+	RecvPropInt( RECVINFO( a ) ),
+	RecvPropInt( RECVINFO( b ) ),
+	RecvPropFloat( RECVINFO( f ) ),
+END_RECV_TABLE()
+
 BEGIN_RECV_TABLE_NOBASE(DTTestClientSub, DT_DTTestSub)
 	// - Auto type conversions (receiving an array of floats into an array of ints).
 	RecvPropArray(
 		RecvPropFloat(RECVINFO(m_FloatArray[0])),
 		m_FloatArray),
+
+	RecvPropUtlVector( RECVINFO_UTLVECTOR( m_UtlVectorFloat ), MAX_FLOATARRAY_ELEMENTS, RecvPropFloat(NULL,0,0) ),
+	RecvPropUtlVectorDataTable( m_UtlVectorStruct, MAX_STRUCTARRAY_ELEMENTS, DT_TestStruct ),
+	
+	RecvPropUtlVector( 
+		RECVINFO_UTLVECTOR( m_UtlVectorChar ),
+		MAX_CHARARRAY_ELEMENTS,
+		RecvPropInt( NULL, 0, sizeof( char ) ) ),
 
 	RecvPropArray(
 		RecvPropString(RECVINFO(m_Strings[0]), 0, RecvProxy_DTTestClientSubString),
@@ -341,7 +407,7 @@ typedef void (*RandomlyChangeElementFn)(DTTestServer *pServer);
 
 float FRand(double minVal, double maxVal)
 {
-	return (float)(((double)rand() / RAND_MAX) * (maxVal - minVal) + minVal);
+	return (float)(((double)rand() / VALVE_RAND_MAX) * (maxVal - minVal) + minVal);
 }
 
 void RandomlyChangeStringGeneric(char *str, int size)
@@ -401,7 +467,7 @@ bool CompareString(DTTestClient *pClient, DTTestServer *pServer)
 void RandomlyChangeString(DTTestServer *pServer)
 {
 	//memset( pServer->m_String, , sizeof( pServer->m_String ) );
-	 strcpy( pServer->m_String, "a" );
+	 Q_strncpy( pServer->m_String, "a", sizeof( pServer->m_String ) );
 
 	//RandomlyChangeStringGeneric(pServer->m_String, sizeof(pServer->m_String));
 }
@@ -569,6 +635,94 @@ void RandomlyChangeVLA( DTTestServer *pServer )
 }
 
 
+bool CompareUtlVectorStruct( DTTestClient *pClient, DTTestServer *pServer )
+{
+	CUtlVector<CTestStruct> &c = pClient->m_Sub.m_UtlVectorStruct;
+	CUtlVector<CTestStruct> &s = pServer->m_Sub.m_UtlVectorStruct;
+
+	if ( c.Count() != s.Count() )
+		return false;
+
+	for ( int i=0; i < c.Count(); i++ )
+	{
+		if ( c[i].a != s[i].a || c[i].b != s[i].b || c[i].f != s[i].f )
+			return false;
+	}
+	return true;
+}
+
+
+void RandomlyChangeUtlVectorStruct( DTTestServer *pServer )
+{
+	if ( !g_bSendSub )
+		return;
+
+	int nElements = rand() % MAX_STRUCTARRAY_ELEMENTS;
+	pServer->m_Sub.m_UtlVectorStruct.SetSize( nElements );
+	for ( int i=0; i < nElements; i++ )
+	{
+		pServer->m_Sub.m_UtlVectorStruct[i].a = rand();
+		pServer->m_Sub.m_UtlVectorStruct[i].b = rand();
+		pServer->m_Sub.m_UtlVectorStruct[i].f = rand();
+	}
+}
+
+bool CompareUtlVectorFloat( DTTestClient *pClient, DTTestServer *pServer )
+{
+	CUtlVector<float> &c = pClient->m_Sub.m_UtlVectorFloat;
+	CUtlVector<float> &s = pServer->m_Sub.m_UtlVectorFloat;
+
+	if ( c.Count() != s.Count() )
+		return false;
+
+	for ( int i=0; i < c.Count(); i++ )
+	{
+		if ( c[i] != s[i] )
+			return false;
+	}
+	return true;
+}
+
+void RandomlyChangeUtlVectorChar( DTTestServer *pServer )
+{
+	if ( !g_bSendSub )
+		return;
+
+	int nElements = rand() % MAX_CHARARRAY_ELEMENTS;
+	pServer->m_Sub.m_UtlVectorChar.SetSize( nElements );
+	for ( int i=0; i < nElements; i++ )
+		pServer->m_Sub.m_UtlVectorChar[i] = (char)rand();
+}
+
+
+bool CompareUtlVectorChar( DTTestClient *pClient, DTTestServer *pServer )
+{
+	CUtlVector<char> &c = pClient->m_Sub.m_UtlVectorChar;
+	CUtlVector<char> &s = pServer->m_Sub.m_UtlVectorChar;
+
+	if ( c.Count() != s.Count() )
+		return false;
+
+	for ( int i=0; i < c.Count(); i++ )
+	{
+		if ( c[i] != s[i] )
+			return false;
+	}
+	return true;
+}
+
+void RandomlyChangeUtlVectorFloat( DTTestServer *pServer )
+{
+	if ( !g_bSendSub )
+		return;
+
+	int nElements = rand() % MAX_FLOATARRAY_ELEMENTS;
+	pServer->m_Sub.m_UtlVectorFloat.SetSize( nElements );
+	for ( int i=0; i < nElements; i++ )
+		pServer->m_Sub.m_UtlVectorFloat[i] = rand() / 0.93;
+}
+
+
 typedef struct
 {
 	CompareElementFn		m_CompareFn;
@@ -578,6 +732,9 @@ typedef struct
 VarTestInfo g_VarTestInfos[] =
 {
 	{CompareVLA,			RandomlyChangeVLA},
+	{CompareUtlVectorStruct,RandomlyChangeUtlVectorStruct},
+	{CompareUtlVectorFloat, RandomlyChangeUtlVectorFloat},
+	{CompareUtlVectorChar,	RandomlyChangeUtlVectorChar},
 	{CompareFloat,			RandomlyChangeFloat},
 	{CompareSub2,			RandomlyChangeSub2},
 	{CompareSub2Sub,		RandomlyChangeSub2Sub},
@@ -646,20 +803,19 @@ bool CompareDTTest(DTTestClient *pClient, DTTestServer *pServer)
 	return true;
 }
 
-static int g_FakeSendTableSpawnCount = 1;
-
 bool WriteSendTable_R( SendTable *pTable, bf_write &bfWrite, bool bNeedsDecoder )
 {
-	if( pTable->GetWriteSpawnCount() == g_FakeSendTableSpawnCount )
+	if( pTable->GetWriteFlag() )
 		return true;
 
-	pTable->SetWriteSpawnCount( g_FakeSendTableSpawnCount );
+	pTable->SetWriteFlag( true );
 
 	// Send the version with the exclude props.
 	bfWrite.WriteOneBit( 1 );
-	bfWrite.WriteOneBit( bNeedsDecoder );
 
-	if( !SendTable_SendInfo( pTable, &bfWrite ) )
+	bfWrite.WriteOneBit( bNeedsDecoder?1:0 );
+	
+	if( !SendTable_WriteInfos( pTable, &bfWrite ) )
 		return false;
 
 	for( int i=0; i < pTable->m_nProps; i++ )
@@ -681,15 +837,26 @@ void RunDataTableTest()
 	SendTable *pSendTable = &REFERENCE_SEND_TABLE(DT_DTTest);
 
 
+	ALIGN4 unsigned char buf[4096] ALIGN4_POST;
+	bf_write x = bf_write(buf, 4096);
+	bf_read y = bf_read(buf, 4096);
+	x.WriteUBitLong(1, 1);
+	x.WriteUBitLong(3, 2);
+	x.WriteUBitLong(7, 3);
+	x.WriteUBitLong(0x31415926, 32);
+	Verify( y.ReadOneBit() == 1 );
+	Verify( y.ReadUBitLong(5) == 7*4+3 );
+	Verify( y.ReadUBitLong(32) == 0x31415926 );
+
+
 	// Initialize the send and receive modules.
 	SendTable_Init( &pSendTable, 1 );
 	RecvTable_Init( &pRecvTable, 1 );
 
-	// Invalidate fake spawncount
-	++g_FakeSendTableSpawnCount;
-
+	pSendTable->SetWriteFlag( false );
+	
 	// Send DataTable info to the client.
-	unsigned char commBuf[8192];
+	ALIGN4 unsigned char commBuf[8192] ALIGN4_POST;
 	bf_write bfWrite( "RunDataTableTest->commBuf", commBuf, sizeof(commBuf) );
 	if( !WriteSendTable_R( pSendTable, bfWrite, true ) )
 	{
@@ -702,14 +869,17 @@ void RunDataTableTest()
 	bf_read bfRead( "RunDataTableTest->bfRead", commBuf, sizeof(commBuf));
 	while( bfRead.ReadOneBit() )
 	{
-		if( !RecvTable_RecvInfo( &bfRead, bfRead.ReadOneBit() != 0 ) )
+		bool bNeedsDecoder = bfRead.ReadOneBit()!=0;
+
+		if( !RecvTable_RecvClassInfos( &bfRead, bNeedsDecoder ) )
 		{
-			Assert( !"RunDataTableTest: ReadTableInfo failed." );
+			Assert( !"RunDataTableTest: RecvTable_ReadInfos failed." );
+			continue;
 		}
 	}
 
 	// Register our receive table.
-	if( !RecvTable_CreateDecoders() )
+	if( !RecvTable_CreateDecoders( NULL, false ) )
 	{
 		Assert(false);
 	}
@@ -719,8 +889,8 @@ void RunDataTableTest()
 	DTTestServer dtServer;
 	DTTestClient dtClient;
 
-	unsigned char prevEncoded[4096];
-	unsigned char fullEncoded[4096];
+	ALIGN4 unsigned char prevEncoded[4096] ALIGN4_POST;
+	ALIGN4 unsigned char fullEncoded[4096] ALIGN4_POST;
 
 	memset(&dtServer, 0, sizeof(dtServer));
 	memset(&dtClient, 0, sizeof(dtClient));
@@ -757,19 +927,19 @@ void RunDataTableTest()
 
 		// Fully encode it.
 		bf_write bfFullEncoded( "RunDataTableTest->bfFullEncoded", fullEncoded, sizeof(fullEncoded) );
-		if( !SendTable_Encode( pSendTable, &dtServer, &bfFullEncoded, NULL, -1, NULL ) )
+		if( !SendTable_Encode( pSendTable, &dtServer, &bfFullEncoded, -1, NULL ) )
 		{
 			Assert(false);
 		}
 
 
-		unsigned char deltaEncoded[4096];
+		ALIGN4 unsigned char deltaEncoded[4096] ALIGN4_POST;
 		bf_write bfDeltaEncoded( "RunDataTableTest->bfDeltaEncoded", deltaEncoded, sizeof(deltaEncoded) );
 		
 		if ( iIteration == 0 )
 		{
 			// On the first iteration, just write the whole state.
-			if( !SendTable_Encode( pSendTable, &dtServer, &bfDeltaEncoded, NULL, -1, NULL ) )
+			if( !SendTable_Encode( pSendTable, &dtServer, &bfDeltaEncoded, -1, NULL ) )
 			{
 				Assert( false );
 			}
@@ -777,7 +947,7 @@ void RunDataTableTest()
 		else
 		{
 			// Figure out the delta between the newly encoded one and the previously encoded one.
-			int deltaProps[MAX_DATATABLE_PROPS];
+			ALIGN4 int deltaProps[MAX_DATATABLE_PROPS] ALIGN4_POST;
 
 			bf_read fullEncodedRead( "RunDataTableTest->fullEncodedRead", fullEncoded, sizeof( fullEncoded ), bfFullEncoded.GetNumBitsWritten() );
 			bf_read prevEncodedRead( "RunDataTableTest->prevEncodedRead", prevEncoded, sizeof( prevEncoded ) );
@@ -810,15 +980,12 @@ void RunDataTableTest()
 		// This step isn't necessary to have the client decode the data but it's here to test
 		// RecvTable_CopyEncoding (and RecvTable_MergeDeltas). This call should just make an exact
 		// copy of the encoded data.
-		unsigned char copyEncoded[4096];
+		ALIGN4 unsigned char copyEncoded[4096] ALIGN4_POST;
 		bf_read bfReadDeltaEncoded( "RunDataTableTest->bfReadDeltaEncoded", deltaEncoded, sizeof( deltaEncoded ) );
 		bf_write bfCopyEncoded( "RunDataTableTest->bfCopyEncoded", copyEncoded, sizeof(copyEncoded) );
-		if( !RecvTable_CopyEncoding( pRecvTable, &bfReadDeltaEncoded, &bfCopyEncoded, -1 ) )
-		{
-			Assert(false);
-		}
 
-
+		RecvTable_CopyEncoding( pRecvTable, &bfReadDeltaEncoded, &bfCopyEncoded, -1 );
+		
 		// Decode..
 		bf_read bfDecode( "RunDataTableTest->copyEncoded", copyEncoded, sizeof( copyEncoded ) );
 		if(!RecvTable_Decode(pRecvTable, &dtClient, &bfDecode, 1111))
@@ -841,4 +1008,3 @@ void RunDataTableTest()
 
 
 #endif
-

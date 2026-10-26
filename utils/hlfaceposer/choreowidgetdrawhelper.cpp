@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "tier0/dbg.h"
 #include <stdio.h>
 #include "choreoview.h"
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget )
 {
-	Init( widget, 0, 0, 0, 0, COLOR_CHOREO_BACKGROUND );
+	Init( widget, 0, 0, 0, 0, COLOR_CHOREO_BACKGROUND, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -25,7 +25,7 @@ CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget )
 //-----------------------------------------------------------------------------
 CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, COLORREF bgColor )
 {
-	Init( widget, 0, 0, 0, 0, bgColor );
+	Init( widget, 0, 0, 0, 0, bgColor, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -35,8 +35,19 @@ CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, COLORREF bgC
 //-----------------------------------------------------------------------------
 CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds )
 {
-	Init( widget, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, COLOR_CHOREO_BACKGROUND );
+	Init( widget, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, COLOR_CHOREO_BACKGROUND, false );
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *widget - 
+//			bounds - 
+//-----------------------------------------------------------------------------
+CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds, bool noPageFlip )
+{
+	Init( widget, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, COLOR_CHOREO_BACKGROUND, noPageFlip );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -48,7 +59,7 @@ CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds
 //-----------------------------------------------------------------------------
 CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor )
 {
-	Init( widget, x, y, w, h, bgColor );
+	Init( widget, x, y, w, h, bgColor, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -59,7 +70,7 @@ CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, int x, int y
 //-----------------------------------------------------------------------------
 CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds, COLORREF bgColor )
 {
-	Init( widget, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, bgColor );
+	Init( widget, bounds.left, bounds.top, bounds.right - bounds.left, bounds.bottom - bounds.top, bgColor, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -70,8 +81,10 @@ CChoreoWidgetDrawHelper::CChoreoWidgetDrawHelper( mxWindow *widget, RECT& bounds
 //			w - 
 //			h - 
 //-----------------------------------------------------------------------------
-void CChoreoWidgetDrawHelper::Init( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor )
+void CChoreoWidgetDrawHelper::Init( mxWindow *widget, int x, int y, int w, int h, COLORREF bgColor, bool noPageFlip )
 {
+	m_bNoPageFlip = noPageFlip;
+
 	m_x = x;
 	m_y = y;
 
@@ -86,19 +99,29 @@ void CChoreoWidgetDrawHelper::Init( mxWindow *widget, int x, int y, int w, int h
 	m_rcClient.right	=  m_x + m_w;
 	m_rcClient.bottom	= m_y + m_h;
 
-	m_dcMemory = CreateCompatibleDC( m_dcReal );
-	m_bmMemory = CreateCompatibleBitmap( m_dcReal, m_w, m_h );
-	m_bmOld = (HBITMAP)SelectObject( m_dcMemory, m_bmMemory );
+	if ( !noPageFlip )
+	{
+		m_dcMemory = CreateCompatibleDC( m_dcReal );
+		m_bmMemory = CreateCompatibleBitmap( m_dcReal, m_w, m_h );
+		m_bmOld = (HBITMAP)SelectObject( m_dcMemory, m_bmMemory );
+	}
+	else
+	{
+		m_dcMemory = m_dcReal;
+		m_x = m_y = 0;
+	}
 
 	m_clrOld = SetBkColor( m_dcMemory, bgColor );
 
-	HBRUSH br = CreateSolidBrush( bgColor );
-
 	RECT rcFill = m_rcClient;
 	OffsetRect( &rcFill, -m_rcClient.left, -m_rcClient.top );
-	FillRect( m_dcMemory, &rcFill, br );
 
-	DeleteObject( br );
+	if ( !noPageFlip )
+	{
+		HBRUSH br = CreateSolidBrush( bgColor );
+		FillRect( m_dcMemory, &rcFill, br );
+		DeleteObject( br );
+	}
 
 	m_ClipRegion = (HRGN)0;
 }
@@ -115,14 +138,17 @@ CChoreoWidgetDrawHelper::~CChoreoWidgetDrawHelper( void )
 		StopClipping();
 	}
 
-	BitBlt( m_dcReal, m_x, m_y, m_w, m_h, m_dcMemory, 0, 0, SRCCOPY );
+	if ( !m_bNoPageFlip )
+	{
+		BitBlt( m_dcReal, m_x, m_y, m_w, m_h, m_dcMemory, 0, 0, SRCCOPY );
 
-	SetBkColor( m_dcMemory, m_clrOld );
+		SetBkColor( m_dcMemory, m_clrOld );
 
-	SelectObject( m_dcMemory, m_bmOld );
-	DeleteObject( m_bmMemory );
+		SelectObject( m_dcMemory, m_bmOld );
+		DeleteObject( m_bmMemory );
 
-	DeleteObject( m_dcMemory );
+		DeleteObject( m_dcMemory );
+	}
 
 	ReleaseDC( m_hWnd, m_dcReal );
 
@@ -244,17 +270,21 @@ int CChoreoWidgetDrawHelper::CalcTextWidth( const char *font, int pointsize, int
 		 DEFAULT_PITCH,
 		 font );
 
-	HFONT oldFont = (HFONT)SelectObject( m_dcMemory, fnt );
+	HDC screen = GetDC( NULL );
+
+	HFONT oldFont = (HFONT)SelectObject( screen, fnt );
 
 	RECT rcText;
 	rcText.left = rcText.top = 0;
 	rcText.bottom = pointsize + 5;
 	rcText.right = rcText.left + 2048;
 
-	DrawText( m_dcMemory, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
+	DrawText( screen, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
 
-	SelectObject( m_dcMemory, oldFont );
+	SelectObject( screen, oldFont );
 	DeleteObject( fnt );
+
+	ReleaseDC( NULL, screen );
 
 	return rcText.right;
 }
@@ -293,17 +323,21 @@ int CChoreoWidgetDrawHelper::CalcTextWidthW( const char *font, int pointsize, in
 		 DEFAULT_PITCH,
 		 font );
 
-	HFONT oldFont = (HFONT)SelectObject( m_dcMemory, fnt );
+	HDC screen = GetDC( NULL );
+
+	HFONT oldFont = (HFONT)SelectObject( screen, fnt );
 
 	RECT rcText;
 	rcText.left = rcText.top = 0;
 	rcText.bottom = pointsize + 5;
 	rcText.right = rcText.left + 2048;
 
-	DrawTextW( m_dcMemory, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
+	DrawTextW( screen, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
 
-	SelectObject( m_dcMemory, oldFont );
+	SelectObject( screen, oldFont );
 	DeleteObject( fnt );
+
+	ReleaseDC( NULL, screen );
 
 	return rcText.right;
 }
@@ -323,16 +357,20 @@ int CChoreoWidgetDrawHelper::CalcTextWidth( HFONT fnt, const char *fmt, ... )
 	vprintf( fmt, args );
 	vsprintf( output, fmt, args );
 
-	HFONT oldFont = (HFONT)SelectObject( m_dcMemory, fnt );
+	HDC screen = GetDC( NULL );
+
+	HFONT oldFont = (HFONT)SelectObject( screen, fnt );
 
 	RECT rcText;
 	rcText.left = rcText.top = 0;
 	rcText.bottom = 1000;
 	rcText.right = rcText.left + 2048;
 
-	DrawText( m_dcMemory, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
+	DrawText( screen, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
 
-	SelectObject( m_dcMemory, oldFont );
+	SelectObject( screen, oldFont );
+
+	ReleaseDC( NULL, screen );
 
 	return rcText.right;
 }
@@ -346,16 +384,20 @@ int CChoreoWidgetDrawHelper::CalcTextWidthW( HFONT fnt, const wchar_t *fmt, ... 
 	vwprintf( fmt, args );
 	vswprintf( output, fmt, args );
 
-	HFONT oldFont = (HFONT)SelectObject( m_dcMemory, fnt );
+	HDC screen = GetDC( NULL );
+
+	HFONT oldFont = (HFONT)SelectObject( screen, fnt );
 
 	RECT rcText;
 	rcText.left = rcText.top = 0;
 	rcText.bottom = 1000;
 	rcText.right = rcText.left + 2048;
 
-	DrawTextW( m_dcMemory, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
+	DrawTextW( screen, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
 
-	SelectObject( m_dcMemory, oldFont );
+	SelectObject( screen, oldFont );
+
+	ReleaseDC( NULL, screen );
 
 	return rcText.right;
 }
@@ -693,6 +735,8 @@ POINTL CChoreoWidgetDrawHelper::DrawColoredRamp( COLORREF clr, int style, int wi
 	int dy = y2 - y1;
 
 	POINTL p;
+	p.x = 0L;
+	p.y = 0L;
 	for (float i = 0.1f; i <= 1.09f; i += 0.1f)
 	{
 		float j = 3.0f * i * i - 2.0f * i * i * i;
@@ -918,7 +962,7 @@ void CChoreoWidgetDrawHelper::ClipToRects( void )
 			HRGN addIn = CreateRectRgn( add.left, add.top, add.right, add.bottom );
 			HRGN result = CreateRectRgn( 0, 0, 100, 100 );
 
-			int success = CombineRgn( result, m_ClipRegion, addIn, RGN_AND );
+			CombineRgn( result, m_ClipRegion, addIn, RGN_AND );
 			
 			DeleteObject( m_ClipRegion );
 			DeleteObject( addIn );
@@ -954,10 +998,12 @@ void CChoreoWidgetDrawHelper::DrawFilledRect( HBRUSH br, RECT& rc )
 void CChoreoWidgetDrawHelper::DrawCircle( COLORREF clr, int x, int y, int radius, bool filled /*= true*/ )
 {
 	RECT rc;
-	rc.left = x - radius / 2;
-	rc.right = rc.left + radius;
-	rc.top = y - radius / 2;
-	rc.bottom = y + radius;
+	int ihalfradius = radius >> 1;
+
+	rc.left = x - ihalfradius;
+	rc.right = rc.left + 2 * ihalfradius;
+	rc.top = y - ihalfradius;
+	rc.bottom = y + 2 * ihalfradius - 1;
 
 	OffsetSubRect( rc );
 

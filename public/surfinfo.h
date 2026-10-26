@@ -1,18 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef SURFINFO_H
 #define SURFINFO_H
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include "vplane.h"
+#include "mathlib/vplane.h"
 
-//#include "vector.h"
+//#include "mathlib/vector.h"
 #define MAX_SURFINFO_VERTS	16
 class SurfInfo
 {

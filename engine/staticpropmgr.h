@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,12 +7,12 @@
 //
 // This file contains a little interface to deal with static prop collisions
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef STATICPROPMGR_H
 #define STATICPROPMGR_H
 
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "engine/IStaticPropMgr.h"
 
 // FIXME: Remove! Only here for the test against old code
@@ -29,12 +24,13 @@
 //-----------------------------------------------------------------------------
 class ICollideable;
 FORWARD_DECLARE_HANDLE( LightCacheHandle_t );
+class IPooledVBAllocator;
 
 
 //-----------------------------------------------------------------------------
 // The engine's static prop manager
 //-----------------------------------------------------------------------------
-class IStaticPropMgrEngine
+abstract_class IStaticPropMgrEngine
 {
 public:
 	virtual bool Init() = 0;
@@ -71,6 +67,8 @@ public:
 
 	// Returns the static prop index (useful for networking)
 	virtual int GetStaticPropIndex( IHandleEntity *pHandleEntity ) const = 0;
+
+	virtual bool PropHasBakedLightingDisabled( IHandleEntity *pHandleEntity) const = 0;
 };
 
 

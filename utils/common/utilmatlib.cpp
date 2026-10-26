@@ -1,31 +1,24 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 // C callable material system interface for the utils.
 
-#include "materialsystem/IMaterialSystem.h"
-#include "materialsystem/IMaterial.h"
-#include "materialsystem/IMaterialVar.h"
+#include "materialsystem/imaterialsystem.h"
+#include "materialsystem/imaterial.h"
+#include "materialsystem/imaterialvar.h"
 #include <cmdlib.h>
 #include "utilmatlib.h"
 #include "tier0/dbg.h"
 #include <windows.h>
-#include "FileSystem.h"
-#include "materialsystem/MaterialSystem_Config.h"
-#include "Mathlib.h"
-
-IMaterialSystem *g_pMaterialSystem = NULL;
+#include "filesystem.h"
+#include "materialsystem/materialsystem_config.h"
+#include "mathlib/Mathlib.h"
 
 void LoadMaterialSystemInterface( CreateInterfaceFn fileSystemFactory )
 {
@@ -34,14 +27,14 @@ void LoadMaterialSystemInterface( CreateInterfaceFn fileSystemFactory )
 	
 	// materialsystem.dll should be in the path, it's in bin along with vbsp.
 	const char *pDllName = "materialsystem.dll";
-	HINSTANCE materialSystemDLLHInst;
-	materialSystemDLLHInst = LoadLibrary( pDllName );
+	CSysModule *materialSystemDLLHInst;
+	materialSystemDLLHInst = g_pFullFileSystem->LoadModule( pDllName );
 	if( !materialSystemDLLHInst )
 	{
 		Error( "Can't load MaterialSystem.dll\n" );
 	}
 
-	CreateInterfaceFn clientFactory = Sys_GetFactory( "MaterialSystem.dll" );
+	CreateInterfaceFn clientFactory = Sys_GetFactory( materialSystemDLLHInst );
 	if ( clientFactory )
 	{
 		g_pMaterialSystem = (IMaterialSystem *)clientFactory( MATERIAL_SYSTEM_INTERFACE_VERSION, NULL );
@@ -63,40 +56,32 @@ void LoadMaterialSystemInterface( CreateInterfaceFn fileSystemFactory )
 
 void InitMaterialSystem( const char *materialBaseDirPath, CreateInterfaceFn fileSystemFactory )
 {
-	MaterialSystem_Config_t config;
-
-	memset( &config, 0, sizeof(config) );
-	config.screenGamma = 2.2f;
-	config.texGamma = 2.2f;
-	config.overbright = 1.0f;
-	config.bAllowCheats = false;
-	config.bLinearFrameBuffer = false;
-	config.polyOffset = 0.0f;
-	config.skipMipLevels = 0;
-	config.lightScale = 1.0f;
-	config.bFilterLightmaps = false;
-	config.bFilterTextures = false;
-	config.bMipMapTextures = false;
-	config.bBumpmap = true;
-	config.bShowSpecular = true;
-	config.bShowDiffuse = true;
-	config.maxFrameLatency = 1;
-	config.bLightingOnly = false;
-	config.bCompressedTextures = false;
-	config.bShowMipLevels = false;
-	config.bEditMode = false;	// No, we're not in WorldCraft.
-	config.m_bForceTrilinear = false;
-	config.m_nForceAnisotropicLevel = 0;
-	config.m_bForceBilinear = false;
-
 	LoadMaterialSystemInterface( fileSystemFactory );
-	g_pMaterialSystem->UpdateConfig( &config, false );
+	MaterialSystem_Config_t config;
+	g_pMaterialSystem->OverrideConfig( config, false );
+}
+
+void ShutdownMaterialSystem( )
+{
+	if ( g_pMaterialSystem )
+	{
+		g_pMaterialSystem->Shutdown();
+		g_pMaterialSystem = NULL;
+	}
 }
 
 MaterialSystemMaterial_t FindMaterial( const char *materialName, bool *pFound, bool bComplain )
 {
-	MaterialSystemMaterial_t matHandle;
-	matHandle = g_pMaterialSystem->FindMaterial( materialName, pFound, bComplain );
+	IMaterial *pMat = g_pMaterialSystem->FindMaterial( materialName, TEXTURE_GROUP_OTHER, bComplain );
+	MaterialSystemMaterial_t matHandle = pMat;
+	
+	if ( pFound )
+	{
+		*pFound = true;
+		if ( IsErrorMaterial( pMat ) )
+			*pFound = false;
+	}
+
 	return matHandle;
 }
 
@@ -190,4 +175,10 @@ const char *GetMaterialVar( MaterialSystemMaterial_t materialHandle, const char 
 	{
 		return NULL;
 	}
+}
+
+const char *GetMaterialShaderName( MaterialSystemMaterial_t materialHandle )
+{
+	IMaterial *material = ( IMaterial * )materialHandle;
+	return material->GetShaderName();
 }

@@ -1,35 +1,79 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// Purpose: Phoneme/Viseme sentence
+// Purpose: 
 //
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 #ifndef SENTENCE_H
 #define SENTENCE_H
 #ifdef _WIN32
 #pragma once
 #endif
 
+// X360 optimizes out the extra memory needed by the editors in these types
+#ifndef _X360
+#define PHONEME_EDITOR 1
+#endif
 
 #include "utlvector.h"
 
 class CUtlBuffer;
+
+#define CACHED_SENTENCE_VERSION			1
+#define CACHED_SENTENCE_VERSION_ALIGNED	4
+
+//-----------------------------------------------------------------------------
+// Purpose: A sample point
+//-----------------------------------------------------------------------------
+// Can't do this due to backward compat issues
+//#ifdef _WIN32
+//#pragma pack (1)
+//#endif
 
 struct CEmphasisSample
 {
 	float		time;
 	float		value;
 
+	void SetSelected( bool isSelected );
+#if PHONEME_EDITOR
+	// Used by editors only
 	bool		selected;
+#endif
 };
 
-class CPhonemeTag
+class CBasePhonemeTag
 {
 public:
-	enum
-	{
-		MAX_PHONEME_LENGTH = 8
-	};
+	CBasePhonemeTag();
+	CBasePhonemeTag( const CBasePhonemeTag& from );
+
+	CBasePhonemeTag &operator=( const CBasePhonemeTag &from )	{ memcpy( this, &from, sizeof(*this) ); return *this; }
+
+	float GetStartTime() const				{ return m_flStartTime; }
+	void SetStartTime( float startTime )	{ m_flStartTime = startTime; }
+	void AddStartTime( float startTime )	{ m_flStartTime += startTime; }
+
+	float GetEndTime() const				{ return m_flEndTime; }
+	void SetEndTime( float endTime )		{ m_flEndTime = endTime; }
+	void AddEndTime( float startTime )		{ m_flEndTime += startTime; }
+
+	int GetPhonemeCode() const				{ return m_nPhonemeCode; }
+	void SetPhonemeCode( int phonemeCode )	{ m_nPhonemeCode = phonemeCode; }
+
+private:
+	float			m_flStartTime;
+	float			m_flEndTime;
+	unsigned short	m_nPhonemeCode;
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+class CPhonemeTag : public CBasePhonemeTag
+{
+	typedef CBasePhonemeTag BaseClass;
+public:
 
 					CPhonemeTag( void );
 					CPhonemeTag( const char *phoneme );
@@ -37,19 +81,28 @@ public:
 					~CPhonemeTag( void );
 
 	void			SetTag( const char *phoneme );
+	char const		*GetTag() const;
 
-	float			m_flStartTime;
-	float			m_flEndTime;
-	float			m_flVolume;
-	int				m_nPhonemeCode;
-	char			m_szPhoneme[ MAX_PHONEME_LENGTH ];
-
-	// Used by UI code
+	unsigned int	ComputeDataCheckSum();
+#if PHONEME_EDITOR
+	bool			m_bSelected;
 	unsigned int	m_uiStartByte;
 	unsigned int	m_uiEndByte;
-	bool			m_bSelected;
+#endif
+	void SetSelected( bool isSelected );
+	bool GetSelected() const;
+	void SetStartAndEndBytes( unsigned int start, unsigned int end );
+	unsigned int GetStartByte() const;
+	unsigned int GetEndByte() const;
+
+private:
+	char			*m_szPhoneme;
+
 };
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 class CWordTag
 {
 public:
@@ -59,19 +112,29 @@ public:
 					~CWordTag( void );
 
 	void			SetWord( const char *word );
+	const char		*GetWord() const;
 
 	int				IndexOfPhoneme( CPhonemeTag *tag );
+
+	unsigned int	ComputeDataCheckSum();
 
 	float			m_flStartTime;
 	float			m_flEndTime;
 
-	char			*m_pszWord;
-
 	CUtlVector	< CPhonemeTag *> m_Phonemes;
-
+#if PHONEME_EDITOR
 	bool			m_bSelected;
 	unsigned int	m_uiStartByte;
 	unsigned int	m_uiEndByte;
+#endif
+	void SetSelected( bool isSelected );
+	bool GetSelected() const;
+	void SetStartAndEndBytes( unsigned int start, unsigned int end );
+	unsigned int GetStartByte() const;
+	unsigned int GetEndByte() const;
+
+private:
+	char			*m_pszWord;
 };
 
 // A sentence can be closed captioned
@@ -102,50 +165,18 @@ enum
 	CC_ENGLISH = 0,
 	CC_FRENCH,
 	CC_GERMAN,
-	CC_SPANISH,
 	CC_ITALIAN,
 	CC_KOREAN,
+	CC_SCHINESE,  // Simplified Chinese
+	CC_SPANISH,
+	CC_TCHINESE,  // Traditional Chinese
 	CC_JAPANESE,
+	CC_RUSSIAN,
+	CC_THAI,
+	CC_PORTUGUESE,
 	// etc etc
 
 	CC_NUM_LANGUAGES
-};
-
-class CCloseCaptionPhrase
-{
-public:
-	static char const	*NameForLanguage( int language );
-	static int			LanguageForName( char const *name );
-
-					CCloseCaptionPhrase( void );
-					CCloseCaptionPhrase( const wchar_t *stream );
-					CCloseCaptionPhrase( const CCloseCaptionPhrase& from );
-					~CCloseCaptionPhrase( void );
-
-	void			SetStream( const wchar_t *stream );
-	const wchar_t	*GetStream( void ) const;
-
-	void			SetSelected( bool selected );
-	bool			GetSelected( void ) const;
-
-	void			SetStartTime( float st );
-	float			GetStartTime( void ) const;
-	void			SetEndTime( float et );
-	float			GetEndTime( void ) const;
-
-	int				CountTokens( void ) const;
-	const wchar_t	*GetToken( int token_number ) const;
-	bool			SplitCommand( const wchar_t *in, wchar_t *cmd, wchar_t *args ) const;
-
-private:
-	wchar_t const	*ParseToken( const wchar_t *in, wchar_t *token, int tokensize ) const;
-
-	void			Init( void );
-
-	float			m_flStartTime;
-	float			m_flEndTime;
-	wchar_t			*m_pszStream;
-	bool			m_bSelected;
 };
 
 //-----------------------------------------------------------------------------
@@ -154,6 +185,10 @@ private:
 class CSentence
 {
 public:
+	static char const	*NameForLanguage( int language );
+	static int			LanguageForName( char const *name );
+	static void 		ColorForLanguage( int language, unsigned char& r, unsigned char& g, unsigned char& b );
+
 	// Construction
 					CSentence( void );
 					~CSentence( void );
@@ -161,11 +196,22 @@ public:
 	// Assignment operator
 	CSentence& operator =(const CSentence& src );
 
+	void			Append( float starttime, const CSentence& src );
+
 	void			SetText( const char *text );
-	const char		*GetText( void );
+	const char		*GetText( void ) const;
 
 	void			InitFromDataChunk( void *data, int size );
+	void			InitFromBuffer( CUtlBuffer& buf );
 	void			SaveToBuffer( CUtlBuffer& buf );
+
+	//				This strips out all of the stuff used by the editor, leaving just one blank work, no sentence text, and just
+	//					the phonemes without the phoneme text...(same as the cacherestore version below)
+	void			MakeRuntimeOnly();
+
+	// This is a compressed save of just the data needed to drive phonemes in the engine (no word / sentence text, etc )
+	void			CacheSaveToBuffer( CUtlBuffer& buf, int version );
+	void			CacheRestoreFromBuffer( CUtlBuffer& buf );
 
 	// Add word/phoneme to sentence
 	void			AddPhonemeTag( CWordTag *word, CPhonemeTag *tag );
@@ -194,50 +240,63 @@ public:
 	int				GetNumSamples( void );
 	CEmphasisSample	*GetSample( int index );
 
-	void			AddCloseCaptionPhrase( int language, CCloseCaptionPhrase *phrase );
-	void			InsertCloseCaptionPhraseAtIndex( int language, CCloseCaptionPhrase *phrase, int index );
-
-	int				GetCloseCaptionPhraseCount( int language ) const;
-	CCloseCaptionPhrase *GetCloseCaptionPhrase( int language, int index );
-	void			RemoveCloseCaptionPhrase( int language, int index );
-	int				FindCloseCaptionPhraseIndex( int language, CCloseCaptionPhrase *phrase );
-
-	void			SetCloseCaptionFromText( int language );
 	// Compute start and endtime based on all words
 	void			GetEstimatedTimes( float& start, float &end );
 
 	void			SetVoiceDuck( bool shouldDuck ) { m_bShouldVoiceDuck = shouldDuck; }
 	bool			GetVoiceDuck() const { return m_bShouldVoiceDuck; }
 
-public:
-	enum
-	{
-		MAX_SENTENCE_SIZE = 512,
-	};
+	unsigned int	ComputeDataCheckSum();
 
-	char			m_szText[ MAX_SENTENCE_SIZE ];
+	void			SetDataCheckSum( unsigned int chk );
+	unsigned int	GetDataCheckSum() const;
+
+	int				GetRuntimePhonemeCount() const;
+	const CBasePhonemeTag *GetRuntimePhoneme( int i ) const;
+	void			ClearRuntimePhonemes();
+	void			AddRuntimePhoneme( const CPhonemeTag *src );
+
+	void			CreateEventWordDistribution( char const *pszText, float flSentenceDuration );
+	static int		CountWords( char const *pszText );
+	static bool		ShouldSplitWord( char in );
+
+public:
+#if PHONEME_EDITOR
+	char			*m_szText;
 
 	CUtlVector< CWordTag * >	m_Words;
-	CUtlVector< CCloseCaptionPhrase * >	m_CloseCaption[ CC_NUM_LANGUAGES ];
+#endif
+	CUtlVector	< CBasePhonemeTag *> m_RunTimePhonemes;
 
-
+#if PHONEME_EDITOR
 	int				m_nResetWordBase;
-	
+#endif
 	// Phoneme emphasis data
 	CUtlVector< CEmphasisSample > m_EmphasisSamples;
+
+#if PHONEME_EDITOR
+	unsigned int	m_uCheckSum;
+#endif
+	bool			m_bIsValid : 8;
+	bool			m_bStoreCheckSum : 8;
+	bool			m_bShouldVoiceDuck : 8;
+	bool			m_bIsCached : 8;
 
 private:
 	void			ParseDataVersionOnePointZero( CUtlBuffer& buf );
 	void			ParsePlaintext( CUtlBuffer& buf );
 	void			ParseWords( CUtlBuffer& buf );
 	void			ParseEmphasis( CUtlBuffer& buf );
-	void			ParseCloseCaption( CUtlBuffer& buf );
 	void			ParseOptions( CUtlBuffer& buf );
+	void			ParseCloseCaption( CUtlBuffer& buf );
 
 	void			ResetCloseCaptionAll( void );
-	void			ResetCloseCaption( int language );
 
 	friend class PhonemeEditor;
-	bool			m_bShouldVoiceDuck;
 };
+
+//#ifdef _WIN32
+//#pragma pack ()
+//#endif
+
 #endif // SENTENCE_H

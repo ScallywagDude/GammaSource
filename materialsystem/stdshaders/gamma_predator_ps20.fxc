@@ -1,0 +1,44 @@
+//========= GammaSource ============//
+//
+// Pixel shader for the 2002-2003 Predator and JellyFish shaders
+// (predator.psh, predator_envmap.psh, predator_envmaptimesenvmapmask.psh, JellyFish.psh).
+//
+//=================================//
+
+//	STATIC: "MODE"		"0..3"
+//	MODE 0 = refraction (framebuffer * refract tint)
+//	MODE 1 = envmap * tint
+//	MODE 2 = envmap * envmap mask * tint
+//	MODE 3 = JellyFish: gradient + base texture
+
+#include "common_ps_fxc.h"
+
+sampler Sampler0	: register( s0 );	// framebuffer / cubemap / gradient
+sampler Sampler1	: register( s1 );	// envmap mask / base texture
+
+const float4 g_Tint	: register( c2 );
+
+struct PS_INPUT
+{
+	float3 vRefractXYW		: TEXCOORD0;
+	float3 vReflect			: TEXCOORD1;
+	float2 vTexCoord		: TEXCOORD2;
+	float2 vGradient		: TEXCOORD3;
+};
+
+float4 main( PS_INPUT i ) : COLOR
+{
+#if MODE == 0
+	float2 uv = i.vRefractXYW.xy / i.vRefractXYW.z;
+	return tex2D( Sampler0, uv ) * float4( g_Tint.rgb, 1 );
+#elif MODE == 1
+	float4 env = texCUBE( Sampler0, i.vReflect );
+	return float4( env.rgb * g_Tint.rgb, 1 );
+#elif MODE == 2
+	float4 env = texCUBE( Sampler0, i.vReflect );
+	float4 mask = tex2D( Sampler1, i.vTexCoord );
+	return env * mask * float4( g_Tint.rgb, 1 );
+#else
+	return tex2D( Sampler0, i.vGradient ) + tex2D( Sampler1, i.vTexCoord );
+#endif
+}

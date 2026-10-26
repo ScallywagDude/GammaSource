@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "statuswindow.h"
 #include "drawhelper.h"
@@ -58,7 +58,7 @@ void CStatusWindow::redraw()
 	rcText.bottom = h2() - 4;
 	rcText.top = rcText.bottom - lineheight;
 
-	int minval = m_pScrollbar->getMinValue();
+//	int minval = m_pScrollbar->getMinValue();
 	int maxval = m_pScrollbar->getMaxValue();
 	int pagesize = m_pScrollbar->getPagesize();
 	int curval = m_pScrollbar->getValue();
@@ -137,7 +137,7 @@ void CStatusWindow::StatusPrint( int r, int g, int b, bool overwrite, const char
 	{
 		if ( *in == '\n' || *in == '\r' )
 		{
-			*in++;
+			in++;
 		}
 		else
 		{
@@ -181,7 +181,7 @@ void CStatusWindow::PositionSliders( int sboffset )
 {
 	int lineheight = ( STATUS_FONT_SIZE + 2 );
 
-	int linesused = min( MAX_TEXT_LINES, m_nCurrentLine );
+	int linesused = min( (int)MAX_TEXT_LINES, m_nCurrentLine );
 	linesused = max( linesused, 1 );
 
 	int trueh = h2();

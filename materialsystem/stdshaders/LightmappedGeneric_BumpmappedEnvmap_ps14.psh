@@ -1,3 +1,4 @@
+; STATIC: "NORMALMAPALPHAENVMAPMASK" "0..1"
 ps.1.4
 ;------------------------------------------------------------------------------
 ; Phase 1
@@ -21,8 +22,12 @@ dp3_x2 r3.rgb, r5, r4_bx2      ; 2(N.Eye)
 mul    r3.rgb, r5, r3          ; 2N(N.Eye)
 dp3    r2.rgb, r5, r5          ; N.N
 mad    r2.rgb, -r4_bx2, r2, r3 ; 2N(N.Eye) - Eye(N.N)
+
+#if NORMALMAPALPHAENVMAPMASK
 ; Alpha gets lost after phase marker, so store it here
 mov    r5, r0.a
+#endif
+
 ;------------------------------------------------------------------------------
 ; Phase 2
 ;------------------------------------------------------------------------------
@@ -59,5 +64,9 @@ lrp		r0.rgb, c2, r0, r1			; blend between color and greyscale
 mad r0.a, r0.a, c6.a, c4.a			; Take Fresnel R(0) into consideration
 
 mul r0.rgb, r0, r0.a				; multiply output color by result of fresnel calc
-+mov r0.a, r5.r						; output alpha from the texture
 
+#if NORMALMAPALPHAENVMAPMASK
++mul r0.a, c0.a, r5.r				; Fade amount * alpha from the texture
+#else
++mov r0.a, c0.a						; Just use the fade amount
+#endif

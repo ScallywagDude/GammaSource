@@ -1,127 +1,157 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
+
+#include "tier0/platform.h"
+#include "sys.h"
 #include "testscriptmgr.h"
 #include "tier0/dbg.h"
 #include "filesystem_engine.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "cmd.h"
 #include "convar.h"
 #include "vstdlib/random.h"
 #include <stdlib.h>
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 CTestScriptMgr g_TestScriptMgr;
 
+ConVar testscript_debug( "testscript_debug", "0", 0, "Debug test scripts." );
 
+#ifdef _DEBUG
 // --------------------------------------------------------------------------------------------------- //
 // Global console commands the test script manager implements.
 // --------------------------------------------------------------------------------------------------- //
-
-void Test_Wait()
+CON_COMMAND_EXTERN( Test_Wait, Test_Wait, "" )
 {
-	if ( Cmd_Argc() < 2 )
+	if ( args.ArgC() < 2 )
 	{
 		Error( "Test_Wait: requires seconds parameter." );
 		return;
 	}
 
-	float flSeconds = atof( Cmd_Argv( 1 ) );
+	float flSeconds = atof( args[ 1 ] );
 	GetTestScriptMgr()->SetWaitTime( flSeconds );
 }
 
-void Test_RunFrame()
+CON_COMMAND_EXTERN( Test_RunFrame, Test_RunFrame, "" )
 {
 	GetTestScriptMgr()->SetWaitCheckPoint( "frame_end" );
 }
 
-void Test_WaitForCheckPoint()
+CON_COMMAND_EXTERN( Test_WaitForCheckPoint, Test_WaitForCheckPoint, "" )
 {
-	if ( Cmd_Argc() < 2 )
+	if ( args.ArgC() < 2 )
 	{
-		Error( "Test_WaitForCheckPoint: requires checkpoint name." );
+		Error( "Test_WaitForCheckPoint <checkpoint name> [once]: requires checkpoint name." );
 		return;
 	}
 
-	GetTestScriptMgr()->SetWaitCheckPoint( Cmd_Argv( 1 ) );
+	bool bOnce = ( args.ArgC() >= 3 && Q_stricmp( args[2], "once" ) == 0 );
+	GetTestScriptMgr()->SetWaitCheckPoint( args[ 1 ], bOnce );
 }
 
-void Test_StartLoop()
+CON_COMMAND_EXTERN( Test_StartLoop, Test_StartLoop, "Test_StartLoop <loop name> - Denote the start of a loop. Really just defines a named point you can jump to." )
 {
-	if ( Cmd_Argc() < 2 )
+	if ( args.ArgC() < 2 )
 	{
 		Error( "Test_StartLoop: requires a loop name." );
 		return;
 	}
 
-	GetTestScriptMgr()->StartLoop( Cmd_Argv( 1 ) );
+	GetTestScriptMgr()->StartLoop( args[ 1 ] );
 }
 
-void Test_LoopCount()
+CON_COMMAND_EXTERN( Test_LoopCount, Test_LoopCount, "Test_LoopCount <loop name> <count> - loop back to the specified loop start point the specified # of times." )
 {
-	if ( Cmd_Argc() < 3 )
+	if ( args.ArgC() < 3 )
 	{
 		Error( "Test_LoopCount: requires a loop name and number of times to loop." );
 		return;
 	}
 
-	GetTestScriptMgr()->LoopCount( Cmd_Argv( 1 ), atoi( Cmd_Argv( 2 ) ) );
+	GetTestScriptMgr()->LoopCount( args[ 1 ], atoi( args[ 2 ] ) );
 }
 
-void Test_LoopForNumSeconds()
+CON_COMMAND_EXTERN( Test_Loop, Test_Loop, "Test_Loop <loop name> - loop back to the specified loop start point unconditionally." )
 {
-	if ( Cmd_Argc() < 3 )
+	if ( args.ArgC() < 2 )
+	{
+		Error( "Test_Loop: requires a loop name." );
+		return;
+	}
+
+	GetTestScriptMgr()->LoopCount( args[ 1 ], -1 );
+}
+
+CON_COMMAND_EXTERN( Test_LoopForNumSeconds, Test_LoopForNumSeconds, "Test_LoopForNumSeconds <loop name> <time> - loop back to the specified start point for the specified # of seconds." )
+{
+	if ( args.ArgC() < 3 )
 	{
 		Error( "Test_LoopLoopForNumSeconds: requires a loop name and number of seconds to loop." );
 		return;
 	}
 
-	GetTestScriptMgr()->LoopForNumSeconds( Cmd_Argv( 1 ), atof( Cmd_Argv( 2 ) ) );
+	GetTestScriptMgr()->LoopForNumSeconds( args[ 1 ], atof( args[ 2 ] ) );
 }
 
-void Test_RandomChance()
+CON_COMMAND( Test_RandomChance, "Test_RandomChance <percent chance, 0-100> <token1> <token2...> - Roll the dice and maybe run the command following the percentage chance." )
 {
-	if ( Cmd_Argc() < 3 )
+	if ( args.ArgC() < 3 )
 	{
 		Error( "Test_RandomChance: requires percentage chance parameter (0-100) followed by command to execute." );
 	}
 
-	float flPercent = atof( Cmd_Argv ( 1 ) );
+	float flPercent = atof( args[ 1 ] );
 	if ( RandomFloat( 0, 100 ) < flPercent )
 	{
 		char newString[1024];
 		newString[0] = 0;
 
-		for ( int i=2; i < Cmd_Argc(); i++ )
+		for ( int i=2; i < args.ArgC(); i++ )
 		{
-			Q_strncat( newString, Cmd_Argv( i ), sizeof( newString ) );
-			Q_strncat( newString, " ", sizeof( newString ) );
+			Q_strncat( newString, args[ i ], sizeof( newString ), COPY_ALL_CHARACTERS );
+			Q_strncat( newString, " ", sizeof( newString ), COPY_ALL_CHARACTERS );
 		}
 
-		Cmd_ExecuteString( newString, src_command );
+		Cbuf_InsertText( newString );
 	}
 }
 
-ConCommand cc_Test_Wait( "Test_Wait", Test_Wait );
 
-ConCommand cc_Test_StartLoop( "Test_StartLoop", Test_StartLoop, "Test_StartLoop <loop name> - Denote the start of a loop. Really just defines a named point you can jump to." );
-ConCommand cc_Test_LoopCount( "Test_LoopCount", Test_LoopCount, "Test_LoopCount <loop name> <count> - loop back to the specified loop start point the specified # of times." );
-ConCommand cc_Test_LoopForNumSeconds( "Test_LoopForNumSeconds", Test_LoopForNumSeconds, "Test_LoopForNumSeconds <loop name> <time> - loop back to the specified start point for the specified # of seconds." );
+CON_COMMAND( Test_SendKey, "" )
+{
+	if ( args.ArgC() < 2 )
+	{
+		Error( "Test_SendKey: requires key to send." );
+	}
+	Sys_TestSendKey( args[1] );
+}
 
-ConCommand cc_Test_RandomChance( "Test_RandomChance", Test_RandomChance, "Test_RandomChance <percent chance, 0-100> <token1> <token2...> - Roll the dice and maybe run the command following the percentage chance." );
+CON_COMMAND( Test_StartScript, "Start a test script running.." )
+{
+	if ( args.ArgC() < 2 )
+	{
+		Warning( "Test_StartScript: requires filename of script to start (file must be under testscripts directory).\n" );
+	}
 
-ConCommand cc_Test_RunFrame( "Test_RunFrame", Test_RunFrame );
-ConCommand cc_Test_WaitForCheckPoint( "Test_WaitForCheckPoint", Test_WaitForCheckPoint );
-
+	if ( !GetTestScriptMgr()->StartTestScript( args[1] ) )
+		Warning( "Error starting testscript '%s'\n", args[1] );
+}
+#endif
 
 // --------------------------------------------------------------------------------------------------- //
 // CTestScriptMgr implementation.
 // --------------------------------------------------------------------------------------------------- //
-
 CTestScriptMgr::CTestScriptMgr()
 {
 	m_hFile = FILESYSTEM_INVALID_HANDLE;
@@ -141,7 +171,7 @@ bool CTestScriptMgr::StartTestScript( const char *pFilename )
 	Term();
 
 	char fullName[512];
-	Q_snprintf( fullName, sizeof( fullName ), "TestScripts\\%s", pFilename );
+	Q_snprintf( fullName, sizeof( fullName ), "testscripts\\%s", pFilename );
 
 	m_hFile = g_pFileSystem->Open( fullName, "rt" );
 	if ( m_hFile == FILESYSTEM_INVALID_HANDLE )
@@ -172,6 +202,16 @@ void CTestScriptMgr::CheckPoint( const char *pName )
 {
 	if ( !IsInitted() || IsTimerWaiting() )
 		return;
+
+	if ( testscript_debug.GetInt() )
+	{
+		if ( stricmp( pName, "frame_end" ) != 0 )
+		{
+			Msg( "TESTSCRIPT: CheckPoint -> '%s'.\n", pName );
+		}
+	}
+
+	m_CheckPointsHit.Insert( pName, 0 ); // Remember that we hit this checkpoint.
 
 	if ( m_NextCheckPoint[0] )
 	{
@@ -251,7 +291,8 @@ void CTestScriptMgr::RunCommands()
 			}			
 		}
 
-		Cmd_ExecuteString( curCommand, src_command );
+		Cbuf_AddText( curCommand );
+		Cbuf_Execute();
 	}
 }
 
@@ -321,7 +362,7 @@ void CTestScriptMgr::LoopCount( const char *pLoopName, int nTimes )
 	}
 
 	++pLoop->m_nCount;
-	if ( pLoop->m_nCount < nTimes )
+	if ( pLoop->m_nCount < nTimes || nTimes == -1 )
 	{
 		g_pFileSystem->Seek( m_hFile, pLoop->m_iNextCommandPos, FILESYSTEM_SEEK_HEAD );
 	}
@@ -364,7 +405,19 @@ void CTestScriptMgr::ErrorIfNotInitted()
 }
 
 
-void CTestScriptMgr::SetWaitCheckPoint( const char *pCheckPointName )
+void CTestScriptMgr::SetWaitCheckPoint( const char *pCheckPointName, bool bOnce )
 {
+	if ( testscript_debug.GetInt() )
+	{
+		if ( stricmp( pCheckPointName, "frame_end" ) != 0 )
+		{
+			Msg( "TESTSCRIPT: waiting for checkpoint '%s'%s\n", pCheckPointName, bOnce ? " (once)." : "." );
+		}
+	}
+	
+	// Don't wait on this checkpoint if we alereayd
+	if ( bOnce && m_CheckPointsHit.Find( pCheckPointName ) != m_CheckPointsHit.InvalidIndex() )
+		return;
+
 	Q_strncpy( m_NextCheckPoint, pCheckPointName, sizeof( m_NextCheckPoint ) );
 }

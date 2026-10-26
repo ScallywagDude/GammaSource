@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef THREADHELPERS_H
 #define THREADHELPERS_H
@@ -12,7 +12,7 @@
 #endif
 
 
-#include "utllinkedlist.h"
+#include "tier1/utllinkedlist.h"
 
 
 #define SIZEOF_CS	24	// sizeof( CRITICAL_SECTION )
@@ -25,9 +25,10 @@ public:
 			~CCriticalSection();
 
 
-private:
+protected:
 
 	friend class CCriticalSectionLock;
+	
 	void	Lock();
 	void	Unlock();
 
@@ -56,6 +57,28 @@ private:
 	CCriticalSection	*m_pCS;
 	bool				m_bLocked;
 };
+
+
+template< class T >
+class CCriticalSectionData : private CCriticalSection
+{
+public:
+	// You only have access to the data between Lock() and Unlock().
+	T*		Lock()
+	{
+		CCriticalSection::Lock();
+		return &m_Data;
+	}
+	
+	void	Unlock()
+	{
+		CCriticalSection::Unlock();
+	}
+
+private:
+	T m_Data;
+};
+
 
 
 // ------------------------------------------------------------------------------------------------ //

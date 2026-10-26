@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( PANELLISTPANEL_H )
 #define PANELLISTPANEL_H
 #ifdef _WIN32
@@ -15,14 +15,13 @@
 
 class KeyValues;
 
-namespace vgui { class ScrollBar; }
 
 //-----------------------------------------------------------------------------
 // Purpose: A list of variable height child panels
 //-----------------------------------------------------------------------------
 class CPanelListPanel : public vgui::Panel
 {
-	typedef vgui::Panel BaseClass;
+	DECLARE_CLASS_SIMPLE( CPanelListPanel, vgui::Panel ); 
 
 public:
 	typedef struct dataitem_s
@@ -31,7 +30,7 @@ public:
 		vgui::Panel *panel;
 	} DATAITEM;
 
-	CPanelListPanel( vgui::Panel *parent, char const *panelName );
+	CPanelListPanel( vgui::Panel *parent, char const *panelName, bool inverseButtons = false );
 	~CPanelListPanel();
 
 	// DATA & ROW HANDLING
@@ -43,13 +42,20 @@ public:
 	virtual void RemoveItem(int itemIndex); // removes an item from the table (changing the indices of all following items)
 	virtual void DeleteAllItems(); // clears and deletes all the memory used by the data items
 
+	// career-mode UI wants to nudge sub-controls around
+	void SetSliderYOffset(int pixels);
+
 	// PAINTING
 	virtual vgui::Panel *GetCellRenderer( int row );
 
-	virtual void OnSliderMoved( int position );
+	MESSAGE_FUNC_INT( OnSliderMoved, "ScrollBarSliderMoved", position );
 
-	DECLARE_PANELMAP();
 	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
+
+	vgui::Panel *GetEmbedded()
+	{
+		return _embedded;
+	}
 
 protected:
 
@@ -67,7 +73,7 @@ private:
 
 	int					_tableStartX;
 	int					_tableStartY;
-	typedef vgui::Panel BaseClass;
+	int					_sliderYOffset;
 };
 
 #endif // PANELLISTPANEL_H

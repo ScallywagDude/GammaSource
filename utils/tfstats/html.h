@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:  Interface of CHTMLFile.
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef HTML_H
 #define HTML_H
@@ -47,7 +42,7 @@ public:
 	CHTMLFile(const char*filenm ,const char* title,bool fPrintBody=true,const char* bgimage=NULL,int leftmarg=0,int topmarg=20);
 	void open(const char*);
 
-	void write(const char*,...);
+	void write(PRINTF_FORMAT_STRING const char*,...);
 
 	void hr(int len=0,bool alignleft=false);
 	void br(){write("<br>\n");}

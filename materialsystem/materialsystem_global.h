@@ -1,16 +1,11 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef MATERIALSYSTEM_GLOBAL_H
 #define MATERIALSYSTEM_GLOBAL_H
@@ -21,6 +16,8 @@
 
 #include "imaterialsysteminternal.h"
 #include "tier0/dbg.h"
+#include "tier2/tier2.h"
+
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -30,8 +27,12 @@ class IShaderAPI;
 class IHardwareConfigInternal;
 class IShaderUtil;
 class IShaderShadow;
-class IFileSystem;
+class IShaderDeviceMgr;
+class IShaderDevice;
 class IShaderSystemInternal;
+class IMaterialInternal;
+class IColorCorrectionSystem;
+class IMaterialVar;
 
 
 //-----------------------------------------------------------------------------
@@ -51,16 +52,19 @@ class IShaderSystemInternal;
 // Global structures
 //-----------------------------------------------------------------------------
 extern MaterialSystem_Config_t g_config;
+extern uint32 g_nDebugVarsSignature;
 
 //extern MaterialSystem_ErrorFunc_t	Error;
 //extern MaterialSystem_WarningFunc_t Warning;
 
-extern float			g_ooOverbright;
 extern int				g_FrameNum;
 
 extern IShaderAPI*	g_pShaderAPI;
+extern IShaderDeviceMgr* g_pShaderDeviceMgr;
+extern IShaderDevice*	g_pShaderDevice;
 extern IShaderShadow* g_pShaderShadow;
-extern IFileSystem *g_pFileSystem;
+
+extern IMaterialInternal *g_pErrorMaterial;
 
 IShaderSystemInternal* ShaderSystem();
 inline IShaderSystemInternal* ShaderSystem()
@@ -78,8 +82,29 @@ inline IHardwareConfigInternal *HardwareConfig()
 //-----------------------------------------------------------------------------
 // Accessor to get at the material system
 //-----------------------------------------------------------------------------
-IMaterialSystemInternal* MaterialSystem();
-IShaderUtil* ShaderUtil();
+inline IMaterialSystemInternal* MaterialSystem()
+{
+	extern IMaterialSystemInternal *g_pInternalMaterialSystem;
+	return g_pInternalMaterialSystem;
+}
+
+inline IShaderUtil* ShaderUtil()
+{
+	extern IShaderUtil *g_pShaderUtil;
+	return g_pShaderUtil;
+}
+
+extern IColorCorrectionSystem *g_pColorCorrectionSystem;
+inline IColorCorrectionSystem *ColorCorrectionSystem()
+{
+	return g_pColorCorrectionSystem;
+}
+
+
+//-----------------------------------------------------------------------------
+// Global methods related to material vars
+//-----------------------------------------------------------------------------
+void EnableThreadedMaterialVarAccess( bool bEnable, IMaterialVar **ppParams, int nVarCount );
 
 
 #endif // MATERIALSYSTEM_GLOBAL_H

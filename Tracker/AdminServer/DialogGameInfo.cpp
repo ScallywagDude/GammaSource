@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "DialogGameInfo.h"
 #include "Info.h"
 #include "IRunGameEngine.h"
@@ -252,7 +251,7 @@ void CDialogGameInfo::ApplySchemeSettings(vgui::IScheme *pScheme)
 	// force the label to get it's scheme settings
 	m_pInfoLabel->InvalidateLayout(true);
 	// override them
-	m_pInfoLabel->SetFgColor(GetSchemeColor("BrightControlText", scheme()->GetIScheme(scheme()->GetDefaultScheme())));
+	m_pInfoLabel->SetFgColor(GetSchemeColor("BrightControlText"));
 }
 
 //-----------------------------------------------------------------------------

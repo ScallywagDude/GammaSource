@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MYSQL_WRAPPER_H
 #define MYSQL_WRAPPER_H
@@ -25,7 +25,7 @@ friend class CMySQL;
 
 public:
 	// This is like a sprintf, but it will grow the string as necessary.
-	void				Format( const char *pFormat, ... );
+	void				Format( PRINTF_FORMAT_STRING const char *pFormat, ... );
 
 private:
 	CUtlVector<char>	m_QueryText;

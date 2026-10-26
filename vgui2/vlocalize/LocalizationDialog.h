@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LOCALIZATIONDIALOG_H
 #define LOCALIZATIONDIALOG_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
+#include <VGUI_controls/Frame.h>
 
 namespace vgui
 {
@@ -31,6 +31,8 @@ class CLocalizationDialog : public vgui::Frame
 public:
 	CLocalizationDialog(const char *fileName);
 	~CLocalizationDialog();
+
+	char const *GetFileName() const;
 
 private:
 	// vgui overrides

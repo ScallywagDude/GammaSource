@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "basetypes.h"
 #include "changeframelist.h"
@@ -34,6 +34,23 @@ public:
 		delete this;
 	}
 
+	virtual IChangeFrameList* Copy()
+	{
+		CChangeFrameList *pRet = new CChangeFrameList;
+
+		int numProps = m_ChangeTicks.Count();
+
+		pRet->m_ChangeTicks.SetSize( numProps );
+
+		for ( int i=0; i < numProps; i++ )
+		{
+			pRet->m_ChangeTicks[ i ] = m_ChangeTicks[ i ];
+		}
+
+		return pRet;
+
+	}
+
 	virtual int		GetNumProps()
 	{
 		return m_ChangeTicks.Count();
@@ -52,15 +69,15 @@ public:
 		int nOutProps = 0;
 
 		int c = m_ChangeTicks.Count();
+		
+		Assert( c <= nMaxOutProps );
+
 		for ( int i=0; i < c; i++ )
 		{
 			if ( m_ChangeTicks[i] > iTick )
 			{
-				if ( nOutProps < nMaxOutProps )
-				{
-					iOutProps[nOutProps] = i;
-					++nOutProps;
-				}
+				iOutProps[nOutProps] = i;
+				++nOutProps;
 			}
 		}
 
@@ -74,7 +91,6 @@ protected:
 	{
 	}
 
-
 private:
 	// Change frames for each property.
 	CUtlVector<int>		m_ChangeTicks;
@@ -87,4 +103,6 @@ IChangeFrameList* AllocChangeFrameList( int nProperties, int iCurTick )
 	pRet->Init( nProperties, iCurTick);
 	return pRet;
 }
+
+
 

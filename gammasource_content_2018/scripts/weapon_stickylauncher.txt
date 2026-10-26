@@ -1,0 +1,81 @@
+// Sticky-bomb launcher
+
+WeaponData
+{
+	"bucket_position_360"	"5"
+	"bucket_360"	"4"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Sticky launcher"
+	"viewmodel"			"models/weapons/v_pistol.mdl"
+	"playermodel"		"models/weapons/w_pistol.mdl"
+	"anim_prefix"		"pistol"
+	"bucket"			"4"
+	"bucket_position"	"5"
+
+	"clip_size"			"18"
+	"primary_ammo"		"MediumRound"
+	"secondary_ammo"	"None"
+
+	"weight"			"2"
+	"item_flags"		"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"reload"			"Weapon_StickyLauncher.Reload"
+		"reload_npc"		"Weapon_StickyLauncher.NPC_Reload"
+		"empty"				"Weapon_StickyLauncher.Empty"
+		"single_shot"		"Weapon_StickyLauncher.Single"
+		"single_shot_npc"	"Weapon_StickyLauncher.NPC_Single"
+		"special1"			"Weapon_StickyLauncher.Special1"
+		"special2"			"Weapon_StickyLauncher.Special2"
+		"burst"				"Weapon_StickyLauncher.Burst"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"60"
+				"width"		"73"
+				"height"	"15"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	
+		"weapon"
+		{
+			"file" "sprites/w_icons6b"
+			"x" "128"
+			"y" "0"
+			"width" "128"
+			"height" "64"
+		}
+
+		"weapon_s"
+		{
+			"file" "sprites/w_icons6b"
+			"x" "128"
+			"y" "0"
+			"width" "128"
+			"height" "64"
+		}
+	}
+}

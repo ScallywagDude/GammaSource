@@ -1,19 +1,14 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "cmdlib.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "polylib.h"
 #include "worldsize.h"
 #include "threads.h"
@@ -43,7 +38,7 @@ winding_t *winding_pool[MAX_POINTS_ON_WINDING+4];
 AllocWinding
 =============
 */
-winding_t	*AllocWinding (int points)
+winding_t *AllocWinding (int points)
 {
 	winding_t	*w;
 
@@ -92,7 +87,7 @@ RemoveColinearPoints
 */
 int	c_removed;
 
-void	RemoveColinearPoints (winding_t *w)
+void RemoveColinearPoints (winding_t *w)
 {
 	int		i, j, k;
 	Vector	v1, v2;
@@ -129,7 +124,7 @@ void	RemoveColinearPoints (winding_t *w)
 WindingPlane
 ============
 */
-void WindingPlane (winding_t *w, Vector& normal, vec_t *dist)
+void WindingPlane (winding_t *w, Vector &normal, vec_t *dist)
 {
 	Vector	v1, v2;
 	
@@ -156,7 +151,7 @@ void WindingPlane (winding_t *w, Vector& normal, vec_t *dist)
 WindingArea
 =============
 */
-vec_t	WindingArea(winding_t *w)
+vec_t WindingArea(winding_t *w)
 {
 	int		i;
 	Vector	d1, d2, cross;
@@ -173,7 +168,7 @@ vec_t	WindingArea(winding_t *w)
 	return total * 0.5;
 }
 
-void	WindingBounds (winding_t *w, Vector& mins, Vector& maxs)
+void WindingBounds (winding_t *w, Vector &mins, Vector &maxs)
 {
 	vec_t	v;
 	int		i,j;
@@ -199,7 +194,7 @@ void	WindingBounds (winding_t *w, Vector& mins, Vector& maxs)
 WindingCenter
 =============
 */
-void	WindingCenter (winding_t *w, Vector& center)
+void WindingCenter (winding_t *w, Vector &center)
 {
 	int		i;
 	float	scale;
@@ -219,13 +214,15 @@ void	WindingCenter (winding_t *w, Vector& center)
 WindingCenter
 =============
 */
-vec_t	WindingAreaAndBalancePoint( winding_t *w, Vector& center )
+vec_t WindingAreaAndBalancePoint( winding_t *w, Vector &center )
 {
 	int		i;
 	Vector	d1, d2, cross;
 	vec_t	total;
 
 	VectorCopy (vec3_origin, center);
+	if ( !w )
+		return 0.0f;
 
 	total = 0;
 	for (i=2 ; i<w->numpoints ; i++)
@@ -253,7 +250,7 @@ vec_t	WindingAreaAndBalancePoint( winding_t *w, Vector& center )
 BaseWindingForPlane
 =================
 */
-winding_t *BaseWindingForPlane (Vector& normal, vec_t dist)
+winding_t *BaseWindingForPlane (const Vector &normal, vec_t dist)
 {
 	int		i, x;
 	vec_t	max, v;
@@ -364,7 +361,7 @@ ClipWindingEpsilon
 =============
 */
 
-void ClipWindingEpsilon (winding_t *in, Vector& normal, vec_t dist, 
+void ClipWindingEpsilon (winding_t *in, const Vector &normal, vec_t dist, 
 				vec_t epsilon, winding_t **front, winding_t **back)
 {
 	vec_t	dists[MAX_POINTS_ON_WINDING+4];
@@ -470,13 +467,49 @@ void ClipWindingEpsilon (winding_t *in, Vector& normal, vec_t dist,
 }
 #pragma optimize("", on)
 
+
+// NOTE: This is identical to ClipWindingEpsilon, but it does a pre/post translation to improve precision
+void ClipWindingEpsilon_Offset( winding_t *in, const Vector &normal, vec_t dist, vec_t epsilon, winding_t **front, winding_t **back, const Vector &offset )
+{
+	TranslateWinding( in, offset );
+	ClipWindingEpsilon( in, normal, dist+DotProduct(offset,normal), epsilon, front, back );
+	TranslateWinding( in, -offset );
+	if ( front && *front )
+	{
+		TranslateWinding( *front, -offset );
+	}
+	if ( back && *back )
+	{
+		TranslateWinding( *back, -offset );
+	}
+}
+
+void ClassifyWindingEpsilon_Offset( winding_t *in, const Vector &normal, vec_t dist, vec_t epsilon, winding_t **front, winding_t **back, winding_t **on, const Vector &offset)
+{
+	TranslateWinding( in, offset );
+	ClassifyWindingEpsilon( in, normal, dist+DotProduct(offset,normal), epsilon, front, back, on );
+	TranslateWinding( in, -offset );
+	if ( front && *front )
+	{
+		TranslateWinding( *front, -offset );
+	}
+	if ( back && *back )
+	{
+		TranslateWinding( *back, -offset );
+	}
+	if ( on && *on )
+	{
+		TranslateWinding( *on, -offset );
+	}
+}
+
 /*
 =============
 ClassifyWindingEpsilon
 =============
 */
 // This version returns the winding as "on" if all verts lie in the plane
-void ClassifyWindingEpsilon( winding_t *in, Vector& normal, vec_t dist, 
+void ClassifyWindingEpsilon( winding_t *in, const Vector &normal, vec_t dist, 
 				vec_t epsilon, winding_t **front, winding_t **back, winding_t **on)
 {
 	vec_t	dists[MAX_POINTS_ON_WINDING+4];
@@ -592,7 +625,7 @@ void ClassifyWindingEpsilon( winding_t *in, Vector& normal, vec_t dist,
 ChopWindingInPlace
 =============
 */
-void ChopWindingInPlace (winding_t **inout, Vector& normal, vec_t dist, vec_t epsilon)
+void ChopWindingInPlace (winding_t **inout, const Vector &normal, vec_t dist, vec_t epsilon)
 {
 	winding_t	*in;
 	vec_t	dists[MAX_POINTS_ON_WINDING+4];
@@ -606,7 +639,6 @@ void ChopWindingInPlace (winding_t **inout, Vector& normal, vec_t dist, vec_t ep
 
 	in = *inout;
 	counts[0] = counts[1] = counts[2] = 0;
-
 // determine sides for each point
 	for (i=0 ; i<in->numpoints ; i++)
 	{
@@ -614,9 +646,13 @@ void ChopWindingInPlace (winding_t **inout, Vector& normal, vec_t dist, vec_t ep
 		dot -= dist;
 		dists[i] = dot;
 		if (dot > epsilon)
+		{
 			sides[i] = SIDE_FRONT;
+		}
 		else if (dot < -epsilon)
+		{
 			sides[i] = SIDE_BACK;
+		}
 		else
 		{
 			sides[i] = SIDE_ON;
@@ -696,7 +732,7 @@ Returns the fragment of in that is on the front side
 of the cliping plane.  The original is freed.
 =================
 */
-winding_t	*ChopWinding (winding_t *in, Vector& normal, vec_t dist)
+winding_t *ChopWinding (winding_t *in, const Vector &normal, vec_t dist)
 {
 	winding_t	*f, *b;
 
@@ -778,7 +814,7 @@ void CheckWinding (winding_t *w)
 WindingOnPlaneSide
 ============
 */
-int		WindingOnPlaneSide (winding_t *w, Vector& normal, vec_t dist)
+int WindingOnPlaneSide (winding_t *w, const Vector &normal, vec_t dist)
 {
 	qboolean	front, back;
 	int			i;
@@ -817,7 +853,7 @@ int		WindingOnPlaneSide (winding_t *w, Vector& normal, vec_t dist)
 // Purpose: 2d point inside of winding test (assumes the point resides in the
 //          winding plane)
 //-----------------------------------------------------------------------------
-bool PointInWinding( Vector const &pt, winding_t *pWinding )
+bool PointInWinding( const Vector &pt, winding_t *pWinding )
 {
 	if( !pWinding )
 		return false;
@@ -870,3 +906,10 @@ bool PointInWinding( Vector const &pt, winding_t *pWinding )
 #endif
 }
 
+void TranslateWinding( winding_t *pWinding, const Vector &offset )
+{
+	for ( int i = 0; i < pWinding->numpoints; i++ )
+	{
+		pWinding->p[i] += offset;
+	}
+}

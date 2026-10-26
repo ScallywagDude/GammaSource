@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,223 +9,274 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( CLIENT_H )
 #define CLIENT_H
 #ifdef _WIN32
 #pragma once
 #endif
 
-
-#include "convar.h"
-#include "info.h"
-#include "protocol.h"
-#include "dlight.h"
+#include <qlimits.h>
+#include <utllinkedlist.h>
+#include <convar.h>
+#include <checksum_crc.h>
+#include <protocol.h>
+#include <cdll_int.h>
+#include <globalvars_base.h>
+#include <soundflags.h>
+#include <utlvector.h>
+#include "host.h"
 #include "event_system.h"
-#include "checksum_crc.h"
 #include "precache.h"
-#include "globalvars_base.h"
+#include "baseclientstate.h"
+#include "clientframe.h"
 
-#define	MAX_SCOREBOARDNAME	32                 // have it (yet, ever?).  If we do put it in, we can readjust.
-#define	MAX_STYLESTRING	64
+
 
 struct model_t;
+struct SoundInfo_t;
 
 class ClientClass;
 class CSfxTable;
-
-#include "client_command.h"
-#include "frame.h"
-
-typedef struct
-{
-	int		length;
-	char	map[MAX_STYLESTRING];
-} lightstyle_t;
-
-// Player info.
-typedef struct player_info_s
-{
-	// scoreboard information
-	char			name[MAX_SCOREBOARDNAME];
-	// Settings for player
-	char			userinfo[MAX_INFO_STRING];
-	// skin information
-	char			model[MAX_QPATH];
-
-	// hashed cd key
-	char			hashedcdkey[16];
-
-	// tracker identification number
-	int				trackerID;
-
-	// Spray paint logo
-	CRC32_t			logo;
-} player_info_t;
-
-#define	SIGNONS		3			// signon messages to receive before connected
-
-#define	MAX_DLIGHTS		32
-#define	MAX_ELIGHTS		64		// entity only point lights
+class CPureServerWhitelist;
 
 #define	MAX_DEMOS		32
-#define	MAX_DEMONAME	32
 
-typedef enum
+struct AddAngle
 {
-	ca_dedicated, 		// A dedicated server with no ability to start a client
-	ca_disconnected, 	// Full screen console with no connection
-	ca_connecting,      // Challenge requested, waiting for response or to resend connection request.
-	ca_connected,		// valid netcon, talking to a server, waiting for server data
-	ca_active			// d/l complete, ready game views should be displayed
-} cactive_t;
-
-//
-// the client_static_t structure is persistant through an arbitrary number
-// of server connections
-//
-typedef struct
-{
-	cactive_t	state;              // Current state.
-
-// Our sequenced channel to the remote server.
-	netchan_t   netchan;
-
-	// Unreliable stuff. Gets sent in CL_Move about cl_cmdrate times per second.
-	bf_write	datagram;
-	byte		datagram_buf[NET_MAX_PAYLOAD];
-
-// Connection to server.
-	double      connect_time;       // If gap of connect_time to realtime > 3000, then resend connect packet
-
-// connection information
-	int			signon;			    // 0 to SIGNONS, for the signon sequence.
-	char		servername[MAX_OSPATH];	// name of server from original connect command
-
-	// personalization data sent to server	
-	char		userinfo[MAX_INFO_STRING];
-
-	// When can we send the next command packet?
-	float		nextcmdtime;                
-	// Sequence number of last outgoing command
-	int			lastoutgoingcommand;
-
-// demo loop control
-	int			demonum;		                  // -1 = don't play demos
-	char		demos[MAX_DEMOS][MAX_DEMONAME];	  // when not playing
-
-	float		latency;		// Rolling average of frame latencey (receivedtime - senttime) values.
-
-	int			otherplayerbits;   // For profiling
-	int			localplayerbits;
-
-	float		packet_loss;
-	double		packet_loss_recalc_time;
-
-	int			snapshotnumber;
-	char		retry_address[ MAX_OSPATH ];
-} client_static_t;
-
-extern client_static_t	cls;
-
-// This represents a server's 
-class C_ServerClassInfo
-{
-public:
-				C_ServerClassInfo();
-				~C_ServerClassInfo();
-
-
-public:
-
-	ClientClass	*m_pClientClass;
-	char		*m_ClassName;
-	char		*m_DatatableName;
-
-	// This is an index into the network string table (cl.GetInstanceBaselineTable()).
-	int			m_InstanceBaselineIndex; // INVALID_STRING_INDEX if not initialized yet.
+	float total;
+	float starttime;
 };
 
 
-#include "cl_main.h"
+//-----------------------------------------------------------------------------
+// Purpose: CClientState should hold all pieces of the client state
+//   The client_state_t structure is wiped completely at every server signon
+//-----------------------------------------------------------------------------
+class CClientState : public CBaseClientState, public CClientFrameManager
+{
+	typedef struct CustomFile_s
+	{
+		CRC32_t			crc;	//file CRC
+		unsigned int	reqID;	// download request ID
+	} CustomFile_t;
+
+public:
+	CClientState();
+	~CClientState();
+
+public: // IConnectionlessPacketHandler interface:
+		
+	bool ProcessConnectionlessPacket(struct netpacket_s *packet);
+
+public: // CBaseClientState overrides:
+	void Disconnect( const char *pszReason, bool bShowMainMenu );
+	void FullConnect( netadr_t &adr );
+	bool SetSignonState ( int state, int count );
+	void PacketStart(int incoming_sequence, int outgoing_acknowledged);
+	void PacketEnd( void );
+	void FileReceived( const char *fileName, unsigned int transferID );
+	void FileRequested(const char *fileName, unsigned int transferID );
+	void FileDenied(const char *fileName, unsigned int transferID );
+	void FileSent( const char *fileName, unsigned int transferID );
+	void ConnectionCrashed( const char * reason );
+	void ConnectionClosing( const char * reason );
+	const char *GetCDKeyHash( void );
+	void SetFriendsID( uint friendsID, const char *friendsName );
+	void SendClientInfo( void );
+	void SendServerCmdKeyValues( KeyValues *pKeyValues );
+	void InstallStringTableCallback( char const *tableName );
+	bool HookClientStringTable( char const *tableName );
+	bool InstallEngineStringTableCallback( char const *tableName );
+
+	void StartUpdatingSteamResources();
+	void CheckUpdatingSteamResources();
+	void CheckFileCRCsWithServer();
+	void FinishSignonState_New();
+	void ConsistencyCheck(bool bForce);
+	void RunFrame();
+
+	void ReadEnterPVS( CEntityReadInfo &u );
+	void ReadLeavePVS( CEntityReadInfo &u );
+	void ReadDeltaEnt( CEntityReadInfo &u );
+	void ReadPreserveEnt( CEntityReadInfo &u );
+	void ReadDeletions( CEntityReadInfo &u );
+
+	// In case the client DLL is using the old interface to set area bits,
+	// copy what they've passed to us into the m_chAreaBits array (and 0xFF-out the m_chAreaPortalBits array).
+	void UpdateAreaBits_BackwardsCompatible();
+
+	// Used to be pAreaBits.
+	unsigned char** GetAreaBits_BackwardCompatibility();
+
+public: // IServerMessageHandlers
+	
+	PROCESS_NET_MESSAGE( Tick );
+	
+	PROCESS_NET_MESSAGE( StringCmd );
+	PROCESS_SVC_MESSAGE( ServerInfo );
+	PROCESS_SVC_MESSAGE( ClassInfo );
+	PROCESS_SVC_MESSAGE( SetPause );
+	PROCESS_SVC_MESSAGE( VoiceInit );
+	PROCESS_SVC_MESSAGE( VoiceData );
+	PROCESS_SVC_MESSAGE( Sounds );
+	PROCESS_SVC_MESSAGE( FixAngle );
+	PROCESS_SVC_MESSAGE( CrosshairAngle );
+	PROCESS_SVC_MESSAGE( BSPDecal );
+	PROCESS_SVC_MESSAGE( GameEvent );
+	PROCESS_SVC_MESSAGE( UserMessage );
+	PROCESS_SVC_MESSAGE( EntityMessage );
+	PROCESS_SVC_MESSAGE( PacketEntities );
+	PROCESS_SVC_MESSAGE( TempEntities );
+	PROCESS_SVC_MESSAGE( Prefetch );
+	PROCESS_SVC_MESSAGE( SetPauseTimed );
+
+public:
+
+	float		m_flLastServerTickTime;		// the timestamp of last message
+	bool		insimulation;
+
+	int			oldtickcount;		// previous tick
+	float		m_tickRemainder;	// client copy of tick remainder
+	float		m_frameTime;		// dt of the current frame
+
+	int			lastoutgoingcommand;// Sequence number of last outgoing command
+	int			chokedcommands;		// number of choked commands
+	int			last_command_ack;	// last command sequence number acknowledged by server
+	int			command_ack;		// current command sequence acknowledged by server
+	int			m_nSoundSequence;	// current processed reliable sound sequence number
+	
+	//
+	// information that is static for the entire time connected to a server
+	//
+	bool		ishltv;			// true if HLTV server/demo
+#if defined( REPLAY_ENABLED )
+	bool		isreplay;		// true if Replay server/demo
+#endif
+
+	MD5Value_t	serverMD5;              // To determine if client is playing hacked .map. (entities lump is skipped)
+	
+	unsigned char	m_chAreaBits[MAX_AREA_STATE_BYTES];
+	unsigned char	m_chAreaPortalBits[MAX_AREA_PORTAL_STATE_BYTES];
+	bool			m_bAreaBitsValid; // Have the area bits been set for this level yet?
+	
+// refresh related state
+	QAngle		viewangles;
+	CUtlVector< AddAngle >	addangle;
+	float		addangletotal;
+	float		prevaddangletotal;
+	int			cdtrack;			// cd audio
+
+	CustomFile_t	m_nCustomFiles[MAX_CUSTOM_FILES]; // own custom files CRCs
+
+	uint		m_nFriendsID;
+	char		m_FriendsName[MAX_PLAYER_NAME_LENGTH];
 
 
-// ConVars
-extern	ConVar	cl_name;
-extern	ConVar	cl_shownet;
-extern	ConVar	cl_interp;
+	CUtlFixedLinkedList< CEventInfo > events;	// list of received events
+
+// demo loop control
+	int			demonum;		                  // -1 = don't play demos
+	CUtlString	demos[MAX_DEMOS];				  // when not playing
+
+public:
+
+	// If 'insimulation', returns the time (in seconds) at the client's current tick.
+	// Otherwise, returns the exact client clock.
+	float				GetTime() const;
+	
+	
+	bool				IsPaused() const;
+	float				GetPausedExpireTime() const { return m_flPausedExpireTime; }
+
+	float				GetFrameTime( void ) const;
+	void				SetFrameTime( float dt ) { m_frameTime = dt; }
+
+	float				GetClientInterpAmount();		// Formerly cl_interp, now based on cl_interp_ratio and cl_updaterate.
+		
+	void				Clear( void );
+
+	void				DumpPrecacheStats(  const char * name );
+
+	// Public API to models
+	model_t				*GetModel( int index );
+	void				SetModel( int tableIndex );
+	int					LookupModelIndex( char const *name );
+
+	// Public API to generic
+	char const			*GetGeneric( int index );
+	void				SetGeneric( int tableIndex );
+	int					LookupGenericIndex( char const *name );
+
+	// Public API to sounds
+	CSfxTable			*GetSound( int index );
+	char const			*GetSoundName( int index );
+	void				SetSound( int tableIndex );
+	int					LookupSoundIndex( char const *name );
+	void				ClearSounds();
+
+	// Public API to decals
+	char const			*GetDecalName( int index );
+	void				SetDecal( int tableIndex );
+
+	// customization files code
+	void				CheckOwnCustomFiles(); // load own custom file
+	void				CheckOthersCustomFile(CRC32_t crc); // check if we have to download custom files from server
+	void				AddCustomFile( int slot, const char *resourceFile);
+
+public:
+
+
+	INetworkStringTable *m_pModelPrecacheTable;	
+	INetworkStringTable *m_pGenericPrecacheTable;	
+	INetworkStringTable *m_pSoundPrecacheTable;
+	INetworkStringTable *m_pDecalPrecacheTable;
+	INetworkStringTable *m_pInstanceBaselineTable;
+	INetworkStringTable *m_pLightStyleTable;
+	INetworkStringTable *m_pUserInfoTable;
+	INetworkStringTable *m_pServerStartupTable;
+	INetworkStringTable *m_pDownloadableFileTable;
+	INetworkStringTable *m_pDynamicModelsTable;
+	
+	CPrecacheItem		model_precache[ MAX_MODELS ];
+	CPrecacheItem		generic_precache[ MAX_GENERIC ];
+	CPrecacheItem		sound_precache[ MAX_SOUNDS ];
+	CPrecacheItem		decal_precache[ MAX_BASE_DECALS ];
+
+	WaitForResourcesHandle_t m_hWaitForResourcesHandle;
+	bool m_bUpdateSteamResources;
+	bool m_bShownSteamResourceUpdateProgress;
+	bool m_bDownloadResources;
+	bool m_bPrepareClientDLL;
+	bool m_bCheckCRCsWithServer;
+	float m_flLastCRCBatchTime;
+
+	// This is only kept around to print out the whitelist info if sv_pure is used.
+	CPureServerWhitelist *m_pPureServerWhitelist;
+
+	IFileList *m_pPendingPureFileReloads;
+
+private:
+
+	void ProcessSoundsWithProtoVersion( SVC_Sounds *msg, CUtlVector< SoundInfo_t > &sounds, int nProtoVersion );
+
+private:
+	
+	// Note: This is only here for backwards compatibility. If it is set to something other than NULL,
+	// then we'll copy its contents into m_chAreaBits in UpdateAreaBits_BackwardsCompatible.
+	byte		*m_pAreaBits;
+	
+	// Set to false when we first connect to a server and true later on before we
+	// respond to a new whitelist.
+	bool		m_bMarkedCRCsUnverified;
+};  //CClientState
 
 extern	CClientState	cl;
 
-extern	lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
-extern	dlight_t		cl_dlights[MAX_DLIGHTS];
-extern	dlight_t		cl_elights[MAX_ELIGHTS];
-
+#ifndef SWDS
 extern CGlobalVarsBase g_ClientGlobalVariables;
+#endif
 
-
-#define EndGameAssertMsg( assertion, msg ) \
-	if ( !(assertion) )\
-		Host_EndGame msg
-
-
-//=============================================================================
-
-// cl_main.cpp
-//
-void CL_DecayLights (void);
-
-void CL_Init (void);
-void CL_Shutdown( void );
-
-void CL_FireEvents( void );
-void CL_Disconnect (void);
-void CL_NextDemo (void);
-
-// Resource
-void CL_ParseAuthenticationMessage( unsigned char cType );
-void CL_RegisterResources ( void );
-
-//
-// cl_input
-//
-void CL_Move( float accumulated_extra_samples );
-void CL_ExtraMouseUpdate( float remainder );
-
-void CL_ClearState (void);
-void CL_ReadPackets ( bool framefinished );        // Read packets from server and other sources (ping requests, etc.)
-void CL_SendConnectPacket (void);  // Send the actual connection packet, after server supplies us a challenge value.
-void CL_CheckForResend (void);     // If we are in ca_connecting state and it has been cl_resend.value seconds, 
-								   //  request a challenge value again if we aren't yet connected. 
-//
-// cl_main.cpp
-//
-void CL_HudMessage( const char *pMessage );
-void CL_CheckClientState( void );
-void CL_TakeSnapshotAndSwap();
-
-//
-// cl_parse.cpp
-//
-void CL_ParseServerMessage ( qboolean normal_message = true );
-void CL_WriteMessageHistory( void );
-int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf);
-void CL_PostReadMessages();
-
-//
-// view
-//
-void V_RenderView (void);
-
-//
-// cl_tent
-//
-void CL_SignonReply (void);
-
-// cl_ents_parse.cpp
-bool CL_IsPlayerIndex( int index );
-
-// cl_parse_tent.cpp
-void CL_ParseTEnt (void);
+extern bool g_bClientGameDLLGreaterThanV13;
 
 #endif // CLIENT_H

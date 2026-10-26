@@ -1,25 +1,26 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
+
+#include <stdio.h>
 
 #include "GameConsole.h"
 #include "GameConsoleDialog.h"
-#include <vgui/ISurface.h>
+#include "LoadingDialog.h"
+#include "vgui/ISurface.h"
 
-#include <KeyValues.h>
-#include <vgui/Cursor.h>
-#include <vgui/VGUI.h>
-#include <vgui_controls/Panel.h>
+#include "KeyValues.h"
+#include "vgui/VGUI.h"
+#include "vgui/IVGui.h"
+#include "vgui_controls/Panel.h"
+#include "convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
-#include <tier0/memdbgon.h>
-
-#ifndef min
-	#define min(a,b)  (((a) < (b)) ? (a) : (b))
-#endif
+#include "tier0/memdbgon.h"
 
 static CGameConsole g_GameConsole;
 //-----------------------------------------------------------------------------
@@ -29,7 +30,6 @@ CGameConsole &GameConsole()
 {
 	return g_GameConsole;
 }
-
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameConsole, IGameConsole, GAMECONSOLE_INTERFACE_VERSION, g_GameConsole);
 
 //-----------------------------------------------------------------------------
@@ -53,16 +53,23 @@ CGameConsole::~CGameConsole()
 //-----------------------------------------------------------------------------
 void CGameConsole::Initialize()
 {
+#ifndef _XBOX
 	m_pConsole = vgui::SETUP_PANEL( new CGameConsoleDialog() ); // we add text before displaying this so set it up now!
-		int swide, stall;
-	m_pConsole->SetParent(g_pTaskbar->GetVPanel());
 
+	// set the console to taking up most of the right-half of the screen
+	int swide, stall;
 	vgui::surface()->GetScreenSize(swide, stall);
-	int offset = 40;
+	int offsetx = vgui::scheme()->GetProportionalScaledValue(16);
+	int offsety = vgui::scheme()->GetProportionalScaledValue(64);
+
 	m_pConsole->SetBounds(
-		offset, offset, 
-		min( swide - 2 * offset, 560 ), min( stall - 2 * offset, 400 ) );
+		swide / 2 - offsetx,
+		offsety,
+		swide / 2,
+		(IsAndroid() ? 0.5f : 1.f )*(stall - (offsety * 2)));
+
 	m_bInitialized = true;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -70,11 +77,13 @@ void CGameConsole::Initialize()
 //-----------------------------------------------------------------------------
 void CGameConsole::Activate()
 {
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return;
 
 	vgui::surface()->RestrictPaintToSinglePanel(NULL);
 	m_pConsole->Activate();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -82,10 +91,12 @@ void CGameConsole::Activate()
 //-----------------------------------------------------------------------------
 void CGameConsole::Hide()
 {
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return;
 
 	m_pConsole->Hide();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -93,57 +104,28 @@ void CGameConsole::Hide()
 //-----------------------------------------------------------------------------
 void CGameConsole::Clear()
 {
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return;
 
 	m_pConsole->Clear();
+#endif
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: prints a message to the console
-//-----------------------------------------------------------------------------
-void CGameConsole::Printf(const char *format, ...)
-{
-	if (!m_bInitialized)
-		return;
-
-	m_pConsole->Print(format);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: printes a debug message to the console
-//-----------------------------------------------------------------------------
-void CGameConsole::DPrintf(const char *format, ...)
-{
-	if (!m_bInitialized)
-		return;
-
-	m_pConsole->DPrint(format);
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : clr - 
-//			*format - 
-//			... - 
-//-----------------------------------------------------------------------------
-void CGameConsole::ColorPrintf( Color& clr, const char *format, ...)
-{
-	if (!m_bInitialized)
-		return;
-
-	m_pConsole->ColorPrintf( clr, format );
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: returns true if the console is currently in focus
 //-----------------------------------------------------------------------------
 bool CGameConsole::IsConsoleVisible()
 {
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return false;
 	
 	return m_pConsole->IsVisible();
+#else
+	return false;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -151,17 +133,44 @@ bool CGameConsole::IsConsoleVisible()
 //-----------------------------------------------------------------------------
 void CGameConsole::ActivateDelayed(float time)
 {
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return;
 
 	m_pConsole->PostMessage(m_pConsole, new KeyValues("Activate"), time);
+#endif
 }
 
-void CGameConsole::SetParent( int parent )
+void CGameConsole::SetParent( intp parent )
 {	
+#ifndef _XBOX
 	if (!m_bInitialized)
 		return;
 
 	m_pConsole->SetParent( static_cast<vgui::VPANEL>( parent ));
+
+	// apply proportionality from parent
+	if (vgui::ipanel()->IsProportional(static_cast<vgui::VPANEL>(parent)))
+	{
+		m_pConsole->SetProportional(true);
+		m_pConsole->InvalidateLayout(true, true);
+	}
+#endif
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: static command handler
+//-----------------------------------------------------------------------------
+void CGameConsole::OnCmdCondump()
+{
+#ifndef _XBOX
+	g_GameConsole.m_pConsole->DumpConsoleTextToFile();
+#endif
+}
+
+#ifndef _XBOX
+CON_COMMAND( condump, "dump the text currently in the console to condumpXX.log" )
+{
+	g_GameConsole.OnCmdCondump();
+}
+#endif

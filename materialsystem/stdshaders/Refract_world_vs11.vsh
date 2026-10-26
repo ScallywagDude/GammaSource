@@ -1,4 +1,7 @@
 vs.1.1
+
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Constants specified by the app
 ;    c0      = (0, 1, 2, 0.5)
@@ -55,18 +58,7 @@ dp3 $worldTangentT.x, $vTangentT, $cModel0
 dp3 $worldTangentT.y, $vTangentT, $cModel1
 dp3 $worldTangentT.z, $vTangentT, $cModel2
 
-if( $g_fogType eq "rangefog" )
-{
-	&RangeFog( $projPos );
-}
-elsif( $g_fogType eq "heightfog" )
-{
-	&WaterFog( $worldPos, $projPos );
-}
-else
-{
-	die;
-}	
+&CalcFog( $worldPos, $projPos );
 
 alloc $worldEyeVect
 
@@ -86,8 +78,8 @@ dp3 $tangentEyeVect.z, $worldEyeVect, $worldNormal
 ; stick the tangent space eye vector into oD0
 mad oD0.xyz, $tangentEyeVect, $cHalf, $cHalf
 
-dp4 $bumpTexCoord.x, $vTexCoord0, c91
-dp4 $bumpTexCoord.y, $vTexCoord0, c92
+dp4 $bumpTexCoord.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
+dp4 $bumpTexCoord.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_2
 
 ; dudv map
 mov oT0.xy, $bumpTexCoord
@@ -103,7 +95,7 @@ alloc $w
 mov oPos, $projPos
 
 ; special case perspective correct texture projection so that the texture fits exactly on the screen
-mul $projPos.y, $projPos.y, c94.w
+mul $projPos.y, $projPos.y, $SHADER_SPECIFIC_CONST_4.w
 add $projPos.xy, $projPos.xy, $projPos.w
 mul $projPos.xy, $projPos.xy, $cHalf
 
@@ -137,6 +129,7 @@ mul $projTangentS.xy, $projTangentS.xy, $w.w
 ;------------------------------------------------------------------------------
 
 alloc $projTangentT
+alloc $texCoord
 
 ; we only care about x and y
 dp3 $projTangentT.x, $worldTangentT, $cViewProj0
@@ -151,14 +144,17 @@ mul $projTangentT.xy, $projTangentT.xy, $w.w
 ;max $projPos.xy, $projPos.xy, $cOne
 ;min $projPos.xy, $projPos.xy, -$cOne
 
-mul oT1.x, $projTangentS.x, c93.x
-mul oT1.y, $projTangentT.x, c93.x
+mul oT1.x, $projTangentS.x, $SHADER_SPECIFIC_CONST_3.x
+mul oT1.y, $projTangentT.x, $SHADER_SPECIFIC_CONST_3.x
 mov oT1.z, $projPos.x ; huh?
 
-mul oT2.x, $projTangentS.y, -c93.x
-mul oT2.y, $projTangentT.y, -c93.x
-mov oT2.z, $projPos.y
+mul $texCoord.x, $projTangentS.y, -$SHADER_SPECIFIC_CONST_3.x
+mul $texCoord.y, $projTangentT.y, -$SHADER_SPECIFIC_CONST_3.x
+mov $texCoord.z, $projPos.y
+mov oT2.xyz, $texCoord
+mov oT3.xyz, $texCoord
 
+free $texCoord
 free $projPos
 free $worldPos
 free $worldEyeVect

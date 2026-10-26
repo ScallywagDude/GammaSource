@@ -1,12 +1,18 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "BaseVSShader.h"
-#include "VMatrix.h"
+#include "mathlib/vmatrix.h"
+
+#include "water_ps14.inc"
+#include "watercheap_vs14.inc"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( Water, Water_DX81 )
 
@@ -34,6 +40,8 @@ BEGIN_VS_SHADER( Water_DX81,
 		SHADER_PARAM( FORCECHEAP, SHADER_PARAM_TYPE_INTEGER, "", "" )
 		SHADER_PARAM( FORCEEXPENSIVE, SHADER_PARAM_TYPE_BOOL, "", "" )
 		SHADER_PARAM( REFLECTENTITIES, SHADER_PARAM_TYPE_BOOL, "", "" )
+		SHADER_PARAM( REFLECTBLENDFACTOR, SHADER_PARAM_TYPE_FLOAT, "1.0", "" )
+		SHADER_PARAM( NOFRESNEL, SHADER_PARAM_TYPE_BOOL, "0", "" )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
@@ -64,14 +72,13 @@ BEGIN_VS_SHADER( Water_DX81,
 		{
 			params[FORCEEXPENSIVE]->SetIntValue( 0 );
 		}
-		if( g_pConfig->bEditMode )
-		{
-			params[ENVMAP]->SetStringValue( "engine/defaultcubemap" );
-			params[FORCEEXPENSIVE]->SetIntValue( 0 );
-		}
 		if( params[FORCEEXPENSIVE]->GetIntValue() && params[FORCECHEAP]->GetIntValue() )
 		{
 			params[FORCEEXPENSIVE]->SetIntValue( 0 );
+		}
+		if( !params[REFLECTBLENDFACTOR]->IsDefined() )
+		{
+			params[REFLECTBLENDFACTOR]->SetFloatValue( 1.0f );
 		}
 		if( !params[FORCEEXPENSIVE]->GetIntValue() && !params[ENVMAP]->IsDefined() )
 		{
@@ -91,16 +98,13 @@ BEGIN_VS_SHADER( Water_DX81,
 	SHADER_INIT
 	{
 		Assert( params[WATERDEPTH]->IsDefined() );
-		if( !g_pConfig->bEditMode )
+		if( params[REFRACTTEXTURE]->IsDefined() )
 		{
-			if( params[REFRACTTEXTURE]->IsDefined() )
-			{
-				LoadTexture( REFRACTTEXTURE );
-			}
-			if( params[REFLECTTEXTURE]->IsDefined() )
-			{
-				LoadTexture( REFLECTTEXTURE );
-			}
+			LoadTexture( REFRACTTEXTURE );
+		}
+		if( params[REFLECTTEXTURE]->IsDefined() )
+		{
+			LoadTexture( REFLECTTEXTURE );
 		}
 		if (params[ENVMAP]->IsDefined() )
 		{
@@ -116,9 +120,7 @@ BEGIN_VS_SHADER( Water_DX81,
 	{
 		// "REFLECT" "0..1"
 		// "REFRACT" "0..1"
-		int pshIndex = 
-			( bReflection ? 1 : 0 ) |
-			( bReflection ? 2 : 0 );				
+		int pshIndex = ( bReflection ? 1 : 0 ) | ( bRefraction ? 2 : 0 );				
 		return pshIndex;
 	}
 
@@ -128,41 +130,43 @@ BEGIN_VS_SHADER( Water_DX81,
 		SHADOW_STATE
 		{
 			SetInitialShadowState( );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
 			if( bRefraction )
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );
 			}
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE3, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );
 			if( bReflection )
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE4, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );
 			}
 			int fmt = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_TANGENT_S | VERTEX_TANGENT_T;
-			pShaderShadow->VertexShaderVertexFormat( fmt, 1, 0, 0, 0 );
-			pShaderShadow->SetVertexShader( "Water_ps14" );
+			pShaderShadow->VertexShaderVertexFormat( fmt, 1, 0, 0 );
+
+			water_ps14_Static_Index vshIndex;
+			pShaderShadow->SetVertexShader( "Water_ps14", vshIndex.GetIndex() );
+
 			int pshIndex = GetReflectionRefractionPixelShaderIndex( bReflection, bRefraction );
 			pShaderShadow->SetPixelShader ( "Water_ps14", pshIndex );
+			FogToFogColor();
 		}
 		DYNAMIC_STATE
 		{
 			pShaderAPI->SetDefaultState();
-			pShaderAPI->BindNormalizationCubeMap( SHADER_TEXTURE_STAGE1 );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_NORMALIZATION_CUBEMAP );
 			if( bRefraction )
 			{
-				BindTexture( SHADER_TEXTURE_STAGE2, REFRACTTEXTURE, -1 );
+				BindTexture( SHADER_SAMPLER2, REFRACTTEXTURE, -1 );
 			}
-			BindTexture( SHADER_TEXTURE_STAGE3, NORMALMAP, BUMPFRAME );
+			BindTexture( SHADER_SAMPLER3, NORMALMAP, BUMPFRAME );
 			if( bReflection )
 			{
-				BindTexture( SHADER_TEXTURE_STAGE4, REFLECTTEXTURE, -1 );
+				BindTexture( SHADER_SAMPLER4, REFLECTTEXTURE, -1 );
 			}
 
-			pShaderAPI->SetVertexShaderIndex( 0 );
-			
-			SetVertexShaderConstant( 90, REFLECTAMOUNT );
-			SetVertexShaderTextureTransform( 91, BUMPTRANSFORM );
-			SetVertexShaderConstant( 93, REFRACTAMOUNT );
+			SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, REFLECTAMOUNT );
+			SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_1, BUMPTRANSFORM );
+			SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_3, REFRACTAMOUNT );
 			
 			float c0[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 			pShaderAPI->SetPixelShaderConstant( 0, c0, 1 );
@@ -181,79 +185,126 @@ BEGIN_VS_SHADER( Water_DX81,
 			float reflectionRefractionScale[4] = { params[REFLECTAMOUNT]->GetFloatValue(), 
 				params[REFRACTAMOUNT]->GetFloatValue(), 0.0f, 0.0f };
 			pShaderAPI->SetPixelShaderConstant( 5, reflectionRefractionScale, 1 );
-			pShaderAPI->SetVertexShaderConstant( 94, reflectionRefractionScale, 1 );
+			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_4, reflectionRefractionScale, 1 );
 
-
-			FogToFogColor();
+			water_ps14_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 		}
 		Draw();
 	}
 	
+	enum DrawCheapType_t
+	{
+		DRAW_CHEAP_OPAQUE = 0,
+		DRAW_CHEAP_FRESNEL_OPAQUE,
+		DRAW_CHEAP_LOD_ONLY,
+		DRAW_CHEAP_FRESNEL_AND_LOD,
+	};
+
 	inline void DrawCheapWater( IMaterialVar **params, IShaderShadow* pShaderShadow, 
-		                        IShaderDynamicAPI* pShaderAPI, bool bBlend )
+		                        IShaderDynamicAPI* pShaderAPI, DrawCheapType_t type )
 	{
 		SHADOW_STATE
 		{
 			SetInitialShadowState( );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE3, true );
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE4, true );
-			if( bBlend )
+
+			// In edit mode, use nocull
+			if ( UsingEditor( params ) )
+			{
+				s_pShaderShadow->EnableCulling( false );
+			}
+
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );
+			if ( (type != DRAW_CHEAP_OPAQUE) && (type != DRAW_CHEAP_FRESNEL_OPAQUE) )
 			{
 				EnableAlphaBlending( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
 			}
 			pShaderShadow->VertexShaderVertexFormat( 
 				VERTEX_POSITION | VERTEX_NORMAL | VERTEX_TANGENT_S |
-				VERTEX_TANGENT_T, 1, 0, 0, 0 );
-			pShaderShadow->SetVertexShader( "WaterCheap_vs14" );
-			pShaderShadow->SetPixelShader( "WaterCheap_ps14" );
+				VERTEX_TANGENT_T, 1, 0, 0 );
+
+			watercheap_vs14_Static_Index vshIndex;
+			pShaderShadow->SetVertexShader( "WaterCheap_vs14", vshIndex.GetIndex() );
+
+			static const char *s_pPixelShader[] =
+			{
+				"WaterCheapOpaque_ps14",
+				"WaterCheapFresnelOpaque_ps14",
+				"WaterCheap_ps14",
+				"WaterCheapFresnel_ps14",
+			};
+
+			pShaderShadow->SetPixelShader( s_pPixelShader[type] );
+			FogToFogColor();
 		}
 		DYNAMIC_STATE
 		{
 			pShaderAPI->SetDefaultState();
-			BindTexture( SHADER_TEXTURE_STAGE0, NORMALMAP, BUMPFRAME );
-			BindTexture( SHADER_TEXTURE_STAGE3, ENVMAP, ENVMAPFRAME );
-			pShaderAPI->BindNormalizationCubeMap( SHADER_TEXTURE_STAGE4 );
+			BindTexture( SHADER_SAMPLER0, NORMALMAP, BUMPFRAME );
+			BindTexture( SHADER_SAMPLER3, ENVMAP, ENVMAPFRAME );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER4, TEXTURE_NORMALIZATION_CUBEMAP );
 			
-			SetEnvMapTintPixelShaderDynamicState( 0, REFLECTTINT, ALPHA );
-			float cheapWaterStartDistance = params[CHEAPWATERSTARTDISTANCE]->GetFloatValue();
-			float cheapWaterEndDistance = params[CHEAPWATERENDDISTANCE]->GetFloatValue();
-			float cheapWaterConstants[4] = 
-			{ 
-				cheapWaterStartDistance, 
-				1.0f / ( cheapWaterEndDistance - cheapWaterStartDistance ), 0.0f, 0.0f 
-			};
-			pShaderAPI->SetVertexShaderConstant( 92, cheapWaterConstants );
+			float pCheapWaterConstants[4] = { 0, 0, 0, 0 };
+			if ( (type != DRAW_CHEAP_OPAQUE) && (type != DRAW_CHEAP_FRESNEL_OPAQUE) )
+			{
+				float flCheapWaterStartDistance = params[CHEAPWATERSTARTDISTANCE]->GetFloatValue();
+				float flCheapWaterEndDistance = params[CHEAPWATERENDDISTANCE]->GetFloatValue();
+				pCheapWaterConstants[0] = flCheapWaterStartDistance;
+				pCheapWaterConstants[1] = 1.0f / ( flCheapWaterEndDistance - flCheapWaterStartDistance );
+			}
+			pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_2, pCheapWaterConstants );
 
 			SetPixelShaderConstant( 0, FOGCOLOR );
-			SetPixelShaderConstant( 1, REFLECTTINT );
-			SetPixelShaderConstant( 2, REFRACTTINT );
+			SetPixelShaderConstant( 1, REFLECTTINT, REFLECTBLENDFACTOR );
 				
-			FogToFogColor();
-			SetVertexShaderTextureTransform( 90, BUMPTRANSFORM );
+			SetVertexShaderTextureTransform( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, BUMPTRANSFORM );
+
+			watercheap_vs14_Dynamic_Index vshIndex;
+			vshIndex.SetDOWATERFOG( pShaderAPI->GetSceneFogMode() == MATERIAL_FOG_LINEAR_BELOW_FOG_Z );
+			pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
 		}
 		Draw();
 	}
 
 	SHADER_DRAW
 	{
-		// FIXME: make a dx8 version of DrawCheapWater.
-		bool bForceCheap = params[FORCECHEAP]->GetIntValue() != 0 || g_pConfig->bEditMode;
-		bool bForceExpensive = params[FORCEEXPENSIVE]->GetIntValue() != 0 || g_pConfig->bEditMode;
-		Assert( !( bForceCheap && bForceExpensive ) );
-		bool bReflection = params[REFLECTTEXTURE]->IsDefined();
-		bool bRefraction = params[REFRACTTEXTURE]->IsDefined();
-		if( !bForceCheap )
+		// NOTE: Here's what all this means.
+		// 1) ForceCheap means use env_cubemap only
+		// 2) ForceExpensive means do real reflection instead of env_cubemap.
+		// By default, it will do refraction and use env_cubemap for the reflection.
+
+		// Also, it will fade to cheap water at a particular distance, 
+		// based on CheapWaterStartDistance and CheapWaterEndDistance
+		// * In the ForceCheap case, no fading is required
+		// * In the default case, it will fade based on these parameters in a single pass
+		// * In the expensive case, it will have to perform the fade in a separate pass.
+
+		bool bForceCheap = params[FORCECHEAP]->GetIntValue() != 0 || UsingEditor( params );
+		bool bForceExpensive = params[FORCEEXPENSIVE]->GetIntValue() != 0;
+		bool bRefraction = params[REFRACTTEXTURE]->IsTexture();
+		bool bReflection = bForceExpensive && params[REFLECTTEXTURE]->IsTexture();
+		DrawCheapType_t type = params[NOFRESNEL]->GetIntValue() ? DRAW_CHEAP_OPAQUE : DRAW_CHEAP_FRESNEL_OPAQUE;
+		if( !bForceCheap && (bRefraction || bReflection) )
 		{
 			DrawReflectionRefraction( params, pShaderShadow, pShaderAPI, bReflection, bRefraction );
+			if ( !bReflection )
+			{
+				type = params[NOFRESNEL]->GetIntValue() ? DRAW_CHEAP_LOD_ONLY : DRAW_CHEAP_FRESNEL_AND_LOD;
+			}
+			else
+			{
+				type = DRAW_CHEAP_LOD_ONLY;
+			}
 		}
 
 		// Use $decal to see if we are a decal or not. . if we are, then don't bother
 		// drawing the cheap version for now since we don't have access to env_cubemap
-		if( !bForceExpensive && params[ENVMAP]->IsDefined() && 
-			!IS_FLAG_SET( MATERIAL_VAR_DECAL ) )
+		if( params[ENVMAP]->IsTexture() && !IS_FLAG_SET( MATERIAL_VAR_DECAL ) && !bReflection )
 		{
-			DrawCheapWater( params, pShaderShadow, pShaderAPI, !bForceCheap );
+			DrawCheapWater( params, pShaderShadow, pShaderAPI, type );
 		}
 	}
 END_SHADER

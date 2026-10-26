@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ITHREADEDTCPSOCKET_H
 #define ITHREADEDTCPSOCKET_H
@@ -32,7 +32,7 @@ public:
 	// Free resources associated with the packet.
 	void Release();
 
-private:
+public:
 	friend class CThreadedTCPSocket;
 	~CTCPPacket(); // Use Release(), not delete.
 
@@ -147,7 +147,7 @@ public:
 ITCPConnectSocket* ThreadedTCP_CreateListener( 
 	IHandlerCreator *pHandlerCreator,	// This handles messages from the socket.
 	const unsigned short port,			// Listen on this port.
-	int nQueueLength = -1				// How many connections 
+	int nQueueLength = 5				// How many connections 
 	);
 
 
@@ -164,6 +164,10 @@ ITCPConnectSocket* ThreadedTCP_CreateConnector(
 
 // Enable or disable timeouts.
 void ThreadedTCP_EnableTimeouts( bool bEnable );
+
+// This should be called at init time. If set to true, it'll set the send and recv threads to low priority.
+// (Default is true).
+void ThreadedTCP_SetTCPSocketThreadPriorities( bool bSetTCPSocketThreadPriorities );
 
 
 #endif // ITHREADEDTCPSOCKET_H

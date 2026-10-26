@@ -1,12 +1,10 @@
-/***
-*
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-****/
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vrad.h"
 #include "vmpi.h"
@@ -33,6 +31,66 @@ Use the PVS to accelerate if available
 */
 
 #define TEST_EPSILON	0.1
+#define PLANE_TEST_EPSILON  0.01 // patch must be this much in front of the plane to be considered "in front"
+#define PATCH_FACE_OFFSET  0.1 // push patch origins off from the face by this amount to avoid self collisions
+
+#define STREAM_SIZE 512
+
+class CTransferMaker
+{
+public:
+
+	CTransferMaker( transfer_t *all_transfers );
+	~CTransferMaker();
+
+	FORCEINLINE void TestMakeTransfer( Vector start, Vector stop, int ndxShooter, int ndxReciever )
+	{
+		g_RtEnv.AddToRayStream( m_RayStream, start, stop, &m_pResults[m_nTests] );
+		m_pShooterPatches[m_nTests] = ndxShooter;
+		m_pRecieverPatches[m_nTests] = ndxReciever;
+		++m_nTests;
+	}
+
+	void Finish();
+
+private:
+
+	int m_nTests;
+	RayTracingSingleResult *m_pResults;
+	int *m_pShooterPatches;
+	int *m_pRecieverPatches;
+	RayStream m_RayStream;
+	transfer_t *m_AllTransfers;
+};
+
+CTransferMaker::CTransferMaker( transfer_t *all_transfers ) :
+	m_AllTransfers( all_transfers ), m_nTests( 0 )
+{
+	m_pResults = (RayTracingSingleResult *)calloc( 1, MAX_PATCHES * sizeof ( RayTracingSingleResult ) );
+	m_pShooterPatches = (int *)calloc( 1, MAX_PATCHES * sizeof( int ) );
+	m_pRecieverPatches = (int *)calloc( 1, MAX_PATCHES * sizeof( int ) );
+}
+
+CTransferMaker::~CTransferMaker()
+{
+	free ( m_pResults );
+	free ( m_pShooterPatches );
+	free (m_pRecieverPatches );
+}
+
+void CTransferMaker::Finish()
+{
+	g_RtEnv.FinishRayStream( m_RayStream );
+	for ( int i = 0; i < m_nTests; ++i )
+	{
+		if ( m_pResults[i].HitID == -1 || m_pResults[i].HitDistance >= m_pResults[i].ray_length )
+		{
+			MakeTransfer( m_pShooterPatches[i], m_pRecieverPatches[i], m_AllTransfers );
+		}
+	}
+	m_nTests = 0;
+}
+
 
 dleaf_t* PointInLeaf (int iNode, Vector const& point)
 {
@@ -97,20 +155,20 @@ void PvsForOrigin (Vector& org, byte *pvs)
 }
 
 
-void TestPatchToPatch( int ndxPatch1, int ndxPatch2, int head, transfer_t *transfers, int iThread )
+void TestPatchToPatch( int ndxPatch1, int ndxPatch2, int head, transfer_t *transfers, CTransferMaker &transferMaker, int iThread )
 {
 	Vector tmp;
 
 	//
 	// get patches
 	//
-	if( ndxPatch1 == patches.InvalidIndex() || ndxPatch2 == patches.InvalidIndex() )
+	if( ndxPatch1 == g_Patches.InvalidIndex() || ndxPatch2 == g_Patches.InvalidIndex() )
 		return;
 
-	patch_t *patch = &patches.Element( ndxPatch1 );
-	patch_t *patch2 = &patches.Element( ndxPatch2 );
+	CPatch *patch = &g_Patches.Element( ndxPatch1 );
+	CPatch *patch2 = &g_Patches.Element( ndxPatch2 );
 
-	if (patch2->child1 != patches.InvalidIndex() )
+	if (patch2->child1 != g_Patches.InvalidIndex() )
 	{
 		// check to see if we should use a child node instead
 
@@ -119,8 +177,8 @@ void TestPatchToPatch( int ndxPatch1, int ndxPatch2, int head, transfer_t *trans
 		// FIXME: should be based on form-factor (ie. include visible angle, etc)
 		if ( DotProduct(tmp, tmp) * 0.0625 < patch2->area )
 		{
-			TestPatchToPatch( ndxPatch1, patch2->child1, head, transfers, iThread );
-			TestPatchToPatch( ndxPatch1, patch2->child2, head, transfers, iThread );
+			TestPatchToPatch( ndxPatch1, patch2->child1, head, transfers, transferMaker, iThread );
+			TestPatchToPatch( ndxPatch1, patch2->child2, head, transfers, transferMaker, iThread );
 			return;
 		}
 	}
@@ -129,10 +187,13 @@ void TestPatchToPatch( int ndxPatch1, int ndxPatch2, int head, transfer_t *trans
 	// if bit has not already been set
 	//  && v2 is not behind light plane
 	//  && v2 is visible from v1
-	if ( DotProduct (patch2->origin, patch->normal) > patch->planeDist + 1.01
-	  && TestLine (patch->origin, patch2->origin, head, iThread) == CONTENTS_EMPTY )
+	if ( DotProduct( patch2->origin, patch->normal ) > patch->planeDist + PLANE_TEST_EPSILON )
 	{
-		MakeTransfer( ndxPatch1, ndxPatch2, transfers );
+		// push out origins from face so that don't intersect their owners
+		Vector p1, p2;
+		VectorAdd( patch->origin, patch->normal, p1 );
+		VectorAdd( patch2->origin, patch2->normal, p2 );
+		transferMaker.TestMakeTransfer( p1, p2, ndxPatch1, ndxPatch2 );
 	}
 }
 
@@ -144,28 +205,28 @@ TestPatchToFace
 Sets vis bits for all patches in the face
 ==============
 */
-void TestPatchToFace (unsigned patchnum, int facenum, int head, transfer_t *transfers, int iThread )
+void TestPatchToFace (unsigned patchnum, int facenum, int head, transfer_t *transfers, CTransferMaker &transferMaker, int iThread )
 {
-	if( faceParents.Element( facenum ) == patches.InvalidIndex() || patchnum == patches.InvalidIndex() )
+	if( faceParents.Element( facenum ) == g_Patches.InvalidIndex() || patchnum == g_Patches.InvalidIndex() )
 		return;
 
-	patch_t	*patch = &patches.Element( patchnum );
-	patch_t *patch2 = &patches.Element( faceParents.Element( facenum ) );
+	CPatch	*patch = &g_Patches.Element( patchnum );
+	CPatch *patch2 = &g_Patches.Element( faceParents.Element( facenum ) );
 
 	// if emitter is behind that face plane, skip all patches
 
-	patch_t *pNextPatch;
+	CPatch *pNextPatch;
 
-	if ( patch2 && DotProduct(patch->origin, patch2->normal) > patch2->planeDist + 1.01 )
+	if ( patch2 && DotProduct(patch->origin, patch2->normal) > patch2->planeDist + PLANE_TEST_EPSILON )
 	{
 		// we need to do a real test
 		for( ; patch2; patch2 = pNextPatch )
 		{
 			// next patch
 			pNextPatch = NULL;
-			if( patch2->ndxNextParent != patches.InvalidIndex() )
+			if( patch2->ndxNextParent != g_Patches.InvalidIndex() )
 			{
-				pNextPatch = &patches.Element( patch2->ndxNextParent );
+				pNextPatch = &g_Patches.Element( patch2->ndxNextParent );
 			}
 
 			/*
@@ -175,8 +236,8 @@ void TestPatchToFace (unsigned patchnum, int facenum, int head, transfer_t *tran
 				continue;
 			*/
 
-			int ndxPatch2 = patch2 - patches.Base();
-			TestPatchToPatch( patchnum, ndxPatch2, head, transfers, iThread );
+			int ndxPatch2 = patch2 - g_Patches.Base();
+			TestPatchToPatch( patchnum, ndxPatch2, head, transfers, transferMaker, iThread );
 		}
 	}
 }
@@ -202,25 +263,25 @@ void AddDispsToClusterTable( void )
 	for( int ndxFace = 0; ndxFace < numfaces; ndxFace++ )
 	{
 		// search for displacement faces
-		if( dfaces[ndxFace].dispinfo == -1 )
+		if( g_pFaces[ndxFace].dispinfo == -1 )
 			continue;
 
 		//
 		// get the clusters associated with the face
 		//
-		if( facePatches.Element( ndxFace ) != facePatches.InvalidIndex() )
+		if( g_FacePatches.Element( ndxFace ) != g_FacePatches.InvalidIndex() )
 		{
-			patch_t *pNextPatch = NULL;
-			for( patch_t *pPatch = &patches.Element( facePatches.Element( ndxFace ) ); pPatch; pPatch = pNextPatch )
+			CPatch *pNextPatch = NULL;
+			for( CPatch *pPatch = &g_Patches.Element( g_FacePatches.Element( ndxFace ) ); pPatch; pPatch = pNextPatch )
 			{
 				// next patch
 				pNextPatch = NULL;
-				if( pPatch->ndxNext != patches.InvalidIndex() )
+				if( pPatch->ndxNext != g_Patches.InvalidIndex() )
 				{
-					pNextPatch = &patches.Element( pPatch->ndxNext );
+					pNextPatch = &g_Patches.Element( pPatch->ndxNext );
 				}
 
-				if( pPatch->clusterNumber != patches.InvalidIndex() )
+				if( pPatch->clusterNumber != g_Patches.InvalidIndex() )
 				{
 					int ndxDisp = g_ClusterDispFaces[pPatch->clusterNumber].dispFaces.Find( ndxFace );
 					if( ndxDisp == -1 )
@@ -242,15 +303,15 @@ BuildVisRow
 Calc vis bits from a single patch
 ==============
 */
-void BuildVisRow (int patchnum, byte *pvs, int head, transfer_t *transfers, int iThread )
+void BuildVisRow (int patchnum, byte *pvs, int head, transfer_t *transfers, CTransferMaker &transferMaker, int iThread )
 {
 	int		j, k, l, leafIndex;
-	patch_t	*patch;
+	CPatch	*patch;
 	dleaf_t	*leaf;
 	byte	face_tested[MAX_MAP_FACES];
 	byte	disp_tested[MAX_MAP_FACES];
 
-	patch = &patches.Element( patchnum );
+	patch = &g_Patches.Element( patchnum );
 
 	memset( face_tested, 0, numfaces ) ;
 	memset( disp_tested, 0, numfaces );
@@ -280,7 +341,7 @@ void BuildVisRow (int patchnum, byte *pvs, int head, transfer_t *transfers, int 
 				// don't check patches on the same face
 				if (patch->faceNumber == l)
 					continue;
-				TestPatchToFace (patchnum, l, head, transfers, iThread );
+				TestPatchToFace (patchnum, l, head, transfers, transferMaker, iThread );
 			}
 		}
 
@@ -297,7 +358,7 @@ void BuildVisRow (int patchnum, byte *pvs, int head, transfer_t *transfers, int 
 			if( patch->faceNumber == ndxFace )
 				continue;
 
-			TestPatchToFace( patchnum, ndxFace, head, transfers, iThread );
+			TestPatchToFace( patchnum, ndxFace, head, transfers, transferMaker, iThread );
 		}
 	}
 
@@ -326,37 +387,39 @@ void BuildVisLeafs_Cluster(
 	int threadnum,
 	transfer_t *transfers, 
 	int iCluster, 
-	void (*PatchCB)(int iThread, int patchnum, patch_t *patch)
+	void (*PatchCB)(int iThread, int patchnum, CPatch *patch)
 	)
 {
 	byte	pvs[(MAX_MAP_CLUSTERS+7)/8];
-	patch_t	*patch;
+	CPatch	*patch;
 	int		head;
 	unsigned	patchnum;
-
 	
 	DecompressVis( &dvisdata[ dvis->bitofs[ iCluster ][DVIS_PVS] ], pvs);
 	head = 0;
 
+	CTransferMaker transferMaker( transfers );
+
 	// light every patch in the cluster
 	if( clusterChildren.Element( iCluster ) != clusterChildren.InvalidIndex() )
 	{
-		patch_t *pNextPatch;
-		for( patch = &patches.Element( clusterChildren.Element( iCluster ) ); patch; patch = pNextPatch )
+		CPatch *pNextPatch;
+		for( patch = &g_Patches.Element( clusterChildren.Element( iCluster ) ); patch; patch = pNextPatch )
 		{
 			//
 			// next patch
 			//
 			pNextPatch = NULL;
-			if( patch->ndxNextClusterChild != patches.InvalidIndex() )
+			if( patch->ndxNextClusterChild != g_Patches.InvalidIndex() )
 			{
-				pNextPatch = &patches.Element( patch->ndxNextClusterChild );
+				pNextPatch = &g_Patches.Element( patch->ndxNextClusterChild );
 			}
 			
-			patchnum = patch - patches.Base();
+			patchnum = patch - g_Patches.Base();
 
 			// build to all other world clusters
-			BuildVisRow (patchnum, pvs, head, transfers, threadnum );
+			BuildVisRow (patchnum, pvs, head, transfers, transferMaker, threadnum );
+			transferMaker.Finish();
 			
 			// do the transfers
 			MakeScales( patchnum, transfers );

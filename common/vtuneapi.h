@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 /**
 ***  Copyright  (C) 1999-2001 Intel Corporation. All rights reserved.
 ***

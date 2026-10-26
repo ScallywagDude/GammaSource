@@ -1,0 +1,235 @@
+[
+  {
+    "Name": "New Profile",
+    "Projects": [
+      {
+        "Path": "tier0\\tier0.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vstdlib\\vstdlib.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "unitlib\\unitlib.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vtf\\vtf.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "shaderlib\\shaderlib.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_dbg.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_dx6.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_dx7.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_dx8.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_dx9.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\stdshader_hdr_dx9.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\stdshaders\\shader_nvfx.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\shaderempty\\shaderempty.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\shaderdx8\\shaderdx8.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\shaderdx8\\playback\\playback.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "materialsystem\\materialsystem.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\mxtk\\msvc\\mxtoolkitwin32.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vgui2\\vgui_surfacelib\\vgui_surfacelib.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vgui2\\src\\vgui_dll.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vgui2\\controls\\vgui_controls.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vphysics\\vphysics.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "studiorender\\studiorender.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "filesystem\\filesystem_stdio\\filesystem_stdio.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "appframework\\appframework.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "vguimatsurface\\vguimatsurface.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "gameui\\GameUI.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "engine\\voice_codecs\\miles\\miles.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "Tracker\\ServerBrowser\\ServerBrowser.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vmpi\\vmpi.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vbspinfo\\vbspinfo.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vbsp\\vbsp.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vrad\\vrad.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vrad_launcher\\vrad_launcher.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vvis\\vvis.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vvis_launcher\\vvis_launcher.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\nvtristriplib\\nvtristriplib.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\studiomdl\\studiomdl.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\hlmviewer\\src\\hlmv.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\hlfaceposer\\hlfaceposer.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\scenemanager\\scenemanager.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\phonemeextractor\\phonemeextractor.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\newdat\\newdat.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vtex\\vtex.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vtex\\vtex_dll.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\unittest\\unittest.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\bsppack\\bsppack.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\bspzip\\bspzip.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\height2normal\\height2normal.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\vtf2tga\\vtf2tga.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "utils\\bugreporter\\bugreporter.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "engine\\engine.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "dedicated\\dedicated.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "worldcraft\\worldcraft.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "dlls\\hl.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "cl_dll\\client.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "launcher\\launcher.vcxproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "launcher_main\\launcher_main.vcxproj",
+        "Action": "Start"
+      }
+    ]
+  }
+]

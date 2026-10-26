@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 #include <stdio.h>
 #include <windows.h>
 #include "snd_audio_source.h"
@@ -22,8 +17,8 @@
 #include "snd_wave_mixer_private.h"
 #include "snd_wave_mixer_adpcm.h"
 #include "ifaceposersound.h"
-#include "viewersettings.h"
 #include "AudioWaveOutput.h"
+#include "tier2/riff.h"
 
 typedef struct channel_s
 {
@@ -95,9 +90,6 @@ public:
 };
 
 
-#define WAVE_FORMAT_PCM		1
-#define WAVE_FORMAT_ADPCM	2
-
 //-----------------------------------------------------------------------------
 // Purpose: Create an approprite mixer type given the data format
 // Input  : *data - data access abstraction
@@ -137,16 +129,21 @@ CAudioMixer *CreateWaveMixer( CWaveData *data, int format, int channels, int bit
 // Purpose: Init the base WAVE mixer.
 // Input  : *data - data access object
 //-----------------------------------------------------------------------------
-CAudioMixerWave::CAudioMixerWave( CWaveData *data ) : m_pData(data)
+CAudioMixerWave::CAudioMixerWave( CWaveData *data ) : m_pData(data), m_pChannel(NULL)
 {
 	m_loop = 0;
 	m_sample = 0;
 	m_absoluteSample = 0;
+	m_scrubSample = -1;
 	m_fracOffset = 0;
 	m_bActive = false;
 	m_nModelIndex = -1;
 	m_bForward = true;
 	m_bAutoDelete = true;
+	m_pChannel = new channel_t;
+	m_pChannel->leftvol   = 127;
+	m_pChannel->rightvol  = 127;
+	m_pChannel->pitch		= 1.0;
 }
 
 //-----------------------------------------------------------------------------
@@ -155,6 +152,7 @@ CAudioMixerWave::CAudioMixerWave( CWaveData *data ) : m_pData(data)
 CAudioMixerWave::~CAudioMixerWave( void )
 {
 	delete m_pData;
+	delete m_pChannel;
 }
 
 
@@ -201,18 +199,40 @@ int CAudioMixerWave::GetSamplePosition( void )
 	return m_sample;
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: Gets the current sample location in playback
+// Output : int (samples from start of wave)
+//-----------------------------------------------------------------------------
+int CAudioMixerWave::GetScrubPosition( void )
+{
+	if (m_scrubSample != -1)
+	{
+		return m_scrubSample;
+	}
+	return m_sample;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : position - 
 //-----------------------------------------------------------------------------
-bool CAudioMixerWave::SetSamplePosition( int position )
+bool CAudioMixerWave::SetSamplePosition( int position, bool scrubbing )
 {
 	position = max( 0, position );
 
 	m_sample = position;
 	m_absoluteSample = position;
 	m_startpos = m_sample;
-
+	if (scrubbing)
+	{
+		m_scrubSample = position;
+	}
+	else
+	{
+		m_scrubSample = -1;
+	}
+		
 	return true;
 }
 
@@ -272,6 +292,20 @@ void CAudioMixerWave::SetAutoDelete( bool autodelete )
 bool CAudioMixerWave::GetAutoDelete( void ) const
 {
 	return m_bAutoDelete;
+}
+
+void CAudioMixerWave::SetVolume( float volume )
+{
+	int ivolume = (int)( clamp( volume, 0.0f, 1.0f ) * 127.0f );
+
+	m_pChannel->leftvol   = ivolume;
+	m_pChannel->rightvol  = ivolume;
+}
+
+channel_t *CAudioMixerWave::GetChannel()
+{
+	Assert( m_pChannel );
+	return m_pChannel;
 }
 
 //-----------------------------------------------------------------------------
@@ -334,7 +368,6 @@ bool CAudioMixerWave::SkipSamples( channel_t *pChannel, int startSample, int sam
 
 	int inputSampleRate = (int)(pChannel->pitch * m_pData->Source().SampleRate());
 	float rate = (float)inputSampleRate / outputRate;
-	fixedint fracstep = FIX_FLOAT( rate );
 
 	sampleCount = min( sampleCount, PAINTBUFFER_SIZE );
 
@@ -352,7 +385,6 @@ bool CAudioMixerWave::SkipSamples( channel_t *pChannel, int startSample, int sam
 
 	while ( sampleCount > 0 )
 	{
-		int availableSamples;
 		int inputSampleCount;
 		char *pData = NULL;
 		int outputSampleCount = sampleCount;
@@ -375,9 +407,9 @@ bool CAudioMixerWave::SkipSamples( channel_t *pChannel, int startSample, int sam
 			}
 
 			// compute new fraction part of sample index
-			float offset = (m_fracOffset / FIX_SCALE) + (rate * outputSampleCount);
-			offset = offset - (float)((int)offset);
-			m_fracOffset = FIX_FLOAT(offset);
+			float flOffset = (m_fracOffset / FIX_SCALE) + (rate * outputSampleCount);
+			flOffset = flOffset - (float)((int)flOffset);
+			m_fracOffset = FIX_FLOAT( flOffset );
 		}
 		else
 		{
@@ -385,7 +417,7 @@ bool CAudioMixerWave::SkipSamples( channel_t *pChannel, int startSample, int sam
 			{
 				startSample = max( 0, startSample - sampleCount );
 			}
-			availableSamples = GetOutputData( (void **)&pData, startSample, sampleCount, forward );
+			int availableSamples = GetOutputData( (void **)&pData, startSample, sampleCount, forward );
 			if ( !availableSamples )
 				break;
 			outputSampleCount = availableSamples;
@@ -445,7 +477,6 @@ bool CAudioMixerWave::MixDataToDevice( IAudioDevice *pDevice, channel_t *pChanne
 
 	while ( sampleCount > 0 )
 	{
-		int availableSamples;
 		int inputSampleCount;
 		char *pData = NULL;
 		int outputSampleCount = sampleCount;
@@ -468,13 +499,13 @@ bool CAudioMixerWave::MixDataToDevice( IAudioDevice *pDevice, channel_t *pChanne
 			Mix( pDevice, pChannel, pData, offset, m_fracOffset, fracstep, outputSampleCount, 0, forward );
 			
 			// compute new fraction part of sample index
-			float offset = (m_fracOffset / FIX_SCALE) + (rate * outputSampleCount);
-			offset = offset - (float)((int)offset);
-			m_fracOffset = FIX_FLOAT(offset);
+			float flOffset = (m_fracOffset / FIX_SCALE) + (rate * outputSampleCount);
+			flOffset = flOffset - (float)((int)flOffset);
+			m_fracOffset = FIX_FLOAT( flOffset );
 		}
 		else
 		{
-			availableSamples = GetOutputData( (void **)&pData, startpos, sampleCount, forward );
+			int availableSamples = GetOutputData( (void **)&pData, startpos, sampleCount, forward );
 			if ( !availableSamples )
 				break;
 

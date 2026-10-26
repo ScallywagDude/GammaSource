@@ -1,12 +1,15 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: random steam class
 //
-//=============================================================================
+//===========================================================================//
 
 #include <tier0/dbg.h>
 #include <vstdlib/random.h>
 #include "cdll_int.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -27,6 +30,11 @@ public:
 	float	RandomFloat( float flMinVal = 0.0f, float flMaxVal = 1.0f )
 	{
 		return ::RandomFloat( flMinVal, flMaxVal );
+	}
+
+	float	RandomFloatExp( float flMinVal = 0.0f, float flMaxVal = 1.0f, float flExponent = 1.0f )
+	{
+		return ::RandomFloatExp( flMinVal, flMaxVal, flExponent );
 	}
 
 	int		RandomInt( int iMinVal, int iMaxVal )

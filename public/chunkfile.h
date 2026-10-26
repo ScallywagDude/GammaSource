@@ -1,16 +1,19 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef CHUNKFILE_H
 #define CHUNKFILE_H
+
+#ifdef _WIN32
 #pragma once
+#endif
 
 #include <stdio.h>
-#include "TokenReader.h"
+#include "tokenreader.h"
 
 
 #define MAX_INDENT_DEPTH		80
@@ -18,6 +21,7 @@
 
 
 class CChunkFile;
+class Vector2D;
 class Vector;
 class Vector4D;
 
@@ -134,6 +138,7 @@ class CChunkFile
 		ChunkFileResult_t WriteKeyValueFloat(const char *pszKey, float fValue);
 		ChunkFileResult_t WriteKeyValueInt(const char *pszKey, int nValue);
 		ChunkFileResult_t WriteKeyValuePoint(const char *pszKey, const Vector &Point);
+		ChunkFileResult_t WriteKeyValueVector2(const char *pszKey, const Vector2D &vec);
 		ChunkFileResult_t WriteKeyValueVector3(const char *pszKey, const Vector &vec);
 		ChunkFileResult_t WriteKeyValueVector4( const char *pszKey, const Vector4D &vec);
 
@@ -143,7 +148,7 @@ class CChunkFile
 		// Functions for reading chunk files.
 		//
 		ChunkFileResult_t ReadChunk(KeyHandler_t pfnKeyHandler = NULL, void *pData = NULL);
-		ChunkFileResult_t ReadNext(char *szKey, char *szValue, ChunkType_t &eChunkType);
+		ChunkFileResult_t ReadNext(char *szKey, char *szValue, int nValueSize, ChunkType_t &eChunkType);
 		ChunkFileResult_t HandleChunk(const char *szChunkName);
 		void HandleError(const char *szChunkName, ChunkFileResult_t eError);
 
@@ -153,6 +158,7 @@ class CChunkFile
 		static bool ReadKeyValueInt(const char *pszValue, int &nInt);
 		static bool ReadKeyValueFloat(const char *pszValue, float &flFloat);
 		static bool ReadKeyValuePoint(const char *pszValue, Vector &Point);
+		static bool ReadKeyValueVector2(const char *pszValue, Vector2D &vec);
 		static bool ReadKeyValueVector3(const char *pszValue, Vector &vec);
 	    static bool ReadKeyValueVector4( const char *pszValue, Vector4D &vec);
 

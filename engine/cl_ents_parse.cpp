@@ -1,91 +1,35 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Parsing of entity network packets.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "quakedef.h"
-#include "client_class.h"
-#include "cdll_engine_int.h"
-#include "icliententitylist.h"
-#include "cl_ents.h"
+
+#include "client_pch.h"
 #include "con_nprint.h"
-#include "protocol.h"
 #include "iprediction.h"
 #include "cl_entityreport.h"
-#include "host.h"
-#include "demo.h"
-#include "UtlVector.h"
-#include "FileSystem_Engine.h"
-#include "const.h"
 #include "dt_recv_eng.h"
 #include "net_synctags.h"
-#include "ISpatialPartitionInternal.h"
+#include "ispatialpartitioninternal.h"
 #include "LocalNetworkBackdoor.h"
 #include "basehandle.h"
 #include "dt_localtransfer.h"
 #include "iprediction.h"
-#include "tier0/vprof.h"
-#include "vstdlib/icommandline.h"
+#include "netmessages.h"
+#include "ents_shared.h"
+#include "cl_ents_parse.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-// PostDataUpdate calls are stored in a list until all ents have been updated.
-class CPostDataUpdateCall
-{
-public:
-	int		m_iEnt;
-	DataUpdateType_t	m_UpdateType;
-};
-
-
-// Passed around the read functions.
-class CEntityReadInfo
-{
-public:
-
-	frame_t			*m_pFrame;
-	bool			m_bUncompressed;
-	int				m_iStartBit;
-	int				m_iEndBit;
-	bool			m_bFinished;	// set to true when the packet is through
-	
-	CRecvEntList	*m_pOld;
-	CRecvEntList	*m_pNew;
-
-	int				m_OldNum;
-	int				m_NewNum;
-
-	int				m_OldIndex;
-	int				m_NewIndex;
-	
-	UpdateType		m_UpdateType;
-	int				m_UpdateFlags;		// from the subheader
-	bool			m_bIsEntity;
-	
-	int				*m_pLocalPlayerBits;
-	int				*m_pOtherPlayerBits;
-
-	unsigned char	*m_pEntityInPVS;	
-
-	int				m_nHeaderCount;
-	int				m_nHeaderBase;
-
-	CPostDataUpdateCall	m_PostDataUpdateCalls[MAX_EDICTS];
-	int					m_nPostDataUpdateCalls;
-};
-
-
-ConVar cl_flushentitypacket("cl_flushentitypacket", "0", 0, "For debugging. Force the engine to flush an entity packet.");
-ConVar cl_deltatrace( "cl_deltatrace", "0", 0, "For debugging, print entity creation/deletion info to console." );
-ConVar cl_packettrace( "cl_packettrace", "1", 0, "For debugging, massive spew to file." );
-
-ConVar cl_showdecodecount( "cl_showdecodecount", "0", 0, "For debugging, show # props decoded" );
-
+static ConVar cl_flushentitypacket("cl_flushentitypacket", "0", FCVAR_CHEAT, "For debugging. Force the engine to flush an entity packet.");
 
 // Prints important entity creation/deletion events to console
 #if defined( _DEBUG )
-#define TRACE_DELTA( text ) if ( cl_deltatrace.GetInt() ) { Con_Printf( text ); };
+static ConVar cl_deltatrace( "cl_deltatrace", "0", 0, "For debugging, print entity creation/deletion info to console." );
+#define TRACE_DELTA( text ) if ( cl_deltatrace.GetInt() ) { ConMsg( "%s", text ); };
 #else
 #define TRACE_DELTA( funcs )
 #endif
@@ -96,13 +40,17 @@ ConVar cl_showdecodecount( "cl_showdecodecount", "0", 0, "For debugging, show # 
 // Debug networking stuff.
 //-----------------------------------------------------------------------------
 
+
 // #define DEBUG_NETWORKING 1
 
 #if defined( DEBUG_NETWORKING )
+void SpewToFile( char const* pFmt, ... );
+static ConVar cl_packettrace( "cl_packettrace", "1", 0, "For debugging, massive spew to file." );
 #define TRACE_PACKET( text ) if ( cl_packettrace.GetInt() ) { SpewToFile text ; };
 #else
 #define TRACE_PACKET( text )
 #endif
+
 
 #if defined( DEBUG_NETWORKING )
 
@@ -139,7 +87,7 @@ void SpewToFile( char const* pFmt, ... )
 	va_list args;
 
 	va_start( args, pFmt );
-	int len = vsprintf( temp, pFmt, args );
+	int len = Q_vsnprintf( temp, sizeof( temp ), pFmt, args );
 	va_end( args );
 	assert( len < 2048 );
 
@@ -161,29 +109,27 @@ void SpewToFile( char const* pFmt, ... )
 // 
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *flags - 
-//			entnum - 
-//-----------------------------------------------------------------------------
-void CL_AddInPVSFlag( unsigned char *flags, int entnum )
-{
-	flags[ entnum >> 3 ] |= 1 << ( entnum & 7 );
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Frees the client DLL's binding to the object.
 // Input  : iEnt - 
 //-----------------------------------------------------------------------------
-void CL_DeleteDLLEntity( int iEnt, char *reason )
+void CL_DeleteDLLEntity( int iEnt, const char *reason, bool bOnRecreatingAllEntities )
 {
 	IClientNetworkable *pNet = entitylist->GetClientNetworkable( iEnt );
 
 	if ( pNet )
 	{
 		ClientClass *pClientClass = pNet->GetClientClass();
-		TRACE_DELTA( va( "%s - %s", pClientClass ? pClientClass->m_pNetworkName : "unknown", reason ) );
+		TRACE_DELTA( va( "Trace %i (%s): delete (%s)\n", iEnt, pClientClass ? pClientClass->m_pNetworkName : "unknown", reason ) );
+#ifndef _XBOX
 		CL_RecordDeleteEntity( iEnt, pClientClass );
+#endif
+		if ( bOnRecreatingAllEntities )
+		{
+			pNet->SetDestroyedOnRecreateEntities();
+		}
+
 		pNet->Release();
 	}
 }
@@ -196,32 +142,33 @@ void CL_DeleteDLLEntity( int iEnt, char *reason )
 //-----------------------------------------------------------------------------
 IClientNetworkable* CL_CreateDLLEntity( int iEnt, int iClass, int iSerialNum )
 {
-	if( iClass >= cl.m_nServerClasses )
-	{
-		Host_Error("CL_CreateDLLEntity: invalid class index (%d).\n", iClass);
-		return false;
-	}
-
 #if defined( _DEBUG )
 	IClientNetworkable *pOldNetworkable = entitylist->GetClientNetworkable( iEnt );
 	Assert( !pOldNetworkable );
 #endif
 
 	ClientClass *pClientClass;
-	if ( pClientClass = cl.m_pServerClasses[iClass].m_pClientClass )
+	if ( ( pClientClass = cl.m_pServerClasses[iClass].m_pClientClass ) != NULL )
 	{
-		TRACE_DELTA( va( "%s - Create (%i):  Enter PVS\n", pClientClass->m_pNetworkName, iEnt ) );
+		TRACE_DELTA( va( "Trace %i (%s): create\n", iEnt, pClientClass->m_pNetworkName ) );
+#ifndef _XBOX
 		CL_RecordAddEntity( iEnt );
-		
+#endif		
+
+		if ( !cl.IsActive() )
+		{
+			COM_TimestampedLog( "cl:  create '%s'", pClientClass->m_pNetworkName );
+		}
+
 		// Create the entity.
 		return pClientClass->m_pCreateFn( iEnt, iSerialNum );
 	}
 
 	Assert(false);
-	return false;
+	return NULL;
 }
 
-static void	SpewBitStream( unsigned char* pMem, int bit, int lastbit )
+void	SpewBitStream( unsigned char* pMem, int bit, int lastbit )
 {
 	int val = 0;
 	char buf[1024];
@@ -276,7 +223,7 @@ static void	SpewBitStream( unsigned char* pMem, int bit, int lastbit )
 }
 
 
-void CL_AddPostDataUpdateCall( CEntityReadInfo &u, int iEnt, DataUpdateType_t updateType )
+inline static void CL_AddPostDataUpdateCall( CEntityReadInfo &u, int iEnt, DataUpdateType_t updateType )
 {
 	ErrorIfNot( u.m_nPostDataUpdateCalls < MAX_EDICTS,
 		("CL_AddPostDataUpdateCall: overflowed u.m_PostDataUpdateCalls") );
@@ -287,86 +234,14 @@ void CL_AddPostDataUpdateCall( CEntityReadInfo &u, int iEnt, DataUpdateType_t up
 }
 
 
-//-----------------------------------------------------------------------------
-// Purpose: When a delta command is received from the server
-//  We need to grab the entity # out of it any the bit settings, too.
-//  Returns -1 if there are no more entities.
-// Input  : &bRemove - 
-//			&bIsNew - 
-// Output : int
-//-----------------------------------------------------------------------------
-void CL_ParseDeltaHeader( 
-	CEntityReadInfo &u
-	)
-{
-	bool value;
 
-
-	u.m_UpdateFlags = FHDR_ZERO;
-
-
-#ifdef DEBUG_NETWORKING
-	bf_read* pRead = MSG_GetReadBuf();
-	int bit = pRead->GetNumBitsRead();
-#endif
-
-	SyncTag_Read( MSG_GetReadBuf(), "Hdr" );	
-
-	if ( !MSG_ReadOneBit() )
-	{
-		int offset = MSG_ReadBitLong( DELTA_OFFSET_BITS );
-
-		u.m_NewNum = u.m_nHeaderBase + offset;
-	}
-	else
-	{
-		u.m_NewNum = MSG_ReadBitLong( MAX_EDICT_BITS );
-	}
-
-	u.m_nHeaderBase = u.m_NewNum;
-
-	// leave pvs flag
-	value = !!MSG_ReadOneBit();
-	if ( !value )
-	{
-		// enter pvs flag
-		value = !!MSG_ReadOneBit();
-		if ( value )
-		{
-			u.m_UpdateFlags |= FHDR_ENTERPVS;
-			// Recreate flag?
-			value = !!MSG_ReadOneBit();
-			if ( value )
-			{
-				u.m_UpdateFlags |= FHDR_FORCERECREATE;
-			}
-		}
-	}
-	else
-	{
-		u.m_UpdateFlags |= FHDR_LEAVEPVS;
-
-		// Force delete flag
-		value = !!MSG_ReadOneBit();
-		if ( value )
-		{
-			u.m_UpdateFlags |= FHDR_DELETE;
-		}
-	}
-
-	// Output the bitstream...
-#ifdef DEBUG_NETWORKING
-	int lastbit = pRead->GetNumBitsRead();
-	SpewBitStream( (byte *)pRead->m_pData, bit, lastbit );
-#endif
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Get the receive table for the specified entity
 // Input  : *pEnt - 
 // Output : RecvTable*
 //-----------------------------------------------------------------------------
-RecvTable* GetEntRecvTable( int entnum )
+static inline RecvTable* GetEntRecvTable( int entnum )
 {
 	IClientNetworkable *pNet = entitylist->GetClientNetworkable( entnum );
 	if ( pNet )
@@ -376,76 +251,20 @@ RecvTable* GetEntRecvTable( int entnum )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Can go from either a baseline or a previous packet_entity
-//  The delta (difference) between the from and to state is used to alter the from fields
-//  into the to fields.
-// Input  : *from - 
-//			*to - 
-//			entNum - 
-//			bNew - 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-void CL_ParseDelta( 
-	bf_read *pInput,
-	IClientNetworkable *pDest,
-	int entNum, 
-	unsigned char *flags )
-{
-	// If ent doesn't think it's in PVS, signal that it is
-	CL_AddInPVSFlag( flags, entNum );
-	
-	
-	// The goal here is to copy the data either from 'from' or from the network stream so 'to' is a valid 
-	// delta-encoded entity state.
-	RecvTable *pRecvTable = GetEntRecvTable( entNum );
-	if( !pRecvTable )
-		Host_Error( "CL_ParseDelta: invalid recv table for ent %d.\n", entNum );
-
-	RecvTable_Decode( pRecvTable, pDest->GetDataTableBasePtr(), pInput, entNum );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Removes existing entities from packet
-// Input  : *pPacket - 
-//-----------------------------------------------------------------------------
-void CL_ClearPacket(CRecvEntList *pPacket)
-{
-	pPacket->Term();
-}
-
-
-//-----------------------------------------------------------------------------
 // Purpose: Returns true if the entity index corresponds to a player slot 
 // Input  : index - 
-// Output : qboolean
+// Output : bool
 //-----------------------------------------------------------------------------
-bool CL_IsPlayerIndex( int index )
+static inline bool CL_IsPlayerIndex( int index )
 {
-	return ( index >= 1 && index <= cl.maxclients ) ? true : false;
+	return ( index >= 1 && index <= cl.m_nMaxClients );
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Determine entity number of corresponding entity in old packet
-// Input  : *oldp - 
-//			oldindex - 
-// Output : int 9999 == not in old packet
-//-----------------------------------------------------------------------------
-int CL_LookupOldpacketIndex( CRecvEntList *oldp, int oldindex )
-{
-	if ( !oldp || oldindex >= oldp->GetNumEntities() )
-	{
-		return 9999;
-	}
-	else
-	{
-		return oldp->GetEntityIndex( oldindex );
-	}
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Bad data was received, just flushes incoming delta data.
 //-----------------------------------------------------------------------------
-void CL_FlushEntityPacket( int endbit, CRecvEntList *packet, char const *errorString, ... )
+void CL_FlushEntityPacket( CClientFrame *packet, char const *errorString, ... )
 {
 	con_nprint_t np;
 	char str[2048];
@@ -453,10 +272,10 @@ void CL_FlushEntityPacket( int endbit, CRecvEntList *packet, char const *errorSt
 
 	// Spit out an error.
 	va_start(marker, errorString);
-	_vsnprintf(str, sizeof(str), errorString, marker);
+	Q_vsnprintf(str, sizeof(str), errorString, marker);
 	va_end(marker);
 	
-	Con_Printf("%s", str);
+	ConMsg("%s", str);
 
 	np.fixed_width_font = false;
 	np.time_to_live = 1.0;
@@ -466,15 +285,9 @@ void CL_FlushEntityPacket( int endbit, CRecvEntList *packet, char const *errorSt
 	np.color[ 2 ] = 0.0;
 	Con_NXPrintf( &np, "WARNING:  CL_FlushEntityPacket, %s", str );
 
-	cl.validsequence = 0;		// can't render a frame
-	cl.frames[ cl.parsecountmod ].invalid = true;  // State that this data is bogus.
-
-	MSG_GetReadBuf()->Seek( endbit );
-
 	// Free packet memory.
-	CL_ClearPacket( packet );
+	delete packet;
 }
-
 
 
 // ----------------------------------------------------------------------------- //
@@ -487,181 +300,216 @@ void CL_CopyNewEntity(
 	int iSerialNum
 	)
 {
-	if ( u.m_NewIndex >= MAX_EDICTS )
+	if ( u.m_nNewEntity < 0 || u.m_nNewEntity >= MAX_EDICTS )
 	{
-		Host_Error ("CL_ParsePacketEntities: newindex == MAX_EDICTS");
+		Host_Error ("CL_CopyNewEntity: u.m_nNewEntity < 0 || m_nNewEntity >= MAX_EDICTS");
 		return;
 	}
 
 	// If it's new, make sure we have a slot for it.
-	IClientNetworkable *ent = entitylist->GetClientNetworkable( u.m_NewNum );
+	IClientNetworkable *ent = entitylist->GetClientNetworkable( u.m_nNewEntity );
 
-	// Only create if it doesn't already exist
+	if( iClass >= cl.m_nServerClasses )
+	{
+		Host_Error("CL_CopyNewEntity: invalid class index (%d).\n", iClass);
+		return;
+	}
+
+	// Delete the entity.
 	ClientClass *pClass = cl.m_pServerClasses[iClass].m_pClientClass;
 	bool bNew = false;
 	if ( ent )
 	{
-		// Make sure we've got the same type of entity that we're about to
-		// receive data for
-		ClientClass *pCurrentClientClass = ent->GetClientClass();
-
-		// Make sure we've got the same type of entity that we're about to
-		// receive data for
-		if ( pClass != pCurrentClientClass )
+		// if serial number is different, destory old entity
+		if ( ent->GetIClientUnknown()->GetRefEHandle().GetSerialNumber() != iSerialNum )
 		{
-			static int nWhines = 0;
-			if ( ++nWhines < 4 )
-			{
-				Msg( "CL_CopyNewEntity:  Server / Client mismatch on entity %i (class %i)\n", u.m_NewNum, iClass );
-				Msg( "  Server class %s\n", pClass->m_pNetworkName );
-				Msg( "  Client class %s\n", pCurrentClientClass->m_pNetworkName );
-			}
-		
-			CL_DeleteDLLEntity( u.m_NewNum, va( "MISMATCH DETECTED (%i)\n", u.m_NewNum ) );
-			ent = 0; // force a recreate
+			CL_DeleteDLLEntity( u.m_nNewEntity, "CopyNewEntity" );
+			ent = NULL; // force a recreate
 		}
 	}
 
 	if ( !ent )
 	{	
 		// Ok, it doesn't exist yet, therefore this is not an "entered PVS" message.
-		ent = CL_CreateDLLEntity( u.m_NewNum, iClass, iSerialNum );
+		ent = CL_CreateDLLEntity( u.m_nNewEntity, iClass, iSerialNum );
 		if( !ent )
 		{
-			Host_Error( "CL_ParsePacketEntities:  Error creating entity %s(%i)\n", cl.m_pServerClasses[iClass].m_pClientClass->m_pNetworkName, u.m_NewNum );
+			const char *pNetworkName = cl.m_pServerClasses[iClass].m_pClientClass ? cl.m_pServerClasses[iClass].m_pClientClass->m_pNetworkName : "";
+			Host_Error( "CL_ParsePacketEntities:  Error creating entity %s(%i)\n", pNetworkName, u.m_nNewEntity );
 			return;
 		}
 
 		bNew = true;
 	}
 
-	int start_bit = MSG_GetReadBuf()->m_iCurBit;
+	int start_bit = u.m_pBuf->GetNumBitsRead();
 
 	DataUpdateType_t updateType = bNew ? DATA_UPDATE_CREATED : DATA_UPDATE_DATATABLE_CHANGED;
 	ent->PreDataUpdate( updateType );
 
-		// Get either the static or instance baseline.
-		const void *pFromData;
-		int nFromBits;
-		bool bUseStaticBaseline = false;
+	// Get either the static or instance baseline.
+	const void *pFromData;
+	int nFromBits;
 
-		PackedEntity *baseline = GetStaticBaseline( u.m_NewNum );
-		if ( baseline && baseline->m_pRecvTable && baseline->m_pRecvTable == pClass->m_pRecvTable )
-		{
-			bUseStaticBaseline = true;
-			pFromData = baseline->LockData();
-			nFromBits = baseline->GetNumBits();
-		}
-		else
-		{
-			int nFromBytes;
-			
-			// Every entity must have a static or an instance baseline when we get here.
-			ErrorIfNot(
-				GetDynamicBaseline( iClass, &pFromData, &nFromBytes ),
-				("CL_CopyNewEntity: GetDynamicBaseline(%d) failed.", iClass)
-			);
-			
-			nFromBits = nFromBytes * 8;
-		}
+	PackedEntity *baseline = u.m_bAsDelta ? cl.GetEntityBaseline( u.m_nBaseline, u.m_nNewEntity ) : NULL;
+	if ( baseline && baseline->m_pClientClass == pClass )
+	{
+		Assert( !baseline->IsCompressed() );
+		pFromData = baseline->GetData();
+		nFromBits = baseline->GetNumBits();
+	}
+	else
+	{
+		// Every entity must have a static or an instance baseline when we get here.
+		ErrorIfNot(
+			cl.GetClassBaseline( iClass, &pFromData, &nFromBits ),
+			("CL_CopyNewEntity: GetClassBaseline(%d) failed.", iClass)
+		);
+		
+		nFromBits *= 8; // convert to bits
+	}
 
-		// Delta from baseline
-		bf_read fromBuf( "CL_CopyNewEntity->fromBuf", pFromData, PAD_NUMBER( nFromBits, 8 ) / 8, nFromBits );
-		CL_ParseDelta( &fromBuf, ent, u.m_NewNum, u.m_pEntityInPVS );
+	// Delta from baseline and merge to new baseline
+	bf_read fromBuf( "CL_CopyNewEntity->fromBuf", pFromData, Bits2Bytes(nFromBits), nFromBits );
 
-		// Unlock the static baseline's data if we need to.
-		if ( bUseStaticBaseline )
-			baseline->UnlockData();
+	RecvTable *pRecvTable = GetEntRecvTable( u.m_nNewEntity );
+
+	if( !pRecvTable )
+		Host_Error( "CL_ParseDelta: invalid recv table for ent %d.\n", u.m_nNewEntity );
+
+	if ( u.m_bUpdateBaselines )
+	{
+		// store this baseline in u.m_pUpdateBaselines
+		ALIGN4 char packedData[MAX_PACKEDENTITY_DATA] ALIGN4_POST;
+		bf_write writeBuf( "CL_CopyNewEntity->newBuf", packedData, sizeof(packedData) );
+
+		RecvTable_MergeDeltas( pRecvTable, &fromBuf, u.m_pBuf, &writeBuf, -1, NULL, true );
+
+		// set the other baseline
+		cl.SetEntityBaseline( (u.m_nBaseline==0)?1:0, pClass, u.m_nNewEntity, packedData, writeBuf.GetNumBytesWritten() );
+
+		fromBuf.StartReading( packedData, writeBuf.GetNumBytesWritten() );
+
+		RecvTable_Decode( pRecvTable, ent->GetDataTableBasePtr(), &fromBuf, u.m_nNewEntity, false );
+
+	}
+	else
+	{
+		// write data from baseline into entity
+		RecvTable_Decode( pRecvTable, ent->GetDataTableBasePtr(), &fromBuf, u.m_nNewEntity, false );
 
 		// Now parse in the contents of the network stream.
-		CL_ParseDelta( MSG_GetReadBuf(), ent, u.m_NewNum, u.m_pEntityInPVS );
+		RecvTable_Decode( pRecvTable, ent->GetDataTableBasePtr(), u.m_pBuf, u.m_nNewEntity, true );
+	}
 
-	CL_AddPostDataUpdateCall( u, u.m_NewNum, updateType );
+	CL_AddPostDataUpdateCall( u, u.m_nNewEntity, updateType );
 
-	u.m_pNew->SetEntityIndex( u.m_NewIndex, u.m_NewNum );
+	// If ent doesn't think it's in PVS, signal that it is
+	Assert( u.m_pTo->last_entity <= u.m_nNewEntity );
+	u.m_pTo->last_entity = u.m_nNewEntity;
+	Assert( !u.m_pTo->transmit_entity.Get(u.m_nNewEntity) );
+	u.m_pTo->transmit_entity.Set( u.m_nNewEntity );
 
 	//
 	// Net stats..
 	//
-	int end_bit = MSG_GetReadBuf()->m_iCurBit;
-	CL_RecordEntityBits( u.m_NewNum, end_bit - start_bit );
-	if ( CL_IsPlayerIndex( u.m_NewNum ) )
+	int bit_count = u.m_pBuf->GetNumBitsRead() - start_bit;
+#ifndef _XBOX
+	if ( cl_entityreport.GetBool() )
+		CL_RecordEntityBits( u.m_nNewEntity, bit_count );
+#endif
+	if ( CL_IsPlayerIndex( u.m_nNewEntity ) )
 	{
-		if ( u.m_NewNum == cl.playernum + 1 )
+		if ( u.m_nNewEntity == cl.m_nPlayerSlot + 1 )
 		{
-			*u.m_pLocalPlayerBits += ( end_bit - start_bit  );
+			u.m_nLocalPlayerBits += bit_count;
 		}
 		else
 		{
-			*u.m_pOtherPlayerBits += ( end_bit - start_bit  );
+			u.m_nOtherPlayerBits += bit_count;
 		}
 	}
 }
 
+void CL_PreserveExistingEntity( int nOldEntity )
+{
+	IClientNetworkable *pEnt = entitylist->GetClientNetworkable( nOldEntity );
+	if ( !pEnt )
+	{
+		// If you hit this, this is because there's a networked client entity that got released
+		// by some method other than a server update.  This can happen if client code calls
+		// release on a networked entity.
+
+#if defined( STAGING_ONLY )
+		// Try to use the cl_removeentity_backtrace_capture code in cliententitylist.cpp...
+		Msg( "%s: missing client entity %d.\n", __FUNCTION__, nOldEntity );
+		Cbuf_AddText( CFmtStr( "cl_removeentity_backtrace_dump %d\n", nOldEntity ) );
+		Cbuf_Execute();
+#endif // STAGING_ONLY
+
+		Host_Error( "CL_PreserveExistingEntity: missing client entity %d.\n", nOldEntity );
+		return;
+	}
+
+//	pEnt->OnDataUnchangedInPVS();
+}
 
 void CL_CopyExistingEntity( CEntityReadInfo &u )
 {
-	int start_bit = MSG_GetReadBuf()->m_iCurBit;
+	int start_bit = u.m_pBuf->GetNumBitsRead();
 
-	IClientNetworkable *pEnt = entitylist->GetClientNetworkable( u.m_NewNum );
+	IClientNetworkable *pEnt = entitylist->GetClientNetworkable( u.m_nNewEntity );
 	if ( !pEnt )
 	{
-		Host_Error( "CL_CopyExistingEntity: missing client entity %d.\n", u.m_NewNum );
+		Host_Error( "CL_CopyExistingEntity: missing client entity %d.\n", u.m_nNewEntity );
 		return;
 	}
+
+	Assert( u.m_pFrom->transmit_entity.Get(u.m_nNewEntity) );
 
 	// Read raw data from the network stream
 	pEnt->PreDataUpdate( DATA_UPDATE_DATATABLE_CHANGED );
 
-		CL_ParseDelta( MSG_GetReadBuf(), pEnt, u.m_NewNum, u.m_pEntityInPVS	);
-			
-	CL_AddPostDataUpdateCall( u, u.m_NewNum, DATA_UPDATE_DATATABLE_CHANGED );
+	RecvTable *pRecvTable = GetEntRecvTable( u.m_nNewEntity );
 
-	u.m_pNew->SetEntityIndex( u.m_NewIndex, u.m_NewNum );
-
-	int end_bit = MSG_GetReadBuf()->GetNumBitsRead();
-	CL_RecordEntityBits( u.m_NewNum, end_bit - start_bit );
-
-	if ( CL_IsPlayerIndex( u.m_NewNum ) )
+	if( !pRecvTable )
 	{
-		if ( u.m_NewNum == cl.playernum + 1 )
+		Host_Error( "CL_ParseDelta: invalid recv table for ent %d.\n", u.m_nNewEntity );
+		return;
+	}
+
+	RecvTable_Decode( pRecvTable, pEnt->GetDataTableBasePtr(), u.m_pBuf, u.m_nNewEntity );
+
+	CL_AddPostDataUpdateCall( u, u.m_nNewEntity, DATA_UPDATE_DATATABLE_CHANGED );
+
+	u.m_pTo->last_entity = u.m_nNewEntity;
+	Assert( !u.m_pTo->transmit_entity.Get(u.m_nNewEntity) );
+	u.m_pTo->transmit_entity.Set( u.m_nNewEntity );
+
+	int bit_count = u.m_pBuf->GetNumBitsRead() - start_bit;
+#ifndef _XBOX
+	if ( cl_entityreport.GetBool() )
+		CL_RecordEntityBits( u.m_nNewEntity,  bit_count );
+#endif
+	if ( CL_IsPlayerIndex( u.m_nNewEntity ) )
+	{
+		if ( u.m_nNewEntity == cl.m_nPlayerSlot + 1 )
 		{
-			*u.m_pLocalPlayerBits += ( end_bit - start_bit  );
+			u.m_nLocalPlayerBits += bit_count;
 		}
 		else
 		{
-			*u.m_pOtherPlayerBits += ( end_bit - start_bit  );
+			u.m_nOtherPlayerBits += bit_count;
 		}
 	}
 }
 
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : length - 
-//			start_bit - 
-//			*fmt - 
-//			... - 
-//-----------------------------------------------------------------------------
-void CL_HandleError( int endbit, int start_bit, const char *fmt, ... )
-{
-	char str[2048];
-	va_list marker;
-
-	// Spit out an error.
-	va_start(marker, fmt);
-	_vsnprintf(str, sizeof(str), fmt, marker);
-	va_end(marker);
-
-	Con_Printf( "%s\n", str );
-
-	MSG_GetReadBuf()->Seek( endbit );
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CL_MarkEntitiesOutOfPVS( unsigned char *pvs_flags )
+void CL_MarkEntitiesOutOfPVS( CBitVec<MAX_EDICTS> *pvs_flags )
 {
 	int highest_index = entitylist->GetHighestEntityIndex();
 	// Note that we go up to and including the highest_index
@@ -674,7 +522,7 @@ void CL_MarkEntitiesOutOfPVS( unsigned char *pvs_flags )
 		// FIXME: We can remove IClientEntity here if we keep track of the
 		// last frame's entity_in_pvs
 		bool curstate = !ent->IsDormant();
-		bool newstate = pvs_flags[ i >> 3 ] & ( 1 << ( i & 7 ) ) ? true : false;
+		bool newstate = pvs_flags->Get( i )  ? true : false;
 
 		if ( !curstate && newstate )
 		{
@@ -685,187 +533,18 @@ void CL_MarkEntitiesOutOfPVS( unsigned char *pvs_flags )
 		{
 			// Inform the client entity list that the entity left the PVS
 			ent->NotifyShouldTransmit( SHOULDTRANSMIT_END );
-
+#ifndef _XBOX
 			CL_RecordLeavePVS( i );
-		}
-		else if (curstate && newstate)
-		{
-			// Inform the client entity list that the entity is still in the PVS
-			ent->NotifyShouldTransmit( SHOULDTRANSMIT_STAY );
+#endif
 		}
 	}
 }
-
-
-// Returns false if you should stop reading entities.
-static inline bool CL_DetermineUpdateType(
-	CEntityReadInfo &u 
-	)
-{
-	if ( !u.m_bIsEntity || ( u.m_NewNum > u.m_OldNum ) )
-	{
-		// If we're at the last entity, preserve whatever entities followed it in the old packet.
-		// If newnum > oldnum, then the server skipped sending entities that it wants to leave the state alone for.
-		if ( !u.m_pOld || ( u.m_OldIndex >= u.m_pOld->GetNumEntities() ) )
-		{
-			assert( !u.m_bIsEntity );
-			return false;
-		}
-
-		// Preserve entities until we reach newnum (ie: the server didn't send certain entities because
-		// they haven't changed).
-		u.m_UpdateType = PreserveEnt;
-	}
-	else
-	{
-		if( u.m_UpdateFlags & FHDR_ENTERPVS )
-		{
-			u.m_UpdateType = EnterPVS;
-		}
-		else if( u.m_UpdateFlags & FHDR_LEAVEPVS )
-		{
-			u.m_UpdateType = LeavePVS;
-		}
-		else
-		{
-			u.m_UpdateType = DeltaEnt;
-		}
-	}
-
-	return true;
-}
-
-
-static inline void CL_ReadEnterPVS( 
-	CEntityReadInfo &u
-	)
-{
-	TRACE_PACKET(( "  CL Enter PVS (%d)\n", u.m_NewNum ));
-
-	if ( u.m_UpdateFlags & FHDR_FORCERECREATE )
-	{
-		CL_DeleteDLLEntity( u.m_NewNum, va( "Delete (%i):  Recreate\n", u.m_NewNum ) );
-	}
-
-	int iClass = MSG_GetReadBuf()->ReadUBitLong( cl.m_nServerClassBits );
-
-	int iSerialNum = MSG_GetReadBuf()->ReadUBitLong( NUM_NETWORKED_EHANDLE_SERIAL_NUMBER_BITS );
-
-	CL_CopyNewEntity( u, iClass, iSerialNum );
-
-	u.m_NewIndex++;
-}
-
-
-static inline void CL_ReadLeavePVS(CEntityReadInfo &u)
-{
-	// Sanity check.
-	if ( u.m_bUncompressed )
-	{
-		cl.validsequence = 0;
-		CL_HandleError( u.m_iEndBit, u.m_iStartBit, "WARNING: LeavePVS on full update" );
-		u.m_bFinished = true;	// break out
-		return;
-	}
-
-	if ( u.m_UpdateFlags & FHDR_DELETE )
-	{
-		CL_DeleteDLLEntity( u.m_OldNum, va( "Delete (%i):  Exit PVS + Destroy\n", u.m_OldNum ) );
-	}
-
-	u.m_OldIndex++;
-}
-
-
-static inline void CL_ReadDeltaEnt(CEntityReadInfo &u)
-{
-	CL_CopyExistingEntity( u );
-	
-	u.m_NewIndex++;
-	u.m_OldIndex++;
-}
-
-
-static inline void CL_ReadPreserveEnt(CEntityReadInfo &u)
-{
-	if ( u.m_bUncompressed )  // Should never happen on a full update.
-	{
-		cl.validsequence = 0;
-		CL_HandleError( u.m_iEndBit, u.m_iStartBit, "WARNING: PreserveEnt on full update" );
-		u.m_bFinished = true;	// break out
-		return;
-	}
-	
-	// copy one of the old entities over to the new packet unchanged
-	if ( u.m_NewIndex >= MAX_EDICTS )
-	{
-		Host_Error ("CL_ParsePacketEntities: u.m_NewIndex == MAX_EDICTS");
-	}
-	
-	u.m_pNew->CopyState( u.m_pOld, u.m_OldIndex, u.m_NewIndex );
-	u.m_NewIndex++;
-	u.m_OldIndex++;
-	
-	// Zero overhead
-	CL_RecordEntityBits( u.m_OldNum, 0 );
-
-	CL_AddInPVSFlag( u.m_pEntityInPVS, u.m_OldNum );
-}
-
-
-static inline void CL_ReadEntityUpdate(
-	CEntityReadInfo &u
-)
-{
-	switch( u.m_UpdateType )
-	{
-		case EnterPVS:
-		{
-			CL_ReadEnterPVS( u );
-		}
-		break;
-
-		case LeavePVS:
-		{
-			CL_ReadLeavePVS( u );
-		}
-		break;
-
-		case DeltaEnt:
-		{
-			CL_ReadDeltaEnt( u );
-		}
-		break;
-
-		case PreserveEnt:
-		{
-			CL_ReadPreserveEnt( u );
-		}
-		break;
-	}
-}
-
-
-static inline void CL_ReadDeletions( bool bUncompressed, bool bFinished )
-{
-	if ( !bUncompressed && !bFinished )
-	{
-		while ( MSG_ReadOneBit() )
-		{
-			int idx = MSG_ReadBitLong( 10 );
-
-			CL_DeleteDLLEntity( idx, va( "Delete (%i):  Express deletion\n", idx ));
-		}
-	}
-}
-
 
 static void CL_CallPostDataUpdates( CEntityReadInfo &u )
 {
-	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_POSTDATAUPDATE_START );
-
 	for ( int i=0; i < u.m_nPostDataUpdateCalls; i++ )
 	{
+		MDLCACHE_CRITICAL_SECTION_(g_pMDLCache);
 		CPostDataUpdateCall *pCall = &u.m_PostDataUpdateCalls[i];
 	
 		IClientNetworkable *pEnt = entitylist->GetClientNetworkable( pCall->m_iEnt );
@@ -874,104 +553,11 @@ static void CL_CallPostDataUpdates( CEntityReadInfo &u )
 
 		pEnt->PostDataUpdate( pCall->m_UpdateType );
 	}
-
-	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_POSTDATAUPDATE_END );
 }
 
+static float g_flLastPerfRequest = 0.0f;
 
-// ----------------------------------------------------------------------------- //
-// ----------------------------------------------------------------------------- //
-void CL_ReadPacketEntities(
-	int endbit,
-	int headercount,
-	CRecvEntList *oldp, 
-	CRecvEntList *newp, 
-	frame_t *frame,
-	int *localplayerbits,
-	int *otherplayerbits,
-	bool bUncompressed,
-	unsigned char entity_in_pvs[ PAD_NUMBER( MAX_EDICTS, 8 ) ]
-	)
-{
-	CEntityReadInfo u;
-	u.m_iEndBit = endbit;
-	u.m_pOld = oldp;
-	u.m_pNew = newp;
-	u.m_pFrame = frame;
-	u.m_pLocalPlayerBits = localplayerbits;
-	u.m_pOtherPlayerBits = otherplayerbits;
-	u.m_bUncompressed = bUncompressed;
-	u.m_pEntityInPVS = entity_in_pvs;
-	u.m_nHeaderBase = 0;
-	u.m_nHeaderCount = headercount;
-	u.m_nPostDataUpdateCalls = 0;
-
-
-	memset( u.m_pEntityInPVS, 0, PAD_NUMBER( MAX_EDICTS, 8 ) );
-	u.m_iStartBit = MSG_GetReadBuf()->GetNumBitsRead();
-
-	// Loop until there are no more entities to read
-	u.m_OldIndex = u.m_NewIndex = 0;
-	u.m_NewNum = u.m_OldNum = -1;
-
-	u.m_bFinished = false;
-	while ( !u.m_bFinished )
-	{
-		u.m_nHeaderCount--;
-
-		u.m_bIsEntity = ( u.m_nHeaderCount >= 0 ) ? true : false;
-
-		if ( u.m_bIsEntity  )
-		{
-			CL_ParseDeltaHeader( u );
-		}
-
-		bool bExitOut = false;
-		u.m_UpdateType = PreserveEnt;
-		while( u.m_UpdateType == PreserveEnt && !u.m_bFinished )
-		{
-			u.m_OldNum = CL_LookupOldpacketIndex( u.m_pOld, u.m_OldIndex );
-
-			// Figure out what kind of an update this is.
-			if( !CL_DetermineUpdateType( u ) )
-			{
-				bExitOut = true;
-				break;
-			}
-
-			CL_ReadEntityUpdate( u );
-		}
-
-		// Exit out without finishing?
-		if( bExitOut )
-			break;
-	}
-
-	// Now process explicit deletes.
-	CL_ReadDeletions( u.m_bUncompressed, u.m_bFinished );
-
-	CL_CallPostDataUpdates( u );
-
-	// Something didn't parse...
-	if ( MSG_IsOverflowed() )							
-	{	
-		Host_Error ( "CL_ParsePacketEntities:  buffer read overflow\n" );
-	}
-
-	// If we get an uncompressed packet, then the server is waiting for us to ack the validsequence
-	// that we got the uncompressed packet on. So we stop reading packets here and force ourselves to
-	// send the clc_move on the next frame.
-	//
-	// If we didn't do this, we might wind up reading another entity packet from the server and incrementing
-	// our validsequence before responding to the server, in which case the server wouldn't know for sure
-	// if we got the uncompressed packet or not. Then it could get stuck in a loop where it keeps resending
-	// the uncompressed packet.
-	if ( bUncompressed )
-	{
-		cl.continue_reading_packets = false;
-		cl.force_send_usercmd = true;
-	} 
-}
+static ConVar cl_debug_player_perf( "cl_debug_player_perf", "0", 0 );
 
 //-----------------------------------------------------------------------------
 // Purpose: An svc_packetentities has just been parsed, deal with the
@@ -981,209 +567,188 @@ void CL_ReadPacketEntities(
 //			*playerbits - 
 // Output : void CL_ParsePacketEntities
 //-----------------------------------------------------------------------------
-int _CL_ParsePacketEntities ( qboolean delta, int *localplayerbits, int *otherplayerbits )
+bool CL_ProcessPacketEntities ( SVC_PacketEntities *entmsg )
 {
-	int				oldpacket, newpacket;
-	CRecvEntList	*oldp, *newp;
-	static	CRecvEntList	dummy;
-	int			from;
-	int				newp_number; // # of entities in new packet.
-	int				nEntsInPacket;
-	frame_t			*frame;
-	int				entity_count = 0;
-
-
 	VPROF( "_CL_ParsePacketEntities" );
-	// Paranoia...
-	dummy.Term();
-
-	// Frame # of packet we are deltaing to
-	newpacket	= cl.parsecountmod; 
-	frame		= &cl.frames[newpacket];
-
 
 	// Packed entities for that frame
-	newp		= &frame->packet_entities;
+	// Allocate space for new packet info.
+	CClientFrame *newFrame = cl.AllocateFrame();
+	newFrame->Init( cl.GetServerTickCount() );
+	CClientFrame *oldFrame = NULL;
 
-	// Retrieve size of packet.
-	newp_number = MSG_ReadShort();
-	// Make sure that we always have at least one slot allocated in memory.
-	nEntsInPacket = max( 1, newp_number );
-
-	// If this is a delta update, grab the sequence value and make sure it's the one we requested.
-	if ( delta )
-	{
-		// Frame we are delta'ing from.
-		from		= MSG_GetReadBuf()->ReadUBitLong( DELTAFRAME_NUMBITS );
-		oldpacket	= from;
-	}
-	else
-	{
-		// Delta too old or is initial message
-		oldpacket = -1;             
-		// we can start recording now that we've received an uncompressed packet
-		demo->SetWaitingForUpdate( false );	
-	}
-
-	// Assume valid
-	frame->invalid = false;
-
-	TRACE_PACKET(( "CL Receive (%d <-%d)\n", cls.netchan.incoming_sequence, oldpacket ));
-	TRACE_PACKET(( "CL Num Ents (%d)\n", nEntsInPacket ));
-
-	int startbit = MSG_GetReadBuf()->GetNumBitsRead();
-	int length = MSG_ReadBitLong( DELTASIZE_BITS );
-	
-	int endbit = startbit + length;
-	if ( g_pLocalNetworkBackdoor )
-	{
-		MSG_GetReadBuf()->Seek( endbit );
-	}
-	else
-	{
-		// Free any old data.
-		CL_ClearPacket( newp );
-
-		// Allocate space for new packet info.
-		newp->Init( nEntsInPacket );
-
-		int headercount = MSG_ReadBitLong( MAX_EDICT_BITS );
-
-		// See if we can use the packet still
-		bool uncompressed;
-		if ( oldpacket != -1 || cl_flushentitypacket.GetInt() )
-		{
-			if ( cl_flushentitypacket.GetInt() )
-			{	
-				// we can't use this, it is too old
-				CL_FlushEntityPacket( endbit, newp, "Forced by cvar\n" );
-				cl_flushentitypacket.SetValue(0);	// Reset the cvar.
-				return 0;
-			}
-
-			// DELTAFRAME_MASK determines how long you can go before you're dropped.
-			// CL_UPDATE_MASK is how long you can go before asking for uncompressed updates.
-			Assert( CL_UPDATE_MASK < DELTAFRAME_MASK );
-
-			int subtracted = ( ( ( cls.netchan.incoming_sequence & DELTAFRAME_MASK ) -  oldpacket ) & DELTAFRAME_MASK );
-			if ( subtracted == 0 )
-			{
-				Host_Error( "Update too old, connection dropped.\n" );
-				return 0;
-			}
-
-			// Have we already looped around and flushed this info?
-			if ( subtracted >= CL_UPDATE_MASK )
-			{	
-				// we can't use this, it is too old
-				CL_FlushEntityPacket( endbit, newp, "Update is too old\n" );
-				cl_flushentitypacket.SetValue(0);	// Reset the cvar.
-				return 0;
-			}
-
-			// Otherwise, mark where we are valid to and point to the packet entities we'll be updating from.
-			oldp = &cl.frames[oldpacket&CL_UPDATE_MASK].packet_entities;
-
-			uncompressed = false;
-		}
-		else
-		{	
-			// Use a fake old value with zero values.
-			oldp = &dummy;          
-			
-			// Flag this is a full update
-			uncompressed = true;
-
-			// Clear out the client's entity states..
-			for ( int i=0; i < entitylist->GetHighestEntityIndex(); i++ )
-				CL_DeleteDLLEntity( i, "uncompressed update\n" );
-		}
-
-		g_nPropsDecoded = 0;
-
-		unsigned char entity_in_pvs[ PAD_NUMBER( MAX_EDICTS, 8 ) ];
-		entity_count = headercount;
-		CL_ReadPacketEntities( endbit, headercount, oldp, newp, frame, localplayerbits, otherplayerbits, uncompressed, entity_in_pvs );
- 		CL_MarkEntitiesOutOfPVS( entity_in_pvs );
-
-		if ( cl_showdecodecount.GetInt() )
-		{
-			Msg( "%04d props decoded\n", g_nPropsDecoded );
-		}
-
-		Assert( MSG_GetReadBuf()->GetNumBitsRead() == endbit );
-		TRACE_PACKET(( "CL Msg Length (%d)\n", length ));
-	}
-
-	// Mark current delta state
-	cl.validsequence = cls.netchan.incoming_sequence;
-
-	return entity_count;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : delta - 
-//			*playerbits - 
-// Output : void CL_ParsePacketEntities
-//-----------------------------------------------------------------------------
-void CL_ParsePacketEntities ( bool delta, int *localplayerbits, int *otherplayerbits )
-{
-	*localplayerbits = 0;
-	*otherplayerbits = 0;
-
-	// Tell prediction that we're recreating entities due to an uncompressed packet arriving
-	if ( g_pClientSidePrediction && !delta )
-	{
-		g_pClientSidePrediction->OnReceivedUncompressedPacket();
-	}
-
-	int entity_count = _CL_ParsePacketEntities( delta, localplayerbits, otherplayerbits );
-
-	// First update is the final signon stage where we actually receive an entity (i.e., the world at least)
-	bool playingdemo = demo->IsPlayingBack();
-
-	if ( ( cls.signon == SIGNONS - 1 ) && ( !playingdemo || entity_count > 0 ) )
+	// if cl_flushentitypacket is set to N, the next N entity updates will be flushed
+	if ( cl_flushentitypacket.GetInt() )
 	{	
-		// We are done with signon sequence.
-		cls.signon = SIGNONS;
-		
-		// Clear loading plaque.
-		CL_SignonReply (); 
-		
-		// FIXME: Please oh please move this out of this spot...
-		// It so does not belong here. Instead, we want some phase of the
-		// client DLL where it knows its read in all entities
-		int i;
-		if( i = CommandLine()->FindParm( "-buildcubemaps" ) )
+		// we can't use this, it is too old
+		CL_FlushEntityPacket( newFrame, "Forced by cvar\n" );
+		cl_flushentitypacket.SetValue( cl_flushentitypacket.GetInt() - 1 );	// Reduce the cvar.
+		return false;
+	}
+
+	if ( entmsg->m_bIsDelta )
+	{
+		int nDeltaTicks = cl.GetServerTickCount() - entmsg->m_nDeltaFrom;
+		float flDeltaSeconds = TICKS_TO_TIME( nDeltaTicks );
+
+		// If we have cl_debug_player_perf set and we see a huge delta between what we've ack'd to the server and where it's at
+		//  ask it for an instantaneous perf snapshot
+		if ( cl_debug_player_perf.GetBool() &&
+			( flDeltaSeconds > 0.5f ) &&							// delta is pretty out of date
+			( ( realtime - g_flLastPerfRequest ) > 5.0f ) )		// haven't requested in a while
 		{
-			// FIXME: Sucky, figure out logic for this crap
-			SpatialPartition()->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
+			g_flLastPerfRequest = realtime;
+			Warning( "Gap in server data, requesting connection perf data\n" );
+			cl.SendStringCmd( "playerperf\n" );
+		}
 
-			int numIterations = 1;
-			if( CommandLine()->ParmCount() > i + 1 )
-			{
-				numIterations = atoi( CommandLine()->GetParm(i+1) );
-			}
-			if( numIterations == 0 )
-			{
-				numIterations = 1;
-			}
-			void R_BuildCubemapSamples( int numIterations );
-			R_BuildCubemapSamples( numIterations );
-			Cbuf_AddText( "quit\n" );
+		if ( cl.GetServerTickCount() == entmsg->m_nDeltaFrom )
+		{
+			Host_Error( "Update self-referencing, connection dropped.\n" );
+			return false;
+		}
 
-			SpatialPartition()->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, true );
+		// Otherwise, mark where we are valid to and point to the packet entities we'll be updating from.
+		oldFrame = cl.GetClientFrame( entmsg->m_nDeltaFrom );
+
+		if ( !oldFrame )
+		{
+			CL_FlushEntityPacket( newFrame, "Update delta not found.\n" );
+			return false;
 		}
 	}
+	else
+	{
+		if ( cl_debug_player_perf.GetBool() )
+		{
+			Warning( "Received uncompressed server update\n" );
+		}
+
+		// Clear out the client's entity states..
+		for ( int i=0; i <= entitylist->GetHighestEntityIndex(); i++ )
+		{
+			CL_DeleteDLLEntity( i, "ProcessPacketEntities", true );
+		}
+	}
+
+	// signal client DLL that we have started updating entities
+	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_START );
+
+	g_nPropsDecoded = 0;
+
+	Assert( entmsg->m_nBaseline >= 0 && entmsg->m_nBaseline < 2 );
+
+	if ( entmsg->m_bUpdateBaseline )
+	{
+		// server requested to use this snapshot as baseline update
+		int nUpdateBaseline = (entmsg->m_nBaseline == 0) ? 1 : 0;
+		cl.CopyEntityBaseline( entmsg->m_nBaseline, nUpdateBaseline );
+
+		// send new baseline acknowledgement(as reliable)
+		cl.m_NetChannel->SendNetMsg( CLC_BaselineAck( cl.GetServerTickCount(), entmsg->m_nBaseline ), true );
+		
+	}
+
+	CEntityReadInfo u;
+	u.m_pBuf = &entmsg->m_DataIn;
+	u.m_pFrom = oldFrame;
+	u.m_pTo = newFrame;
+	u.m_bAsDelta = entmsg->m_bIsDelta;
+	u.m_nHeaderCount = entmsg->m_nUpdatedEntries;
+	u.m_nBaseline = entmsg->m_nBaseline;
+	u.m_bUpdateBaselines = entmsg->m_bUpdateBaseline;
+	
+	// update the entities
+	cl.ReadPacketEntities( u );
+
+	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_POSTDATAUPDATE_START );
+
+	// call PostDataUpdate() for each entity
+	CL_CallPostDataUpdates( u );
+
+	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_POSTDATAUPDATE_END );
+
+	// call NotifyShouldTransmit() for entities that entered or left the PVS
+	CL_MarkEntitiesOutOfPVS( &newFrame->transmit_entity );
+
+	// adjust net channel stats
+
+	cl.m_NetChannel->UpdateMessageStats( INetChannelInfo::LOCALPLAYER, u.m_nLocalPlayerBits );
+	cl.m_NetChannel->UpdateMessageStats( INetChannelInfo::OTHERPLAYERS, u.m_nOtherPlayerBits );
+	cl.m_NetChannel->UpdateMessageStats( INetChannelInfo::ENTITIES, -(u.m_nLocalPlayerBits+u.m_nOtherPlayerBits) );
+
+ 	cl.DeleteClientFrames( entmsg->m_nDeltaFrom );
+
+	// If the client has more than 64 frames, the host will start to eat too much memory.
+	// TODO: We should enforce this somehow.
+	if ( MAX_CLIENT_FRAMES < cl.AddClientFrame( newFrame ) )
+	{
+		DevMsg( 1, "CL_ProcessPacketEntities: frame window too big (>%i)\n", MAX_CLIENT_FRAMES );	
+	}
+
+	// all update activities are finished
+	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_END );
+
+	return true;
 }
 
-void CL_Parse_PacketEntities( void )
+/*
+==================
+CL_PreprocessEntities
+
+Server information pertaining to this client only
+==================
+*/
+namespace CDebugOverlay
 {
-	CL_ParsePacketEntities ( false, &cls.localplayerbits, &cls.otherplayerbits );  // delta from baseline
+	extern void PurgeServerOverlays( void );
 }
 
-void CL_Parse_DeltaPacketEntities( void )
+void CL_PreprocessEntities( void )
 {
-	CL_ParsePacketEntities (true, &cls.localplayerbits, &cls.otherplayerbits );   // delta from previous
+	// Zero latency!!! (single player or listen server?)
+	bool bIsUsingMultiplayerNetworking = NET_IsMultiplayer();
+	bool bLastOutgoingCommandEqualsLastAcknowledgedCommand = cl.lastoutgoingcommand == cl.command_ack;
+
+	// We always want to re-run prediction when using the multiplayer networking, or if we're the listen server and we get a packet
+	//  before any frames have run
+	if ( bIsUsingMultiplayerNetworking ||
+		bLastOutgoingCommandEqualsLastAcknowledgedCommand )
+	{
+		//Msg( "%i/%i CL_ParseClientdata:  no latency server ack %i\n", 
+		//	host_framecount, cl.tickcount,
+		//	command_ack );
+		CL_RunPrediction( PREDICTION_SIMULATION_RESULTS_ARRIVING_ON_SEND_FRAME );
+	}
+
+	// Copy some results from prediction back into right spot
+	// Anything not sent over the network from server to client must be specified here.
+	//if ( cl.last_command_ack  )
+	{
+		int number_of_commands_executed = ( cl.command_ack - cl.last_command_ack );
+
+#if 0
+		COM_Log( "cl.log", "Receiving frame acknowledging %i commands\n",
+			number_of_commands_executed );
+
+		COM_Log( "cl.log", "  last command number executed %i\n",
+			cl.command_ack );
+
+		COM_Log( "cl.log", "  previous last command number executed %i\n",
+			cl.last_command_ack );
+
+		COM_Log( "cl.log", "  current world frame %i\n",
+			cl.m_nCurrentSequence );
+#endif
+
+		// Copy last set of changes right into current frame.
+		g_pClientSidePrediction->PreEntityPacketReceived( number_of_commands_executed, cl.m_nCurrentSequence );
+	}
+
+	CDebugOverlay::PurgeServerOverlays();
 }
+
+
+
+
+

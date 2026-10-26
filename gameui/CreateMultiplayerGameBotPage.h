@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CREATEMULTIPLAYERGAMEBOTPAGE_H
 #define CREATEMULTIPLAYERGAMEBOTPAGE_H
@@ -23,12 +23,11 @@ class CCvarToggleCheckButton;
 //-----------------------------------------------------------------------------
 class CCreateMultiplayerGameBotPage : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( CCreateMultiplayerGameBotPage, vgui::PropertyPage );
+
 public:
 	CCreateMultiplayerGameBotPage( vgui::Panel *parent, const char *name, KeyValues *botKeys );
 	~CCreateMultiplayerGameBotPage();
-
-	// put all cvars and their current values into 'botKeys'
-	void UpdateKeys( KeyValues *botKeys );
 
 protected:
 	virtual void OnResetChanges();
@@ -45,14 +44,22 @@ private:
 	CCvarToggleCheckButton *m_allowMachineGuns;
 	CCvarToggleCheckButton *m_allowRifles;
 	CCvarToggleCheckButton *m_allowGrenades;
+#ifdef CS_SHIELD_ENABLED
 	CCvarToggleCheckButton *m_allowShields;
+#endif // CS_SHIELD_ENABLED
 	CCvarToggleCheckButton *m_allowSnipers;
+
+	CCvarToggleCheckButton *m_deferToHuman;
 
 	vgui::ComboBox *m_joinTeamCombo;
 	void SetJoinTeamCombo( const char *team );
 
-	vgui::TextEntry *m_quotaEntry;
+	vgui::ComboBox *m_chatterCombo;
+	void SetChatterCombo( const char *team );
+
 	vgui::TextEntry *m_prefixEntry;
+
+	KeyValues *m_pSavedData;
 };
 
 

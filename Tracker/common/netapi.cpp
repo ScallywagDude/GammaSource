@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,8 +6,30 @@
 //=============================================================================
 #include <stdio.h>
 #include <stdlib.h>
+#if defined( WIN32 )
+#if !defined( _X360 )
 #include "winsock.h"
+#else
+#include "winsockx.h"
+#endif
+#elif defined( POSIX )
+#include <sys/socket.h>
+#include <netdb.h>
+#include <resolv.h> 
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#else
+#error
+#endif
 #include "inetapi.h"
+
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include <tier0/memdbgon.h>
+#pragma warning(disable: 4706) // warning C4706: assignment within conditional expression
 
 //-----------------------------------------------------------------------------
 // Purpose: Implements INetAPI
@@ -24,6 +46,8 @@ public:
 	virtual void		GetSocketAddress( int socket, netadr_t *a );
 
 	virtual bool		CompareAdr( netadr_t *a, netadr_t *b );
+
+	virtual void	GetLocalIP(netadr_t *a);
 };
 
 // Expose interface
@@ -87,7 +111,7 @@ char *CNetAPI::AdrToString( netadr_t *a )
 		}
 		else if ( a->type == NA_IP )
 		{
-			sprintf(s, "%i.%i.%i.%i:%i", a->ip[0], a->ip[1], a->ip[2], a->ip[3], ::ntohs( a->port ) );
+			sprintf(s, "%i.%i.%i.%i:%i", a->ip[0], a->ip[1], a->ip[2], a->ip[3], ntohs( a->port ) );
 		}
 	}
 	return s;
@@ -182,7 +206,7 @@ void CNetAPI::GetSocketAddress( int socket, netadr_t *a )
 	char	buff[512];
 	struct sockaddr_in	address;
 	int		namelen;
-	int     net_error = 0;
+//	int     net_error = 0;
 
 	memset( a, 0, sizeof( *a ) );
 	gethostname(buff, 512);
@@ -227,4 +251,27 @@ bool CNetAPI::CompareAdr( netadr_t *a, netadr_t *b )
 	}
 
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Full IP address compare
+// Input  : *a - 
+//			*b - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+
+void CNetAPI::GetLocalIP(netadr_t *a)
+{
+	char s[64];
+
+	if(!::gethostname(s,64))
+	{
+		struct hostent *localip = ::gethostbyname(s);
+		if(localip)
+		{
+			a->type=NA_IP;
+			a->port=0;
+			memcpy(a->ip,localip->h_addr_list[0],4);
+		}
+	}
 }

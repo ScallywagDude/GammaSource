@@ -1,11 +1,14 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "quakedef.h"
 #include "precache.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Print out flag names
@@ -26,9 +29,9 @@ char const *GetFlagString( int flags )
 	{
 		if ( !first )
 		{
-			strcat( ret, " | " );
+			Q_strncat( ret, " | ", sizeof( ret ), COPY_ALL_CHARACTERS );
 		}
-		strcat( ret, "RES_FATALIFMISSING" );
+		Q_strncat( ret, "RES_FATALIFMISSING", sizeof( ret ), COPY_ALL_CHARACTERS );
 		first = false;
 	}
 
@@ -36,9 +39,9 @@ char const *GetFlagString( int flags )
 	{
 		if ( !first )
 		{
-			strcat( ret, " | " );
+			Q_strncat( ret, " | ", sizeof( ret ), COPY_ALL_CHARACTERS );
 		}
-		strcat( ret, "RES_PRELOAD" );
+		Q_strncat( ret, "RES_PRELOAD", sizeof( ret ), COPY_ALL_CHARACTERS );
 		first = false;
 	}
 
@@ -60,8 +63,10 @@ CPrecacheItem::CPrecacheItem( void )
 void CPrecacheItem::ResetStats( void )
 {
 	m_uiRefcount = 0;
+#if DEBUG_PRECACHE
 	m_flFirst = 0.0f;
 	m_flMostRecent = 0.0f;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -70,11 +75,13 @@ void CPrecacheItem::ResetStats( void )
 void CPrecacheItem::Reference( void )
 {
 	m_uiRefcount++;
+#if DEBUG_PRECACHE
 	m_flMostRecent = realtime;
 	if ( !m_flFirst )
 	{
 		m_flFirst = realtime;
 	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -223,7 +230,11 @@ void CPrecacheItem::SetDecal( char const *decalname )
 //-----------------------------------------------------------------------------
 float CPrecacheItem::GetFirstReference( void )
 {
+#if DEBUG_PRECACHE
 	return m_flFirst;
+#else
+	return 0;
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -232,7 +243,11 @@ float CPrecacheItem::GetFirstReference( void )
 //-----------------------------------------------------------------------------
 float CPrecacheItem::GetMostRecentReference( void )
 {
+#if DEBUG_PRECACHE
 	return m_flMostRecent;
+#else
+	return 0;
+#endif
 }
 
 //-----------------------------------------------------------------------------

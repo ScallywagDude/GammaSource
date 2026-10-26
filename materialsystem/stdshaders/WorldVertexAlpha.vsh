@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 local( $worldPos, $worldNormal, $projPos, $reflectionVector );
@@ -18,8 +20,6 @@ mov oPos, $projPos
 dp4 $worldPos.z, $vPos, $cModel2
 
 &CalcFog( $worldPos, $projPos );
-
-&DoHeightClip( $worldPos, "oT2" );
 
 &FreeRegister( \$worldPos );
 &FreeRegister( \$projPos );

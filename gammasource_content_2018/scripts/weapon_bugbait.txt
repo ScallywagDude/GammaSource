@@ -1,0 +1,70 @@
+// Bug bait
+
+WeaponData
+{
+	"bucket_position_360"	"2"
+	"bucket_360"	"5"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Pheropod\n(Bugbait)"
+	"viewmodel"				"models/weapons/v_bugbait.mdl"
+	"playermodel"			"models/spore.mdl"
+	"anim_prefix"			"Grenade"
+	"bucket"				"5"
+	"bucket_position"		"2"
+
+	"clip_size"				"0"
+	"clip2_size"			"0"
+	"primary_ammo"			"None"
+	"secondary_ammo"		"None"
+	"default_clip"			"0"
+	"default_clip2"			"0"
+
+//	"weight"				"1"
+	"weight"				"0"
+	"item_flags"			"0"
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons3"
+				"x"			"1"
+				"y"			"129"
+				"width"		"126"
+				"height"	"62"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons3b"
+				"x"			"0"
+				"y"			"128"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"110"
+				"width"		"73"
+				"height"	"20"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"48"
+				"y"			"72"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

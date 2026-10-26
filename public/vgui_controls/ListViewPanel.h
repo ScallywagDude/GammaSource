@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LISTVIEWPANEL_H
 #define LISTVIEWPANEL_H
@@ -17,8 +12,8 @@
 #pragma once
 #endif
 
-#include <UtlLinkedList.h>
-#include <UtlVector.h>
+#include <utllinkedlist.h>
+#include <utlvector.h>
 
 namespace vgui
 {
@@ -33,11 +28,13 @@ class ListViewItem;
 //-----------------------------------------------------------------------------
 class ListViewPanel : public Panel
 {
+	DECLARE_CLASS_SIMPLE( ListViewPanel, Panel );
+
 public:
 	ListViewPanel(Panel *parent, const char *panelName);
 	~ListViewPanel();
 
-	virtual int  AddItem(KeyValues *data, bool bScrollToItem, bool bSortOnAdd);
+	virtual int  AddItem(const KeyValues *data, bool bScrollToItem, bool bSortOnAdd);
 	virtual int  GetItemCount();
 	virtual KeyValues *GetItem(int itemID);
 	virtual void ApplyItemChanges(int itemID);
@@ -80,21 +77,19 @@ protected:
 	virtual void PerformLayout();
 	virtual void Paint();
 	virtual void ApplySchemeSettings(IScheme *pScheme);
-	virtual void OnMousePressed(enum MouseCode code);
-	virtual void OnMouseDoublePressed(enum MouseCode code);
-	virtual void OnKeyCodeTyped(enum KeyCode code);
+	virtual void OnMousePressed( MouseCode code);
+	virtual void OnMouseDoublePressed( MouseCode code);
+	virtual void OnKeyCodeTyped( KeyCode code);
 	virtual void OnKeyTyped(wchar_t unichar);
-	virtual void OnSliderMoved();
+	MESSAGE_FUNC( OnSliderMoved, "ScrollBarSliderMoved" );
 	virtual int GetItemsPerColumn();
-
-	DECLARE_PANELMAP();
 
 private:
 	ScrollBar			*m_hbar;
 
-	friend ListViewItem;
-	void 	OnItemMousePressed(ListViewItem* pItem, enum MouseCode code);
-	void 	OnItemMouseDoublePressed(ListViewItem* pItem, enum MouseCode code);
+	friend class ListViewItem;
+	void 	OnItemMousePressed(ListViewItem* pItem, MouseCode code);
+	void 	OnItemMouseDoublePressed(ListViewItem* pItem, MouseCode code);
 	int 	GetItemsMaxWidth();
 	int 	GetItemIndex(int itemID);
 	void 	OnShiftSelect(int itemID);
@@ -118,8 +113,6 @@ private:
 	bool		m_bNeedsSort;
 	bool 		m_bDeleteImageListWhenDone;
 	ImageList 	*m_pImageList;
-
-	typedef Panel BaseClass;
 };
 
 

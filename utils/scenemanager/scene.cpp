@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "scene.h"
@@ -36,8 +36,7 @@ CProject *CScene::GetOwnerProject()
 void CScene::SetComments( char const *comments )
 {
 	delete[] m_pszComments;
-	m_pszComments = new char[ Q_strlen( comments ) + 1 ];
-	Q_strcpy( m_pszComments, comments );
+	m_pszComments = V_strdup( comments );
 
 	GetOwnerProject()->SetDirty( true );
 }

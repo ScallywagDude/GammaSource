@@ -1,25 +1,25 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 
 #include "LocalizationDialog.h"
 #include "CreateTokenDialog.h"
 
-#include <VGUI_Button.h>
-#include <VGUI_Controls.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_IVGui.h>
-#include <VGUI_ILocalize.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Menu.h>
-#include <VGUI_MenuButton.h>
-#include <VGUI_MessageBox.h>
-#include <VGUI_FileOpenDialog.h>
+#include "vgui_controls/Button.h"
+#include "vgui_controls/ListPanel.h"
+#include"vgui_controls/TextEntry.h"
+#include "VGUI/IVGui.h"
+#include "VGUI/ILocalize.h"
+#include "VGUI/ISurface.h"
+#include "tier1/KeyValues.h"
+#include "vgui_controls/Menu.h"
+#include "vgui_controls/MenuButton.h"
+#include "vgui_controls/MessageBox.h"
+#include "vgui_controls/FileOpenDialog.h"
 
 #include <stdio.h>
 
@@ -34,7 +34,7 @@ CLocalizationDialog::CLocalizationDialog(const char *fileName) : Frame(NULL, "Lo
 
 	m_pTokenList = new ListPanel(this, "TokenList");
 
-	m_pTokenList->AddColumnHeader(0, "Token", "Token Name", 128, true, RESIZABLE, RESIZABLE);
+	m_pTokenList->AddColumnHeader(0, "Token", "Token Name", 128, 128, 1024, 0 );
 	
 	m_pLanguageEdit = new TextEntry(this, "LanguageEdit");
 	m_pLanguageEdit->SetMultiline(true);
@@ -61,11 +61,11 @@ CLocalizationDialog::CLocalizationDialog(const char *fileName) : Frame(NULL, "Lo
 	strcpy(m_szFileName, fileName);
 
 	char buf[512];
-	sprintf(buf, "%s - Localization Editor", m_szFileName);
+	Q_snprintf(buf, sizeof( buf ), "%s - Localization Editor", m_szFileName);
 	SetTitle(buf, true);
 
 	// load in the string table
-	if (!localize()->AddFile(filesystem(), m_szFileName))
+	if (!g_pVGuiLocalize->AddFile( m_szFileName ) )
 	{
 		MessageBox *msg = new MessageBox("Fatal error", "couldn't load specified file");
 		msg->SetCommand("Close");
@@ -75,14 +75,14 @@ CLocalizationDialog::CLocalizationDialog(const char *fileName) : Frame(NULL, "Lo
 	}
 
 	// populate the dialog with the strings
-	StringIndex_t idx = localize()->GetFirstStringIndex();
-	while (idx != VGUI_INVALID_STRING_INDEX)
+	StringIndex_t idx = g_pVGuiLocalize->GetFirstStringIndex();
+	while ( idx != INVALID_LOCALIZE_STRING_INDEX )
 	{
 		// adds the strings into the table, along with the indexes
-		m_pTokenList->AddItem(new KeyValues("LString", "Token", localize()->GetNameByIndex(idx)), idx);
+		m_pTokenList->AddItem(new KeyValues("LString", "Token", g_pVGuiLocalize->GetNameByIndex(idx)), idx, false, false);
 
 		// move to the next string
-		idx = localize()->GetNextStringIndex(idx);
+		idx = g_pVGuiLocalize->GetNextStringIndex(idx);
 	}
 
 	// sort the table
@@ -123,7 +123,7 @@ void CLocalizationDialog::PerformLayout()
 //-----------------------------------------------------------------------------
 void CLocalizationDialog::OnTokenSelected()
 {
-	if (m_pTokenList->GetNumSelectedRows() != 1)
+	if (m_pTokenList->GetSelectedItemsCount() != 1)
 	{
 		// clear the list
 		m_pLanguageEdit->SetText("");
@@ -137,12 +137,14 @@ void CLocalizationDialog::OnTokenSelected()
 	else
 	{
 		// get the data
-		ListPanel::DATAITEM *data = m_pTokenList->GetDataItem(m_pTokenList->GetSelectedRow(0));
+		int itemId = m_pTokenList->GetSelectedItem(0);
+		vgui::ListPanelItem *data = m_pTokenList->GetItemData( itemId );
+		Assert( data );
 		m_iCurrentToken = data->userData;
-		wchar_t *unicodeString = localize()->GetValueByIndex(m_iCurrentToken);
+		wchar_t *unicodeString = g_pVGuiLocalize->GetValueByIndex(m_iCurrentToken);
 
 		char value[2048];
-		localize()->ConvertUnicodeToANSI(unicodeString, value, sizeof(value));
+		g_pVGuiLocalize->ConvertUnicodeToANSI(unicodeString, value, sizeof(value));
 
 		//!! unicode test label
 		m_pTestLabel->SetText(unicodeString);
@@ -162,8 +164,8 @@ void CLocalizationDialog::OnTextChanged()
 {
 	static char buf1[1024], buf2[1024];
 
-	m_pLanguageEdit->GetText(0, buf1, sizeof(buf1));
-	m_pEnglishEdit->GetText(0, buf2, sizeof(buf2));
+	m_pLanguageEdit->GetText( buf1, sizeof( buf1 ) );
+	m_pEnglishEdit->GetText( buf2, sizeof( buf2 ) );
 
 	if (!strcmp(buf1, buf2))
 	{
@@ -185,14 +187,14 @@ void CLocalizationDialog::OnApplyChanges()
 
 	static char buf1[1024];
 	static wchar_t unicodeString[1024];
-	m_pLanguageEdit->GetText(0, buf1, sizeof(buf1));
-	localize()->ConvertANSIToUnicode(buf1, unicodeString, sizeof(unicodeString) / sizeof(wchar_t));
+	m_pLanguageEdit->GetText( buf1, sizeof( buf1 ) );
+	g_pVGuiLocalize->ConvertANSIToUnicode(buf1, unicodeString, sizeof(unicodeString) / sizeof(wchar_t));
 
 	//!! unicode test label
 	m_pTestLabel->SetText(unicodeString);
 
 	// apply the text change to the database
-	localize()->SetValueByIndex(m_iCurrentToken, unicodeString);
+	g_pVGuiLocalize->SetValueByIndex(m_iCurrentToken, unicodeString);
 
 	// disable the apply button
 	m_pApplyButton->SetEnabled(false);
@@ -206,7 +208,7 @@ void CLocalizationDialog::OnApplyChanges()
 //-----------------------------------------------------------------------------
 void CLocalizationDialog::OnFileSave()
 {
-	if (localize()->SaveToFile(filesystem(), m_szFileName))
+	if (g_pVGuiLocalize->SaveToFile( m_szFileName ) )
 	{
 		// success
 		MessageBox *box = new MessageBox("Save Successful - VLocalize", "File was successfully saved.", false);
@@ -225,10 +227,10 @@ void CLocalizationDialog::OnFileSave()
 //-----------------------------------------------------------------------------
 void CLocalizationDialog::OnFileOpen()
 {
-	FileOpenDialog *box = new FileOpenDialog(this, "Open");
+	FileOpenDialog *box = new FileOpenDialog( this, "Open", true );
 
 	box->SetStartDirectory("u:\\");
-	box->AddFilter("*.*", "All Files (*.*)");
+	box->AddFilter("*.*", "All Files (*.*)", true );
 	box->DoModal(false);
 }
 
@@ -239,11 +241,11 @@ void CLocalizationDialog::OnFileOpen()
 void CLocalizationDialog::OnTokenCreated(const char *tokenName)
 {
 	// add the new string table token to the token list
-	int idx = localize()->FindIndex(tokenName);
-	int newRow = m_pTokenList->AddItem(new KeyValues("LString", "Token", localize()->GetNameByIndex(idx)), idx);
+	int idx = g_pVGuiLocalize->FindIndex(tokenName);
+	int itemId = m_pTokenList->AddItem(new KeyValues("LString", "Token", g_pVGuiLocalize->GetNameByIndex(idx)), idx, true, true );
 
 	// make that currently selected
-	m_pTokenList->SetSelectedRows(newRow, newRow);
+	m_pTokenList->SetSingleSelectedItem( itemId );
 	OnTokenSelected();
 }
 
@@ -252,9 +254,14 @@ void CLocalizationDialog::OnTokenCreated(const char *tokenName)
 //-----------------------------------------------------------------------------
 void CLocalizationDialog::OnCreateToken()
 {
-	CCreateTokenDialog *dlg = new CCreateTokenDialog();
+	CCreateTokenDialog *dlg = new CCreateTokenDialog( this );
 	dlg->AddActionSignalTarget(this);
 	dlg->CreateSingleToken();
+}
+
+char const *CLocalizationDialog::GetFileName() const
+{
+	return m_szFileName;
 }
 
 //-----------------------------------------------------------------------------

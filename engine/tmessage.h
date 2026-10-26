@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #ifndef TMESSAGE_H
 #define TMESSAGE_H
 #pragma once
@@ -11,7 +18,10 @@ extern "C" {
 #define NETWORK_MESSAGE2 "__NETMESSAGE__2"
 #define NETWORK_MESSAGE3 "__NETMESSAGE__3"
 #define NETWORK_MESSAGE4 "__NETMESSAGE__4"
-#define MAX_NETMESSAGE	4
+#define NETWORK_MESSAGE5 "__NETMESSAGE__5"
+#define NETWORK_MESSAGE6 "__NETMESSAGE__6"
+
+#define MAX_NETMESSAGE	6
 
 #include "client_textmessage.h"
 

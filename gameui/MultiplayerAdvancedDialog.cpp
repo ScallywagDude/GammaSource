@@ -1,59 +1,51 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <time.h>
-#include "EngineInterface.h"
 
 #include "MultiplayerAdvancedDialog.h"
+
+#include <vgui/ILocalize.h>
 #include <vgui/ISurface.h>
+#include <vgui_controls/ListPanel.h>
+#include <KeyValues.h>
+#include <vgui_controls/Label.h>
 #include <vgui_controls/Button.h>
+#include <vgui_controls/MessageBox.h>
 #include <vgui_controls/CheckButton.h>
 #include <vgui_controls/ComboBox.h>
 #include <vgui_controls/TextEntry.h>
+#include "cvarslider.h"
 #include "PanelListPanel.h"
+#include <vgui/IInput.h>
+#include <steam/steam_api.h>
+#include "EngineInterface.h"
+#include "fmtstr.h"
 
-#include <vgui/IScheme.h>
-#include "FileSystem.h"
+#include "filesystem.h"
+
 #include <tier0/vcrmode.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
-#include <tier0/memdbgon.h>
+#include "tier0/memdbgon.h"
 
 using namespace vgui;
 
-void UTIL_StripInvalidCharacters( char *pszInput );
+#define OPTIONS_DIR "cfg"
+#define DEFAULT_OPTIONS_FILE OPTIONS_DIR "/user_default.scr"
+#define OPTIONS_FILE OPTIONS_DIR "/user.scr"
 
 //-----------------------------------------------------------------------------
-// Purpose: Basic help dialog
+// Purpose: Constructor
 //-----------------------------------------------------------------------------
-CMultiplayerAdvancedPage::CMultiplayerAdvancedPage(vgui::Panel *parent) 
-: vgui::PropertyPage(parent, "MultiplayerAdvancedDialog")
-{
-	m_pListPanel = new CPanelListPanel( this, "PanelListPanel" );
-
-	m_pList = NULL;
-
-	m_pDescription = new CInfoDescription( m_pListPanel );
-	m_pDescription->InitFromFile( "user.scr" );
-	m_pDescription->TransferCurrentValues( NULL );
-
-	CreateControls();
-	LoadControlSettings("Resource\\MultiplayerAdvancedPage.res");
-
-}
-
-CMultiplayerAdvancedDialog::CMultiplayerAdvancedDialog(vgui::Panel *parent) 
-: CTaskFrame(parent, "MultiplayerAdvancedDialog")
+CMultiplayerAdvancedDialog::CMultiplayerAdvancedDialog(vgui::Panel *parent) : BaseClass(NULL, "MultiplayerAdvancedDialog")
 {
 	SetBounds(0, 0, 372, 160);
 	SetSizeable( false );
-
-	MakePopup();
-	g_pTaskbar->AddTask(GetVPanel());
 
 	SetTitle("#GameUI_MultiplayerAdvanced", true);
 
@@ -67,25 +59,34 @@ CMultiplayerAdvancedDialog::CMultiplayerAdvancedDialog(vgui::Panel *parent)
 
 	m_pList = NULL;
 
-	m_pDescription = new CInfoDescription( m_pListPanel );
-	m_pDescription->InitFromFile( "user.scr" );
+	m_pDescription = new CInfoDescription();
+	m_pDescription->InitFromFile( DEFAULT_OPTIONS_FILE );
+	m_pDescription->InitFromFile( OPTIONS_FILE );
 	m_pDescription->TransferCurrentValues( NULL );
 
-	CreateControls();
 	LoadControlSettings("Resource\\MultiplayerAdvancedDialog.res");
+	CreateControls();
+
+	MoveToCenterOfScreen();
+	SetSizeable( false );
+	SetDeleteSelfOnClose( true );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Destructor
+//-----------------------------------------------------------------------------
+CMultiplayerAdvancedDialog::~CMultiplayerAdvancedDialog()
+{
+	delete m_pDescription;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-CMultiplayerAdvancedDialog::~CMultiplayerAdvancedDialog()
+void CMultiplayerAdvancedDialog::Activate()
 {
-	//DestroyControls();
-}
-
-CMultiplayerAdvancedPage::~CMultiplayerAdvancedPage()
-{
-	//DestroyControls();
+	BaseClass::Activate();
+	input()->SetAppModalSurface(GetVPanel());
 }
 
 
@@ -115,18 +116,23 @@ void CMultiplayerAdvancedDialog::OnCommand( const char *command )
 	BaseClass::OnCommand( command );
 }
 
-
-void CMultiplayerAdvancedPage::OnResetData()
+void CMultiplayerAdvancedDialog::OnKeyCodeTyped(KeyCode code)
 {
-	GatherCurrentValues();
-}
-void CMultiplayerAdvancedPage::OnApplyChanges()
-{
-	SaveValues();
+	// force ourselves to be closed if the escape key it pressed
+	if (code == KEY_ESCAPE)
+	{
+		Close();
+	}
+	else
+	{
+		BaseClass::OnKeyCodeTyped(code);
+	}
 }
 
-
-void CMultiplayerAdvanced::GatherCurrentValues()
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMultiplayerAdvancedDialog::GatherCurrentValues()
 {
 	if ( !m_pDescription )
 		return;
@@ -135,6 +141,7 @@ void CMultiplayerAdvanced::GatherCurrentValues()
 	CheckButton *pBox;
 	TextEntry *pEdit;
 	ComboBox *pCombo;
+	CCvarSlider *pSlider;
 
 	mpcontrol_t *pList;
 
@@ -148,6 +155,12 @@ void CMultiplayerAdvanced::GatherCurrentValues()
 	while ( pList )
 	{
 		pObj = pList->pScrObj;
+
+		if ( pObj->type == O_CATEGORY )
+		{
+			pList = pList->next;
+			continue;
+		}
 
 		if ( !pList->pControl )
 		{
@@ -173,35 +186,41 @@ void CMultiplayerAdvanced::GatherCurrentValues()
 			sprintf( szValue, "%s", strValue );
 			break;
 		case O_LIST:
-			pCombo = (ComboBox *)pList->pControl;
-			// pCombo->GetText( strValue, sizeof( strValue ) );
-			int activeItem = pCombo->GetActiveItem();
-			
-			pItem = pObj->pListItems;
-			int n = (int)pObj->fdefValue;
-
-			while ( pItem )
 			{
-				if (!activeItem--)
-					break;
+				pCombo = (ComboBox *)pList->pControl;
+				// pCombo->GetText( strValue, sizeof( strValue ) );
+				int activeItem = pCombo->GetActiveItem();
+				
+				pItem = pObj->pListItems;
+	//			int n = (int)pObj->fdefValue;
 
-				pItem = pItem->pNext;
-			}
+				while ( pItem )
+				{
+					if (!activeItem--)
+						break;
 
-			if ( pItem )
-			{
-				sprintf( szValue, "%s", pItem->szValue );
+					pItem = pItem->pNext;
+				}
+
+				if ( pItem )
+				{
+					sprintf( szValue, "%s", pItem->szValue );
+				}
+				else  // Couln't find index
+				{
+					//assert(!("Couldn't find string in list, using default value"));
+					sprintf( szValue, "%s", pObj->defValue );
+				}
+				break;
 			}
-			else  // Couln't find index
-			{
-				assert(!("Couldn't find string in list, using default value"));
-				sprintf( szValue, "%s", pObj->defValue );
-			}
+		case O_SLIDER:
+			pSlider = ( CCvarSlider * )pList->pControl;
+			sprintf( szValue, "%.2f", pSlider->GetSliderValue() );
 			break;
 		}
 
 		// Remove double quotes and % characters
-		UTIL_StripInvalidCharacters( szValue );
+		UTIL_StripInvalidCharacters( szValue, sizeof(szValue) );
 
 		strcpy( strValue, szValue );
 
@@ -211,7 +230,10 @@ void CMultiplayerAdvanced::GatherCurrentValues()
 	}
 }
 
-void CMultiplayerAdvanced::CreateControls()
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMultiplayerAdvancedDialog::CreateControls()
 {
 	DestroyControls();
 
@@ -220,17 +242,44 @@ void CMultiplayerAdvanced::CreateControls()
 
 	pObj = m_pDescription->pObjList;
 
+	// Build out the clan dropdown
+	CScriptObject *pClanObj = m_pDescription->FindObject( "cl_clanid" );
+	ISteamFriends *pFriends = steamapicontext->SteamFriends();
+	if ( pFriends && pClanObj )
+	{
+		pClanObj->RemoveAndDeleteAllItems();
+		int iGroupCount = pFriends->GetClanCount();
+		pClanObj->AddItem( new CScriptListItem( "#Cstrike_ClanTag_None", "0" ) );
+		for ( int k = 0; k < iGroupCount; ++ k )
+		{
+			CSteamID clanID = pFriends->GetClanByIndex( k );
+			const char *pName = pFriends->GetClanName( clanID );
+			const char *pTag = pFriends->GetClanTag( clanID );
+
+			char id[12];
+			Q_snprintf( id, sizeof( id ), "%d", clanID.GetAccountID() );
+			pClanObj->AddItem( new CScriptListItem( CFmtStr( "%s (%s)", pTag, pName ), id ) );
+		}
+	}
+
 	mpcontrol_t	*pCtrl;
 
 	CheckButton *pBox;
 	TextEntry *pEdit;
 	ComboBox *pCombo;
+	CCvarSlider *pSlider;
 	CScriptListItem *pListItem;
 
 	Panel *objParent = m_pListPanel;
 
 	while ( pObj )
 	{
+		if ( pObj->type == O_OBSOLETE || pObj->type == O_CATEGORY )
+		{
+			pObj = pObj->pNext;
+			continue;
+		}
+
 		pCtrl = new mpcontrol_t( objParent, "mpcontrol_t" );
 		pCtrl->type = pObj->type;
 
@@ -249,18 +298,32 @@ void CMultiplayerAdvanced::CreateControls()
 			pCtrl->pControl = (Panel *)pEdit;
 			break;
 		case O_LIST:
+			{
 			pCombo = new ComboBox( pCtrl, "DescComboBox", 5, false );
 
+			// track which row matches the current value
+			int iRow = -1;
+			int iCount = 0;
 			pListItem = pObj->pListItems;
 			while ( pListItem )
 			{
+				if ( iRow == -1 && !Q_stricmp( pListItem->szValue, pObj->curValue ) )
+					iRow = iCount;
+
 				pCombo->AddItem( pListItem->szItemText, NULL );
 				pListItem = pListItem->pNext;
+				++iCount;
 			}
 
-			pCombo->ActivateItemByRow((int)pObj->fdefValue);
+
+			pCombo->ActivateItemByRow( iRow );
 
 			pCtrl->pControl = (Panel *)pCombo;
+			}
+			break;
+		case O_SLIDER:
+			pSlider = new CCvarSlider( pCtrl, "DescSlider", "Test", pObj->fMin, pObj->fMax, pObj->cvarname, false );
+			pCtrl->pControl = (Panel *)pSlider;
 			break;
 		default:
 			break;
@@ -275,7 +338,21 @@ void CMultiplayerAdvanced::CreateControls()
 		}
 
 		pCtrl->pScrObj = pObj;
-		pCtrl->SetSize( 100, 28 );
+
+		switch ( pCtrl->type )
+		{
+		case O_BOOL:
+		case O_STRING:
+		case O_NUMBER:
+		case O_LIST:
+			pCtrl->SetSize( 100, 28 );
+			break;
+		case O_SLIDER:
+			pCtrl->SetSize( 100, 40 );
+			break;
+		default:
+			break;
+		}
 		//pCtrl->SetBorder( scheme()->GetBorder(1, "DepressedButtonBorder") );
 		m_pListPanel->AddItem( pCtrl );
 
@@ -305,7 +382,10 @@ void CMultiplayerAdvanced::CreateControls()
 	}
 }
 
-void CMultiplayerAdvanced::DestroyControls()
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMultiplayerAdvancedDialog::DestroyControls()
 {
 	mpcontrol_t *p, *n;
 
@@ -323,7 +403,10 @@ void CMultiplayerAdvanced::DestroyControls()
 	m_pList = NULL;
 }
 
-void CMultiplayerAdvanced::SaveValues() 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMultiplayerAdvancedDialog::SaveValues() 
 {
 	// Get the values from the controls:
 	GatherCurrentValues();
@@ -336,77 +419,13 @@ void CMultiplayerAdvanced::SaveValues()
 		// Add settings to config.cfg
 		m_pDescription->WriteToConfig();
 
-		fp = filesystem()->Open( "user.scr", "wb" );
+		g_pFullFileSystem->CreateDirHierarchy( OPTIONS_DIR );
+		fp = g_pFullFileSystem->Open( OPTIONS_FILE, "wb" );
 		if ( fp )
 		{
 			m_pDescription->WriteToScriptFile( fp );
-			filesystem()->Close( fp );
+			g_pFullFileSystem->Close( fp );
 		}
 	}
 }
 
-void CInfoDescription::WriteScriptHeader( FileHandle_t fp )
-{
-    char am_pm[] = "AM";
-	tm newtime;
-	g_pVCR->Hook_LocalTime( &newtime );
-
-	filesystem()->FPrintf( fp, (char *)getHint() );
-
-// Write out the comment and Cvar Info:
-	filesystem()->FPrintf( fp, "// Half-Life User Info Configuration Layout Script (stores last settings chosen, too)\r\n" );
-	filesystem()->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
-	filesystem()->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
-	filesystem()->FPrintf( fp, "VERSION %.1f\r\n\r\n", SCRIPT_VERSION );
-	filesystem()->FPrintf( fp, "DESCRIPTION INFO_OPTIONS\r\n{\r\n" );
-}
-
-void CInfoDescription::WriteFileHeader( FileHandle_t fp )
-{
-    char am_pm[] = "AM";
-	tm newtime;
-	g_pVCR->Hook_LocalTime( &newtime );
-
-	filesystem()->FPrintf( fp, "// Half-Life User Info Configuration Settings\r\n" );
-	filesystem()->FPrintf( fp, "// DO NOT EDIT, GENERATED BY HALF-LIFE\r\n" );
-	filesystem()->FPrintf( fp, "// File generated:  %.19s %s\r\n", asctime( &newtime ), am_pm );
-	filesystem()->FPrintf( fp, "//\r\n//\r\n// Cvar\t-\tSetting\r\n\r\n" );
-}
-
-CInfoDescription::CInfoDescription( CPanelListPanel *panel )
-: CDescription( panel )
-{
-	setHint( "// NOTE:  THIS FILE IS AUTOMATICALLY REGENERATED, \r\n\
-//DO NOT EDIT THIS HEADER, YOUR COMMENTS WILL BE LOST IF YOU DO\r\n\
-// User options script\r\n\
-//\r\n\
-// Format:\r\n\
-//  Version [float]\r\n\
-//  Options description followed by \r\n\
-//  Options defaults\r\n\
-//\r\n\
-// Option description syntax:\r\n\
-//\r\n\
-//  \"cvar\" { \"Prompt\" { type [ type info ] } { default } }\r\n\
-//\r\n\
-//  type = \r\n\
-//   BOOL   (a yes/no toggle)\r\n\
-//   STRING\r\n\
-//   NUMBER\r\n\
-//   LIST\r\n\
-//\r\n\
-// type info:\r\n\
-// BOOL                 no type info\r\n\
-// NUMBER       min max range, use -1 -1 for no limits\r\n\
-// STRING       no type info\r\n\
-// LIST         "" delimited list of options value pairs\r\n\
-//\r\n\
-//\r\n\
-// default depends on type\r\n\
-// BOOL is \"0\" or \"1\"\r\n\
-// NUMBER is \"value\"\r\n\
-// STRING is \"value\"\r\n\
-// LIST is \"index\", where index \"0\" is the first element of the list\r\n\r\n\r\n" );
-
-	setDescription( "INFO_OPTIONS" );
-}

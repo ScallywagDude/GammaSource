@@ -1,99 +1,105 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include <stdio.h>
 
 #include "GraphPanel.h"
 
+#include <vgui/ISystem.h>
+#include <vgui/ISurface.h>
+#include <vgui/IVGui.h>
+#include <vgui/IScheme.h>
+#include <vgui/ILocalize.h>
+#include <KeyValues.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISystem.h>
-#include <VGUI_ISurface.h>
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_Button.h>
-#include <VGUI_ToggleButton.h>
-#include <VGUI_RadioButton.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_ComboBox.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_PropertySheet.h>
-#include <VGUI_CheckButton.h>
-
-#include <VGUI_ILocalize.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/TextEntry.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/ToggleButton.h>
+#include <vgui_controls/RadioButton.h>
+#include <vgui_controls/ListPanel.h>
+#include <vgui_controls/ComboBox.h>
+#include <vgui_controls/PHandle.h>
+#include <vgui_controls/PropertySheet.h>
+#include <vgui_controls/CheckButton.h>
 
 #define max(a,b)            (((a) > (b)) ? (a) : (b))
 
+#define STATS_UPDATE_RATE	5.0f
+
+
+// colors for the various graph lines+controls
+Color CGraphPanel::CGraphsImage::CPUColor= Color(0,255,0,255); // green
+Color CGraphPanel::CGraphsImage::FPSColor= Color(255,0,0,255); // red
+Color CGraphPanel::CGraphsImage::NetInColor = Color(255,255,0,255); // yellow
+Color CGraphPanel::CGraphsImage::NetOutColor = Color(0,255,255,255); // light blue
+Color CGraphPanel::CGraphsImage::PlayersColor = Color(255,0,255,255); // purple
+Color CGraphPanel::CGraphsImage::PingColor = Color(0,0,0,255); // black
+//Color CGraphPanel::CGraphsImage::lineColor = Color(76,88,68,255);
 
 using namespace vgui;
+
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CGraphPanel::CGraphPanel(vgui::Panel *parent, const char *name) : PropertyPage(parent, name)
 {
+	SetMinimumSize(300,200);
+
 	m_pGraphsPanel = new ImagePanel(this,"Graphs");
 	m_pGraphs = new CGraphsImage();
 	m_pGraphsPanel->SetImage(m_pGraphs);
 
+	m_pInButton = new CheckButton(this,"InCheck","#Graph_In");
+	m_pOutButton = new CheckButton(this,"OutCheck","#Graph_Out");
+	m_pFPSButton = new CheckButton(this,"FPSCheck","#Graph_FPS");
+	m_pCPUButton = new CheckButton(this,"CPUCheck","#Graph_CPU");
+	m_pPINGButton = new CheckButton(this,"PingCheck","#Graph_Ping");
+	m_pPlayerButton = new CheckButton(this,"PlayersCheck","#Graph_Players");
 
-	m_pClearButton = new Button(this,"Clear","&Reset");
-	m_pClearButton->SetVisible(true);
-	m_pClearButton->SetEnabled(true);
-	m_pClearButton->SetCommand(new KeyValues("clear"));
-	m_pClearButton->AddActionSignalTarget(this);
+	m_pTimeCombo = new ComboBox(this, "TimeCombo",3,false);
+	m_pTimeCombo->AddItem("#Graph_Minutes", NULL);
+	int defaultItem = m_pTimeCombo->AddItem("#Graph_Hours", NULL);
+	m_pTimeCombo->AddItem("#Graph_Day", NULL);
+	m_pTimeCombo->ActivateItem(defaultItem);
 
-	m_pBandwidthButton = new CheckButton(this,"Bandwidth","Bandwidth");
-	m_pBandwidthButton->SetVisible(true);
-	m_pBandwidthButton->SetEnabled(true);
-
-
-	m_pFPSButton = new CheckButton(this,"FPS","FPS");
-	m_pFPSButton->SetVisible(true);
-	m_pFPSButton->SetEnabled(true);
-
-	m_pCPUButton = new CheckButton(this,"CPU","CPU");
-	m_pCPUButton->SetVisible(true);
-	m_pCPUButton->SetEnabled(true);
-
-	m_pPINGButton = new CheckButton(this,"Ping","Ping");
-	m_pPINGButton->SetVisible(true);
-	m_pPINGButton->SetEnabled(true);
-
-
-	m_pSecButton = new RadioButton(this,"Seconds","Seconds");
-	m_pSecButton->SetEnabled(true);
-	m_pSecButton->SetVisible(true);
-	m_pSecButton->AddActionSignalTarget(this);
-
-	m_pMinButton = new RadioButton(this,"Minutes","Minutes");
-	m_pMinButton->SetEnabled(true);
-	m_pMinButton->SetVisible(true);
-	m_pMinButton->AddActionSignalTarget(this);
-
-	m_pHourButton = new RadioButton(this,"Hours","Hours");
-	m_pHourButton->SetEnabled(true);
-	m_pHourButton->SetVisible(true);
-	m_pHourButton->AddActionSignalTarget(this);
-
-	m_pTimeLabel = new Label(this,"timelabel","Time frame between points");
-	m_pGraphsLabel = new Label(this,"graphslabel","Display graph");
-	
+	m_pVertCombo = new ComboBox(this, "VertCombo",6,false);
+	m_pVertCombo->AddItem("#Graph_In", NULL);
+	m_pVertCombo->AddItem("#Graph_Out", NULL);
+	m_pVertCombo->AddItem("#Graph_FPS", NULL);
+	defaultItem = m_pVertCombo->AddItem("#Graph_CPU", NULL);
+	m_pVertCombo->AddItem("#Graph_Ping", NULL);
+	m_pVertCombo->AddItem("#Graph_Players", NULL);
+	m_pVertCombo->ActivateItem(defaultItem);
 
 	// now setup defaults
-	m_pCPUButton->SetSelected(false);
-	m_pBandwidthButton->SetSelected(false);
+	m_pCPUButton->SetSelected(true);
+	m_pInButton->SetSelected(false);
+	m_pOutButton->SetSelected(false);
 	m_pFPSButton->SetSelected(false);
-	m_pPINGButton->SetSelected(true);
+	m_pPINGButton->SetSelected(false);
 
-	m_pSecButton->SetSelected(true);
+	LoadControlSettings("Admin/GraphPanel.res", "PLATFORM");
 
+	int w,h;
+	m_pGraphsPanel->GetSize(w,h);
+	m_pGraphs->SaveSize(w,h);
+	m_pGraphs->SetDraw(m_pCPUButton->IsSelected(),m_pFPSButton->IsSelected(),
+	m_pInButton->IsSelected(),m_pOutButton->IsSelected(),m_pPINGButton->IsSelected(),m_pPlayerButton->IsSelected());
+
+	m_pPINGButton->SetFgColor(m_pGraphs->GetPingColor());
+	m_pCPUButton->SetFgColor(m_pGraphs->GetCPUColor());
+	m_pFPSButton->SetFgColor(m_pGraphs->GetFPSColor());
+	m_pInButton->SetFgColor(m_pGraphs->GetInColor());
+	m_pOutButton->SetFgColor(m_pGraphs->GetOutColor());
+	m_pPlayerButton->SetFgColor(m_pGraphs->GetPlayersColor());
+
+	ivgui()->AddTickSignal(GetVPanel());
+	m_flNextStatsUpdateTime = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -104,11 +110,21 @@ CGraphPanel::~CGraphPanel()
 
 }
 
+void CGraphPanel::ApplySchemeSettings( IScheme *pScheme )
+{
+	BaseClass::ApplySchemeSettings( pScheme );
+	m_pGraphsPanel->SetBorder(	pScheme->GetBorder("ButtonDepressedBorder"));
+	m_pGraphs->SetBgColor(GetSchemeColor("WindowBG", pScheme));
+	m_pGraphs->SetAxisColor(Color(76,88,68,255));
+
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Activates the page
 //-----------------------------------------------------------------------------
 void CGraphPanel::OnPageShow()
 {
+	BaseClass::OnPageShow();
 }
 
 //-----------------------------------------------------------------------------
@@ -116,208 +132,155 @@ void CGraphPanel::OnPageShow()
 //-----------------------------------------------------------------------------
 void CGraphPanel::OnPageHide()
 {
+	BaseClass::OnPageHide();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Ping onlu
+// Purpose: called every frame to update stats page
 //-----------------------------------------------------------------------------
-void CGraphPanel::PingOnly(bool state)
+void CGraphPanel::OnTick()
 {
-	m_pGraphs->PingOnly(state);
-	
-	m_pBandwidthButton->SetVisible(!state);
-	m_pFPSButton->SetVisible(!state);
-	m_pCPUButton->SetVisible(!state);
-	
+	if (m_flNextStatsUpdateTime > system()->GetFrameTime())
+		return;
+
+	m_flNextStatsUpdateTime = (float)system()->GetFrameTime() + STATS_UPDATE_RATE;
+	RemoteServer().RequestValue(this, "stats");	
 }
 
-
 //-----------------------------------------------------------------------------
-// Purpose: Relayouts the data
+// Purpose: tells the image about the new size
 //-----------------------------------------------------------------------------
 void CGraphPanel::PerformLayout()
 {
 	BaseClass::PerformLayout();
-	int x,y,w,h;
-	GetBounds(x,y,w,h);
-	
-// you need to set the size of the image panel here...
-	m_pGraphsPanel->SetSize(w,h);
-	m_pGraphs->SaveSize(w-10,h-35);
+	int w,h,x,y;
+	m_pGraphsPanel->GetBounds(x,y,w,h);
 
-	m_pBandwidthButton->SetBounds(x+w-85,y+h-90,80,20);
-	m_pFPSButton->SetBounds(x+w-85,y+h-70,75,20);
-	m_pCPUButton->SetBounds(x+w-85,y+h-50,75,20);
-	m_pPINGButton->SetBounds(x+w-85,y+h-110,75,20);
-	m_pGraphsLabel->SetBounds(x+w-85,y+h-130,80,20);
+	m_pGraphs->SaveSize(w,h); // tell the image about the resize
 
-	const int buttonWidth=80,labelWidth=160;
-
-	m_pClearButton->SetBounds(x+2,y+h-50,47,20);
-
-	m_pTimeLabel->SetBounds(x+55,y+h-50,labelWidth,20);
-	m_pSecButton->SetBounds(x+55+labelWidth,y+h-50,buttonWidth,20);
-	m_pMinButton->SetBounds(x+55+labelWidth+buttonWidth,y+h-50,buttonWidth,20);
-	m_pHourButton->SetBounds(x+55+labelWidth+buttonWidth*2,y+h-50,buttonWidth-20,20);
+	// push the mid axis label to the middle of the image
+	Label *entry = dynamic_cast<Label *>(FindChildByName("AxisMid"));
+	if (entry)
+	{
+		int entry_x,entry_y;
+		entry->GetPos(entry_x,entry_y);
+		entry->SetPos(entry_x,y+(h/2)-8);
+	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Handles stats command returns
+//-----------------------------------------------------------------------------
+void CGraphPanel::OnServerDataResponse(const char *value, const char *response)
+{
+	if (!stricmp(value, "stats"))
+	{
+		// parse the stats out of the response
+		Points_t p;
+		float uptime, users;
+		sscanf(response, "%f %f %f %f %f %f %f", &p.cpu, &p.in, &p.out, &uptime, &users, &p.fps, &p.players);
+		p.cpu = p.cpu / 100; // its given as a value between 0<x<100, we want 0<x<1
+		p.ping = 0;
+		p.time = (float)system()->GetCurrentTime();
+		m_pGraphs->AddPoint(p);
+
+		// days:hours:minutes:seconds
+		char timeText[64];
+		_snprintf(timeText, sizeof(timeText), "%i", (int)p.players);
+		SetControlString("TotalUsersLabel", timeText);
+
+		// mark the vert combo has changed to force it to update graph ranges
+		m_pVertCombo->GetText(timeText, 64);
+		OnTextChanged(m_pVertCombo, timeText);
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: the paint routine for the graph image. Handles the layout and drawing of the graph image
 //-----------------------------------------------------------------------------
-void CGraphPanel::CGraphsImage::DrawPointPolyLine(const vgui::Point *vertices, int count)
-{
-    if (!vertices || count < 2)
-        return;
-    CUtlVector<int> xs;
-    CUtlVector<int> ys;
-    xs.SetCount(count);
-    ys.SetCount(count);
-    for (int i = 0; i < count; ++i)
-        vertices[i].GetPoint(xs[i], ys[i]);
-    DrawPolyLine(xs.Base(), ys.Base(), count);
-}
-
 void CGraphPanel::CGraphsImage::Paint()
 {
-	int x,y,distPoints;
+	int x,y;
+	float distPoints; // needs to be a float, rounding errors cause problems with lots of points
 	int bottom=5; // be 5 pixels above the bottom
-	int left=50;
+	int left=2;
 
-	int offsetNET,offsetFPS,offsetCPU;
-
-
-	Point *pCpu=NULL,*pIn=NULL, *pOut=NULL,*pFPS=NULL,*pPing=NULL;
-
-	Color g(0,255,0,255); // green
-	Color r(255,0,0,255); // red
-	Color yel(255,255,0,255); // yellow
-	Color lb(0,255,255,255); // light blue
-	Color bl(0,0,0,255); // black
-	Color purple(255,0,255,255); // purple
+	int *pCpuX=NULL, *pCpuY=NULL;
+	int *pInX=NULL, *pInY=NULL;
+	int *pOutX=NULL, *pOutY=NULL;
+	int *pFPSX=NULL, *pFPSY=NULL;
+	int *pPingX=NULL, *pPingY=NULL;
+	int *pPlayersX=NULL, *pPlayersY=NULL;
 
 	GetSize(x,y);
+
+	SetColor(bgColor);
+	SetBkColor(bgColor);
+	DrawFilledRect(0,0,x,y);
 
 	y-=4; // borders
 	x-=4;
 
 
-	if(!cpu && !fps && !net && !ping) // no graphs selected
+	if(!cpu && !fps && !net_i && !net_o && !ping && !players) // no graphs selected
 		return; 
 
 	if(points.Count()<2)
 		return; // not enough points yet...
 
-	if(x<200 || y<100) 
+	if(x<=200 || y<=100) 
 		return; // to small
 
 
-	if(cpu)
-	{
-		if(net && fps)
-		{ // all three
-			offsetCPU=5;
-			offsetNET= -30;
-			offsetFPS= 15;
-		}
-		else if( net )
-		{ // net and cpu
-			offsetCPU=5;
-			offsetNET= -15;
-
-		}
-		else
-		{ // cpu and fps
-			offsetCPU=5;
-			offsetFPS=15;
-		}
-	}
-	else
-	{
-		if(net && fps)
-		{ // net and fps
-			offsetNET= -15;
-			offsetFPS= 5;
-		}
-		else if( net )
-		{ // net
-			offsetNET= 0;
-
-		}
-		else
-		{ //  fps
-			offsetFPS=0;
-		}
-
-	}
-
-
-	distPoints= (x-150)/points.Count();
+	distPoints= static_cast<float>(x)/static_cast<float>(points.Count()-1);
 	if(distPoints<=0)
 	{
 		distPoints=1;
 	}
 
-//	DrawOutlinedRect(x-105,5,x,100);
+	SetColor(lineColor);
+	SetBkColor(lineColor);
+	//DrawLine(4,5,x,5);
+	DrawLine(4,y/2,x,y/2);
+	//DrawLine(4,y,x,y);
 
-	SetColor(bl);
-	DrawLine(10,5,x-105,5);
-	DrawLine(10,y/2,x-105,y/2);
-	DrawLine(10,y,x-105,y);
+	float RangePing=maxPing;
+	float RangeFPS=maxFPS;
+	float Range=0;
+	float RangePlayers=maxPlayers;
 
-
-	wchar_t tmp[12];
-	// draw the legend + axes
-
-	if(cpu)
-	{
-		SetColor(g); // green
-	//	DrawLine(x-25,20,x-5,20);
-		localize()->ConvertANSIToUnicode("%CPU", tmp, 12);
-		DrawPrintText(x-70,5,tmp,4);
-
-		localize()->ConvertANSIToUnicode("100%", tmp, 12);
-		DrawPrintText(5,offsetCPU,tmp,4);
-		localize()->ConvertANSIToUnicode("50%", tmp, 12);
-		DrawPrintText(5,y/2-offsetCPU,tmp,3);
-		localize()->ConvertANSIToUnicode("0%", tmp, 12);
-		DrawPrintText(5,y-offsetCPU,tmp,2);
-	}
-	
-	if(net)
-	{
-		SetColor(r); // red
-	//	DrawLine(x-25,40,x-5,40);
-		localize()->ConvertANSIToUnicode("In (kB/sec)", tmp, 12);
-		DrawPrintText(x-70,20,tmp,11);
-
-		SetColor(yel); //yellow
-	//	DrawLine(x-25,60,x-5,60);
-		localize()->ConvertANSIToUnicode("Out (kB/sec)", tmp, 12);
-		DrawPrintText(x-70,35,tmp,12);
-	}
-
-
-	if(fps)
-	{
-		SetColor(lb); 
-	//	DrawLine(x-25,80,x-5,80);
-		localize()->ConvertANSIToUnicode("FPS", tmp, 12);
-		DrawPrintText(x-70,50,tmp,3);
-	}
 
 	if(ping)
 	{
-		SetColor(purple); 
-		//DrawLine(x-25,100,x-5,80);
-		localize()->ConvertANSIToUnicode("Ping", tmp, 12);
-		DrawPrintText(x-40,50,tmp,4);
+		RangePing+=static_cast<float>(maxPing*0.1); // don't let the top of the range touch the top of the panel
 
+		if(RangePing<=1) 
+		{ // don't let the zero be at the top of the screen
+			RangePing=1.0;
+		}
+		pPingX = new int[points.Count()];
+		pPingY = new int[points.Count()];
 	}
 
+	if(cpu)
+	{
+		pCpuX = new int[points.Count()];
+		pCpuY = new int[points.Count()];
+	}
+	
+	if(fps)
+	{			
+		RangeFPS+=static_cast<float>(maxFPS*0.1); // don't let the top of the range touch the top of the panel
 
-	float Range=0;
-	if(net)
+		if(RangeFPS<=1) 
+		{ // don't let the zero be at the top of the screen
+			RangeFPS=1.0;
+		}
+		pFPSX = new int[points.Count()];
+		pFPSY = new int[points.Count()];
+	}
+
+	if(net_i)
 	{
 	
 		// put them on a common scale, base it at zero 
@@ -330,96 +293,32 @@ void CGraphPanel::CGraphsImage::Paint()
 			Range=1.0;
 		}
 
-		char numText[20];
-		SetColor(yel); //yellow
-
-		_snprintf(numText,20,"%0.2f",Range);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(5,-offsetNET,tmp,strlen(numText));
-		_snprintf(numText,20,"%0.2f",Range/2);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		if(cpu && fps && net) 
-		{ // when you have all three you have to draw it slightly differently
-			DrawPrintText(5,y/2+offsetNET/2,tmp,strlen(numText));
-		}
-		else
-		{
-			DrawPrintText(5,y/2+offsetNET,tmp,strlen(numText));
-		}
-		_snprintf(numText,20,"0");
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(5,y+offsetNET,tmp,1);
-		pIn= new Point[points.Count()];
-		pOut= new Point[points.Count()];
+		pInX = new int[points.Count()];
+		pInY = new int[points.Count()];
 	}
 
-	float RangeFPS=maxFPS;
-	if(fps)
+	if(net_o)
 	{
+		// put them on a common scale, base it at zero 
+		Range = max(maxIn,maxOut);
 			
-		RangeFPS+=static_cast<float>(maxFPS*0.1); // don't let the top of the range touch the top of the panel
+		Range+=static_cast<float>(Range*0.1); // don't let the top of the range touch the top of the panel
 
-		if(RangeFPS<=1) 
+		if(Range<=1) 
 		{ // don't let the zero be at the top of the screen
-			RangeFPS=1.0;
+			Range=1.0;
 		}
 
-		char numText[20];
-		SetColor(lb); 
-
-		_snprintf(numText,20,"%0.2f",RangeFPS);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(5,offsetFPS,tmp,strlen(numText));
-		_snprintf(numText,20,"%0.2f",RangeFPS/2);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		if(cpu && fps && net) 
-		{ // when you have all three you have to draw it slightly differently
-			DrawPrintText(5,y/2+offsetFPS/2,tmp,strlen(numText));
-		}
-		else
-		{
-			DrawPrintText(5,y/2+offsetFPS,tmp,strlen(numText));
-		}
-		_snprintf(numText,20,"0");
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(5,y-offsetFPS,tmp,1);
-		pFPS= new Point[points.Count()];
+		pOutX = new int[points.Count()];
+		pOutY = new int[points.Count()];
 	}
 
-
-	if(cpu)
+	if(players)
 	{
-		pCpu= new Point[points.Count()];
-	}
+		RangePlayers+=static_cast<float>(maxPlayers*0.1); // don't let the top of the range touch the top of the panel
 
-
-	float RangePing=maxPing;
-	if(ping)
-	{
-			
-		RangePing+=static_cast<float>(maxPing*0.1); // don't let the top of the range touch the top of the panel
-
-		if(RangePing<=1) 
-		{ // don't let the zero be at the top of the screen
-			RangePing=1.0;
-		}
-
-		char numText[20];
-		SetColor(purple); 
-
-		_snprintf(numText,20,"%0.2f",RangePing);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(x-120,5,tmp,strlen(numText));
-		_snprintf(numText,20,"%0.2f",RangePing/2);
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(x-120,y/2-5,tmp,strlen(numText));
-		_snprintf(numText,20,"0");
-		localize()->ConvertANSIToUnicode(numText, tmp, 12);
-		DrawPrintText(x-120,y-5,tmp,1);
-
-
-		pPing= new Point[points.Count()];
-
+		pPlayersX = new int[points.Count()];
+		pPlayersY = new int[points.Count()];
 	}
 
 	for(int i=0;i<points.Count();i++)
@@ -428,61 +327,89 @@ void CGraphPanel::CGraphsImage::Paint()
 	
 		if(cpu) 
 		{
-			pCpu[i].SetPoint(left+i*distPoints,static_cast<int>((1-points[i].cpu)*y));
+			pCpuX[i] = left+static_cast<int>(i*distPoints);
+			pCpuY[i] = static_cast<int>((1-points[i].cpu)*y);
 		}
 	
-		if(net)
+		if(net_i)
 		{
-			pIn[i].SetPoint(left+i*distPoints,static_cast<int>(( (Range-points[i].in)/Range)*y-bottom));
-	
-			pOut[i].SetPoint(left+i*distPoints,static_cast<int>(((Range-points[i].out)/Range)*y-bottom));
+			pInX[i] = left+static_cast<int>(i*distPoints);
+			pInY[i] = static_cast<int>(( (Range-points[i].in)/Range)*y-bottom);
 		}
+		
+		if(net_o)
+		{
+			pOutX[i] = left+static_cast<int>(i*distPoints);
+			pOutY[i] = static_cast<int>(((Range-points[i].out)/Range)*y-bottom);
+		}
+
 		if(fps)
 		{
-			pFPS[i].SetPoint(left+i*distPoints,static_cast<int>(( (RangeFPS-points[i].fps)/RangeFPS)*y-bottom));
-
+			pFPSX[i] = left+static_cast<int>(i*distPoints);
+			pFPSY[i] = static_cast<int>(( (RangeFPS-points[i].fps)/RangeFPS)*y-bottom);
 		}
 
 		if(ping)
 		{
-			pPing[i].SetPoint(left+i*distPoints,static_cast<int>(( (RangePing-points[i].ping)/RangePing)*y-bottom));
-
+			pPingX[i] = left+static_cast<int>(i*distPoints);
+			pPingY[i] = static_cast<int>(( (RangePing-points[i].ping)/RangePing)*y-bottom);
 		}
+
+		if(players)
+		{
+			pPlayersX[i] = left+static_cast<int>(i*distPoints);
+			pPlayersY[i] = static_cast<int>(( (RangePlayers-points[i].players)/RangePlayers)*y-bottom);
+		}
+
 	
 	}
 	// we use DrawPolyLine, its much, much, much more efficient than calling lots of DrawLine()'s
 
 	if(cpu)
 	{
-		SetColor(g); // green
-		DrawPointPolyLine(pCpu, points.Count());	
-	}
+		SetColor(CPUColor); // green
+		DrawPolyLine(pCpuX, pCpuY, points.Count());	
+		delete [] pCpuX;
+		delete [] pCpuY;
+	} 
 
-	if(net) 
+	if(net_i) 
 	{
-		SetColor(r); // red
-		DrawPointPolyLine(pIn, points.Count());	
-
-		SetColor(yel); //yellow
-		DrawPointPolyLine(pOut, points.Count());	
+		SetColor(NetInColor); // red
+		DrawPolyLine(pInX, pInY, points.Count());	
+		delete [] pInX;
+		delete [] pInY;
+	}
+	if(net_o)
+	{
+		SetColor(NetOutColor); //yellow
+		DrawPolyLine(pOutX, pOutY, points.Count());	
+		delete [] pOutX;
+		delete [] pOutY;
 	}
 	if(fps)
 	{
-		SetColor(lb);
-		DrawPointPolyLine(pFPS, points.Count());	
+		SetColor(FPSColor);
+		DrawPolyLine(pFPSX, pFPSY, points.Count());	
+		delete [] pFPSX;
+		delete [] pFPSY;
 	}
 
 	if(ping)
 	{
-		SetColor(purple);
-		DrawPointPolyLine(pPing, points.Count());	
+		SetColor(PingColor);
+		DrawPolyLine(pPingX, pPingY, points.Count());	
+		delete [] pPingX;
+		delete [] pPingY;
 	}
-	
-	if(cpu && pCpu) free(pCpu);
-	if(net &&pIn) free(pIn);
-	if(net && pOut) free(pOut);
-	if(fps && pFPS) free(pFPS);
-	if(ping && pPing) free(pPing);
+
+	if(players)
+	{
+		SetColor(PlayersColor);
+		DrawPolyLine(pPlayersX, pPlayersY, points.Count());	
+		delete [] pPlayersX;
+		delete [] pPlayersY;
+	}
 }  
 
 
@@ -492,28 +419,22 @@ void CGraphPanel::CGraphsImage::Paint()
 CGraphPanel::CGraphsImage::CGraphsImage(): vgui::Image(), points()
 {
 	maxIn=maxOut=minIn=minOut=minFPS=maxFPS=minPing=maxPing=0;
-	net=fps=cpu=ping=false;
-	ping_only=true; // by default pings only
+	net_i=net_o=fps=cpu=ping=players=false;
 	numAvgs=0;
 	memset(&avgPoint,0x0,sizeof(Points_t));
-
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: sets which graph to draw, true means draw it
 //-----------------------------------------------------------------------------
-void CGraphPanel::CGraphsImage::SetDraw(bool cpu_in,bool fps_in,bool net_in,bool ping_in)
+void CGraphPanel::CGraphsImage::SetDraw(bool cpu_in,bool fps_in,bool net_in,bool net_out,bool ping_in,bool players_in)
 {
 	cpu=cpu_in;
 	fps=fps_in;
-	net=net_in;
+	net_i=net_in;
+	net_o=net_out;
 	ping=ping_in;
-	if(ping_only)
-	{
-		cpu=false;
-		net=false;
-		fps=false;
-	}
+	players=players_in;
 }
 
 //-----------------------------------------------------------------------------
@@ -526,6 +447,7 @@ void CGraphPanel::CGraphsImage::AvgPoint(Points_t p)
 	avgPoint.in += p.in;
 	avgPoint.out += p.out;
 	avgPoint.ping += p.ping;
+	avgPoint.players += p.players;
 	numAvgs++;
 }
 
@@ -570,6 +492,15 @@ void CGraphPanel::CGraphsImage::CheckBounds(Points_t p)
 	{
 		minPing=avgPoint.ping;
 	}
+
+	if(p.players>maxPlayers)
+	{
+		maxPlayers=avgPoint.players;
+	}
+	if(p.players<minPlayers)
+	{
+		minPlayers=avgPoint.players;
+	}
 	
 }
 
@@ -588,29 +519,26 @@ bool CGraphPanel::CGraphsImage::AddPoint(Points_t p)
 		return false;
 	}
 
-	if(timeBetween==HOURS)
+	if(timeBetween==SECONDS) // most recent minute
 	{
-		
-		if(points.Count()>1 && (p.time - points[points.Count()-1].time ) < 5*60 ) 
-			// only add a point every 5 minutes											 
-			// which means 12 per hour
+		while(points.Count() && (p.time-points[0].time)>60)
 		{
-			AvgPoint(p);
-			return false;
+			points.Remove(0);
 		}
-
+	}
+	else if(timeBetween==HOURS) // most recent hour
+	{
+		while(points.Count() && (p.time-points[0].time)>60*60)
+		{
+			points.Remove(0);
+		}
 	} 
-	else if ( timeBetween==MINUTES)
+	else if ( timeBetween==MINUTES) // most recent day
 	{
-		
-		if(points.Count()>1 && (p.time - points[points.Count()-1].time ) < 30 ) 
-			// only add a point every 30 seconds										 
-			// which means 120 per hour
+			while(points.Count() && (p.time-points[0].time)>60*60*24)
 		{
-			AvgPoint(p);
-			return false;
+			points.Remove(0);
 		}
-
 	}
 
 	AvgPoint(p);
@@ -620,13 +548,14 @@ bool CGraphPanel::CGraphsImage::AddPoint(Points_t p)
 	avgPoint.in  /= numAvgs;
 	avgPoint.out /= numAvgs;
 	avgPoint.ping /= numAvgs;
+	avgPoint.players /= numAvgs;
 	avgPoint.time = p.time;
 	numAvgs=0;
 
-	int k= points.Count();
+	int k=0;
 
 	if(x!=0 && points.Count()> x/2) 
-	// there are more points than pixels so drop one.
+	// there are more points than pixels so thin them out
 	{
 		while(points.Count()> x/2)
 		{
@@ -634,11 +563,17 @@ bool CGraphPanel::CGraphsImage::AddPoint(Points_t p)
 			if(points[0].in==maxIn ||
 				points[0].out==maxOut ||
 				points[0].fps==maxFPS ||
-				points[0].ping==maxPing )
+				points[0].ping==maxPing ||
+				points[0].players==maxPlayers)
 			{
 				recalcBounds=true;
 			}
-			points.Remove(0); // remove the head node
+			points.Remove(k); // remove the head node
+			k+=2;
+			if(k>points.Count()) 
+			{
+				k=0;
+			}
 		}
 	}
 
@@ -668,18 +603,10 @@ void CGraphPanel::CGraphsImage::SetScale(intervals time)
 	points.RemoveAll();
 
 	// and reset the maxes
-	maxIn=maxOut=minIn=minOut=minFPS=maxFPS=minPing=maxPing=0;
+	maxIn=maxOut=minIn=minOut=minFPS=maxFPS=minPing=maxPing=maxPlayers=minPlayers=0;
 
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: run when the send button is pressed, send a rcon "say" to the server
-//-----------------------------------------------------------------------------
-void CGraphPanel::OnSendChat()
-{
-
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: clear button handler, clears the current points
@@ -687,7 +614,6 @@ void CGraphPanel::OnSendChat()
 void CGraphPanel::OnClearButton()
 {
 	m_pGraphs->RemovePoints();
-	Repaint();
 }
 
 //-----------------------------------------------------------------------------
@@ -695,40 +621,111 @@ void CGraphPanel::OnClearButton()
 //-----------------------------------------------------------------------------
 void CGraphPanel::OnCheckButton()
 {
-	m_pGraphs->SetDraw(m_pCPUButton->IsSelected(),m_pFPSButton->IsSelected(),
-		m_pBandwidthButton->IsSelected(),m_pPINGButton->IsSelected());
-
+	m_pGraphs->SetDraw(m_pCPUButton->IsSelected(), m_pFPSButton->IsSelected(), m_pInButton->IsSelected(), m_pOutButton->IsSelected(), m_pPINGButton->IsSelected(), m_pPlayerButton->IsSelected());
 }
 
 //-----------------------------------------------------------------------------
 // Purpose:Handles the scale radio buttons, passes the scale to use through to the graph image
 //-----------------------------------------------------------------------------
-void CGraphPanel::OnButtonToggled()
+void CGraphPanel::OnTextChanged(Panel *panel, const char *text)
 {
-	if(m_pSecButton->IsSelected())
+	if (panel == m_pTimeCombo)
 	{
-		m_pGraphs->SetScale(SECONDS);
+		if (strstr(text, "Hour"))
+		{
+			m_pGraphs->SetScale(MINUTES);
+		}
+		else if (strstr(text, "Day"))
+		{
+			m_pGraphs->SetScale(HOURS);
+		}
+		else
+		{
+			m_pGraphs->SetScale(SECONDS);
+		}
 	}
-	else if(m_pMinButton->IsSelected())
+	else if (panel == m_pVertCombo)
 	{
-		m_pGraphs->SetScale(MINUTES);
-	}
-	else
-	{
-		m_pGraphs->SetScale(HOURS);
+		float maxVal, minVal;
+		char minText[20], midText[20], maxText[20];
+
+		if (strstr(text, "CPU"))
+		{
+			SetAxisLabels(m_pGraphs->GetCPUColor(), "100%", "50%", "0%");
+		}
+		else if (strstr(text, "FPS"))
+		{
+			m_pGraphs->GetFPSLimits(maxVal, minVal);
+			sprintf(maxText,"%0.2f", maxVal);
+			sprintf(midText,"%0.2f", (maxVal - minVal) / 2);
+			sprintf(minText,"%0.2f", minVal);
+			SetAxisLabels(m_pGraphs->GetFPSColor(), maxText, midText, minText);
+		}
+		else if (strstr(text, "In"))
+		{
+			m_pGraphs->GetInLimits(maxVal, minVal);
+			sprintf(maxText,"%0.2f", maxVal);
+			sprintf(midText,"%0.2f", (maxVal - minVal) / 2);
+			sprintf(minText,"%0.2f", minVal);
+
+			SetAxisLabels(m_pGraphs->GetInColor(), maxText, midText, minText);
+		}
+		else if (strstr(text, "Out"))
+		{
+			m_pGraphs->GetOutLimits(maxVal, minVal);
+			sprintf(maxText,"%0.2f", maxVal);
+			sprintf(midText,"%0.2f", (maxVal - minVal) / 2);
+			sprintf(minText,"%0.2f", minVal);
+			SetAxisLabels(m_pGraphs->GetOutColor(), maxText, midText, minText);
+		}
+		else if (strstr(text, "Ping"))
+		{
+			m_pGraphs->GetPingLimits(maxVal, minVal);
+			sprintf(maxText,"%0.2f", maxVal);
+			sprintf(midText,"%0.2f", (maxVal - minVal) / 2);
+			sprintf(minText,"%0.2f", minVal);
+			SetAxisLabels(m_pGraphs->GetPingColor(), maxText, midText, minText);
+		}
+		else if (strstr(text, "Players"))
+		{
+			m_pGraphs->GetPlayerLimits(maxVal, minVal);
+			sprintf(maxText,"%0.2f", maxVal);
+			sprintf(midText,"%0.2f", (maxVal - minVal) / 2);
+			sprintf(minText,"%0.2f", minVal);
+
+			SetAxisLabels(m_pGraphs->GetPlayersColor(), maxText, midText, minText);
+		}
 	}
 }
+
 //-----------------------------------------------------------------------------
-// Purpose: Message map
+// Purpose: 
 //-----------------------------------------------------------------------------
-MessageMapItem_t CGraphPanel::m_MessageMap[] =
+void CGraphPanel::SetAxisLabels(Color c, char *max, char *mid, char *min)
 {
-	MAP_MESSAGE( CGraphPanel, "SendChat", OnSendChat ),
-	MAP_MESSAGE( CGraphPanel, "CheckButtonChecked", OnCheckButton ),
-	MAP_MESSAGE( CGraphPanel, "clear", OnClearButton ),
+	Label *lab;
+	lab= GetLabel("AxisMax");
+	if(lab)
+	{
+		lab->SetFgColor(c);
+		lab->SetText(max);
+	}
+	lab = GetLabel("AxisMid");
+	if(lab)
+	{
+		lab->SetFgColor(c);
+		lab->SetText(mid);
+	}
+	lab = GetLabel("AxisMin");
+	if(lab)
+	{
+		lab->SetFgColor(c);
+		lab->SetText(min);
+	}
+}
 
-	MAP_MESSAGE( CGraphPanel, "RadioButtonChecked", OnButtonToggled ),
-//	MAP_MESSAGE_PTR_CONSTCHARPTR( CGraphPanel, "TextChanged", OnTextChanged, "panel", "text" ),
-};
-
-IMPLEMENT_PANELMAP( CGraphPanel, Frame );
+Label *CGraphPanel::GetLabel(const char *name)
+{
+	Label *lab = dynamic_cast<Label *>(FindChildByName(name));
+	return lab;
+}

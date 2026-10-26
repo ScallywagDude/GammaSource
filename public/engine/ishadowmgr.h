@@ -1,15 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// Interface to the engine system responsible for dealing with shadows
-//=============================================================================
+//=============================================================================//
 
 #ifndef ISHADOWMGR_H
 #define ISHADOWMGR_H
@@ -19,7 +14,7 @@
 #endif
 
 #include "interface.h"
-#include "vmatrix.h"
+#include "mathlib/vmatrix.h"
 
 
 //-----------------------------------------------------------------------------
@@ -31,9 +26,25 @@ class Vector;
 class Vector2D;
 struct model_t;
 typedef unsigned short ModelInstanceHandle_t;
+class IClientRenderable;
+class ITexture;
 
 // change this when the new version is incompatable with the old
-#define ENGINE_SHADOWMGR_INTERFACE_VERSION	"VEngineShadowMgr001"
+#define ENGINE_SHADOWMGR_INTERFACE_VERSION	"VEngineShadowMgr002"
+
+
+//-----------------------------------------------------------------------------
+// Flags for the creation method
+//-----------------------------------------------------------------------------
+enum ShadowFlags_t
+{
+	SHADOW_FLAGS_FLASHLIGHT				= (1 << 0),
+	SHADOW_FLAGS_SHADOW					= (1 << 1),
+	// Update this if you add flags
+	SHADOW_FLAGS_LAST_FLAG				= SHADOW_FLAGS_SHADOW
+};
+
+#define SHADOW_FLAGS_PROJECTED_TEXTURE_TYPE_MASK ( SHADOW_FLAGS_FLASHLIGHT | SHADOW_FLAGS_SHADOW )
 
 
 //-----------------------------------------------------------------------------
@@ -59,9 +70,10 @@ enum
 //-----------------------------------------------------------------------------
 enum ShadowCreateFlags_t
 {
-	SHADOW_CACHE_VERTS = 0x1,
+	SHADOW_CACHE_VERTS =  ( 1 << 0 ),
+	SHADOW_FLASHLIGHT =   ( 1 << 1 ),
 
-	SHADOW_LAST_FLAG = SHADOW_CACHE_VERTS
+	SHADOW_LAST_FLAG = SHADOW_FLASHLIGHT,
 };
 
 
@@ -83,11 +95,12 @@ struct ShadowInfo_t
 	unsigned char	m_FalloffBias;
 };
 
+struct FlashlightState_t;
 
 //-----------------------------------------------------------------------------
 // The engine's interface to the shadow manager
 //-----------------------------------------------------------------------------
-class IShadowMgr
+abstract_class IShadowMgr
 {
 public:
 	// Create, destroy shadows (see ShadowCreateFlags_t for creationFlags)
@@ -120,12 +133,17 @@ public:
 	// the shadow size measured in the space of the shadow matrix; the
 	// shadow goes from +/- size.x/2 along the x axis of the shadow matrix
 	// and +/- size.y/2 along the y axis of the shadow matrix.
-	virtual void ProjectShadow( ShadowHandle_t handle, const Vector& origin,
-		const Vector& projectionDir, const VMatrix &worldToShadow, const Vector2D &size,
-		float maxDistance, float falloffOffset, float falloffAmount ) = 0;
+	virtual void ProjectShadow( ShadowHandle_t handle, const Vector &origin, 
+		const Vector& projectionDir, const VMatrix& worldToShadow, const Vector2D& size,
+		int nLeafCount, const int *pLeafList,
+		float maxHeight, float falloffOffset, float falloffAmount, const Vector &vecCasterOrigin ) = 0;
+
+	virtual void ProjectFlashlight( ShadowHandle_t handle, const VMatrix &worldToShadow, int nLeafCount, const int *pLeafList ) = 0;
 
 	// Gets at information about a particular shadow
 	virtual const ShadowInfo_t &GetInfo( ShadowHandle_t handle ) = 0;
+
+	virtual const Frustum_t &GetFlashlightFrustum( ShadowHandle_t handle ) = 0;
 
 	// Methods related to shadows on brush models
 	virtual void AddShadowToBrushModel( ShadowHandle_t handle, 
@@ -151,6 +169,20 @@ public:
 
 	// Set the darkness falloff bias
 	virtual void SetFalloffBias( ShadowHandle_t shadow, unsigned char ucBias ) = 0;
+
+	// Update the state for a flashlight.
+	virtual void UpdateFlashlightState( ShadowHandle_t shadowHandle, const FlashlightState_t &lightState ) = 0;
+
+	virtual void DrawFlashlightDepthTexture( ) = 0;
+
+	virtual void AddFlashlightRenderable( ShadowHandle_t shadow, IClientRenderable *pRenderable ) = 0;
+	virtual ShadowHandle_t CreateShadowEx( IMaterial* pMaterial, IMaterial* pModelMaterial, void* pBindProxy, int creationFlags ) = 0;
+
+	virtual void SetFlashlightDepthTexture( ShadowHandle_t shadowHandle, ITexture *pFlashlightDepthTexture, unsigned char ucShadowStencilBit ) = 0;
+
+	virtual const FlashlightState_t &GetFlashlightState( ShadowHandle_t handle ) = 0;
+
+	virtual void SetFlashlightRenderState( ShadowHandle_t handle ) = 0;
 };
 
 

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "map_shared.h"
 #include "bsplib.h"
@@ -40,45 +40,21 @@ ChunkFileResult_t LoadEntityKeyCallback(const char *szKey, const char *szValue, 
 	}
 	else if (!stricmp(szKey, "id"))
 	{
-		// UNDONE: flag errors by ID instead of index
-		//g_MapError.BrushState( atoi( szValue ), 0 );
+		// UNDONE: flag entity errors by ID instead of index
+		//g_MapError.EntityState( atoi( szValue ) );
+		// rename this field since DME code uses this name
+		SetKeyValue( pLoadEntity->pEntity, "hammerid", szValue );
 		return(ChunkFile_Ok);
 	}
 	else if( !stricmp( szKey, "mapversion" ) )
 	{
 		// .vmf map revision number
 		g_MapRevision = atoi( szValue );
+		SetKeyValue( pLoadEntity->pEntity, szKey, szValue );
 		return ( ChunkFile_Ok );
 	}
 
-	//
-	// Create new epair and fill it out.
-	//
-	epair_t *e = new epair_t;
-
-	e->key = new char [strlen(szKey) + 1];
-	e->value = new char [strlen(szValue) + 1];
-
-	strcpy(e->key, szKey);
-	strcpy(e->value, szValue);
-
-	//
-	// Append it to the end of epair list.
-	//
-	e->next = NULL;
-
-	if (!pLoadEntity->pEntity->epairs)
-	{
-		pLoadEntity->pEntity->epairs = e;
-	}
-	else
-	{
-		epair_t *ep;
-		for ( ep = pLoadEntity->pEntity->epairs; ep->next != NULL; ep = ep->next )
-		{
-		}
-		ep->next = e;
-	}
+	SetKeyValue( pLoadEntity->pEntity, szKey, szValue );
 
 	return(ChunkFile_Ok);
 }

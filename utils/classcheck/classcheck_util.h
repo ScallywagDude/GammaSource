@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef CLASSCHECK_UTIL_H
 #define CLASSCHECK_UTIL_H
 #ifdef _WIN32
@@ -17,8 +17,6 @@ char *CC_ParseToken(char *data);
 char *CC_DiscardUntilMatchingCharIncludingNesting( char *input, const char *pairing );
 char *CC_RawParseChar( char *input, const char *ch, char *breakchar );
 char *CC_ParseUntilEndOfLine( char *input );
-
-void UTIL_StripTrailingSlashes( char *string );
 
 extern char com_token[1024];
 extern bool com_ignoreinlinecomment;

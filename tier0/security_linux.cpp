@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Platform level security functions.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 // Uncomment the following line to require the prescence of a hardware key.
 //#define REQUIRE_HARDWARE_KEY

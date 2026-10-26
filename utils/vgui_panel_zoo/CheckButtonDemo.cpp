@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include <Keyvalues.h>
+#include <vgui_controls/Controls.h>
 
-#include <VGUI_CheckButton.h>
+#include <vgui_controls/CheckButton.h>
 
 
 using namespace vgui;
@@ -129,7 +129,7 @@ MessageMapItem_t CheckButtonDemo::m_MessageMap[] =
 	MAP_MESSAGE( CheckButtonDemo, "Check2", OnCheckButton2Checked ),
 };
 
-IMPLEMENT_PANELMAP(CheckButtonDemo, BaseClass);
+IMPLEMENT_PANELMAP(CheckButtonDemo, DemoPage);
 
 
 

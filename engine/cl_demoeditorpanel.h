@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOEDITORPANEL_H
 #define CL_DEMOEDITORPANEL_H
@@ -29,7 +29,7 @@ class CBaseActionEditDialog;
 //-----------------------------------------------------------------------------
 class CDemoEditorPanel : public vgui::Frame
 {
-	typedef vgui::Frame BaseClass;
+	DECLARE_CLASS_SIMPLE( CDemoEditorPanel, vgui::Frame );
 
 public:
 	CDemoEditorPanel( vgui::Panel *parent );

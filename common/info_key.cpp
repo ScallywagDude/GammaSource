@@ -1,14 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "info_key.h"
 
 #include <stdio.h>
 #include <string.h>
+#include "tier1/strtools.h"
 
 #define MAX_KV_LEN 127
 /*
@@ -99,7 +100,8 @@ void Info_RemoveKey ( char *s, const char *key )
 
 		if (!stricmp (key, pkey) )
 		{
-			strcpy (start, s);	// remove this part
+			// This is safe because we're copying within the same string
+			Q_strcpy (start, s);	// remove this part
 			return;
 		}
 
@@ -206,7 +208,7 @@ char *Info_FindLargestKey( char *s, int maxsize )
 		if ( (size > largest_size) && !Info_IsKeyImportant(key) )
 		{
 			largest_size = size;
-			strcpy( largest_key, key );
+			Q_strncpy( largest_key, key, sizeof( largest_key ) );
 		}
 	}
 
@@ -242,7 +244,7 @@ void Info_SetValueForStarKey ( char *s, const char *key, const char *value, int 
 	if (!value || !strlen(value))
 		return;
 
-	sprintf (news, "\\%s\\%s", key, value);
+	Q_snprintf (news, sizeof( news ), "\\%s\\%s", key, value);
 
  	if ( (int)(strlen(news) + strlen(s)) >= maxsize)
 	{

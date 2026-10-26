@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
+#include "vgui/IVGui.h"
+#include "tier1/KeyValues.h"
+#include <vgui_controls/Label.h>
 
 
 using namespace vgui;

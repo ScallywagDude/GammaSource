@@ -1,6 +1,6 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Â© 1996-2001, Valve LLC, All rights reserved. ============
 //
-// Purpose: 
+// Purpose: GammaSource: the 2003 options "Advanced" tab (content lock)
 //
 // $NoKeywords: $
 //=============================================================================
@@ -24,6 +24,8 @@ class CContentControlDialog;
 //-----------------------------------------------------------------------------
 class COptionsSubAdvanced : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( COptionsSubAdvanced, vgui::PropertyPage );
+
 public:
 	COptionsSubAdvanced(vgui::Panel *parent);
 	~COptionsSubAdvanced();
@@ -36,13 +38,10 @@ public:
     void OnOpenContentControlDialog();
 
 private:
-	DECLARE_PANELMAP();
-    void OnContentControlClose();
+    MESSAGE_FUNC( OnContentControlClose, "ContentControlClose" );
 
 	CContentControlDialog   *m_pContentControlDialog;
     vgui::CheckButton       *m_pContentCheckButton;
-
-	typedef vgui::PropertyPage BaseClass;
 };
 
 #endif // OPTIONS_SUB_ADVANCED_H

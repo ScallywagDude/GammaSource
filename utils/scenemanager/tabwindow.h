@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef TABWINDOW_H
 #define TABWINDOW_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "utlvector.h"
 
 class CDrawHelper;

@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,32 +9,13 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
-#include "quakedef.h"
-#include "cdll_int.h"
-#include "iprediction.h"
-#include "measure_section.h"
-#include "cl_pred.h"
+//=============================================================================//
+#include "client_pch.h"
 #include "demo.h"
 #include "host.h"
 
-static int g_FramneCountOfLastPrediction = -1;
-//-----------------------------------------------------------------------------
-// Purpose: Mark message sequence of frame we are predicting
-//-----------------------------------------------------------------------------
-void CL_StorePredictionFrame( void )
-{
-	g_FramneCountOfLastPrediction = host_tickcount;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CL_HasRunPredictionThisFrame( void )
-{
-	return g_FramneCountOfLastPrediction == host_tickcount;
-}
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -50,8 +26,6 @@ bool CL_HasRunPredictionThisFrame( void )
 //-----------------------------------------------------------------------------
 void CL_Predict( int world_start_state, bool validframe, int start_command, int stop_command )
 {
-	MEASURECODE( "CL_Predict" );
-
 	// Allow client .dll to do prediction.
 	g_pClientSidePrediction->Update( 
 		world_start_state, 
@@ -66,40 +40,35 @@ void CL_Predict( int world_start_state, bool validframe, int start_command, int 
 //-----------------------------------------------------------------------------
 void CL_RunPrediction( PREDICTION_REASON reason )
 {
-	if ( CL_HasRunPredictionThisFrame() )
-	{
-		return;
-	}
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-	CL_StorePredictionFrame();
-
-	if ( cls.state != ca_active )
+	if ( !cl.IsActive() )
 		return;
 
-	if ( !cl.validsequence ||
-		 ( ( cls.netchan.outgoing_sequence + 1 - cls.netchan.incoming_acknowledged ) >= CL_UPDATE_MASK ) )
+	if ( cl.m_nDeltaTick < 0 ) 
 	{
+		// no valid snapshot received yet
 		return;
 	}
 
 	// Don't do prediction if skipping ahead during demo playback
-	if ( demo->IsPlayingBack() && 
-		( demo->IsSkippingAhead() || demo->IsFastForwarding() ) )
+	if ( demoplayer->IsSkipping() )
 	{
 		return;
 	}
 
 	//Msg( "%i pred reason %s\n", host_framecount, reason == PREDICTION_SIMULATION_RESULTS_ARRIVING_ON_SEND_FRAME ?
 	//	"same frame" : "normal" );
-	frame_t *frame = &cl.frames[ cl.last_prediction_start_state & CL_UPDATE_MASK ];
+
+	bool valid = cl.m_nDeltaTick > 0; // cl.GetReceiveList( cl.delta_tick ) != NULL;
 
 	//Msg( "%i/%i CL_RunPrediction:  last ack %i most recent %i\n", 
 	//	host_framecount, cl.tickcount,
 	//	cl.last_command_ack, 
-	//	cls.netchan.outgoing_sequence - 1 );
+	//	cl.netchan->m_nOutSequenceNr - 1 );
 
-	CL_Predict( cl.last_prediction_start_state, 
-		!frame->invalid ? true : false, 
+	CL_Predict( cl.m_nDeltaTick, 
+		valid,  
 		cl.last_command_ack, 
-		cls.netchan.outgoing_sequence - 1 );
+		cl.lastoutgoingcommand + cl.chokedcommands );
 }

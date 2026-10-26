@@ -13,6 +13,8 @@ mkdir cache > /dev/null
 IN_DSP=../$1
 OUT_DSP=cache/`basename $1`.check
 
+p4 edit $OUT_DSP
+
 if [ ! -f "$OUT_DSP" ]; then
 	cp $IN_DSP $OUT_DSP
 	chmod +w $OUT_DSP
@@ -27,5 +29,6 @@ if test "$IN_SUM" != "$OUT_SUM" ; then
 fi
 
 cp $IN_DSP $OUT_DSP
-chmod +w $OUT_DSP
+#chmod +w $OUT_DSP
+p4 revert -a $OUT_DSP
 cd ..

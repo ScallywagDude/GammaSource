@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CONTENTCONTROLDIALOG_H
 #define CONTENTCONTROLDIALOG_H
@@ -11,20 +11,15 @@
 #pragma once
 #endif
 
-#include "taskframe.h"
-
-namespace vgui
-{
-	class Label;
-	class Button;
-	class TextEntry;
-}
+#include "vgui_controls/Frame.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-class CContentControlDialog : public CTaskFrame
+class CContentControlDialog : public vgui::Frame
 {
+	DECLARE_CLASS_SIMPLE( CContentControlDialog, vgui::Frame );
+
 public:
 	CContentControlDialog(vgui::Panel *parent);
 	~CContentControlDialog();
@@ -41,12 +36,11 @@ public:
 protected:
 	void			WriteToken( const char *str );
 	bool			CheckPassword( char const *oldPW, char const *newPW, bool enableContentControl );
-	char			*BinPrintf( unsigned char *buf, int nLen );
 	void			UpdateContentControlStatus( void );
 
-	void			Explain( char const *fmt, ... );
+	void			Explain( PRINTF_FORMAT_STRING char const *fmt, ... );
 
-    void            HashPassword(const char *newPW, char *hashBuffer);
+    void            HashPassword(const char *newPW, char *hashBuffer, int maxlen );
     bool            EnablePassword(const char *newPW);
     bool            DisablePassword(const char *oldPW);
 
@@ -66,8 +60,6 @@ protected:
 	vgui::TextEntry	*m_pPassword2;
 
 	vgui::Label		*m_pExplain;
-
-	typedef CTaskFrame BaseClass;
 };
 
 

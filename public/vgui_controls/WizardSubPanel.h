@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef WIZARDSUBPANEL_H
 #define WIZARDSUBPANEL_H
@@ -22,14 +17,13 @@
 namespace vgui
 {
 
-class WizardPanel;
-class BuildGroup;
-
 //-----------------------------------------------------------------------------
 // Purpose: Base panel for use in Wizards and in property sheets
 //-----------------------------------------------------------------------------
 class WizardSubPanel : public EditablePanel
 {
+	DECLARE_CLASS_SIMPLE( WizardSubPanel, EditablePanel );
+
 public:
 	// constructor
 	WizardSubPanel(Panel *parent, const char *panelName);
@@ -53,6 +47,9 @@ public:
 	virtual bool OnFinishButton() { return true; }
 	virtual bool OnCancelButton() { return true; }
 
+	// returns true if this panel should be displayed, or if we should just skip over it
+	virtual bool ShouldDisplayPanel()	{ return true; }
+
 	// return true if this subpanel doesn't need the next/prev/finish/cancel buttons or will do it itself
 	virtual bool isNonWizardPanel() { return false; }
 
@@ -73,13 +70,19 @@ public:
 	// returns a pointer
 	virtual WizardSubPanel *GetSiblingSubPanelByName(const char *pageName);
 
+	// gets the size this subpanel would like the wizard to be
+	// returns true if it has a desired size
+	virtual bool GetDesiredSize(int &wide, int &tall);
+
 protected:
+	virtual void ApplySettings(KeyValues *inResourceData);
+	virtual void GetSettings( KeyValues *outResourceData );
 	virtual void ApplySchemeSettings(IScheme *pScheme);
+	virtual const char *GetDescription();
 
 private:
-	typedef vgui::EditablePanel BaseClass;
-
 	WizardPanel *_wizardPanel;
+	int m_iDesiredWide, m_iDesiredTall;
 };
 
 } // namespace vgui

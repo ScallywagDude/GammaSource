@@ -1,41 +1,33 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-//                 Half-Life Model Viewer (c) 1999 by Mete Ciragan
+// Purpose: 
 //
-// file:           mdlviewer.h
-// last modified:  Apr 28 1999, Mete Ciragan
-// copyright:      The programs and associated files contained in this
-//                 distribution were developed by Mete Ciragan. The programs
-//                 are not in the public domain, but they are freely
-//                 distributable without licensing fees. These programs are
-//                 provided without guarantee or warrantee expressed or
-//                 implied.
-//
-// version:        1.2
-//
-// email:          mete@swissquake.ch
-// web:            http://www.swissquake.ch/chumbalum-soft/
-//
-#ifndef INCLUDED_MDLVIEWER
-#define INCLUDED_MDLVIEWER
+//=============================================================================//
 
-
-
-#ifndef INCLUDED_MXWINDOW
-#include "mxWindow.h"
+#ifndef MDLVIEWER_H
+#define MDLVIEWER_H
+#ifdef _WIN32
+#pragma once
 #endif
 
-
+#include "sceneimage.h"
 
 #define IDC_FILE_LOADMODEL			1001
 #define IDC_FILE_LOADBACKGROUNDTEX	1002
 #define IDC_FILE_LOADGROUNDTEX		1003
 #define IDC_FILE_UNLOADGROUNDTEX	1004
-#define IDC_FILE_RECENTMODELS1		1008
-#define IDC_FILE_RECENTMODELS2		1009
-#define IDC_FILE_RECENTMODELS3		1010
-#define IDC_FILE_RECENTMODELS4		1011
+#define IDC_FILE_RECENTFILES1		1008
+#define IDC_FILE_RECENTFILES2		1009
+#define IDC_FILE_RECENTFILES3		1010
+#define IDC_FILE_RECENTFILES4		1011
+#define IDC_FILE_RECENTFILES5		1012
+#define IDC_FILE_RECENTFILES6		1013
+#define IDC_FILE_RECENTFILES7		1014
+#define IDC_FILE_RECENTFILES8		1015
 #define IDC_FILE_EXIT				1016
 #define IDC_FILE_REFRESH			1017
+#define IDC_FILE_SAVESOUNDSCRIPTCHANGES 1018
+#define IDC_FILE_REBUILDSCENESIMAGE	1019
 
 #define IDC_EXPRESSIONS_SAVE		1020
 #define IDC_EXPRESSIONS_LOAD		1021
@@ -56,6 +48,8 @@
 #define IDC_CHOREOSCENE_SAVEAS		1033
 #define IDC_CHOREOSCENE_CLOSE		1034
 #define IDC_CHOREOSCENE_ADDACTOR	1035
+#define IDC_FILE_LOADMODEL_STEAM	1036
+#define IDC_CHOREOSCENE_LOADNEXT	1038
 
 #define IDC_OPTIONS_COLORBACKGROUND	1101
 #define IDC_OPTIONS_COLORGROUND		1102
@@ -64,6 +58,9 @@
 #define IDC_OPTIONS_MAKESCREENSHOT	1105
 #define IDC_OPTIONS_DUMP			1106
 #define IDC_OPTIONS_CENTERONFACE	1107
+#define IDC_OPTIONS_CLEARMODELSOUNDS 1108
+
+#define IDC_OPTIONS_LANGUAGESTART	1150
 
 #define IDC_WINDOW_FIRSTTOOL		1200
 #define IDC_WINDOW_LASTTOOL			1231
@@ -80,11 +77,6 @@
 
 #define IDC_HELP_GOTOHOMEPAGE		1301
 #define IDC_HELP_ABOUT				1302
-
-#define IDC_EDIT_COPY				1400
-#define IDC_EDIT_PASTE				1401
-#define IDC_EDIT_UNDO				1402
-#define IDC_EDIT_REDO				1403
 
 class mxMenuBar;
 class mxMenu;
@@ -103,11 +95,12 @@ enum { Action, Size, Timer, Idle, Show, Hide,
 		KeyUp, KeyDown
 	};
 
-class MDLViewer : public mxWindow
+class MDLViewer : public mxWindow, public ISceneCompileStatus
 {
 	mxMenuBar *mb;
 	mxMenu *menuFile;
 	mxMenu *menuOptions;
+	mxMenu *menuCloseCaptionLanguages;
 	mxMenu *menuWindow;
 	mxMenu *menuHelp;
 	mxMenu *menuEdit;
@@ -133,12 +126,17 @@ public:
 	virtual void		OnDelete();
 	virtual bool		CanClose();
 
+	virtual void UpdateStatus( char const *pchSceneName, bool bQuiet, int nIndex, int nCount );
+
+	void OnFileLoaded( char const *pszFile );
+
 	// MANIPULATORS
 	virtual int handleEvent (mxEvent *event);
 	void redraw ();
 	virtual bool PaintBackground( void );
 
 	void UpdateWindowMenu( void );
+	void UpdateLanguageMenu( int currentLanguageId );
 
 	void InitModelTab( void );
 	void InitGridSettings( void );
@@ -150,15 +148,13 @@ public:
 	void LoadModelFile( const char *pszFile );
 	int		GetCurrentHitboxSet(void);
 
-	void Copy( void );
-	void Paste( void );
-	void Undo( void );
-	void Redo( void );
-
 	virtual bool Closing( void );
 
 	void LoadWindowPositions( void );
 	void SaveWindowPositions( void );
+
+	void OnSaveSoundScriptChanges();
+	void OnRebuildScenesImage();
 
 	void OnCascade();
 	void OnTile();
@@ -175,18 +171,26 @@ public:
 	// ACCESSORS
 	mxMenuBar *getMenuBar () const { return mb; }
 
+	void LoadModel_Steam();
+
+	void OnVCDSaved();
+
 private:
 	void DoTile( int x, int y );
 
 	void LoadPosition( void );
 	void SavePosition( void );
+
+	bool AreSoundScriptsDirty();
+
+	bool	m_bOldSoundScriptsDirty;
+	bool	m_bVCDSaved;
 };
 
 
-
+const char *GetGameDirectory( );
+void CreatePath( const char *pPath );
 extern MDLViewer *g_MDLViewer;
 extern char g_appTitle[];
 
-
-
-#endif // INCLUDED_MDLVIEWER
+#endif // MDLVIEWER_H

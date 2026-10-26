@@ -1,12 +1,17 @@
 vs.1.1
 ;------------------------------------------------------------------------------
-;	 c90	 = eyeball origin			FIXME
-;	 c91	 = eyeball up * 0.5			FIXME
-;	 c92	 = iris projection U		FIXME
-;	 c93	 = iris projection V		FIXME
-;	 c94	 = glint projection U		FIXME
-;	 c95	 = glint projection V		FIXME
+;	 $SHADER_SPECIFIC_CONST_0	 = eyeball origin			
+;	 $SHADER_SPECIFIC_CONST_1	 = eyeball up * 0.5			
+;	 $SHADER_SPECIFIC_CONST_2	 = iris projection U		
+;	 $SHADER_SPECIFIC_CONST_3	 = iris projection V		
+;	 $SHADER_SPECIFIC_CONST_4	 = glint projection U		
+;	 $SHADER_SPECIFIC_CONST_5	 = glint projection V		
 ;------------------------------------------------------------------------------
+
+# STATIC: "HALF_LAMBERT"			"0..1"
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "LIGHT_COMBO"			"0..21"
+# DYNAMIC: "SKINNING"				"0..1"
 
 #include "macros.vsh"
 
@@ -14,7 +19,7 @@ vs.1.1
 ; Vertex blending (whacks r1-r7, positions in r7)
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$worldPos );
-&SkinPosition( $g_numBones, $worldPos );
+&SkinPosition( $worldPos );
 
 ;------------------------------------------------------------------------------
 ; Transform the position from world to view space
@@ -34,10 +39,10 @@ mov oPos, $projPos
 &AllocateRegister( \$worldNormal );
 &AllocateRegister( \$normalDotUp );
 
-sub $worldNormal, $worldPos, c90		; Normal = (Pos - Eye origin)
-dp3 $normalDotUp, $worldNormal, c91		; Normal -= 0.5f * (Normal dot Eye Up) * Eye Up
-mul $normalDotUp, $normalDotUp, c0.w
-mad $worldNormal, -$normalDotUp, c91, $worldNormal
+sub $worldNormal, $worldPos, $SHADER_SPECIFIC_CONST_0		; Normal = (Pos - Eye origin)
+dp3 $normalDotUp, $worldNormal, $SHADER_SPECIFIC_CONST_1		; Normal -= 0.5f * (Normal dot Eye Up) * Eye Up
+mul $normalDotUp, $normalDotUp, $cHalf
+mad $worldNormal, -$normalDotUp, $SHADER_SPECIFIC_CONST_1, $worldNormal
 
 &FreeRegister( \$normalDotUp );
 
@@ -47,8 +52,7 @@ mad $worldNormal, -$normalDotUp, c91, $worldNormal
 ;------------------------------------------------------------------------------
 ; Lighting
 ;------------------------------------------------------------------------------
-&DoLighting( $g_staticLightType, $g_ambientLightType, $g_localLightType1, 
-			 $g_localLightType2, $worldPos, $worldNormal );
+&DoLighting( $worldPos, $worldNormal );
 
 &FreeRegister( \$worldNormal );
  
@@ -68,9 +72,9 @@ mad $worldNormal, -$normalDotUp, c91, $worldNormal
 ;------------------------------------------------------------------------------
 
 mov oT0, $vTexCoord0
-dp4 oT1.x, c92, $worldPos		; FIXME
-dp4 oT1.y, c93, $worldPos		; FIXME
-dp4 oT2.x, c94, $worldPos		; FIXME
-dp4 oT2.y, c95, $worldPos		; FIXME
+dp4 oT1.x, $SHADER_SPECIFIC_CONST_2, $worldPos
+dp4 oT1.y, $SHADER_SPECIFIC_CONST_3, $worldPos
+dp4 oT2.x, $SHADER_SPECIFIC_CONST_4, $worldPos
+dp4 oT2.y, $SHADER_SPECIFIC_CONST_5, $worldPos
 
 &FreeRegister( \$worldPos );

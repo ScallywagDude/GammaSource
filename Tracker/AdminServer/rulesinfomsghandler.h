@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,7 @@
 #endif
 
 #include "Socket.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 
 class CRulesInfo;
 
@@ -35,7 +35,7 @@ public:
 private:
 	// the parent class that we push info back to
 	CRulesInfo *m_pRulesInfo;
-	CUtlVector<KeyValues *> *m_vRules;
+	CUtlVector<vgui::KeyValues *> *m_vRules;
 };
 
 

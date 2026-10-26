@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//===========================================================================//
 
 #ifndef CBASE_H
 #define CBASE_H
@@ -16,14 +16,13 @@
 //
 
 // TODO: reference additional headers your program requires here
-#include "mx/mx.h"
-#include "mx/mxwindow.h"
+#include "mxtk/mx.h"
+#include "mxtk/mxwindow.h"
 #include "tier0/dbg.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "vstdlib/random.h"
 #include "sharedInterface.h"
 #include "scenemanager_tools.h"
-
-extern class CSoundEmitterSystemBase *soundemitter;
+#include "tier3/tier3.h"
 
 #endif // CBASE_H

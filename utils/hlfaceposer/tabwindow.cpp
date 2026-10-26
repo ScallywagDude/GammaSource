@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "tabwindow.h"
 #include "ChoreoWidgetDrawHelper.h"
@@ -25,6 +25,9 @@ CTabWindow::CTabWindow( mxWindow *parent, int x, int y, int w, int h, int id /*=
 	setId( id );
 
 	m_nSelected = -1;
+
+	m_nRowHeight = 20;
+	m_nRowsRequired = 1;
 
 	m_nTabWidth = 80;
 	m_nPixelDelta = 3;
@@ -66,11 +69,13 @@ void CTabWindow::SetColor( int index, COLORREF clr )
 void CTabWindow::SetInverted( bool invert )
 {
 	m_bInverted = invert;
+	RecomputeLayout( w2() );
 }
 
 void CTabWindow::SetRightJustify( bool rightjustify )
 {
 	m_bRightJustify = true;
+	RecomputeLayout( w2() );
 }
 
 //-----------------------------------------------------------------------------
@@ -81,68 +86,7 @@ void CTabWindow::SetRightJustify( bool rightjustify )
 //-----------------------------------------------------------------------------
 void CTabWindow::GetTabRect( const RECT& rcClient, RECT& tabRect, int tabNum )
 {
-	if ( !m_bRightJustify )
-	{
-		// Starting column
-		int left = m_nPixelDelta + 1;
-		int i = 0; 
-		while ( i < tabNum && i < m_Items.Size() - 1 )
-		{
-			left += m_Items[ i ].m_nWidth;
-			i++;
-		}
-
-		tabRect = rcClient;
-		tabRect.left = left;
-		tabRect.right= tabRect.left + m_Items[ i ].m_nWidth;
-	}
-	else
-	{
-		// Starting column
-		int width = rcClient.right - rcClient.left;
-
-		int right = width - ( m_nPixelDelta + 1 ) - 5;
-		int i = m_Items.Size() - 1; 
-		for ( ; i > tabNum && i > 0; --i  )
-		{
-			right -= m_Items[ i ].m_nWidth;
-		}
-
-		tabRect = rcClient;
-		tabRect.right = right;
-		tabRect.left= tabRect.right - m_Items[ i ].m_nWidth;
-	}
-
-	// Offset top a bit
-	if ( !m_bInverted )
-	{
-		tabRect.top += 2;
-	}
-	else
-	{
-		tabRect.bottom -= 2;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Compute tab width based on font data
-// Input  : drawHelper - 
-//			tabNum - 
-//-----------------------------------------------------------------------------
-void CTabWindow::SetTabWidth( CChoreoWidgetDrawHelper& drawHelper, int tabNum )
-{
-	// Range check
-	if ( tabNum < 0 || tabNum >= m_Items.Size() )
-	{
-		Assert( 0 );
-		return;
-	}
-
-	CETItem *p = &m_Items[ tabNum ];
-	Assert( p );
-
-	// Assume 15 pixel buffer for slanted edges
-	p->m_nWidth = drawHelper.CalcTextWidth( "Arial", 9, FW_NORMAL, p->m_szString ) + 15;
+	tabRect = m_Items[ tabNum ].rect;
 }
 
 //-----------------------------------------------------------------------------
@@ -157,19 +101,6 @@ void CTabWindow::DrawTab( CChoreoWidgetDrawHelper& drawHelper, RECT& rcClient, i
 	RECT rcTab;
 
 	if ( tabnum < 0 || tabnum >= m_Items.Size() )
-		return;
-
-	CETItem *p = &m_Items[ tabnum ];
-	Assert( p );
-
-	// Width < 0 means we need to compute it still
-	if ( p->m_nWidth < 0 )
-	{
-		SetTabWidth( drawHelper, tabnum );
-	}
-
-	// Couldn't compute it, sigh
-	if ( p->m_nWidth < 0 )
 		return;
 
 	GetTabRect( rcClient, rcTab, tabnum );
@@ -239,7 +170,7 @@ void CTabWindow::DrawTab( CChoreoWidgetDrawHelper& drawHelper, RECT& rcClient, i
 	OffsetRect( &rcTab, 2, 0 );
 
 	// Draw label
-	drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, text, rcTab, p->m_szString );
+	drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, text, rcTab, "%s%s", getPrefix( tabnum ), getLabel( tabnum ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -341,6 +272,11 @@ int CTabWindow::handleEvent (mxEvent *event)
 			}
 		}
 		break;
+	case mxEvent::Size:
+		{
+			RecomputeLayout( w2() );
+		}
+		break;
 	}
 	return iret;
 }
@@ -355,12 +291,25 @@ void CTabWindow::add( const char *item )
 	CETItem *p = &m_Items[ m_Items.Size() - 1 ];
 	Assert( p );
 
-	p->m_nWidth = -1;
+	Q_memset( &p->rect, 0, sizeof( p->rect) );
 
 	strcpy( p->m_szString, item );
+	p->m_szPrefix[ 0 ] = 0;
 	m_nSelected = min( m_nSelected, m_Items.Size() - 1 );
 	m_nSelected = max( m_nSelected, 0 );
+
+	RecomputeLayout( w2() );
+
 	redraw();
+}
+
+void CTabWindow::setPrefix( int item, char const *prefix )
+{
+	if ( item < 0 || item >= m_Items.Size() )
+		return;
+
+	Q_strncpy( m_Items[ item ].m_szPrefix, prefix, sizeof( m_Items[ item ].m_szPrefix ) );
+//	RecomputeLayout( w2() );
 }
 
 //-----------------------------------------------------------------------------
@@ -389,6 +338,9 @@ void CTabWindow::remove( int index )
 
 	m_nSelected = min( m_nSelected, m_Items.Size() - 1 );
 	m_nSelected = max( m_nSelected, 0 );
+
+	RecomputeLayout( w2() );
+
 	redraw();
 }
 
@@ -399,6 +351,9 @@ void CTabWindow::removeAll()
 {
 	m_nSelected = -1;
 	m_Items.RemoveAll();
+
+	RecomputeLayout( w2() );
+
 	redraw();
 }
 
@@ -419,4 +374,107 @@ int	CTabWindow::getSelectedIndex () const
 {
 	// Convert based on override index
 	return m_nSelected;
+}
+
+char const *CTabWindow::getLabel( int item )
+{
+	if ( item < 0 || item >= m_Items.Count() )
+		return "";
+
+	return m_Items[ item ].m_szString;
+}
+
+char const	*CTabWindow::getPrefix( int item )
+{
+	if ( item < 0 || item >= m_Items.Count() )
+		return "";
+
+	return m_Items[ item ].m_szPrefix;
+}
+
+void CTabWindow::SetRowHeight( int rowheight )
+{
+	m_nRowHeight = rowheight;
+	RecomputeLayout( w2() );
+	redraw();
+}
+
+int CTabWindow::GetBestHeight( int width )
+{
+	return RecomputeLayout( width, false ) * m_nRowHeight;
+}
+
+
+int CTabWindow::RecomputeLayout( int windowWidth, bool dolayout /*=true*/ )
+{
+	// Draw non-selected first
+	int curedge = m_nPixelDelta + 1;
+	int curtop = 0;
+
+	if ( m_bRightJustify )
+	{
+		curedge = windowWidth - ( m_nPixelDelta + 1 ) - 5;
+	}
+
+	int startedge = curedge;
+
+	int currentrow = 0;
+
+	for ( int i = 0 ; i < m_Items.Size(); i++ )
+	{
+		CETItem *p = &m_Items[ i ];
+
+		RECT rc;
+
+		int textwidth = CChoreoWidgetDrawHelper::CalcTextWidth( "Arial", 9, FW_NORMAL, "%s%s", p->m_szPrefix, p->m_szString ) + 15;
+
+		if ( !m_bRightJustify )
+		{
+			// Starting column
+			if ( curedge + textwidth > windowWidth )
+			{
+				curedge = startedge;
+				curtop += m_nRowHeight;
+				currentrow++;
+			}
+
+			rc.left = curedge;
+			rc.right = curedge + textwidth;
+			rc.top = curtop + 2;
+			rc.bottom = curtop + m_nRowHeight;
+
+			curedge += textwidth;
+
+			p->rect = rc;
+		}
+		else
+		{
+			// Starting column
+			if ( curedge - textwidth < 0 )
+			{
+				curedge = startedge;
+				curtop += m_nRowHeight;
+				currentrow++;
+			}
+
+			rc.left = curedge - textwidth;
+			rc.right = curedge;
+			rc.top = curtop;
+			rc.bottom = curtop + m_nRowHeight - 2;
+
+			curedge -= textwidth;
+		}
+
+		if ( dolayout )
+		{
+			p->rect = rc;
+		}
+	}
+
+	if ( dolayout )
+	{
+		m_nRowsRequired = currentrow + 1;
+	}
+
+	return currentrow + 1;
 }

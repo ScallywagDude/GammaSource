@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,7 +6,7 @@
 //=============================================================================
 
 #include "ClickableTabbedPanel.h"
-#include <VGUI_KeyValues.h>
+#include <vgui/KeyValues.h>
 
 
 using namespace vgui;
@@ -34,7 +34,7 @@ CClickableTabbedPanel::~CClickableTabbedPanel()
 		// check for context menu open
 	if (code == MOUSE_RIGHT)
 	{
-			postActionSignal(new KeyValues("OpenContextMenu", "row", -1));
+			postActionSignal(new KeyValues("OpenContextMenu", "itemID", -1));
 	}
 
 }*/

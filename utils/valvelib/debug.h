@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_DEBUG_H__D402C9F7_EF9A_4182_B9BE_F92F1ABB99EF__INCLUDED_)
 #define AFX_DEBUG_H__D402C9F7_EF9A_4182_B9BE_F92F1ABB99EF__INCLUDED_
 
@@ -19,7 +26,7 @@
 // Note: file names are still ANSI strings (filenames rarely need UNICODE)
 BOOL AssertFailedLine(LPCSTR lpszFileName, int nLine);
 
-void Trace(LPCTSTR lpszFormat, ...);
+void Trace(PRINTF_FORMAT_STRING LPCTSTR lpszFormat, ...);
 
 // by default, debug break is asm int 3, or a call to DebugBreak, or nothing
 #if defined(_M_IX86)

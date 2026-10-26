@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
 #include "cbase.h"
 #include "StatusWindow.h"
 #include "cmdlib.h"
@@ -5,10 +12,10 @@
 #include "workspace.h"
 #include "workspacemanager.h"
 #include "workspacebrowser.h"
-#include "riff.h"
+#include "tier2/riff.h"
 #include "sentence.h"
 #include "utlbuffer.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include <KeyValues.h>
 #include "MultipleRequest.h"
 
@@ -113,8 +120,9 @@ void Con_Printf( const char *fmt, ... )
 	static char output[1024];
 
 	va_start( args, fmt );
-	vprintf( fmt, args );
+//	vprintf( fmt, args );
 	vsprintf( output, fmt, args );
+	va_end( args );
 
 	if ( !g_pStatusWindow )
 	{
@@ -167,20 +175,7 @@ char *SceneManager_MakeWindowsSlashes( char *pname )
 //-----------------------------------------------------------------------------
 const char *SceneManager_GetGameDirectory( void )
 {
-	static char gamedir[ 256 ];
-
-	strcpy( gamedir, basegamedir );
-	int len = strlen( gamedir );
-	if ( len > 0 )
-	{
-		// Strip path separator
-		if ( gamedir[ len - 1 ] == '/' ||
-			 gamedir[ len - 1 ] == '\\' )
-		{
-			gamedir[ len - 1 ] = 0;
-		}
-	}
-
+	// Todo: Make SceneManager only use the filesystem read/write paths.
 	return gamedir;
 }
 
@@ -388,7 +383,7 @@ void SplitFileName( char const *in, char *path, int maxpath, char *filename, int
 
    if ( dir[0] )
    {
-		int len = Q_snprintf( path, maxpath, "\\%s", dir );
+		Q_snprintf( path, maxpath, "\\%s", dir );
    }
    else
    {
@@ -561,7 +556,7 @@ static StdIOWriteBinary io_out;
 //-----------------------------------------------------------------------------
 static void SceneManager_ParseSentence( CSentence& sentence, IterateRIFF &walk )
 {
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.EnsureCapacity( walk.ChunkSize() );
 	walk.ChunkRead( buf.Base() );
@@ -617,7 +612,7 @@ bool SceneManager_LoadSentenceFromWavFile( char const *wavfile, CSentence& sente
 static void SceneManager_StoreValveDataChunk( CSentence& sentence, IterateOutputRIFF& store )
 {
 	// Buffer and dump data
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	sentence.SaveToBuffer( buf );
 
@@ -629,14 +624,12 @@ bool SceneManager_SaveSentenceToWavFile( char const *wavfile, CSentence& sentenc
 {
 	char tempfile[ 512 ];
 
-	Q_strcpy( tempfile, wavfile );
+	Q_StripExtension( wavfile, tempfile, sizeof( tempfile ) );
+	Q_DefaultExtension( tempfile, ".tmp", sizeof( tempfile ) );
 
-	StripExtension( tempfile );
-	DefaultExtension( tempfile, ".tmp" );
-
-	if ( filesystem->FileExists( tempfile, NULL ) )
+	if ( filesystem->FileExists( tempfile, "GAME" ) )
 	{
-		filesystem->RemoveFile( tempfile, NULL );
+		filesystem->RemoveFile( tempfile, "GAME" );
 	}
 
 	if ( !filesystem->IsFileWritable( wavfile ) )
@@ -655,7 +648,7 @@ bool SceneManager_SaveSentenceToWavFile( char const *wavfile, CSentence& sentenc
 	}
 	
 	// Rename original wavfile to temp
-	filesystem->RenameFile( wavfile, tempfile, NULL );
+	filesystem->RenameFile( wavfile, tempfile, "GAME" );
 
 	// NOTE:  Put this in it's own scope so that the destructor for outfileRFF actually closes the file!!!!
 	{
@@ -777,4 +770,77 @@ void SceneManager_SaveWindowPositions( CUtlBuffer& buf, int indent, mxWindow *wn
 	Indent( buf, indent );
 	buf.Printf( "\"zoomed\"\t\"%i\"\n", zoomed ? 1 : 0 );
 
+}
+#if defined( _WIN32 ) || defined( WIN32 )
+#define PATHSEPARATOR(c) ((c) == '\\' || (c) == '/')
+#else	//_WIN32
+#define PATHSEPARATOR(c) ((c) == '/')
+#endif	//_WIN32
+
+static bool charsmatch( char c1, char c2 )
+{
+	if ( tolower( c1 ) == tolower( c2 ) )
+		return true;
+	if ( PATHSEPARATOR( c1 ) && PATHSEPARATOR( c2 ) )
+		return true;
+	return false;
+}
+
+
+char *Q_stristr_slash( char const *pStr, char const *pSearch )
+{
+	AssertValidStringPtr(pStr);
+	AssertValidStringPtr(pSearch);
+
+	if (!pStr || !pSearch) 
+		return 0;
+
+	char const* pLetter = pStr;
+
+	// Check the entire string
+	while (*pLetter != 0)
+	{
+		// Skip over non-matches
+		if ( charsmatch( *pLetter, *pSearch ) )
+		{
+			// Check for match
+			char const* pMatch = pLetter + 1;
+			char const* pTest = pSearch + 1;
+			while (*pTest != 0)
+			{
+				// We've run off the end; don't bother.
+				if (*pMatch == 0)
+					return 0;
+
+				if ( !charsmatch( *pMatch, *pTest ) )
+					break;
+
+				++pMatch;
+				++pTest;
+			}
+
+			// Found a match!
+			if (*pTest == 0)
+				return (char *)pLetter;
+		}
+
+		++pLetter;
+	}
+
+	return 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *filename - 
+//-----------------------------------------------------------------------------
+void MakeFileWriteable( const char *filename )
+{
+	Assert( filesystem );
+	char fullpath[ 512 ];
+	if (filesystem->GetLocalPath( filename, fullpath, sizeof(fullpath) ))
+	{
+		Q_FixSlashes( fullpath );
+		SetFileAttributes( fullpath, FILE_ATTRIBUTE_NORMAL );
+	}
 }

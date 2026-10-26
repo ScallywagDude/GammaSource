@@ -1,14 +1,28 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+
 #include "vbsp.h"
 #include "disp_vbsp.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "faces.h"
-#include "..\..\common\builddisp.h"
-#include "vstdlib/strtools.h"
+#include "builddisp.h"
+#include "tier1/strtools.h"
 #include "utilmatlib.h"
 #include "utldict.h"
+#include "map.h"
 
 int		c_nofaces;
 int		c_facenodes;
+
+// NOTE: This is a global used to link faces back to the tree node/portals they came from
+// it's used when filling water volumes
+node_t *dfacenodes[MAX_MAP_FACES];
+
 
 /*
 =========================================================
@@ -19,6 +33,7 @@ ONLY SAVE OUT PLANES THAT ARE ACTUALLY USED AS NODES
 */
   
 void EmitFaceVertexes (face_t **list, face_t *f);
+void AssignOccluderAreas();
 
 /*
 ============
@@ -35,8 +50,8 @@ void EmitPlanes (void)
 	plane_t		*mp;
 	int		planetranslate[MAX_MAP_PLANES];
 
-	mp = mapplanes;
-	for (i=0 ; i<nummapplanes ; i++, mp++)
+	mp = g_MainMap->mapplanes;
+	for (i=0 ; i<g_MainMap->nummapplanes ; i++, mp++)
 	{
 		dp = &dplanes[numplanes];
 		planetranslate[i] = numplanes;
@@ -77,7 +92,7 @@ void EmitMarkFace (dleaf_t *leaf_p, face_t *f)
 	if (i == numleaffaces)
 	{
 		if (numleaffaces >= MAX_MAP_LEAFFACES)
-			Error ("MAX_MAP_LEAFFACES");
+			Error ("Too many detail brush faces, max = %d\n", MAX_MAP_LEAFFACES);
 
 		dleaffaces[numleaffaces] =  facenum;
 		numleaffaces++;
@@ -104,8 +119,9 @@ void EmitLeaf (node_t *node)
 
 	// emit a leaf
 	if (numleafs >= MAX_MAP_LEAFS)
-		Error ("MAX_MAP_LEAFS");
+		Error ("Too many BSP leaves, max = %d", MAX_MAP_LEAFS);
 
+	node->diskId = numleafs;
 	leaf_p = &dleafs[numleafs];
 	numleafs++;
 
@@ -125,6 +141,10 @@ void EmitLeaf (node_t *node)
 	leaf_p->contents = node->contents;
 	leaf_p->area = node->area;
 
+	// By default, assume the leaf can see the skybox.
+	// VRAD will do the actual computation to see if it really can see the skybox
+	leaf_p->flags = LEAF_FLAGS_SKY;
+
 	//
 	// write bounding box info
 	//	
@@ -138,9 +158,9 @@ void EmitLeaf (node_t *node)
 	for (b=node->brushlist ; b ; b=b->next)
 	{
 		if (numleafbrushes >= MAX_MAP_LEAFBRUSHES)
-			Error ("MAX_MAP_LEAFBRUSHES");
+			Error ("Too many brushes in one leaf, max = %d", MAX_MAP_LEAFBRUSHES);
 
-		brushnum = b->original - mapbrushes;
+		brushnum = b->original - g_MainMap->mapbrushes;
 		for (i=leaf_p->firstleafbrush ; i<numleafbrushes ; i++)
 		{
 			if (dleafbrushes[i] == brushnum)
@@ -214,8 +234,8 @@ int CreateOrigFace( face_t *f )
     // get the next original face
     //
     if( numorigfaces >= MAX_MAP_FACES )
-		Error( "numorigfaces == MAX_MAP_FACES" );
-    of = &dorigfaces[numorigfaces];
+		Error( "Too many faces in map, max = %d", MAX_MAP_FACES );
+	of = &dorigfaces[numorigfaces];
     numorigfaces++;
 
     // set original face to -1 -- it is an origianl face!
@@ -291,7 +311,7 @@ int CreateOrigFace( face_t *f )
                 // get next surface edge
                 //
                 if( numsurfedges >= MAX_MAP_SURFEDGES )
-                    Error( "numsurfedges == MAX_MAP_SURFEDGES" );                
+                    Error( "Too much brush geometry in bsp, numsurfedges == MAX_MAP_SURFEDGES" );                
                 dsurfedges[numsurfedges] = -j;
                 numsurfedges++;
                 break;
@@ -309,7 +329,7 @@ int CreateOrigFace( face_t *f )
             // get next surface edge
             //
             if( numsurfedges >= MAX_MAP_SURFEDGES )
-                Error( "numsurfedges == MAX_MAP_SURFEDGES" );
+				Error( "Too much brush geometry in bsp, numsurfedges == MAX_MAP_SURFEDGES" );                
             dsurfedges[numsurfedges] = ( numedges - 1 );
             numsurfedges++;
         }
@@ -386,7 +406,6 @@ int FindOrCreateOrigFace( face_t *f )
     return index;
 }
 
-
 /*
 ==================
 EmitFace
@@ -398,8 +417,8 @@ void EmitFace( face_t *f, qboolean onNode )
 	int		i;
 	int		e;
 
-	void SubdivideFaceBySubdivSize( face_t *f ); // garymcthack
-	SubdivideFaceBySubdivSize( f );
+//	void SubdivideFaceBySubdivSize( face_t *f ); // garymcthack
+//	SubdivideFaceBySubdivSize( f );
     
 	// set initial output number
 	f->outputnumber = -1;
@@ -412,6 +431,15 @@ void EmitFace( face_t *f, qboolean onNode )
 	if( f->merged || f->split[0] || f->split[1] )
 		return;
 
+	// don't emit NODRAW faces for runtime
+	if ( texinfo[f->texinfo].flags & SURF_NODRAW )
+	{
+		// keep NODRAW terrain surfaces though
+		if ( f->dispinfo == -1 )
+			return;
+		Warning("NODRAW on terrain surface!\n");
+	}
+
 	// save output number so leaffaces can use
 	f->outputnumber = numfaces;
 
@@ -419,8 +447,13 @@ void EmitFace( face_t *f, qboolean onNode )
     // get the next available .bsp face slot
     //
 	if (numfaces >= MAX_MAP_FACES)
-		Error ("numfaces == MAX_MAP_FACES");
+		Error( "Too many faces in map, max = %d", MAX_MAP_FACES );
 	df = &dfaces[numfaces];
+
+	// Save the correlation between dfaces and faces -- since dfaces doesnt have worldcraft face id
+	dfaceids.AddToTail();
+	dfaceids[numfaces].hammerfaceid = f->originalface->id;
+
 	numfaces++;
 
     //
@@ -439,6 +472,12 @@ void EmitFace( face_t *f, qboolean onNode )
 
     // save the original "side"/face data
     df->origFace = FindOrCreateOrigFace( f );
+	df->surfaceFogVolumeID = -1;
+	dfacenodes[numfaces-1] = f->fogVolumeLeaf;
+	if ( f->fogVolumeLeaf )
+	{
+		Assert( f->fogVolumeLeaf->planenum == PLANENUM_LEAF );
+	}
 
     //
     // edge info
@@ -457,7 +496,8 @@ void EmitFace( face_t *f, qboolean onNode )
 	}
 
 	df->firstPrimID = f->firstPrimID;
-	df->numPrims = f->numPrims;
+	df->SetNumPrims( f->numPrims );
+	df->SetDynamicShadowsEnabled( f->originalface->m_bDynamicShadowsEnabled );
 
     //
     // save off points -- as edges
@@ -468,7 +508,7 @@ void EmitFace( face_t *f, qboolean onNode )
 		e = GetEdge2 (f->vertexnums[i], f->vertexnums[(i+1)%f->numpoints], f);
 
 		if (numsurfedges >= MAX_MAP_SURFEDGES)
-			Error ("numsurfedges == MAX_MAP_SURFEDGES");
+			Error( "Too much brush geometry in bsp, numsurfedges == MAX_MAP_SURFEDGES" );                
 		dsurfedges[numsurfedges] = e;
 		numsurfedges++;
 	}
@@ -481,6 +521,12 @@ void EmitFace( face_t *f, qboolean onNode )
 		if ( nOverlayCount > 0 )
 		{
 			Overlay_AddFaceToLists( ( numfaces - 1 ), pSide );
+		}
+
+		nOverlayCount = pSide->aWaterOverlayIds.Count();
+		if ( nOverlayCount > 0 )
+		{
+			OverlayTransition_AddFaceToLists( ( numfaces - 1 ), pSide );
 		}
 	}
 }
@@ -538,6 +584,8 @@ int EmitDrawNode_r (node_t *node)
 	// emit a node	
 	if (numnodes == MAX_MAP_NODES)
 		Error ("MAX_MAP_NODES");
+	node->diskId = numnodes;
+
 	n = &dnodes[numnodes];
 	numnodes++;
 
@@ -584,6 +632,262 @@ int EmitDrawNode_r (node_t *node)
 
 //=========================================================
 
+// This will generate a scratchpad file with the level's geometry in it and the noshadow faces drawn red.
+// #define SCRATCHPAD_NO_SHADOW_FACES
+#if defined( SCRATCHPAD_NO_SHADOW_FACES )
+	#include "scratchpad_helpers.h"
+	IScratchPad3D *g_pPad;
+#endif
+
+
+void MarkNoShadowFaces()
+{
+#if defined( SCRATCHPAD_NO_SHADOW_FACES )
+	g_pPad = ScratchPad3D_Create();
+	ScratchPad_DrawWorld( g_pPad, false, CSPColor(1,1,1,0.3) );
+
+	for ( int iFace=0; iFace < numfaces; iFace++ )
+	{
+		dface_t *pFace = &dfaces[iFace];
+
+		if ( !pFace->AreDynamicShadowsEnabled() )
+		{
+			ScratchPad_DrawFace( g_pPad, pFace, iFace, CSPColor(1,0,0,1), Vector(1,0,0) );
+			ScratchPad_DrawFace( g_pPad, pFace, iFace, CSPColor(1,0,0,1), Vector(-1,0,0) );
+			ScratchPad_DrawFace( g_pPad, pFace, iFace, CSPColor(1,0,0,1), Vector(0,1,0) );
+		}
+	}
+	g_pPad->Release();
+#endif
+}
+
+struct texinfomap_t
+{
+	int refCount;
+	int outputIndex;
+};
+struct texdatamap_t
+{
+	int refCount;
+	int outputIndex;
+};
+
+// Find the best used texinfo to remap this brush side
+int FindMatchingBrushSideTexinfo( int sideIndex, const texinfomap_t *pMap )
+{
+	dbrushside_t &side = dbrushsides[sideIndex];
+	// find one with the same flags & surfaceprops (even if the texture name is different)
+	int sideTexFlags = texinfo[side.texinfo].flags;
+	int sideTexData = texinfo[side.texinfo].texdata;
+	int sideSurfaceProp = g_SurfaceProperties[sideTexData];
+	for ( int j = 0; j < texinfo.Count(); j++ )
+	{
+		if ( pMap[j].refCount > 0 && 
+			texinfo[j].flags == sideTexFlags && 
+			g_SurfaceProperties[texinfo[j].texdata] == sideSurfaceProp )
+		{
+			// found one
+			return j;
+		}
+	}
+
+	// can't find a better match
+	return side.texinfo;
+}
+
+// Remove all unused texinfos and rebuild array
+void ComapctTexinfoArray( texinfomap_t *pMap )
+{
+	CUtlVector<texinfo_t> old;
+	old.CopyArray( texinfo.Base(), texinfo.Count() );
+	texinfo.RemoveAll();
+	int firstSky = -1;
+	int first2DSky = -1;
+	for ( int i = 0; i < old.Count(); i++ )
+	{
+		if ( !pMap[i].refCount )
+		{
+			pMap[i].outputIndex = -1;
+			continue;
+		}
+		// only add one sky texinfo + one 2D sky texinfo
+		if ( old[i].flags & SURF_SKY2D )
+		{
+			if ( first2DSky < 0 )
+			{
+				first2DSky = texinfo.AddToTail( old[i] );
+			}
+			pMap[i].outputIndex = first2DSky;
+			continue;
+		}
+		if ( old[i].flags & SURF_SKY )
+		{
+			if ( firstSky < 0 )
+			{
+				firstSky = texinfo.AddToTail( old[i] );
+			}
+			pMap[i].outputIndex = firstSky;
+			continue;
+		}
+		pMap[i].outputIndex = texinfo.AddToTail( old[i] );
+	}
+}
+
+void CompactTexdataArray( texdatamap_t *pMap )
+{
+	CUtlVector<char>	oldStringData;
+	oldStringData.CopyArray( g_TexDataStringData.Base(), g_TexDataStringData.Count() );
+	g_TexDataStringData.RemoveAll();
+	CUtlVector<int>		oldStringTable;
+	oldStringTable.CopyArray( g_TexDataStringTable.Base(), g_TexDataStringTable.Count() );
+	g_TexDataStringTable.RemoveAll();
+	CUtlVector<dtexdata_t> oldTexData;
+	oldTexData.CopyArray( dtexdata, numtexdata );
+	// clear current table and rebuild
+	numtexdata = 0;
+	for ( int i = 0; i < oldTexData.Count(); i++ )
+	{
+		// unreferenced, note in map and skip
+		if ( !pMap[i].refCount )
+		{
+			pMap[i].outputIndex = -1;
+			continue;
+		}
+		pMap[i].outputIndex = numtexdata;
+
+		// get old string and re-add to table
+		const char *pString = &oldStringData[oldStringTable[oldTexData[i].nameStringTableID]];
+		int nameIndex = TexDataStringTable_AddOrFindString( pString );
+		// copy old texdata and fixup with new name in compacted table
+		dtexdata[numtexdata] = oldTexData[i];
+		dtexdata[numtexdata].nameStringTableID = nameIndex;
+		numtexdata++;
+	}
+}
+
+void CompactTexinfos()
+{
+	Msg("Compacting texture/material tables...\n");
+	texinfomap_t *texinfoMap = new texinfomap_t[texinfo.Count()];
+	texdatamap_t *texdataMap = new texdatamap_t[numtexdata];
+	memset( texinfoMap, 0, sizeof(texinfoMap[0])*texinfo.Count() );
+	memset( texdataMap, 0, sizeof(texdataMap[0])*numtexdata );
+	int i;
+	// get texinfos referenced by faces
+	for ( i = 0; i < numfaces; i++ )
+	{
+		texinfoMap[dfaces[i].texinfo].refCount++;
+	}
+	// get texinfos referenced by brush sides
+	for ( i = 0; i < numbrushsides; i++ )
+	{
+		// not referenced by any visible geometry
+		Assert( dbrushsides[i].texinfo >=  0 );
+		if ( !texinfoMap[dbrushsides[i].texinfo].refCount )
+		{
+			dbrushsides[i].texinfo = FindMatchingBrushSideTexinfo( i, texinfoMap );
+			// didn't find anything suitable, go ahead and reference it
+			if ( !texinfoMap[dbrushsides[i].texinfo].refCount )
+			{
+				texinfoMap[dbrushsides[i].texinfo].refCount++;
+			}
+		}
+	}
+	// get texinfos referenced by overlays
+	for ( i = 0; i < g_nOverlayCount; i++ )
+	{
+		texinfoMap[g_Overlays[i].nTexInfo].refCount++;
+	}
+	for ( i = 0; i < numleafwaterdata; i++ )
+	{
+		if ( dleafwaterdata[i].surfaceTexInfoID >= 0 )
+		{
+			texinfoMap[dleafwaterdata[i].surfaceTexInfoID].refCount++;
+		}
+	}
+	for ( i = 0; i < *pNumworldlights; i++ )
+	{
+		if ( dworldlights[i].texinfo >= 0 )
+		{
+			texinfoMap[dworldlights[i].texinfo].refCount++;
+		}
+	}
+	for ( i = 0; i < g_nWaterOverlayCount; i++ )
+	{
+		if ( g_WaterOverlays[i].nTexInfo >= 0 )
+		{
+			texinfoMap[g_WaterOverlays[i].nTexInfo].refCount++;
+		}
+	}
+	// reference all used texdatas
+	for ( i = 0; i < texinfo.Count(); i++ )
+	{
+		if ( texinfoMap[i].refCount > 0 )
+		{
+			texdataMap[texinfo[i].texdata].refCount++;
+		}
+	}
+
+	int oldCount = texinfo.Count();
+	int oldTexdataCount = numtexdata;
+	int oldTexdataString = g_TexDataStringData.Count();
+	ComapctTexinfoArray( texinfoMap );
+	CompactTexdataArray( texdataMap );
+	for ( i = 0; i < texinfo.Count(); i++ )
+	{
+		int mapIndex = texdataMap[texinfo[i].texdata].outputIndex;
+		Assert( mapIndex >= 0 );
+		texinfo[i].texdata = mapIndex;
+		//const char *pName = TexDataStringTable_GetString( dtexdata[texinfo[i].texdata].nameStringTableID );
+	}
+	// remap texinfos on faces
+	for ( i = 0; i < numfaces; i++ )
+	{
+		Assert( texinfoMap[dfaces[i].texinfo].outputIndex >= 0 );
+		dfaces[i].texinfo = texinfoMap[dfaces[i].texinfo].outputIndex;
+	}
+	// remap texinfos on brushsides
+	for ( i = 0; i < numbrushsides; i++ )
+	{
+		Assert( texinfoMap[dbrushsides[i].texinfo].outputIndex >= 0 );
+		dbrushsides[i].texinfo = texinfoMap[dbrushsides[i].texinfo].outputIndex;
+	}
+	// remap texinfos on overlays
+	for ( i = 0; i < g_nOverlayCount; i++ )
+	{
+		g_Overlays[i].nTexInfo = texinfoMap[g_Overlays[i].nTexInfo].outputIndex;
+	}
+	// remap leaf water data
+	for ( i = 0; i < numleafwaterdata; i++ )
+	{
+		if ( dleafwaterdata[i].surfaceTexInfoID >= 0 )
+		{
+			dleafwaterdata[i].surfaceTexInfoID = texinfoMap[dleafwaterdata[i].surfaceTexInfoID].outputIndex;
+		}
+	}
+	// remap world lights
+	for ( i = 0; i < *pNumworldlights; i++ )
+	{
+		if ( dworldlights[i].texinfo >= 0 )
+		{
+			dworldlights[i].texinfo = texinfoMap[dworldlights[i].texinfo].outputIndex;
+		}
+	}
+	// remap water overlays
+	for ( i = 0; i < g_nWaterOverlayCount; i++ )
+	{
+		if ( g_WaterOverlays[i].nTexInfo >= 0 )
+		{
+			g_WaterOverlays[i].nTexInfo = texinfoMap[g_WaterOverlays[i].nTexInfo].outputIndex;
+		}
+	}
+
+	Msg("Reduced %d texinfos to %d\n", oldCount, texinfo.Count() );
+	Msg("Reduced %d texdatas to %d (%d bytes to %d)\n", oldTexdataCount, numtexdata, oldTexdataString, g_TexDataStringData.Count() );
+
+	delete[] texinfoMap;
+	delete[] texdataMap;
+}
 
 /*
 ============
@@ -627,8 +931,7 @@ void WriteBSP (node_t *headnode, face_t *pLeafFaceList )
 		}
 	}
 
-	Cubemap_FixupDispMaterials(); // garymcthack - this is a gross place for this.
-
+	EmitWaterVolumesForBSP( &dmodels[nummodels], headnode );
 	qprintf ("%5i nodes with faces\n", c_facenodes);
 	qprintf ("%5i nodes without faces\n", c_nofaces);
 	qprintf ("%5i faces\n", numfaces-oldfaces);
@@ -713,17 +1016,26 @@ void SetLightStyles (void)
 		if (j == stylenum)
 		{
 			if (stylenum == MAX_SWITCHED_LIGHTS)
-				Error ("stylenum == MAX_SWITCHED_LIGHTS");
+				Error ("Too many switched lights (error at light %s), max = %d", t, MAX_SWITCHED_LIGHTS);
 			strcpy (lighttargets[j], t);
 			stylenum++;
 		}
 		sprintf (value, "%i", 32 + j);
+		char *pCurrentStyle = ValueForKey( e, "style" );
+		// the designer has set a default lightstyle as well as making the light switchable
+		if ( pCurrentStyle )
+		{
+			int oldStyle = atoi(pCurrentStyle);
+			if ( oldStyle != 0 )
+			{
+				// save off the default style so the game code can make a switchable copy of it
+				SetKeyValue( e, "defaultstyle", pCurrentStyle );
+			}
+		}
 		SetKeyValue (e, "style", value);
 	}
 
 }
-
-//===========================================================
 
 /*
 ============
@@ -741,11 +1053,11 @@ void EmitBrushes (void)
 	int			    planenum;
 
 	numbrushsides = 0;
-	numbrushes = nummapbrushes;
+	numbrushes = g_MainMap->nummapbrushes;
 
-	for (bnum=0 ; bnum<nummapbrushes ; bnum++)
+	for (bnum=0 ; bnum<g_MainMap->nummapbrushes ; bnum++)
 	{
-		b = &mapbrushes[bnum];
+		b = &g_MainMap->mapbrushes[bnum];
 		db = &dbrushes[bnum];
 
 		db->contents = b->contents;
@@ -759,6 +1071,10 @@ void EmitBrushes (void)
 			numbrushsides++;
 			cp->planenum = b->original_sides[j].planenum;
 			cp->texinfo = b->original_sides[j].texinfo;
+			if ( cp->texinfo == -1 )
+			{
+				cp->texinfo = g_MainMap->g_ClipTexinfo;
+			}
 			cp->bevel = b->original_sides[j].bevel;
 		}
 
@@ -773,7 +1089,7 @@ void EmitBrushes (void)
 					dist = -b->mins[x];
 				else
 					dist = b->maxs[x];
-				planenum = FindFloatPlane (normal, dist);
+				planenum = g_MainMap->FindFloatPlane (normal, dist);
 				for (i=0 ; i<b->numsides ; i++)
 					if (b->original_sides[i].planenum == planenum)
 						break;
@@ -850,8 +1166,12 @@ void DiscoverMacroTextures()
 	for ( int iFace=0; iFace < numfaces; iFace++ )
 	{
 		texinfo_t *pTexInfo = &texinfo[dfaces[iFace].texinfo];
+		if ( pTexInfo->texdata < 0 )
+			continue;
+
 		dtexdata_t *pTexData = &dtexdata[pTexInfo->texdata];
 		const char *pMaterialName = &g_TexDataStringData[ g_TexDataStringTable[pTexData->nameStringTableID] ];
+		
 		MaterialSystemMaterial_t hMaterial = FindMaterial( pMaterialName, NULL, false );
 
 		const char *pMacroTextureName = GetMaterialVar( hMaterial, "$macro_texture" );
@@ -874,6 +1194,42 @@ void DiscoverMacroTextures()
 }
 
 
+// Make sure that we have a water lod control entity if we have water in the map.
+void EnsurePresenceOfWaterLODControlEntity( void )
+{
+	extern bool g_bHasWater;
+	if( !g_bHasWater )
+	{
+		// Don't bother if there isn't any water in the map.
+		return;
+	}
+	for( int i=0; i < num_entities; i++ )
+	{
+		entity_t *e = &entities[i];
+
+		const char *pClassName = ValueForKey( e, "classname" );
+		if( !Q_stricmp( pClassName, "water_lod_control" ) )
+		{
+			// Found one!!!!
+			return;
+		}
+	}
+
+	// None found, add one.
+	Warning( "Water found with no water_lod_control entity, creating a default one.\n" );
+
+	entity_t *mapent = &entities[num_entities];
+	num_entities++;
+	memset(mapent, 0, sizeof(*mapent));
+	mapent->firstbrush = g_MainMap->nummapbrushes;
+	mapent->numbrushes = 0;
+
+	SetKeyValue( mapent, "classname", "water_lod_control" );
+	SetKeyValue( mapent, "cheapwaterstartdistance", "1000" );
+	SetKeyValue( mapent, "cheapwaterenddistance", "2000" );
+}
+
+
 /*
 ============
 EndBSPFile
@@ -881,6 +1237,9 @@ EndBSPFile
 */
 void EndBSPFile (void)
 {
+	// Mark noshadow faces.
+	MarkNoShadowFaces();
+
 	EmitBrushes ();
 	EmitPlanes ();
 
@@ -895,6 +1254,7 @@ void EndBSPFile (void)
 
 	// Emit overlay data.
 	Overlay_EmitOverlayFaces();
+	OverlayTransition_EmitOverlayFaces();
 
 	// phys collision needs dispinfo to operate (needs to generate phys collision for displacement surfs)
 	EmitPhysCollision();
@@ -912,17 +1272,23 @@ void EndBSPFile (void)
 	// Compute bounds after creating disp info because we need to reference it
 	ComputeBoundsNoSkybox();
 
+	// Make sure that we have a water lod control eneity if we have water in the map.
+	EnsurePresenceOfWaterLODControlEntity();
+
 	// Doing this here because stuff about may filter out entities
 	UnparseEntities ();
 
+	// remove unused texinfos
+	CompactTexinfos();
+
 	// Figure out which faces want macro textures.
 	DiscoverMacroTextures();
-	
-	char	targetPath[1024];
 
-	GetPlatformMapPath( source, targetPath, g_nDXLevel, 1024 );
-	Msg ("Writing %s\n", targetPath);
-	WriteBSPFile (targetPath);
+	char fileName[1024];
+	V_strncpy( fileName, source, sizeof( fileName ) );
+	V_DefaultExtension( fileName, ".bsp", sizeof( fileName ) );
+	Msg ("Writing %s\n", fileName);
+	WriteBSPFile (fileName);
 }
 
 
@@ -942,7 +1308,7 @@ void BeginModel (void)
 	Vector		mins, maxs;
 
 	if (nummodels == MAX_MAP_MODELS)
-		Error ("MAX_MAP_MODELS");
+		Error ("Too many brush models in map, max = %d", MAX_MAP_MODELS);
 	mod = &dmodels[nummodels];
 
 	mod->firstface = numfaces;
@@ -962,7 +1328,7 @@ void BeginModel (void)
 
 	for (j=start ; j<end ; j++)
 	{
-		b = &mapbrushes[j];
+		b = &g_MainMap->mapbrushes[j];
 		if (!b->numsides)
 			continue;	// not a real brush (origin brush)
 		AddPointToBounds (b->mins, mins, maxs);
@@ -995,7 +1361,7 @@ void EndModel (void)
 //-----------------------------------------------------------------------------
 // figure out which leaf a point is in
 //-----------------------------------------------------------------------------
-static int PointLeafnum_r (Vector const& p, int num)
+static int PointLeafnum_r (const Vector& p, int num)
 {
 	float		d;
 	while (num >= 0)
@@ -1016,31 +1382,9 @@ static int PointLeafnum_r (Vector const& p, int num)
 	return -1 - num;
 }
 
-static int PointLeafnum ( dmodel_t* pModel, Vector const& p )
+int PointLeafnum ( dmodel_t* pModel, const Vector& p )
 {
 	return PointLeafnum_r (p, pModel->headnode);
-}
-
-
-//-----------------------------------------------------------------------------
-// Compute the 3D skybox areas
-//-----------------------------------------------------------------------------
-static void Compute3DSkyboxAreas( dmodel_t* pModel, CUtlVector<int>& areas )
-{
-	for (int i = 0; i < num_entities; ++i)
-	{
-		char* pEntity = ValueForKey(&entities[i], "classname");
-		if (!strcmp(pEntity, "sky_camera"))
-		{
-			// Found a 3D skybox camera, get a leaf that lies in it
-			int leaf = PointLeafnum( pModel, entities[i].origin );
-			if (dleafs[leaf].contents & CONTENTS_SOLID)
-			{
-				Error ("Error! Entity sky_camera in solid volume!\n");
-			}
-			areas.AddToTail( dleafs[leaf].area );
-		}
-	}
 }
 
 
@@ -1184,15 +1528,11 @@ void AddDispsToBounds( int nHeadNode, CUtlVector<int>& skipAreas, Vector &vecMin
 //-----------------------------------------------------------------------------
 void ComputeBoundsNoSkybox( )
 {
-	// determine areas which are 3D skybox
-	CUtlVector<int> areas;
-	Compute3DSkyboxAreas( &dmodels[0], areas );
-
 	// Iterate over all world leaves, skip those which are part of skybox
 	Vector mins, maxs;
 	ClearBounds (mins, maxs);
-	AddNodeToBounds( dmodels[0].headnode, areas, mins, maxs );
-	AddDispsToBounds( dmodels[0].headnode, areas, mins, maxs );
+	AddNodeToBounds( dmodels[0].headnode, g_SkyAreas, mins, maxs );
+	AddDispsToBounds( dmodels[0].headnode, g_SkyAreas, mins, maxs );
 
 	// Add the bounds to the worldspawn data
 	for (int i = 0; i < num_entities; ++i)

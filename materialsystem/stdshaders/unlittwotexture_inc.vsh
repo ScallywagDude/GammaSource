@@ -11,7 +11,7 @@ sub UnlitTwoTexture
 	; Vertex blending
 	;------------------------------------------------------------------------------
 	&AllocateRegister( \$worldPos );
-	&SkinPosition( $g_numBones, $worldPos );
+	&SkinPosition( $worldPos );
 
 	;------------------------------------------------------------------------------
 	; Transform the position from world to proj space
@@ -34,11 +34,22 @@ sub UnlitTwoTexture
 	;------------------------------------------------------------------------------
 	; Texture coordinates (use world-space normal for envmap, tex transform for mask)
 	;------------------------------------------------------------------------------
-	dp4 oT0.x, $vTexCoord0, c90
-	dp4 oT0.y, $vTexCoord0, c91
 
-	dp4 oT1.x, $vTexCoord0, c92
-	dp4 oT1.y, $vTexCoord0, c93
+	dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+	dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
+	if ( $g_x360 )
+	{
+		; must write xyzw to match read in pixelshader
+		mov oT0.zw, $cZero
+	}
+
+	dp4 oT1.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_2
+	dp4 oT1.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_3
+	if ( $g_x360 )
+	{
+		; must write xyzw to match read in pixelshader
+		mov oT1.zw, $cZero
+	}
 
 	if( $vertexcolor )
 	{

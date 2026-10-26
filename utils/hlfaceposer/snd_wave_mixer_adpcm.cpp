@@ -1,6 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+
+#pragma warning( disable: 4201 )
 #include <mmsystem.h>
+#pragma warning( default: 4201 )
+
 #include <mmreg.h>
 #include "snd_wave_source.h"
 #include "snd_wave_mixer_adpcm.h"
@@ -23,7 +34,7 @@ public:
 	virtual void Mix( IAudioDevice *pDevice, channel_t *pChannel, void *pData, int outputOffset, int inputOffset, fixedint fracRate, int outCount, int timecompress, bool forward = true );
 	virtual int	 GetOutputData( void **pData, int samplePosition, int sampleCount, bool forward = true );
 
-	virtual bool SetSamplePosition( int position );
+	virtual bool SetSamplePosition( int position, bool scrubbing = false );
 
 private:
 	bool					DecodeBlock( void );
@@ -138,7 +149,7 @@ void CAudioMixerWaveADPCM::DecompressBlockMono( short *pOut, const char *pIn, in
 	// this is a toggle to read nibbles, first nibble is high
 	int high = 1;
 
-	int error, sample;
+	int error = 0, sample = 0;
 
 	// now process the block
 	while ( count )
@@ -243,7 +254,7 @@ void CAudioMixerWaveADPCM::DecompressBlockStereo( short *pOut, const char *pIn, 
 	// this is a toggle to read nibbles, first nibble is high
 	int high = 1;
 
-	int error, sample;
+	int error, sample = 0;
 
 	// now process the block
 	while ( count )
@@ -462,11 +473,11 @@ int CAudioMixerWaveADPCM::GetOutputData( void **pData, int samplePosition, int s
 // Purpose: 
 // Input  : position - 
 //-----------------------------------------------------------------------------
-bool CAudioMixerWaveADPCM::SetSamplePosition( int position )
+bool CAudioMixerWaveADPCM::SetSamplePosition( int position, bool scrubbing )
 {
 	position = max( 0, position );
 
-	CAudioMixerWave::SetSamplePosition( position );
+	CAudioMixerWave::SetSamplePosition( position, scrubbing );
 
 	int requestedBlock	= GetBlockNumberForSample( position );
 	int firstSample		= GetFirstSampleForBlock( requestedBlock );

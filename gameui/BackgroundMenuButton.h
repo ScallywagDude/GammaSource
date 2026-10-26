@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef BACKGROUNDMENUBUTTON_H
 #define BACKGROUNDMENUBUTTON_H
@@ -23,27 +23,6 @@ public:
 	~CBackgroundMenuButton();
 
 	virtual void OnCommand(const char *command);
-
-	void SetImages(vgui::IImage *image, vgui::IImage *mouseoverImage)
-	{
-		m_pImage = image;
-		m_pMouseOverImage = mouseoverImage;
-		SetArmed(IsArmed());
-	}
-
-	virtual void SetArmed(bool state)
-	{
-		if (state)
-		{
-			SetImageAtIndex(0, m_pMouseOverImage, 0);
-		}
-		else
-		{
-			SetImageAtIndex(0, m_pImage, 0);
-		}
-
-		BaseClass::SetArmed(state);
-	}
 
 protected:
 	vgui::Menu *RecursiveLoadGameMenu(KeyValues *datafile);

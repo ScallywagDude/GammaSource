@@ -1,14 +1,17 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
-#include "tier0/dbg.h"
+#include "cbase.h"
 #include "physics_controller_raycast_vehicle.h"
 #include "ivp_material.hxx"
 #include "ivp_ray_solver.hxx"
 #include "ivp_cache_object.hxx"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor

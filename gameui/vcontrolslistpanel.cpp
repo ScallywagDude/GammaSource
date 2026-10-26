@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "vcontrolslistpanel.h"
 #include "GameUI_Interface.h"
@@ -16,6 +16,9 @@
 #include <vgui/Cursor.h>
 #include <KeyValues.h>
 
+// NVNT including for input system access
+#include "tier2/tier2.h"
+#include "inputsystem/iinputsystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -38,18 +41,8 @@ public:
 		GetSize(wide, tall);
 
 		// Draw a white rectangle around that cell
-		vgui::surface()->DrawSetColor( 149, 136, 49, 255 );
+		vgui::surface()->DrawSetColor( 255, 165, 0, 255 );
 		vgui::surface()->DrawFilledRect( x, y, x + wide, y + tall );
-
-		// top & left
-		vgui::surface()->DrawSetColor( 45, 49, 40, 255 );
-		vgui::surface()->DrawFilledRect( x - 3, y - 3, x + wide + 2, y - 2 );
-		vgui::surface()->DrawFilledRect( x - 2, y - 2, x - 3, y + tall + 3 );
-
-		// bottom and right
-		vgui::surface()->DrawSetColor( 150, 159, 142, 255 );
-		vgui::surface()->DrawFilledRect( x - 2, y + tall + 3, x + wide + 3, y + tall + 2 );
-		vgui::surface()->DrawFilledRect( x + wide + 3, y - 3, x + wide + 2, y + tall + 2 );
 	}
 
 	virtual void OnKeyCodeTyped(KeyCode code)
@@ -96,6 +89,9 @@ VControlsListPanel::~VControlsListPanel()
 	m_pInlineEditPanel->MarkForDeletion();
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
 void VControlsListPanel::ApplySchemeSettings(IScheme *pScheme )
 {
 	BaseClass::ApplySchemeSettings( pScheme );
@@ -111,18 +107,19 @@ void VControlsListPanel::StartCaptureMode( HCursor hCursor )
 	EnterEditMode(m_nClickRow, 1, m_pInlineEditPanel);
 	input()->SetMouseFocus(m_pInlineEditPanel->GetVPanel());
 	input()->SetMouseCapture(m_pInlineEditPanel->GetVPanel());
+	// NVNT tell the input system that novint devices
+	// should be set unable to do menu mouse emulation.
+	g_pInputSystem->SetNovintPure(true);
+
+	engine->StartKeyTrapMode();
 
 	if (hCursor)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
-		if ( hCursor == dc_none )
-		{
-			vgui::input()->GetCursorPos( m_iMouseX, m_iMouseY );
-			engine->SetCursorPos(  engine->GetWindowCenterX(), engine->GetWindowCenterY() ); // use gEngfuncs and NOT input() because input() is relative to vgui, not absolute
-		}
+
+		// save off the cursor position so we can restore it
+		vgui::input()->GetCursorPos( m_iMouseX, m_iMouseY );
 	}
-	// turn off key translation (so that we can tell the difference between ENTER and KP_ENTER)
-	vgui::surface()->SetTranslateExtendedKeys(false);
 }
 
 //-----------------------------------------------------------------------------
@@ -132,21 +129,19 @@ void VControlsListPanel::EndCaptureMode( HCursor hCursor )
 {
 	m_bCaptureMode = false;
 	input()->SetMouseCapture(NULL);
-	// reset key translation (so that KP_ENTER will act like a normal enter key again)
-	vgui::surface()->SetTranslateExtendedKeys(true);
 	LeaveEditMode();
 	RequestFocus();
 	input()->SetMouseFocus(GetVPanel());
+	// NVNT tell the input system that novint devices
+	// should be allowed to do menu mouse emulation.
+	g_pInputSystem->SetNovintPure(false);
 	if (hCursor)
 	{
 		m_pInlineEditPanel->SetCursor(hCursor);
-		if ( GameUI().IsGameUIActive() )
+		surface()->SetCursor(hCursor);	
+		if ( hCursor != dc_none )
 		{
-			surface()->SetCursor(hCursor);	
-			if ( hCursor != dc_none )
-			{
-				vgui::input()->SetCursorPos ( m_iMouseX, m_iMouseY );	
-			}
+			vgui::input()->SetCursorPos ( m_iMouseX, m_iMouseY );	
 		}
 	}
 }

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SIMPLE_PHYSICS_H
 #define SIMPLE_PHYSICS_H
@@ -12,7 +12,7 @@
 #endif
 
 
-#include "vector.h"
+#include "mathlib/vector.h"
 
 
 // CSimplePhysics is a framework for simplified physics simulation.

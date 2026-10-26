@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef STUDIO_INTERNAL_H
 #define STUDIO_INTERNAL_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include "vector.h"
+#include "mathlib/vector.h"
 
 struct dworldlight_t;
 

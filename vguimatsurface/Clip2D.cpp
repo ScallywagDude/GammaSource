@@ -1,20 +1,21 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Contains 2D clipping routines
 //
 // $Revision: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include <vgui/isurface.h>
+#include <vgui/ISurface.h>
 #include "Clip2D.h"
 #include "tier0/dbg.h"
-#include "UtlVector.h"
+#include "utlvector.h"
+#if defined( _X360 )
+#include "materialsystem/imaterialsystem.h"
+#endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Stretch texture to fit window ( before scissoring )
@@ -43,6 +44,7 @@ struct ScissorRect_t
 
 static ScissorRect_t g_ScissorRect;
 static bool	g_bScissor = false;
+static bool g_bFullScreenScissor = false;
 
 //-----------------------------------------------------------------------------
 // Enable/disable scissoring...
@@ -59,18 +61,31 @@ void SetScissorRect( int left, int top, int right, int bottom )
 	Assert( left <= right );
 	Assert( top <= bottom );
 
+	if ( g_ScissorRect.left == left && g_ScissorRect.right == right &&
+		 g_ScissorRect.top == top && g_ScissorRect.bottom == bottom )
+		 return;
+
 	g_ScissorRect.left   = left;
 	g_ScissorRect.top    = top;
 	g_ScissorRect.right  = right;
 	g_ScissorRect.bottom = bottom;
+
+#if defined( _X360 )
+	// no reason to waste cpu on full screen scissor, gpu does it
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	int vx, vy, vw, vh;
+	pRenderContext->GetViewport( vx, vy, vw, vh );
+	g_bFullScreenScissor = (left <= vx && top <= vy && right >= vw && bottom >= vh );
+#endif
 }
 
-void GetScissorRect( int &left, int &top, int &right, int &bottom )
+void GetScissorRect( int &left, int &top, int &right, int &bottom, bool &enabled )
 {
 	left = g_ScissorRect.left;
 	top = g_ScissorRect.top;
 	right = g_ScissorRect.right;
 	bottom = g_ScissorRect.bottom;
+	enabled = g_bScissor;
 }
 
 
@@ -95,7 +110,7 @@ class CClipTop
 public:
 	static inline bool Inside( vgui::Vertex_t const& vert )					
 	{ 
-		return vert.m_Position.y > g_ScissorRect.top;
+		return vert.m_Position.y >= g_ScissorRect.top;
 	}
 	static inline float Clip( const Vector2D& one, const Vector2D& two )	
 	{ 
@@ -108,7 +123,7 @@ class CClipLeft
 public:
 	static inline bool Inside( vgui::Vertex_t const& vert )					
 	{ 
-		return vert.m_Position.x > g_ScissorRect.left;
+		return vert.m_Position.x >= g_ScissorRect.left;
 	}
 	static inline float Clip( const Vector2D& one, const Vector2D& two )	
 	{ 
@@ -186,7 +201,7 @@ bool ClipLineToPlane( Clipper &clipper, const vgui::Vertex_t *pInVerts, vgui::Ve
 //-----------------------------------------------------------------------------
 bool ClipLine( const vgui::Vertex_t *pInVerts, vgui::Vertex_t* pOutVerts )
 {
-	if (g_bScissor)
+	if ( g_bScissor && !g_bFullScreenScissor )
 	{
 		// Clippers...
 		CClipTop top;
@@ -311,7 +326,7 @@ int ClipPolygon( int iCount, vgui::Vertex_t *pVerts, int iTranslateX, int iTrans
 		clip.m_ppClipVertices[0][i] = &clip.m_pTempVertices[i];
 	}
 
-	if (!g_bScissor)
+	if ( !g_bScissor || g_bFullScreenScissor )
 	{
 		Assert(pppOutVertex);
 		*pppOutVertex = clip.m_ppClipVertices[0].Base();
@@ -368,6 +383,16 @@ bool ClipRect( const vgui::Vertex_t &inUL, const vgui::Vertex_t &inLR,
 	// Check for a valid rectangle...
 //	Assert( inUL.m_Position.x <= inLR.m_Position.x );
 //	Assert( inUL.m_Position.y <= inLR.m_Position.y );
+ 
+	if ( IsX360() && ( !g_bScissor || g_bFullScreenScissor || 
+		( inUL.m_Position.x >= g_ScissorRect.left && inLR.m_Position.x <= g_ScissorRect.right && inUL.m_Position.y >= g_ScissorRect.top && inLR.m_Position.y <= g_ScissorRect.bottom ) ) )
+	{
+		// clipping is not needed
+		// either full screen, and hw will do it or rect is inscribed, and operation is meaningless
+		*pOutUL = inUL;
+		*pOutLR = inLR;
+		return true;
+	}
 
 	if ( g_bScissor )
 	{

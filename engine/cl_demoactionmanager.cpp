@@ -1,21 +1,16 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "glquake.h"
+#include "client_pch.h"
 #include <vgui/VGUI.h>
 #include <vgui_controls/Controls.h>
 #include "cl_demoaction.h"
 #include "cl_demoactionmanager.h"
 #include "cl_demouipanel.h"
-
-#include <KeyValues.h>
-#include "UtlBuffer.h"
-#include "filesystem_engine.h"
-#include "filesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -41,12 +36,11 @@ public:
 	virtual void		StartPlaying( char const *demfilename );
 	virtual void		StopPlaying();
 
-	virtual void		Update( bool newframe, int demoframe, float demotime );
+	virtual void		Update( bool newframe, int demotick, float demotime );
 
 	virtual void		SaveToBuffer( CUtlBuffer& buf );
 	virtual void		SaveToFile( void );
 
-	virtual void		InstallDemoUI( vgui::Panel *parent );
 	virtual char const	*GetCurrentDemoFile( void );
 
 	virtual int			GetActionCount( void );
@@ -59,13 +53,10 @@ public:
 
 	virtual void		ReloadFromDisk( void );
 
-	virtual float		GetPlaybackScale();
-
 	virtual void		DispatchEvents();
 	virtual void		InsertFireEvent( CBaseDemoAction *action );
 
-	virtual bool		OverrideView( democmdinfo_t& info, int frame, float elapsed );
-	virtual void		DrawDebuggingInfo( int frame, float elapsed );
+	virtual bool		OverrideView( democmdinfo_t& info, int tick );
 private:
 	void				OnVDMLoaded( char const *demfilename );
 	void				ClearAll();
@@ -74,7 +65,7 @@ private:
 	CUtlVector< CBaseDemoAction * >	m_PendingFireActionStack;
 
 
-	int					m_nPrevFrame;
+	int					m_nPrevTick;
 	float				m_flPrevTime;
 
 
@@ -91,7 +82,7 @@ IDemoActionManager *demoaction = ( IDemoActionManager * )&g_DemoActionManager;
 //-----------------------------------------------------------------------------
 CDemoActionManager::CDemoActionManager()
 {
-	m_nPrevFrame = 0;
+	m_nPrevTick = 0;
 	m_flPrevTime = 0.0f;
 	m_szCurrentFile[ 0 ] = 0;
 	m_bDirty = false;
@@ -129,8 +120,8 @@ void CDemoActionManager::Shutdown( void )
 void CDemoActionManager::ReloadFromDisk( void )
 {
 	char metafile[ 512 ];
-	COM_StripExtension( m_szCurrentFile, metafile, sizeof( metafile ) );
-	COM_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
+	Q_StripExtension( m_szCurrentFile, metafile, sizeof( metafile ) );
+	Q_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
 
 	ClearAll();
 
@@ -145,7 +136,7 @@ void CDemoActionManager::ReloadFromDisk( void )
 		Assert( kv );
 		if ( kv )
 		{
-			if ( kv->LoadFromFile( filesystem(), metafile ) )
+			if ( kv->LoadFromFile( g_pFullFileSystem, metafile ) )
 			{
 				// Iterate over all metaclasses...
 				KeyValues* pIter = kv->GetFirstSubKey();
@@ -153,12 +144,12 @@ void CDemoActionManager::ReloadFromDisk( void )
 				{
 					char factorytouse[ 512 ];
 					
-					strcpy( factorytouse, pIter->GetName() );
+					Q_strncpy( factorytouse, pIter->GetName(), sizeof( factorytouse ) );
 
 					// New format is to put numbers in here
 					if ( atoi( factorytouse ) > 0 )
 					{
-						strcpy( factorytouse, pIter->GetString( "factory", "" ) );
+						Q_strncpy( factorytouse, pIter->GetString( "factory", "" ), sizeof( factorytouse ) );
 					}
 
 					CBaseDemoAction *action = CBaseDemoAction::CreateDemoAction( CBaseDemoAction::TypeForName( factorytouse ) );
@@ -183,7 +174,6 @@ void CDemoActionManager::ReloadFromDisk( void )
 			}
 		}
 
-	//	COM_FreeFile( (byte *)buffer );
 //	}
 //	else
 //	{
@@ -207,17 +197,18 @@ void CDemoActionManager::StartPlaying( char const *demfilename )
 	// Clear anything currently pending
 	StopPlaying();
 
+	bool changedfile = Q_strcasecmp( demfilename, m_szCurrentFile ) != 0;
+
 	Q_strncpy( m_szCurrentFile, demfilename, sizeof( m_szCurrentFile ) );
 
 	char metafile[ 512 ];
-	COM_StripExtension( demfilename, metafile, sizeof( metafile ) );
-	COM_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
+	Q_StripExtension( demfilename, metafile, sizeof( metafile ) );
+	Q_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
 
 	long filetime = g_pFileSystem->GetFileTime( metafile );
 
-	// Same file?
-	if ( !Q_strcasecmp( demfilename, m_szCurrentFile ) &&
-		m_lFileTime == filetime )
+	// If didn't change file and the timestamps are the same, don't transition to new .vdm
+	if ( !changedfile && ( m_lFileTime == filetime ) )
 	{
 		return;
 	}
@@ -258,7 +249,7 @@ void CDemoActionManager::StopPlaying()
 	}
 
 	// Reset counters
-	m_nPrevFrame = 0;
+	m_nPrevTick = 0;
 	m_flPrevTime = 0.0f;
 
 	m_PendingFireActionStack.RemoveAll();
@@ -269,7 +260,7 @@ void CDemoActionManager::StopPlaying()
 // Input  : demoframe - 
 //			demotime - 
 //-----------------------------------------------------------------------------
-void CDemoActionManager::Update(  bool newframe, int demoframe, float demotime )
+void CDemoActionManager::Update(  bool newframe, int demotick, float demotime )
 {
 	// Nothing to do?
 	int count = m_ActionStack.Count();
@@ -278,8 +269,8 @@ void CDemoActionManager::Update(  bool newframe, int demoframe, float demotime )
 
 	// Setup timing context
 	DemoActionTimingContext ctx;
-	ctx.prevframe = m_nPrevFrame;
-	ctx.curframe = demoframe;
+	ctx.prevtick = m_nPrevTick;
+	ctx.curtick = demotick;
 	ctx.prevtime = m_flPrevTime;
 	ctx.curtime = demotime;
 
@@ -294,7 +285,7 @@ void CDemoActionManager::Update(  bool newframe, int demoframe, float demotime )
 		action->Update( ctx );
 	}
 
-	m_nPrevFrame = demoframe;
+	m_nPrevTick = demotick;
 	m_flPrevTime = demotime;
 }
 
@@ -337,11 +328,11 @@ void CDemoActionManager::SaveToFile( void )
 		return;
 
 	char metafile[ 512 ];
-	COM_StripExtension( m_szCurrentFile, metafile, sizeof( metafile ) );
-	COM_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
+	Q_StripExtension( m_szCurrentFile, metafile, sizeof( metafile ) );
+	Q_DefaultExtension( metafile, ".vdm", sizeof( metafile ) );
 
 	// Save data
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 	SaveToBuffer( buf );
 
 	// Write to file
@@ -359,8 +350,6 @@ void CDemoActionManager::SaveToFile( void )
 	m_lFileTime = g_pFileSystem->GetFileTime( metafile );
 }
 
-static CDemoUIPanel *g_pDemoUI = NULL;
-
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *demfilename - 
@@ -368,24 +357,18 @@ static CDemoUIPanel *g_pDemoUI = NULL;
 void CDemoActionManager::OnVDMLoaded( char const *demfilename )
 {
 	// Notify UI?
-	if ( !g_pDemoUI )
-		return;
 
-	g_pDemoUI->OnVDMChanged();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *parent - 
-//-----------------------------------------------------------------------------
-void CDemoActionManager::InstallDemoUI( vgui::Panel *parent )
-{
 	if ( g_pDemoUI )
-		return;
+	{
+		g_pDemoUI->OnVDMChanged();
+	}
 
-	g_pDemoUI = new CDemoUIPanel( parent );
-	Assert( g_pDemoUI );
+	if ( g_pDemoUI2 )
+	{
+		g_pDemoUI2->OnVDMChanged();
+	}
 }
+
 
 char const *CDemoActionManager::GetCurrentDemoFile( void )
 {
@@ -460,22 +443,15 @@ void CDemoActionManager::SetDirty( bool dirty )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float CDemoActionManager::GetPlaybackScale()
-{
-	if ( !g_pDemoUI )
-		return 1.0f;
-
-	return g_pDemoUI->GetPlaybackScale();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : *action - 
 //-----------------------------------------------------------------------------
 void CDemoActionManager::InsertFireEvent( CBaseDemoAction *action )
 {
+	// BUGBUG: Sometimes this can get called multiple times for the same event before DispatchEvents() is called.  Why?
+	// If that gets fixed, remove this hack.
+	if ( m_PendingFireActionStack.Find(action) >= 0 )
+		return;
+
 	m_PendingFireActionStack.AddToTail( action );
 }
 
@@ -497,18 +473,11 @@ void CDemoActionManager::DispatchEvents()
 	m_PendingFireActionStack.RemoveAll();
 }
 
-bool CDemoActionManager::OverrideView( democmdinfo_t& info, int frame, float elapsed )
+bool CDemoActionManager::OverrideView( democmdinfo_t& info, int tick )
 {
-	if ( !g_pDemoUI )
-		return false;
-
-	return g_pDemoUI->OverrideView( info, frame, elapsed );
+	// override view
+	return false;
 }
 
-void CDemoActionManager::DrawDebuggingInfo( int frame, float elapsed )
-{
-	if ( !g_pDemoUI )
-		return;
 
-	g_pDemoUI->DrawDebuggingInfo( frame, elapsed );
-}
+

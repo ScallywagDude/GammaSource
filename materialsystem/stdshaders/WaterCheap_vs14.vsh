@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
@@ -75,19 +77,11 @@ rcp $worldEyeVect.w, $worldEyeVect.w
 ; calculate the cheap water blend factor and stick it into oD0.a
 ; NOTE: This won't be perspective correct!!!!!
 ; OPTIMIZE: This could turn into a mad.
-add $worldEyeVect.w, $worldEyeVect.w, -c92.x
-mul $worldEyeVect.w, $worldEyeVect.w, c92.y
-;max $worldEyeVect.w, $worldEyeVect.w, $cZero
-;min oD0.w, $worldEyeVect.w, $cOne
+add $worldEyeVect.w, $worldEyeVect.w, -$SHADER_SPECIFIC_CONST_2.x
+mul oD0, $worldEyeVect.w, $SHADER_SPECIFIC_CONST_2.y
 
-
-&Normalize( $tangentEyeVect );
-
-; stick the tangent space eye vector into oD0.xyz
-mad oD0.xyz, $tangentEyeVect, $cHalf, $cHalf
-
-; stick the magnitude of the eye vector in oD0.w
-mov oD0.w, $worldEyeVect.w
+; stick the tangent space eye vector into oT5.xyz
+mov oT5.xyz, $tangentEyeVect
 
 &FreeRegister( \$worldEyeVect );
 &FreeRegister( \$tangentEyeVect );
@@ -95,8 +89,8 @@ mov oD0.w, $worldEyeVect.w
 ;------------------------------------------------------------------------------
 ; Texture coordinates
 ;------------------------------------------------------------------------------
-dp4 oT0.x, $vTexCoord0, c90
-dp4 oT0.y, $vTexCoord0, c91
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 
 

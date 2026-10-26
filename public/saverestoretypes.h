@@ -1,4 +1,4 @@
-//========= Copyright (c) 1996-2002, Valve LLC, All rights reserved. ==========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:
 //
@@ -6,7 +6,7 @@
 //
 // @Note (toml 12-02-02): For now, all of the methods in the types defined here
 // are inline to permit simple cross-DLL usage
-//=============================================================================
+//=============================================================================//
 
 #ifndef SAVERESTORETYPES_H
 #define SAVERESTORETYPES_H
@@ -14,6 +14,8 @@
 #if defined( _WIN32 )
 #pragma once
 #endif
+
+#include "tier1/utlhash.h"
 
 #include <string_t.h> // NULL_STRING define
 struct edict_t;
@@ -61,9 +63,6 @@ public:
 	const char *StringFromSymbol( int token );
 
 private:
-#ifndef _WIN32
-	unsigned _rotr ( unsigned val, int shift);
-#endif
 	unsigned int HashString( const char *pszToken );
 	
 	//---------------------------------
@@ -91,7 +90,7 @@ struct levellist_t
 {
 	DECLARE_SIMPLE_DATADESC();
 
-	char	mapName[ 32 ];
+	char	mapName[ MAX_MAP_NAME_SAVE ];
 	char	landmarkName[ 32 ];
 	edict_t	*pentLandmark;
 	Vector	vecLandmarkOrigin;
@@ -103,7 +102,7 @@ struct levellist_t
 
 struct EHandlePlaceholder_t // Engine does some of the game writing (alas, probably shouldn't), but can't see ehandle.h
 {
-	unsigned long i;
+	uintp i;
 };
 
 //-------------------------------------
@@ -122,6 +121,7 @@ struct entitytable_t
 		classname = NULL_STRING;
 		globalname = NULL_STRING;
 		landmarkModelSpace.Init();
+		modelname = NULL_STRING;
 	}
 
 	int			id;				// Ordinal ID of this entity (used for entity <--> pointer conversions)
@@ -145,6 +145,9 @@ struct entitytable_t
 									// NOTE: Brush models can be built in different coordiante systems
 									//		in different levels, so this fixes up local quantities to match
 									//		those differences.
+	string_t	modelname;
+
+	DECLARE_SIMPLE_DATADESC();
 };
 
 #define FENTTABLE_PLAYER		0x80000000
@@ -165,7 +168,8 @@ struct saverestorelevelinfo_t
 	char		szLandmarkName[20];	// landmark we'll spawn near in next level
 	Vector		vecLandmarkOffset;	// for landmark transitions
 	float		time;
-	char		szCurrentMapName[32];	// To check global entities
+	char		szCurrentMapName[MAX_MAP_NAME_SAVE];	// To check global entities
+	int			mapVersion;
 };
 
 //-------------------------------------
@@ -174,8 +178,10 @@ class CGameSaveRestoreInfo
 {
 public:
 	CGameSaveRestoreInfo()
+		: tableCount( 0 ), pTable( 0 ), m_pCurrentEntity( 0 ), m_EntityToIndex( 1024 )
 	{
-		memset( this, 0, sizeof(*this) );
+		memset( &levelInfo, 0, sizeof( levelInfo ) );
+		modelSpaceOffset.Init( 0, 0, 0 );
 	}
 
 	void InitEntityTable( entitytable_t *pNewTable = NULL, int size = 0 )
@@ -197,10 +203,64 @@ public:
 		return pReturn;
 	}
 
+	CBaseEntity *GetCurrentEntityContext()	{ return m_pCurrentEntity; }
+	void		SetCurrentEntityContext(CBaseEntity *pEntity) { m_pCurrentEntity = pEntity; }
+
 	int NumEntities()						{ return tableCount; }
 	entitytable_t *GetEntityInfo( int i )	{ return (pTable + i); }
 	float GetBaseTime() const				{ return levelInfo.time; }
 	Vector GetLandmark() const				{ return ( levelInfo.fUseLandmark ) ? levelInfo.vecLandmarkOffset : vec3_origin; }
+
+	void BuildEntityHash()
+	{
+#ifdef GAME_DLL
+		int i;
+		entitytable_t *pTable;
+		int nEntities = NumEntities();
+
+		for ( i = 0; i < nEntities; i++ )
+		{
+			pTable = GetEntityInfo( i );
+			m_EntityToIndex.Insert(  CHashElement( pTable->hEnt.Get(), i ) );
+		}
+#endif
+	}
+
+	void PurgeEntityHash()
+	{
+		m_EntityToIndex.Purge();
+	}
+
+	int	GetEntityIndex( const CBaseEntity *pEntity )
+	{
+#ifdef SR_ENTS_VISIBLE
+		if ( pEntity )
+		{
+			if ( m_EntityToIndex.Count() )
+			{
+				UtlHashHandle_t hElement = m_EntityToIndex.Find( CHashElement( pEntity ) );
+				if ( hElement != m_EntityToIndex.InvalidHandle() )
+				{
+					return m_EntityToIndex.Element( hElement ).index;
+				}
+			}
+			else
+			{
+				int i;
+				entitytable_t *pEntTable;
+
+				int nEntities = NumEntities();
+				for ( i = 0; i < nEntities; i++ )
+				{
+					pEntTable = GetEntityInfo( i );
+					if ( pEntTable->hEnt == pEntity )
+						return pEntTable->id;
+				}
+			}
+		}
+#endif
+		return -1;
+	}
 
 	saverestorelevelinfo_t levelInfo;
 	Vector		modelSpaceOffset;			// used only for globaly entity brushes modelled in different coordinate systems.
@@ -208,16 +268,53 @@ public:
 private:
 	int			tableCount;		// Number of elements in the entity table
 	entitytable_t	*pTable;		// Array of entitytable_t elements (1 for each entity)
+	CBaseEntity		*m_pCurrentEntity; // only valid during the save functions of this entity, NULL otherwise
+
+
+	struct CHashElement
+	{
+		const CBaseEntity *pEntity; 
+		int index;
+
+		CHashElement( const CBaseEntity *pEntity, int index) : pEntity(pEntity), index(index) {}
+		CHashElement( const CBaseEntity *pEntity ) : pEntity(pEntity) {}
+		CHashElement() = default;
+	};
+
+	class CHashFuncs
+	{
+	public:
+		CHashFuncs( int ) {}
+
+		// COMPARE
+		bool operator()( const CHashElement &lhs, const CHashElement &rhs ) const
+		{
+			return lhs.pEntity == rhs.pEntity;
+		}
+
+		// HASH
+		unsigned int operator()( const CHashElement &item ) const
+		{
+			return HashItem( item.pEntity );
+		}
+	};
+
+	typedef CUtlHash<CHashElement, CHashFuncs, CHashFuncs> CEntityToIndexHash;
+
+	CEntityToIndexHash m_EntityToIndex;
 };
 
 //-----------------------------------------------------------------------------
-// @Note (toml 11-27-02): This is hopefully a temporary state of affairs as responsibilites of engine
-// versus game get combed out, and support for arbitrary segments of the compound save
-// file is established
+
 
 class CSaveRestoreData : public CSaveRestoreSegment,
 						 public CGameSaveRestoreInfo
 {
+public:
+	CSaveRestoreData() : bAsync( false ) {}
+
+
+	bool bAsync;
 };
 
 inline CSaveRestoreData *MakeSaveRestoreData( void *pMemory )
@@ -334,6 +431,7 @@ inline void CSaveRestoreSegment::InitSymbolTable( char **pNewTokens, int sizeTab
 	Assert( !pTokens );
 	tokenCount = sizeTable;
 	pTokens = pNewTokens;
+	memset( pTokens, 0, sizeTable * sizeof( pTokens[0]) );
 }
 
 inline char **CSaveRestoreSegment::DetachSymbolTable()
@@ -410,34 +508,29 @@ inline const char *CSaveRestoreSegment::StringFromSymbol( int token )
 	return "<<illegal>>";
 }
 
-#ifndef _WIN32
-inline unsigned CSaveRestoreSegment::_rotr ( unsigned val, int shift)
-{
-		register unsigned lobit;        /* non-zero means lo bit set */
-		register unsigned num = val;    /* number to rotate */
+/// XXX(JohnS): I'm not sure using an intrinsic has any value here, just doing the shift should be recognized by most
+///             compilers. Either way, there's no portable intrinsic.
 
-		shift &= 0x1f;                  /* modulo 32 -- this will also make
-										   negative shifts work */
+// Newer GCC versions provide this in this header, older did by default.
+#if !defined( _rotr ) && defined( COMPILER_GCC ) && !defined( __arm__ ) && !defined( __aarch64__ )
+#include <x86intrin.h>
+#endif
 
-		while (shift--) 
-		{
-				lobit = num & 1;        /* get high bit */
-				num >>= 1;              /* shift right one bit */
-				if (lobit)
-						num |= 0x80000000;  /* set hi bit if lo bit was set */
-		}
-
-		return num;
+#if !defined ( _rotr )
+inline unsigned _rotr(unsigned x, unsigned n) {
+	 return (x >> n % 32) | (x << (32-n) % 32);
 }
 #endif
 
 inline unsigned int CSaveRestoreSegment::HashString( const char *pszToken )
 {
+	COMPILE_TIME_ASSERT( sizeof( unsigned int ) == 4 );
 	unsigned int	hash = 0;
 
 	while ( *pszToken )
+	{
 		hash = _rotr( hash, 4 ) ^ *pszToken++;
-
+	}
 	return hash;
 }
 

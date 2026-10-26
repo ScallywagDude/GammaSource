@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VRADDLL_H
 #define VRADDLL_H
@@ -13,9 +13,10 @@
 
 
 #include "ivraddll.h"
+#include "ilaunchabledll.h"
 
 
-class CVRadDLL : public IVRadDLL
+class CVRadDLL : public IVRadDLL, public ILaunchableDLL
 {
 // IVRadDLL overrides.
 public:

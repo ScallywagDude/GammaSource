@@ -1,22 +1,23 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
+
+#if !defined(_STATIC_LINKED) || defined(_VGUI_DLL)
 
 #include <vgui/ISurface.h>
 
-#include "memorybitmap.h"
+#include "Memorybitmap.h"
 #include "vgui_internal.h"
 
 #include <string.h>
 #include <stdlib.h>
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 using namespace vgui;
 
@@ -55,7 +56,7 @@ void MemoryBitmap::GetSize(int &wide, int &tall)
 	if (!_valid)
 		return;
 
-	surface()->DrawGetTextureSize(_id, wide, tall);
+	g_pSurface->DrawGetTextureSize(_id, wide, tall);
 }
 
 //-----------------------------------------------------------------------------
@@ -109,13 +110,10 @@ void MemoryBitmap::Paint()
 	if (!_valid)
 		return;
 
-	//MIKETODO: procedural textures
-	return;
-
 	// if we don't have an _id then lets make one
 	if (!_id)
 	{
-		_id = surface()->CreateNewTextureID( true );
+		_id = g_pSurface->CreateNewTextureID( true );
 	}
 	
 	// if we have not uploaded yet, lets go ahead and do so
@@ -125,12 +123,12 @@ void MemoryBitmap::Paint()
 	}
 	
 	//set the texture current, set the color, and draw the biatch
-	surface()->DrawSetTexture(_id);
-	surface()->DrawSetColor(_color[0], _color[1], _color[2], _color[3]);
+	g_pSurface->DrawSetTexture(_id);
+	g_pSurface->DrawSetColor(_color[0], _color[1], _color[2], _color[3]);
 
 	int wide, tall;
 	GetSize(wide, tall);
-	surface()->DrawTexturedRect(_pos[0], _pos[1], _pos[0] + wide, _pos[1] + tall);
+	g_pSurface->DrawTexturedRect(_pos[0], _pos[1], _pos[0] + wide, _pos[1] + tall);
 }
 
 
@@ -152,31 +150,25 @@ void MemoryBitmap::ForceUpload(unsigned char *texture,int wide, int tall)
 	if(_w==0 || _h==0)
 		return;
 	
-	//MIKETODO: procedural textures
-	return;
-
 	if (!_id)
 	{
-		_id = surface()->CreateNewTextureID( true );
+		_id = g_pSurface->CreateNewTextureID( true );
 	}
 /*	drawSetTextureRGBA(IE->textureID,static_cast<const char *>(lpvBits), w, h);
 */
-	surface()->DrawSetTextureRGBA(_id, _texture, _w, _h, false, true);
+	g_pSurface->DrawSetTextureRGBA(_id, _texture, _w, _h, false, true);
 	_uploaded = true;
 
-	_valid = surface()->IsTextureIDValid(_id);
+	_valid = g_pSurface->IsTextureIDValid(_id);
 }
-
-
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: data accessor
 //-----------------------------------------------------------------------------
-HCursor MemoryBitmap::GetID()
+HTexture MemoryBitmap::GetID()
 {
 	return _id;
 }
 
+#endif // _STATIC_LINKED && _VGUI_DLL
 

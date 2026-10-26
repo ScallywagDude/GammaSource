@@ -1,20 +1,11 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-//                 Half-Life Model Viewer (c) 1999 by Mete Ciragan
+// Purpose: 
 //
-// file:           FlexPanel.cpp
-// last modified:  May 29 1999, Mete Ciragan
-// copyright:      The programs and associated files contained in this
-//                 distribution were developed by Mete Ciragan. The programs
-//                 are not in the public domain, but they are freely
-//                 distributable without licensing fees. These programs are
-//                 provided without guarantee or warrantee expressed or
-//                 implied.
-//
-// version:        1.2
-//
-// email:          mete@swissquake.ch
-// web:            http://www.swissquake.ch/chumbalum-soft/
-//
+//===========================================================================//
+
+
+#include "hlfaceposer.h"
 #include "FlexPanel.h"
 #include "ViewerSettings.h"
 #include "StudioModel.h"
@@ -23,24 +14,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <mx/mx.h>
-#include <mx/mxBmp.h>
+#include <mxtk/mx.h>
+#include <mxtk/mxBmp.h>
 
 #include "mxbitmapwindow.h"
 #include "mxExpressionTray.h"
 #include "expressions.h"
-#include "cmdlib.h"
+#include "expressiontool.h"
+#include "filesystem.h"
 #include "mdlviewer.h"
-#include "hlfaceposer.h"
 #include "ExpressionProperties.h"
 #include "expclass.h"
 #include "choreowidgetdrawhelper.h"
+#include "choreoview.h"
+#include "choreoscene.h"
 #include "mxExpressionSlider.h"
 #include "faceposer_models.h"
+
+LocalFlexController_t FindFlexControllerIndexByName( StudioModel *model, char const *searchname );
+char const *GetGlobalFlexControllerName( int index );
 
 extern char g_appTitle[];
 
 #define LINE_HEIGHT 20
+
+#define FLEXSLIDER_INVALID_INDEX	-1
 
 FlexPanel		*g_pFlexPanel = 0;
 
@@ -52,6 +50,18 @@ void FlexPanel::PositionControls( int width, int height )
 	int buttonheight = 18;
 
 	btnResetSliders->setBounds( buttonx, row, buttonwidth, buttonheight );
+
+	buttonx += buttonwidth + 5;
+	btnCopyToSliders->setBounds( buttonx, row, buttonwidth, buttonheight );
+
+	buttonx += buttonwidth + 5;
+	buttonwidth = 100;
+	btnCopyFromSliders->setBounds( buttonx, row, buttonwidth, buttonheight );
+
+	buttonx += buttonwidth + 5;
+	buttonwidth = 100;
+
+	btnMenu->setBounds( buttonx, row, buttonwidth, buttonheight );
 }
 
 FlexPanel::FlexPanel (mxWindow *parent)
@@ -62,6 +72,10 @@ FlexPanel::FlexPanel (mxWindow *parent)
 	m_bNewExpressionMode = true;
 
 	btnResetSliders = new mxButton( this, 0, 0, 100, 20, "Zero Sliders", IDC_EXPRESSIONRESET );
+
+	btnCopyToSliders = new mxButton( this, 0, 0, 100, 20, "Get Tracks", IDC_COPY_TO_FLEX );
+	btnCopyFromSliders = new mxButton( this, 0, 0, 100, 20, "Make Keyframe", IDC_COPY_FROM_FLEX );
+	btnMenu = new mxButton( this, 0, 0, 100, 20, "Menu", IDC_FP_MENU );
 
 	mxWindow *wFlex = this;
 	for (int i = 0; i < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; i++)
@@ -79,7 +93,7 @@ FlexPanel::FlexPanel (mxWindow *parent)
 
 
 
-FlexPanel::~FlexPanel ()
+FlexPanel::~FlexPanel()
 {
 }
 
@@ -106,7 +120,7 @@ void FlexPanel::PositionSliders( int sboffset )
 
 	int rowsneeded = GLOBAL_STUDIO_FLEX_CONTROL_COUNT;
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( hdr )
 	{
 		rowsneeded = m_nViewableFlexControllerCount;
@@ -155,6 +169,8 @@ void FlexPanel::PositionSliders( int sboffset )
 
 int FlexPanel::handleEvent (mxEvent *event)
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
@@ -199,8 +215,39 @@ int FlexPanel::handleEvent (mxEvent *event)
 				break;
 			case IDC_EXPRESSIONRESET:
 				{
-					ResetSliders( true );
+					ResetSliders( true, true );
 					IFacePoserToolWindow::SetActiveTool( this );
+				}
+				break;
+
+			case IDC_COPY_TO_FLEX:
+				{
+					g_pExpressionTool->OnCopyToFlex( g_pChoreoView->GetScene()->GetTime(), true );
+				}
+				break;
+			case IDC_COPY_FROM_FLEX:
+				{
+					g_pExpressionTool->OnCopyFromFlex( g_pChoreoView->GetScene()->GetTime(), false );
+				}
+				break;
+			case IDC_FP_UNCHECK_ALL:
+				{
+					OnSetAll( FP_STATE_UNCHECK );
+				}
+				break;
+			case IDC_FP_CHECK_ALL:
+				{
+					OnSetAll( FP_STATE_CHECK );
+				}
+				break;
+			case IDC_FP_INVERT:
+				{
+					OnSetAll( FP_STATE_INVERT );
+				}
+				break;
+			case IDC_FP_MENU:
+				{
+					OnMenu();
 				}
 				break;
 			}
@@ -214,7 +261,7 @@ int FlexPanel::handleEvent (mxEvent *event)
 				mxExpressionSlider *slider = ( mxExpressionSlider * )event->widget;
 				int barnumber = event->height;
 				int slidernum = ( event->action - IDC_FLEXSCALE );
-				
+
 				float value = slider->getValue ( barnumber );
 				float influ = slider->getInfluence( );
 				
@@ -264,13 +311,35 @@ int FlexPanel::handleEvent (mxEvent *event)
 						}
 					}
 				}
-				
-				// Update the face
-				models->GetActiveStudioModel()->SetFlexController( flex, value * influ );
-				if (flex2 != flex)
-					models->GetActiveStudioModel()->SetFlexController( flex2, value2 * influ );
 
-				g_viewerSettings.solveHeadTurn = 1;
+				// FIXME: Needs to drive the current actor, not model
+
+				// Go from global to local indices
+				LocalFlexController_t localflex = FindFlexControllerIndexByName( models->GetActiveStudioModel(), GetGlobalFlexControllerName( flex ) );
+				if ( localflex >= 0 )
+				{
+					// Update the face
+					// FIXME: I'm not sure this is needed anymore....
+					models->GetActiveStudioModel()->SetFlexController( localflex, value * influ );
+					if (flex2 != flex)
+					{
+						LocalFlexController_t localflex2 = FindFlexControllerIndexByName( models->GetActiveStudioModel(), GetGlobalFlexControllerName( flex2 ) );
+						if ( localflex2 >= 0 )
+						{
+							models->GetActiveStudioModel()->SetFlexController( localflex2, value2 * influ );
+						}
+						else
+						{
+							Assert( 0 );
+						}
+					}
+				}
+				else
+				{
+					Assert( 0 );
+				}
+
+				models->SetSolveHeadTurn( 1 );
 				IFacePoserToolWindow::SetActiveTool( this );
 			}
 		}
@@ -279,39 +348,48 @@ int FlexPanel::handleEvent (mxEvent *event)
 	return iret;
 }
 
-void FlexPanel::initFlexes ()
+void FlexPanel::initFlexes()
 {
 	m_nViewableFlexControllerCount = 0;
 
 	memset( nFlexSliderIndex, 0, sizeof( nFlexSliderIndex ) );
 	memset( nFlexSliderBarnum, 0, sizeof( nFlexSliderBarnum ) );
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if (hdr)
 	{
-		for (int j = 0; j < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; j++)
+		for (int i = 0; i < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; i++)
 		{
-			slFlexScale[j]->setVisible( false );
-			slFlexScale[j]->setLabel( "" );
+			slFlexScale[i]->setVisible( false );
+			slFlexScale[i]->setLabel( "" );
+			slFlexScale[i]->SetMode( false );
+			// init to invalid slider index
+			nFlexSliderIndex[i] = FLEXSLIDER_INVALID_INDEX;
 		}
 
 		// J is the slider number we're filling in
-		j = 0;
-
-		for ( int k = 0; k < hdr->numflexcontrollers; k++ )
+		int j = 0;
+		for ( LocalFlexController_t k = LocalFlexController_t(0); k < hdr->numflexcontrollers(); k++ )
 		{
 			// Lookup global flex controller index
-			int controller = hdr->pFlexcontroller( k )->link;
+			int controller = hdr->pFlexcontroller( k )->localToGlobal;
 			Assert( controller != -1 );
 
-			//Con_Printf( "%i Setting up %s global %i\n", k, hdr->pFlexcontroller(k)->pszName(), controller );
+			// Con_Printf( "%i Setting up %s global %i\n", k, hdr->pFlexcontroller(k)->pszName(), controller );
 
 			slFlexScale[j]->setLabel( hdr->pFlexcontroller(k)->pszName() );
 
-			if ( nFlexSliderIndex[controller] == 0 )
+			if ( nFlexSliderIndex[controller] == FLEXSLIDER_INVALID_INDEX )
 			{
+				//Con_Printf( "Assigning bar %i to barnum %i of slider %s for controller %i\n",
+				//	j, 0, hdr->pFlexcontroller(k)->pszName(), controller );
+
 				nFlexSliderIndex[controller] = j;
 				nFlexSliderBarnum[controller] = 0;
+			}
+			else
+			{
+				Assert( 0 );
 			}
 
 			if (hdr->pFlexcontroller(k)->min != hdr->pFlexcontroller(k)->max)
@@ -320,17 +398,25 @@ void FlexPanel::initFlexes ()
 			if (strncmp( "right_", hdr->pFlexcontroller(k)->pszName(), 6 ) == 0)
 			{
 				if (hdr->pFlexcontroller(k)->min != hdr->pFlexcontroller(k)->max)
-					slFlexScale[j]->setRange( 1, hdr->pFlexcontroller(k+1)->min, hdr->pFlexcontroller(k+1)->max );
+					slFlexScale[j]->setRange( 1, 0.0f, 1.0f );
 				slFlexScale[j]->setLabel( &hdr->pFlexcontroller(k)->pszName()[6] );
 
 				slFlexScale[j]->SetMode( true );
 				k++;
-				controller = hdr->pFlexcontroller( k )->link;
+				controller = hdr->pFlexcontroller( k )->localToGlobal;
 				Assert( controller != -1 );
-				if ( nFlexSliderIndex[controller] == 0 )
+				if ( nFlexSliderIndex[controller] == FLEXSLIDER_INVALID_INDEX )
 				{
 					nFlexSliderIndex[controller] = j;
 					nFlexSliderBarnum[controller] = 1;
+
+					//Con_Printf( "Assigning stereo side of bar %i to barnum %i of slider %s for controller\n",
+					//	j, 1, hdr->pFlexcontroller(k)->pszName(), controller );
+
+				}
+				else
+				{
+					Assert(0);
 				}
 			}
 			m_nViewableFlexControllerCount++;
@@ -352,20 +438,77 @@ void FlexPanel::initFlexes ()
 }
 
 
+void FlexPanel::OnModelChanged()
+{
+	ResetSliders( true, false );
+	SetEvent( NULL );
+	redraw();
+}
+
+void FlexPanel::SetEvent( CChoreoEvent *event )
+{
+	bool bUpdateSliders = false;
+
+	if ( event != NULL )
+	{
+		CChoreoScene *scene = event->GetScene();
+		StudioModel *model = FindAssociatedModel( scene, event->GetActor()  );
+
+		if (model == models->GetActiveStudioModel())
+		{
+			bUpdateSliders = true;
+		}
+	}
+
+	btnCopyToSliders->setEnabled( bUpdateSliders );
+	btnCopyFromSliders->setEnabled( bUpdateSliders );
+	return;
+}
+
+
+bool FlexPanel::IsValidSlider( int iFlexController ) const
+{
+	if ( nFlexSliderIndex[ iFlexController ] == FLEXSLIDER_INVALID_INDEX )
+		return false;
+
+	return true;
+}
+
 float	
 FlexPanel::GetSlider( int iFlexController )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "GetSlider(%d) invalid controller index\n", iFlexController );
+		return 0.0f;
+	}
+
 	return slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->getValue( nFlexSliderBarnum[ iFlexController ] );
 }
 
 float FlexPanel::GetSliderRawValue( int iFlexController )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "GetSliderRawValue(%d) invalid controller index\n", iFlexController );
+		return 0.0f;
+	}
+
 	return slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->getRawValue( nFlexSliderBarnum[ iFlexController ] );
 }
 
 void FlexPanel::GetSliderRange( int iFlexController, float& minvalue, float& maxvalue )
 {
 	int barnum = nFlexSliderBarnum[ iFlexController ];
+
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "GetSliderRange(%d) invalid controller index\n", iFlexController );
+
+		minvalue = 0.0f;
+		maxvalue = 1.0f;
+		return;
+	}
 
 	mxExpressionSlider *sl = slFlexScale[ nFlexSliderIndex[ iFlexController ] ]; 
 	Assert( sl );
@@ -376,26 +519,66 @@ void FlexPanel::GetSliderRange( int iFlexController, float& minvalue, float& max
 void
 FlexPanel::SetSlider( int iFlexController, float value )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "SetSlider(%d) invalid controller index\n", iFlexController );
+		return;
+	}
+
 	slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->setValue( nFlexSliderBarnum[ iFlexController ], value );
 }
 
 float	
 FlexPanel::GetInfluence( int iFlexController )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "GetInfluence(%d) invalid controller index\n", iFlexController );
+		return 0.0f;
+	}
+
 	return slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->getInfluence( );
+}
+
+void
+FlexPanel::SetEdited( int iFlexController, bool isEdited )
+{
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "IsEdited(%d) invalid controller index\n", iFlexController );
+		return;
+	}
+
+	slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->setEdited( nFlexSliderBarnum[ iFlexController ], isEdited );
+}
+
+bool
+FlexPanel::IsEdited( int iFlexController )
+{
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "IsEdited(%d) invalid controller index\n", iFlexController );
+		return 0.0f;
+	}
+
+	return slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->isEdited( nFlexSliderBarnum[ iFlexController ] );
 }
 
 void
 FlexPanel::SetInfluence( int iFlexController, float value )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "SetInfluence(%d) invalid controller index\n", iFlexController );
+		return;
+	}
+
 	// Con_Printf( "SetInfluence( %d, %.0f ) : %d %d\n", iFlexController, value, nFlexSliderIndex[ iFlexController ], nFlexSliderBarnum[ iFlexController ] );
 	if ( nFlexSliderBarnum[ iFlexController ] == 0)
 	{
 		slFlexScale[ nFlexSliderIndex[ iFlexController ] ]->setInfluence( value );
 	}
 }
-
-char const *GetGlobalFlexControllerName( int index );
 
 int
 FlexPanel::LookupFlex( int iSlider, int barnum )
@@ -404,7 +587,7 @@ FlexPanel::LookupFlex( int iSlider, int barnum )
 	{
 		if (nFlexSliderIndex[i] == iSlider && nFlexSliderBarnum[i] == barnum)
 		{
-			//char const *name = GetGlobalFlexControllerName( i );
+			// char const *name = GetGlobalFlexControllerName( i );
 			//Con_Printf( "lookup slider %i bar %i == %s\n",
 				//iSlider, barnum, name );
 
@@ -421,6 +604,12 @@ FlexPanel::LookupFlex( int iSlider, int barnum )
 int
 FlexPanel::LookupPairedFlex( int iFlexController )
 {
+	if ( !IsValidSlider( iFlexController ) )
+	{
+		Msg( "LookupPairedFlex(%d) invalid controller index\n", iFlexController );
+		return iFlexController;
+	}
+
 	if (nFlexSliderBarnum[ iFlexController ] == 1)
 	{
 		return iFlexController - 1;
@@ -438,7 +627,7 @@ FlexPanel::setExpression( int index )
 	if ( !models->GetActiveStudioModel() )
 		return;
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 		return;
 
@@ -452,24 +641,22 @@ FlexPanel::setExpression( int index )
 
 	// Con_Printf( "Setting expression to %i:'%s'\n", index, exp->name );
 
-	if ( FacePoser_GetOverridesShowing() )
-	{
-		if ( exp->HasOverride() && exp->GetOverride() )
-		{
-			exp = exp->GetOverride();
-		}
-	}
-
 	float *settings = exp->GetSettings();
 	float *weights = exp->GetWeights();
 	Assert( settings );	
 	Assert( weights );	
 
-	for (int i = 0; i < hdr->numflexcontrollers; i++)
+	for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 	{
-		int j = hdr->pFlexcontroller( i )->link;
+		int j = hdr->pFlexcontroller( i )->localToGlobal;
 		if ( j == -1 )
 			continue;
+
+		//if ( weights[j] > 0.0f )
+		//{
+		//	Con_Printf( "%i Setting %s to %f\n", j, GetGlobalFlexControllerName( j ),
+		//		settings[ j ] );
+		//}
 
 		SetSlider( j, settings[j] );
 		SetInfluence( j, weights[j] );
@@ -479,7 +666,7 @@ FlexPanel::setExpression( int index )
 
 void FlexPanel::DeleteExpression( int index )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 		return;
 	CExpClass *active = expressions->GetActiveClass();
@@ -499,7 +686,7 @@ void FlexPanel::DeleteExpression( int index )
 //-----------------------------------------------------------------------------
 void FlexPanel::RevertExpression( int index )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 		return;
 
@@ -516,78 +703,9 @@ void FlexPanel::RevertExpression( int index )
 	g_pExpressionTrayTool->redraw();
 }
 
-void FlexPanel::SaveExpressionOverride( int index )
-{
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
-	if ( !hdr )
-		return;
-
-	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
-
-	CExpression *exp = active->GetExpression( index );
-	if ( !exp )
-		return;
-
-	// Found it in the base, now create the override if it doesn't exist
-	//
-	CExpClass *overrides = expressions->FindOverrideClass( active->GetName() );
-	if ( !overrides )
-	{
-		// create one
-		overrides = expressions->AddOverrideClass( active->GetName() );
-		if( overrides )
-		{
-			overrides->SetDirty( true );
-			active->SetOverrideClass( overrides );
-			overrides->SetIsOverrideClass( true );
-		}
-	}
-
-	if ( !overrides )
-		return;
-
-	CExpression *oe = overrides->FindExpression( exp->name );
-	if ( !oe )
-	{
-		oe = overrides->AddExpression( exp->name, exp->description, exp->GetSettings(), exp->GetWeights(), false );
-	}
-
-	if ( !oe )
-		return;
-	
-	float *settings = oe->GetSettings();
-	float *weights = oe->GetWeights();
-	Assert( settings );	
-	Assert( weights );	
-	for ( int i = 0; i < hdr->numflexcontrollers; i++ )
-	{
-		int j = hdr->pFlexcontroller( i )->link;
-
-		settings[ j ] = GetSlider( j );
-		weights[ j ] = GetInfluence( j );
-	}
-
-	exp->Revert();
-
-	oe->CreateNewBitmap( models->GetActiveModelIndex() );
-
-	oe->ResetUndo();
-
-	oe->SetDirty( false );
-
-	// So overrides save when we save
-	active->SetDirty( true );
-
-	active->ApplyOverrides();
-
-	g_pExpressionTrayTool->redraw();
-}
-
 void FlexPanel::SaveExpression( int index )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 		return;
 
@@ -607,9 +725,9 @@ void FlexPanel::SaveExpression( int index )
 	float *weights = exp->GetWeights();
 	Assert( settings );	
 	Assert( weights );	
-	for ( int i = 0; i < hdr->numflexcontrollers; i++ )
+	for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++ )
 	{
-		int j = hdr->pFlexcontroller( i )->link;
+		int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 		settings[ j ] = GetSlider( j );
 		weights[ j ] = GetInfluence( j );
@@ -628,15 +746,15 @@ void FlexPanel::CopyControllerSettingsToStructure( CExpression *exp )
 {
 	Assert( exp );
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( hdr )
 	{
 		float *settings = exp->GetSettings();
 		float *weights = exp->GetWeights();
 
-		for (int i = 0; i < hdr->numflexcontrollers; i++)
+		for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 		{
-			int j = hdr->pFlexcontroller( i )->link;
+			int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 			settings[ j ] = GetSlider( j );
 			weights[ j ] = GetInfluence( j );
@@ -644,45 +762,80 @@ void FlexPanel::CopyControllerSettingsToStructure( CExpression *exp )
 	}
 }
 
-void FlexPanel::ResetSliders( bool preserveundo )
+void FlexPanel::OnSetAll( int state )
+{
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
+	if ( hdr )
+	{
+		for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
+		{
+			int j = hdr->pFlexcontroller( i )->localToGlobal;
+
+			float setting = GetSlider( j );
+			float influence = GetInfluence( j );
+			switch ( state )
+			{
+			default:
+				Assert( 0 );
+				break;
+			case FP_STATE_UNCHECK:
+				influence = 0.0f;
+				break;
+			case FP_STATE_CHECK:
+				influence = 1.0f;
+				break;
+			case FP_STATE_INVERT:
+				influence = 1.0f - influence;
+				break;
+			}
+			
+			SetInfluence( j, influence );
+			models->GetActiveStudioModel()->SetFlexController( i, setting * influence );
+		}
+	}
+}
+
+void FlexPanel::ResetSliders( bool preserveundo, bool bDirtyClass )
 {
 	CExpClass *active = expressions->GetActiveClass();
-	if ( !active )
-		return;
 
 	bool needredo = false;
 	CExpression zeroes;
 
 	CExpression *exp = NULL;
-	int index = active->GetSelectedExpression();
-	if ( index != -1 )
+	if ( active )
 	{
-		exp = active->GetExpression( index );
-		if ( exp )
+		int index = active->GetSelectedExpression();
+		if ( index != -1 )
 		{
-			float *settings = exp->GetSettings();
-			Assert( settings );
-
-			if ( memcmp( settings, zeroes.GetSettings(), GLOBAL_STUDIO_FLEX_CONTROL_COUNT * sizeof( float ) ) )
+			exp = active->GetExpression( index );
+			if ( exp )
 			{
-				if ( preserveundo )
+				float *settings = exp->GetSettings();
+				Assert( settings );
+
+				if ( memcmp( settings, zeroes.GetSettings(), GLOBAL_STUDIO_FLEX_CONTROL_COUNT * sizeof( float ) ) )
 				{
-					exp->PushUndoInformation();
-					needredo = true;
+					if ( preserveundo )
+					{
+						exp->PushUndoInformation();
+						needredo = true;
+					}
+
+					if ( bDirtyClass )
+					{
+						active->SetDirty( true );	
+					}
+
+					g_pExpressionTrayTool->redraw();
 				}
-
-				active->SetDirty( true );
-
-				g_pExpressionTrayTool->redraw();
 			}
 		}
 	}
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( hdr )
 	{
-		int i;
-
 		if( exp )
 		{
 			float *settings = exp->GetSettings();
@@ -690,23 +843,24 @@ void FlexPanel::ResetSliders( bool preserveundo )
 
 			Assert( settings && weights );
 
-			for ( i = 0; i < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; i++ )
+			for ( int i = 0; i < GLOBAL_STUDIO_FLEX_CONTROL_COUNT; i++ )
 			{
 				settings[ i ] = 0.0f;
 				weights[ i ] = 0.0f;
 			}
 		}
 
-		for ( i = 0; i < hdr->numflexcontrollers; i++ )
+		for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++ )
 		{
-			int j = hdr->pFlexcontroller( i )->link;
+			int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 			if ( j == -1 )
 				continue;
 
 			SetSlider( j, 0.0f );
 			SetInfluence( j, 0.0f );
-			models->GetActiveStudioModel()->SetFlexController( i, 0.0 );
+			SetEdited( j, false );
+			models->GetActiveStudioModel()->SetFlexController( i, 0.0f );
 		}
 	}
 
@@ -757,7 +911,7 @@ void FlexPanel::PasteControllerSettings( void )
 		}
 	}
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( hdr )
 	{
 		float *settings = paste->GetSettings();
@@ -765,9 +919,9 @@ void FlexPanel::PasteControllerSettings( void )
 		Assert( settings );
 		Assert( weights );
 
-		for (int i = 0; i < hdr->numflexcontrollers; i++)
+		for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 		{
-			int j = hdr->pFlexcontroller( i )->link;
+			int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 			SetSlider( j, settings[j] );
 			SetInfluence( j, weights[j] );
@@ -784,10 +938,10 @@ void FlexPanel::PasteControllerSettings( void )
 
 void FlexPanel::EditExpression( void )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't edit face pose, must load a model first!\n" );
+		Con_ErrorPrintf( "Can't edit face pose, must load a model first!\n" );
 		return;
 	}
 	
@@ -798,7 +952,7 @@ void FlexPanel::EditExpression( void )
 	int index = active->GetSelectedExpression();
 	if ( index == -1 )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't edit face pose, must select a face from list first!\n" );
+		Con_ErrorPrintf( "Can't edit face pose, must select a face from list first!\n" );
 		return;
 	}
 
@@ -824,14 +978,14 @@ void FlexPanel::EditExpression( void )
 	if ( ( strlen( params.m_szName ) <= 0 ) ||
 		!stricmp( params.m_szName, "unnamed" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid name\n" );
+		Con_ErrorPrintf( "You must type in a valid name\n" );
 		return;
 	}
 
 	if ( ( strlen( params.m_szDescription ) <= 0 ) ||
    	   !stricmp( params.m_szDescription, "description" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid description\n" );
+		Con_ErrorPrintf( "You must type in a valid description\n" );
 		return;
 	}
 
@@ -858,10 +1012,10 @@ void FlexPanel::EditExpression( void )
 
 void FlexPanel::NewExpression( void )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't create new face pose, must load a model first!\n" );
+		Con_ErrorPrintf( "Can't create new face pose, must load a model first!\n" );
 		return;
 	}
 
@@ -884,14 +1038,14 @@ void FlexPanel::NewExpression( void )
 	if ( ( strlen( params.m_szName ) <= 0 ) ||
 		!stricmp( params.m_szName, "unnamed" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid name\n" );
+		Con_ErrorPrintf( "You must type in a valid name\n" );
 		return;
 	}
 
 	if ( ( strlen( params.m_szDescription ) <= 0 ) ||
    	   !stricmp( params.m_szDescription, "description" ) )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must type in a valid description\n" );
+		Con_ErrorPrintf( "You must type in a valid description\n" );
 		return;
 	}
 
@@ -899,15 +1053,15 @@ void FlexPanel::NewExpression( void )
 	float weights[ GLOBAL_STUDIO_FLEX_CONTROL_COUNT ];
 	memset( settings, 0, sizeof( settings ) );
 	memset( weights, 0, sizeof( settings ) );
-	for ( int i = 0; i < hdr->numflexcontrollers; i++ )
+	for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++ )
 	{
-		int j = hdr->pFlexcontroller( i )->link;
+		int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 		settings[ j ] = GetSlider( j );
 		weights[ j ] = GetInfluence( j );
 	}	
 
-	active->AddExpression( params.m_szName, params.m_szDescription, settings, weights, true );
+	active->AddExpression( params.m_szName, params.m_szDescription, settings, weights, true, true );
 }
 
 //-----------------------------------------------------------------------------
@@ -918,4 +1072,21 @@ bool FlexPanel::PaintBackground( void )
 {
 	redraw();
 	return false;
+}
+
+void FlexPanel::OnMenu()
+{
+	POINT pt;
+	pt.x = btnMenu->x();
+	pt.y = btnMenu->y();
+	pt.y -= 3 * btnMenu->h2();
+	ScreenToClient( (HWND)getHandle(), &pt );
+
+	mxPopupMenu *pop = new mxPopupMenu();
+
+	pop->add( "Check All", IDC_FP_CHECK_ALL );
+	pop->add( "Uncheck All", IDC_FP_UNCHECK_ALL );
+	pop->add( "Invert Selection", IDC_FP_INVERT );
+
+	pop->popup( this, pt.x, pt.y );
 }

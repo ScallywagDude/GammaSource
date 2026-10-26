@@ -1,16 +1,11 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 #if !defined( IENGINE_H )
 #define IENGINE_H
 #ifdef _WIN32
@@ -22,7 +17,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-class IEngine
+abstract_class IEngine
 {
 public:
 	enum
@@ -32,27 +27,31 @@ public:
 		QUIT_RESTART
 	};
 
+	// Engine State Flags
+	enum EngineState_t
+	{
+		DLL_INACTIVE = 0,		// no dll
+		DLL_ACTIVE,				// engine is focused
+		DLL_CLOSE,				// closing down dll
+		DLL_RESTART,			// engine is shutting down but will restart right away
+		DLL_PAUSED,				// engine is paused, can become active from this state
+	};
+
+
 	virtual			~IEngine( void ) { }
 
 	virtual	bool	Load( bool dedicated, const char *rootdir ) = 0;
 	virtual void	Unload( void ) = 0;
-	virtual	void	SetState( int iState ) = 0;
-	virtual int		GetState( void ) = 0;
-	virtual int		Frame( void ) = 0;
+	virtual void	SetNextState( EngineState_t iNextState ) = 0;
+	virtual EngineState_t GetState( void ) = 0;
 
-	virtual double	GetFrameTime( void ) = 0;
-	virtual double	GetCurTime( void ) = 0;
+	virtual void	Frame( void ) = 0;
 
-	virtual void	TrapKey_Event( int key, bool down ) = 0;
-	virtual void	TrapMouse_Event( int buttons, bool down ) = 0;
-
-	virtual void	StartTrapMode( void ) = 0;
-	virtual bool	IsTrapping( void ) = 0;
-	virtual bool	CheckDoneTrapping( int& buttons, int& key ) = 0;
+	virtual float	GetFrameTime( void ) = 0;
+	virtual float	GetCurTime( void ) = 0;
 
 	virtual int		GetQuitting( void ) = 0;
 	virtual void	SetQuitting( int quittype ) = 0;
-
 };
 
 extern IEngine *eng;

@@ -1,6 +1,13 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "cbase.h"
 #include "itreeitem.h"
-#include "mx/mxTreeView.h"
+#include "mxtk/mxTreeView.h"
 #include "project.h"
 #include "scene.h"
 #include "soundentry.h"

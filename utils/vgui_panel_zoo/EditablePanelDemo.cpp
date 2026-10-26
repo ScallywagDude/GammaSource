@@ -1,19 +1,19 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include "vgui/IVGui.h"
+#include "vgui_controls/Controls.h"
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_EditablePanel.h>
-#include <VGUI_Label.h>
-#include <VGUI_ComboBox.h>
+#include "tier1/KeyValues.h"
+#include <vgui_controls/EditablePanel.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/ComboBox.h>
 
 using namespace vgui;
 
@@ -48,7 +48,7 @@ EditablePanelDemo::EditablePanelDemo(Panel *parent, const char *name) : DemoPage
 	m_pEditablePanel->SetPos(0, 0);
 
 	// Add a child Label panel to the EditablePanel
-	m_pSpeedLabel = (Label *)(m_pEditablePanel->CreateControlByName(this, "Label"));
+	m_pSpeedLabel = (Label *)(m_pEditablePanel->CreateControlByName("Label"));
 	// Set its parent to our editable panel.
 	m_pSpeedLabel->SetParent(m_pEditablePanel);
 	// Set its Position
@@ -56,9 +56,7 @@ EditablePanelDemo::EditablePanelDemo(Panel *parent, const char *name) : DemoPage
 	// Set its size
 	m_pSpeedLabel->SetSize(96,20);
 	// Set it not to resize with the window.
-	m_pSpeedLabel->SetAutoResize(AUTORESIZE_NO);
-	// Set its pincorner
-	m_pSpeedLabel->SetPinCorner(PIN_TOPLEFT);
+	m_pSpeedLabel->SetAutoResize(PIN_TOPLEFT, AUTORESIZE_NO, 0, 0, 0, 0 );
 	// Set it visible
 	m_pSpeedLabel->SetVisible(true);
 	// Set it enabled
@@ -86,7 +84,7 @@ EditablePanelDemo::EditablePanelDemo(Panel *parent, const char *name) : DemoPage
 	};
 
 	// Create the combo box using the create function
-	m_pInternetSpeed = (ComboBox *)(m_pEditablePanel->CreateControlByName(this, "ComboBox"));
+	m_pInternetSpeed = (ComboBox *)(m_pEditablePanel->CreateControlByName("ComboBox"));
 	// Set its parent to our editable panel.
 	m_pInternetSpeed->SetParent(m_pEditablePanel);
 	// Set its position next to the label.
@@ -94,9 +92,7 @@ EditablePanelDemo::EditablePanelDemo(Panel *parent, const char *name) : DemoPage
 	// Set its size
 	m_pInternetSpeed->SetSize(200, 20);
 	// Set it not to resize with the window.
-	m_pInternetSpeed->SetAutoResize(AUTORESIZE_NO);
-	// Set its pincorner
-	m_pInternetSpeed->SetPinCorner(PIN_TOPLEFT);
+	m_pInternetSpeed->SetAutoResize(PIN_TOPLEFT, AUTORESIZE_NO, 0, 0, 0, 0 );
 	// Set it visible
 	m_pInternetSpeed->SetVisible(true);
 	// Set it enabled
@@ -118,7 +114,7 @@ EditablePanelDemo::EditablePanelDemo(Panel *parent, const char *name) : DemoPage
 	// Add menu items to this combo box.
 	for (int i = 0; i < ARRAYSIZE(g_Speeds); i++)
 	{
-		m_pInternetSpeed->AddItem(g_Speeds[i]);
+		m_pInternetSpeed->AddItem(g_Speeds[i], NULL );
 	}
 
 	// Associate our label with our combo box

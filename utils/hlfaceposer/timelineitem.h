@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef TIMELINEITEM_H
 #define TIMELINEITEM_H
@@ -11,8 +11,8 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
-#include "UtlVector.h"
+#include <mxtk/mx.h>
+#include "utlvector.h"
 #include "ExpressionSample.h"
 
 class CExpression;
@@ -21,7 +21,13 @@ class CFlexAnimationTrack;
 class CChoreoWidgetDrawHelper;
 class CChoreoView;
 
-class TimelineItem /*: public mxWindow*/
+template< class T > class CCurveEditorHelper;
+
+#define FP_TL_SELECTION_TOLERANCE				30.0f
+#define FP_TL_SELECTION_RECTANGLE_TOLERANCE		5.0f
+#define FP_TL_ADDSAMPLE_TOLERANCE				5.0f
+
+class TimelineItem
 {
 public:
 	// Construction
@@ -59,7 +65,7 @@ public:
 	void				SetVisible( bool vis );
 	bool				GetVisible( void ) const;
 
-	void				CountSelected( void );
+	int					CountSelected( void );
 	CFlexAnimationTrack	*GetSafeTrack( void );
 	int					GetNumSelected( void );
 
@@ -83,6 +89,15 @@ public:
 	float				GetTimeForMouse( int mx, bool clip = false );
 	int					GetMouseForTime( float t, bool *clipped = NULL );
 
+	void				SetMousePositionForEvent( mxEvent *event );
+
+	int					NumSamples();
+	CExpressionSample	*GetSample( int idx );
+	void				PreDataChanged( char const *undodescription );
+	void				PostDataChanged( char const *redodescription );
+	CExpressionSample	*GetSampleUnderMouse( int mx, int my, float tolerance = FP_TL_SELECTION_TOLERANCE );
+	void				GetWorkList( bool reflect, CUtlVector< TimelineItem * >& list );
+
 private:
 	enum
 	{
@@ -93,15 +108,11 @@ private:
 		DRAGTYPE_GROW,
 	};
 
-	void				PreDataChanged( char *undodescription );
-	void				PostDataChanged( char *redodescription );
 
 	bool				CanHaveGrowHandle();
 	void				DrawGrowHandle( CChoreoWidgetDrawHelper& helper, RECT& handleRect );
 	void				GetGrowHandleRect( RECT& rc );
 	bool				IsMouseOverGrowHandle( int x, int y);
-
-	CExpressionSample	*GetSampleUnderMouse( mxEvent *event );
 
 	void				MouseDrag( int x, int y, int modifiers, bool snap = false );
 
@@ -111,6 +122,8 @@ private:
 	void				SelectPoints( void );
 
 	void				OnDoubleClicked( void );
+
+	void				DrawAutoHighlight( mxEvent *event );
 
 	int					m_nDragging;
 	int					m_nLastX;
@@ -133,7 +146,7 @@ private:
 
 	int					m_nEditType;
 
-	int					m_bUndoSetup;
+	int					m_nUndoSetup;
 	RECT				m_rcBounds;
 	bool				m_bVisible;
 
@@ -141,6 +154,8 @@ private:
 	double				m_flLastClickTime;
 
 	int					m_nCurrentHeight;
+
+	CCurveEditorHelper< TimelineItem >	*m_pHelper;
 };
 
 #endif // TIMELINEITEM_H

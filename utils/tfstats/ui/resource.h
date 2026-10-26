@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by UI.rc

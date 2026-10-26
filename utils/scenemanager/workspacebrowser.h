@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef WORKSPACEBROWSER_H
 #define WORKSPACEBROWSER_H
@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "mx/mxTreeView.h"
+#include "mxtk/mxTreeView.h"
 #include "commctrl.h"
 
 class CWorkspace;

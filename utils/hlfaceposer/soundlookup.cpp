@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include "mx/mx.h"
+#include "mxtk/mx.h"
 #include "resource.h"
 #include "SoundLookup.h"
 #include "mdlviewer.h"
-#include "SoundEmitterSystemBase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "addsoundentry.h"
 
 static CSoundLookupParams g_Params;
@@ -27,8 +27,10 @@ static void PopulateSoundEntryList( HWND wnd, CSoundLookupParams *params )
 	for ( int i = 0; i < c; i++ )
 	{
 		int soundindex = (*params->entryList)[ i ];
-		char const *text = soundemitter->GetSoundName( soundindex );
-		if ( text && text[0] )
+		char text[ 128 ];
+		text[ 0 ]  = 0;
+		Q_strncpy( text, soundemitter->GetSoundName( soundindex ), sizeof( text ) );
+		if ( text[0] )
 		{
 			char const *script = soundemitter->GetSourceFileForSound( soundindex );
 

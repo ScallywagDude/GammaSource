@@ -1,6 +1,15 @@
 #ifndef HK_BASE_BASE_TYPES_H
 #define HK_BASE_BASE_TYPES_H
 
+#ifdef _LINUX
+#include <signal.h>
+#endif
+
+// TODO(crack): filthy hack to get around keyword bans in macros
+#ifndef _ALLOW_KEYWORD_MACROS
+# define _ALLOW_KEYWORD_MACROS
+#endif // _ALLOW_KEYWORD_MACROS
+
 // some of these are wrong
 #if defined(_DEBUG) && !defined(HK_DEBUG)
 #	define HK_DEBUG
@@ -25,7 +34,13 @@
 #endif
 
 #define HK_DECLARE_NONVIRTUAL_CLASS_ALLOCATOR(a,b)
+
+#ifdef _LINUX
+#define HK_BREAKPOINT() raise(SIGINT)
+#else
 #define HK_BREAKPOINT() *(int*)0=0
+#endif
+
 
 class hkBaseObject
 {
@@ -51,14 +66,18 @@ typedef unsigned char		hk_uchar;
 typedef unsigned short		hk_uint16;
 typedef unsigned int		hk_uint32;
 
-#if defined(__POWERPC__) && defined(__MWERKS__)
+#if 1 // defined(__POWERPC__) && defined(__MWERKS__)
 #include <stddef.h>
 typedef size_t 			hk_size_t;  // CK: unsigned long int ..
 #else
 typedef unsigned int 	hk_size_t;
 #endif
 
+#ifdef _LINUX
+#define HK_BREAK raise(SIGINT)
+#else
 #define HK_BREAK (*((int *)0)) = 0
+#endif
 
 #define HK_PUBLIC public
 
@@ -107,9 +126,9 @@ typedef hk_uint32	hk_id;
 #endif
 #define HK_TEMPLATE_INLINE inline
 
-#if defined(__i386__) || defined(WIN32)
-#	define HK_HAVE_QUERY_PERFORMANCE_TIMER
-#endif
+//#if defined(__i386__) || defined(WIN32)
+//#	define HK_HAVE_QUERY_PERFORMANCE_TIMER
+//#endif
 
 #if !defined(HK_ALIGNED_VARIABLE)
 #	if defined(HK_PS2)

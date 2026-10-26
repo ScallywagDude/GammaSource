@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // vmpi_service_ui.cpp : Defines the entry point for the application.
 //
 
@@ -5,7 +12,7 @@
 #include "consolewnd.h"
 #include "resource.h"
 #include "tier0/dbg.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "shell_icon_mgr.h"
 #include "vmpi.h"
 #include "service_conn_mgr.h"
@@ -33,8 +40,39 @@ bool g_bHighlightIconWhenBusy = false;
 // STATE THE SERVICE OWNS.
 int g_iCurState = 0; // One of the VMPI_SERVICE_STATE_ defines.
 char *g_pPassword = NULL;
-bool g_bSkipCSXJobs = false;
+bool g_bScreensaverMode = false;
 
+
+void LogString( const char *pStr, ... )
+{
+#ifdef VMPI_SERVICE_LOGS
+	char str[4096];
+	va_list marker;
+	va_start( marker, pStr );
+	_vsnprintf( str, sizeof( str ), pStr, marker );
+	va_end( marker );
+	
+	static FILE *fp = fopen( "c:\\vmpi_service_ui.log", "wt" );
+	if ( fp )
+	{
+		fprintf( fp, "%s", str );
+		fflush( fp );
+	}
+#endif
+}
+
+char* GetLastErrorString()
+{
+	static char err[2048];
+	
+	LPVOID lpMsgBuf;
+	FormatMessage( FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, GetLastError(), MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &lpMsgBuf, 0, NULL );
+	strncpy( err, (char*)lpMsgBuf, sizeof( err ) );
+	LocalFree( lpMsgBuf );
+
+	err[ sizeof( err ) - 1 ] = 0;
+	return err;
+}
 
 
 // ------------------------------------------------------------------------------------------ //
@@ -115,21 +153,28 @@ public:
 
 void CUIConnMgr::HandlePacket( const char *pData, int len )
 {
-	int offset = 1;
-	if ( pData[0] == VMPI_SERVICE_CONSOLE_TEXT )
+	if ( pData[0] != VMPI_SERVICE_UI_PROTOCOL_VERSION )
+		return;
+	
+	int packetID = pData[1];
+	
+	int offset = 2;
+	if ( packetID == VMPI_SERVICE_TO_UI_CONSOLE_TEXT )
 	{
-		Msg( &pData[1] );
+		Msg( &pData[offset] );
 	}
-	else if ( pData[0] == VMPI_SERVICE_STATE )
+	else if ( packetID == VMPI_SERVICE_TO_UI_STATE )
 	{
 		// Get the new state out..
 		g_iCurState = *((int*)&pData[offset]);
 		offset += 4;
+
+		LogString( "New UI state: %d.\n", g_iCurState );
 		
 		// Update our icon.
 		UpdateAppIcon();
 
-		g_bSkipCSXJobs = (*((char*)&pData[offset]) != 0);
+		g_bScreensaverMode = (*((char*)&pData[offset]) != 0);
 		++offset;
 
 		// Store the current password.
@@ -143,7 +188,43 @@ void CUIConnMgr::HandlePacket( const char *pData, int len )
 
 		UpdatePopupMenuState();
 	}
-	else if ( pData[0] == VMPI_SERVICE_EXIT )
+	else if ( packetID == VMPI_SERVICE_TO_UI_PATCHING )
+	{
+		LogString( "Got a VMPI_SERVICE_TO_UI_PATCHING packet.\n" );
+		
+		int bExitAfter = pData[offset];
+		++offset;
+		
+		char workingDir[MAX_PATH], commandLine[4096];
+		V_strncpy( workingDir, &pData[offset], sizeof( workingDir ) );
+		offset += V_strlen( workingDir ) + 1;
+		
+		V_strncpy( commandLine, &pData[offset], sizeof( commandLine ) );
+		offset += V_strlen( commandLine ) + 1;
+		
+		// Run whatever they said to run.
+		STARTUPINFO si;
+		memset( &si, 0, sizeof( si ) );
+		si.cb = sizeof( si );
+		
+		PROCESS_INFORMATION pi;
+		memset( &pi, 0, sizeof( pi ) );
+		if ( CreateProcess( NULL, commandLine, NULL, NULL, false, CREATE_NO_WINDOW, NULL, workingDir, &si, &pi ) )
+		{
+			LogString( "CreateProcess succeeded:\n%s\n", commandLine );
+
+			CloseHandle( pi.hProcess );
+			CloseHandle( pi.hThread );
+			
+			if ( bExitAfter )
+				PostQuitMessage( 0 );
+		}
+		else
+		{
+			LogString( "CreateProcess failed: %s", GetLastErrorString() );
+		}
+	}
+	else if ( packetID == VMPI_SERVICE_TO_UI_EXIT )
 	{
 		// Exit.
 		PostQuitMessage( 0 );
@@ -254,7 +335,7 @@ void UpdatePopupMenuState()
 	EnableMenuItem( g_hPopupMenu, ID_SHOW_CONSOLE_WINDOW,  g_pConsoleWnd->IsVisible() ? MF_GRAYED : MF_ENABLED );
 	EnableMenuItem( g_hPopupMenu, ID_HIDE_CONSOLE_WINDOW, !g_pConsoleWnd->IsVisible() ? MF_GRAYED : MF_ENABLED );
 
-	CheckMenuItem( g_hPopupMenu, ID_IGNORECSXCOMPILES, g_bSkipCSXJobs ? MF_CHECKED : MF_UNCHECKED );
+	CheckMenuItem( g_hPopupMenu, ID_SCREENSAVER_MODE, g_bScreensaverMode ? MF_CHECKED : MF_UNCHECKED );
 	CheckMenuItem( g_hPopupMenu, ID_HIGHLIGHT_ICON_WHEN_BUSY, g_bHighlightIconWhenBusy ? MF_CHECKED : MF_UNCHECKED );
 }
 
@@ -371,6 +452,13 @@ public:
 						g_ConnMgr.SendPacket( -1, &cPacket, 1 );
 					}
 					break;
+					
+					case ID_KILLCURRENTJOB:
+					{
+						char cPacket = VMPI_KILL_PROCESS;
+						g_ConnMgr.SendPacket( -1, &cPacket, 1 );
+					}
+					break;
 
 					case ID_HIGHLIGHT_ICON_WHEN_BUSY:
 					{
@@ -381,13 +469,14 @@ public:
 					}
 					break;
 
-					case ID_IGNORECSXCOMPILES:
+					case ID_SCREENSAVER_MODE:
 					{
-						g_bSkipCSXJobs = !g_bSkipCSXJobs;
-						char cPacket[2] = { VMPI_SERVICE_SKIP_CSX_JOBS, g_bSkipCSXJobs };
+						g_bScreensaverMode = !g_bScreensaverMode;
+						char cPacket[2] = { VMPI_SERVICE_SCREENSAVER_MODE, g_bScreensaverMode };
 						g_ConnMgr.SendPacket( -1, cPacket, sizeof( cPacket ) );
 					}
 					break;
+
 
 					case ID_SHOW_CONSOLE_WINDOW:
 					{
@@ -455,6 +544,8 @@ int APIENTRY WinMain(HINSTANCE hInstance,
  	g_hInstance = hInstance;
 
 
+	LogString( "vmpi_service_ui startup.\n" );
+
 	// Don't run multiple instances.	
 	HANDLE hMutex = CreateMutex( NULL, FALSE, "vmpi_service_ui_mutex" );
 	if ( hMutex && GetLastError() == ERROR_ALREADY_EXISTS )
@@ -464,6 +555,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Hook spew output.
 	SpewOutputFunc( MySpewOutputFunc );
 	InitConsoleWindow();
+	LogString( "Setup console window.\n" );
 
 	LoadStateFromRegistry();
 
@@ -486,6 +578,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	// Connect to the VMPI service.
 	g_ConnMgr.InitClient();
 
+	LogString( "Entering main loop.\n" );
 	
 	while ( 1 )
 	{

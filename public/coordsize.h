@@ -1,15 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// coordsize.h  -- semi-public resolution/size of coordinate messages used in engine
-//=============================================================================
+//=============================================================================//
 
 #ifndef COORDSIZE_H
 #define COORDSIZE_H
@@ -22,6 +17,12 @@
 #define COORD_FRACTIONAL_BITS		5
 #define COORD_DENOMINATOR			(1<<(COORD_FRACTIONAL_BITS))
 #define COORD_RESOLUTION			(1.0/(COORD_DENOMINATOR))
+
+// Special threshold for networking multiplayer origins
+#define COORD_INTEGER_BITS_MP		11
+#define COORD_FRACTIONAL_BITS_MP_LOWPRECISION 3
+#define COORD_DENOMINATOR_LOWPRECISION			(1<<(COORD_FRACTIONAL_BITS_MP_LOWPRECISION))
+#define COORD_RESOLUTION_LOWPRECISION			(1.0/(COORD_DENOMINATOR_LOWPRECISION))
 
 #define NORMAL_FRACTIONAL_BITS		11
 #define NORMAL_DENOMINATOR			( (1<<(NORMAL_FRACTIONAL_BITS)) - 1 )

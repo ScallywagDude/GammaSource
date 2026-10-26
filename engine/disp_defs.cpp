@@ -1,12 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "disp_defs.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // ---------------------------------------------------------------------- //
 // Global tables.
@@ -28,24 +30,12 @@ int g_CoreDispNeighborOrientationMap[4][4] =
 // Global variables.
 // ---------------------------------------------------------------------- //
 
-float						g_flDispToleranceSqr;
 CUtlVector<unsigned char>	g_DispLMAlpha;
-CUtlVector<unsigned char>	g_DispLightmapSamplePositions;
+CUtlVector<unsigned char, CHunkMemory<unsigned char> >	g_DispLightmapSamplePositions;
 CUtlVector<CDispGroup*>		g_DispGroups;
-
-ConVar						r_DispUpdateAll( "r_DispUpdateAll", "0" );
-ConVar						r_DispFullRadius( "r_DispFullRadius", "400", 0, "Radius within which a displacement will stay at its highest LOD" );
-ConVar						r_DispRadius( "r_DispRadius", "500" );
-ConVar						r_DispTolerance("r_DispTolerance", "5");
-ConVar						r_DispLockLOD( "r_DispLockLOD", "0" );
-ConVar						r_DispEnableLOD( "r_DispEnableLOD", "0" );
-
-CMemoryPool					g_DecalFragmentPool( sizeof(CDispDecalFragment), 64 );
 
 bool						g_bDispOrthoRender = false;
 
-ConVar						r_DrawDisp( "r_DrawDisp", "1" );
-
-ConVar						r_DispWalkable( "r_DispWalkable", "0" );
-ConVar						r_DispBuildable( "r_DispBuildable", "0" );
-ConVar r_DispUseStaticMeshes( "r_DispUseStaticMeshes", "1", 0, "High end machines use static meshes. Low end machines use temp meshes." );
+ConVar						r_DrawDisp( "r_DrawDisp", "1", FCVAR_CHEAT, "Toggles rendering of displacment maps" );
+ConVar						r_DispWalkable( "r_DispWalkable", "0", FCVAR_CHEAT );
+ConVar						r_DispBuildable( "r_DispBuildable", "0", FCVAR_CHEAT );

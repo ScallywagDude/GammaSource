@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IMAGEPANEL_H
 #define IMAGEPANEL_H
@@ -30,28 +25,66 @@ class IImage;
 //-----------------------------------------------------------------------------
 class ImagePanel : public Panel
 {
+	DECLARE_CLASS_SIMPLE( ImagePanel, Panel );
 public:
 	ImagePanel(Panel *parent, const char *name);
 	~ImagePanel();
 
 	virtual void SetImage(IImage *image);
+	virtual void SetImage(const char *imageName);
 	virtual IImage *GetImage();
+	char *GetImageName();
+
+	void SetShouldCenterImage( bool state ) { m_bCenterImage = state; }
+	bool GetShouldCenterImage() const { return m_bCenterImage; }
+
+	// sets whether or not the image should scale to fit the size of the ImagePanel (defaults to false)
+	void SetShouldScaleImage( bool state );
+	bool GetShouldScaleImage();
+	void SetScaleAmount( float scale );
+	float GetScaleAmount( void );
+
+	void SetTileImage( bool bTile )	{ m_bTileImage = bTile; }
+
+	// set the color to fill with, if no image is specified
+	void SetFillColor( Color col );
+	Color GetFillColor();
+
+	virtual Color GetDrawColor( void );
+	virtual void SetDrawColor( Color drawColor );
+
+	virtual void ApplySettings(KeyValues *inResourceData);
+
+	// unhooks and evicts image if possible, caller must re-establish
+	bool EvictImage();
+	
+	int GetNumFrames();
+	void SetFrame( int nFrame );
+
+	void SetRotation( int iRotation ) { m_iRotation = iRotation; }
 
 protected:
 	virtual void PaintBackground();
 	virtual void GetSettings(KeyValues *outResourceData);
-	virtual void ApplySettings(KeyValues *inResourceData);
 	virtual const char *GetDescription();
 	virtual void OnSizeChanged(int newWide, int newTall);
+	virtual void ApplySchemeSettings( IScheme *pScheme );
 
 private:
-	DECLARE_PANELMAP();
 	IImage *m_pImage;
 	char *m_pszImageName;
-	char *m_pszColorName;
+	char *m_pszFillColorName;
+	char *m_pszDrawColorName;
+	bool m_bPositionImage;
+	bool m_bCenterImage;
 	bool m_bScaleImage;
+	bool m_bTileImage;
+	bool m_bTileHorizontally;
+	bool m_bTileVertically;
+	float m_fScaleAmount;
 	Color m_FillColor;
-	typedef vgui::Panel BaseClass;
+	Color m_DrawColor;
+	int m_iRotation;
 };
 
 } // namespace vgui

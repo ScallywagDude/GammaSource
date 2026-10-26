@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Makes .DAT files
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <stdio.h>
 #include <string.h>
@@ -22,33 +17,14 @@
 #include <stdlib.h>
 #include "basetypes.h"
 #include "checksum_md5.h"
+#include "tier1/strtools.h"
 
 void Sys_Error( char *fmt, ... );
 extern void Con_Printf( char *fmt, ... );
-int COM_FOpenFile( const char *filename, FILE **file );
 
 // So we can link CRC
 int LittleLongFn( int l );
 int (*LittleLong)(int l) = LittleLongFn;
-
-
-void StripExtension( const char *in, char *out )
-{
-	// BUGBUG -- The one in common doesn't work with relative paths, so do this instead.
-	const char *tail = in + strlen( in ) - 1;
-
-	while ( tail > in && *tail != '.' )
-		tail--;
-
-	int len = tail - in;
-	
-	while (len)
-	{
-		*out++ = *in++;
-		len--;
-	}
-	*out = 0;
-}
 
 
 // So we can link CRC
@@ -84,13 +60,6 @@ void Con_Printf( char *fmt, ... )
 	va_list args;
 	va_start( args, fmt );
 	vprintf( fmt, args );
-}
-
-
-// So we can link CRC
-int COM_FOpenFile( const char *filename, FILE **file )
-{
-	return COM_FindFile( (char *)filename, file );
 }
 
 bool MD5_Hash_File(unsigned char digest[16], char *pszFileName, bool bUsefopen /* = FALSE */, bool bSeed /* = FALSE */, unsigned int seed[4] /* = NULL */)
@@ -193,7 +162,7 @@ int main( int argc, char *argv[] )
 
 
 	// Get the filename without the extension
-	StripExtension( argv[1], out );
+	Q_StripExtension( argv[1], out, sizeof( out ) );
 	sprintf( datFile, "%s.dat", out );
 
 	// Build the MD5 hash for the .EXE file

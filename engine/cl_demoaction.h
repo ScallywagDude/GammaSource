@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOACTION_H
 #define CL_DEMOACTION_H
@@ -68,7 +68,7 @@ typedef enum
 typedef enum
 {
 	ACTION_USES_NEITHER = 0,
-	ACTION_USES_FRAME,
+	ACTION_USES_TICK,
 	ACTION_USES_TIME,
 
 	NUM_TIMING_TYPES,
@@ -79,8 +79,8 @@ typedef enum
 //-----------------------------------------------------------------------------
 struct DemoActionTimingContext
 {
-	int		prevframe;
-	int		curframe;
+	int		prevtick;
+	int		curtick;
 	float	prevtime;
 	float	curtime;
 };
@@ -88,7 +88,7 @@ struct DemoActionTimingContext
 typedef CBaseDemoAction * (*DEMOACTIONFACTORY_FUNC)( void );
 typedef CBaseActionEditDialog *(*DEMOACTIONEDIT_FUNC)( CDemoEditorPanel *parent, CBaseDemoAction *action, bool newaction );
 
-class CBaseDemoAction
+abstract_class CBaseDemoAction
 {
 public:
 
@@ -119,10 +119,10 @@ public:
 	void					SetActionFired( bool fired );
 	bool					GetActionFired( void ) const;
 
-	int						GetStartFrame( void ) const;
-	void					SetStartFrame( int frame );
+	int						GetStartTick( void ) const;
+	void					SetStartTick( int tick );
 	float					GetStartTime( void ) const;
-	void					SetStartTime( float t );
+	void					SetStartTime( float time );
 
 	void					SetFinishedAction( bool finished );
 	bool					HasActionFinished( void ) const;
@@ -155,7 +155,7 @@ public:
 	static bool				HasEditorFactory( DEMOACTION actionType );
 
 	// Serialization helper ( handles indenting )
-	static void				BufPrintf( int depth, CUtlBuffer& buf, char const *fmt, ... );
+	static void				BufPrintf( int depth, CUtlBuffer& buf, PRINTF_FORMAT_STRING char const *fmt, ... );
 
 private:
 
@@ -174,7 +174,7 @@ private:
 	char					m_szActionTarget[ MAX_ACTION_NAME ];
 
 	DEMOACTIONTIMINGTYPE	m_Timing;
-	int						m_nStartFrame;
+	int						m_nStartTick;
 	float					m_flStartTime;
 };
 

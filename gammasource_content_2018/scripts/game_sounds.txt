@@ -1,0 +1,1138 @@
+//
+//
+// NOTE:  AUTOMATICALLY GENERATED FILE, ANY HAND EDITED COMMENTS WILL BE LOST!!!
+// NOTE:  AUTOMATICALLY GENERATED FILE, ANY HAND EDITED COMMENTS WILL BE LOST!!!
+// NOTE:  AUTOMATICALLY GENERATED FILE, ANY HAND EDITED COMMENTS WILL BE LOST!!!
+//
+// VOL_NORM		1.0f
+//
+//-----------------------------------------------------------------------------
+// common attenuation values
+//-----------------------------------------------------------------------------
+//
+// DON'T USE THESE - USE SNDLVL_ INSTEAD!!!
+//	ATTN_NONE		0.0f	
+//	ATTN_NORM		0.8f
+//	ATTN_IDLE		2.0f
+//	ATTN_STATIC		1.25f 
+//	ATTN_RICOCHET	1.5f
+//	ATTN_GUNFIRE	0.27f
+//
+//	SNDLVL_NONE		= 0,
+//	SNDLVL_25dB		= 25,
+//	SNDLVL_30dB		= 30,
+//	SNDLVL_35dB		= 35,
+//	SNDLVL_40dB		= 40,
+//	SNDLVL_45dB		= 45,
+//	SNDLVL_50dB		= 50,	// 3.9
+//	SNDLVL_55dB		= 55,	// 3.0
+//	SNDLVL_IDLE		= 60,	// 2.0
+//	SNDLVL_TALKING	= 60,	// 2.0
+//	SNDLVL_60dB		= 60,	// 2.0
+//	SNDLVL_65dB		= 65,	// 1.5
+//	SNDLVL_STATIC	= 66,	// 1.25
+//	SNDLVL_70dB		= 70,	// 1.0
+//	SNDLVL_NORM		= 75,
+//	SNDLVL_75dB		= 75,	// 0.8
+//	SNDLVL_80dB		= 80,	// 0.7
+//	SNDLVL_85dB		= 85,	// 0.6
+//	SNDLVL_90dB		= 90,	// 0.5
+//	SNDLVL_95dB		= 95,
+//	SNDLVL_100dB	= 100,	// 0.4
+//	SNDLVL_105dB	= 105,
+//	SNDLVL_120dB	= 120,
+//	SNDLVL_130dB	= 130,
+//	SNDLVL_GUNFIRE	= 140,	// 0.27
+//	SNDLVL_140dB	= 140,	// 0.2
+//	SNDLVL_150dB	= 150,	// 0.2
+
+
+"NPC_Barney.FootstepLeft"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_IDLE"
+
+	"rndwave"
+	{
+		"wave"	"footsteps/hardboot_generic1.wav"
+		"wave"	"footsteps/hardboot_generic2.wav"
+		"wave"	"footsteps/hardboot_generic3.wav"
+		"wave"	"footsteps/hardboot_generic4.wav"
+	}
+}
+
+"NPC_Barney.FootstepRight"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_IDLE"
+
+	"rndwave"
+	{
+		"wave"	"footsteps/hardboot_generic5.wav"
+		"wave"	"footsteps/hardboot_generic6.wav"
+		"wave"	"footsteps/hardboot_generic7.wav"
+		"wave"	"footsteps/hardboot_generic8.wav"
+	}
+}
+
+"NPC_BaseZombie.PoundDoor"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/zombie/zombie_pound_door.wav"
+}
+
+"NPC_BaseZombie.Swat"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/zombie/zombie_hit.wav"
+}
+
+"NPC_Citizen.FootstepLeft"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_IDLE"
+
+	"rndwave"
+	{
+		"wave"	"footsteps/hardboot_generic1.wav"
+		"wave"	"footsteps/hardboot_generic2.wav"
+		"wave"	"footsteps/hardboot_generic3.wav"
+		"wave"	"footsteps/hardboot_generic4.wav"
+	}
+}
+
+"NPC_Citizen.FootstepRight"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_IDLE"
+
+	"rndwave"
+	{
+		"wave"	"footsteps/hardboot_generic5.wav"
+		"wave"	"footsteps/hardboot_generic6.wav"
+		"wave"	"footsteps/hardboot_generic7.wav"
+		"wave"	"footsteps/hardboot_generic8.wav"
+	}
+}
+
+"NPC_Combine.GrenadeLaunch"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"0.800"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/glauncher.wav"
+}
+
+"NPC_CombineS.Die"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/combine_soldier/die1.wav"
+		"wave"	"npc/combine_soldier/die2.wav"
+		"wave"	"npc/combine_soldier/die3.wav"
+	}
+}
+
+"NPC_MissileDefense.Attack"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_100dB"
+
+	"rndwave"
+	{
+		"wave"	"weapons/hmg1_1.wav"
+		"wave"	"weapons/hmg1_2.wav"
+		"wave"	"weapons/hmg1_3.wav"
+	}
+}
+
+"NPC_MissileDefense.Reload"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_100dB"
+
+	"wave"			"weapons/ar1_boltback.wav"
+}
+
+"NPC_MissileDefense.Turn"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_100dB"
+
+	"wave"			"npc/entity/turret/turret_loop1.wav"
+}
+
+"NPC_Monk.Fire"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_100dB"
+
+	"wave"			"weapons/monk_gun/fire.wav"
+}
+
+"NPC_MSynth.Hover"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"0.500"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/waste_scanner/hover.wav"
+}
+
+"NPC_MSynth.WarmUp"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/vort/attack_charge.wav"
+}
+
+"NPC_MSynth.EnergyShoot"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/waste_scanner/grenade_fire.wav"
+}
+
+"NPC_MSynth.Shoot"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/vort/attack_shoot.wav"
+}
+
+
+"NPC_Roller.PowerOn"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/power_up.wav"
+}
+
+"NPC_Roller.PowerOff"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/shut_down.wav"
+}
+
+"NPC_Roller.Marco"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/roller/call1.wav"
+		"wave"	"npc/roller/call2.wav"
+	}
+}
+
+"NPC_Roller.Polo"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/call3.wav"
+}
+
+"NPC_RollerBuddy.Confirm"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/confirm_move.wav"
+}
+
+"NPC_RollerBuddy.RemoteYes"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"0.500"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/remote_yes.wav"
+}
+
+"NPC_RollerBuddy.RemoteNo"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"0.500"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/remote_yes.wav"
+}
+
+"NPC_RollerBull.Measure"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/test/rol_probe1.wav"
+}
+
+"NPC_RollerBull.Tossed"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"90, 110"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/test/rol_tossed1.wav"
+}
+
+"NPC_RollerBull.Taunt"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.300"
+	"pitch"			"90, 110"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/test/rol_swingbladetaunt1.wav"
+}
+
+"NPC_RollerBull.OpenSpikes"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"90, 110"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/blade_out.wav"
+}
+
+"NPC_RollerBull.CloseSpikes"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/blade_in.wav"
+}
+
+"NPC_RollerBull.Cut"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.600"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/blade_cut.wav"
+}
+
+"NPC_RollerBull.Summon"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/test/rol_summon1.wav"
+}
+
+"NPC_RollerBull.Idle"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/roller/test/rol_idle1.wav"
+		"wave"	"npc/roller/test/rol_idle2.wav"
+		"wave"	"npc/roller/test/rol_idle3.wav"
+		"wave"	"npc/roller/test/rol_idle4.wav"
+	}
+}
+
+"NPC_RollerBull.Bark"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/roller/bark1.wav"
+		"wave"	"npc/roller/bark2.wav"
+		"wave"	"npc/roller/bark3.wav"
+	}
+}
+
+
+"NPC_RollerTurret.Shoot"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/roller/turret_shoot.wav"
+}
+
+"Player_Manhack.ThrustLow"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.500"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/manhack/spinloop_low.wav"
+}
+
+"Player_Manhack.ThrustHigh"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.500"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/manhack/spinloop_high.wav"
+}
+
+"Player_Manhack.GrindFlesh"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"0.800"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/manhack/grind_flesh1.wav"
+		"wave"	"npc/manhack/grind_flesh2.wav"
+		"wave"	"npc/manhack/grind_flesh3.wav"
+	}
+}
+
+"Player_Manhack.Grind"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"0.800"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/manhack/grind1.wav"
+		"wave"	"npc/manhack/grind2.wav"
+		"wave"	"npc/manhack/grind3.wav"
+	}
+}
+
+"Player_Manhack.Fly"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/stinger_flyloop1.wav"
+}
+
+"Player_Manhack.Fire"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/stinger_fire1.wav"
+}
+
+"Player_Manhack.Damage"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"impact/bullets/metal/metal1.wav"
+		"wave"	"impact/bullets/metal/metal2.wav"
+		"wave"	"impact/bullets/metal/metal3.wav"
+		"wave"	"impact/bullets/metal/metal4.wav"
+	}
+}
+
+"ScannerShield.MetalDebris"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"debris/metal1.wav"
+}
+
+"PropAPC.FireCannon"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_90dB"
+
+	"wave"			"weapons/stinger_fire1.wav"
+}
+
+"PropAPC.FireRocket"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_90dB"
+
+	"wave"			"weapons/stinger_fire1.wav"
+}
+
+"PropJeep.FireCannon"
+{
+	"channel"		"CHAN_AUTO"
+	"volume"		"0.750, 1.000"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/gauss/fire1.wav"
+}
+
+"PropJeep.FireChargedCannon"
+{
+	"channel"		"CHAN_AUTO"
+	"volume"		"0.750, 1.000"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/gauss/fire1.wav"
+}
+
+"PropJeep.AmmoOpen"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"1.0"
+	"soundlevel"	"SNDLVL_80dB"
+	"pitch"		"90,110"
+	"wave"		"vehicles/atv_ammo_open.wav"
+}
+
+"PropJeep.AmmoClose"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"1.0"
+	"soundlevel"	"SNDLVL_80dB"
+	"pitch"		"90,110"
+	"wave"		"vehicles/atv_ammo_close.wav"
+}
+
+"ExtinguisherCharger.Use"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"items/medshot4.wav"
+}
+
+"Flare.Touch"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/flaregun/impact.wav"
+}
+
+"Missile.Accelerate"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"weapons/rpg/rocket1.wav"
+}
+
+"Missile.Ignite"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_90dB"
+
+	"wave"			"weapons/rpg/rocket1.wav"
+}
+
+"PortableThumper.ThumpSound"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"ambient/objects/thumper_dust.wav"
+}
+
+"HUDQuickInfo.LowHealth"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NONE"
+
+	"wave"			"player/hud/warning.wav"
+}
+
+"HUDQuickInfo.LowAmmo"
+{
+	"channel"		"CHAN_ITEM"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NONE"
+
+	"wave"			"player/hud/warning.wav"
+}
+
+"explode_1"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_1.wav"
+}
+
+"explode_2"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_2.wav"
+}
+
+"explode_3"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_3.wav"
+}
+
+"explode_4"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_4.wav"
+}
+
+"explode_5"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_5.wav"
+}
+
+"explode_6"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_6.wav"
+}
+
+"explode_7"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_7.wav"
+}
+
+"explode_8"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_8.wav"
+}
+
+"explode_9"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_GUNFIRE"
+
+	"wave"			"weapons/explode_9.wav"
+}
+
+"fire_large"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"ambient/fire_big_loop1.wav"
+}
+
+"fire_medium"
+{
+	"channel"		"CHAN_STATIC"
+	"volume"		"VOL_NORM"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"ambient/fire_med_loop1.wav"
+}
+
+"Physics.WaterSplash"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.800, 1.000"
+	"pitch"			"85, 115"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"ambient/nature/water/water_splash1.wav"
+		"wave"	"ambient/nature/water/water_splash2.wav"
+		"wave"	"ambient/nature/water/water_splash3.wav"
+	}
+}
+
+"WateryDeath.Warn"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_75dB"
+
+	"rndwave"
+	{
+		"wave"			"npc/ichthyosaur/ping1.wav"
+		"wave"			"npc/ichthyosaur/ping2.wav"
+		"wave"			"npc/ichthyosaur/water_growl1.wav"
+		"wave"			"npc/ichthyosaur/water_growl4.wav"
+		"wave"			"npc/ichthyosaur/water_growl5.wav"
+	}
+}
+
+"WateryDeath.Pull"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"0.600, 1.000"
+	"pitch"			"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/ichthyosaur/attack_growl1.wav"
+		"wave"	"npc/ichthyosaur/attack_growl2.wav"
+		"wave"	"npc/ichthyosaur/attack_growl3.wav"
+	}
+}
+
+"WateryDeath.Bite"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"95, 105"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"			"npc/ichthyosaur/snap.wav"
+}
+
+
+"ItemBattery.Touch"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/battery_pickup.wav"
+}
+
+"HealthKit.Touch"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/smallmedkit1.wav"
+}
+
+"HealthVial.Touch"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/smallmedkit1.wav"
+}
+
+"WallHealth.Deny"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1.0"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/medshotno1.wav"
+}
+
+"WallHealth.Start"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1.0"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/medshot4.wav"
+}
+
+"WallHealth.LoopingContinueCharge"
+{
+	"channel"	"CHAN_STATIC"
+	"volume"	"1.0"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/medcharge4.wav"
+}
+
+"WallHealth.Recharge"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1.0"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/medshot4.wav"
+}
+
+"SuitRecharge.Deny"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"0.85"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/suitchargeno1.wav"
+}
+
+"SuitRecharge.Start"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"0.85"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/suitchargeok1.wav"
+}
+
+"SuitRecharge.ChargingLoop"
+{
+	"channel"	"CHAN_STATIC"
+	"volume"	"0.85"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/suitcharge1.wav"
+}
+
+"AmmoCrate.Open"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"0.85"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/ammocrate_open.wav"
+}
+
+"AmmoCrate.Close"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"0.85"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/ammocrate_close.wav"
+}
+
+// ---- GammaSource 2018 build: retail HL2 entries this file lacks ----
+
+"AI_BaseNPC.BodyDrop_Heavy"
+{
+	"channel"	"CHAN_BODY"
+	"volume"	"1"
+	"soundlevel"	"SNDLVL_75dB"
+	"pitch"	"90"
+
+	"rndwave"
+	{
+		"wave"	"physics/flesh/flesh_impact_hard1.wav"
+		"wave"	"physics/flesh/flesh_impact_hard2.wav"
+		"wave"	"physics/flesh/flesh_impact_hard3.wav"
+		"wave"	"physics/flesh/flesh_impact_hard4.wav"
+		"wave"	"physics/flesh/flesh_impact_hard5.wav"
+		"wave"	"physics/flesh/flesh_impact_hard6.wav"
+	}
+}
+
+"AI_BaseNPC.BodyDrop_Light"
+{
+	"channel"	"CHAN_BODY"
+	"volume"	"0.9"
+	"soundlevel"  "SNDLVL_75dB"
+	"pitch"	"105"
+
+	"rndwave"
+	{
+		"wave"	"physics/flesh/flesh_impact_hard1.wav"
+		"wave"	"physics/flesh/flesh_impact_hard2.wav"
+		"wave"	"physics/flesh/flesh_impact_hard3.wav"
+		"wave"	"physics/flesh/flesh_impact_hard4.wav"
+		"wave"	"physics/flesh/flesh_impact_hard5.wav"
+		"wave"	"physics/flesh/flesh_impact_hard6.wav"
+	}
+}
+
+"AI_BaseNPC.SwishSound"
+{
+	"channel"	"CHAN_BODY"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"npc/zombie/claw_miss2.wav"
+}
+
+"AI_BaseNPC.SentenceStop"
+{
+	"channel"	"CHAN_VOICE"
+	"volume"	"1.0"
+	"soundlevel"  "SNDLVL_60dB"
+
+	"wave"	"common/null.wav"
+}
+
+"BaseCombatCharacter.CorpseGib"
+{
+	"channel"	"CHAN_WEAPON"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+	"rndwave"
+	{
+		"wave"	"physics/flesh/flesh_squishy_impact_hard2.wav"
+	}
+}
+
+"BaseCombatCharacter.StopWeaponSounds"
+{
+	"channel"	"CHAN_WEAPON"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"common/null.wav"
+}
+
+"BaseCombatCharacter.AmmoPickup"
+{
+	"channel"	"CHAN_ITEM"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+
+	"wave"	"items/ammo_pickup.wav"
+}
+
+"BaseCombatWeapon.WeaponDrop"
+{
+	"channel"		"CHAN_VOICE"
+	"volume"		"0.8"
+	"soundlevel"  "SNDLVL_75dB"
+	"pitch"	  "95,110"
+	"rndwave"
+	{
+		"wave"	"physics/metal/weapon_impact_hard1.wav"
+		"wave"	"physics/metal/weapon_impact_hard2.wav"
+		"wave"	"physics/metal/weapon_impact_hard3.wav"
+	}
+}
+
+"BaseCombatWeapon.WeaponMaterialize"
+{
+	"channel"	"CHAN_WEAPON"
+	"volume"	"1"
+	"soundlevel"  "SNDLVL_75dB"
+	"pitch"	"150"
+
+	"wave"	"items/suitchargeok1.wav"
+}
+
+"General.BurningFlesh"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"0.45"
+	"pitch"		"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"		 "npc/headcrab/headcrab_burning_loop2.wav" 
+}
+
+"General.BurningObject"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"		"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"		 "ambient/fire/fire_small_loop2.wav" 
+}
+
+"General.StopBurning"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"		"PITCH_NORM"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"		 "common/null.wav" 
+}

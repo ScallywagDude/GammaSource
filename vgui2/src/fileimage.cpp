@@ -1,21 +1,20 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include <string.h>
 #include "fileimage.h"
 
-#include <windows.h>
-#include "VGUI_Internal.h"
-#include "FileSystem.h"
+#include "winlite.h"
+#include "vgui_internal.h"
+#include "filesystem.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // TGA header.
 #pragma pack(1)
@@ -89,8 +88,8 @@ static void WriteRun(unsigned char *pColor, FileHandle_t fp, int runLength)
 
 	runCount = runLength - 1;
 	runCount |= (1 << 7);
-	vgui::filesystem()->Write( &runCount, 1, fp );
-	vgui::filesystem()->Write( pColor, 4, fp );
+	g_pFullFileSystem->Write( &runCount, 1, fp );
+	g_pFullFileSystem->Write( pColor, 4, fp );
 }
 
 
@@ -182,7 +181,7 @@ void Save32BitTGA(
 	hdr.m_Width = pImage->m_Width;
 	hdr.m_Height = pImage->m_Height;
 
-	vgui::filesystem()->Write(&hdr, sizeof(hdr), fp );
+	g_pFullFileSystem->Write(&hdr, sizeof(hdr), fp );
 	
 	// Lines are written bottom-up.
 	for(y=pImage->m_Height-1; y >= 0; y--)

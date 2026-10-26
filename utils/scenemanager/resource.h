@@ -1,8 +1,15 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 //{{NO_DEPENDENCIES}}
 // Microsoft Developer Studio generated include file.
 // Used by scenemanager.rc
 //
-#define IDC_NOSINGLE					3
+#define IDC_NOSINGLE                    3
 #define IDC_NOALL                       4
 #define IDI_PLUS                        104
 #define IDI_WORKSPACE                   104
@@ -33,7 +40,6 @@
 #define IDC_VOLUME                      1008
 #define IDC_SOUNDLEVEL                  1009
 #define IDC_PITCH                       1010
-#define IDC_NOPRECACHE                  1012
 #define IDC_WAVELIST                    1013
 #define IDC_ADDWAVE                     1014
 #define IDC_REMOVEWAVE                  1015
@@ -41,12 +47,18 @@
 #define IDC_OWNERONLY                   1017
 #define IDC_STATIC_SENTENCETEXT         1018
 #define IDC_WAVENAME                    1019
+#define IDC_STATIC_CLOSECAPTION         1019
 #define IDC_VOICEDUCK                   1020
 #define IDC_SENTENCETEXT                1021
 #define IDC_WAVEPROPERTIES              1022
+#define IDC_CCTEXT                      1022
 #define IDC_PROMPT                      1023
 #define IDC_YESALL                      1024
 #define IDC_YES                         1025
+#define IDC_CCRESET                     1026
+#define IDC_EXPORTSENTENCE              1027
+#define IDC_IMPORTSENTENCE              1028
+#define IDC_STATIC_CCTEXT               1029
 
 // Next default values for new objects
 // 
@@ -54,7 +66,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        121
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1026
+#define _APS_NEXT_CONTROL_VALUE         1030
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

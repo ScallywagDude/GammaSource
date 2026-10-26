@@ -1,0 +1,37 @@
+[
+  {
+    "path": "models/items/gamma_hevsuit_2003.mdl",
+    "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Items\\hevsuit.mdl",
+    "sha256": "936b5d9ef805eaf2fdd63722e535136482db1b885e2a96903aef1cc9d25ad264"
+  },
+  {
+    "path": "models/items/gamma_hevsuit_2003.dx80.vtx",
+    "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Items\\hevsuit.dx80.vtx",
+    "sha256": "65a8146ea927d7f96590a8bdf4e396ddfe2daa481a0c6cf81ae84c607e7b4fbe"
+  },
+  {
+    "path": "models/items/gamma_hevsuit_2003.dx7_2bone.vtx",
+    "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Items\\hevsuit.dx7_2bone.vtx",
+    "sha256": "6cdb6fc81bfcafcbeb1036258c372f6288064dfc89dfb38c88917006eeab91a3"
+  },
+  {
+    "path": "materials/models/gs_suit/hev_sheet.vtf",
+    "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\Models\\HEVSuit\\hev_sheet.vtf",
+    "sha256": "194cff4219fb5304208db3290ef41796c1e17ce20a8103f3f99fcbfca04082f1"
+  },
+  {
+    "path": "materials/models/gs_suit/hev_sheet.vmt",
+    "source": "compatibility material",
+    "sha256": "cebe14167795b584afb2f3d8c2521600038860135a7ef94076d3c46788344029"
+  },
+  {
+    "path": "materials/sprites/gamma_physbeam.vtf",
+    "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\sprites\\physbeam.vtf",
+    "sha256": "1d3ee40d6a9101efa86501fdce39fad387c1651cd96559f208c6f27b2ec9071c"
+  },
+  {
+    "path": "materials/sprites/gamma_physbeam.vmt",
+    "source": "compatibility material",
+    "sha256": "7f86317036d1fade0b660bfc8ed365f999bfcd8c75d75b509d37a0c9d9eccfd8"
+  }
+]

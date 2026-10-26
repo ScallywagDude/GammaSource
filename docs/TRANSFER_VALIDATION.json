@@ -1,0 +1,14 @@
+{
+  "input_zip": "GammaSource_2018_FriendlyFire_Handoff_20261025.zip",
+  "counts": {
+    "unchanged": 33809,
+    "modified_intentionally": 2,
+    "directory": 0,
+    "missing": 0,
+    "mismatch": 0
+  },
+  "errors": [],
+  "readme_disclosure_and_redistribution_unchanged": true,
+  "waf_and_overlay_paths_exist": true,
+  "single_top_level_root": "GammaSource/"
+}

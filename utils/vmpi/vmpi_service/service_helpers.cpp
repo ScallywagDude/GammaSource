@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "stdafx.h"
 #include "service_helpers.h"
@@ -14,7 +14,7 @@ static CRITICAL_SECTION g_CtrlHandlerMutex;
 static void (*g_pInternalServiceFn)( void *pParam ) = NULL;
 static void *g_pInternalServiceParam = NULL;
 
-static bool g_bShouldExit = false;
+static volatile bool g_bShouldExit = false;
 
 
 SERVICE_STATUS          MyServiceStatus; 
@@ -40,7 +40,7 @@ void WINAPI MyServiceCtrlHandler( DWORD Opcode )
                 Msg( "[MY_SERVICE] SetServiceStatus error %ld\n", status ); 
             } 
  
-            Msg( "[MY_SERVICE] Leaving MyService \n", 0 ); 
+            Msg( "[MY_SERVICE] Leaving MyService \n" ); 
             return; 
  
         case SERVICE_CONTROL_INTERROGATE: 
@@ -101,7 +101,7 @@ void WINAPI MyServiceStart( DWORD argc, LPTSTR *argv )
 
 
     // This is where the service does its work. 
-    Msg( "[MY_SERVICE] Returning the Main Thread \n", 0 ); 
+    Msg( "[MY_SERVICE] Returning the Main Thread \n" ); 
 }
 
 

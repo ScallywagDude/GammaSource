@@ -1,64 +1,63 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// common.c -- misc functions used in client and server
-//
-// $Header: $
 // $NoKeywords: $
-//=============================================================================
+//
+//=============================================================================//
 
-#include "winquake.h"
-#include "glquake.h"
+#include "host.h"
 #include <ctype.h>
 #include "draw.h"
 #include "zone.h"
 #include "sys.h"
-#include "edict.h"
-#include "coordsize.h"
-#include "characterset.h"
-#include "gl_texture.h"
-#include "bitbuf.h"
+#include <edict.h>
+#include <coordsize.h>
+#include <characterset.h>
+#include <bitbuf.h>
 #include "common.h"
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include "traceinit.h"
-#include "filesystem.h"
+#include <filesystem.h>
 #include "filesystem_engine.h"
-#include "convar.h"
-//#include "VGui_int.h"
+#include <convar.h>
 #include "gl_matsysiface.h"
-#include "materialsystem/imaterialsystemhardwareconfig.h"
-#include "vstdlib/ICommandLine.h"
+#include "filesystem_init.h"
+#include <materialsystem/imaterialsystemhardwareconfig.h>
+#include <tier0/icommandline.h>
+#include <vstdlib/random.h>
+#include "sys_dll.h"
+#include "datacache/idatacache.h"
+#include "matchmaking.h"
+#include "tier1/KeyValues.h"
+#include "vgui_baseui_interface.h"
+#include "tier2/tier2.h"
+#include "language.h"
+#ifndef SWDS
+#include "cl_steamauth.h"
+#endif
+#include "tier3/tier3.h"
+#include <vgui/ILocalize.h>
+#include "tier1/lzss.h"
+#include "tier1/snappy.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-// Things used by C files.
-float V_CalcRoll (const QAngle& angles, const Vector& velocity, float rollangle, float rollspeed);
-int COM_CompareFileTime(char *filename1, char *filename2, int *iCompare);
-
-
 // Things in other C files.
-#define NUM_SAFE_ARGVS  7
-
 #define MAX_LOG_DIRECTORIES	10000
 
-char *gpszAppName = "Half-Life 2";
-
-char gpszVersionString[32] = "1.0"; 
-
-qboolean com_ignorecolons = false;  // YWB:  Ignore colons as token separators in COM_Parse
+bool com_ignorecolons = false; 
 
 // wordbreak parsing set
 static characterset_t	g_BreakSet, g_BreakSetIncludingColons;
 
 #define COM_TOKEN_MAX_LENGTH 1024
 char	com_token[COM_TOKEN_MAX_LENGTH];
-
-char	g_TempStringBuf[2048];
 
 /*
 All of Quake's data access is through a hierarchical file system, but the contents of 
@@ -90,710 +89,78 @@ quality sound edition.  Because they are added at the end, they will not overrid
 an explicit setting on the original command line.
 */
 
-
-/*
-==============================
-Q_FileNameCmp
-
-this is a specific string compare to use for filenames.  
- it treats all slashes as the same character. so you can compare
-paths.  (Quake uses / internally, while NT uses \ for it's path-seperator thing)
-NOTE: this function uses the same return value conventions as strcmp.
-so 0 signals a match.
-==============================
-*/
-int Q_FileNameCmp(const char* file1,const char* file2)
-{
-	do
-	{
-		if (*file1 == '/' && *file2=='\\')
-			continue;
-		if (*file2 == '/' && *file1=='\\')
-			continue;
-		if (tolower(*file1) != tolower(*file2))
-			return -1;			
-		if (!*file1)
-			return 0;
-	} while (*file1++ && *file2++);
-	return 0; // fixed bogus warning
-}
-
-
-
-/*
-==================
-COM_Nibble
-
-Returns the 4 bit nibble for a hex character
-==================
-*/
-unsigned char COM_Nibble( char c )
-{
-	if ( ( c >= '0' ) &&
-		 ( c <= '9' ) )
-	{
-		 return (unsigned char)(c - '0');
-	}
-
-	if ( ( c >= 'A' ) &&
-		 ( c <= 'F' ) )
-	{
-		 return (unsigned char)(c - 'A' + 0x0a);
-	}
-
-	if ( ( c >= 'a' ) &&
-		 ( c <= 'f' ) )
-	{
-		 return (unsigned char)(c - 'a' + 0x0a);
-	}
-
-	return '0';
-}
-
-/*
-==================
-COM_HexConvert
-
-Converts pszInput Hex string to nInputLength/2 binary
-==================
-*/
-void COM_HexConvert( const char *pszInput, int nInputLength, unsigned char *pOutput )
-{
-	unsigned char *p;
-	int i;
-	const char *pIn;
-
-	p = pOutput;
-	for (i = 0; i < nInputLength; i+=2 )
-	{
-		pIn = &pszInput[i];
-
-		*p = COM_Nibble( pIn[0] ) << 4 | COM_Nibble( pIn[1] );		
-
-		p++;
-	}
-}
-
-/*
-==============================
-COM_BinPrintf
-
-==============================
-*/
-char *COM_BinPrintf( unsigned char *buf, int nLen )
-{
-	static char szReturn[4096];
-	unsigned char c;
-	char szChunk[10];
-	int i;
-
-	Q_memset(szReturn, 0, sizeof( szReturn ) );
-
-	for (i = 0; i < nLen; i++)
-	{
-		c = (unsigned char)buf[i];
-		Q_snprintf(szChunk, sizeof( szChunk ), "%02x", c);
-		Q_strcat(szReturn, szChunk);
-	}
-
-	return szReturn;
-}
-
 /*
 ==============================
 COM_ExplainDisconnection
 
 ==============================
 */
-void COM_ExplainDisconnection( qboolean bPrint, char *fmt, ... )
+void COM_ExplainDisconnection( bool bPrint, const char *fmt, ... )
 {
+#ifdef _X360
+	g_pMatchmaking->SessionNotification( SESSION_NOTIFY_LOST_SERVER );
+#else
 	va_list		argptr;
-	static char	string[1024];
-	
+	char		string[1024];
+
 	va_start (argptr, fmt);
 	Q_vsnprintf(string, sizeof( string ), fmt,argptr);
 	va_end (argptr);
 
 	Q_strncpy( gszDisconnectReason, string, 256 );
 	gfExtendedError = true;
+#endif
 
 	if ( bPrint )
 	{
-		Con_Printf( "%s\n", gszDisconnectReason );
-	}
-}
-
-/*
-==============================================================================
-
-			MESSAGE IO FUNCTIONS
-
-Handles byte ordering and avoids alignment errors
-==============================================================================
-*/
-
-//
-// writing functions
-//
-
-void MSG_WriteChar (sizebuf_t *sb, int c)
-{
-	byte    *buf;
-	
-#ifdef PARANOID
-	if (c < -128 || c > 127)
-		Sys_Error ("MSG_WriteChar: range error");
-#endif
-
-	buf = (byte *)SZ_GetSpace (sb, 1);
-	buf[0] = c;
-}
-
-void MSG_WriteByte (sizebuf_t *sb, int c)
-{
-	byte    *buf;
-	
-#ifdef PARANOID
-	if (c < 0 || c > 255)
-		Sys_Error ("MSG_WriteByte: range error");
-#endif
-
-	buf = (byte *)SZ_GetSpace (sb, 1);
-	buf[0] = c;
-}
-
-void MSG_WriteShort (sizebuf_t *sb, int c)
-{
-	byte    *buf;
-	
-#ifdef PARANOID
-	if (c < ((short)0x8000) || c > (short)0x7fff)
-		Sys_Error ("MSG_WriteShort: range error");
-#endif
-
-	buf = (byte *)SZ_GetSpace (sb, 2);
-	buf[0] = c&0xff;
-	buf[1] = c>>8;
-}
-
-void MSG_WriteWord (sizebuf_t *sb, int c)
-{
-	byte    *buf;
-	
-	buf = (byte *)SZ_GetSpace (sb, 2);
-	buf[0] = c&0xff;
-	buf[1] = (c>>8)&0xff;
-}
-
-void MSG_WriteLong (sizebuf_t *sb, int c)
-{
-	byte    *buf;
-	
-	buf = (byte *)SZ_GetSpace (sb, 4);
-	buf[0] = c&0xff;
-	buf[1] = (c>>8)&0xff;
-	buf[2] = (c>>16)&0xff;
-	buf[3] = c>>24;
-}
-
-void MSG_WriteFloat (sizebuf_t *sb, float f)
-{
-	union
-	{
-		float   f;
-		int     l;
-	} dat;
-	
-	
-	dat.f = f;
-	dat.l = LittleLong (dat.l);
-	
-	SZ_Write (sb, &dat.l, 4);
-}
-
-void MSG_WriteString (sizebuf_t *sb, const char *s)
-{
-	if (!s)
-		SZ_Write (sb, "", 1);
-	else
-		SZ_Write (sb, s, Q_strlen(s)+1);
-}
-
-void MSG_WriteBuf (sizebuf_t *sb, int iSize, void *buf)
-{
-	if (!buf)
-		return;
-
-	SZ_Write (sb, buf, iSize);
-}
-
-void MSG_WriteAngle (sizebuf_t *sb, float f)
-{
-	MSG_WriteByte (sb, ((int)(f*256/360)) & 255);
-}
-
-void MSG_WriteHiresAngle (bf_write *sb, float f)
-{
-	sb->WriteUBitLong( ((int)(f*65536/360)) & 0xFFFF, 16 );
-}
-
-// Bit Field I/O routines
-static bf_write		bfwrite( "global bfwrite", NULL, 0, -1 );
-static bf_read		bfread( "global bfread", NULL, 0, -1 );
-
-// ---------------------------------------------------------------------------------------- //
-// bf_write wrappers.
-// ---------------------------------------------------------------------------------------- //
-
-void MSG_WriteOneBit( int nValue )
-{
-	bfwrite.WriteOneBit(nValue);
-}
-
-void MSG_StartBitWriting( sizebuf_t *buf )
-{
-	bfwrite.StartWriting(&buf->data, buf->maxsize, buf->cursize << 3);
-}
-
-void MSG_EndBitWriting ( sizebuf_t *buf )
-{
-	buf->cursize = bfwrite.GetNumBytesWritten();
-}
-
-// Append numbits least significant bits from data to the current bit stream
-void MSG_WriteBitByte( unsigned char *data, int numbits )
-{
-	bfwrite.WriteUBitLong(*data, numbits);
-}
-
-void MSG_WriteBitShort( unsigned short *data, int numbits )
-{
-	bfwrite.WriteUBitLong(*data, numbits);
-}
-
-void MSG_WriteBitLong( unsigned int *data, int numbits )
-{
-	bfwrite.WriteUBitLong(*data, numbits);
-}
-
-// Sign bit comes first
-void MSG_WriteSBitByte( char *data, int numbits )
-{
-	bfwrite.WriteSBitLong(*data, numbits);
-}
-
-void MSG_WriteSBitShort( short *data, int numbits )
-{
-	bfwrite.WriteSBitLong(*data, numbits);
-}
-
-void MSG_WriteSBitLong( int *data, int numbits )
-{
-	bfwrite.WriteSBitLong(*data, numbits);
-}
-
-void MSG_WriteBitAngle( float fAngle, int numbits )
-{
-	bfwrite.WriteBitAngle(fAngle, numbits);
-}
-
-void MSG_WriteBitCoord (const float f)
-{
-	bfwrite.WriteBitCoord(f);
-}
-
-void MSG_WriteBitVec3Coord( const Vector& fa )
-{
-	bfwrite.WriteBitVec3Coord(fa);
-}
-
-void MSG_WriteCoord (sizebuf_t *sb, const float f)
-{
-	bfwrite.WriteBitCoord(f);
-}
-
-void MSG_WriteVec3Coord (sizebuf_t *sb, const Vector& fa)
-{
-	bfwrite.WriteBitVec3Coord(fa);
-}
-
-void MSG_WriteVec3Normal (sizebuf_t *sb, const Vector& fa)
-{
-	bfwrite.WriteBitVec3Normal(fa);
-}
-
-
-
-
-// ---------------------------------------------------------------------------------------- //
-// bf_read wrappers.
-// ---------------------------------------------------------------------------------------- //
-
-float MSG_ReadBitAngle( int numbits )
-{
-	return bfread.ReadBitAngle(numbits);
-}
-
-// The MSG_ functions just operate on these.
-bf_read* MSG_GetReadBuf()
-{
-	return &bfread;
-}
-
-bf_write* MSG_GetWriteBuf()
-{
-	return &bfwrite;
-}
-
-void MSG_StartBitReading( sizebuf_t *buf )
-{
-	bfread.StartReading(&buf->data, buf->maxsize, buf->cursize << 3);
-}
-
-void MSG_EndBitReading ( sizebuf_t *buf )
-{
-}
-
-int MSG_ReadOneBit( void )
-{
-	return bfread.ReadOneBit();
-}
-
-// Append numbits least significant bits from data to the current bit stream
-unsigned char MSG_ReadBitByte( int numbits )
-{
-	return (unsigned char)bfread.ReadUBitLong(numbits);
-}
-
-unsigned char MSG_PeekBitByte( int numbits )
-{
-	return (unsigned char)bfread.PeekUBitLong(numbits);
-}
-
-unsigned short MSG_ReadBitShort( int numbits )
-{
-	return (unsigned short)bfread.ReadUBitLong(numbits);
-}
-
-unsigned int MSG_ReadBitLong( int numbits )
-{
-	return bfread.ReadUBitLong(numbits);
-}
-
-unsigned int MSG_PeekBitLong( int numbits )
-{
-	return bfread.PeekUBitLong(numbits);
-}
-
-// Append numbits least significant bits from data to the current bit stream
-char MSG_ReadSBitByte( int numbits )
-{
-	return (char)bfread.ReadSBitLong(numbits);
-}
-
-short MSG_ReadSBitShort( int numbits )
-{
-	return (short)bfread.ReadSBitLong(numbits);
-}
-
-int MSG_ReadSBitLong( int numbits )
-{
-	return bfread.ReadSBitLong(numbits);
-}
-
-// Basic Coordinate Routines (these contain bit-field size AND fixed point scaling constants)
-
-float MSG_ReadBitCoord (void)
-{
-	return bfread.ReadBitCoord();
-}
-
-void MSG_ReadBitVec3Coord( Vector& fa )
-{
-	bfread.ReadBitVec3Coord(fa);
-}
-
-void MSG_ReadBitVec3Normal( Vector& fa )
-{
-	bfread.ReadBitVec3Normal(fa);
-}
-
-void MSG_ReadBitAngles( QAngle& fa )
-{
-	bfread.ReadBitAngles(fa);
-}
-
-
-
-//
-// reading functions
-//
-bool MSG_IsOverflowed()
-{
-	return bfread.IsOverflowed();
-}
-
-void MSG_BeginReading (void)
-{
-	bfread.StartReading(net_message.data, net_message.cursize);
-}
-
-int MSG_ReadChar (void)
-{
-	return bfread.ReadChar();
-}
-
-int MSG_ReadByte (void)
-{
-	return bfread.ReadByte();
-}
-
-int MSG_ReadShort (void)
-{
-	return bfread.ReadShort();
-}
-
-int MSG_ReadWord (void)
-{
-	return bfread.ReadWord();
-}
-
-
-int MSG_ReadLong (void)
-{
-	return bfread.ReadLong();
-}
-
-float MSG_ReadFloat (void)
-{
-	return bfread.ReadFloat();
-}
-
-int MSG_ReadBuf(int iSize, void *pbuf)
-{
-	return bfread.ReadBytes(pbuf, iSize) ? 1 : -1;
-}
-
-char *MSG_ReadString (void)
-{
-	bfread.ReadString(g_TempStringBuf, sizeof(g_TempStringBuf), false);
-	return g_TempStringBuf;
-}
-
-char *MSG_ReadStringLine (void)
-{
-	bfread.ReadString(g_TempStringBuf, sizeof(g_TempStringBuf), true);
-	return g_TempStringBuf;
-}
-
-float MSG_ReadAngle (void)
-{
-	return bfread.ReadBitAngle(8);
-}
-
-float MSG_ReadHiresAngle (void)
-{
-	return bfread.ReadBitAngle(16);
-}
-
-void SZ_Clear (sizebuf_t *buf)
-{
-	buf->cursize = 0;
-	buf->overflowed = false;
-}
-
-void *SZ_GetSpace (sizebuf_t *buf, int length)
-{
-	void    *data;
-	
-	if (buf->cursize + length > buf->maxsize)
-	{
-		if (!buf->allowoverflow)
+		if ( gszDisconnectReason[0] == '#' )
 		{
-			if (!buf->maxsize)
-				Sys_Error ("SZ_GetSpace:  Tried to write to an uninitialized sizebuf_t");
+			wchar_t formatStr[256];
+			const wchar_t *wpchReason = g_pVGuiLocalize ? g_pVGuiLocalize->Find(gszDisconnectReason) : NULL;
+			if ( wpchReason )
+			{
+				wcsncpy(formatStr, wpchReason, sizeof( formatStr ) / sizeof( wchar_t ) );
+
+				char conStr[256];
+				g_pVGuiLocalize->ConvertUnicodeToANSI(formatStr, conStr, sizeof( conStr ));
+				ConMsg( "%s\n", conStr );
+			}
 			else
-				Sys_Error ("SZ_GetSpace: overflow without allowoverflow set");
+				ConMsg( "%s\n", gszDisconnectReason );
 		}
 		else
 		{
-			Con_Printf( "overflowing, ok\n" );
+			ConMsg( "%s\n", gszDisconnectReason );
 		}
-		
-		if (length > buf->maxsize)
-			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
-			
-		Con_Printf ("SZ_GetSpace: overflow\n");
-		SZ_Clear (buf); 
-		buf->overflowed = true;
 	}
-
-	data = buf->data + buf->cursize;
-	buf->cursize += length;
-	
-	return data;
-}
-
-void SZ_Write (sizebuf_t *buf, const void *data, int length)
-{
-	Q_memcpy (SZ_GetSpace(buf,length),data,length);         
-}
-
-void SZ_Print (sizebuf_t *buf, const char *data)
-{
-	int             len;
-	
-	len = Q_strlen(data)+1;
-
-// byte * cast to keep VC++ happy
-	if (buf->data[buf->cursize-1])
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len),data,len); // no trailing 0
-	else
-		Q_memcpy ((byte *)SZ_GetSpace(buf, len-1)-1,data,len); // write over trailing 0
-}
-
-
-//============================================================================
-
-
-/*
-============
-COM_SkipPath
-============
-*/
-char *COM_SkipPath (char *pathname)
-{
-	char    *last;
-	
-	last = pathname;
-	while (*pathname)
-	{
-		if (*pathname=='/')
-			last = pathname+1;
-		pathname++;
-	}
-	return last;
 }
 
 /*
-============
-COM_StripExtension
-============
+==============================
+COM_ExtendedExplainDisconnection
+
+==============================
 */
-void COM_StripExtension( const char *in, char *out, int outSize )
+void COM_ExtendedExplainDisconnection( bool bPrint, const char *fmt, ... )
 {
-	// Find the last dot.
-	const char *pLastExt = in;
-	while( 1 )
-	{
-		const char *pTest = strchr( pLastExt, '.' );
-		if ( !pTest )
-			break;
+#ifdef _X360
+	g_pMatchmaking->SessionNotification( SESSION_NOTIFY_LOST_SERVER );
+#else
+	va_list		argptr;
+	char		string[1024];
 
-		pLastExt = pTest + 1;
-	}
+	va_start (argptr, fmt);
+	Q_vsnprintf(string, sizeof( string ), fmt,argptr);
+	va_end (argptr);
 
-	// Copy up to the last dot.
-	if ( pLastExt > in )
+	Q_strncpy( gszExtendedDisconnectReason, string, 256 );
+#endif
+
+	if ( bPrint )
 	{
-		int nChars = pLastExt - in - 1;
-		nChars = min( nChars, outSize-1 );
-		memcpy( out, in, nChars );
-		out[nChars] = 0;
-	}
-	else
-	{
-		Q_strncpy( out, in, outSize );
+		ConMsg( "%s\n", gszExtendedDisconnectReason );
 	}
 }
-
-
-/*
-============
-COM_FileExtension
-============
-*/
-char *COM_FileExtension (char *in)
-{
-	static char exten[8];
-	int             i;
-
-	while (*in && *in != '.')
-		in++;
-	if (!*in)
-		return "";
-	in++;
-	for (i=0 ; i<7 && *in ; i++,in++)
-		exten[i] = *in;
-	exten[i] = 0;
-	return exten;
-}
-
-/*
-============
-COM_FileBase
-============
-*/
-// Extracts the base name of a file (no path, no extension, assumes '/' as path separator)
-void COM_FileBase (const char *in, char *out)
-{
-	int len, start, end;
-
-	len = strlen( in );
-	
-	// scan backward for '.'
-	end = len - 1;
-	while ( end && in[end] != '.' && in[end] != '/' && in[end] != '\\' )
-		end--;
-	
-	if ( in[end] != '.' )		// no '.', copy to end
-		end = len-1;
-	else 
-		end--;					// Found ',', copy to left of '.'
-
-
-	// Scan backward for '/'
-	start = len-1;
-	while ( start >= 0 && in[start] != '/' && in[start] != '\\' )
-		start--;
-
-	if ( start < 0 || ( in[start] != '/' && in[start] != '\\' ) )
-		start = 0;
-	else 
-		start++;
-
-	// Length of new sting
-	len = end - start + 1;
-
-	// Copy partial string
-	Q_strncpy( out, &in[start], len+1 );
-}
-
-
-/*
-==================
-COM_DefaultExtension
-==================
-*/
-void COM_DefaultExtension( char *path, const char *extension, int pathStringLength )
-{
-	char    *src;
-//
-// if path doesn't have a .EXT, append extension
-// (extension should include the .)
-//
-	src = path + strlen(path) - 1;
-
-	while (*src != '/' && src != path)
-	{
-		if (*src == '.')
-			return;                 // it has an extension
-		src--;
-	}
-
-	Q_strncat( path, extension, pathStringLength );
-}
-
 
 /*
 ==============
@@ -802,9 +169,9 @@ COM_Parse
 Parse a token out of a string
 ==============
 */
-char *COM_Parse (char *data)
+const char *COM_Parse (const char *data)
 {
-	int             c;
+	unsigned char    c;
 	int             len;
 	characterset_t	*breaks;
 	
@@ -879,12 +246,44 @@ skipwhite:
 
 /*
 ==============
+COM_AddNoise
+
+Changes n random bits in a data block
+==============
+*/
+void COM_AddNoise( unsigned char *data, int length, int number )
+{
+	for ( int i = 0; i < number; i++ )
+	{
+		int randomByte = RandomInt( 0, length-1 );
+		int randomBit = RandomInt( 0, 7 );
+
+		// get original data
+		unsigned char dataByte = data[randomByte];
+
+		// flip bit
+		if ( dataByte & randomBit )
+		{
+			dataByte &= ~randomBit;
+		}
+		else
+		{
+			dataByte |= randomBit;
+		}
+
+		// write back
+		data[randomByte] = dataByte;
+	}
+}
+
+/*
+==============
 COM_Parse_Line
 
 Parse a line out of a string
 ==============
 */
-char *COM_ParseLine (char *data)
+const char *COM_ParseLine (const char *data)
 {
 	int c;
 	int len;
@@ -904,7 +303,7 @@ char *COM_ParseLine (char *data)
 		data++;
 		len++;
 		c = *data;
-	} while ( c>=' ' && ( len < COM_TOKEN_MAX_LENGTH - 1 ) );
+	} while ( ( c>=' ' || c < 0 || c == '\t' ) && ( len < COM_TOKEN_MAX_LENGTH - 1 ) );
 	
 	com_token[len] = 0;
 
@@ -929,14 +328,14 @@ COM_TokenWaiting
 Returns 1 if additional data is waiting to be processed on this line
 ==============
 */
-int COM_TokenWaiting( char *buffer )
+int COM_TokenWaiting( const char *buffer )
 {
-	char *p;
+	const char *p;
 
 	p = buffer;
 	while ( *p && *p!='\n')
 	{
-		if ( !isspace( *p ) || isalnum( *p ) )
+		if ( !V_isspace( *p ) || V_isalnum( *p ) )
 			return 1;
 
 		p++;
@@ -948,30 +347,35 @@ int COM_TokenWaiting( char *buffer )
 
 /*
 ============
+tmpstr512
+
+rotates through a bunch of string buffers of 512 bytes each
+============
+*/
+char *tmpstr512()
+{
+	static char	string[32][512];
+	static int	curstring = 0;
+	curstring = ( curstring + 1 ) & 31;
+	return string[curstring];  
+}
+
+/*
+============
 va
 
 does a varargs printf into a temp buffer, so I don't need to have
 varargs versions of all text functions.
-FIXME: make this buffer size safe someday
 ============
 */
-char    *va(char *format, ...)
+char *va( const char *format, ... )
 {
-	va_list         argptr;
-	static char             string[4][1024];
-	static int curstring = 0;
-	
-	curstring = ( curstring + 1 ) % 4;
-
+	char* outbuf = tmpstr512();
+	va_list argptr;
 	va_start (argptr, format);
-#ifdef _WIN32
-	Q_vsnprintf( string[curstring], sizeof( string[curstring] ), format, argptr );
-#else
-	vsprintf (string[curstring], format,argptr);
-#endif
+	Q_vsnprintf( outbuf, 512, format, argptr );
 	va_end (argptr);
-
-	return string[curstring];  
+	return outbuf;
 }
 
 /*
@@ -982,43 +386,63 @@ prints a vector into a temporary string
 bufffer.
 ============
 */
-char    *vstr(Vector& v)
+const char *vstr(Vector& v)
 {
-	static int idx = 0;
-	static char string[16][1024];
-
-	idx++;
-	idx &= 15;
-
-	Q_snprintf(string[idx], sizeof( string[idx] ), "%.2f %.2f %.2f", v[0], v[1], v[2]);
-	return string[idx];  
+	char* outbuf = tmpstr512();
+	Q_snprintf(outbuf, 512, "%.2f %.2f %.2f", v[0], v[1], v[2]);
+	return outbuf;
 }
 
-int     com_filesize;
+char    com_basedir[MAX_OSPATH];
 char    com_gamedir[MAX_OSPATH];
-char	com_defaultgamedir[MAX_OSPATH];
+
+/*
+==================
+CL_CheckGameDirectory
+
+Client side game directory change.
+==================
+*/
+bool COM_CheckGameDirectory( const char *gamedir )
+{
+	// Switch game directories if needed, or abort if it's not good.
+	char szGD[ MAX_OSPATH ];
+
+	if ( !gamedir || !gamedir[0] )
+	{
+		ConMsg( "Server didn't specify a gamedir, assuming no change\n" );
+		return true;
+	}
+
+	// Rip out the current gamedir.
+	Q_FileBase( com_gamedir, szGD, sizeof( szGD ) );
+
+	if ( Q_stricmp( szGD, gamedir ) )
+	{
+		// Changing game directories without restarting is not permitted any more
+		ConMsg( "COM_CheckGameDirectory: game directories don't match (%s / %s)\n", szGD, gamedir );
+		return false;
+	}
+
+	return true;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Finds the file in the search path.
-//  Sets com_filesize and file handle
 // Input  : *filename - 
 //			*file - 
 // Output : int
 //-----------------------------------------------------------------------------
 int COM_FindFile( const char *filename, FileHandle_t *file )
 {
-	assert( file );
-
+	Assert( file );
+	int filesize = -1;
 	*file = g_pFileSystem->Open( filename, "rb" );
 	if ( *file )
 	{
-		com_filesize = g_pFileSystem->Size( *file );
+		filesize = g_pFileSystem->Size( *file );
 	}
-	else
-	{
-		com_filesize = -1;
-	}
-	return com_filesize;
+	return filesize;
 }
 
 //-----------------------------------------------------------------------------
@@ -1039,7 +463,7 @@ COM_WriteFile
 The filename will be prefixed by the current game directory
 ============
 */
-void COM_WriteFile (char *filename, void *data, int len)
+void COM_WriteFile (const char *filename, void *data, int len)
 {
 	FileHandle_t  handle;
 	
@@ -1048,13 +472,13 @@ void COM_WriteFile (char *filename, void *data, int len)
 
 	Q_snprintf( pName, nameLen, "%s", filename);
 
-	COM_FixSlashes( pName );
+	Q_FixSlashes( pName );
 	COM_CreatePath( pName );
 
 	handle = g_pFileSystem->Open( pName, "wb" );
 	if ( !handle )
 	{
-		Sys_Printf ("COM_WriteFile: failed on %s\n", pName);
+		Warning ("COM_WriteFile: failed on %s\n", pName);
 		return;
 	}
 	
@@ -1064,50 +488,18 @@ void COM_WriteFile (char *filename, void *data, int len)
 
 /*
 ============
-COM_FixSlashes
-
-Changes all '/' characters into '\' characters, in place.
-============
-*/
-void COM_FixSlashes( char *pname )
-{
-#ifdef _WIN32
-	while ( *pname ) {
-		if ( *pname == '/' )
-			*pname = '\\';
-		pname++;
-	}
-#else
-	while ( *pname ) {
-		if ( *pname == '\\' )
-			*pname = '/';
-		pname++;
-	}
-#endif
-}
-
-/*
-============
 COM_CreatePath
 
 Only used for CopyFile
 ============
 */
-void    COM_CreatePath (char *path)
+void COM_CreatePath (const char *path)
 {
-	char    *ofs;
-	char old;
-	
-	for (ofs = path+1 ; *ofs ; ofs++)
-	{
-		if (*ofs == '/' || *ofs == '\\')
-		{       // create the directory
-			old = *ofs;
-			*ofs = 0;
-			Sys_mkdir (path);
-			*ofs = old;
-		}
-	}
+	char temppath[1024];
+	Q_strncpy(temppath, path, sizeof(temppath));
+	Q_StripFilename( temppath );
+
+	Sys_mkdir( temppath );
 }
 
 
@@ -1115,25 +507,38 @@ void    COM_CreatePath (char *path)
 ===========
 COM_CopyFile
 
-Copies a file over from the net to the local cache, creating any directories
-needed.  This is for the convenience of developers using ISDN from home.
+Copies a file from pSourcePath to pDestPath.
 ===========
 */
-void COM_CopyFile (char *netpath, char *cachepath)
+bool COM_CopyFile ( const char *pSourcePath, const char *pDestPath )
 {
+	if ( IsX360() )
+		return false;
+
 	int             remaining, count;
 	char			buf[4096];
 	FileHandle_t in, out;
 
-	in = g_pFileSystem->Open( netpath, "rb" );
-	assert( in );
-	
-	// create directories up to the cache file
-	COM_CreatePath (cachepath);     
+	in = g_pFileSystem->Open( pSourcePath, "rb" );
 
-	out = g_pFileSystem->Open( cachepath, "wb" );
-	assert( out );
+	AssertMsg( in, "COM_CopyFile(): Input file failed to open" );
+
+	if ( in == FILESYSTEM_INVALID_HANDLE )
+		return false;
+		
+	// create directories up to the cache file
+	COM_CreatePath( pDestPath );     
+
+	out = g_pFileSystem->Open( pDestPath, "wb" );
+
+	AssertMsg( out, "COM_CopyFile(): Output file failed to open" );
 	
+	if ( out == FILESYSTEM_INVALID_HANDLE )
+	{
+		g_pFileSystem->Close( in );
+		return false;
+	}
+		
 	remaining = g_pFileSystem->Size( in );
 	while ( remaining > 0 )
 	{
@@ -1151,7 +556,9 @@ void COM_CopyFile (char *netpath, char *cachepath)
 	}
 
 	g_pFileSystem->Close( in );
-	g_pFileSystem->Close( out );    
+	g_pFileSystem->Close( out );   
+	
+	return true;
 }
 
 
@@ -1163,36 +570,23 @@ Finds the file in the search path, copies over the name with the full path name.
 This doesn't search in the pak file.
 ===========
 */
-int COM_ExpandFilename( char *filename )
+int COM_ExpandFilename( char *filename, int maxlength )
 {
 	char expanded[MAX_OSPATH];
 
-	if ( g_pFileSystem->GetLocalPath( filename, expanded ) != NULL )
+	if ( g_pFileSystem->GetLocalPath( filename, expanded, sizeof(expanded) ) != NULL )
 	{
-		strcpy( filename, expanded );
+		Q_strncpy( filename, expanded, maxlength );
 		return 1;
 	}
 
 	if ( filename && filename[0] != '*' )
 	{
-		Sys_Printf ("COM_ExpandFilename: can't find %s\n", filename);
+		Warning ("COM_ExpandFilename: can't find %s\n", filename);
 	}
 	
 	return 0;
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: If the requested file is inside a packfile, a new FileHandle_t will be opened
-//  into the file.
-// Input  : *filename - 
-//			*file - 
-// Output : int 
-//-----------------------------------------------------------------------------
-int COM_FOpenFile (const char *filename, FileHandle_t *file)
-{
-	return COM_FindFile( (char *)filename, file );
-}
-
 
 /*
 ===========
@@ -1203,22 +597,7 @@ Returns the size of the file only.
 */
 int COM_FileSize (const char *filename)
 {
-#if 1
 	return g_pFileSystem->Size(filename);
-#endif
-
-#if 0
-	FileHandle_t fp = NULL;
-	int iSize;
-
-	iSize = COM_FindFile ( filename, &fp );
-	if (fp)
-	{
-		g_pFileSystem->Close( fp );
-	}
-
-	return iSize;
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1262,29 +641,35 @@ byte *COM_LoadFile (const char *path, int usehunk, int *pLength)
 	}
 
 	// Extract the filename base name for hunk tag
-	COM_FileBase( path, base );
-	
+	Q_FileBase( path, base, sizeof( base ) );
+
+	unsigned bufSize = len + 1;
+	if ( IsX360() )
+	{
+		bufSize = g_pFileSystem->GetOptimalReadSize( hFile, bufSize ); // align to sector
+	}
+
 	switch ( usehunk )
 	{
 	case 1:
-		buf = (byte *)Hunk_AllocName (len+1, base);
+		buf = (byte *)Hunk_AllocName (bufSize, base);
 		break;
 	case 2:
-		buf = (byte *)Hunk_TempAlloc (len+1);
+		AssertMsg( 0, "Temp alloc no longer supported\n" );
 		break;
 	case 3:
-		buf = (byte *)Cache_Alloc (loadcache, len+1, base);
+		AssertMsg( 0, "Cache alloc no longer supported\n" );
 		break;
 	case 4:
 		{
 			if (len+1 > loadsize)
-				buf = (byte *)Hunk_TempAlloc (len+1);
+				buf = (byte *)malloc(bufSize);
 			else
 				buf = loadbuf;
 		}
 		break;
 	case 5:
-		buf = (byte *)malloc(len + 1);  // YWB:  FIXME, this is evil.
+		buf = (byte *)malloc(bufSize);  // YWB:  FIXME, this is evil.
 		break;
 	default:
 		Sys_Error ("COM_LoadFile: bad usehunk");
@@ -1297,7 +682,7 @@ byte *COM_LoadFile (const char *path, int usehunk, int *pLength)
 		return NULL;			
 	}
 		
-	g_pFileSystem->Read( buf, len, hFile );
+	g_pFileSystem->ReadEx( buf, bufSize, len, hFile );
 	COM_CloseFile( hFile );
 
 	((byte *)buf)[ len ] = 0;
@@ -1307,34 +692,6 @@ byte *COM_LoadFile (const char *path, int usehunk, int *pLength)
 		*pLength = len;
 	}
 	return buf;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *path - 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool COM_DoesFileExist(const char *path)
-{
-	FileHandle_t hFile;
-
-	if ( COM_OpenFile( path, &hFile ) == -1 )
-	{
-		return false;
-	}
-
-	COM_CloseFile(hFile);
-	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *buffer - 
-// Output : void COM_FreeFile
-//-----------------------------------------------------------------------------
-void COM_FreeFile (byte *buffer)
-{
-	free( buffer );
 }
 
 /*
@@ -1362,31 +719,13 @@ void COM_CopyFileChunk( FileHandle_t dst, FileHandle_t src, int nSize )
 	g_pFileSystem->Flush ( dst );
 }
 
-byte *COM_LoadHunkFile (const char *path)
-{
-	return COM_LoadFile (path, 1, NULL);
-}
-
-byte *COM_LoadTempFile (const char *path, int *pLength)
-{
-	return COM_LoadFile (path, 2, pLength);
-}
-
-void COM_LoadCacheFile (const char *path, cache_user_t *cu )
-{
-	loadcache = cu;
-	COM_LoadFile (path, 3, NULL);
-}
-
-// uses temp hunk if larger than bufsize
-byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize)
+// uses malloc if larger than bufsize
+byte *COM_LoadStackFile (const char *path, void *buffer, int bufsize, int& filesize )
 {
 	byte    *buf;
-	
 	loadbuf = (byte *)buffer;
 	loadsize = bufsize;
-	buf = COM_LoadFile (path, 4, NULL);
-	
+	buf = COM_LoadFile (path, 4, &filesize );
 	return buf;
 }
 
@@ -1405,83 +744,29 @@ void COM_Shutdown( void )
 {
 }
 
-/*
-================
-COM_AddGameDirectory
-
-Sets com_gamedir, adds the directory to the head of the path,
-then loads and adds pak1.pak pak2.pak ... 
-================
-*/
-void COM_AddGameDirectory ( const char *pszBaseDir, const char *pszDir )
+//-----------------------------------------------------------------------------
+// Purpose: allocates memory and copys source text
+// Input  : *in - 
+// Output : char *CopyString
+//-----------------------------------------------------------------------------
+char *COM_StringCopy(const char *in)
 {
-	char dir[ MAX_OSPATH ];
-	char platdir [MAX_OSPATH];
-
-	Q_snprintf( dir, sizeof( dir ), "%s/%s", pszBaseDir, pszDir );
-	strcpy ( com_gamedir, dir );
-
-	g_pFileSystem->AddSearchPath( dir, "GAME", PATH_ADD_TO_HEAD );
-
-	// It's OK for this to be NULL on the dedicated server.
-	if( g_pMaterialSystemHardwareConfig )
-	{
-		int dxLevel = g_pMaterialSystemHardwareConfig->GetDXSupportLevel();
-		if( dxLevel >= 60 && dxLevel < 70 )
-		{
-			// DX6
-			Q_snprintf( platdir, sizeof( platdir ), "%s/platform_dx7", dir ); 
-			g_pFileSystem->AddSearchPath( platdir, "GAME", PATH_ADD_TO_HEAD );
-			Q_snprintf( platdir, sizeof( platdir ), "%s/platform_dx6", dir ); 
-			g_pFileSystem->AddSearchPath( platdir, "GAME", PATH_ADD_TO_HEAD );
-		}
-		else if( dxLevel >= 70 && dxLevel < 80 )
-		{
-			// DX7
-			Q_snprintf( platdir, sizeof( platdir ), "%s/platform_dx7", dir ); 
-			g_pFileSystem->AddSearchPath( platdir, "GAME", PATH_ADD_TO_HEAD );
-		}
-		else if( dxLevel >= 80 && dxLevel < 90 )
-		{
-			// DX8
-
-		}
-		// DX9 and higher is assumed to be DX9 compatable:
-		else if( dxLevel >= 90 )
-		{
-			// DX9
-		}
-	}
+	int len = Q_strlen(in)+1;
+	char *out = (char *)new char[ len ];
+	Q_strncpy (out, in, len );
+	return out;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Actually re-inits the fs
-// Input  : *pszGameDir - 
-//-----------------------------------------------------------------------------
-void COM_ChangeGameDir( const char *pszGameDir )
+void COM_StringFree(const char *in)
 {
-	g_pFileSystem->RemoveSearchPath( NULL, "GAME" );
-	g_pFileSystem->RemoveSearchPath( NULL, "PLATFORM" );
-
-	// start up with the default game directory
-	COM_AddGameDirectory ( host_parms.basedir, com_defaultgamedir );
-
-	// Adds basedir/gamedir as an override game, only if it's different from the default, of course
-	if ( stricmp( pszGameDir, com_defaultgamedir ) )
-	{
-		COM_AddGameDirectory ( host_parms.basedir, pszGameDir );
-	}
-
-	g_pFileSystem->AddSearchPath( pszGameDir, "PLATFORM" );
-
-	// Set LOGDIR to be something reasonable
-	COM_SetupLogDir( NULL );
+	delete [] in;
 }
+
 
 void COM_SetupLogDir( const char *mapname )
 {
 	char gameDir[MAX_OSPATH];
-	COM_GetGameDir( gameDir );
+	COM_GetGameDir( gameDir, sizeof( gameDir ) );
 
 	// Blat out the all directories in the LOGDIR path
 	g_pFileSystem->RemoveSearchPath( NULL, "LOGDIR" );
@@ -1529,124 +814,326 @@ void COM_SetupLogDir( const char *mapname )
 	}
 }
 
-
-void COM_StripTrailingSlash( char *ppath )
+/*
+================
+COM_GetModDirectory - return the final directory in the game dir (i.e "cstrike", "hl2", rather than c:\blah\cstrike )
+================
+*/
+const char *COM_GetModDirectory()
 {
-	int len;
-
-	len = strlen( ppath );
-
-	if ( len > 0 )
+	static char modDir[MAX_PATH];
+	if ( Q_strlen( modDir ) == 0 )
 	{
-		if ( (ppath[len-1] == '\\') || (ppath[len-1] == '/'))
-			ppath[len-1] = 0;
+		const char *gamedir = CommandLine()->ParmValue("-game", CommandLine()->ParmValue( "-defaultgamedir", "hl2" ) );
+		Q_strncpy( modDir, gamedir, sizeof(modDir) );
+		if ( strchr( modDir, '/' ) || strchr( modDir, '\\' ) )
+		{
+			Q_StripLastDir( modDir, sizeof(modDir) );
+			int dirlen = Q_strlen( modDir );
+			Q_strncpy( modDir, gamedir + dirlen, sizeof(modDir) - dirlen );
+		}
 	}
+
+	return modDir;
 }
 
 
-void COM_ParseDirectoryFromCmd( const char *pCmdName, char *pDirName, const char *pDefault )
+/*
+================
+Return if we should load content from the _hd folder for this mod
+This logic needs to match with the gameui/OptionsSubVideo.cpp code
+================
+*/
+bool BLoadHDContent( const char *pchModDir, const char *pchBaseDir )
 {
-	const char *pParameter = CommandLine()->ParmValue( pCmdName );
+	char szModSteamInfPath[ 1024 ];
+	V_ComposeFileName( pchModDir, "game_hd.txt", szModSteamInfPath, sizeof( szModSteamInfPath ) );
+	char szFullPath[ 1024 ];
+	V_MakeAbsolutePath( szFullPath, sizeof( szFullPath ), szModSteamInfPath, pchBaseDir );
 
-	// Found a valid parameter on the cmd line?
-	if ( pParameter )
+	FILE *fp = fopen( szFullPath, "rb" );
+	if ( fp )
 	{
-		// Grab it
-		strcpy( pDirName, pParameter );
+		fclose(fp);
+		return true;
 	}
-	else if ( pDefault )
-	{
-		// Ok, then use the default
-		strcpy (pDirName, pDefault);
-	}
-	else
-	{
-		// If no default either, then just terminate the string
-		pDirName[0] = 0;
-	}
-
-	COM_StripTrailingSlash( pDirName );
+	return false;
 }
+
+
+extern void Host_CheckGore( void );
 
 /*
 ================
 COM_InitFilesystem
 ================
 */
-void COM_InitFilesystem (void)
+void COM_InitFilesystem( const char *pFullModPath )
 {
-	// Get the default game dir
-	COM_ParseDirectoryFromCmd( "-defaultgamedir", com_defaultgamedir, "hl2" );
+	CFSSearchPathsInit initInfo;
 
-	// start up with the default game directory
-	COM_AddGameDirectory ( host_parms.basedir, com_defaultgamedir );
+#ifndef SWDS	
+	if ( IsPC() )
+	{
+		static char language[128];
+		language[0] = 0;
+
+		// There are two language at play here.  The Audio language which is controled by the
+		// properties on the game itself in Steam (at least for now).  And the language Steam is set to.
+        // Under Windows the text in the game is controled by the language Steam is set in, but the audio
+		// is controled by the language set in the game's properties which we can get from Steam3Client
+
+		// A command line override for audio language has also been added.
+		// -audiolanguage <language>
+		// User must have the .vpk files for the language installed though in order to use the command line switch
+		
+		if ( Steam3Client().SteamApps() )
+		{
+			// use -audiolanguage command line to override audio language, otherwise take language from steam
+			Q_strncpy(language, CommandLine()->ParmValue("-audiolanguage", Steam3Client().SteamApps()->GetCurrentGameLanguage()), sizeof( language ) - 1);
+		}
+		else
+		{
+			char *szLang = getenv("LANG");
+
+			// still allow command line override even when not running steam
+			if (CommandLine()->CheckParm("-audiolanguage"))
+			{
+				Q_strncpy(language, CommandLine()->ParmValue("-audiolanguage", "english"), sizeof( language ) - 1);
+			}
+			else if( szLang )
+			{
+				ELanguage lang = PchLanguageICUCodeToELanguage(szLang, k_Lang_English);
+				const char *szShortLang = GetLanguageShortName(lang);
+				if( Q_strncmp(szShortLang, "none", 4) != 0 )
+					Q_strncpy(language, szShortLang, sizeof( language ) - 1);
+			}
+		}
+
+		if ( ( Q_strlen(language) > 0 ) && ( Q_stricmp(language, "english") ) )
+		{
+			initInfo.m_pLanguage = language;
+		}
+	}
+#endif
 	
-	// -game <gamedir>
-	// Adds basedir/gamedir as an override game, only if it's different from the default, of course
-	const char *pModDir;
-	const char *pGameDir = CommandLine()->ParmValue("-game", com_defaultgamedir );
-	if ( stricmp( pGameDir, com_defaultgamedir ) )
+	initInfo.m_pFileSystem = g_pFileSystem;
+	initInfo.m_pDirectoryName = pFullModPath;
+	if ( !initInfo.m_pDirectoryName )
 	{
-		COM_AddGameDirectory ( host_parms.basedir, pGameDir );
-		pModDir = pGameDir;
-	}
-	else
-	{
-		pModDir = com_defaultgamedir;
+		initInfo.m_pDirectoryName = GetCurrentGame();
 	}
 
-	// Some things (like searching for cfg/config.cfg) only look in the mod directory.
-	char dir[ MAX_OSPATH ];
-	Q_snprintf( dir, sizeof( dir ), "%s/%s", host_parms.basedir, pModDir );
-	g_pFileSystem->AddSearchPath( dir, "MOD", PATH_ADD_TO_TAIL );
+	Host_CheckGore();
+
+	initInfo.m_bLowViolence = g_bLowViolence;
+	initInfo.m_bMountHDContent = BLoadHDContent( initInfo.m_pDirectoryName, GetBaseDirectory() );
+
+	// Load gameinfo.txt and setup all the search paths, just like the tools do.
+	FileSystem_LoadSearchPaths( initInfo );
+							  
+	// The mod path becomes com_gamedir.
+	Q_MakeAbsolutePath( com_gamedir, sizeof( com_gamedir ), initInfo.m_ModPath );
+							  	
+	// Set com_basedir.
+	Q_strncpy ( com_basedir, GetBaseDirectory(), sizeof( com_basedir ) ); // the "root" directory where hl2.exe is
+	Q_strlower( com_basedir );
+	Q_FixSlashes( com_basedir );
+	
+#if !defined( SWDS ) && !defined( DEDICATED )
+	EngineVGui()->SetVGUIDirectories();
+#endif
 
 	// Set LOGDIR to be something reasonable
 	COM_SetupLogDir( NULL );
+
+//	g_pFileSystem->PrintSearchPaths();
+
 }
 
-void COM_Log( char *pszFile, char *fmt, ...)
+const char *COM_DXLevelToString( int dxlevel )
 {
-	va_list		argptr;
-	char		string[1024];
-	FileHandle_t fp;
-	char *pfilename;
+	bool bHalfPrecision = false;
+
+	const char *pShaderDLLName = g_pMaterialSystemHardwareConfig->GetShaderDLLName();
+	if( pShaderDLLName && Q_stristr( pShaderDLLName, "nvfx" ) )
+	{
+		bHalfPrecision = true;
+	}
 	
-	if ( !pszFile )
+	if( CommandLine()->CheckParm( "-dxlevel" ) )
+	{
+		switch( dxlevel )
+		{
+		case 0:
+			return "default";
+		case 60:
+			return "6.0";
+		case 70:
+			return "7.0";
+		case 80:
+			return "8.0";
+		case 81:
+			return "8.1";
+		case 82:
+			if( bHalfPrecision )
+			{
+				return "8.1 with some 9.0 (half-precision)";
+			}
+			else
+			{
+				return "8.1 with some 9.0 (full-precision)";
+			}
+		case 90:
+			if( bHalfPrecision )
+			{
+				return "9.0 (half-precision)";
+			}
+			else
+			{
+				return "9.0 (full-precision)";
+			}
+		default:
+			return "UNKNOWN";
+		}
+	}
+	else
+	{
+		switch( dxlevel )
+		{
+		case 60:
+			return "gamemode - 6.0";
+		case 70:
+			return "gamemode - 7.0";
+		case 80:
+			return "gamemode - 8.0";
+		case 81:
+			return "gamemode - 8.1";
+		case 82:
+			if( bHalfPrecision )
+			{
+				return "gamemode - 8.1 with some 9.0 (half-precision)";
+			}
+			else
+			{
+				return "gamemode - 8.1 with some 9.0 (full-precision)";
+			}
+		case 90:
+			if( bHalfPrecision )
+			{
+				return "gamemode - 9.0 (half-precision)";
+			}
+			else
+			{
+				return "gamemode - 9.0 (full-precision)";
+			}
+		default:
+			return "gamemode";
+		}
+	}
+}
+
+const char *COM_FormatSeconds( int seconds )
+{
+	static char string[64];
+
+	int hours = 0;
+	int minutes = seconds / 60;
+
+	if ( minutes > 0 )
+	{
+		seconds -= (minutes * 60);
+		hours = minutes / 60;
+
+		if ( hours > 0 )
+		{
+			minutes -= (hours * 60);
+		}
+	}
+	
+	if ( hours > 0 )
+	{
+		Q_snprintf( string, sizeof(string), "%2i:%02i:%02i", hours, minutes, seconds );
+	}
+	else
+	{
+		Q_snprintf( string, sizeof(string), "%02i:%02i", minutes, seconds );
+	}
+
+	return string;
+}
+
+// Non-VarArgs version
+void COM_LogString( char const *pchFile, char const *pchString )
+{
+	if ( !g_pFileSystem )
+	{
+		Assert( 0 );
+		return;
+	}
+
+	FileHandle_t fp;
+	const char *pfilename;
+
+	if ( !pchFile )
 	{
 		pfilename = "hllog.txt";
 	}
 	else
 	{
-		pfilename = pszFile;
+		pfilename = pchFile;
 	}
-	va_start (argptr,fmt);
-	Q_vsnprintf(string, sizeof( string ), fmt,argptr);
-	va_end (argptr);
 
 	fp = g_pFileSystem->Open( pfilename, "a+t");
 	if (fp)
 	{
-		g_pFileSystem->FPrintf(fp, "%s", string);
+		g_pFileSystem->Write( pchString, strlen( pchString), fp );
 		g_pFileSystem->Close(fp);
 	}
 }
 
-byte *COM_LoadFileForMe(const char *filename, int *pLength)
+void COM_Log( const char *pszFile, const char *fmt, ...)
 {
-	return COM_LoadFile(filename, 5, pLength);
+	if ( !g_pFileSystem )
+	{
+		Assert( 0 );
+		return;
+	}
+
+	va_list		argptr;
+	char		string[8192];
+
+	va_start (argptr,fmt);
+	Q_vsnprintf(string, sizeof( string ), fmt,argptr);
+	va_end (argptr);
+
+	COM_LogString( pszFile, string );
 }
 
-int COM_CompareFileTime(char *filename1, char *filename2, int *iCompare)
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *filename1 - 
+//			*filename2 - 
+//			*iCompare - 
+// Output : int
+//-----------------------------------------------------------------------------
+int COM_CompareFileTime(const char *filename1, const char *filename2, int *iCompare)
 {
 	int bRet = 0;
-	*iCompare = 0;
+	if ( iCompare )
+	{
+		*iCompare = 0;
+	}
 
 	if (filename1 && filename2)
 	{
 		long ft1 = g_pFileSystem->GetFileTime( filename1 );
 		long ft2 = g_pFileSystem->GetFileTime( filename2 );
 
-		*iCompare = Sys_CompareFileTime( ft1,  ft2 );
+		if ( iCompare )
+		{
+			*iCompare = Sys_CompareFileTime( ft1,  ft2 );
+		}
 		bRet = 1;
 	}
 
@@ -1657,10 +1144,10 @@ int COM_CompareFileTime(char *filename1, char *filename2, int *iCompare)
 // Purpose: 
 // Input  : *szGameDir - 
 //-----------------------------------------------------------------------------
-void COM_GetGameDir(char *szGameDir)
+void COM_GetGameDir(char *szGameDir, int maxlen)
 {
 	if (!szGameDir) return;
-	strcpy(szGameDir, com_gamedir);
+	Q_strncpy(szGameDir, com_gamedir, maxlen );
 }
 
 //-----------------------------------------------------------------------------
@@ -1669,236 +1156,265 @@ void COM_GetGameDir(char *szGameDir)
 //			*token - 
 // Output : char
 //-----------------------------------------------------------------------------
-char *COM_ParseFile(char *data, char *token)
+const char *COM_ParseFile(const char *data, char *token, int maxtoken )
 {
-	char *return_data = COM_Parse(data);
-	strcpy(token, com_token);
+	const char *return_data = COM_Parse(data);
+	Q_strncpy(token, com_token, maxtoken);
 	return return_data;	
 }
 
-
-///////////////////////////////////////////////////////
-/*
-=================
-COM_CheckAuthenticationType()
-
-  Determine whether this server is a private/LAN only server, or whether it is a valid
-  Internet server.
-=================
-*/
-void COM_CheckAuthenticationType()
-{
-	gfUseLANAuthentication = true;
-}
-
-/*
-================
-COM_EntsForPlayerSlots
-
-Returns the appropriate size of the edicts array to allocate
-based on the stated # of max players
-================
-*/
-int COM_EntsForPlayerSlots(int nPlayers)
-{
-	// FIXME: due to all the weapons, we may run out...
-	return MAX_EDICTS;
-}
-
-/*
-===============
-COM_GetShortName
-
-Returns the player's nickname, in a directory safe 8 character max string.
-===============
-*/
-char *COM_GetShortName(char *name)
-{
-	static char szReturnName[9];
-	char *pDst, *pSrc;
-	int   i;
-
-	memset(szReturnName, 0, 9);
-
-	if (strlen(name) < 1)
-		return "Noname";
-	
-	pDst = szReturnName;
-	pSrc = name;
-
-	i = 0;  // Up to 8 characters.
-	while ( *pSrc &&
-		   ( i < 8 ) )
-	{
-		if (isalpha(*pSrc))
-		{
-			*pDst++ = *pSrc;
-			i++;
-		}
-
-		pSrc++;
-	}
-	*pDst = 0;
-
-	if (strlen(szReturnName) < 1)
-		return "Noname";
-
-	return szReturnName;
-
-}
-
-#define BLOCK_SIZE 1024   // For copying operations
-/*
-===============
-CL_CopyChunk
-===============
-*/
-void CL_CopyChunk( FileHandle_t dst, FileHandle_t src, int nSize )
-{
-	int   copysize = nSize;
-	char  copybuf[BLOCK_SIZE];
-	while (copysize > BLOCK_SIZE)
-	{
-		g_pFileSystem->Read ( copybuf, BLOCK_SIZE, src );
-		g_pFileSystem->Write( copybuf, BLOCK_SIZE, dst );
-		copysize -= BLOCK_SIZE;
-	}
-	g_pFileSystem->Read ( copybuf, copysize, src );
-	g_pFileSystem->Write( copybuf, copysize, dst );
-	g_pFileSystem->Flush ( src );
-	g_pFileSystem->Flush ( dst );
-}
-
-
-void DebugOutStraight(const char *pStr)
-{
-#ifdef _WIN32
-	OutputDebugString(pStr);
-#elif _LINUX
-	fprintf(stderr, "%s\n", pStr);
-#endif
-}
-
-
-void DebugOut(const char *pStr, ...)
-{
-	char str[4096];
-	va_list marker;
-
-	va_start(marker, pStr);
-	Q_vsnprintf(str, sizeof( str ), pStr, marker);
-	va_end(marker);
-
-#ifdef _WIN32
-	OutputDebugString(str);
-#elif _LINUX
-	fprintf(stderr, "%s\n", pStr);
-#endif
-}
-
-static unsigned char mungify_table[ 16 ] = 
-{
-	122, 100, 5, 241,
-	27, 155, 160, 181,
-	202, 237, 97, 13,
-	74, 223, 142, 199,
-};
-
-/*
-================
-COM_Munge
-
-Anti-proxy/aimbot obfuscation code
-
-  COM_UnMunge should reversably fixup the data
-================
-*/
-void COM_Munge( unsigned char *data, int len, int seq )
-{
-	int i;
-	int mungelen;
-
-	int c;
-	int *pc;
-	unsigned char *p;
-
-	int j;
-
-	mungelen = len & ~3;
-	mungelen /= 4;
-
-	for ( i = 0; i < mungelen; i++ )
-	{
-		pc = (int *)&data[ i * 4 ];
-		c = *pc;
-
-		c ^= ~seq;
-
-		c = DWordSwap( c );
-		
-		p = ( unsigned char *)&c;
-		for ( j = 0 ; j < 4; j++ )
-		{
-			*p++ ^= ( 0xa5 | ( j << j) | j | mungify_table[ ( i + j ) & 0x0f ] );
-		}
-
-		c ^= seq;
-		
-		*pc = c;
-	}
-}
-
-/*
-================
-COM_UnMunge
-
-Anti-proxy/aimbot obfuscation code
-================
-*/
-void COM_UnMunge( unsigned char *data, int len, int seq )
-{
-	int i;
-	int mungelen;
-
-	int c;
-	int *pc;
-	unsigned char *p;
-
-	int j;
-
-	mungelen = len & ~3;
-	mungelen /= 4;
-
-	for ( i = 0; i < mungelen; i++ )
-	{
-		pc = (int *)&data[ i * 4 ];
-		c = *pc;
-
-		c ^= seq;
-
-		p = ( unsigned char *)&c;
-		for ( j = 0 ; j < 4; j++ )
-		{
-			*p++ ^= ( 0xa5 | ( j << j) | j | mungify_table[ ( i + j ) & 0x0f ] );
-		}
-
-		c = DWordSwap( c );
-
-		c ^= ~seq;
-		
-		*pc = c;
-	}
-}
-
-/*
-================
-COM_Init
-================
-*/
-
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : void COM_Init
+//-----------------------------------------------------------------------------
 void COM_Init ( void )
 {
 	CharacterSetBuild( &g_BreakSet, "{}()'" );
 	CharacterSetBuild( &g_BreakSetIncludingColons, "{}()':" );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool COM_IsValidPath( const char *pszFilename )
+{
+	if ( !pszFilename )
+	{
+		return false;
+	}
+
+	if ( Q_strlen( pszFilename ) <= 0    ||
+		Q_strstr( pszFilename, "\\\\" ) ||	// to protect network paths
+		Q_strstr( pszFilename, ":" )    || // to protect absolute paths
+		Q_strstr( pszFilename, ".." ) ||   // to protect relative paths
+		Q_strstr( pszFilename, "\n" ) ||   // CFileSystem_Stdio::FS_fopen doesn't allow this
+		Q_strstr( pszFilename, "\r" ) )    // CFileSystem_Stdio::FS_fopen doesn't allow this
+	{
+		return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool COM_IsValidLogFilename( const char *pszFilename )
+{
+	if ( !pszFilename || !pszFilename[0] )
+		return false;
+
+	if ( V_stristr( pszFilename, "   " ) || V_stristr( pszFilename, "\t" ) ) // don't multiple spaces or tab
+		return false;
+
+	const char *extension = V_strrchr( pszFilename, '.' );
+	if ( extension )
+	{
+		if ( Q_stricmp( extension, ".log" ) && Q_stricmp( extension, ".txt" ) ) // must use .log or .txt if an extension is specified
+			return false;
+
+		if ( extension == pszFilename ) // bad filename (just an extension)
+			return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+unsigned int COM_GetIdealDestinationCompressionBufferSize_Snappy( unsigned int uncompressedSize )
+{
+	// 4 for the ID, plus whatever Snappy says it would need.
+	return 4 + snappy::MaxCompressedLength( uncompressedSize );
+}
+
+//-----------------------------------------------------------------------------
+void *COM_CompressBuffer_Snappy( const void *source, unsigned int sourceLen, unsigned int *compressedLen, unsigned int maxCompressedLen )
+{
+	Assert( source );
+	Assert( compressedLen );
+
+	// Allocate a buffer big enough to hold the worst case.
+	unsigned nMaxCompressedSize = COM_GetIdealDestinationCompressionBufferSize_Snappy( sourceLen );
+	char *pCompressed = (char*)malloc( nMaxCompressedSize );
+	if ( pCompressed == NULL )
+		return NULL;
+
+	// Do the compression
+	*(uint32 *)pCompressed = SNAPPY_ID;
+	size_t compressed_length;
+	snappy::RawCompress( (const char *)source, sourceLen, pCompressed + sizeof(uint32), &compressed_length );
+	compressed_length += 4;
+	Assert( compressed_length <= nMaxCompressedSize );
+
+	// Check if this result is OK
+	if ( maxCompressedLen != 0 && compressed_length > maxCompressedLen )
+	{
+		free( pCompressed );
+		return NULL;
+	}
+
+	*compressedLen = compressed_length;
+	return pCompressed;
+}
+
+//-----------------------------------------------------------------------------
+bool COM_BufferToBufferCompress_Snappy( void *dest, unsigned int *destLen, const void *source, unsigned int sourceLen )
+{
+	Assert( dest );
+	Assert( destLen );
+	Assert( source );
+
+	// Check if we need to use a temporary buffer
+	unsigned nMaxCompressedSize = COM_GetIdealDestinationCompressionBufferSize_Snappy( sourceLen );
+	unsigned compressedLen = *destLen;
+	if ( compressedLen < nMaxCompressedSize )
+	{
+
+		// Yep.  Use the other function to allocate the buffer of the right size and comrpess into it
+		void *temp = COM_CompressBuffer_Snappy( source, sourceLen, &compressedLen, compressedLen );
+		if ( temp == NULL )
+			return false;
+
+		// Copy over the data
+		V_memcpy( dest, temp, compressedLen );
+		*destLen = compressedLen;
+		free( temp );
+		return true;
+	}
+
+	// We have room and should be able to compress directly
+	*(uint32 *)dest = SNAPPY_ID;
+	size_t compressed_length;
+	snappy::RawCompress( (const char *)source, sourceLen, (char *)dest + sizeof(uint32), &compressed_length );
+	compressed_length += 4;
+	Assert( compressed_length <= nMaxCompressedSize );
+	*destLen = compressed_length;
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+unsigned COM_GetIdealDestinationCompressionBufferSize_LZSS( unsigned int uncompressedSize )
+{
+	// Our LZSS compressor doesn't need any extra space because it will stop and fail
+	// as soon as it figures out it's unable to reduce the size of the data by more than
+	// 32 bytes
+	return uncompressedSize;
+}
+
+//-----------------------------------------------------------------------------
+void *COM_CompressBuffer_LZSS( const void *source, unsigned int sourceLen, unsigned int *compressedLen, unsigned int maxCompressedLen )
+{
+	Assert( source );
+	Assert( compressedLen );
+
+	CLZSS s;
+	unsigned int uCompressedLen = 0;
+	byte *pbOut = s.Compress( (const byte *)source, sourceLen, &uCompressedLen );
+	if ( pbOut && uCompressedLen > 0 && ( uCompressedLen <= maxCompressedLen || maxCompressedLen == 0 ) )
+	{
+		*compressedLen = uCompressedLen;
+		return pbOut;
+	}
+
+	if ( pbOut )
+	{
+		free( pbOut );
+	}
+	return NULL;
+}
+
+//-----------------------------------------------------------------------------
+bool COM_BufferToBufferCompress_LZSS( void *dest, unsigned int *destLen, const void *source, unsigned int sourceLen )
+{
+	Assert( dest );
+	Assert( destLen );
+	Assert( source );
+
+	CLZSS s;
+	unsigned int uCompressedLen = 0;
+	if ( !s.CompressNoAlloc( (const byte *)source, sourceLen, (unsigned char *)dest, &uCompressedLen ) )
+		return false;
+
+	*destLen = uCompressedLen;
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+int COM_GetUncompressedSize( const void *compressed, unsigned int compressedLen )
+{
+	const lzss_header_t *pHeader = (const lzss_header_t *)compressed;
+
+	// Check for our own LZSS compressed data
+	if ( ( compressedLen >= sizeof(lzss_header_t) ) && pHeader->id == LZSS_ID )
+		return LittleLong( pHeader->actualSize );
+
+	// Check for Snappy compressed
+	if ( compressedLen > sizeof(pHeader->id) && pHeader->id == SNAPPY_ID )
+	{
+		size_t snappySize;
+		if ( snappy::GetUncompressedLength( (const char *)compressed + sizeof(pHeader->id), compressedLen-sizeof(pHeader->id), &snappySize ) )
+			return (int)snappySize;
+	}
+
+	return -1;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Generic buffer decompression from source into dest
+//-----------------------------------------------------------------------------
+bool COM_BufferToBufferDecompress( void *dest, unsigned int *destLen, const void *source, unsigned int sourceLen )
+{
+	int nDecompressedSize = COM_GetUncompressedSize( source, sourceLen );
+	if ( nDecompressedSize >= 0 )
+	{
+
+		// Check buffer size
+		if ( (unsigned)nDecompressedSize > *destLen )
+		{
+			Warning( "NET_BufferToBufferDecompress with improperly sized dest buffer (%u in, %u needed)\n", *destLen, nDecompressedSize );
+			return false;
+		}
+
+		const lzss_header_t *pHeader = (const lzss_header_t *)source;
+		if ( pHeader->id == LZSS_ID )
+		{
+			CLZSS s;
+			int nActualDecompressedSize = s.SafeUncompress( (byte *)source, sourceLen, (byte *)dest, *destLen );
+			if ( nActualDecompressedSize != nDecompressedSize )
+			{
+				Warning( "NET_BufferToBufferDecompress: header said %d bytes would be decompressed, but we LZSS decompressed %d\n", nDecompressedSize, nActualDecompressedSize );
+				return false;
+			}
+			*destLen = nDecompressedSize;
+			return true;
+		}
+
+		if ( pHeader->id == SNAPPY_ID )
+		{
+			if ( !snappy::RawUncompress( (const char *)source + 4, sourceLen - 4, (char *)dest ) )
+			{
+				Warning( "NET_BufferToBufferDecompress: Snappy decompression failed\n" );
+				return false;
+			}
+			*destLen = nDecompressedSize;
+			return true;
+		}
+
+		// Mismatch between this routine and COM_GetUncompressedSize
+		AssertMsg( false, "Unknown compression type?" );
+		return false;
+	}
+	else
+	{
+		if ( sourceLen > *destLen )
+		{
+			Warning( "NET_BufferToBufferDecompress with improperly sized dest buffer (%u in, %u needed)\n", *destLen, sourceLen );
+			return false;
+		}
+
+		V_memcpy( dest, source, sourceLen );
+		*destLen = sourceLen;
+	}
+
+	return true;
+}

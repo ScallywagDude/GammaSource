@@ -1,0 +1,81 @@
+// Pistol
+
+WeaponData
+{
+	"bucket_position_360"	"0"
+	"bucket_360"	"1"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Pistol"
+	"viewmodel"			"models/weapons/v_pistol.mdl"
+	"playermodel"		"models/weapons/w_pistol.mdl"
+	"anim_prefix"		"pistol"
+	"bucket"			"1"
+	"bucket_position"	"0"
+
+	"clip_size"			"18"
+	"primary_ammo"		"MediumRound"
+	"secondary_ammo"	"None"
+
+//	"weight"			"1"
+	"weight"			"2"
+	"item_flags"		"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+
+		"reload"		"Weapon_Pistol.Reload"
+		"reload_npc"	"Weapon_Pistol.NPC_Reload"
+		"empty"			"Weapon_Pistol.Empty"
+		"single_shot"	"Weapon_Pistol.Single"
+		"single_shot_npc"	"Weapon_Pistol.NPC_Single"
+		"special1"		"Weapon_Pistol.Special1"
+		"special2"		"Weapon_Pistol.Special2"
+		"burst"			"Weapon_Pistol.Burst"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons1"
+				"x"		"129"
+				"y"		"1"
+				"width"		"126"
+				"height"	"62"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons1b"
+				"x"		"128"
+				"y"		"0"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"60"
+				"width"		"73"
+				"height"	"15"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

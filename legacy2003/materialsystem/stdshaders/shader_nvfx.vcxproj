@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release ps20|Win32">
+      <Configuration>Release ps20</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug ps20|Win32">
+      <Configuration>Debug ps20</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{6B20B36F-B471-5CE9-8C36-F035CD92D4C8}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>shader_nvfx</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="ModernShaderTools">
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'=='' and '$(HL2_MODERN_PERL)'!=''">$(HL2_MODERN_PERL)</HL2ModernPerl>
+    <HL2ModernPerl Condition="'$(HL2ModernPerl)'==''">perl</HL2ModernPerl>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;fxctmp9_nv3x;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;PS20A;NV3X;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;shader_nvfx_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Release\vstdlib.lib;..\..\shaderlib\build\Release\shaderlib.lib;..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>shader_nvfx</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;fxctmp9_nv3x;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;PS20A;NV3X;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;shader_nvfx_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Debug\vstdlib.lib;..\..\shaderlib\build\Debug\shaderlib.lib;..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;fxctmp9_nv3x_ps20;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>NDEBUG;NV3X;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;shader_nvfx_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Release\vstdlib.lib;..\..\shaderlib\build\Release\shaderlib.lib;..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>shader_nvfx</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\common;..\..\public;fxctmp9_nv3x_ps20;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;NV3X;_WINDOWS;_MBCS;_USRDLL;fopen=dont_use_fopen;shader_nvfx_DLL_EXPORT;_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level4</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>..\..\vstdlib\build\Debug\vstdlib.lib;..\..\shaderlib\build\Debug\shaderlib.lib;..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <AdditionalLibraryDirectories>..\..\lib\common\\;..\..\lib\public\\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\BaseVSShader.cpp" />
+    <ClCompile Include="..\..\public\bumpvects.cpp" />
+    <ClCompile Include=".\hsv.cpp" />
+    <ClCompile Include=".\lightmappedgeneric.cpp" />
+    <ClCompile Include="..\..\public\mathlib.cpp" />
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp" />
+    <ClCompile Include=".\refract.cpp" />
+    <ClCompile Include=".\shadow.cpp" />
+    <ClCompile Include=".\shatteredglass.cpp" />
+    <ClCompile Include=".\sky.cpp" />
+    <ClCompile Include=".\teeth.cpp" />
+    <ClCompile Include=".\unlitgeneric.cpp" />
+    <ClCompile Include=".\vertexlitgeneric.cpp" />
+    <ClCompile Include="..\..\public\vmatrix.cpp" />
+    <ClCompile Include=".\water.cpp" />
+    <ClCompile Include=".\worldvertexalpha.cpp" />
+    <ClCompile Include=".\worldvertextransition.cpp" />
+    <ClCompile Include=".\shader_nvfx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\BaseVSShader.h" />
+    <ClInclude Include=".\common_fxc.h" />
+    <ClInclude Include=".\common_hlsl_cpp_consts.h" />
+    <ClInclude Include=".\common_ps_fxc.h" />
+    <ClInclude Include=".\common_vs_fxc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include=".\hsv_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlit_and_unlit_generic_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\vertexlit_and_unlit_generic_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\lightmappedgeneric_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\shadow_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\shadow_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\ShatteredGlass_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\ShatteredGlass_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\teeth_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\Water_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\Water_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\screenspaceeffect_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\Refract_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\Refract_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_vs20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_vs_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+    <CustomBuild Include=".\WaterCheap_ps20.fxc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x -ps20a %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">fxctmp9_nv3x\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">py -3 "..\..\modernize\run_shader_tool.py" --perl "$(HL2ModernPerl)" ..\..\devtools\bin\fxc_prep.pl -dx9 -nv3x %(Filename).fxc</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">fxctmp9_nv3x_ps20\%(Filename).inc</Outputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug ps20|Win32'">common_fxc.h;common_hlsl_cpp_consts.h;common_ps_fxc.h;..\..\devtools\bin\fxc.exe;..\..\devtools\bin\fxc_prep.pl;..\..\modernize\run_shader_tool.py;..\..\modernize\legacy_shader_tool.py;..\..\modernize\build_modern_shaders.py;%(AdditionalInputs)</AdditionalInputs>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\devtools\bin\fxc_prep.pl" />
+    <None Include=".\shader_nvfx.txt" />
+    <None Include="..\..\devtools\bin\updateshaders.pl" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\shaderlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\tier0\tier0.vcxproj">
+      <Project>{6FF36EA7-9968-563F-A949-77D0A5E5E6E8}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vstdlib\vstdlib.vcxproj">
+      <Project>{A2B5AD75-6625-5F92-AAF0-648CB23FAF16}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

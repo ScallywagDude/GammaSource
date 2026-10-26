@@ -1,18 +1,16 @@
-#include <stdio.h>
-#include "vphysics_interface.h"
-#include "physics_object.h"
-#include "convert.h"
-#include "mathlib.h"
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+#include "cbase.h"
 #include "vcollide_parse.h"
 
-#include "ivp_physics.hxx"
 #include "ivp_listener_object.hxx"
-#include "tier0/dbg.h"
 #include "vphysics/constraints.h"
 #include "isaverestore.h"
-#include "physics_environment.h"
-#include "vphysics_saverestore.h"
-#include "utlvector.h"
 
 // HACKHACK: Mathlib defines this too!
 #undef clamp
@@ -59,10 +57,14 @@
 
 #include "ivp_cache_object.hxx"
 #include "ivp_template_constraint.hxx"
-#include "ivp_core.hxx"
 extern void qh_srand( int seed);
 #include "qhull_user.hxx"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+
+const float UNBREAKABLE_BREAK_LIMIT = 1e12f;
 
 hk_Vector3 TransformHLWorldToHavanaLocal( const Vector &hlWorld, IVP_Real_Object *pObject )
 {
@@ -113,7 +115,7 @@ void ConvertHLLocalMatrixToHavanaLocal( const matrix3x4_t& hlMatrix, hk_Transfor
 	ivpMatrix.get_4x4_column_major( (hk_real *)&out );
 }
 
-void set_4x4_column_major( IVP_U_Matrix &ivpMatrix, float *in4x4 )
+void set_4x4_column_major( IVP_U_Matrix &ivpMatrix, const float *in4x4 )
 {
 	ivpMatrix.set_elem( 0, 0, in4x4[0] );
 	ivpMatrix.set_elem( 1, 0, in4x4[1] );
@@ -155,21 +157,32 @@ inline void ConvertDirectionToHL( const hk_Vector3 &point, Vector& out )
 	out.x = point.x;
 }
 
-void ConvertHavanaLocalMatrixToHL( hk_Transform &in, matrix3x4_t& hlMatrix, IVP_Real_Object *pObject )
+void ConvertHavanaLocalMatrixToHL( const hk_Transform &in, matrix3x4_t& hlMatrix, IVP_Real_Object *pObject )
 {
 	IVP_U_Matrix ivpMatrix;
-	set_4x4_column_major( ivpMatrix, (hk_real *)&in );
+	set_4x4_column_major( ivpMatrix, (const hk_real *)&in );
 	ConvertMatrixToHL( ivpMatrix, hlMatrix );
 }
 
-struct vphysics_save_cphysicsconstraintgroup_t
+static bool IsBreakableConstraint( const constraint_breakableparams_t &constraint )
+{
+	return ( (constraint.forceLimit != 0 && constraint.forceLimit < UNBREAKABLE_BREAK_LIMIT) || 
+		(constraint.torqueLimit != 0 && constraint.torqueLimit < UNBREAKABLE_BREAK_LIMIT) || 
+		(constraint.bodyMassScale[0] != 1.0f && constraint.bodyMassScale[0] != 0.0f) || 
+		(constraint.bodyMassScale[1] != 1.0f && constraint.bodyMassScale[1] != 0.0f) ) ? true : false;
+}
+
+struct vphysics_save_cphysicsconstraintgroup_t : public constraint_groupparams_t
 {
 	bool isActive;
 	DECLARE_SIMPLE_DATADESC();
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_cphysicsconstraintgroup_t )
-	DEFINE_FIELD( vphysics_save_cphysicsconstraintgroup_t,	isActive,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( isActive,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( additionalIterations, FIELD_INTEGER ),
+	DEFINE_FIELD( minErrorTicks, FIELD_INTEGER ),
+	DEFINE_FIELD( errorTolerance, FIELD_FLOAT ),
 END_DATADESC()
 
 // a little list that holds active groups so they can activate after 
@@ -183,13 +196,24 @@ public:
 
 	void WriteToTemplate( vphysics_save_cphysicsconstraintgroup_t &groupParams )
 	{
-		groupParams.isActive = m_pLCS->is_active();
+		hk_Local_Constraint_System_BP bp;
+		m_pLCS->write_to_blueprint( &bp );
+		groupParams.additionalIterations = bp.m_n_iterations;
+		groupParams.isActive = bp.m_active;
+		groupParams.minErrorTicks = bp.m_minErrorTicks;
+		groupParams.errorTolerance = ConvertDistanceToHL(bp.m_errorTolerance);
 	}
 
 public:
-	CPhysicsConstraintGroup( IVP_Environment *pEnvironment );
+	CPhysicsConstraintGroup( IVP_Environment *pEnvironment, const constraint_groupparams_t &group );
 	~CPhysicsConstraintGroup();
 	virtual void Activate();
+	virtual bool IsInErrorState();
+	virtual void ClearErrorState();
+	void GetErrorParams( constraint_groupparams_t *pParams );
+	void SetErrorParams( const constraint_groupparams_t &params );
+	void SolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1 );
+	
 private:
 	hk_Local_Constraint_System *m_pLCS;
 };
@@ -202,6 +226,53 @@ void CPhysicsConstraintGroup::Activate()
 	}
 }
 
+bool CPhysicsConstraintGroup::IsInErrorState()
+{
+	if (m_pLCS)
+	{
+		return m_pLCS->has_error();
+	}
+	return false;
+}
+
+void CPhysicsConstraintGroup::ClearErrorState()
+{
+	if (m_pLCS)
+	{
+		m_pLCS->clear_error();
+	}
+}
+
+void CPhysicsConstraintGroup::GetErrorParams( constraint_groupparams_t *pParams )
+{
+	if ( !m_pLCS )
+		return;
+
+	vphysics_save_cphysicsconstraintgroup_t tmp;
+	WriteToTemplate( tmp );
+	*pParams = tmp;
+}
+
+
+void CPhysicsConstraintGroup::SetErrorParams( const constraint_groupparams_t &params )
+{
+	if ( !m_pLCS )
+		return;
+
+	m_pLCS->set_error_ticks( params.minErrorTicks );
+	m_pLCS->set_error_tolerance( ConvertDistanceToIVP(params.errorTolerance) );
+}
+
+void CPhysicsConstraintGroup::SolvePenetration( IPhysicsObject *pObj0, IPhysicsObject *pObj1 )
+{
+	if ( m_pLCS && pObj0 && pObj1 )
+	{
+		CPhysicsObject *pPhys0 = static_cast<CPhysicsObject *>(pObj0);
+		CPhysicsObject *pPhys1 = static_cast<CPhysicsObject *>(pObj1);
+		m_pLCS->solve_penetration(pPhys0->GetObject(), pPhys1->GetObject());
+	}
+}
+
 
 CPhysicsConstraintGroup::~CPhysicsConstraintGroup()
 {
@@ -209,9 +280,12 @@ CPhysicsConstraintGroup::~CPhysicsConstraintGroup()
 }
 
 
-CPhysicsConstraintGroup::CPhysicsConstraintGroup( IVP_Environment *pEnvironment )
+CPhysicsConstraintGroup::CPhysicsConstraintGroup( IVP_Environment *pEnvironment, const constraint_groupparams_t &group )
 {
 	hk_Local_Constraint_System_BP cs_bp;
+	cs_bp.m_n_iterations = group.additionalIterations;
+	cs_bp.m_minErrorTicks = group.minErrorTicks;
+	cs_bp.m_errorTolerance = ConvertDistanceToIVP(group.errorTolerance);
 	m_pLCS = new hk_Local_Constraint_System( static_cast<hk_Environment *>(pEnvironment), &cs_bp );
 	m_pLCS->set_client_data( (void *)this );
 }
@@ -238,10 +312,10 @@ struct vphysics_save_cphysicsconstraint_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_cphysicsconstraint_t )
-	DEFINE_FIELD( vphysics_save_cphysicsconstraint_t,		constraintType,		FIELD_INTEGER ),
-	DEFINE_VPHYSPTR( vphysics_save_cphysicsconstraint_t, pGroup ),
-	DEFINE_VPHYSPTR( vphysics_save_cphysicsconstraint_t, pObjReference ),
-	DEFINE_VPHYSPTR( vphysics_save_cphysicsconstraint_t, pObjAttached ),
+	DEFINE_FIELD( constraintType,		FIELD_INTEGER ),
+	DEFINE_VPHYSPTR( pGroup ),
+	DEFINE_VPHYSPTR( pObjReference ),
+	DEFINE_VPHYSPTR( pObjAttached ),
 END_DATADESC()
 
 struct vphysics_save_constraintbreakable_t : public constraint_breakableparams_t
@@ -250,10 +324,11 @@ struct vphysics_save_constraintbreakable_t : public constraint_breakableparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintbreakable_t )
-	DEFINE_FIELD( vphysics_save_constraintbreakable_t,		strength,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintbreakable_t,		forceLimit,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintbreakable_t,		torqueLimit,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintbreakable_t,		isActive,		FIELD_BOOLEAN ),
+	DEFINE_FIELD( strength,				FIELD_FLOAT ),
+	DEFINE_FIELD( forceLimit,			FIELD_FLOAT ),
+	DEFINE_FIELD( torqueLimit,			FIELD_FLOAT ),
+	DEFINE_AUTO_ARRAY( bodyMassScale,	FIELD_FLOAT ),
+	DEFINE_FIELD( isActive,		FIELD_BOOLEAN ),
 END_DATADESC()
 
 struct vphysics_save_constraintaxislimit_t : public constraint_axislimit_t
@@ -262,10 +337,10 @@ struct vphysics_save_constraintaxislimit_t : public constraint_axislimit_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintaxislimit_t )
-	DEFINE_FIELD( vphysics_save_constraintaxislimit_t,		minRotation,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintaxislimit_t,		maxRotation,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintaxislimit_t,		angularVelocity,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintaxislimit_t,		torque,		FIELD_FLOAT ),
+	DEFINE_FIELD( minRotation,		FIELD_FLOAT ),
+	DEFINE_FIELD( maxRotation,		FIELD_FLOAT ),
+	DEFINE_FIELD( angularVelocity,		FIELD_FLOAT ),
+	DEFINE_FIELD( torque,		FIELD_FLOAT ),
 END_DATADESC()
 
 struct vphysics_save_constraintfixed_t : public constraint_fixedparams_t
@@ -274,8 +349,8 @@ struct vphysics_save_constraintfixed_t : public constraint_fixedparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintfixed_t )
-	DEFINE_AUTO_ARRAY2D( vphysics_save_constraintfixed_t, attachedRefXform, FIELD_FLOAT ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintfixed_t, constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY2D( attachedRefXform, FIELD_FLOAT ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
 END_DATADESC()
 
 struct vphysics_save_constrainthinge_t : public constraint_hingeparams_t
@@ -284,10 +359,10 @@ struct vphysics_save_constrainthinge_t : public constraint_hingeparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constrainthinge_t )
-	DEFINE_FIELD( vphysics_save_constrainthinge_t, worldPosition, FIELD_POSITION_VECTOR ),
-	DEFINE_FIELD( vphysics_save_constrainthinge_t, worldAxisDirection, FIELD_VECTOR ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constrainthinge_t, constraint, vphysics_save_constraintbreakable_t ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constrainthinge_t, hingeAxis, vphysics_save_constraintaxislimit_t ),
+	DEFINE_FIELD( worldPosition, FIELD_POSITION_VECTOR ),
+	DEFINE_FIELD( worldAxisDirection, FIELD_VECTOR ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_EMBEDDED_OVERRIDE( hingeAxis, vphysics_save_constraintaxislimit_t ),
 END_DATADESC()
 
 struct vphysics_save_constraintsliding_t : public constraint_slidingparams_t
@@ -296,12 +371,13 @@ struct vphysics_save_constraintsliding_t : public constraint_slidingparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintsliding_t )
-	DEFINE_AUTO_ARRAY2D( vphysics_save_constraintsliding_t, attachedRefXform, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintsliding_t, slideAxisRef, FIELD_VECTOR ),
-	DEFINE_FIELD( vphysics_save_constraintsliding_t, limitMin, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintsliding_t, limitMax, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintsliding_t, friction, FIELD_FLOAT ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintsliding_t, constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY2D( attachedRefXform, FIELD_FLOAT ),
+	DEFINE_FIELD( slideAxisRef, FIELD_VECTOR ),
+	DEFINE_FIELD( limitMin, FIELD_FLOAT ),
+	DEFINE_FIELD( limitMax, FIELD_FLOAT ),
+	DEFINE_FIELD( friction, FIELD_FLOAT ),
+	DEFINE_FIELD( velocity, FIELD_FLOAT ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
 END_DATADESC()
 
 struct vphysics_save_constraintpulley_t : public constraint_pulleyparams_t
@@ -310,12 +386,12 @@ struct vphysics_save_constraintpulley_t : public constraint_pulleyparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintpulley_t )
-	DEFINE_AUTO_ARRAY( vphysics_save_constraintpulley_t, pulleyPosition, FIELD_POSITION_VECTOR ),
-	DEFINE_AUTO_ARRAY( vphysics_save_constraintpulley_t, objectPosition, FIELD_VECTOR ),
-	DEFINE_FIELD( vphysics_save_constraintpulley_t, totalLength, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintpulley_t, gearRatio, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintpulley_t, isRigid, FIELD_BOOLEAN ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintpulley_t, constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY( pulleyPosition, FIELD_POSITION_VECTOR ),
+	DEFINE_AUTO_ARRAY( objectPosition, FIELD_VECTOR ),
+	DEFINE_FIELD( totalLength, FIELD_FLOAT ),
+	DEFINE_FIELD( gearRatio, FIELD_FLOAT ),
+	DEFINE_FIELD( isRigid, FIELD_BOOLEAN ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
 END_DATADESC()
 
 struct vphysics_save_constraintlength_t : public constraint_lengthparams_t
@@ -324,10 +400,10 @@ struct vphysics_save_constraintlength_t : public constraint_lengthparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintlength_t )
-	DEFINE_AUTO_ARRAY( vphysics_save_constraintlength_t, objectPosition, FIELD_VECTOR ),
-	DEFINE_FIELD( vphysics_save_constraintlength_t, totalLength, FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_constraintlength_t, isRigid, FIELD_BOOLEAN ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintlength_t, constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY( objectPosition, FIELD_VECTOR ),
+	DEFINE_FIELD( totalLength, FIELD_FLOAT ),
+	DEFINE_FIELD( minLength, FIELD_FLOAT ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
 END_DATADESC()
 
 struct vphysics_save_constraintballsocket_t : public constraint_ballsocketparams_t
@@ -336,8 +412,8 @@ struct vphysics_save_constraintballsocket_t : public constraint_ballsocketparams
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintballsocket_t )
-	DEFINE_AUTO_ARRAY( vphysics_save_constraintballsocket_t, constraintPosition, FIELD_VECTOR ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintballsocket_t, constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY( constraintPosition, FIELD_VECTOR ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
 END_DATADESC()
 
 struct vphysics_save_constraintragdoll_t : public constraint_ragdollparams_t
@@ -346,11 +422,15 @@ struct vphysics_save_constraintragdoll_t : public constraint_ragdollparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_constraintragdoll_t )
-	DEFINE_AUTO_ARRAY2D( vphysics_save_constraintragdoll_t, constraintToReference, FIELD_FLOAT ),
-	DEFINE_AUTO_ARRAY2D( vphysics_save_constraintragdoll_t, constraintToAttached, FIELD_FLOAT ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintragdoll_t, axes[0], vphysics_save_constraintaxislimit_t ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintragdoll_t, axes[1], vphysics_save_constraintaxislimit_t ),
-	DEFINE_EMBEDDED_OVERRIDE( vphysics_save_constraintragdoll_t, axes[2], vphysics_save_constraintaxislimit_t ),
+	DEFINE_EMBEDDED_OVERRIDE( constraint, vphysics_save_constraintbreakable_t ),
+	DEFINE_AUTO_ARRAY2D( constraintToReference, FIELD_FLOAT ),
+	DEFINE_AUTO_ARRAY2D( constraintToAttached, FIELD_FLOAT ),
+	DEFINE_EMBEDDED_OVERRIDE( axes[0], vphysics_save_constraintaxislimit_t ),
+	DEFINE_EMBEDDED_OVERRIDE( axes[1], vphysics_save_constraintaxislimit_t ),
+	DEFINE_EMBEDDED_OVERRIDE( axes[2], vphysics_save_constraintaxislimit_t ),
+	DEFINE_FIELD( onlyAngularLimits, FIELD_BOOLEAN ),
+	DEFINE_FIELD( isActive, FIELD_BOOLEAN ),
+	DEFINE_FIELD( useClockwiseRotations, FIELD_BOOLEAN ),
 END_DATADESC()
 
 struct vphysics_save_constraint_t
@@ -375,7 +455,7 @@ public:
 	// init as ragdoll constraint
 	void InitRagdoll( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_ragdollparams_t &ragdoll );
 	// init as hinge
-	void InitHinge( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_hingeparams_t &hinge );
+	void InitHinge( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_limitedhingeparams_t &hinge );
 	// init as fixed (BUGBUG: This is broken)
 	void InitFixed( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_fixedparams_t &fixed );
 	// init as ballsocket
@@ -387,16 +467,16 @@ public:
 	// init as stiff spring / length constraint
 	void InitLength( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_lengthparams_t &length );
 
-	void WriteToTemplate( vphysics_save_cphysicsconstraint_t &header, vphysics_save_constraint_t &constraintTemplate );
+	void WriteToTemplate( vphysics_save_cphysicsconstraint_t &header, vphysics_save_constraint_t &constraintTemplate ) const;
 
-	void WriteRagdoll( constraint_ragdollparams_t &ragdoll );
-	void WriteHinge( constraint_hingeparams_t &hinge );
-	void WriteFixed( constraint_fixedparams_t &fixed );
-	void WriteSliding( constraint_slidingparams_t &sliding );
-	void WriteBallsocket( constraint_ballsocketparams_t &ballsocket );
-	void WritePulley( constraint_pulleyparams_t &pulley );
-	void WriteLength( constraint_lengthparams_t &length );
-	CPhysicsConstraintGroup *GetConstraintGroup();
+	void WriteRagdoll( constraint_ragdollparams_t &ragdoll ) const;
+	void WriteHinge( constraint_hingeparams_t &hinge ) const;
+	void WriteFixed( constraint_fixedparams_t &fixed ) const;
+	void WriteSliding( constraint_slidingparams_t &sliding ) const;
+	void WriteBallsocket( constraint_ballsocketparams_t &ballsocket ) const;
+	void WritePulley( constraint_pulleyparams_t &pulley ) const;
+	void WriteLength( constraint_lengthparams_t &length ) const;
+	CPhysicsConstraintGroup *GetConstraintGroup() const;
 
 	hk_Constraint *CreateBreakableConstraint( hk_Constraint *pRealConstraint, hk_Local_Constraint_System *pLcs, const constraint_breakableparams_t &constraint )
 	{
@@ -404,13 +484,15 @@ public:
 		hk_Breakable_Constraint_BP bp;
 		bp.m_real_constraint = pRealConstraint;
 		float forceLimit = ConvertDistanceToIVP( constraint.forceLimit );
-		bp.m_linear_strength = forceLimit > 0 ? forceLimit : 1e12;
-		bp.m_angular_strength = constraint.torqueLimit > 0 ? DEG2RAD(constraint.torqueLimit) : 1e12;
+		bp.m_linear_strength = forceLimit > 0 ? forceLimit : UNBREAKABLE_BREAK_LIMIT;
+		bp.m_angular_strength = constraint.torqueLimit > 0 ? DEG2RAD(constraint.torqueLimit) : UNBREAKABLE_BREAK_LIMIT;
+		bp.m_bodyMassScale[0] = constraint.bodyMassScale[0] > 0 ? constraint.bodyMassScale[0] : 1.0f;
+		bp.m_bodyMassScale[1] = constraint.bodyMassScale[1] > 0 ? constraint.bodyMassScale[1] : 1.0f;;
 		return new hk_Breakable_Constraint( pLcs, &bp );
 	}
-	void ReadBreakableConstraint( constraint_breakableparams_t &params );
+	void ReadBreakableConstraint( constraint_breakableparams_t &params ) const;
 
-	hk_Constraint *GetRealConstraint()
+	hk_Constraint *GetRealConstraint() const
 	{
 		if ( m_isBreakable )
 		{
@@ -424,14 +506,39 @@ public:
 	void Activate( void );
 	void Deactivate( void );
 	void SetupRagdollAxis( int axis, const constraint_axislimit_t &axisData, hk_Limited_Ball_Socket_BP *ballsocketBP );
-	void SetupRagdollAxisTorque( int axis, const constraint_axislimit_t &axisData, hk_Ragdoll_Constraint_BP *bp );
-
 	// UNDONE: Implement includeStatic for havana
 
 	void SetGameData( void *gameData ) { m_pGameData = gameData; }
-	void *GetGameData( void ) { return m_pGameData; }
-	IPhysicsObject *GetReferenceObject( void );
-	IPhysicsObject *GetAttachedObject( void );
+	void *GetGameData( void ) const { return m_pGameData; }
+	IPhysicsObject *GetReferenceObject( void ) const;
+	IPhysicsObject *GetAttachedObject( void ) const;
+
+	void SetLinearMotor( float speed, float maxForce );
+	void SetAngularMotor( float rotSpeed, float maxAngularImpulse );
+	void UpdateRagdollTransforms( const matrix3x4_t &constraintToReference, const matrix3x4_t &constraintToAttached );
+	bool GetConstraintTransform( matrix3x4_t *pConstraintToReference, matrix3x4_t *pConstraintToAttached ) const;
+	bool GetConstraintParams( constraint_breakableparams_t *pParams ) const;
+	void OutputDebugInfo()
+	{
+		hk_Local_Constraint_System *pLCS = m_HkLCS;
+		if ( m_HkConstraint )
+		{
+			pLCS = m_HkConstraint->get_constraint_system();
+		}
+		if ( pLCS )
+		{
+			int count = 0;
+			hk_Array<hk_Constraint *> list;
+			pLCS->get_constraints_in_system( list );
+			Msg("System of %d constraints\n", list.length());
+			for ( hk_Array<hk_Constraint*>::iterator i = list.start(); list.is_valid(i); i = list.next(i) )
+			{
+				hk_Constraint *pConstraint = list.get_element(i);
+				Msg("\tConstraint %d) %s\n", count, pConstraint->get_constraint_type() );
+				count++;
+			}
+		}
+	}
 
 	void DetachListener();
 	// Object listener
@@ -465,11 +572,11 @@ CPhysicsConstraint::CPhysicsConstraint( CPhysicsObject *pReferenceObject, CPhysi
 	{
 		m_pObjReference = (CPhysicsObject *)pReferenceObject;
 		m_pObjAttached = (CPhysicsObject *)pAttachedObject;
-		if ( !(m_pObjReference->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+		if ( !(m_pObjReference->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 		{
 			m_pObjReference->GetObject()->add_listener_object( this );
 		}
-		if ( !(m_pObjAttached->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+		if ( !(m_pObjAttached->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 		{
 			m_pObjAttached->GetObject()->add_listener_object( this );
 		}
@@ -481,9 +588,71 @@ CPhysicsConstraint::CPhysicsConstraint( CPhysicsObject *pReferenceObject, CPhysi
 	}
 }
 
+// Check to see if this is a single degree of freedom joint, if so, convert to a hinge
+static bool ConvertRagdollToHinge( constraint_limitedhingeparams_t *pHingeOut, const constraint_ragdollparams_t &ragdoll, IPhysicsObject *pReferenceObject, IPhysicsObject *pAttachedObject )
+{
+	int nDOF = 0;
+	int dofIndex = 0;
+	for ( int i = 0; i < 3; i++ )
+	{
+		if ( ragdoll.axes[i].minRotation != ragdoll.axes[i].maxRotation )
+		{
+			dofIndex = i;
+			nDOF++;
+		}
+	}
+
+	// found multiple degrees of freedom
+	if ( nDOF != 1 )
+		return false;
+
+	// convert params to hinge
+	pHingeOut->Defaults();
+	pHingeOut->constraint = ragdoll.constraint;
+
+	// get the hinge axis in world space
+	matrix3x4_t refToWorld, constraintToWorld;
+	pReferenceObject->GetPositionMatrix( &refToWorld );
+	ConcatTransforms( refToWorld, ragdoll.constraintToReference, constraintToWorld );
+	// many ragdoll constraints don't set this and the ragdoll solver ignores it
+	// force it to the default
+	pHingeOut->constraint.strength = 1.0f;
+	MatrixGetColumn( constraintToWorld, 3, &pHingeOut->worldPosition );
+	MatrixGetColumn( constraintToWorld, dofIndex, &pHingeOut->worldAxisDirection );
+	pHingeOut->referencePerpAxisDirection.Init();
+	pHingeOut->referencePerpAxisDirection[(dofIndex+1)%3] = 1;
+
+	Vector perpCS;
+	VectorIRotate( pHingeOut->referencePerpAxisDirection, ragdoll.constraintToReference, perpCS );
+	VectorRotate( perpCS, ragdoll.constraintToAttached, pHingeOut->attachedPerpAxisDirection );
+
+	pHingeOut->hingeAxis = ragdoll.axes[dofIndex];
+
+	// Funky math to insure that the friction is preserved after the math that the hinge code uses.
+	pHingeOut->hingeAxis.torque = RAD2DEG( pHingeOut->hingeAxis.torque * pReferenceObject->GetMass() );
+	
+	// need to flip the limits, just flip the axis instead
+	if ( !ragdoll.useClockwiseRotations )
+	{
+		float tmp = pHingeOut->hingeAxis.minRotation;
+		pHingeOut->hingeAxis.minRotation = -pHingeOut->hingeAxis.maxRotation;
+		pHingeOut->hingeAxis.maxRotation = -tmp;
+	}
+
+	return true;
+}
+
 // ragdoll constraint
 void CPhysicsConstraint::InitRagdoll( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_ragdollparams_t &ragdoll )
 {
+	// UNDONE: If this is a hinge parameterized using the ragdoll params, use a hinge instead!
+	constraint_limitedhingeparams_t hinge;
+	if ( ConvertRagdollToHinge( &hinge, ragdoll, m_pObjReference, m_pObjAttached ) )
+	{
+		InitHinge( pEnvironment, constraint_group, hinge );
+		return;
+	}
+	
 	m_constraintType = CONSTRAINT_RAGDOLL;
 
 	hk_Rigid_Body *ref = (hk_Rigid_Body*)m_pObjReference->GetObject();
@@ -493,21 +662,49 @@ void CPhysicsConstraint::InitRagdoll( IVP_Environment *pEnvironment, CPhysicsCon
 	ConvertHLLocalMatrixToHavanaLocal( ragdoll.constraintToReference, ballsocketBP.m_transform_os_ks[0] );
 	ConvertHLLocalMatrixToHavanaLocal( ragdoll.constraintToAttached, ballsocketBP.m_transform_os_ks[1] );
 
+	bool breakable = IsBreakableConstraint( ragdoll.constraint );
+
 	int i;
+
+	// BUGBUG: Handle incorrect clockwise rotations here
 	for ( i = 0; i < 3; i++ )
 	{
 		SetupRagdollAxis( i, ragdoll.axes[i], &ballsocketBP );
 	}
 	ballsocketBP.m_constrainTranslation = ragdoll.onlyAngularLimits ? false : true;
 
+	// swap the input limits if they are clockwise (angles are counter-clockwise)
+	if ( ragdoll.useClockwiseRotations )
+	{
+		for ( i = 0; i < 3; i++ )
+		{
+			float tmp = ballsocketBP.m_angular_limits[i].m_min;
+			ballsocketBP.m_angular_limits[i].m_min = -ballsocketBP.m_angular_limits[i].m_max;
+			ballsocketBP.m_angular_limits[i].m_max = -tmp;
+		}
+	}
+
 	hk_Ragdoll_Constraint_BP_Builder r_builder;
-	r_builder.initialize_from_limited_ball_socket_bp( &ballsocketBP, ref, att);
+	r_builder.initialize_from_limited_ball_socket_bp( &ballsocketBP, ref, att );
 	hk_Ragdoll_Constraint_BP *bp = (hk_Ragdoll_Constraint_BP  *)r_builder.get_blueprint();  // get non const bp
 	
+	int revAxisMapHK[3];
+	revAxisMapHK[bp->m_axisMap[0]] = 0;
+	revAxisMapHK[bp->m_axisMap[1]] = 1;
+	revAxisMapHK[bp->m_axisMap[2]] = 2;
 	for ( i = 0; i < 3; i++ )
 	{
-		SetupRagdollAxisTorque( i, ragdoll.axes[i], bp );
+		// remap HL axis to IVP axis
+		int ivpAxis = ConvertCoordinateAxisToIVP( i );
+
+		// initialize_from_limited_ball_socket_bp remapped the axes too!  So remap again.
+		int hkAxis = revAxisMapHK[ivpAxis];
+
+		const constraint_axislimit_t &axisData = ragdoll.axes[i];
+		bp->m_limits[hkAxis].set_motor( DEG2RAD(axisData.angularVelocity), axisData.torque * m_pObjReference->GetMass() );
+		bp->m_tau = 1.0f;
 	}
+
 
 	hk_Local_Constraint_System *lcs = constraint_group ? constraint_group->GetLCS() : NULL;
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
@@ -518,39 +715,45 @@ void CPhysicsConstraint::InitRagdoll( IVP_Environment *pEnvironment, CPhysicsCon
 		m_HkLCS = lcs;
 	}
 
-	m_HkConstraint = new hk_Ragdoll_Constraint( lcs, bp, ref, att);
+	if ( breakable )
+	{
+		hk_Ragdoll_Constraint *pConstraint = new hk_Ragdoll_Constraint( hkEnvironment, bp, ref, att);
+		m_HkConstraint = CreateBreakableConstraint( pConstraint, lcs, ragdoll.constraint );
+	}
+	else
+	{
+		m_HkConstraint = new hk_Ragdoll_Constraint( lcs, bp, ref, att);
+	}
 
 	if ( m_HkLCS && ragdoll.isActive )
 	{
 		m_HkLCS->activate();
 	}
+	m_HkConstraint->set_client_data( (void *)this );
 }
 
 // hinge constraint
-void CPhysicsConstraint::InitHinge( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_hingeparams_t &hinge )
+void CPhysicsConstraint::InitHinge( IVP_Environment *pEnvironment, CPhysicsConstraintGroup *constraint_group, const constraint_limitedhingeparams_t &hinge )
 {
 	m_constraintType = CONSTRAINT_HINGE;
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( hinge.constraint.forceLimit != 0 || hinge.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( hinge.constraint );
 
 	hk_Hinge_BP_Builder builder;
 
-	IVP_U_Point axisIVP_ws, axisStartIVP_ws, axisStartIVP_os;
+	IVP_U_Point axisIVP_ws, axisPerpIVP_os, axisStartIVP_ws, axisStartIVP_os;
 	
 	ConvertDirectionToIVP( hinge.worldAxisDirection, axisIVP_ws );
 	builder.set_axis_ws( (hk_Rigid_Body*)m_pObjReference->GetObject(), (hk_Rigid_Body*)m_pObjAttached->GetObject(), vec(axisIVP_ws) );
-
 	builder.set_position_os( 0, TransformHLWorldToHavanaLocal( hinge.worldPosition, m_pObjReference->GetObject() ) );
 	builder.set_position_os( 1, TransformHLWorldToHavanaLocal( hinge.worldPosition, m_pObjAttached->GetObject() ) );
 
+	ConvertDirectionToIVP( hinge.referencePerpAxisDirection, axisPerpIVP_os );
+	builder.set_axis_perp_os( 0, vec(axisPerpIVP_os) );
+	ConvertDirectionToIVP( hinge.attachedPerpAxisDirection, axisPerpIVP_os );
+	builder.set_axis_perp_os( 1, vec(axisPerpIVP_os) );
+	
 	builder.set_tau( hinge.constraint.strength );
 	// torque is an impulse radians/sec * inertia
 	if ( hinge.hingeAxis.torque != 0 )
@@ -592,14 +795,7 @@ void CPhysicsConstraint::InitFixed( IVP_Environment *pEnvironment, CPhysicsConst
 	m_constraintType = CONSTRAINT_FIXED;
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( fixed.constraint.forceLimit != 0 || fixed.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( fixed.constraint );
 
 	hk_Fixed_BP fixed_bp;
 	ConvertHLLocalMatrixToHavanaLocal( fixed.attachedRefXform, fixed_bp.m_transform_os_ks );
@@ -618,7 +814,7 @@ void CPhysicsConstraint::InitFixed( IVP_Environment *pEnvironment, CPhysicsConst
 	{
 		hk_Constraint *pFixed = new hk_Fixed_Constraint( hkEnvironment, &fixed_bp, (hk_Rigid_Body*)m_pObjReference->GetObject(), (hk_Rigid_Body*)m_pObjAttached->GetObject() );
 
-		m_HkConstraint = CreateBreakableConstraint( pFixed, m_HkLCS, fixed.constraint );
+		m_HkConstraint = CreateBreakableConstraint( pFixed, lcs, fixed.constraint );
 	}
 	else
 	{
@@ -638,14 +834,7 @@ void CPhysicsConstraint::InitBallsocket( IVP_Environment *pEnvironment, CPhysics
 
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( ballsocket.constraint.forceLimit != 0 || ballsocket.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( ballsocket.constraint );
 
 	hk_Ball_Socket_BP builder;
 
@@ -687,14 +876,7 @@ void CPhysicsConstraint::InitSliding( IVP_Environment *pEnvironment, CPhysicsCon
 	m_constraintType = CONSTRAINT_SLIDING;
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( sliding.constraint.forceLimit != 0 || sliding.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( sliding.constraint );
 
 	hk_Prismatic_BP prismatic_bp;
 	hk_Transform t;
@@ -715,7 +897,14 @@ void CPhysicsConstraint::InitSliding( IVP_Environment *pEnvironment, CPhysicsCon
 	}
 	if ( sliding.friction )
 	{
-		bp.set_friction( ConvertDistanceToIVP(sliding.friction) );
+		if ( sliding.velocity )
+		{
+			bp.set_motor( ConvertDistanceToIVP(sliding.velocity), ConvertDistanceToIVP(sliding.friction) );
+		}
+		else
+		{
+			bp.set_friction( ConvertDistanceToIVP(sliding.friction) );
+		}
 	}
 	prismatic_bp.m_limit.init_limit( bp, 1.0 );
 
@@ -731,7 +920,7 @@ void CPhysicsConstraint::InitSliding( IVP_Environment *pEnvironment, CPhysicsCon
 	{
 		hk_Constraint *pFixed = new hk_Prismatic_Constraint( hkEnvironment, &prismatic_bp, (hk_Rigid_Body*)m_pObjReference->GetObject(), (hk_Rigid_Body*)m_pObjAttached->GetObject() );
 
-		m_HkConstraint = CreateBreakableConstraint( pFixed, m_HkLCS, sliding.constraint );
+		m_HkConstraint = CreateBreakableConstraint( pFixed, lcs, sliding.constraint );
 	}
 	else
 	{
@@ -751,14 +940,7 @@ void CPhysicsConstraint::InitPulley( IVP_Environment *pEnvironment, CPhysicsCons
 
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( pulley.constraint.forceLimit != 0 || pulley.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( pulley.constraint );
 
 	hk_Pulley_BP pulley_bp;
 	pulley_bp.m_tau = pulley.constraint.strength;
@@ -789,7 +971,7 @@ void CPhysicsConstraint::InitPulley( IVP_Environment *pEnvironment, CPhysicsCons
 	{
 		hk_Constraint *pPulley = new hk_Pulley_Constraint( hkEnvironment, &pulley_bp, (hk_Rigid_Body*)m_pObjReference->GetObject(), (hk_Rigid_Body*)m_pObjAttached->GetObject() );
 
-		m_HkConstraint = CreateBreakableConstraint( pPulley, m_HkLCS, pulley.constraint );
+		m_HkConstraint = CreateBreakableConstraint( pPulley, lcs, pulley.constraint );
 	}
 	else
 	{
@@ -810,22 +992,15 @@ void CPhysicsConstraint::InitLength( IVP_Environment *pEnvironment, CPhysicsCons
 
 	hk_Environment *hkEnvironment = static_cast<hk_Environment *>(pEnvironment);
 
-	bool breakable = false;
-	if ( length.constraint.forceLimit != 0 || length.constraint.torqueLimit != 0 )
-	{
-		// UNDONE: Can't support groups and breaking at the same time!
-		// should we assert here?
-		constraint_group = NULL;
-		breakable = true;
-	}
+	bool breakable = IsBreakableConstraint( length.constraint );
 
 	hk_Stiff_Spring_BP stiff_bp;
 	stiff_bp.m_tau = length.constraint.strength;
 	//stiff_bp.m_strength = length.constraint.strength;
-	stiff_bp.m_is_rigid = length.isRigid;
 
 	// Get the current length of rope
 	stiff_bp.m_length = ConvertDistanceToIVP( length.totalLength );
+	stiff_bp.m_min_length = ConvertDistanceToIVP( length.minLength );
 
 	// set the anchor positions in object space
 	ConvertPositionToIVP( length.objectPosition[0], stiff_bp.m_translation_os_ks[0] );
@@ -843,7 +1018,7 @@ void CPhysicsConstraint::InitLength( IVP_Environment *pEnvironment, CPhysicsCons
 	{
 		hk_Constraint *pLength = new hk_Stiff_Spring_Constraint( hkEnvironment, &stiff_bp, (hk_Rigid_Body*)m_pObjReference->GetObject(), (hk_Rigid_Body*)m_pObjAttached->GetObject() );
 
-		m_HkConstraint = CreateBreakableConstraint( pLength, m_HkLCS, length.constraint );
+		m_HkConstraint = CreateBreakableConstraint( pLength, lcs, length.constraint );
 	}
 	else
 	{
@@ -858,7 +1033,7 @@ void CPhysicsConstraint::InitLength( IVP_Environment *pEnvironment, CPhysicsCons
 }
 
 // Serialization: Write out a description for this constraint
-void CPhysicsConstraint::WriteToTemplate( vphysics_save_cphysicsconstraint_t &header, vphysics_save_constraint_t &constraintTemplate )
+void CPhysicsConstraint::WriteToTemplate( vphysics_save_cphysicsconstraint_t &header, vphysics_save_constraint_t &constraintTemplate ) const
 {
 	header.constraintType = m_constraintType;
 	
@@ -866,7 +1041,6 @@ void CPhysicsConstraint::WriteToTemplate( vphysics_save_cphysicsconstraint_t &he
 	if ( !m_HkConstraint )
 		return;
 
-	// BUGBUG: STORE THIS SOMEHOW!!!
 	header.pGroup = GetConstraintGroup();
 
 	header.pObjReference = m_pObjReference;
@@ -901,7 +1075,143 @@ void CPhysicsConstraint::WriteToTemplate( vphysics_save_cphysicsconstraint_t &he
 	}
 }
 
-CPhysicsConstraintGroup *CPhysicsConstraint::GetConstraintGroup()
+void CPhysicsConstraint::SetLinearMotor( float speed, float maxLinearImpulse )
+{
+	if ( m_constraintType != CONSTRAINT_SLIDING )
+		return;
+
+	hk_Prismatic_Constraint *pConstraint = (hk_Prismatic_Constraint *)GetRealConstraint();
+	pConstraint->set_motor( ConvertDistanceToIVP( speed ), ConvertDistanceToIVP( maxLinearImpulse ) );
+}
+
+void CPhysicsConstraint::SetAngularMotor( float rotSpeed, float maxAngularImpulse )
+{
+	if ( m_constraintType == CONSTRAINT_RAGDOLL && rotSpeed == 0 )
+	{
+		hk_Ragdoll_Constraint *pConstraint = (hk_Ragdoll_Constraint *)GetRealConstraint();
+		pConstraint->update_friction( ConvertAngleToIVP( maxAngularImpulse ) );
+	}
+	else if ( m_constraintType == CONSTRAINT_HINGE )
+	{
+		hk_Hinge_Constraint *pConstraint = (hk_Hinge_Constraint *)GetRealConstraint();
+		pConstraint->set_motor( ConvertAngleToIVP( rotSpeed ), ConvertAngleToIVP( fabs(maxAngularImpulse) ) );
+	}
+}
+
+void CPhysicsConstraint::UpdateRagdollTransforms( const matrix3x4_t &constraintToReference, const matrix3x4_t &constraintToAttached )
+{
+	if ( m_constraintType != CONSTRAINT_RAGDOLL )
+		return;
+
+	hk_Transform os_ks_0, os_ks_1;
+
+	ConvertHLLocalMatrixToHavanaLocal( constraintToReference, os_ks_0 );
+	ConvertHLLocalMatrixToHavanaLocal( constraintToAttached, os_ks_1 );
+
+	hk_Ragdoll_Constraint *pConstraint = (hk_Ragdoll_Constraint *)GetRealConstraint();
+	pConstraint->update_transforms( os_ks_0, os_ks_1 );
+}
+
+bool CPhysicsConstraint::GetConstraintTransform( matrix3x4_t *pConstraintToReference, matrix3x4_t *pConstraintToAttached ) const
+{
+	if ( m_constraintType == CONSTRAINT_RAGDOLL )
+	{
+		hk_Ragdoll_Constraint *pConstraint = (hk_Ragdoll_Constraint *)GetRealConstraint();
+		if ( pConstraintToReference )
+		{
+			ConvertHavanaLocalMatrixToHL( pConstraint->get_transform(0), *pConstraintToReference, NULL );
+		}
+		if ( pConstraintToAttached )
+		{
+			ConvertHavanaLocalMatrixToHL( pConstraint->get_transform(1), *pConstraintToAttached, NULL );
+		}
+		return true;
+	}
+	else if ( m_constraintType == CONSTRAINT_BALLSOCKET )
+	{
+		hk_Ball_Socket_Constraint *pConstraint = (hk_Ball_Socket_Constraint *)GetRealConstraint();
+		Vector pos;
+		if ( pConstraintToReference )
+		{
+			ConvertPositionToHL( pConstraint->get_transform(0), pos );
+			AngleMatrix( vec3_angle, pos, *pConstraintToReference );
+		}
+		if ( pConstraintToAttached )
+		{
+			ConvertPositionToHL( pConstraint->get_transform(1), pos );
+			AngleMatrix( vec3_angle, pos, *pConstraintToAttached );
+		}
+		return true;
+	}
+	else if ( m_constraintType == CONSTRAINT_FIXED )
+	{
+		hk_Fixed_Constraint *pConstraint = (hk_Fixed_Constraint *)GetRealConstraint();
+		if ( pConstraintToReference )
+		{
+			ConvertHavanaLocalMatrixToHL( pConstraint->get_transform(0), *pConstraintToReference, NULL );
+		}
+		if ( pConstraintToAttached )
+		{
+			ConvertHavanaLocalMatrixToHL( pConstraint->get_transform(1), *pConstraintToAttached, NULL );
+		}
+		return true;
+	}
+	return false;
+}
+
+// header.pGroup is optionally NULL, all other fields must be valid!
+static bool IsValidConstraint( const vphysics_save_cphysicsconstraint_t &header )
+{
+	if ( header.constraintType != CONSTRAINT_UNKNOWN && header.pObjAttached && header.pObjReference )
+		return true;
+
+	return false;
+}
+
+
+bool CPhysicsConstraint::GetConstraintParams( constraint_breakableparams_t *pParams ) const
+{
+	if ( !pParams )
+		return false;
+	vphysics_save_cphysicsconstraint_t header;
+	vphysics_save_constraint_t constraintTemplate;
+	memset( &header, 0, sizeof(header) );
+	memset( &constraintTemplate, 0, sizeof(constraintTemplate) );
+	WriteToTemplate( header, constraintTemplate );
+
+	if ( IsValidConstraint( header ) )
+	{
+		switch ( header.constraintType )
+		{
+		case CONSTRAINT_UNKNOWN:
+			break;
+		case CONSTRAINT_HINGE:
+			*pParams = constraintTemplate.hinge.constraint;
+			return true;
+		case CONSTRAINT_FIXED:
+			*pParams = constraintTemplate.fixed.constraint;
+			return true;
+		case CONSTRAINT_SLIDING:
+			*pParams = constraintTemplate.sliding.constraint;
+			return true;
+		case CONSTRAINT_PULLEY:
+			*pParams = constraintTemplate.pulley.constraint;
+			return true;
+		case CONSTRAINT_LENGTH:
+			*pParams = constraintTemplate.length.constraint;
+			return true;
+		case CONSTRAINT_BALLSOCKET:
+			*pParams = constraintTemplate.ballsocket.constraint;
+			return true;
+		case CONSTRAINT_RAGDOLL:
+			*pParams = constraintTemplate.ragdoll.constraint;
+			return true;
+		}
+	}
+	return false;
+}
+
+CPhysicsConstraintGroup *CPhysicsConstraint::GetConstraintGroup() const
 {
 	if ( !m_HkConstraint )
 		return NULL;
@@ -911,7 +1221,7 @@ CPhysicsConstraintGroup *CPhysicsConstraint::GetConstraintGroup()
 	return (CPhysicsConstraintGroup *)plcs->get_client_data();
 }
 
-void CPhysicsConstraint::ReadBreakableConstraint( constraint_breakableparams_t &params )
+void CPhysicsConstraint::ReadBreakableConstraint( constraint_breakableparams_t &params ) const
 {
 	if ( m_isBreakable )
 	{
@@ -921,7 +1231,9 @@ void CPhysicsConstraint::ReadBreakableConstraint( constraint_breakableparams_t &
 		params.forceLimit = ConvertDistanceToHL( bp.m_linear_strength );
 		params.torqueLimit = RAD2DEG( bp.m_angular_strength );
 		params.strength = 1.0;
-		Assert( m_HkLCS != NULL );
+		params.bodyMassScale[0] = bp.m_bodyMassScale[0];
+		params.bodyMassScale[1] = bp.m_bodyMassScale[1];
+		//Assert( m_HkLCS != NULL ); // this is allowed now although breaking inside an LCS won't work yet
 	}
 	else
 	{
@@ -935,7 +1247,7 @@ void CPhysicsConstraint::ReadBreakableConstraint( constraint_breakableparams_t &
 }
 
 
-void CPhysicsConstraint::WriteFixed( constraint_fixedparams_t &fixed )
+void CPhysicsConstraint::WriteFixed( constraint_fixedparams_t &fixed ) const
 {
 	hk_Fixed_Constraint *pConstraint = (hk_Fixed_Constraint *)GetRealConstraint();
 	ReadBreakableConstraint( fixed.constraint );
@@ -946,11 +1258,10 @@ void CPhysicsConstraint::WriteFixed( constraint_fixedparams_t &fixed )
 	ConvertHavanaLocalMatrixToHL( fixed_bp.m_transform_os_ks, fixed.attachedRefXform, m_pObjReference->GetObject() );
 }
 
-void CPhysicsConstraint::WriteRagdoll( constraint_ragdollparams_t &ragdoll )
+void CPhysicsConstraint::WriteRagdoll( constraint_ragdollparams_t &ragdoll ) const
 {
-	int axisMap[] = {0,2,1};
-
 	hk_Ragdoll_Constraint *pConstraint = (hk_Ragdoll_Constraint *)GetRealConstraint();
+	ReadBreakableConstraint( ragdoll.constraint );
 	hk_Ragdoll_Constraint_BP ragdoll_bp;
 	// BUGBUG: Write this and figure out how to recreate
 	// or change init func to setup this bp directly
@@ -958,31 +1269,40 @@ void CPhysicsConstraint::WriteRagdoll( constraint_ragdollparams_t &ragdoll )
 
 	ConvertHavanaLocalMatrixToHL( ragdoll_bp.m_transform_os_ks[0], ragdoll.constraintToReference, m_pObjReference->GetObject() );
 	ConvertHavanaLocalMatrixToHL( ragdoll_bp.m_transform_os_ks[1], ragdoll.constraintToAttached, m_pObjAttached->GetObject() );
+	int revAxisMapHK[3];
+	revAxisMapHK[ragdoll_bp.m_axisMap[0]] = 0;
+	revAxisMapHK[ragdoll_bp.m_axisMap[1]] = 1;
+	revAxisMapHK[ragdoll_bp.m_axisMap[2]] = 2;
 	for ( int i = 0; i < 3; i ++ )
 	{
 		constraint_axislimit_t &ragdollAxis = ragdoll.axes[i];
-		hk_Constraint_Limit_BP &bpAxis = ragdoll_bp.m_limits[ axisMap[i] ];
+		int ivpAxis = ConvertCoordinateAxisToIVP( i );
+		int hkAxis = revAxisMapHK[ ivpAxis ];
+		hk_Constraint_Limit_BP &bpAxis = ragdoll_bp.m_limits[ hkAxis ];
 
 		ragdollAxis.angularVelocity = RAD2DEG(bpAxis.m_desired_velocity);
 		ragdollAxis.torque = bpAxis.m_joint_friction * m_pObjReference->GetInvMass();
 		// X&Y
 		if ( i != 2 )
 		{
-			ragdollAxis.minRotation = -RAD2DEG(bpAxis.m_limit_max);
-			ragdollAxis.maxRotation = -RAD2DEG(bpAxis.m_limit_min);
+			ragdollAxis.minRotation = RAD2DEG(bpAxis.m_limit_min);
+			ragdollAxis.maxRotation = RAD2DEG(bpAxis.m_limit_max);
 		}
 		// Z
 		else
 		{
-			ragdollAxis.minRotation = RAD2DEG(bpAxis.m_limit_min);
-			ragdollAxis.maxRotation = RAD2DEG(bpAxis.m_limit_max);
+			ragdollAxis.minRotation = -RAD2DEG(bpAxis.m_limit_max);
+			ragdollAxis.maxRotation = -RAD2DEG(bpAxis.m_limit_min);
 		}
 	}
 	ragdoll.childIndex = -1;
 	ragdoll.parentIndex = -1;
+	ragdoll.isActive = true;
+	ragdoll.onlyAngularLimits = ragdoll_bp.m_constrainTranslation ? false : true;
+	ragdoll.useClockwiseRotations = false;
 }
 
-void CPhysicsConstraint::WriteHinge( constraint_hingeparams_t &hinge )
+void CPhysicsConstraint::WriteHinge( constraint_hingeparams_t &hinge ) const
 {
 	hk_Hinge_Constraint *pConstraint = (hk_Hinge_Constraint *)GetRealConstraint();
 	ReadBreakableConstraint( hinge.constraint );
@@ -1006,7 +1326,7 @@ void CPhysicsConstraint::WriteHinge( constraint_hingeparams_t &hinge )
 	}
 }
 
-void CPhysicsConstraint::WriteSliding( constraint_slidingparams_t &sliding )
+void CPhysicsConstraint::WriteSliding( constraint_slidingparams_t &sliding ) const
 {
 	sliding.Defaults();
 	hk_Prismatic_Constraint *pConstraint = (hk_Prismatic_Constraint *)GetRealConstraint();
@@ -1023,6 +1343,7 @@ void CPhysicsConstraint::WriteSliding( constraint_slidingparams_t &sliding )
 	if ( prismatic_bp.m_limit.m_friction_is_enabled )
 	{
 		sliding.friction = ConvertDistanceToHL( prismatic_bp.m_limit.m_joint_friction );
+		sliding.velocity = ConvertDistanceToHL( prismatic_bp.m_limit.m_desired_velocity );
 	}
 	if ( prismatic_bp.m_limit.m_limit_is_enabled )
 	{
@@ -1033,7 +1354,7 @@ void CPhysicsConstraint::WriteSliding( constraint_slidingparams_t &sliding )
 }
 
 
-void CPhysicsConstraint::WritePulley( constraint_pulleyparams_t &pulley )
+void CPhysicsConstraint::WritePulley( constraint_pulleyparams_t &pulley ) const
 {
 	pulley.Defaults();
 	hk_Pulley_Constraint *pConstraint = (hk_Pulley_Constraint *)GetRealConstraint();
@@ -1055,7 +1376,7 @@ void CPhysicsConstraint::WritePulley( constraint_pulleyparams_t &pulley )
 }
 
 
-void CPhysicsConstraint::WriteLength( constraint_lengthparams_t &length )
+void CPhysicsConstraint::WriteLength( constraint_lengthparams_t &length ) const
 {
 	length.Defaults();
 	hk_Stiff_Spring_Constraint *pConstraint = (hk_Stiff_Spring_Constraint *)GetRealConstraint();
@@ -1071,11 +1392,11 @@ void CPhysicsConstraint::WriteLength( constraint_lengthparams_t &length )
 	}
 
 	length.totalLength = ConvertDistanceToHL(stiff_bp.m_length);
-	length.isRigid = stiff_bp.m_is_rigid;
+	length.minLength = ConvertDistanceToHL(stiff_bp.m_min_length);
 }
 
 
-void CPhysicsConstraint::WriteBallsocket( constraint_ballsocketparams_t &ballsocket )
+void CPhysicsConstraint::WriteBallsocket( constraint_ballsocketparams_t &ballsocket ) const
 {
 	ballsocket.Defaults();
 	hk_Ball_Socket_Constraint *pConstraint = (hk_Ball_Socket_Constraint *)GetRealConstraint();
@@ -1094,12 +1415,12 @@ void CPhysicsConstraint::WriteBallsocket( constraint_ballsocketparams_t &ballsoc
 
 void CPhysicsConstraint::DetachListener()
 {
-	if ( !(m_pObjReference->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjReference->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjReference->GetObject()->remove_listener_object( this );
 	}
 
-	if ( !(m_pObjAttached->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjAttached->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjAttached->GetObject()->remove_listener_object( this );
 	}
@@ -1108,13 +1429,24 @@ void CPhysicsConstraint::DetachListener()
 	m_pObjAttached = NULL;
 }
 
-
-void CPhysicsConstraint::event_object_deleted( IVP_Event_Object * )
+void CPhysicsConstraint::event_object_deleted( IVP_Event_Object *pEvent )
 {
-	// the constraint (or local constraint system) is going to delete itself now, so NULL it.
+	if ( m_HkLCS && pEvent->real_object->get_core()->physical_unmoveable )
+	{
+		// HACKHACK: This makes the behavior consistent
+		m_HkLCS->core_is_going_to_be_deleted_event( pEvent->real_object->get_core() );
+	}
 	DetachListener();
+	// the underlying constraint is no longer valid, delete it.
+	delete m_HkConstraint;
 	m_HkConstraint = NULL;
+	delete m_HkLCS;
 	m_HkLCS = NULL;
+	if ( pEvent->environment )
+	{
+		CPhysicsEnvironment *pEnvironment = (CPhysicsEnvironment *)pEvent->environment->client_data;
+		pEnvironment->NotifyConstraintDisabled( this );
+	}
 }
 
 
@@ -1124,14 +1456,8 @@ CPhysicsConstraint::~CPhysicsConstraint( void )
 	if ( m_HkConstraint || m_HkLCS )
 	{
 		DetachListener();
-		if ( m_HkLCS )
-		{
-			delete m_HkLCS;
-		}
-		else
-		{
-			delete m_HkConstraint;
-		}
+		delete m_HkLCS;
+		delete m_HkConstraint;
 	}
 }
 
@@ -1153,26 +1479,17 @@ void CPhysicsConstraint::Deactivate( void )
 }
 
 
-void CPhysicsConstraint::SetupRagdollAxisTorque( int axis, const constraint_axislimit_t &axisData, hk_Ragdoll_Constraint_BP *bp )
-{
-	static int axisMap[] = {0,2,1};
-	bp->m_limits[axisMap[axis]].set_motor( DEG2RAD(axisData.angularVelocity), axisData.torque * m_pObjReference->GetMass() );
-	bp->m_tau = 1.0f;
-}
-
 void CPhysicsConstraint::SetupRagdollAxis( int axis, const constraint_axislimit_t &axisData, hk_Limited_Ball_Socket_BP *ballsocketBP )
 {
-	static int axisMap[] = {0,2,1};
-	
 	// X & Y
 	if ( axis != 2 )
 	{
-		ballsocketBP->m_angular_limits[ axisMap[axis] ].set( DEG2RAD(-axisData.maxRotation), DEG2RAD(-axisData.minRotation));
+		ballsocketBP->m_angular_limits[ ConvertCoordinateAxisToIVP(axis) ].set( DEG2RAD(axisData.minRotation), DEG2RAD(axisData.maxRotation) );
 	}
 	// Z
 	else
 	{
-		ballsocketBP->m_angular_limits[ axisMap[axis] ].set( DEG2RAD(axisData.minRotation), DEG2RAD(axisData.maxRotation));
+		ballsocketBP->m_angular_limits[ ConvertCoordinateAxisToIVP(axis) ].set( DEG2RAD(-axisData.maxRotation), DEG2RAD(-axisData.minRotation) );
 	}
 }
 
@@ -1225,13 +1542,13 @@ void CPhysicsConstraint::SetBreakLimit( float breakLimitForce, float breakLimitT
 #endif
 
 
-IPhysicsObject *CPhysicsConstraint::GetReferenceObject( void )
+IPhysicsObject *CPhysicsConstraint::GetReferenceObject( void ) const
 {
 	return m_pObjReference;
 }
 
 
-IPhysicsObject *CPhysicsConstraint::GetAttachedObject( void )
+IPhysicsObject *CPhysicsConstraint::GetAttachedObject( void ) const
 {
 	return m_pObjAttached;
 }
@@ -1263,20 +1580,22 @@ IPhysicsConstraint *GetClientDataForHkConstraint( class hk_Breakable_Constraint 
 }
 
 // Create a container for a group of constraints
-IPhysicsConstraintGroup *CreatePhysicsConstraintGroup( IVP_Environment *pEnvironment )
+IPhysicsConstraintGroup *CreatePhysicsConstraintGroup( IVP_Environment *pEnvironment, const constraint_groupparams_t &group )
 {
-	return new CPhysicsConstraintGroup( pEnvironment );
+	MEM_ALLOC_CREDIT();
+	return new CPhysicsConstraintGroup( pEnvironment, group );
 }
 
 IPhysicsConstraint *CreateRagdollConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_ragdollparams_t &ragdoll )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitRagdoll( pEnvironment, (CPhysicsConstraintGroup *)pGroup, ragdoll );
 	return pConstraint;
 }
-
-IPhysicsConstraint *CreateHingeConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_hingeparams_t &hinge )
+IPhysicsConstraint *CreateHingeConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_limitedhingeparams_t &hinge )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitHinge( pEnvironment, (CPhysicsConstraintGroup *)pGroup, hinge );
 	return pConstraint;
@@ -1284,6 +1603,7 @@ IPhysicsConstraint *CreateHingeConstraint( IVP_Environment *pEnvironment, CPhysi
 
 IPhysicsConstraint *CreateFixedConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_fixedparams_t &fixed )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitFixed( pEnvironment, (CPhysicsConstraintGroup *)pGroup, fixed );
 	return pConstraint;
@@ -1291,6 +1611,7 @@ IPhysicsConstraint *CreateFixedConstraint( IVP_Environment *pEnvironment, CPhysi
 
 IPhysicsConstraint *CreateSlidingConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_slidingparams_t &sliding )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitSliding( pEnvironment, (CPhysicsConstraintGroup *)pGroup, sliding );
 	return pConstraint;
@@ -1298,6 +1619,7 @@ IPhysicsConstraint *CreateSlidingConstraint( IVP_Environment *pEnvironment, CPhy
 
 IPhysicsConstraint *CreateBallsocketConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_ballsocketparams_t &ballsocket )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitBallsocket( pEnvironment, (CPhysicsConstraintGroup *)pGroup, ballsocket );
 	return pConstraint;
@@ -1305,6 +1627,7 @@ IPhysicsConstraint *CreateBallsocketConstraint( IVP_Environment *pEnvironment, C
 
 IPhysicsConstraint *CreatePulleyConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_pulleyparams_t &pulley )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitPulley( pEnvironment, (CPhysicsConstraintGroup *)pGroup, pulley );
 	return pConstraint;
@@ -1312,17 +1635,31 @@ IPhysicsConstraint *CreatePulleyConstraint( IVP_Environment *pEnvironment, CPhys
 
 IPhysicsConstraint *CreateLengthConstraint( IVP_Environment *pEnvironment, CPhysicsObject *pReferenceObject, CPhysicsObject *pAttachedObject, IPhysicsConstraintGroup *pGroup, const constraint_lengthparams_t &length )
 {
+	MEM_ALLOC_CREDIT();
 	CPhysicsConstraint *pConstraint = new CPhysicsConstraint( pReferenceObject, pAttachedObject );
 	pConstraint->InitLength( pEnvironment, (CPhysicsConstraintGroup *)pGroup, length );
 	return pConstraint;
 }
 
-// header.pGroup is optionally NULL, all other fields must be valid!
-bool IsValidConstraint( const vphysics_save_cphysicsconstraint_t &header )
+bool IsExternalConstraint( IVP_Controller *pLCS, void *pGameData )
 {
-	if ( header.constraintType != CONSTRAINT_UNKNOWN && header.pObjAttached && header.pObjReference )
-		return true;
-
+	IVP_U_Vector<IVP_Core> *pCores = pLCS->get_associated_controlled_cores();
+	if ( pCores )
+	{
+		for ( int i = 0; i < pCores->n_elems; i++ )
+		{
+			if ( pCores->element_at(i) )
+			{
+				IVP_Real_Object *pivp = pCores->element_at(i)->objects.element_at(0);
+				if ( pivp)
+				{
+					IPhysicsObject *pObject = static_cast<IPhysicsObject *>(pivp->client_data);
+					if ( pObject && pObject->GetGameData() != pGameData )
+						return true;
+				}
+			}
+		}
+	}
 	return false;
 }
 
@@ -1449,6 +1786,10 @@ bool RestorePhysicsConstraint( const physrestoreparams_t &params, CPhysicsConstr
 			break;
 		}
 
+		if ( *ppConstraint )
+		{
+			(*ppConstraint)->SetGameData( params.pGameData );
+		}
 		return true;
 	}
 
@@ -1471,9 +1812,17 @@ bool SavePhysicsConstraintGroup( const physsaveparams_t &params, CPhysicsConstra
 bool RestorePhysicsConstraintGroup( const physrestoreparams_t &params, CPhysicsConstraintGroup **ppConstraintGroup )
 {
 	vphysics_save_cphysicsconstraintgroup_t groupTemplate;
+	memset( &groupTemplate, 0, sizeof(groupTemplate) );
 	params.pRestore->ReadAll( &groupTemplate );
+	if ( groupTemplate.errorTolerance == 0.0f && groupTemplate.minErrorTicks == 0 )
+	{
+		constraint_groupparams_t tmp;
+		tmp.Defaults();
+		groupTemplate.minErrorTicks = tmp.minErrorTicks;
+		groupTemplate.errorTolerance = tmp.errorTolerance;
+	}
 	CPhysicsEnvironment *pEnvironment = (CPhysicsEnvironment *)params.pEnvironment;
-	*ppConstraintGroup = (CPhysicsConstraintGroup *)pEnvironment->CreateConstraintGroup();
+	*ppConstraintGroup = (CPhysicsConstraintGroup *)pEnvironment->CreateConstraintGroup( groupTemplate );
 	if ( *ppConstraintGroup && groupTemplate.isActive )
 	{
 		g_ConstraintGroupActivateList.AddToTail( *ppConstraintGroup );
@@ -1484,6 +1833,7 @@ bool RestorePhysicsConstraintGroup( const physrestoreparams_t &params, CPhysicsC
 
 void PostRestorePhysicsConstraintGroup()
 {
+	MEM_ALLOC_CREDIT();
 	for ( int i = 0; i < g_ConstraintGroupActivateList.Count(); i++ )
 	{
 		g_ConstraintGroupActivateList[i]->Activate();

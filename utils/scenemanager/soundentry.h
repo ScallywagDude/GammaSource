@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef SOUNDENTRY_H
 #define SOUNDENTRY_H
@@ -11,7 +11,7 @@
 #endif
 
 #include "itreeitem.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "sentence.h"
 
 class CAudioSource;
@@ -52,8 +52,9 @@ public:
 	void		SetScriptFile( char const *scriptfile );
 
 	char const	*GetSentenceText( int wavindex );
+	void		GetCCText( wchar_t *out, int maxchars );
 
-	CSoundEmitterSystemBase::CSoundParametersInternal	*GetSoundParameters();
+	CSoundParametersInternal	*GetSoundParameters();
 
 	virtual void Checkout( bool updatestateicons = true );
 	virtual void Checkin( bool updatestateicons = true );

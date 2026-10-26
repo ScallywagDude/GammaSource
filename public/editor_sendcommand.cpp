@@ -1,17 +1,30 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements an interface to the map editor for the execution of
 //			editor shell commands from another application. Commands allow the
 //			creation and deletion of entities, AI nodes, and AI node connections.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+#if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
+
+#if !defined(_X360) && defined(_WIN32)
 #include <windows.h>
+#endif
 #include <stdio.h>
-#include "Editor_SendCommand.h"
-#include "vstdlib/strtools.h"
+#include "editor_sendcommand.h"
+#include "tier1/strtools.h"
+#include "mathlib/vector.h"
 
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+const int MAX_COMMAND_BUFFER = 2048;
 //-----------------------------------------------------------------------------
 // Purpose: Sends a command to the editor (if running) to begin an editing session
 //			of a given map.
@@ -21,7 +34,7 @@
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_BeginSession(const char *pszMapName, int nMapVersion, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "session_begin %s %d", pszMapName, nMapVersion);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -36,7 +49,7 @@ EditorSendResult_t Editor_BeginSession(const char *pszMapName, int nMapVersion, 
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_CheckVersion(const char *pszMapName, int nMapVersion, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "map_check_version %s %d", pszMapName, nMapVersion);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -51,7 +64,7 @@ EditorSendResult_t Editor_CheckVersion(const char *pszMapName, int nMapVersion, 
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_CreateEntity(const char *pszEntity, float x, float y,  float z, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "entity_create %s %g %g %g", pszEntity, x, y, z);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -67,7 +80,7 @@ EditorSendResult_t Editor_CreateEntity(const char *pszEntity, float x, float y, 
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_CreateNode(const char *pszNodeClass, int nID, float x, float y,  float z, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "node_create %s %d %g %g %g", pszNodeClass, nID, x, y, z);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -83,7 +96,7 @@ EditorSendResult_t Editor_CreateNode(const char *pszNodeClass, int nID, float x,
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_CreateNodeLink(int nStartID, int nEndID, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "nodelink_create %d %d", nStartID, nEndID);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -98,12 +111,28 @@ EditorSendResult_t Editor_CreateNodeLink(int nStartID, int nEndID, bool bShowUI)
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_DeleteEntity(const char *pszEntity, float x, float y, float z, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "entity_delete %s %g %g %g", pszEntity, x, y, z);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
 
 
+// sets an arbitrary key/value pair in the entity
+EditorSendResult_t Editor_SetKeyValue(const char *pszEntity, float x, float y, float z, const char *pKey, const char *pValue, bool bShowUI)
+{
+	char szCommand[MAX_COMMAND_BUFFER];
+	Q_snprintf(szCommand,sizeof(szCommand), "entity_set_keyvalue %s %f %f %f \"%s\" \"%s\"", pszEntity, x, y, z, pKey, pValue);
+	return(Editor_SendCommand(szCommand, bShowUI));
+}
+
+
+// applies an incremental rotation to an entity
+EditorSendResult_t Editor_RotateEntity(const char *pszEntity, float x, float y, float z, const QAngle &incrementalRotation, bool bShowUI)
+{
+	char szCommand[MAX_COMMAND_BUFFER];
+	Q_snprintf(szCommand,sizeof(szCommand), "entity_rotate_incremental %s %f %f %f %f %f %f", pszEntity, x, y, z, incrementalRotation.x, incrementalRotation.y, incrementalRotation.z );
+	return(Editor_SendCommand(szCommand, bShowUI));
+}
 //-----------------------------------------------------------------------------
 // Purpose: Sends a command to the editor (if running) to delete an entity at
 //			a given (x, y, z) coordinate.
@@ -112,7 +141,7 @@ EditorSendResult_t Editor_DeleteEntity(const char *pszEntity, float x, float y, 
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_DeleteNode(int nID, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "node_delete %d", nID);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -127,7 +156,7 @@ EditorSendResult_t Editor_DeleteNode(int nID, bool bShowUI)
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_DeleteNodeLink(int nStartID, int nEndID, bool bShowUI)
 {
-	char szCommand[MAX_PATH];
+	char szCommand[MAX_COMMAND_BUFFER];
 	Q_snprintf(szCommand,sizeof(szCommand), "nodelink_delete %d %d", nStartID, nEndID);
 	return(Editor_SendCommand(szCommand, bShowUI));
 }
@@ -155,6 +184,7 @@ EditorSendResult_t Editor_EndSession(bool bShowUI)
 //-----------------------------------------------------------------------------
 EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 {
+#ifdef _WIN32
 	HWND hwnd = FindWindow("Worldcraft_ShellMessageWnd", "Worldcraft_ShellMessageWnd");
 	if (hwnd != NULL)
 	{
@@ -190,7 +220,9 @@ EditorSendResult_t Editor_SendCommand(const char *pszCommand, bool bShowUI)
 
 		return(Editor_NotRunning);
 	}
+#endif
 
 	return(Editor_OK);
 }
 
+#endif // !_STATIC_LINKED || _SHARED_LIB

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdio.h>
 #include "hlfaceposer.h"
 #include "GestureTool.h"
@@ -17,12 +24,10 @@
 #include "FlexPanel.h"
 #include "mxExpressionTray.h"
 #include "ExpressionProperties.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "faceposer_models.h"
 #include "UtlBuffer.h"
-#include "FileSystem.h"
-#include "cmdlib.h"
-#include "scriplib.h"
+#include "filesystem.h"
 #include "iscenetokenprocessor.h"
 #include "choreoviewcolors.h"
 #include "MatSysWin.h"
@@ -40,7 +45,6 @@ GestureTool *g_pGestureTool = 0;
 #define TIME_ZOOM_STEP 2
 
 float SnapTime( float input, float granularity );
-StudioModel *FindAssociatedModel( CChoreoScene *scene, CChoreoActor *a );
 
 GestureTool::GestureTool( mxWindow *parent )
 : IFacePoserToolWindow( "GestureTool", "Gesture" ), mxWindow( parent, 0, 0, 0, 0 )
@@ -49,7 +53,7 @@ GestureTool::GestureTool( mxWindow *parent )
 
 	SetAutoProcess( true );
 
-	m_szEvent[0]		= 0;
+	m_nFocusEventGlobalID = -1;
 
 	m_flScrub			= 0.0f;
 	m_flScrubTarget		= 0.0f;
@@ -75,9 +79,8 @@ GestureTool::GestureTool( mxWindow *parent )
 	m_flPixelsPerSecond = 500.0f;
 
 	m_flLastDuration = 0.0f;
-	m_nTimeZoom = 100;
 	m_nScrollbarHeight	= 12;
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	m_pHorzScrollBar = new mxScrollbar( this, 0, 0, 18, 100, IDC_GESTUREHSCROLL, mxScrollbar::Horizontal );
 	m_pHorzScrollBar->setVisible( false );
@@ -99,12 +102,17 @@ void GestureTool::SetEvent( CChoreoEvent *event )
 
 	if ( event == m_pLastEvent )
 	{
-		if ( event && event->GetDuration() != m_flLastDuration )
+		if ( event )
 		{
-			m_flLastDuration = event->GetDuration();
-			m_nLastHPixelsNeeded = -1;
-			m_nLeftOffset = 0;
-			InvalidateLayout();
+			if ( event->GetDuration() != m_flLastDuration )
+			{
+				m_flLastDuration = event->GetDuration();
+				m_nLastHPixelsNeeded = -1;
+				m_flLeftOffset = 0.0f;
+				InvalidateLayout();
+			}
+
+			m_nFocusEventGlobalID = event->GetGlobalID();
 		}
 
 		m_bInSetEvent = false;
@@ -113,10 +121,10 @@ void GestureTool::SetEvent( CChoreoEvent *event )
 
 	m_pLastEvent = event;
 
-	m_szEvent[ 0 ] = 0;
+	m_nFocusEventGlobalID = -1;
 	if ( event )
 	{
-		strcpy( m_szEvent, event->GetName() );
+		m_nFocusEventGlobalID = event->GetGlobalID();
 	}
 	
 	if ( event )
@@ -127,7 +135,7 @@ void GestureTool::SetEvent( CChoreoEvent *event )
 	{
 		m_flLastDuration = 0.0f;
 	}
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	InvalidateLayout();
 
@@ -139,6 +147,9 @@ void GestureTool::SetEvent( CChoreoEvent *event )
 //-----------------------------------------------------------------------------
 CChoreoEvent *GestureTool::GetSafeEvent( void )
 {
+	if ( m_nFocusEventGlobalID == -1 )
+		return NULL;
+
 	if ( !g_pChoreoView )
 		return NULL;
 
@@ -153,7 +164,7 @@ CChoreoEvent *GestureTool::GetSafeEvent( void )
 		if ( !e || e->GetType() != CChoreoEvent::GESTURE )
 			continue;
 
-		if ( !stricmp( m_szEvent, e->GetName() ) )
+		if ( e->GetGlobalID() == m_nFocusEventGlobalID )
 		{
 			return e;
 		}
@@ -400,7 +411,7 @@ void GestureTool::DrawScrubHandles()
 	CChoreoEvent *ev = GetSafeEvent();
 	if ( ev && ev->GetDuration() > 0.0f )
 	{
-		float scrub = ev->GetShiftedTimeFromReferenceTime( m_flScrub / ev->GetDuration() ) * ev->GetDuration();
+		float scrub = ev->GetOriginalPercentageFromPlaybackPercentage( m_flScrub / ev->GetDuration() ) * ev->GetDuration();
 		GetScrubHandleReferenceRect( rcHandle, scrub, true );
 
 		rcTray = rcHandle;
@@ -512,7 +523,7 @@ void GestureTool::redraw()
 
 	if ( ev && ev->GetDuration() > 0.0f )
 	{
-		float scrub = ev->GetShiftedTimeFromReferenceTime( m_flScrub / ev->GetDuration() ) * ev->GetDuration();
+		float scrub = ev->GetOriginalPercentageFromPlaybackPercentage( m_flScrub / ev->GetDuration() ) * ev->GetDuration();
 		GetScrubHandleReferenceRect( rcHandle, scrub, true );
 		DrawScrubHandle( drawHelper, rcHandle, scrub, true );
 	}
@@ -735,6 +746,8 @@ void GestureTool::OnMouseMove( mxEvent *event )
 
 int	GestureTool::handleEvent( mxEvent *event )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
@@ -757,14 +770,24 @@ int	GestureTool::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseWheeled:
 		{
-			// Zoom time in  / out
-			if ( event->height > 0 )
+			CChoreoScene *scene = g_pChoreoView->GetScene();
+			if ( scene )
 			{
-				m_nTimeZoom = min( m_nTimeZoom + TIME_ZOOM_STEP, MAX_TIME_ZOOM );
-			}
-			else
-			{
-				m_nTimeZoom = max( m_nTimeZoom - TIME_ZOOM_STEP, TIME_ZOOM_STEP );
+				int tz = g_pChoreoView->GetTimeZoom( GetToolName() );
+				bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+				int stepMultipiler = shiftdown ? 5 : 1;
+
+				// Zoom time in  / out
+				if ( event->height > 0 )
+				{
+					tz = min( tz + TIME_ZOOM_STEP * stepMultipiler, MAX_TIME_ZOOM );
+				}
+				else
+				{
+					tz = max( tz - TIME_ZOOM_STEP * stepMultipiler, TIME_ZOOM_STEP );
+				}
+
+				g_pChoreoView->SetPreservedTimeZoom( this, tz );
 			}
 			RepositionHSlider();
 			redraw();
@@ -773,9 +796,6 @@ int	GestureTool::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseDown:
 		{
-			bool ctrldown = ( event->modifiers & mxEvent::KeyCtrl ) ? true : false;
-			bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
-
 			iret = 1;
 
 			int mx = (short)event->x;
@@ -869,9 +889,6 @@ int	GestureTool::handleEvent( mxEvent *event )
 				{
 					ApplyBounds( mx, my );
 
-					int dx = mx - m_nStartX;
-					int dy = my = m_nStartY;
-
 					if ( w2() > 0 )
 					{
 						float t = GetTimeValueForMouse( (short)event->x );
@@ -894,8 +911,11 @@ int	GestureTool::handleEvent( mxEvent *event )
 
 						g_pChoreoView->SetDirty( true );
 						g_pChoreoView->PushUndo( "move absolute tag" );
-						tag->SetTime( lastfrac );
+						tag->SetPercentage( lastfrac );
 						g_pChoreoView->PushRedo( "move absolute tag" );
+
+						g_pChoreoView->InvalidateLayout();
+
 						redraw();
 					}
 			
@@ -909,6 +929,11 @@ int	GestureTool::handleEvent( mxEvent *event )
 			DrawMouseOverPos();
 
 			iret = 1;
+		}
+		break;
+	case mxEvent::KeyDown:
+		{
+			iret = g_pChoreoView->HandleZoomKey( this, event->key );
 		}
 		break;
 	case mxEvent::Action:
@@ -1074,20 +1099,11 @@ void GestureTool::CalcBounds( int movetype )
 					{
 						if ( prevTag )
 						{
-							m_nMinX = GetPixelForTimeValue( prevTag->GetTime() * e->GetDuration() ) + 1;
+							m_nMinX = GetPixelForTimeValue( prevTag->GetPercentage() * e->GetDuration() ) + 1;
 						}
 						if ( nextTag )
 						{
-							m_nMaxX = GetPixelForTimeValue( nextTag->GetTime() * e->GetDuration() ) - 1;
-						}
-						else
-						{
-							if ( tagtype == CChoreoEvent::SHIFTED )
-							{
-								float sequence_duration;
-								e->GetGestureSequenceDuration( sequence_duration );
-								m_nMaxX = GetPixelForTimeValue( sequence_duration );
-							}
+							m_nMaxX = GetPixelForTimeValue( nextTag->GetPercentage() * e->GetDuration() ) - 1;
 						}
 					}
 					else
@@ -1252,7 +1268,7 @@ void GestureTool::GetTagTrayRect( RECT &rcClient, int tagtype, RECT& rcTray )
 
 	rcTray.bottom	= rcTray.top + 6;
 
-	if ( tagtype == CChoreoEvent::SHIFTED )
+	if ( tagtype == CChoreoEvent::ORIGINAL )
 	{
 		OffsetRect( &rcTray, 0, 45 );
 	}
@@ -1270,14 +1286,12 @@ void GestureTool::GetTagTrayRect( RECT &rcClient, int tagtype, RECT& rcTray )
 bool GestureTool::GetAbsTagRect( RECT& rcClient, CChoreoEvent *event, 
 	int tagtype, CEventAbsoluteTag *tag, RECT& rcTag )
 {
-	bool bret = false;
-
 	rcTag = rcClient;
 
 	GetTagTrayRect( rcClient, tagtype, rcTag );
 
 	bool clipped = false;
-	float t = tag->GetTime() * event->GetDuration();
+	float t = tag->GetPercentage() * event->GetDuration();
 	int tagx = GetPixelForTimeValue( t, &clipped );
 
 	rcTag.left		= tagx - 3;
@@ -1397,7 +1411,8 @@ void GestureTool::DrawAbsoluteTags( CChoreoWidgetDrawHelper& drawHelper )
 				rcText.top += 10;
 			}
 			
-			sprintf( text, "%.3f", tag->GetTime() * event->GetDuration() + event->GetStartTime() );
+			// sprintf( text, "%.3f", tag->GetPercentage() * event->GetDuration() + event->GetStartTime() );
+			sprintf( text, "%.3f", tag->GetPercentage() );
 
 			len = drawHelper.CalcTextWidth( "Arial", 9, FW_NORMAL, text );
 			rcText.left = ( rcMark.left + rcMark.right ) / 2 - len / 2;
@@ -1491,6 +1506,9 @@ CEventAbsoluteTag *GestureTool::IsMouseOverTag( int mx, int my )
 			if ( !tag )
 				continue;
 
+			if ( tag->GetLocked() )
+				continue;
+
 			RECT rcTag;
 
 			if ( !GetAbsTagRect( rcClient, event, tagtype, tag, rcTag ) )
@@ -1545,7 +1563,7 @@ void GestureTool::OnInsertTag( void )
 
 	if ( event->GetType() != CChoreoEvent::GESTURE )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Absolute Tag:  Can only tag GESTURE events\n" );
+		Con_ErrorPrintf( "Absolute Tag:  Can only tag GESTURE events\n" );
 		return;
 	}
 
@@ -1562,19 +1580,19 @@ void GestureTool::OnInsertTag( void )
 
 	if ( strlen( params.m_szInputText ) <= 0 )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Timing Tag Name:  No name entered!\n" );
+		Con_ErrorPrintf( "Timing Tag Name:  No name entered!\n" );
 		return;
 	}
 	
 	// Convert click to frac
 	float t = GetTimeValueForMouse( m_nClickedX ) / event->GetDuration();
-	float tshifted = event->GetShiftedTimeFromReferenceTime( t );
+	float tshifted = event->GetOriginalPercentageFromPlaybackPercentage( t );
 
 	g_pChoreoView->SetDirty( true );
 
 	g_pChoreoView->PushUndo( "Add Gesture Tag" );
 
-	event->AddAbsoluteTag( CChoreoEvent::SHIFTED, params.m_szInputText, tshifted );
+	event->AddAbsoluteTag( CChoreoEvent::ORIGINAL, params.m_szInputText, tshifted );
 	event->AddAbsoluteTag( CChoreoEvent::PLAYBACK, params.m_szInputText, t );
 
 	g_pChoreoView->PushRedo( "Add Gesture Tag" );
@@ -1593,7 +1611,7 @@ void GestureTool::OnRevert()
 		return;
 
 	if ( event->GetNumAbsoluteTags( CChoreoEvent::PLAYBACK ) !=
-		 event->GetNumAbsoluteTags( CChoreoEvent::SHIFTED ) )
+		 event->GetNumAbsoluteTags( CChoreoEvent::ORIGINAL ) )
 	{
 		Assert( 0 );
 		return;
@@ -1606,10 +1624,10 @@ void GestureTool::OnRevert()
 	int c = event->GetNumAbsoluteTags( CChoreoEvent::PLAYBACK );
 	for ( int i = 0; i < c; i++ )
 	{
-		CEventAbsoluteTag *shifted = event->GetAbsoluteTag( CChoreoEvent::SHIFTED, i );
+		CEventAbsoluteTag *original = event->GetAbsoluteTag( CChoreoEvent::ORIGINAL, i );
 		CEventAbsoluteTag *playback = event->GetAbsoluteTag( CChoreoEvent::PLAYBACK, i );
 
-		shifted->SetTime( playback->GetTime() );
+		playback->SetPercentage( original->GetPercentage() );
 	}
 		
 
@@ -1781,11 +1799,11 @@ void GestureTool::RepositionHSlider( void )
 	}
 	m_pHorzScrollBar->setBounds( 0, h2() - m_nScrollbarHeight, w2() - m_nScrollbarHeight, m_nScrollbarHeight );
 
-	m_nLeftOffset = max( 0, m_nLeftOffset );
-	m_nLeftOffset = min( pixelsneeded, m_nLeftOffset );
+	m_flLeftOffset = max( 0.f, m_flLeftOffset );
+	m_flLeftOffset = min( (float)pixelsneeded, m_flLeftOffset );
 
 	m_pHorzScrollBar->setRange( 0, pixelsneeded );
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
 	m_pHorzScrollBar->setPagesize( w2() );
 
 	m_nLastHPixelsNeeded = pixelsneeded;
@@ -1797,7 +1815,7 @@ void GestureTool::RepositionHSlider( void )
 //-----------------------------------------------------------------------------
 float GestureTool::GetPixelsPerSecond( void )
 {
-	return m_flPixelsPerSecond * GetTimeZoomScale();
+	return m_flPixelsPerSecond * (float)g_pChoreoView->GetTimeZoom( GetToolName() )/100.0f;
 }
 
 
@@ -1807,8 +1825,8 @@ float GestureTool::GetPixelsPerSecond( void )
 //-----------------------------------------------------------------------------
 void GestureTool::MoveTimeSliderToPos( int x )
 {
-	m_nLeftOffset = x;
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_flLeftOffset = (float)x;
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
 	InvalidateRect( (HWND)m_pHorzScrollBar->getHandle(), NULL, TRUE );
 	InvalidateLayout();
 }
@@ -1837,8 +1855,22 @@ void GestureTool::InvalidateLayout( void )
 //-----------------------------------------------------------------------------
 void GestureTool::GetStartAndEndTime( float& st, float& ed )
 {
-	st = m_nLeftOffset / GetPixelsPerSecond();
+	st = m_flLeftOffset / GetPixelsPerSecond();
 	ed = st + (float)w2() / GetPixelsPerSecond();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  :  - 
+// Output : float
+//-----------------------------------------------------------------------------
+float GestureTool::GetEventEndTime()
+{
+	CChoreoEvent *ev = GetSafeEvent();
+	if ( !ev )
+		return 1.0f;
+
+	return ev->GetDuration();
 }
 
 //-----------------------------------------------------------------------------
@@ -1897,27 +1929,14 @@ float GestureTool::GetTimeValueForMouse( int mx, bool clip /*=false*/)
 	return st + frac * ( ed - st );
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float GestureTool::GetTimeZoomScale( void )
-{
-	return ( float )m_nTimeZoom / 100.0f;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : scale - 
-//-----------------------------------------------------------------------------
-void GestureTool::SetTimeZoomScale( int scale )
-{
-	m_nTimeZoom = scale;
-}
-
 void GestureTool::OnChangeScale( void )
 {
+	CChoreoScene *scene = g_pChoreoView->GetScene();
+	if ( !scene )
+	{
+		return;
+	}
+
 	// Zoom time in  / out
 	CInputParams params;
 	memset( &params, 0, sizeof( params ) );
@@ -1925,17 +1944,17 @@ void GestureTool::OnChangeScale( void )
 	strcpy( params.m_szDialogTitle, "Change Zoom" );
 	strcpy( params.m_szPrompt, "New scale (e.g., 2.5x):" );
 
-	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)m_nTimeZoom / 100.0f );
+	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)g_pChoreoView->GetTimeZoom( GetToolName() ) / 100.0f );
 
 	if ( !InputProperties( &params ) )
 		return;
 
-	m_nTimeZoom = clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM );
+	g_pChoreoView->SetTimeZoom( GetToolName(), clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM ), false );
 
 	m_nLastHPixelsNeeded = -1;
-	m_nLeftOffset= 0;
+	m_flLeftOffset= 0.0f;
 	InvalidateLayout();
-	Con_Printf( "Zoom factor %i %%\n", m_nTimeZoom );
+	Con_Printf( "Zoom factor %i %%\n", g_pChoreoView->GetTimeZoom( GetToolName() ) );
 }
 
 void GestureTool::DrawEventEnd( CChoreoWidgetDrawHelper& drawHelper )
@@ -1959,4 +1978,9 @@ void GestureTool::DrawEventEnd( CChoreoWidgetDrawHelper& drawHelper )
 		COLOR_CHOREO_ENDTIME, PS_SOLID, 1,
 		leftx, GetCaptionHeight() + 73, leftx, rcClient.bottom );
 
+}
+
+void GestureTool::OnModelChanged()
+{
+	redraw();
 }

@@ -1,29 +1,28 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include <stdio.h>
 #include "DialogCvarChange.h"
 
-#include <VGUI_Button.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_IInput.h>
+#include <vgui/IInput.h>
+#include <vgui/ISurface.h>
+#include <KeyValues.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISurface.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/Panel.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/TextEntry.h>
 
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CDialogCvarChange::CDialogCvarChange() : Frame(NULL, "DialogCvarChange")
+CDialogCvarChange::CDialogCvarChange(vgui::Panel *parent) : Frame(parent, "DialogCvarChange")
 {
 	SetSize(320, 200);
 
@@ -32,13 +31,13 @@ CDialogCvarChange::CDialogCvarChange() : Frame(NULL, "DialogCvarChange")
 	m_pInfoLabel = new Label(this, "InfoLabel", "");
 	m_pCvarLabel = new Label(this, "CvarLabel", "");
 	m_pCvarEntry = new TextEntry(this, "CvarEntry");
-	m_pOkayButton = new Button(this, "OkayButton", "&Okay");
-	//m_pCvarEntry->setTextHidden(true);
+	m_pOkayButton = new Button(this, "OkayButton", "#Okay_Button");
 
-	LoadControlSettings("Admin\\DialogCvarChange.res");
+	LoadControlSettings("Admin/DialogCvarChange.res", "PLATFORM");
 
-	SetTitle("Enter new CVAR value", true);
+	SetTitle("#Cvar_Title", true);
 
+	SetSizeable(false);
 	// set our initial position in the middle of the workspace
 	MoveToCenterOfScreen();
 }
@@ -50,11 +49,13 @@ CDialogCvarChange::~CDialogCvarChange()
 {
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Hides value text
+//-----------------------------------------------------------------------------
 void CDialogCvarChange::MakePassword()
 {
 	m_pCvarEntry->SetTextHidden(true);
 	m_bAddCvarText = false; // this isn't asking about a cvar
-//	onTop();
 }
 
 //-----------------------------------------------------------------------------
@@ -63,7 +64,7 @@ void CDialogCvarChange::MakePassword()
 void CDialogCvarChange::Activate(const char *cvarName, const char *curValue, const char *type, const char *question)
 {
 	m_pCvarLabel->SetText(cvarName);
-	if (! m_bAddCvarText ) 
+	if (!m_bAddCvarText)
 	{
 		m_pCvarLabel->SetVisible(false); // hide this
 	}
@@ -82,6 +83,7 @@ void CDialogCvarChange::Activate(const char *cvarName, const char *curValue, con
 
 	// make it modal
 	input()->SetAppModalSurface(GetVPanel());
+	SetVisible(true);
 
 	BaseClass::Activate();
 }
@@ -99,8 +101,7 @@ void CDialogCvarChange::SetLabelText(const char *textEntryName, const char *text
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *command - 
+// Purpose: Handles button presses
 //-----------------------------------------------------------------------------
 void CDialogCvarChange::OnCommand(const char *command)
 {
@@ -132,18 +133,8 @@ void CDialogCvarChange::OnCommand(const char *command)
 
 	if (bClose)
 	{
-		PostMessage(this, new KeyValues("Close"));
-		MarkForDeletion();
+		Close();
 	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CDialogCvarChange::PerformLayout()
-{
-	BaseClass::PerformLayout();
 }
 
 //-----------------------------------------------------------------------------

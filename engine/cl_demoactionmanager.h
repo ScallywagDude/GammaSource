@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOACTIONMANAGER_H
 #define CL_DEMOACTIONMANAGER_H
@@ -24,7 +24,7 @@ struct democmdinfo_t;
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-class IDemoActionManager
+abstract_class IDemoActionManager
 {
 public:
 	virtual				~IDemoActionManager( void ) {}
@@ -40,8 +40,6 @@ public:
 	virtual void		SaveToBuffer( CUtlBuffer& buf ) = 0;
 	virtual void		SaveToFile( void ) = 0;
 
-	virtual void		InstallDemoUI( vgui::Panel *parent ) = 0;
-
 	virtual char const	*GetCurrentDemoFile( void ) = 0;
 
 	virtual int			GetActionCount( void ) = 0;
@@ -54,13 +52,10 @@ public:
 
 	virtual void		ReloadFromDisk( void ) = 0;
 
-	virtual float		GetPlaybackScale() = 0;
-
 	virtual void		DispatchEvents() = 0;
 	virtual void		InsertFireEvent( CBaseDemoAction *action ) = 0;
 
-	virtual bool		OverrideView( democmdinfo_t& info, int frame, float elapsed ) = 0;
-	virtual void		DrawDebuggingInfo( int frame, float elapsed ) = 0;
+	virtual bool		OverrideView( democmdinfo_t& info, int tick ) = 0;
 };
 
 extern IDemoActionManager *demoaction;

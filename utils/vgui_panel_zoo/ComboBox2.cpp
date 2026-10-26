@@ -1,18 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include "vgui_controls/Controls.h"
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_Button.h>
-#include <VGUI_ComboBox.h>
+#include "tier1/KeyValues.h"
+#include <vgui_controls/Button.h>
+#include <vgui_controls/ComboBox.h>
 
 
 using namespace vgui;
@@ -22,6 +22,7 @@ using namespace vgui;
 
 class ComboBox2Demo: public DemoPage
 {
+	DECLARE_CLASS_SIMPLE( ComboBox2Demo, DemoPage );
 	public:
 		ComboBox2Demo(Panel *parent, const char *name);
 		~ComboBox2Demo();
@@ -57,13 +58,13 @@ ComboBox2Demo::ComboBox2Demo(Panel *parent, const char *name) : DemoPage(parent,
 	m_pComboBox->SetWide(150);
 
 	// Add some text selections to the menu list
-	m_pComboBox->AddItem("Right");
-	m_pComboBox->AddItem("Left");
-	m_pComboBox->AddItem("Up");
-	m_pComboBox->AddItem("Down");
-	m_pComboBox->AddItem("Forward");
-	m_pComboBox->AddItem("Backward");
-	m_pComboBox->AddItem("Backward and really long");
+	m_pComboBox->AddItem("Right", NULL );
+	m_pComboBox->AddItem("Left", NULL );
+	m_pComboBox->AddItem("Up", NULL );
+	m_pComboBox->AddItem("Down", NULL );
+	m_pComboBox->AddItem("Forward", NULL );
+	m_pComboBox->AddItem("Backward", NULL );
+	m_pComboBox->AddItem("Backward and really long", NULL );
 
 
 	// Create a button. Clicking this button will send a command back to us.
@@ -102,7 +103,7 @@ void ComboBox2Demo::AddItemToComboBoxMenu()
 	char boxText[128];
 
 	// Get the text from the combo box 
-	m_pComboBox->GetText(0, boxText, 128);
+	m_pComboBox->GetText(boxText, sizeof( boxText ) );
 
 	// We won't add empty text strings to the menu.
 	if (!strcmp(boxText, ""))
@@ -111,7 +112,7 @@ void ComboBox2Demo::AddItemToComboBoxMenu()
 	// Add this item to the combo box menu
 	// If you wanted to check for uniqueness you would have to keep a 
 	// list of the items in the menu and check it.
-	m_pComboBox->AddItem(boxText);
+	m_pComboBox->AddItem(boxText, NULL);
 
 	// Reset the combo box to empty
 	m_pComboBox->SetText("");

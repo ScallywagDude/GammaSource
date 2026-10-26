@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -73,7 +73,7 @@ void CDialogServerPassword::OnCommand(const char *command)
 	{
 		KeyValues *msg = new KeyValues("JoinServerWithPassword");
 		char buf[64];
-		m_pPasswordEntry->GetText(buf, sizeof(buf)-1);
+		m_pPasswordEntry->GetText(0, buf, sizeof(buf)-1);
 		msg->SetString("password", buf);
 		msg->SetInt("serverID", m_iServerID);
 		PostActionSignal(msg);

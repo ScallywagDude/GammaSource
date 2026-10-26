@@ -10,13 +10,14 @@
 #ifndef _IVP_REAL_OBJECT_INCLUDED
 #define _IVP_REAL_OBJECT_INCLUDED
 
-#ifndef WIN32
-#	pragma interface
-#endif
-
 #ifndef IVP_U_MINLIST_INCLUDED
 #	include <ivu_min_list.hxx>
 #endif
+
+#ifndef IVP_ACTUATOR_INCLUDED
+#   include <ivp_actuator.hxx>
+#endif
+
 // resolve forward references 
 class IVP_Template_Phantom;
 class IVP_SurfaceManager;
@@ -157,6 +158,7 @@ protected:
 public:
     virtual void set_new_m_object_f_core( const IVP_U_Matrix *new_m_object_f_core );	 /* specifies new objects coordinate system in core space */
     void init_object_core(IVP_Environment *env, const IVP_Template_Real_Object *tpop);
+    void unlink_contact_points_for_object( IVP_Real_Object *other_object );
 protected:
 
     IVP_Real_Object(IVP_Cluster *father,IVP_SurfaceManager *, const IVP_Template_Real_Object *,
@@ -378,6 +380,8 @@ public:
     
     void recompile_values_changed();
     void recompile_material_changed();
+
+    void force_grow_friction_system();
 };
 
 #endif

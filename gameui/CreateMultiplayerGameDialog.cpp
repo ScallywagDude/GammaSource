@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "CreateMultiplayerGameDialog.h"
 #include "CreateMultiplayerGameServerPage.h"
@@ -12,98 +12,77 @@
 
 #include "EngineInterface.h"
 #include "ModInfo.h"
+#include "GameUI_Interface.h"
 
 #include <stdio.h>
 
 using namespace vgui;
 
-#include "Taskbar.h"
-extern CTaskbar *g_pTaskbar;
-
+#include "vgui_controls/ComboBox.h"
 #include <vgui/ILocalize.h>
 
-#include "FileSystem.h"
+#include "filesystem.h"
 #include <KeyValues.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
-
-// CS
-#include <vgui_controls/RadioButton.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CCreateMultiplayerGameDialog::CCreateMultiplayerGameDialog(vgui::Panel *parent) : PropertyDialog(parent, "CreateMultiplayerGameDialog")
 {
-	SetSize(424, 420);
-	
-	g_pTaskbar->AddTask(GetVPanel());
+	m_bBotsEnabled = false;
+	SetDeleteSelfOnClose(true);
 
+	int w = 348;
+	int h = 460;
+	if (IsProportional())
+	{
+		w = scheme()->GetProportionalScaledValueEx(GetScheme(), w);
+		h = scheme()->GetProportionalScaledValueEx(GetScheme(), h);
+	}
+
+	SetSize(w, h);
+	
 	SetTitle("#GameUI_CreateServer", true);
 	SetOKButtonText("#GameUI_Start");
 
+	if ( ModInfo().UseBots() )
+	{
+		m_bBotsEnabled = true;
+	}
+
 	m_pServerPage = new CCreateMultiplayerGameServerPage(this, "ServerPage");
+	m_pGameplayPage = new CCreateMultiplayerGameGameplayPage(this, "GameplayPage");
+	m_pBotPage = NULL;
+
 	AddPage(m_pServerPage, "#GameUI_Server");
-	AddPage(new CCreateMultiplayerGameGameplayPage(this, "GameplayPage"), "#GameUI_Game");
+	AddPage(m_pGameplayPage, "#GameUI_Game");
 
-	// create KeyValues object to load/save bot options
-	m_pBotSavedData = new KeyValues( "CSBotConfig" );
+	// create KeyValues object to load/save config options
+	m_pSavedData = new KeyValues( "ServerConfig" );
 
-	// load the bot config data
-	if (m_pBotSavedData)
+	// load the config data
+	if (m_pSavedData)
 	{
-		m_pBotSavedData->LoadFromFile( filesystem(), "CSBotConfig.vdf", "CONFIG" );
-	}
-	// add a page of advanced bot controls
-	// NOTE: These controls will use the bot keys to initialize their values
-	m_pBotPage = new CCreateMultiplayerGameBotPage( this, "BotPage", m_pBotSavedData );
-	AddPage( m_pBotPage, "CPU Player Options" );
+		m_pSavedData->LoadFromFile( g_pFullFileSystem, "ServerConfig.vdf", "GAME" ); // this is game-specific data, so it should live in GAME, not CONFIG
 
-//	int botDiff = (int)(engine->pfnGetCvarFloat( "bot_difficulty" ));
-	ConVar const *var = cvar->FindVar( "bot_difficulty" );
-	int botDiff = 0;
-	if ( var )
-	{
-		botDiff = var->GetInt();
-	}
-	else
-	{
-		// no, use the current key value loaded from the config file
-		botDiff = m_pBotSavedData->GetInt( "bot_difficulty" );
+		const char *startMap = m_pSavedData->GetString("map", "");
+		if (startMap[0])
+		{
+			m_pServerPage->SetMap(startMap);
+		}
 	}
 
-/*	// do bot cvars exist yet?
-	if (engine->pfnGetCvarPointer( "bot_difficulty" ))
+	if ( m_bBotsEnabled )
 	{
-		// yes, use the current value of the cvar
-		botDiff = (int)(engine->pfnGetCvarFloat( "bot_difficulty" ));
+		// add a page of advanced bot controls
+		// NOTE: These controls will use the bot keys to initialize their values
+		m_pBotPage = new CCreateMultiplayerGameBotPage( this, "BotPage", m_pSavedData );
+		AddPage( m_pBotPage, "#GameUI_CPUPlayerOptions" );
+		m_pServerPage->EnableBots( m_pSavedData );
 	}
-	else
-	{
-		// no, use the current key value loaded from the config file
-		botDiff = m_pBotSavedData->GetInt( "bot_difficulty" );
-	}
-*/	
-	// shift to array index range
-	++botDiff;
-
-	// set bot difficulty radio buttons
-	static const char *buttonName[] = 
-	{
-		"NoBots",
-		"SkillLevelEasy",
-		"SkillLevelNormal",
-		"SkillLevelHard",
-		"SkillLevelExpert"
-	};
-	if (botDiff < 0)
-		botDiff = 0;
-	else if (botDiff > 4)
-		botDiff = 4;
-	vgui::RadioButton *button = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( buttonName[ botDiff ] ) );
-	if (button)
-		button->SetSelected( true );
 }
 
 //-----------------------------------------------------------------------------
@@ -111,152 +90,110 @@ CCreateMultiplayerGameDialog::CCreateMultiplayerGameDialog(vgui::Panel *parent) 
 //-----------------------------------------------------------------------------
 CCreateMultiplayerGameDialog::~CCreateMultiplayerGameDialog()
 {
-	if (m_pBotSavedData)
+	if (m_pSavedData)
 	{
-		m_pBotSavedData->deleteThis();
-		m_pBotSavedData = NULL;
+		m_pSavedData->deleteThis();
+		m_pSavedData = NULL;
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Overrides the base class so it can setup the taskbar title properly
-//-----------------------------------------------------------------------------
-void CCreateMultiplayerGameDialog::SetTitle(const char *title, bool surfaceTitle)
-{
-	BaseClass::SetTitle(title,surfaceTitle);
-	if (g_pTaskbar)
-	{
-		wchar_t *wTitle;
-		wchar_t w_szTitle[1024];
-
-		wTitle = vgui::localize()->Find(title);
-
-		if(!wTitle)
-		{
-			vgui::localize()->ConvertANSIToUnicode(title,w_szTitle,sizeof(w_szTitle));
-			wTitle = w_szTitle;
-		}
-
-		g_pTaskbar->SetTitle(GetVPanel(), wTitle);
-	}
-
-
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: runs the server when the OK button is pressed
 //-----------------------------------------------------------------------------
-void CCreateMultiplayerGameDialog::OnOK()
+bool CCreateMultiplayerGameDialog::OnOK(bool applyOnly)
 {
-	BaseClass::OnOK();
+	// reset server enforced cvars
+	g_pCVar->RevertFlaggedConVars( FCVAR_REPLICATED );	
+
+	// Cheats were disabled; revert all cheat cvars to their default values.
+	// This must be done heading into multiplayer games because people can play
+	// demos etc and set cheat cvars with sv_cheats 0.
+	g_pCVar->RevertFlaggedConVars( FCVAR_CHEAT );
+
+	DevMsg( "FCVAR_CHEAT cvars reverted to defaults.\n" );
+
+	BaseClass::OnOK(applyOnly);
 
 	// get these values from m_pServerPage and store them temporarily
 	char szMapName[64], szHostName[64], szPassword[64];
 	strncpy(szMapName, m_pServerPage->GetMapName(), sizeof( szMapName ));
-	strncpy(szHostName, m_pServerPage->GetHostName(), sizeof( szHostName ));
-	strncpy(szPassword, m_pServerPage->GetPassword(), sizeof( szPassword ));
+	strncpy(szHostName, m_pGameplayPage->GetHostName(), sizeof( szHostName ));
+	strncpy(szPassword, m_pGameplayPage->GetPassword(), sizeof( szPassword ));
+
+	// save the config data
+	if (m_pSavedData)
+	{
+		if (m_pServerPage->IsRandomMapSelected())
+		{
+			// it's set to random map, just save an
+			m_pSavedData->SetString("map", "");
+		}
+		else
+		{
+			m_pSavedData->SetString("map", szMapName);
+		}
+
+		// save config to a file
+		m_pSavedData->SaveToFile( g_pFullFileSystem, "ServerConfig.vdf", "GAME" );
+	}
 
 	char szMapCommand[1024];
 
-	//
-	// Changes for Counter-strike game dialog - MSB
-	//
-	if (!stricmp( ModInfo().GetGameDescription(), "Counter-Strike" ))
+	// create the command to execute
+	Q_snprintf(szMapCommand, sizeof( szMapCommand ), "disconnect\nwait\nwait\nsv_lan 1\nsetmaster enable\nmaxplayers %i\nsv_password \"%s\"\nhostname \"%s\"\nprogress_enable\nmap %s\n",
+		m_pGameplayPage->GetMaxPlayers(),
+		szPassword,
+		szHostName,
+		szMapName
+	);
+
+	// exec
+	engine->ClientCmd_Unrestricted(szMapCommand);
+
+	return true;
+}
+
+void CCreateMultiplayerGameDialog::OnKeyCodePressed( vgui::KeyCode code )
+{
+	// Handle close here, CBasePanel parent doesn't support "DialogClosing" command
+	ButtonCode_t nButtonCode = GetBaseButtonCode( code );
+
+	if ( nButtonCode == KEY_XBUTTON_B || nButtonCode == STEAMCONTROLLER_B )
 	{
-		// get bot difficulty level
-		float botSkill = -1.0f;
-
-		vgui::RadioButton *noBots = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( "NoBots" ) );
-		if (noBots && !noBots->IsSelected())
+		OnCommand( "Close" );
+	}
+	else if ( nButtonCode == KEY_XBUTTON_A || nButtonCode == STEAMCONTROLLER_A )
+	{
+		OnOK( false );
+	}
+	else if ( nButtonCode == KEY_XBUTTON_UP || 
+			  nButtonCode == KEY_XSTICK1_UP ||
+			  nButtonCode == KEY_XSTICK2_UP ||
+			  nButtonCode == STEAMCONTROLLER_DPAD_UP ||
+			  nButtonCode == KEY_UP )
+	{
+		int nItem = m_pServerPage->GetMapList()->GetActiveItem() - 1;
+		if ( nItem < 0 )
 		{
-			// "not no bots" -> use bots
-
-			vgui::RadioButton *easy = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( "SkillLevelEasy" ) );
-			if (easy && easy->IsSelected())
-				botSkill = 0.0f;
-
-			vgui::RadioButton *normal = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( "SkillLevelNormal" ) );
-			if (normal && normal->IsSelected())
-				botSkill = 1.0f;
-
-			vgui::RadioButton *hard = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( "SkillLevelHard" ) );
-			if (hard && hard->IsSelected())
-				botSkill = 2.0f;
-
-			vgui::RadioButton *expert = static_cast<vgui::RadioButton *>( m_pServerPage->FindChildByName( "SkillLevelExpert" ) );
-			if (expert && expert->IsSelected())
-				botSkill = 3.0f;
+			nItem = m_pServerPage->GetMapList()->GetItemCount() - 1;
 		}
-
-		// update keys
-		m_pBotSavedData->SetInt( "bot_difficulty", (int)botSkill );
-		m_pBotPage->UpdateKeys( m_pBotSavedData );
-
-		// if don't want bots (difficulty == -1), override and set the quota to zero
-		if (m_pBotSavedData->GetInt( "bot_difficulty" ) < 0)
+		m_pServerPage->GetMapList()->ActivateItem( nItem );
+	}
+	else if ( nButtonCode == KEY_XBUTTON_DOWN || 
+			  nButtonCode == KEY_XSTICK1_DOWN ||
+			  nButtonCode == KEY_XSTICK2_DOWN || 
+			  nButtonCode == STEAMCONTROLLER_DPAD_DOWN ||
+			  nButtonCode == KEY_DOWN )
+	{
+		int nItem = m_pServerPage->GetMapList()->GetActiveItem() + 1;
+		if ( nItem >= m_pServerPage->GetMapList()->GetItemCount() )
 		{
-			m_pBotSavedData->SetInt( "bot_quota", 0 );
+			nItem = 0;
 		}
-
-		// save bot config to a file
-		m_pBotSavedData->SaveToFile( filesystem(), "CSBotConfig.vdf", "CONFIG" );
-
-		// create command to load map, set password, etc
-		sprintf( szMapCommand, "disconnect\nsv_lan 1\nsetmaster enable\nmaxplayers %i\nsv_password \"%s\"\nhostname \"%s\"\nmap %s\n",
-			m_pServerPage->GetMaxPlayers(),
-			szPassword,
-			szHostName,
-			szMapName
-		);
-
-		// start loading the map
-		engine->ClientCmd(szMapCommand);
-
-		// wait a few frames after the map loads to make sure everything is "settled"
-		engine->ClientCmd( "wait\nwait\n" );
-
-		// set all of the bot cvars
-		for( KeyValues *key = m_pBotSavedData->GetFirstSubKey(); key; key = key->GetNextKey() )
-		{
-			static char buffer[128];
-
-			if (key->GetDataType() == KeyValues::TYPE_STRING)
-				sprintf( buffer, "%s \"%s\"\n", key->GetName(), key->GetString() );
-			else
-				sprintf( buffer, "%s %d\n", key->GetName(), key->GetInt() );
-
-			engine->ClientCmd( buffer );
-		}
-
-		// if bots are forced onto a specific team, we must disable team balancing and stacking checks
-		const char *team = m_pBotSavedData->GetString( "bot_join_team" );
-		if (team && stricmp( team, "any" ))
-		{
-			engine->ClientCmd( "mp_autoteambalance 0\n" );
-			engine->ClientCmd( "mp_limitteams 0\n" );
-		}
-
+		m_pServerPage->GetMapList()->ActivateItem( nItem );
 	}
 	else
 	{
-		// create the command to execute
-		sprintf(szMapCommand, "disconnect\nsv_lan 1\nsetmaster enable\nmaxplayers %i\nsv_password \"%s\"\nhostname \"%s\"\nmap %s\n",
-			m_pServerPage->GetMaxPlayers(),
-			szPassword,
-			szHostName,
-			szMapName
-		);
-
-		// exec
-		engine->ClientCmd(szMapCommand);
+		BaseClass::OnKeyCodePressed( code );
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: deletes the dialog when it gets closed
-//-----------------------------------------------------------------------------
-void CCreateMultiplayerGameDialog::OnClose()
-{
-	MarkForDeletion();
-	BaseClass::OnClose();
 }

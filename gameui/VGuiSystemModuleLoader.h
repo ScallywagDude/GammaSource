@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Handles loading/unloading of different vgui modules into a shared context
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef VGUISYSTEMMODULELOADER_H
 #define VGUISYSTEMMODULELOADER_H
@@ -11,7 +11,7 @@
 #endif
 
 #include "vgui_controls/PHandle.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "IVGuiModuleLoader.h"
 
 class IVGuiModule;
@@ -28,7 +28,7 @@ public:
 	~CVGuiSystemModuleLoader();
 
 	// loads all the modules in the platform
-	void LoadPlatformModules(CreateInterfaceFn *factorylist, int factorycount, bool useSteamModules);
+	bool LoadPlatformModules(CreateInterfaceFn *factorylist, int factorycount, bool useSteamModules);
 
 	// returns true if the module loader has loaded the modules
 	bool IsPlatformReady();
@@ -44,6 +44,7 @@ public:
 	const char *GetModuleLabel(int moduleIndex);
 
 	bool IsModuleHidden(int moduleIndex);
+	bool IsModuleVisible(int moduleIndex);
 
 	// returns a modules interface factory
 	CreateInterfaceFn GetModuleFactory(int moduleIndex);
@@ -75,7 +76,7 @@ public:
 
 private:
 	// sets up all the modules for use
-	void InitializeAllModules(CreateInterfaceFn *factorylist, int factorycount);
+	bool InitializeAllModules(CreateInterfaceFn *factorylist, int factorycount);
 
 	bool m_bModulesInitialized;
 	bool m_bPlatformShouldRestartAfterExit;
@@ -88,8 +89,7 @@ private:
 	};
 
 	CUtlVector<module_t> m_Modules;
-
-	char m_szTrackerDir[512];
+	KeyValues *m_pPlatformModuleData;
 };
 
 extern CVGuiSystemModuleLoader g_VModuleLoader;

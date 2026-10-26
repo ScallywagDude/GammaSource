@@ -1,0 +1,331 @@
+//========= GammaSource: ported from the 2003 code (dlls/hl2_dll/grenade_brickbat.cpp) ============//
+//
+// Purpose: Things thrown from the hand
+//
+//=============================================================================
+
+#include "cbase.h"
+#include "player.h"
+#include "ammodef.h"
+#include "gamerules.h"
+#include "grenade_brickbat.h"
+#include "weapon_brickbat.h"
+#include "soundent.h"
+#include "decals.h"
+#include "IEffects.h"
+#include "engine/IEngineSound.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+// Global Savedata for changelevel trigger
+BEGIN_DATADESC( CGrenade_Brickbat )
+
+	DEFINE_FIELD( m_nType, FIELD_INTEGER ),
+	DEFINE_FIELD( m_bExplodes, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_bBounceToFlat, FIELD_BOOLEAN ),
+
+	// Function Pointers
+	DEFINE_ENTITYFUNC( BrickbatTouch ),
+	DEFINE_THINKFUNC( BrickbatThink ),
+
+END_DATADESC()
+
+LINK_ENTITY_TO_CLASS( brickbat, CGrenade_Brickbat );
+
+void CGrenade_Brickbat::Spawn( void )
+{
+	RemoveEffects( EF_NOINTERP );
+
+	SetTouch( &ThisClass::BrickbatTouch );
+	SetThink( &ThisClass::BrickbatThink );
+	SetNextThink( gpGlobals->curtime + 0.1f );
+
+	m_takedamage = DAMAGE_YES;
+	m_iHealth = 1;
+
+	SetGravity( 1.0 );
+	SetSequence( 1 );
+
+	CreateVPhysics();
+}
+
+bool CGrenade_Brickbat::CreateVPhysics()
+{
+	VPhysicsInitNormal( SOLID_VPHYSICS, 0, false );
+	IPhysicsObject *pPhysics = VPhysicsGetObject();
+	if ( pPhysics )
+	{
+		// we want world touches
+		unsigned int flags = pPhysics->GetCallbackFlags();
+		pPhysics->SetCallbackFlags( flags | CALLBACK_GLOBAL_TOUCH_STATIC );
+	}
+
+    if (!pPhysics)
+    {
+        SetMoveType(MOVETYPE_FLYGRAVITY);
+        SetSolid(SOLID_BBOX);
+        SetSize(Vector(-4,-4,-4),Vector(4,4,4));
+    }
+    return pPhysics!=NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+void CGrenade_Brickbat::BrickbatTouch( CBaseEntity *pOther )
+{
+	if (!pOther || pOther==GetOwnerEntity() || IsMarkedForDeletion()) return;
+	// -----------------------------------------------------------
+	// Might be physically simulated so get my velocity manually
+	// -----------------------------------------------------------
+	Vector vVelocity;
+	GetVelocity(&vVelocity,NULL);
+
+	// -----------------------------------
+	// Do damage if we moving fairly fast
+	// -----------------------------------
+	if (vVelocity.Length() > 100)
+	{
+		if (GetThrower())
+		{
+			trace_t tr; tr = CBaseEntity::GetTouchTrace( );
+			ClearMultiDamage( );
+			Vector forward;
+			AngleVectors( GetLocalAngles(), &forward );
+
+			CTakeDamageInfo info( this, GetThrower(), m_flDamage, DMG_CRUSH );
+			CalculateMeleeDamageForce( &info, forward, tr.endpos );
+			pOther->DispatchTraceAttack( info, forward, &tr );
+			ApplyMultiDamage();
+		}
+		// If this thrown item explodes, blow it up
+		if (m_bExplodes) 
+		{
+			Detonate();
+			return;
+		}
+	}
+	else if (pOther->GetFlags() & FL_CLIENT)
+	{
+		SpawnBrickbatWeapon();
+		return;
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose : Brickbat grenade turns back into a brickbat weapon
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CGrenade_Brickbat::SpawnBrickbatWeapon( void )
+{
+	CWeaponBrickbat *pBrickbat = (CWeaponBrickbat*)CBaseEntity::CreateNoSpawn( 
+		"weapon_brickbat", GetLocalOrigin(), GetLocalAngles(), NULL );
+	// Spawn after we set the ammo type so the correct model is used
+	if (pBrickbat)
+	{
+		pBrickbat->m_iCurrentAmmoType = m_nType;
+		pBrickbat->Spawn();
+		VPhysicsDestroyObject();
+		SetThink(NULL);
+		UTIL_Remove(this);
+	}
+}
+
+//------------------------------------------------------------------------------
+// Purpose :
+// Input   :
+// Output  :
+//------------------------------------------------------------------------------
+void CGrenade_Brickbat::BrickbatThink( void )
+{
+	// -----------------------------------------------------------
+	// Might be physically simulated so get my velocity manually
+	// -----------------------------------------------------------
+	Vector vVelocity;
+	AngularImpulse vAngVel;
+	GetVelocity(&vVelocity,&vAngVel);
+
+	// See if I can lose my owner (has dropper moved out of way?)
+	// Want do this so owner can throw the brickbat
+	if (GetOwnerEntity())
+	{
+		trace_t tr;
+		Vector	vUpABit = GetAbsOrigin();
+		vUpABit.z += 5.0;
+
+		CBaseEntity* saveOwner = GetOwnerEntity();
+		SetOwnerEntity( NULL );
+		UTIL_TraceEntity( this, GetAbsOrigin(), vUpABit, MASK_SOLID, &tr );
+		if ( tr.startsolid || tr.fraction != 1.0 )
+		{
+			SetOwnerEntity( saveOwner );
+		}
+	}
+
+	// ---------------------------------------------------------------
+	//	Make sure we're not resting on a living thing's bounding box
+	// ---------------------------------------------------------------
+	if (vVelocity.Length() < 0.01)
+	{
+		trace_t tr;
+		UTIL_TraceLine( GetAbsOrigin(), GetAbsOrigin() - Vector(0,0,10), MASK_SOLID, this, COLLISION_GROUP_NONE, &tr );
+
+		if ( tr.fraction < 1.0 && tr.m_pEnt)
+		{
+			CBaseEntity *pEntity = tr.m_pEnt;
+			if (pEntity->GetFlags() & (FL_CLIENT | FL_NPC))
+			{
+				// --------------------
+				// Bounce me off 
+				// --------------------
+				Vector vNewVel;
+				vNewVel.z = 100;
+				vNewVel.x = random->RandomInt(-100,100);
+				vNewVel.y = random->RandomInt(-100,100);
+
+				// If physically simulated
+				IPhysicsObject *pPhysicsObject = VPhysicsGetObject();
+				if ( pPhysicsObject )
+				{
+					AngularImpulse impAngVel;
+					impAngVel = vAngVel;
+					pPhysicsObject->AddVelocity( &vNewVel, &impAngVel );
+				}
+				// Otherwise
+				else
+				{
+					SetAbsVelocity( vNewVel );
+				}
+			}
+		}
+	}
+
+	// HL2MODERN_BRICKBAT_RECOVERY: only recover once the object has settled.
+    IPhysicsObject *physics=VPhysicsGetObject();
+    if ((physics && physics->IsAsleep()) || (!physics && (GetFlags()&FL_ONGROUND) && vVelocity.Length()<20))
+    {
+        SpawnBrickbatWeapon();
+        if (IsMarkedForDeletion()) return;
+    }
+	SetNextThink( gpGlobals->curtime + 0.1f );
+}
+
+//=====================================================================
+//	> Rock
+//=====================================================================
+class CGrenadeRockBB : public CGrenade_Brickbat
+{
+public:
+	DECLARE_CLASS( CGrenadeRockBB, CGrenade_Brickbat );
+
+	void Spawn(void)
+	{
+		m_nType = BRICKBAT_ROCK;
+		m_bExplodes=false;
+		SetModel( "models/props_junk/Rock001a.mdl" );
+		BaseClass::Spawn();
+	}
+	void Precache( void )
+	{
+		engine->PrecacheModel("models/props_junk/Rock001a.mdl");
+		BaseClass::Precache();
+	}
+};
+LINK_ENTITY_TO_CLASS( grenade_rockbb, CGrenadeRockBB );
+PRECACHE_REGISTER(grenade_rockbb);
+
+
+//=====================================================================
+//	> BeerBottle
+//=====================================================================
+class CGrenadeBottle : public CGrenade_Brickbat
+{
+public:
+	DECLARE_CLASS( CGrenadeBottle, CGrenade_Brickbat );
+
+	void Spawn(void)
+	{
+		m_nType	= BRICKBAT_BOTTLE;
+		m_bExplodes	= true;
+		SetModel( "models/weapons/w_bb_bottle.mdl" );
+		BaseClass::Spawn();
+	}
+	void Precache( void );
+	void Detonate( void );
+};
+
+void CGrenadeBottle::Precache( void )
+{
+	engine->PrecacheModel("models/weapons/w_bb_bottle.mdl");
+
+	BaseClass::Precache();
+}
+
+void CGrenadeBottle::Detonate( void )
+{	
+	trace_t trace;
+
+	UTIL_TraceLine ( GetAbsOrigin(), GetAbsOrigin() + GetAbsVelocity(), MASK_SOLID, this, COLLISION_GROUP_NONE, &trace);
+	UTIL_DecalTrace( &trace, "BeerSplash" );
+
+	EmitSound( "GrenadeBottle.Detonate" );
+
+	CSoundEnt::InsertSound(SOUND_COMBAT, GetAbsOrigin(), 400, 0.5);
+
+	UTIL_Remove( this );
+}
+
+LINK_ENTITY_TO_CLASS( grenade_beerbottle, CGrenadeBottle );
+PRECACHE_REGISTER(grenade_beerbottle);
+
+
+
+//=====================================================================
+//	> CrematorHead
+//=====================================================================
+class CGrenadeCrematorHead : public CGrenade_Brickbat
+{
+public:
+	DECLARE_CLASS( CGrenadeCrematorHead, CGrenade_Brickbat );
+
+	void Spawn(void);
+	void Precache( void );
+	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+};
+
+//-----------------------------------------------------------------------------
+// Purpose:
+// Input  :
+// Output :
+//-----------------------------------------------------------------------------
+void CGrenadeCrematorHead::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+{
+	if ( info.GetDamageType() & DMG_BULLET)
+	{
+		g_pEffects->Ricochet(ptr->endpos,ptr->plane.normal);
+	}
+	BaseClass::TraceAttack( info, vecDir, ptr );
+}
+
+void CGrenadeCrematorHead::Spawn(void)
+{
+	m_nType		= BRICKBAT_CREMATORHEAD;
+	m_bExplodes	= false;
+	SetModel( "models/cremator_head.mdl" );
+	BaseClass::Spawn();
+	SetMoveType( MOVETYPE_VPHYSICS );		// uses physics
+}
+
+void CGrenadeCrematorHead::Precache( void )
+{
+	engine->PrecacheModel("models/cremator_head.mdl");
+	BaseClass::Precache();
+}
+
+LINK_ENTITY_TO_CLASS( grenade_crematorhead, CGrenadeCrematorHead );
+PRECACHE_REGISTER(grenade_crematorhead);
+

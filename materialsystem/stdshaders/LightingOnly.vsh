@@ -1,5 +1,10 @@
 vs.1.1
 
+# STATIC: "HALF_LAMBERT"			"0..1"
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "LIGHT_COMBO"			"0..21"
+# DYNAMIC: "SKINNING"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
@@ -7,7 +12,7 @@ vs.1.1
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$worldPos );
 &AllocateRegister( \$worldNormal );
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
 
 ;------------------------------------------------------------------------------
 ; Transform the position from model to proj
@@ -28,8 +33,7 @@ mov oPos, $projPos
 ;------------------------------------------------------------------------------
 ; Lighting
 ;------------------------------------------------------------------------------
-&DoLighting( $g_staticLightType, $g_ambientLightType, $g_localLightType1, 
-			 $g_localLightType2, $worldPos, $worldNormal );
+&DoLighting( $worldPos, $worldNormal );
 
 &FreeRegister( \$worldPos );
 &FreeRegister( \$worldNormal );

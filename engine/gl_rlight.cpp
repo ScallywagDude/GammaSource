@@ -1,30 +1,24 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-//=============================================================================
+//=============================================================================//
 	   
 
-#include "quakedef.h"
-#include "view.h"
-#include "r_local.h"
-#include "materialsystem/IMaterial.h"
-#include "ImageLoader.h"
-#include "TGAWriter.h"
-#include "gl_matsysiface.h"
-#include "DispChain.h"
-#include "GLQuake.h"
+#include "render_pch.h"
+#include "client.h"
+#include "bitmap/imageformat.h"
+#include "bitmap/tgawriter.h"
 #include <float.h>
-#include "CollisionUtils.h"
-#include "gl_lightmap.h"
-#include "../modernize/lightstyle_policy.h"
+#include "collisionutils.h"
+#include "cl_main.h"
+#include "tier0/vprof.h"
+#include "debugoverlay.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Forward declarations
@@ -34,31 +28,31 @@ extern int r_surfacevisframe;
 
 static model_t* s_pLightVecModel = 0;
 
+ConVar r_visualizetraces( "r_visualizetraces", "0", FCVAR_CHEAT );
+ConVar r_visualizelighttraces( "r_visualizelighttraces", "0", FCVAR_CHEAT );
+ConVar r_visualizelighttracesshowfulltrace( "r_visualizelighttracesshowfulltrace", "0", FCVAR_CHEAT );
 
 //-----------------------------------------------------------------------------
 // State associated with R_LightVec
 //-----------------------------------------------------------------------------
 struct LightVecState_t
 {
-	LightVecState_t() : m_LightTestChain( true )
-	{
-	}
+	LightVecState_t() = default;
 	Ray_t	m_Ray;
 	float	m_HitFrac;
 	float*	m_pTextureS;
 	float*	m_pTextureT;
 	float*	m_pLightmapS;
 	float*	m_pLightmapT;
-	int		m_nSkySurfID;
+	SurfaceHandle_t m_nSkySurfID;
 	bool	m_bUseLightStyles;
-	CDispChain m_LightTestChain;
+	CUtlVector<IDispInfo *>	m_LightTestDisps;
 };
 
 
 //-----------------------------------------------------------------------------
 // Globals associated with dynamic lighting
 //-----------------------------------------------------------------------------
-int	r_dlightframecount;
 int	r_dlightchanged;
 int	r_dlightactive;
 
@@ -73,27 +67,39 @@ int	r_dlightactive;
 R_AnimateLight
 ==================
 */
-// HL2MODERN_SMOOTH_LIGHTSTYLES
-// Interpolate the original 10 Hz patterns when requested. Off by default.
-ConVar r_smooth_lightstyles( "r_smooth_lightstyles", "0", FCVAR_ARCHIVE,
-    "Interpolate animated lightstyles between 10 Hz samples (0=2003 behavior)." );
-
 void R_AnimateLight (void)
 {
-    const double now = cl.gettime();
-    const bool smooth = r_smooth_lightstyles.GetBool();
-    for ( int j = 0; j < MAX_LIGHTSTYLES; ++j )
-    {
-        const int brightness = HL2ModernLightstyles::Sample(
-            cl_lightstyle[j].map, cl_lightstyle[j].length, now, smooth );
-        if ( d_lightstylevalue[j] != brightness )
-        {
-            // Also handles a style being cleared. The original engine reset
-            // its intensity to 256 but forgot to invalidate cached lightmaps.
-            d_lightstylevalue[j] = brightness;
-            d_lightstyleframe[j] = r_framecount;
-        }
-    }
+	INetworkStringTable *table = cl.m_pLightStyleTable;
+
+	if ( !table )
+		return;
+
+	// light animations
+	// 'm' is normal light, 'a' is no light, 'z' is double bright
+	int i = (int)(cl.GetTime()*10);
+
+	for (int j=0 ; j<MAX_LIGHTSTYLES ; j++)
+	{
+		int length;
+		const char * lightstyle = (const char*) table->GetStringUserData( j, &length );
+		length--;
+		
+		if (!lightstyle || !lightstyle[0])
+		{
+			d_lightstylevalue[j] = 256;
+			d_lightstylenumframes[j] = 0;
+			continue;
+		}
+		d_lightstylenumframes[j] = length;
+		int k = i % length;
+		k = lightstyle[k] - 'a';
+		k = k*22;
+		if (d_lightstylevalue[j] != k)
+		{
+			d_lightstylevalue[j] = k;
+			d_lightstyleframe[j] = r_framecount;
+		}
+	}	
 }
 
 /*
@@ -107,18 +113,19 @@ DYNAMIC LIGHTS
 // Returns true if the surface has the specified dlight already set on it for this frame.
 inline bool R_IsDLightAlreadyMarked( msurfacelighting_t *pLighting, int bit )
 {
-	return (pLighting->m_nDLightFrame == r_dlightframecount) && (pLighting->m_fDLightBits & bit);
+	return (pLighting->m_nDLightFrame == r_framecount) && (pLighting->m_fDLightBits & bit);
 }
 
 // Mark the surface as changed by the specified dlight (so its texture gets updated when 
 // it comes time to render).
-inline void R_MarkSurfaceDLight( msurfacelighting_t *pLighting, int bit)
+inline void R_MarkSurfaceDLight( SurfaceHandle_t surfID, msurfacelighting_t *pLighting, int bit)
 {
-	pLighting->m_nDLightFrame = r_dlightframecount;
+	pLighting->m_nDLightFrame = r_framecount;
 	pLighting->m_fDLightBits |= bit;
+	MSurf_Flags( surfID ) |= SURFDRAW_HASDLIGHT;
 }
 
-void R_TryLightMarkSurface( dlight_t *light, msurfacelighting_t *pLighting, int surfID, int bit )
+int R_TryLightMarkSurface( dlight_t *light, msurfacelighting_t *pLighting, SurfaceHandle_t surfID, int bit )
 {
 	// Make sure this light actually intersects the surface cache of the surfaces it hits
 	mtexinfo_t	*tex;
@@ -130,19 +137,19 @@ void R_TryLightMarkSurface( dlight_t *light, msurfacelighting_t *pLighting, int 
 	// FIXME: We should figure out a better way to deal with view models
 	float perpDistSq = DotProduct (light->origin, MSurf_Plane( surfID ).normal) - MSurf_Plane( surfID ).dist;
 	if (perpDistSq < DLIGHT_BEHIND_PLANE_DIST)
-		return;
+		return 0;
 
 	perpDistSq *= perpDistSq;
 
-	float flInPlaneRadiusSq = light->radius * light->radius - perpDistSq;
+	float flInPlaneRadiusSq = light->GetRadiusSquared() - perpDistSq;
 	if (flInPlaneRadiusSq <= 0)
-		return;
+		return 0;
 
 	tex = MSurf_TexInfo( surfID );
 
 	Vector2D mins, maxs;
-	mins.Init( pLighting->m_pLightmapMins[0], pLighting->m_pLightmapMins[1] ); 
-	maxs.Init( mins.x + pLighting->m_pLightmapExtents[0], mins.y + pLighting->m_pLightmapExtents[1] );
+	mins.Init( pLighting->m_LightmapMins[0], pLighting->m_LightmapMins[1] ); 
+	maxs.Init( mins.x + pLighting->m_LightmapExtents[0], mins.y + pLighting->m_LightmapExtents[1] );
 
 	// Project light center into texture coordinates
 	Vector2D vecCircleCenter;
@@ -156,22 +163,21 @@ void R_TryLightMarkSurface( dlight_t *light, msurfacelighting_t *pLighting, int 
 
 	// Does the circle intersect the square?
 	if ( !IsCircleIntersectingRectangle( mins, maxs, vecCircleCenter, flInPlaneLuxelRadius ) )
-		return;
+		return 0;
 
 	// Ok, mark the surface as using this light.
-	R_MarkSurfaceDLight(pLighting, bit); 
+	R_MarkSurfaceDLight( surfID, pLighting, bit); 
+	return 1;
 }
 
-void R_MarkLightsLeaf( dlight_t *light, int bit, mleaf_t *pLeaf )
+int R_MarkLightsLeaf( dlight_t *light, int bit, mleaf_t *pLeaf )
 {
-	for( CDispIterator it=pLeaf->GetDispIterator(); it.IsValid(); )
+	int countMarked = 0;
+	for ( int i = 0; i < pLeaf->dispCount; i++ )
 	{
-		CDispLeafLink *pCur = it.Inc();
+		IDispInfo *pDispInfo = MLeaf_Disaplcement( pLeaf, i );
 
-		// get current displacement surface info
-		IDispInfo *pDispInfo = static_cast<IDispInfo*>( pCur->m_pDispInfo );
-
-		int parentSurfID = pDispInfo->GetParent();
+		SurfaceHandle_t parentSurfID = pDispInfo->GetParent();
 		if ( parentSurfID )
 		{
 			// Don't redo all this work if we already hit this surface and decided it's lit by this light.
@@ -181,17 +187,19 @@ void R_MarkLightsLeaf( dlight_t *light, int bit, mleaf_t *pLeaf )
 				// Do a different test for displacement surfaces.
 				Vector bmin, bmax;
 				MSurf_DispInfo( parentSurfID )->GetBoundingBox( bmin, bmax );
-				if ( SphereToAABBIntersection( light->origin, light->radius, bmin, bmax ) )
+				if ( IsBoxIntersectingSphere(bmin, bmax, light->origin, light->GetRadius()) )
 				{
-					R_MarkSurfaceDLight( pLighting, bit ); 
+					R_MarkSurfaceDLight( parentSurfID, pLighting, bit );
+					countMarked++;
 				}
 			}
 		}
 	}
 
+	SurfaceHandle_t *pHandle = &host_state.worldbrush->marksurfaces[pLeaf->firstmarksurface];
 	for ( int i = 0; i < pLeaf->nummarksurfaces; i++ )
 	{
-		int surfID = host_state.worldmodel->brush.marksurfaces[pLeaf->firstmarksurface + i];
+		SurfaceHandle_t surfID = pHandle[i];
 		ASSERT_SURF_VALID( surfID );
 		
 		// only process leaf surfaces
@@ -205,11 +213,12 @@ void R_MarkLightsLeaf( dlight_t *light, int bit, mleaf_t *pLeaf )
 
 		float dist = DotProduct( light->origin, MSurf_Plane( surfID ).normal) - MSurf_Plane( surfID ).dist;
 		
-		if ( dist > light->radius || dist < -light->radius )
+		if ( dist > light->GetRadius() || dist < -light->GetRadius() )
 			continue;
 
-		R_TryLightMarkSurface( light, pLighting, surfID, bit );
+		countMarked += R_TryLightMarkSurface( light, pLighting, surfID, bit );
 	}
+	return countMarked;
 }
 
 
@@ -218,7 +227,7 @@ void R_MarkLightsLeaf( dlight_t *light, int bit, mleaf_t *pLeaf )
 R_MarkLights
 =============
 */
-void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
+int R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 {
 	cplane_t	*splitplane;
 	float		dist;
@@ -227,26 +236,24 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 	if (node->contents >= 0)
 	{
 		// This is a leaf, so check displacement surfaces and leaf faces
-		R_MarkLightsLeaf( light, bit, (mleaf_t*)node );
-		return;
+		return R_MarkLightsLeaf( light, bit, (mleaf_t*)node );
 	}
 	
 	splitplane = node->plane;
 	dist = DotProduct (light->origin, splitplane->normal) - splitplane->dist;
 	
-	if (dist > light->radius)
+	if (dist > light->GetRadius())
 	{
-		R_MarkLights (light, bit, node->children[0]);
-		return;
+		return R_MarkLights (light, bit, node->children[0]);
 	}
-	if (dist < -light->radius)
+	if (dist < -light->GetRadius())
 	{
-		R_MarkLights (light, bit, node->children[1]);
-		return;
+		return R_MarkLights (light, bit, node->children[1]);
 	}
 		
 	// mark the polygons
-	int surfID = node->firstsurface;
+	int countMarked = 0;
+	SurfaceHandle_t surfID = SurfaceHandleFromIndex( node->firstsurface );
 	for (i=0 ; i<node->numsurfaces ; i++, surfID++)
 	{
 		// Don't redo all this work if we already hit this surface and decided it's lit by this light.
@@ -254,23 +261,23 @@ void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 		if(R_IsDLightAlreadyMarked( pLighting, bit))
 			continue;
 
-		R_TryLightMarkSurface( light, pLighting, surfID, bit );
+		countMarked += R_TryLightMarkSurface( light, pLighting, surfID, bit );
 	}
 
-	R_MarkLights( light, bit, node->children[0] );
-	R_MarkLights( light, bit, node->children[1] );
+	countMarked += R_MarkLights( light, bit, node->children[0] );
+	return countMarked + R_MarkLights( light, bit, node->children[1] );
 }
 
 
 void R_MarkDLightsOnSurface( mnode_t* pNode )
 {
-	if (!pNode)
+	if (!pNode || !g_bActiveDlights)
 		return;
 
 	dlight_t	*l = cl_dlights;
 	for (int i=0 ; i<MAX_DLIGHTS ; i++, l++)
 	{
-		if (l->die < cl.gettime() || !l->radius)
+		if (l->die < cl.GetTime() || !l->IsRadiusGreaterThanZero() )
 			continue;
 		if (l->flags & DLIGHT_NO_WORLD_ILLUMINATION)
 			continue;
@@ -286,8 +293,7 @@ R_PushDlights
 */
 void R_PushDlights (void)
 {
-	r_dlightframecount = r_framecount;
-	R_MarkDLightsOnSurface( host_state.worldmodel->brush.nodes );
+	R_MarkDLightsOnSurface( host_state.worldbrush->nodes );
 	MarkDLightsOnStaticProps();
 }
 
@@ -320,13 +326,13 @@ static void ComputeLightmapCoordsAtIntersection( msurfacelighting_t *pLighting, 
 {
 	if( lightmapS && lightmapT )
 	{
-		if( pLighting->m_pLightmapExtents[0] != 0 )
-			*lightmapS = (ds + 0.5f) / ( float )pLighting->m_pLightmapExtents[0];
+		if( pLighting->m_LightmapExtents[0] != 0 )
+			*lightmapS = (ds + 0.5f) / ( float )pLighting->m_LightmapExtents[0];
 		else
 			*lightmapS = 0.5f;
 
-		if( pLighting->m_pLightmapExtents[1] != 0 )
-			*lightmapT = (dt + 0.5f) / ( float )pLighting->m_pLightmapExtents[1];
+		if( pLighting->m_LightmapExtents[1] != 0 )
+			*lightmapT = (dt + 0.5f) / ( float )pLighting->m_LightmapExtents[1];
 		else
 			*lightmapT = 0.5f;
 	}
@@ -336,23 +342,24 @@ static void ComputeLightmapCoordsAtIntersection( msurfacelighting_t *pLighting, 
 //-----------------------------------------------------------------------------
 // Computes the lightmap color at a particular point
 //-----------------------------------------------------------------------------
-static void ComputeLightmapColor( int surfID, int ds, int dt, bool bUseLightStyles, Vector& c )
+static void ComputeLightmapColor( SurfaceHandle_t surfID, int ds, int dt, bool bUseLightStyles, Vector& c )
 {
 	msurfacelighting_t *pLighting = SurfaceLighting( surfID );
-	colorRGBExp32* pLightmap = pLighting->m_pSamples;
+
+	ColorRGBExp32* pLightmap = pLighting->m_pSamples;
 	if( !pLightmap )
 	{
 		static int messagecount = 0;
 		if ( ++messagecount < 10 )
 		{
 			// Stop spamming. I heard you already!!!
-			Con_Printf( "hit surface has no samples\n" );
+			ConMsg( "hit surface has no samples\n" );
 		}
 		return;
 	}
 
-	int smax = ( pLighting->m_pLightmapExtents[0] ) + 1;
-	int tmax = ( pLighting->m_pLightmapExtents[1] ) + 1;
+	int smax = ( pLighting->m_LightmapExtents[0] ) + 1;
+	int tmax = ( pLighting->m_LightmapExtents[1] ) + 1;
 	int offset = smax * tmax;
 	if ( SurfHasBumpedLightmaps( surfID ) )
 	{
@@ -385,7 +392,7 @@ static void ComputeLightmapColorFromAverage( msurfacelighting_t *pLighting, bool
 	{
 		float scale = LightStyleValue( pLighting->m_nStyles[maps] );
 
-		colorRGBExp32* pAvgColor = pLighting->AvgLightColor(maps);
+		ColorRGBExp32* pAvgColor = pLighting->AvgLightColor(maps);
 		c[0] += TexLightToLinear( pAvgColor->r, pAvgColor->exponent ) * scale;
 		c[1] += TexLightToLinear( pAvgColor->g, pAvgColor->exponent ) * scale;
 		c[2] += TexLightToLinear( pAvgColor->b, pAvgColor->exponent ) * scale;
@@ -396,7 +403,7 @@ static void ComputeLightmapColorFromAverage( msurfacelighting_t *pLighting, bool
 //-----------------------------------------------------------------------------
 // Tests a particular surface
 //-----------------------------------------------------------------------------
-static bool FASTCALL FindIntersectionAtSurface( int surfID, float f, 
+static bool FASTCALL FindIntersectionAtSurface( SurfaceHandle_t surfID, float f, 
 	Vector& c, LightVecState_t& state )
 {
 	// no lightmaps on this surface? punt...
@@ -419,16 +426,55 @@ static bool FASTCALL FindIntersectionAtSurface( int surfID, float f,
 
 	// Not in the bounds of our lightmap? punt...
 	msurfacelighting_t *pLighting = SurfaceLighting( surfID );
-	if( s < pLighting->m_pLightmapMins[0] || 
-		t < pLighting->m_pLightmapMins[1] )
+	if( s < pLighting->m_LightmapMins[0] || 
+		t < pLighting->m_LightmapMins[1] )
 		return false;	
 	
 	// assuming a square lightmap (FIXME: which ain't always the case),
 	// lets see if it lies in that rectangle. If not, punt...
-	float ds = s - pLighting->m_pLightmapMins[0];
-	float dt = t - pLighting->m_pLightmapMins[1];
-	if( ds > pLighting->m_pLightmapExtents[0] || dt > pLighting->m_pLightmapExtents[1] )
-		return false;	
+	float ds = s - pLighting->m_LightmapMins[0];
+	float dt = t - pLighting->m_LightmapMins[1];
+	if ( !pLighting->m_LightmapExtents[0] && !pLighting->m_LightmapExtents[1] )
+	{
+		worldbrushdata_t *pBrushData = host_state.worldbrush;
+
+		// 
+		float	lightMaxs[2];
+		lightMaxs[ 0 ] = pLighting->m_LightmapMins[0];
+		lightMaxs[ 1 ] = pLighting->m_LightmapMins[1];
+		int i;
+		for (i=0 ; i<MSurf_VertCount( surfID ); i++)
+		{
+			int e = pBrushData->vertindices[MSurf_FirstVertIndex( surfID )+i];
+			mvertex_t *v = &pBrushData->vertexes[e];
+			
+			int j;
+			for ( j=0 ; j<2 ; j++)
+			{
+				float sextent, textent;
+				sextent = DotProduct (v->position, pTex->lightmapVecsLuxelsPerWorldUnits[0].AsVector3D()) + 
+					pTex->lightmapVecsLuxelsPerWorldUnits[0][3] - pLighting->m_LightmapMins[0];
+				textent = DotProduct (v->position, pTex->lightmapVecsLuxelsPerWorldUnits[1].AsVector3D()) + 
+					pTex->lightmapVecsLuxelsPerWorldUnits[1][3] - pLighting->m_LightmapMins[1];
+
+				if ( sextent > lightMaxs[ 0 ] )
+				{
+					lightMaxs[ 0 ] = sextent;
+				}
+				if ( textent > lightMaxs[ 1 ] )
+				{
+					lightMaxs[ 1 ] = textent;
+				}
+			}
+		}
+		if( ds > lightMaxs[0] || dt > lightMaxs[1] )
+			return false;	
+	}
+	else
+	{
+		if( ds > pLighting->m_LightmapExtents[0] || dt > pLighting->m_LightmapExtents[1] )
+			return false;	
+	}
 
 	// Store off the hit distance...
 	state.m_HitFrac = f;
@@ -437,9 +483,9 @@ static bool FASTCALL FindIntersectionAtSurface( int surfID, float f,
 	ComputeTextureCoordsAtIntersection( pTex, pt, state.m_pTextureS, state.m_pTextureT );
 
 #ifdef USE_CONVARS
-	if( 1 )
+	if ( r_avglight.GetInt() )
 #else
-	if (r_avglight.GetInt())
+	if ( 1 )
 #endif
 	{
 		// This is the faster path; it looks slightly different though
@@ -462,10 +508,10 @@ static bool FASTCALL FindIntersectionAtSurface( int surfID, float f,
 //-----------------------------------------------------------------------------
 
 // returns a surfID
-static int FindIntersectionSurfaceAtNode( mnode_t *node, float t, 
+static SurfaceHandle_t FindIntersectionSurfaceAtNode( mnode_t *node, float t, 
 	Vector& c, LightVecState_t& state )
 {
-	int surfID = node->firstsurface;
+	SurfaceHandle_t surfID = SurfaceHandleFromIndex( node->firstsurface );
 	for (int i=0 ; i<node->numsurfaces ; ++i, ++surfID)
 	{
 		// Don't immediately return when we hit sky; 
@@ -487,7 +533,7 @@ static int FindIntersectionSurfaceAtNode( mnode_t *node, float t,
 		}
 	}
 
-	return -1;
+	return SURFACE_HANDLE_INVALID;
 }
 
 
@@ -496,23 +542,23 @@ static int FindIntersectionSurfaceAtNode( mnode_t *node, float t,
 //-----------------------------------------------------------------------------
 
 // returns surfID
-static int R_LightVecDisplacementChain( LightVecState_t& state, bool bUseLightStyles, Vector& c )
+static SurfaceHandle_t R_LightVecDisplacementChain( LightVecState_t& state, bool bUseLightStyles, Vector& c )
 {
 	// test the ray against displacements
-	int surfID = -1;
+	SurfaceHandle_t surfID = SURFACE_HANDLE_INVALID;
 
-	IDispInfo *pDispInfo = state.m_LightTestChain.GetHead();
-	for( ; pDispInfo; pDispInfo = pDispInfo->GetNextInRayCastChain() )
+	for ( int i = 0; i < state.m_LightTestDisps.Count(); i++ )
 	{
+	
 		float dist;
 		Vector2D luv, tuv;
+		IDispInfo *pDispInfo = state.m_LightTestDisps[i];
 		if (pDispInfo->TestRay( state.m_Ray, 0.0f, state.m_HitFrac, dist, &luv, &tuv ))
 		{
 			// It hit it, and at a point closer than the previously computed
 			// nearest intersection point
 			state.m_HitFrac = dist;
 			surfID = pDispInfo->GetParent();
-
 			ComputeLightmapColor( surfID, (int)luv.x, (int)luv.y, bUseLightStyles, c );
 
 			if (state.m_pLightmapS && state.m_pLightmapT)
@@ -539,21 +585,19 @@ static int R_LightVecDisplacementChain( LightVecState_t& state, bool bUseLightSt
 static void AddDisplacementsInLeafToTestList( mleaf_t* pLeaf, LightVecState_t& state )
 {
 	// add displacement surfaces
-	for( CDispIterator it=pLeaf->GetDispIterator(); it.IsValid(); )
+	for ( int i = 0; i < pLeaf->dispCount; i++ )
 	{
-		CDispLeafLink *pCur = it.Inc();
-
 		// NOTE: We're not using the displacement's touched method here 
 		// because we're just using the parent surface's visframe in the
 		// surface add methods below
-		IDispInfo* pDispInfo = static_cast<IDispInfo*>( pCur->m_pDispInfo );
-		int parentSurfID = pDispInfo->GetParent();
+		IDispInfo *pDispInfo = MLeaf_Disaplcement( pLeaf, i );
+		SurfaceHandle_t parentSurfID = pDispInfo->GetParent();
 
 		// already processed this frame? Then don't do it again!
 		if (MSurf_VisFrame( parentSurfID ) != r_surfacevisframe)
 		{
 			MSurf_VisFrame( parentSurfID ) = r_surfacevisframe;
-			state.m_LightTestChain.AddTo( pDispInfo );
+			state.m_LightTestDisps.AddToTail( pDispInfo );
 		}
 	}
 }
@@ -564,20 +608,22 @@ static void AddDisplacementsInLeafToTestList( mleaf_t* pLeaf, LightVecState_t& s
 //-----------------------------------------------------------------------------
 
 // returns surfID
-static int FASTCALL FindIntersectionSurfaceAtLeaf( mleaf_t *pLeaf, 
+static SurfaceHandle_t FASTCALL FindIntersectionSurfaceAtLeaf( mleaf_t *pLeaf, 
 					float start, float end, Vector& c, LightVecState_t& state )
 {
 	Vector pt;
-	int closestSurfID = -1;
+	SurfaceHandle_t closestSurfID = SURFACE_HANDLE_INVALID;
 
 	// Adds displacements in the leaf to a list of displacements to test at the end
 	AddDisplacementsInLeafToTestList( pLeaf, state );
 
 	// Add non-displacement surfaces
 	// Since there's no BSP tree here, we gotta test *all* surfaces! (blech)
-	for ( int i = 0; i < pLeaf->nummarksurfaces; i++ )
+	SurfaceHandle_t *pHandle = &host_state.worldbrush->marksurfaces[pLeaf->firstmarksurface];
+	// NOTE: Skip all marknodesurfaces, only check detail/leaf faces
+	for ( int i = pLeaf->nummarknodesurfaces; i < pLeaf->nummarksurfaces; i++ )
 	{
-		int surfID = host_state.worldmodel->brush.marksurfaces[pLeaf->firstmarksurface + i];
+		SurfaceHandle_t surfID = pHandle[i];
 		ASSERT_SURF_VALID( surfID );
 
 		// Don't add surfaces that have displacement; they are handled above
@@ -585,8 +631,9 @@ static int FASTCALL FindIntersectionSurfaceAtLeaf( mleaf_t *pLeaf,
 		// displacement code
 		if ( SurfaceHasDispInfo(surfID) )
 			continue;
+		Assert(!(MSurf_Flags( surfID ) & SURFDRAW_NODE));
 
-		if ( MSurf_Flags( surfID ) & (SURFDRAW_NODE | SURFDRAW_NODRAW | SURFDRAW_WATERSURFACE) )
+		if ( MSurf_Flags( surfID ) & (SURFDRAW_NODE|SURFDRAW_NODRAW | SURFDRAW_WATERSURFACE) )
 			continue;
 
 		cplane_t* pPlane = &MSurf_Plane( surfID );
@@ -630,7 +677,7 @@ static int FASTCALL FindIntersectionSurfaceAtLeaf( mleaf_t *pLeaf,
 //-----------------------------------------------------------------------------
 
 // returns surfID
-int RecursiveLightPoint (mnode_t *node, float start, float end,
+SurfaceHandle_t RecursiveLightPoint (mnode_t *node, float start, float end,
 	Vector& c, LightVecState_t& state )
 {
 	// didn't hit anything
@@ -654,7 +701,7 @@ int RecursiveLightPoint (mnode_t *node, float start, float end,
 	
 	// If they're both on the same side of the plane, don't bother to split
 	// just check the appropriate child
-	int surfID;
+	SurfaceHandle_t surfID;
 	if ( (back < 0) == side )
 	{
 		surfID = RecursiveLightPoint (node->children[side], start, end, c, state);
@@ -695,11 +742,13 @@ void R_LightVecUseModel( model_t* pModel )
 // lightmapS/T is in [0,1] within the space of the surface.
 // returns surfID
 //-----------------------------------------------------------------------------
-int R_LightVec (const Vector& start, const Vector& end, bool bUseLightStyles, Vector& c, 
+SurfaceHandle_t R_LightVec (const Vector& start, const Vector& end, bool bUseLightStyles, Vector& c, 
 		float *textureS, float *textureT, float *lightmapS, float *lightmapT )
 {
-	int retSurfID;
-	int dispSurfID;
+	VPROF_INCREMENT_COUNTER( "R_LightVec", 1 );
+
+	SurfaceHandle_t retSurfID;
+	SurfaceHandle_t dispSurfID;
 	
 	// We're using the vis frame here for lightvec tests
 	// to make sure we test each displacement only once
@@ -712,26 +761,39 @@ int R_LightVec (const Vector& start, const Vector& end, bool bUseLightStyles, Ve
 	state.m_pTextureT = textureT;
 	state.m_pLightmapS = lightmapS;
 	state.m_pLightmapT = lightmapT;
-	state.m_nSkySurfID = -1;
+	state.m_nSkySurfID = SURFACE_HANDLE_INVALID;
 	state.m_bUseLightStyles = bUseLightStyles;
 
 	c[0] = c[1] = c[2] = 0.0f;
 
 	model_t* model = s_pLightVecModel ? s_pLightVecModel : host_state.worldmodel; 
-	retSurfID = RecursiveLightPoint(&model->brush.nodes[model->brush.firstnode],
+	retSurfID = RecursiveLightPoint(&model->brush.pShared->nodes[model->brush.firstnode],
 		0.0f, 1.0f, c, state );
 
 	// While doing recursive light point, we built a list of all
 	// displacement surfaces which we need to test, so let's test them
 	dispSurfID = R_LightVecDisplacementChain( state, bUseLightStyles, c );
+
+	if( r_visualizelighttraces.GetBool() )
+	{
+		if( r_visualizelighttracesshowfulltrace.GetBool() )
+		{
+			CDebugOverlay::AddLineOverlay( start, end, 0, 255, 0, 255, true, -1.0f );
+		}
+		else
+		{
+			CDebugOverlay::AddLineOverlay( start, start + ( end - start ) * state.m_HitFrac, 0, 255, 0, 255, true, -1.0f );
+		}
+	}
+
 	if ( IS_SURF_VALID( dispSurfID ) )
 		retSurfID = dispSurfID;
 
-//	Con_Printf( "R_LightVec: %f %f %f\n", c[0], c[1], c[2] );
+//	ConMsg( "R_LightVec: %f %f %f\n", c[0], c[1], c[2] );
 
 	// If we didn't hit anything else, but we hit a sky surface at
 	// some point along the ray cast, return the sky id.
-	if ( ( retSurfID == -1 ) && ( state.m_nSkySurfID != -1 ) )
+	if ( ( retSurfID == SURFACE_HANDLE_INVALID ) && ( state.m_nSkySurfID != SURFACE_HANDLE_INVALID ) )
 		return state.m_nSkySurfID;
 
 	return retSurfID;
@@ -740,7 +802,7 @@ int R_LightVec (const Vector& start, const Vector& end, bool bUseLightStyles, Ve
 // returns light in range from 0 to 1.
 colorVec R_LightPoint (Vector& p)
 {
-	int surfID;
+	SurfaceHandle_t surfID;
 	Vector		end;
 	colorVec	c;
 	Vector		color;

@@ -1,13 +1,13 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_ComboBox.h>
+#include "tier1/KeyValues.h"
+#include <vgui_controls/ComboBox.h>
 
 using namespace vgui;
 
@@ -117,7 +117,7 @@ EditablePanel2Demo::EditablePanel2Demo(Panel *parent, const char *name) : DemoPa
 	// Add menu items to this combo box.
 	for (int i = 0; i < ARRAYSIZE(g_Speeds); i++)
 	{
-		m_pInternetSpeed->AddItem(g_Speeds[i]);
+		m_pInternetSpeed->AddItem(g_Speeds[i], NULL );
 	}
 
 	// Load the resource file settings into our panel.

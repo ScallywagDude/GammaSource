@@ -1,28 +1,29 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "quakedef.h"
-#include "vid.h"
+//===========================================================================//
+#include "client_pch.h"
+#include "ivideomode.h"
 #include "vgui_DebugSystemPanel.h"
 #include <vgui/ISurface.h>
 #include <vgui_controls/Controls.h>
 #include <vgui_controls/MenuButton.h>
 #include <vgui_controls/Menu.h>
 #include <vgui_controls/MenuItem.h>
-#include <KeyValues.h>
 #include <vgui/Cursor.h>
 #include <vgui_controls/TreeView.h>
 #include <vgui_controls/ImageList.h>
 #include <vgui/IScheme.h>
-#include <vgui/IVgui.h>
+#include <vgui/IVGui.h>
 #include <vgui_controls/Frame.h>
 #include <vgui_controls/CheckButton.h>
 #include <vgui_controls/PropertyPage.h>
 #include <vgui_controls/PropertyDialog.h>
 #include <vgui_controls/PropertySheet.h>
+#include "tier1/CommandBuffer.h"
+#include "tier1/tier1.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -49,14 +50,14 @@ class CDebugCommandButton : public vgui::Button
 {
 typedef vgui::Button BaseClass;
 public:
-	CDebugCommandButton( vgui::Panel *parent, char const *panelName, char const *labelText, char const *command )
+	CDebugCommandButton( vgui::Panel *parent, const char *panelName, const char *labelText, const char *command )
 		: BaseClass( parent, panelName, labelText )
 	{
 		AddActionSignalTarget( this );
 		SetCommand( command );
 	}
 
-	virtual void OnCommand( char const *command )
+	virtual void OnCommand( const char *command )
 	{
 		Cbuf_AddText( va( "%s\n", (char *)command ) );
 	}
@@ -70,19 +71,19 @@ class CDebugCommandCheckbox : public vgui::CheckButton
 {
 typedef vgui::CheckButton BaseClass;
 public:
-	CDebugCommandCheckbox( vgui::Panel *parent, char const *panelName, char const *labelText, char const *command )
+	CDebugCommandCheckbox( vgui::Panel *parent, const char *panelName, const char *labelText, const char *command )
 		: BaseClass( parent, panelName, labelText )
 	{
-		m_pVar = ( ConVar * )cv->FindVar( command );
+		m_pVar = ( ConVar * )g_pCVar->FindVar( command );
 		SetCommand( command );
 		AddActionSignalTarget( this );
 	}
 
-	virtual void OnCommand( char const *command )
+	virtual void OnCommand( const char *command )
 	{
 		if ( m_pVar )
 		{
-			m_pVar->SetValue( !m_pVar->GetInt() ? 1 : 0 );
+			Cbuf_AddText( va( "%s %d\n", m_pVar->GetName(), !m_pVar->GetInt() ) );
 		}
 	}
 
@@ -94,19 +95,20 @@ class CDebugIncrementCVarButton : public vgui::Button
 {
 typedef vgui::Button BaseClass;
 public:
-	CDebugIncrementCVarButton( vgui::Panel *parent, char const *panelName, char const *labelText, char const *command )
-		: BaseClass( parent, panelName, labelText )
+	CDebugIncrementCVarButton( vgui::Panel *pParent, const char *pPanelName, const char *pLabelText, const char *pCommand )
+		: BaseClass( pParent, pPanelName, pLabelText )
 	{
-		Cmd_TokenizeString( (char *)command );
+		CCommand args;
+		args.Tokenize( pCommand );
 
 		m_pVar = NULL;
-		if ( Cmd_Argc() >= 4 )
+		if ( args.ArgC() >= 4 )
 		{
-			m_pVar = ( ConVar * )cv->FindVar( Cmd_Argv(0) );
+			m_pVar = ( ConVar * )g_pCVar->FindVar( args[0] );
 
-			m_flMinvalue = (float)atof( Cmd_Argv(1) );
-			m_flMaxvalue = (float)atof( Cmd_Argv(2) );
-			m_flIncrement = (float)atof( Cmd_Argv(3) );
+			m_flMinvalue = (float)atof( args[1] );
+			m_flMaxvalue = (float)atof( args[2] );
+			m_flIncrement = (float)atof( args[3] );
 		}
 
 		SetCommand( "increment" );
@@ -117,7 +119,7 @@ public:
 		OnTick();
 	}
 
-	virtual void OnCommand( char const *command )
+	virtual void OnCommand( const char *command )
 	{
 		//
 		if ( !m_pVar )
@@ -221,7 +223,7 @@ public:
 		// LoadControlSettings( va( "resource\\%s.res", kv->GetName() ) );
 		for (KeyValues *control = kv->GetFirstSubKey(); control != NULL; control = control->GetNextKey())
 		{
-			char const *t;
+			const char *t;
 			
 			t = control->GetString( "command", "" );
 			if ( t && t[0] )
@@ -258,7 +260,7 @@ class CDebugOptionsPanel : public vgui::PropertyDialog
 	typedef vgui::PropertyDialog BaseClass;
 public:
 
-	CDebugOptionsPanel( vgui::Panel *parent, char const *panelName )
+	CDebugOptionsPanel( vgui::Panel *parent, const char *panelName )
 		: BaseClass( parent, panelName )
 	{
 		SetTitle( "Debug Options", true );
@@ -266,7 +268,7 @@ public:
 		KeyValues *kv = new KeyValues( "DebugOptions" );
 		if ( kv )
 		{
-			if ( kv->LoadFromFile(filesystem(), "scripts/DebugOptions.txt") )
+			if ( kv->LoadFromFile(g_pFullFileSystem, "scripts/DebugOptions.txt") )
 			{
 				for (KeyValues *dat = kv->GetFirstSubKey(); dat != NULL; dat = dat->GetNextKey())
 				{
@@ -291,10 +293,13 @@ public:
 		}
 	
 		GetPropertySheet()->SetTabWidth(72);
-		SetPos( vid.width - GetWide() - 10 , 10 );
+		SetPos( videomode->GetModeStereoWidth() - GetWide() - 10 , 10 );
 		SetVisible( true );
 
-		LoadControlSettings( "resource\\DebugOptionsPanel.res" );
+		if ( g_pFullFileSystem->FileExists( "resource/DebugOptionsPanel.res" ) )
+		{
+			LoadControlSettings( "resource/DebugOptionsPanel.res" );
+		}
 	}
 
 	void	Init( KeyValues *kv );
@@ -319,7 +324,7 @@ CDebugMenuButton::CDebugMenuButton(Panel *parent, const char *panelName, const c
 	m_pMenu->AddMenuItem( "Quit", "Quit", parent );
 
 	MenuButton::SetMenu(m_pMenu);
-	SetOpenDirection(MenuButton::DOWN);
+	SetOpenDirection(Menu::DOWN);
 }
 
 //-----------------------------------------------------------------------------
@@ -327,11 +332,11 @@ CDebugMenuButton::CDebugMenuButton(Panel *parent, const char *panelName, const c
 // Input  : *parent - 
 //			*panelName - 
 //-----------------------------------------------------------------------------
-CDebugSystemPanel::CDebugSystemPanel( Panel *parent, char const *panelName )
+CDebugSystemPanel::CDebugSystemPanel( Panel *parent, const char *panelName )
 	: BaseClass( parent, panelName )
 {
 
-	SetBounds( 0, 0, vid.width, vid.height );
+	SetBounds( 0, 0, videomode->GetModeStereoWidth(), videomode->GetModeStereoHeight() );
 
 	// Show arrow cursor while in this mode
 	SetCursor( vgui::dc_arrow );
@@ -362,7 +367,7 @@ void CDebugSystemPanel::SetVisible( bool state )
 	}
 }
 
-void CDebugSystemPanel::OnCommand( char const *command )
+void CDebugSystemPanel::OnCommand( const char *command )
 {
 	if ( !Q_strcasecmp( command, "toggledebugpanel" ) )
 	{

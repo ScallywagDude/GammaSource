@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MXEXPRESSIONSLIDER_H
 #define MXEXPRESSIONSLIDER_H
@@ -11,8 +11,8 @@
 #pragma once
 #endif
 
-#include <mx/mxWindow.h>
-#include <mx/mxCheckBox.h>
+#include <mxtk/mxWindow.h>
+#include <mxtk/mxCheckBox.h>
 
 #define IDC_INFLUENCE 1000
 
@@ -38,6 +38,7 @@ public:
 	void setValue ( int barnum, float value);
 	void setRange ( int barnum, float min, float max, int ticks = 100);
 	void setInfluence ( float value );
+	void setEdited( bool isEdited );
 
 	// ACCESSORS
 	float getRawValue( int barnum ) const;
@@ -46,6 +47,9 @@ public:
 	float getMinValue( int barnum ) const;
 	float getMaxValue( int barnum ) const;
 	float getInfluence( ) const;
+
+	void setEdited( int barnum, bool isEdited );
+	bool isEdited( int barnum ) const;
 
 	virtual void redraw();
 	virtual bool PaintBackground( void );
@@ -70,9 +74,10 @@ private:
 
 	float	m_flMin[ NUMBARS ], m_flMax[ NUMBARS ];
 	int		m_nTicks[ NUMBARS ];
-	float	m_flCurrent[ NUMBARS ];
+	float	m_flCurrent[ NUMBARS ]; // slider location (amount/balance)
 
-	float	m_flSetting[ NUMBARS ];
+	float	m_flSetting[ NUMBARS ]; // paired flex input values (right/left)
+	bool	m_bIsEdited[ NUMBARS ]; // paired flex input values (right/left)
 
 	bool	m_bDraggingThumb;
 	int		m_nCurrentBar;

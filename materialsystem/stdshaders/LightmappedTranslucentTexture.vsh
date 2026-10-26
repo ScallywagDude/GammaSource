@@ -1,5 +1,6 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
 ; FIXME - this is the same as LightmappedGeneric.vsh!!!
 
 #include "LightmappedGeneric_inc.vsh"

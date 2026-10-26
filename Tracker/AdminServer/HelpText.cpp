@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -6,11 +6,10 @@
 //=============================================================================
 
 
-#include <vgui/VGUI.h>
 #include <stdio.h>
 
 #include <VGUI_Controls.h>
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "HelpText.h"
 using namespace vgui;
 
@@ -29,13 +28,13 @@ CHelpText::CHelpText(const char *mod)
 	LoadHelpFile("Admin\\HelpFile.vdf");
 	
 	// now load mod specific stuff
-	if( filesystem()->FileExists(configName) )
+	if( g_pFullFileSystem->FileExists(configName) )
 	{
 		LoadHelpFile(configName);	
 	} 
 
 	// and load an admin mod page if you can find it
-	if( filesystem()->FileExists("Admin\\HelpFile_adminmod.vdf") )
+	if( g_pFullFileSystem->FileExists("Admin\\HelpFile_adminmod.vdf") )
 	{
 		LoadHelpFile("Admin\\HelpFile_adminmod.vdf");	
 	}
@@ -55,7 +54,7 @@ void CHelpText::LoadHelpFile(const char *filename)
 {
 
 
-	if (!m_pHelpData->LoadFromFile(filesystem(), filename, "PLATFORM"))
+	if (!m_pHelpData->LoadFromFile(g_pFullFileSystem, filename, true, "PLATFORM"))
 	{
 		// failed to load...
 	}

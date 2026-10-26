@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ISCHEME_H
 #define ISCHEME_H
@@ -18,9 +13,10 @@
 #endif
 
 #include <vgui/VGUI.h>
-#include "interface.h"
+#include "tier1/interface.h"
 
 class Color;
+class KeyValues;
 
 namespace vgui
 {
@@ -52,6 +48,21 @@ public:
 
 	// colors
 	virtual Color GetColor(const char *colorName, Color defaultColor) = 0;
+	
+	// Get the number of borders
+	virtual int GetBorderCount() const = 0;
+
+	// Get the border at the given index
+	virtual IBorder *GetBorderAtIndex( int iIndex ) = 0;
+
+	// Get the number of fonts
+	virtual int GetFontCount() const = 0;
+
+	// Get the font at the given index
+	virtual HFont GetFontAtIndex( int iIndex ) = 0;	
+
+	// Get color data
+	virtual const KeyValues *GetColorData() const = 0;
 };
 
 
@@ -65,6 +76,9 @@ public:
 
 	// reloads the scheme from the file - should only be used during development
 	virtual void ReloadSchemes() = 0;
+
+	// reloads scheme fonts
+	virtual void ReloadFonts() = 0;
 
 	// returns a handle to the default (first loaded) scheme
 	virtual HScheme GetDefaultScheme() = 0;
@@ -89,11 +103,22 @@ public:
 
 	// gets the proportional coordinates for doing screen-size independant panel layouts
 	// use these for font, image and panel size scaling (they all use the pixel height of the display for scaling)
-	virtual int GetProportionalScaledValue(int normalizedValue) = 0;
+	virtual int GetProportionalScaledValue( int normalizedValue) = 0;
 	virtual int GetProportionalNormalizedValue(int scaledValue) = 0;
+
+	// loads a scheme from a file
+	// first scheme loaded becomes the default scheme, and all subsequent loaded scheme are derivitives of that
+	virtual HScheme LoadSchemeFromFileEx( VPANEL sizingPanel, const char *fileName, const char *tag) = 0;
+	// gets the proportional coordinates for doing screen-size independant panel layouts
+	// use these for font, image and panel size scaling (they all use the pixel height of the display for scaling)
+	virtual int GetProportionalScaledValueEx( HScheme scheme, int normalizedValue ) = 0;
+	virtual int GetProportionalNormalizedValueEx( HScheme scheme, int scaledValue ) = 0;
+
+	// Returns true if image evicted, false otherwise
+	virtual bool DeleteImage( const char *pImageName ) = 0;
 };
 
-#define VGUI_SCHEME_INTERFACE_VERSION "VGUI_Scheme009"
+#define VGUI_SCHEME_INTERFACE_VERSION "VGUI_Scheme010"
 
 
 } // namespace vgui

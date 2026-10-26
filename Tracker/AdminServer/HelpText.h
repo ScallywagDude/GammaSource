@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -28,7 +28,7 @@ public:
 
 private:
 
-	KeyValues *m_pHelpData;
+	vgui::KeyValues *m_pHelpData;
 
 };
 

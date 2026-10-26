@@ -1,8 +1,0 @@
-hl2: registered=32, server excluded=0, client excluded=32
-  source not shared with client (often intentional): weapon_ar1, weapon_ar2, weapon_binoculars, weapon_bugbait, weapon_cguard, weapon_crowbar, weapon_cubemap, weapon_extinguisher, weapon_flaregun, weapon_frag, weapon_gauss, weapon_hmg1, weapon_hopwire, weapon_iceaxe, weapon_immolator, weapon_irifle, weapon_manhack, weapon_molotov, weapon_physcannon, weapon_physgun, weapon_pistol, weapon_rollerwand, weapon_rpg, weapon_shotgun, weapon_slam, weapon_smg1, weapon_smg2, weapon_sniperrifle, weapon_stickylauncher, weapon_stunstick, weapon_thumper, weapon_tripwire
-hl1: registered=15, server excluded=0, client excluded=15
-  source not shared with client (often intentional): weapon_357, weapon_crossbow, weapon_crowbar, weapon_egon, weapon_gauss, weapon_glock, weapon_handgrenade, weapon_hornetgun, weapon_mp5, weapon_physgun, weapon_rpg, weapon_satchel, weapon_shotgun, weapon_snark, weapon_tripmine
-cstrike: registered=28, server excluded=0, client excluded=0
-tf2: registered=38, server excluded=6, client excluded=9
-  not in server: weapon_combat_chargeableplasma, weapon_infiltrator, weapon_laserdesignator, weapon_laserrifle, weapon_mortar, weapon_pistols
-  source not shared with client (often intentional): weapon_builder, weapon_combat_chargeableplasma, weapon_infiltrator, weapon_laserdesignator, weapon_laserrifle, weapon_mortar, weapon_obj_empgenerator, weapon_pistols, weapon_plasmarifle

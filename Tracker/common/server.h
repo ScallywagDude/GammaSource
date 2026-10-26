@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -38,11 +38,13 @@ struct serveritem_t
 	char name[64];											// server name
 	int players;
 	int maxPlayers;
+	int botPlayers;
 	bool proxy;
 	bool password;
 	unsigned int serverID;
 	int listEntryID;
 	char rconPassword[64];	// the rcon password for this server
+	bool loadedFromFile;		// true if this entry was loaded from file rather than comming from the master
 };
 
 

@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include <vgui_controls/Controls.h>
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_Button.h>
-#include <VGUI_QueryBox.h>
+#include <Keyvalues.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/QueryBox.h>
 
 
 using namespace vgui;
@@ -135,7 +135,7 @@ MessageMapItem_t QueryBoxDemo::m_MessageMap[] =
 
 };
 
-IMPLEMENT_PANELMAP(QueryBoxDemo, BaseClass);
+IMPLEMENT_PANELMAP(QueryBoxDemo, DemoPage);
 
 
 

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CHANGEFRAMELIST_H
 #define CHANGEFRAMELIST_H
@@ -23,7 +23,7 @@
 // These are created once per entity per frame. Since usually a very small percentage of an
 // entity's properties actually change each frame, this allows you to get a small set of 
 // properties to delta for each client.
-class IChangeFrameList
+abstract_class IChangeFrameList
 {
 public:
 	
@@ -38,6 +38,8 @@ public:
 
 	// Get a list of all properties with a change frame > iFrame.
 	virtual int		GetPropsChangedAfterTick( int iTick, int *iOutProps, int nMaxOutProps ) = 0;
+
+	virtual IChangeFrameList* Copy() = 0; // return a copy of itself
 
 
 protected:

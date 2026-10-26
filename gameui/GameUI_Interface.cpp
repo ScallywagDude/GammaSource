@@ -1,62 +1,60 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implements all the functions exported by the GameUI dll
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
+#ifdef WIN32
+#if !defined( _X360 )
 #include <windows.h>
+#endif
+#include <io.h>
+#include <direct.h>
+#elif defined( POSIX )
+#include <sys/time.h>
+#else
+#error
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
-#include <io.h>
 #include <tier0/dbg.h>
-#include <direct.h>
 
 #ifdef SendMessage
 #undef SendMessage
 #endif
-
-#include "FileSystem.h"
+																
+#include "filesystem.h"
 #include "GameUI_Interface.h"
 #include "Sys_Utils.h"
 #include "string.h"
-#include "vstdlib/icommandline.h"
-
-// version check includes
-/*/#include "Socket.h"
-//#include "proto_oob.h"
-//#include "MasterVersionCheck.h"
-#include "msgbuffer.h"
-#include "version.h"
-#include "utlvector.h"
-#include "utlsymbol.h"
-#include "Random.h"
-#include "INetApi.h"
-#include "Steam.h"
-*/
-
+#include "tier0/icommandline.h"
 
 // interface to engine
 #include "EngineInterface.h"
 
-//#include "../common/EngineSurface.h"
-//#include "../common/SteamCommon.h"
-//#include "../common/ValidateNewValveCDKeyClient.h"
-#include "keydefs.h"
+#include "replay/ienginereplay.h"
+#include "replay/ireplaysystem.h"
+
 #include "VGuiSystemModuleLoader.h"
+#include "bitmap/tgaloader.h"
 
 #include "GameConsole.h"
 #include "LoadingDialog.h"
-//#include "CDKeyEntryDialog.h"
+#include "CDKeyEntryDialog.h"
 #include "ModInfo.h"
-#include "cl_dll/IGameClientExports.h"
-
+#include "game/client/IGameClientExports.h"
+#include "materialsystem/imaterialsystem.h"
+#include "engine/imatchmaking.h"
+#include "ixboxsystem.h"
+#include "iachievementmgr.h"
 #include "IGameUIFuncs.h"
-#include "IGameUIModelPreview.h"
-#include "VGuiMatSurface/IMatSystemSurface.h"
-#include <IEngineVGUI.h>
-#include "BaseUI/IBaseUI.h"
+#include <ienginevgui.h>
+#include "steam/steam_api.h"
+#include "BonusMapsDatabase.h"
+#include "BonusMapsDialog.h"
+#include "sourcevr/isourcevirtualreality.h"
 
 // vgui2 interface
 // note that GameUI project uses ..\vgui2\include, not ..\utils\vgui\include
@@ -72,48 +70,34 @@
 #include <vgui/ISurface.h>
 #include <vgui_controls/Menu.h>
 #include <vgui_controls/PHandle.h>
-
-//#include "engine/IEngineSound.h"
+#include "tier3/tier3.h"
 #include "tier0/vcrmode.h"
+#include "matsys_controls/matsyscontrols.h"
+#include "steam/steam_api.h"
 
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
 
-// in-game UI elements
-#include "Taskbar.h"
-#include "Friends/IFriendsUser.h"
-#include "SteamPasswordDialog.h"
+#include "tier0/dbg.h"
+#include "engine/IEngineSound.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
 IGameUIFuncs *gameuifuncs = NULL;
-IGameUIModelPreview *gameuimodelpreview = NULL;
-IMatSystemSurface *gameuimatsurface = NULL;
 IEngineVGui *enginevguifuncs = NULL;
+IMatchmaking *matchmaking = NULL;
+IXboxSystem *xboxsystem = NULL;		// 360 only
 vgui::ISurface *enginesurfacefuncs = NULL;
-IBaseUI *baseuifuncs = NULL;
-IFriendsUser *g_pFriendsUser = NULL;
-
-// SRC functions
-// interface to the engine
-#include "tier0/dbg.h"
-#include "engine/IEngineSound.h"
-
-
 IVEngineClient *engine = NULL;
 IEngineSound *enginesound = NULL;
-ICvar *cvar = NULL;
+IAchievementMgr *achievementmgr = NULL;
+IEngineClientReplay *g_pEngineClientReplay = NULL;
+ISourceVirtualReality *g_pSourceVR = NULL;
 
-
-
-// interface to the engine
-//cl_enginefunc_t gEngfuncs;
-//cl_enginefunc_t *engine = NULL; // a pointer to gEngfuncs, used so gameui in SRC and GoldSrc can be compatible
-
-// interface to the base system used by demo player
-//IBaseSystem	* g_pSystemWrapper = NULL;
-
-// interface to the app
-CTaskbar *g_pTaskbar = NULL;
+static CSteamAPIContext g_SteamAPIContext;
+CSteamAPIContext *steamapicontext = &g_SteamAPIContext;
 
 static CBasePanel *staticPanel = NULL;
 
@@ -122,9 +106,9 @@ CGameUI *g_pGameUI = NULL;
 
 class CLoadingDialog;
 vgui::DHANDLE<CLoadingDialog> g_hLoadingDialog;
+vgui::VPANEL g_hLoadingBackgroundDialog = NULL;
 
 static CGameUI g_GameUI;
-
 static WHANDLE g_hMutex = NULL;
 static WHANDLE g_hWaitMutex = NULL;
 
@@ -150,12 +134,16 @@ EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CGameUI, IGameUI, GAMEUI_INTERFACE_VERSION, g_
 CGameUI::CGameUI()
 {
 	g_pGameUI = this;
-	m_bTryingToLoadTracker = false;
+	m_bTryingToLoadFriends = false;
+	m_iFriendsLoadPauseFrames = 0;
 	m_iGameIP = 0;
-	m_iGamePort = 0;
-	m_flProgressStartTime = 0.0f;
-	m_pszCurrentProgressType = "";
+	m_iGameConnectionPort = 0;
+	m_iGameQueryPort = 0;
 	m_bActivatedUI = false;
+	m_szPreviousStatusText[0] = 0;
+	m_bIsConsoleUI = false;
+	m_bHasSavedThisMenuSession = false;
+	m_bOpenProgressOnStart = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -167,225 +155,222 @@ CGameUI::~CGameUI()
 }
 
 
-void CGameUI::Initialize( CreateInterfaceFn *factories, int count )
+//-----------------------------------------------------------------------------
+// Purpose: Initialization
+//-----------------------------------------------------------------------------
+void CGameUI::Initialize( CreateInterfaceFn factory )
 {
-//	TRACE_FUNCTION("CGameUI::Initialize");
-
-/*	CreateInterfaceFn fileSystemFactory = factories[ 2 ];
-	CreateInterfaceFn vguiFactory = factories[ 1 ];
-	CreateInterfaceFn engineFactory = factories[ 0 ];
-	CreateInterfaceFn clientFactory = factories[ 4 ];
-
-	m_FactoryList[ 0 ] = Sys_GetFactoryThis();
-	m_FactoryList[ 1 ] = engineFactory;
-	m_FactoryList[ 2 ] = vguiFactory;
-	m_FactoryList[ 3 ] = fileSystemFactory;
-	m_FactoryList[ 4 ] = clientFactory;
-	m_iNumFactories = count;
-
-	vgui::VGui_InitInterfacesList("GameUI", m_FactoryList, count); // client factory may not be passed in
-*/
-	CreateInterfaceFn factory = factories[ 0 ];
-	CreateInterfaceFn fileSystemFactory = factories[ 0 ];
-	CreateInterfaceFn vguiFactory = factories[ 0 ];
-	CreateInterfaceFn engineFactory = factories[ 0 ];
-	CreateInterfaceFn clientFactory = factories[ 0 ];
-
+	ConnectTier1Libraries( &factory, 1 );
+	ConnectTier2Libraries( &factory, 1 );
+	ConVar_Register( FCVAR_CLIENTDLL );
+	ConnectTier3Libraries( &factory, 1 );
 
 	enginesound = (IEngineSound *)factory(IENGINESOUND_CLIENT_INTERFACE_VERSION, NULL);
-	cvar		= (ICvar *)factory( VENGINE_CVAR_INTERFACE_VERSION, NULL );
-	engine		= (IVEngineClient *)factory( VENGINE_CLIENT_INTERFACE_VERSION, NULL );
+	engine = (IVEngineClient *)factory( VENGINE_CLIENT_INTERFACE_VERSION, NULL );
 
-	m_FactoryList[ 0 ] = Sys_GetFactoryThis();
-	m_FactoryList[ 1 ] = factory;
-	m_iNumFactories = count;
+	steamapicontext->Init();
 
-	vgui::VGui_InitInterfacesList( "GameUI", m_FactoryList, 2 );
+	ConVarRef var( "gameui_xbox" );
+	m_bIsConsoleUI = var.IsValid() && var.GetBool();
 
-		// load localization file
-	vgui::localize()->AddFile(vgui::filesystem(), "Resource/gameui_%language%.txt");
+	vgui::VGui_InitInterfacesList( "GameUI", &factory, 1 );
+	vgui::VGui_InitMatSysInterfacesList( "GameUI", &factory, 1 );
+
+	// load localization file
+	g_pVGuiLocalize->AddFile( "Resource/gameui_%language%.txt", "GAME", true );
+
+	// load mod info
+	ModInfo().LoadCurrentGameInfo();
 
 	// load localization file for kb_act.lst
-	vgui::localize()->AddFile(vgui::filesystem(), "Resource/valve_%language%.txt");
+	g_pVGuiLocalize->AddFile( "Resource/valve_%language%.txt", "GAME", true );
+
+	enginevguifuncs = (IEngineVGui *)factory( VENGINE_VGUI_VERSION, NULL );
+	enginesurfacefuncs = (vgui::ISurface *)factory(VGUI_SURFACE_INTERFACE_VERSION, NULL);
+	gameuifuncs = (IGameUIFuncs *)factory( VENGINE_GAMEUIFUNCS_VERSION, NULL );
+	matchmaking = (IMatchmaking *)factory( VENGINE_MATCHMAKING_VERSION, NULL );
+	xboxsystem = (IXboxSystem *)factory( XBOXSYSTEM_INTERFACE_VERSION, NULL );
+	g_pEngineClientReplay = (IEngineClientReplay *)factory( ENGINE_REPLAY_CLIENT_INTERFACE_VERSION, NULL );
+
+	if ( ModInfo().SupportsVR() && CommandLine()->CheckParm( "-vr" ) )
+	{
+		g_pSourceVR = (ISourceVirtualReality *)factory( SOURCE_VIRTUAL_REALITY_INTERFACE_VERSION, NULL );
+	}
+
+	// NOTE: g_pEngineReplay intentionally not checked here
+	if ( !enginesurfacefuncs || !gameuifuncs || !enginevguifuncs || !xboxsystem || (IsX360() && !matchmaking) )
+	{
+		Error( "CGameUI::Initialize() failed to get necessary interfaces\n" );
+	}
+
+	vgui::VPANEL rootpanel = enginevguifuncs->GetPanel( PANEL_GAMEUIDLL );
 
 	// setup base panel
 	staticPanel = new CBasePanel();
-	staticPanel->SetBounds(0, 0, 400, 300);
-	staticPanel->SetPaintBorderEnabled(false);
-	staticPanel->SetPaintBackgroundEnabled(true);
-	staticPanel->SetPaintEnabled(false);
+	staticPanel->SetBounds(0, 0, 400, 300 );
+	staticPanel->SetPaintBorderEnabled( false );
+	staticPanel->SetPaintBackgroundEnabled( true );
+	staticPanel->SetPaintEnabled( false );
 	staticPanel->SetVisible( true );
 	staticPanel->SetMouseInputEnabled( false );
 	staticPanel->SetKeyBoardInputEnabled( false );
+	staticPanel->SetParent(rootpanel);
+}
 
-	enginevguifuncs = (IEngineVGui * )engineFactory( VENGINE_VGUI_VERSION, NULL);
-	if(enginevguifuncs)
+void CGameUI::PostInit()
+{
+	if ( IsX360() )
 	{
-		vgui::VPANEL rootpanel = enginevguifuncs->GetPanel(PANEL_GAMEUIDLL);
-		staticPanel->SetParent(rootpanel);
-	}
-
-	gameuifuncs = (IGameUIFuncs * )engineFactory( VENGINE_GAMEUIFUNCS_VERSION, NULL );
-	enginesurfacefuncs = (vgui::ISurface * )engineFactory(VGUI_SURFACE_INTERFACE_VERSION,NULL);
-	gameuimodelpreview = (IGameUIModelPreview *)engineFactory(GAMEUI_MODEL_PREVIEW_INTERFACE_VERSION,NULL);
-	gameuimatsurface = enginesurfacefuncs ? (IMatSystemSurface *)enginesurfacefuncs->QueryInterface(MAT_SYSTEM_SURFACE_INTERFACE_VERSION) : NULL;
-	baseuifuncs = (IBaseUI *)engineFactory( BASEUI_INTERFACE_VERSION, NULL);
-	if (clientFactory)
-	{
-		g_pGameClientExports = (IGameClientExports *)clientFactory(GAMECLIENTEXPORTS_INTERFACE_VERSION, NULL);
+		enginesound->PrecacheSound( "UI/buttonrollover.wav", true, true );
+		enginesound->PrecacheSound( "UI/buttonclick.wav", true, true );
+		enginesound->PrecacheSound( "UI/buttonclickrelease.wav", true, true );
+		enginesound->PrecacheSound( "player/suit_denydevice.wav", true, true );
 	}
 }
-/*
+
 //-----------------------------------------------------------------------------
-// Purpose: sends a query to the master server to check if this client is up to date
+// Purpose: Sets the specified panel as the background panel for the loading
+//		dialog.  If NULL, default background is used.  If you set a panel,
+//		it should be full-screen with an opaque background, and must be a VGUI popup.
 //-----------------------------------------------------------------------------
-void CGameUI::MasterVersionCheckQuery()
+void CGameUI::SetLoadingBackgroundDialog( vgui::VPANEL panel )
 {
-	m_pMaster = new CSocket( "version check", -1 );
-	// The socket will delete the handler
-	int bytecode = M2A_MASTERSERVERS;
+	g_hLoadingBackgroundDialog = panel;
+}
 
-	m_pMaster->AddMessageHandler(new CMasterVersionChkMsgHandler( CMsgHandler::MSGHANDLER_BYTECODE, &bytecode));
-
-
-	// load masters from config file
-	CUtlVector<CUtlSymbol> m_MasterServerNames;	// full names of master servers
-
-	KeyValues *kv = new KeyValues("MasterServers");
-	if (kv->LoadFromFile(vgui::filesystem(), "Servers/MasterServers.vdf", true))
+void CGameUI::BonusMapUnlock( const char *pchFileName, const char *pchMapName )
+{
+	if ( !pchFileName || pchFileName[ 0 ] == '\0' || 
+		 !pchMapName || pchMapName[ 0 ] == '\0' )
 	{
-		// iterate the list loading all the servers
-		for (KeyValues *srv = kv->GetFirstSubKey(); srv != NULL; srv = srv->GetNextKey())
+		if ( !g_pBonusMapsDialog )
+			return;
+
+		g_pBonusMapsDialog->SetSelectedBooleanStatus( "lock", false );
+		return;
+	}
+
+	if ( BonusMapsDatabase()->SetBooleanStatus( "lock", pchFileName, pchMapName, false ) )
+	{
+		BonusMapsDatabase()->RefreshMapData();
+
+		if ( !g_pBonusMapsDialog )
 		{
-			m_MasterServerNames.AddToTail(srv->GetString("addr"));
+			// It unlocked without the bonus maps menu open, so flash the menu item
+			CBasePanel *pBasePanel = BasePanel();
+			if ( pBasePanel )
+			{
+				if ( GameUI().IsConsoleUI() )
+				{
+					if ( Q_stricmp( pchFileName, "scripts/advanced_chambers" ) == 0 )
+					{
+						pBasePanel->SetMenuItemBlinkingState( "OpenNewGameDialog", true );
+					}
+				}
+				else
+				{
+					pBasePanel->SetMenuItemBlinkingState( "OpenBonusMapsDialog", true );
+				}
+			}
+
+			BonusMapsDatabase()->SetBlink( true );
 		}
+		else
+			g_pBonusMapsDialog->RefreshData();	// Update the open dialog
+	}
+}
+
+void CGameUI::BonusMapComplete( const char *pchFileName, const char *pchMapName )
+{
+	if ( !pchFileName || pchFileName[ 0 ] == '\0' || 
+		 !pchMapName || pchMapName[ 0 ] == '\0' )
+	{
+		if ( !g_pBonusMapsDialog )
+			return;
+
+		g_pBonusMapsDialog->SetSelectedBooleanStatus( "complete", true );
+		BonusMapsDatabase()->RefreshMapData();
+		g_pBonusMapsDialog->RefreshData();
+		return;
+	}
+
+	if ( BonusMapsDatabase()->SetBooleanStatus( "complete", pchFileName, pchMapName, true ) )
+	{
+		BonusMapsDatabase()->RefreshMapData();
+
+		// Update the open dialog
+		if ( g_pBonusMapsDialog )
+			g_pBonusMapsDialog->RefreshData();
+	}
+}
+
+void CGameUI::BonusMapChallengeUpdate( const char *pchFileName, const char *pchMapName, const char *pchChallengeName, int iBest )
+{
+	if ( !pchFileName || pchFileName[ 0 ] == '\0' || 
+		 !pchMapName || pchMapName[ 0 ] == '\0' || 
+		 !pchChallengeName || pchChallengeName[ 0 ] == '\0' )
+	{
+		return;
 	}
 	else
 	{
-		assert(!("Could not load file Servers/MasterServers.vdf."));
+		if ( BonusMapsDatabase()->UpdateChallengeBest( pchFileName, pchMapName, pchChallengeName, iBest ) )
+		{
+			// The challenge best changed, so write it to the file
+			BonusMapsDatabase()->WriteSaveData();
+			BonusMapsDatabase()->RefreshMapData();
+
+			// Update the open dialog
+			if ( g_pBonusMapsDialog )
+				g_pBonusMapsDialog->RefreshData();
+		}
 	}
+}
 
-	// make sure we have at least one master listed
-	if (m_MasterServerNames.Count() < 1)
-	{
-		// add the default master
-		m_MasterServerNames.AddToTail("half-life.west.won.net:27010");
-	}
-
-	// choose a server at random
-	netadr_t m_MasterAddress;	// Address of master server
-	int serverIndex = RandomLong(0, m_MasterServerNames.Count() - 1);
-	net->StringToAdr(m_MasterServerNames[serverIndex].String(), &m_MasterAddress);
-
-	CMsgBuffer *buffer = m_pMaster->GetSendBuffer();
-	assert( buffer );
-	if ( !buffer )
+void CGameUI::BonusMapChallengeNames( char *pchFileName, char *pchMapName, char *pchChallengeName )
+{
+	if ( !pchFileName || !pchMapName || !pchChallengeName )
 		return;
 
-	char version[32];
-	char product[32];
-
-	memset( version, 0x0, sizeof(version) );
-	memset( product, 0x0, sizeof(product) );
-
-	GetUpdateVersion( product, version );
-
-	if( strlen(product) > 0 && strlen(version) > 0 )
-	{
-		buffer->Clear();
-		// Write query string
-		buffer->WriteByte( A2M_GETMASTERSERVERS );
-		// Write version string
-		buffer->WriteString( version );
-		// write product string
-		buffer->WriteString( product );
-
-		m_pMaster->SendMessage(&m_MasterAddress);
-	}
+	BonusMapsDatabase()->GetCurrentChallengeNames( pchFileName, pchMapName, pchChallengeName );
 }
 
-
-#define VERSION_KEY			"PatchVersion="
-#define PRODUCT_KEY			"ShortTitle="
-#define PRODUCT_STRING		"HALFLIFE"
-
-//-----------------------------------------------------------------------------
-// Purpose: Parses sierra.inf/steam.inf for version info strings
-//-----------------------------------------------------------------------------
-void CGameUI::GetUpdateVersion( char *pszProd, char *pszVer)
+void CGameUI::BonusMapChallengeObjectives( int &iBronze, int &iSilver, int &iGold )
 {
-	char	szFileName[ MAX_PATH ];
-	char	buffer[ 16384 ];
-	unsigned int		bufsize = sizeof( buffer );
-	DWORD	dwResult;
-
-	// Read it from the .inf file
-	memset( buffer, 0, bufsize );
-
-	if ( vgui::filesystem()->FileExists("valve.inf") )
-	{
-		vgui::filesystem()->GetLocalPath("valve.inf", szFileName, MAX_PATH); // GetPrivateProfileSection() is an OS call...needs the whole file at hand.
-		dwResult = GetPrivateProfileSection( "Ident", buffer, bufsize, szFileName ); 
-	}
-	else
-	{
-		return; // didn't find a master file to open
-	}
-
-	// Get the version number
-	strcpy( pszVer, VERSION_STRING );
-	if ( dwResult > 0 && dwResult != ( bufsize - 2 ) )
-	{
-		//
-		// Read 
-		char *pbuf = buffer;
-
-		while ( 1 )
-		{
-			if ( ( (int)(pbuf - buffer) - (int)strlen( VERSION_KEY ) ) > (int)dwResult )
-				break;
-
-			if ( strnicmp( pbuf, VERSION_KEY, strlen( VERSION_KEY ) ) )
-			{
-				pbuf++;
-				continue;
-			}
-
-			pbuf += strlen( VERSION_KEY );
-
-			strcpy( pszVer, pbuf );
-			break;
-		}
-	}
-
-	// Get the product name
-	strcpy( pszProd, PRODUCT_STRING );
-	if ( dwResult > 0 && dwResult != ( bufsize - 2 ) )
-	{
-		//
-		// Read 
-		char *pbuf = buffer;
-
-		while ( 1 )
-		{
-			if ( ( (int)(pbuf - buffer) - (int)strlen( PRODUCT_KEY ) ) > (int)dwResult )
-				break;
-
-			if ( strnicmp( pbuf, PRODUCT_KEY, strlen( PRODUCT_KEY ) ) )
-			{
-				pbuf++;
-				continue;
-			}
-
-			pbuf += strlen( PRODUCT_KEY );
-
-			strcpy( pszProd, pbuf );
-			break;
-		}
-	}
+	BonusMapsDatabase()->GetCurrentChallengeObjectives( iBronze, iSilver, iGold );
 }
 
-*/
+void CGameUI::BonusMapDatabaseSave( void )
+{
+	BonusMapsDatabase()->WriteSaveData();
+}
+
+int CGameUI::BonusMapNumAdvancedCompleted( void )
+{
+	return BonusMapsDatabase()->NumAdvancedComplete();
+}
+
+void CGameUI::BonusMapNumMedals( int piNumMedals[ 3 ] )
+{
+	BonusMapsDatabase()->NumMedals( piNumMedals );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: connects to client interfaces
+//-----------------------------------------------------------------------------
+void CGameUI::Connect( CreateInterfaceFn gameFactory )
+{
+	g_pGameClientExports = (IGameClientExports *)gameFactory(GAMECLIENTEXPORTS_INTERFACE_VERSION, NULL);
+
+	achievementmgr = engine->GetAchievementMgr();
+
+	if (!g_pGameClientExports)
+	{
+		Error("CGameUI::Initialize() failed to get necessary interfaces\n");
+	}
+
+	m_GameFactory = gameFactory;
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Callback function; sends platform Shutdown message to specified window
@@ -397,180 +382,236 @@ int __stdcall SendShutdownMsgFunc(WHANDLE hwnd, int lparam)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Called to setup the game UI
+// Purpose: Searches for GameStartup*.mp3 files in the sound/ui folder and plays one
 //-----------------------------------------------------------------------------
-void CGameUI::Start(struct cl_enginefuncs_s *engineFuncs, int interfaceVersion, IBaseSystem *system)
+void CGameUI::PlayGameStartupSound()
 {
-//	TRACE_FUNCTION("CGameUI::Start");
-//	m_pMaster = NULL;
+	if ( IsX360() )
+		return;
 
-	// copy the engine interface
-//	memcpy(&gEngfuncs, engineFuncs, sizeof(gEngfuncs));
-//	engine = &gEngfuncs;
+	if ( CommandLine()->FindParm( "-nostartupsound" ) )
+		return;
 
-	// set SystemWrapper for demo player
-//	g_pSystemWrapper = system;
+	FileFindHandle_t fh;
 
-	// load mod info
-	ModInfo().LoadCurrentGameInfo();
+	CUtlVector<char *> fileNames;
+	char path[ 512 ];
 
+	bool bHolidayFound = false;
 
-	// Determine Tracker location.
-	// ...If running with Steam, Tracker is in a well defined location relative to the game dir.  Use it if there.
-	// ...Otherwise get the tracker location from the registry key
-	if (FindPlatformDirectory(m_szPlatformDir, sizeof(m_szPlatformDir)))
+	// only want to run the holiday check for TF2
+	const char *pGameName = CommandLine()->ParmValue( "-game", "hl2" );
+	if ( ( Q_stricmp( pGameName, "tf" ) == 0 ) || ( Q_stricmp( pGameName, "tf_beta" ) == 0 ) )
 	{
-		// add the tracker directory to the search path
-		// add localized version first if we're not in english
-		char language[128];
-		if (vgui::system()->GetRegistryString("HKEY_LOCAL_MACHINE\\Software\\Valve\\Steam\\Language", language, sizeof(language)))
+		// check for a holiday sound file
+		const char *pszHoliday = NULL;
+	
+		if ( GameClientExports() )
 		{
-			if (strlen(language) > 0 && stricmp(language, "english"))
+			pszHoliday = GameClientExports()->GetHolidayString();
+			if ( pszHoliday && pszHoliday[0] )
 			{
-				char path[256];
-				sprintf(path, "platform_%s", language);
-				vgui::filesystem()->AddSearchPath(path, "PLATFORM");
+				Q_snprintf( path, sizeof( path ), "sound/ui/holiday/gamestartup_%s*.mp3", pszHoliday );
+				Q_FixSlashes( path );
+
+				char const *fn = g_pFullFileSystem->FindFirstEx( path, "MOD", &fh );
+				{
+					if ( fn )
+					{
+						bHolidayFound = true;
+					}
+				}
 			}
 		}
-		vgui::filesystem()->AddSearchPath("platform", "PLATFORM");
+	}
 
+	// only want to do this if we haven't found a holiday file
+	if ( !bHolidayFound )
+	{
+		Q_snprintf( path, sizeof( path ), "sound/ui/gamestartup*.mp3" );
+		Q_FixSlashes( path );
+	}
+
+	char const *fn = g_pFullFileSystem->FindFirstEx( path, "MOD", &fh );
+	if ( fn )
+	{
+		do
+		{
+			char ext[ 10 ];
+			Q_ExtractFileExtension( fn, ext, sizeof( ext ) );
+
+			if ( !Q_stricmp( ext, "mp3" ) )
+			{
+				char temp[ 512 ];
+				if ( bHolidayFound )
+				{
+					Q_snprintf( temp, sizeof( temp ), "ui/holiday/%s", fn );
+				}
+				else
+				{
+					Q_snprintf( temp, sizeof( temp ), "ui/%s", fn );
+				}
+
+				char *found = new char[ strlen( temp ) + 1 ];
+				Q_strncpy( found, temp, strlen( temp ) + 1 );
+
+				Q_FixSlashes( found );
+				fileNames.AddToTail( found );
+			}
+	
+			fn = g_pFullFileSystem->FindNext( fh );
+
+		} while ( fn );
+
+		g_pFullFileSystem->FindClose( fh );
+	}
+
+	// did we find any?
+	if ( fileNames.Count() > 0 )
+	{
+#ifdef WIN32
+		SYSTEMTIME SystemTime;
+		GetSystemTime( &SystemTime );
+		int index = SystemTime.wMilliseconds % fileNames.Count();
+#else
+		struct timeval tm;
+		gettimeofday( &tm, NULL );
+		int index = tm.tv_usec/1000 % fileNames.Count();
+#endif
+
+		if ( fileNames.IsValidIndex( index ) && fileNames[index] )
+		{
+			// Play the Saxxy music if we're in saxxy mode.
+#if defined( SAXXYMAINMENU_ENABLED )
+			bool bIsTF = false;
+			const char *pGameDir = engine->GetGameDirectory();
+			if ( pGameDir )
+			{
+				// Is the game TF?
+				const int nStrLen = V_strlen( pGameDir );
+				bIsTF = nStrLen
+					&& nStrLen >= 2 &&
+					pGameDir[nStrLen-2] == 't' &&
+					pGameDir[nStrLen-1] == 'f';
+			}
+
+			// escape chars "*#" make it stream, and be affected by snd_musicvolume
+			const char *pSoundFile = bIsTF ? "ui/holiday/gamestartup_saxxy.mp3" : fileNames[index];
+#else
+			const char *pSoundFile = fileNames[index];
+#endif
+
+			char found[ 512 ];
+			Q_snprintf( found, sizeof( found ), "play *#%s", pSoundFile );
+
+			engine->ClientCmd_Unrestricted( found );
+		}
+
+		fileNames.PurgeAndDeleteElements();
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called to setup the game UI
+//-----------------------------------------------------------------------------
+void CGameUI::Start()
+{
+	// determine Steam location for configuration
+	if ( !FindPlatformDirectory( m_szPlatformDir, sizeof( m_szPlatformDir ) ) )
+		return;
+
+	if ( IsPC() )
+	{
 		// setup config file directory
 		char szConfigDir[512];
+		Q_strncpy( szConfigDir, m_szPlatformDir, sizeof( szConfigDir ) );
+		Q_strncat( szConfigDir, "config", sizeof( szConfigDir ), COPY_ALL_CHARACTERS );
 
-		strcpy(szConfigDir, m_szPlatformDir);
-		strcat(szConfigDir, "config");
+		Msg( "Steam config directory: %s\n", szConfigDir );
 
-		/*
-		// make sure the path exists
-		_finddata_t findData;
-		long findHandle = _findfirst(steamPath, &findData);
-		if (steamPath && findHandle != -1)
-		{
-			// put the config dir directly under steam
-			_snprintf(szConfigDir, sizeof(szConfigDir), "%s/config", steamPath);
-			_findclose(findHandle);
-		}
-		else
-		{
-			// we're not running steam, so just put the config dir under the platform
-			_snprintf(szConfigDir, sizeof(szConfigDir), "%sconfig", m_szPlatformDir);
-		}
-		*/
-
-		// add the path
-		vgui::filesystem()->AddSearchPath(szConfigDir, "CONFIG");
-		// make sure the config directory has been created
-		_mkdir(szConfigDir);
-
-		vgui::ivgui()->DPrintf("Platform config directory: %s\n", szConfigDir);
+		g_pFullFileSystem->AddSearchPath(szConfigDir, "CONFIG");
+		g_pFullFileSystem->CreateDirHierarchy("", "CONFIG");
 
 		// user dialog configuration
 		vgui::system()->SetUserConfigFile("InGameDialogConfig.vdf", "CONFIG");
 
-		// localization
-		vgui::localize()->AddFile(vgui::filesystem(), "Resource/platform_%language%.txt");
-		vgui::localize()->AddFile(vgui::filesystem(), "Resource/vgui_%language%.txt");
-
-
-		//!! hack to work around problem with userinfo not being uploaded (and therefore *Tracker field) 
-		//!! this is done to make sure the *tracker userinfo field is set before we connect so that it
-		//!! will get communicated to the server
-		//!! this needs to be changed to a system where it is communicated to server when known but not before
-		
-		//!! addendum: this may very happen now with the platform changes; needs to be tested before this code
-		//!! can be removed
-		{
-			// get the last known userID from the registry and set it in our userinfo string
-			HKEY key;
-			DWORD bufSize = sizeof(m_szPlatformDir);
-			unsigned int lastUserID = 0;
-			bufSize = sizeof(lastUserID);
-			if (ERROR_SUCCESS == g_pVCR->Hook_RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Tracker", 0, KEY_READ, &key))
-			{
-				g_pVCR->Hook_RegQueryValueEx(key, "LastUserID", NULL, NULL, (unsigned char *)&lastUserID, &bufSize);
-
-				// close the registry key
-				g_pVCR->Hook_RegCloseKey(key);
-			}
-			if (lastUserID)
-			{
-				char buf[32];
-				sprintf(buf, "%d", lastUserID);
-				engine->PlayerInfo_SetValueForKey("*tracker", buf);
-			}
-		}
+		g_pFullFileSystem->AddSearchPath( "platform", "PLATFORM" );
 	}
 
-	// task bar - needs to be first thing created
-	g_pTaskbar = new CTaskbar(staticPanel,"TaskBar");
-	g_pTaskbar->SetVisible(false);
+	// localization
+	g_pVGuiLocalize->AddFile( "Resource/platform_%language%.txt");
+	g_pVGuiLocalize->AddFile( "Resource/vgui_%language%.txt");
 
-// FOR SRC
-//	vgui::surface()->SetWorkspaceInsets( 0, 0, 0, g_pTaskbar->GetTall() );
+	Sys_SetLastError( SYS_NO_ERROR );
 
-	// Start loading tracker
-	if (m_szPlatformDir[0] != 0)
+	if ( IsPC() )
 	{
-		vgui::ivgui()->DPrintf2("Initializing platform...\n");
-
-		// open a mutex
-		Sys_SetLastError(SYS_NO_ERROR);
-
-		// primary mutex is the platform.exe name
-		char szExeName[sizeof(m_szPlatformDir) + 32];
-		sprintf(szExeName, "%splatform.exe", m_szPlatformDir);
-		// convert the backslashes in the path string to be forward slashes so it can be used as a mutex name
-		for (char *ch = szExeName; *ch != 0; ch++)
+		if ( !IsPosix() )
 		{
-			*ch = tolower(*ch);
-			if (*ch == '\\')
+			// Alfred says this is really, really old code that does some wacky crap that only
+			//  happened in the first version of HL and it's the only game that does this and
+			//  it was a steam testing type thing and we don't need to do it on Posix, etc.
+
+			g_hMutex = Sys_CreateMutex( "ValvePlatformUIMutex" );
+			g_hWaitMutex = Sys_CreateMutex( "ValvePlatformWaitMutex" );
+			if ( g_hMutex == 0 || g_hWaitMutex == 0 || Sys_GetLastError() == SYS_ERROR_INVALID_HANDLE )
 			{
-				*ch = '/';
+				// error, can't get handle to mutex
+				if (g_hMutex)
+				{
+					Sys_ReleaseMutex(g_hMutex);
+				}
+				if (g_hWaitMutex)
+				{
+					Sys_ReleaseMutex(g_hWaitMutex);
+				}
+				g_hMutex = NULL;
+				g_hWaitMutex = NULL;
+				Error("Steam Error: Could not access Steam, bad mutex\n");
+				return;
+			}
+			unsigned int waitResult = Sys_WaitForSingleObject(g_hMutex, 0);
+			if (!(waitResult == SYS_WAIT_OBJECT_0 || waitResult == SYS_WAIT_ABANDONED))
+			{
+				// mutex locked, need to deactivate Steam (so we have the Friends/ServerBrowser data files)
+				// get the wait mutex, so that Steam.exe knows that we're trying to acquire ValveTrackerMutex
+				waitResult = Sys_WaitForSingleObject(g_hWaitMutex, 0);
+#ifdef WIN32
+				if (waitResult == SYS_WAIT_OBJECT_0 || waitResult == SYS_WAIT_ABANDONED)
+				{
+					Sys_EnumWindows(SendShutdownMsgFunc, 1);
+				}
+#endif
 			}
 		}
+			
+		// Delay playing the startup music until the first frame
+		m_bPlayGameStartupSound = true;
 
-		g_hMutex = Sys_CreateMutex("ValvePlatformUIMutex");
-		g_hWaitMutex = Sys_CreateMutex("ValvePlatformWaitMutex");
-		if (g_hMutex == NULL || g_hWaitMutex == NULL || Sys_GetLastError() == SYS_ERROR_INVALID_HANDLE)
-		{
-			// error, can't get handle to mutex
-			if (g_hMutex)
-			{
-				Sys_ReleaseMutex(g_hMutex);
-			}
-			if (g_hWaitMutex)
-			{
-				Sys_ReleaseMutex(g_hWaitMutex);
-			}
-			g_hMutex = NULL;
-			g_hWaitMutex = NULL;
-			Error("Tracker Error: Could not access Tracker, bad mutex\n");
-			return;
-		}
-		unsigned int waitResult = Sys_WaitForSingleObject(g_hMutex, 0);
-		if (!(waitResult == SYS_WAIT_OBJECT_0 || waitResult == SYS_WAIT_ABANDONED))
-		{
-			// mutex locked, need to close other tracker
-
-			// get the wait mutex, so that tracker.exe knows that we're trying to acquire ValveTrackerMutex
-			waitResult = Sys_WaitForSingleObject(g_hWaitMutex, 0);
-			if (waitResult == SYS_WAIT_OBJECT_0 || waitResult == SYS_WAIT_ABANDONED)
-			{
-				Sys_EnumWindows(SendShutdownMsgFunc, 1);
-			}
-		}
-		m_bTryingToLoadTracker = true;
-		// now we are set up to check every frame to see if we can Start tracker
+		// now we are set up to check every frame to see if we can friends/server browser
+		m_bTryingToLoadFriends = true;
+		m_iFriendsLoadPauseFrames = 1;
 	}
+}
 
-	staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_DESKTOPIMAGE);
+//-----------------------------------------------------------------------------
+// Purpose: Validates the user has a cdkey in the registry
+//-----------------------------------------------------------------------------
+void CGameUI::ValidateCDKey()
+{
+	// this check is disabled, since we have no plans for an offline version of hl2
+#if 0
+	//!! hack, write out a regkey for now so developers don't have to type it in
+	//!! undo this before release
+	vgui::system()->SetRegistryString("HKEY_CURRENT_USER\\Software\\Valve\\Source\\Settings\\EncryptedCDKey", "QOgi:JXrJj<Eb8abkESf4Pg;OfofJwDzRsyH>AdjtyPnV[FB");
 
-	// start mp3 playing
-	//engine->pfnClientCmd("mp3 loop media/gamestartup.mp3\n");
-
-	// SRC version
-	//engine->ClientCmd("loop media/gamestartup.mp3\n");
-
+	// see what's in the registry
+	if (!CCDKeyEntryDialog::IsValidWeakCDKeyInRegistry())
+	{
+		m_hCDKeyEntryDialog = new CCDKeyEntryDialog(NULL, false);
+		m_hCDKeyEntryDialog->Activate();
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -581,145 +622,50 @@ bool CGameUI::FindPlatformDirectory(char *platformDir, int bufferSize)
 {
 	platformDir[0] = '\0';
 
-	// check environment first
-	if (getenv("ValvePlatformMutex"))
+	if ( platformDir[0] == '\0' )
 	{
-		// strip the exe name from the end of the mutex string
-		char szPlatformPath[MAX_PATH];
-		strncpy(szPlatformPath, getenv("ValvePlatformMutex"), sizeof(szPlatformPath) - 1);
-		szPlatformPath[sizeof(szPlatformPath) - 1] = 0;
-		
-		// walk backwards in the string until we find a /
-		for (int i = strlen(szPlatformPath); i > 0; i--)
+		// we're not under steam, so setup using path relative to game
+		if ( IsPC() )
 		{
-			if (szPlatformPath[i] != '/')
+#ifdef WIN32
+			if ( ::GetModuleFileName( ( HINSTANCE )GetModuleHandle( NULL ), platformDir, bufferSize ) )
 			{
-				szPlatformPath[i] = 0;
-			}
-			else
-			{
-				break;
-			}
-		}
-
-		strcpy(platformDir, szPlatformPath);
-	}
-
-	// check for ServerBrowser DLL on local area
-	if (platformDir[0] == '\0')
-	{
-		char *pszServerBrowserDLL = "..\\platform\\servers\\serverbrowser.dll";
-
-		// Require that we find the ServerBrowser DLL.
-		if (vgui::filesystem()->FileExists(pszServerBrowserDLL))
-		{
-			char szPlatformPath[MAX_PATH], szFinalPath[MAX_PATH];
-			vgui::filesystem()->GetLocalPath(pszServerBrowserDLL, szPlatformPath);
-			szPlatformPath[MAX_PATH - 1] = 0;
-
-			// remove any \..\ from the path
-			szFinalPath[0] = 0;
-			int finalPathPos = 0;
-			for (int i = 0; szPlatformPath[i] != 0; i++)
-			{
-				if (!strncmp(szPlatformPath + i, "\\..\\", 4))
+				char *lastslash = strrchr(platformDir, '\\'); // this should be just before the filename
+				if ( lastslash )
 				{
-					// skip over the "\\.."
-					i += 3;
-					
-					// walk the final dir back until the previous '\\'
-					while (szFinalPath[finalPathPos] != '\\' && finalPathPos)
-					{
-						finalPathPos--;
-					}
-				}
-
-				szFinalPath[finalPathPos++] = szPlatformPath[i];
-			}
-			char *binpos = strstr(szFinalPath, "servers\\serverbrowser.dll");
-			if (binpos)
-			{
-				*binpos = 0;
-				strcpy(platformDir, szFinalPath);
-			}
-		}
-	}
-
-	if (platformDir[0] != 0)
-		return true;
-
-	return false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Checks to see if the user has a valid CD key; prompts for one to
-//			be entered if not
-//-----------------------------------------------------------------------------
-void CGameUI::ValidateCDKey(bool force, bool inConnect)
-{
-	return;
-	
-	// if we're running under steam, we don't need a cd key
-	if (CommandLine()->FindParm("-steam"))
-		return;
-
-/*	// this function exported by cdkey.obj (we don't have the source code)
-	extern int SimpleCDCheck( const char *cdkey );
-
-
-	char cdkey[255];
-	if (!force && (!engine->CheckParm("-forcevalve", NULL) && vgui::system()->GetRegistryString("HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\Key", cdkey, sizeof(cdkey)) 
-			&& strlen(cdkey) > 0) )
-	{
-		if ( SimpleCDCheck(cdkey) == 1 )
-		{
-			// success
-			// vgui::ivgui()->DPrintf2("CD KEY %s VALIDATED\n", cdkey);
-			return;
-		}
-	}
-	else if (!force && vgui::system()->GetRegistryString("HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\ValveKey", cdkey, sizeof(cdkey)) 
-			&& strlen(cdkey) > 0)
-	{
-		if ( SteamWeakVerifyNewValveCDKey(cdkey) == eSteamErrorNone )
-		{
-			// success
-			// vgui::ivgui()->DPrintf2("CD KEY %s VALIDATED\n", cdkey);
-			return;
-		}
-	}
-
-	else if (!force && vgui::system()->GetRegistryString("HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\yeK1", cdkey, sizeof(cdkey)))
-	{
-		// TODO: Add weak encrypted key validation check here!
-		if (strlen(cdkey) == 254)
-		{
-			if(vgui::system()->GetRegistryString("HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\yeK2", cdkey, sizeof(cdkey)))
-			{
-				if(strlen(cdkey) == 108)
-				{
-					// success
-					// vgui::ivgui()->DPrintf2("CD KEY %s VALIDATED\n", cdkey);
-					return;
+					*lastslash = 0;
+					Q_strncat(platformDir, "\\platform\\", bufferSize, COPY_ALL_CHARACTERS );
+					return true;
 				}
 			}
+#else
+			if ( getcwd( platformDir, bufferSize ) )
+			{
+				V_AppendSlash( platformDir, bufferSize );
+				Q_strncat(platformDir, "platform", bufferSize, COPY_ALL_CHARACTERS );
+				V_AppendSlash( platformDir, bufferSize );
+				return true;
+			}
+#endif			
 		}
+		else
+		{
+			// xbox fetches the platform path from exisiting platform search path
+			// path to executeable is not correct for xbox remote configuration
+			if ( g_pFullFileSystem->GetSearchPath( "PLATFORM", false, platformDir, bufferSize ) )
+			{
+				char *pSeperator = strchr( platformDir, ';' );
+				if ( pSeperator )
+					*pSeperator = '\0';
+				return true;
+			}
+		}
+
+		Error( "Unable to determine platform directory\n" );
+		return false;
 	}
 
-	// prompt for new cdkey
-	vgui::ivgui()->DPrintf2("CD KEY INVALID\n");
-
-	if (!m_hCDKeyEntryDialog.Get())
-	{
-		m_hCDKeyEntryDialog = new CCDKeyEntryDialog( staticPanel, inConnect );
-	}
-
-	m_hCDKeyEntryDialog->Activate();
-	m_hCDKeyEntryDialog->MoveToCenterOfScreen();
-
-	enginesurfacefuncs->RestrictPaintToSinglePanel(m_hCDKeyEntryDialog->GetVPanel());
-	enginesurfacefuncs->SetModalPanel(m_hCDKeyEntryDialog->GetVPanel());
-	*/
+	return (platformDir[0] != 0);
 }
 
 //-----------------------------------------------------------------------------
@@ -727,16 +673,12 @@ void CGameUI::ValidateCDKey(bool force, bool inConnect)
 //-----------------------------------------------------------------------------
 void CGameUI::Shutdown()
 {
-	if (gameuimodelpreview) gameuimodelpreview->ClearModel();
-	gameuimodelpreview = NULL;
-	gameuimatsurface = NULL;
 	// notify all the modules of Shutdown
 	g_VModuleLoader.ShutdownPlatformModules();
 
 	// unload the modules them from memory
 	g_VModuleLoader.UnloadPlatformModules();
 
-	// free mod info
 	ModInfo().FreeModInfo();
 	
 	// release platform mutex
@@ -749,91 +691,104 @@ void CGameUI::Shutdown()
 	{
 		Sys_ReleaseMutex(g_hWaitMutex);
 	}
+	
+	BonusMapsDatabase()->WriteSaveData();
+
+	steamapicontext->Clear();
+	
+
+	ConVar_Unregister();
+	DisconnectTier3Libraries();
+	DisconnectTier2Libraries();
+	DisconnectTier1Libraries();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: returns true if the game UI is currently visible
+// Purpose: just wraps an engine call to activate the gameUI
 //-----------------------------------------------------------------------------
-bool CGameUI::IsGameUIActive()
+void CGameUI::ActivateGameUI()
 {
-	if ( m_bActivatedUI )
-	{
-		return staticPanel->IsVisible();
-	}
-	else
-		return false;
+	engine->ExecuteClientCmd("gameui_activate");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: just wraps an engine call to hide the gameUI
+//-----------------------------------------------------------------------------
+void CGameUI::HideGameUI()
+{
+	engine->ExecuteClientCmd("gameui_hide");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Toggle allowing the engine to hide the game UI with the escape key
+//-----------------------------------------------------------------------------
+void CGameUI::PreventEngineHideGameUI()
+{
+	engine->ExecuteClientCmd("gameui_preventescape");
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Toggle allowing the engine to hide the game UI with the escape key
+//-----------------------------------------------------------------------------
+void CGameUI::AllowEngineHideGameUI()
+{
+	engine->ExecuteClientCmd("gameui_allowescape");
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Activate the game UI
 //-----------------------------------------------------------------------------
-int CGameUI::ActivateGameUI()
+void CGameUI::OnGameUIActivated()
 {
-	if (IsGameUIActive())
-		return 1;
-
 	m_bActivatedUI = true;
 
-//	TRACE_FUNCTION("CGameUI::ActivateGameUI");
-
 	// hide/show the main panel to Activate all game ui
-	staticPanel->SetVisible(true);
-	g_pTaskbar->SetVisible(true);
+	staticPanel->SetVisible( true );
 
-	// pause the game
-	engine->ClientCmd("setpause");
+	// pause the server in single player
+	if ( engine->GetMaxClients() <= 1 )
+	{
+		engine->ClientCmd_Unrestricted( "setpause" );
+	}
+
+	SetSavedThisMenuSession( false );
 
 	// notify taskbar
-	if (g_pTaskbar)
-	{
-		g_pTaskbar->OnGameUIActivated();
-	}
+	BasePanel()->OnGameUIActivated();
 
-	// return that things have been handled
-	return 1;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Activate the demo player UI
-//-----------------------------------------------------------------------------
-int CGameUI::ActivateDemoUI()
-{
-	if (g_pTaskbar)
+	if ( GameClientExports() )
 	{
-		g_pTaskbar->OnOpenDemoDialog();
-		return 1;
-	}
-	else
-	{
-		return 0;
+		const char *pGameName = CommandLine()->ParmValue( "-game", "hl2" );
+		// only want to run this for TF2
+		if ( ( Q_stricmp( pGameName, "tf" ) == 0 ) || ( Q_stricmp( pGameName, "tf_beta" ) == 0 ) )
+		{
+			GameClientExports()->OnGameUIActivated();
+		}
 	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Hides the game ui, in whatever state it's in
 //-----------------------------------------------------------------------------
-void CGameUI::HideGameUI()
+void CGameUI::OnGameUIHidden()
 {
-//	TRACE_FUNCTION("CGameUI::HideGameUI");
-	// we can't hide the UI if we're not in a level
-	const char *levelName = engine->GetLevelName();
-	if (levelName && levelName[0])
+	if ( GameClientExports() )
 	{
-		//show both the background panel and the taskbar 
-		staticPanel->SetVisible(false);
-		g_pTaskbar->SetVisible(false);
-
-		// unpause the game
-		engine->ClientCmd("unpause");
+		const char *pGameName = CommandLine()->ParmValue( "-game", "hl2" );
+		// only want to run this for TF2
+		if ( ( Q_stricmp( pGameName, "tf" ) == 0 ) || ( Q_stricmp( pGameName, "tf_beta" ) == 0 ) )
+		{
+			GameClientExports()->OnGameUIHidden();
+		}
 	}
-}
 
-//-----------------------------------------------------------------------------
-// Purpose: returns 1 on the game UI having exclusive input, false otherwise
-//-----------------------------------------------------------------------------
-int CGameUI::HasExclusiveInput()
-{
-	return IsGameUIActive();
+	// unpause the game when leaving the UI
+	if ( engine->GetMaxClients() <= 1 )
+	{
+		engine->ClientCmd_Unrestricted("unpause");
+	}
+
+	BasePanel()->OnGameUIHidden();
 }
 
 //-----------------------------------------------------------------------------
@@ -841,6 +796,12 @@ int CGameUI::HasExclusiveInput()
 //-----------------------------------------------------------------------------
 void CGameUI::RunFrame()
 {
+	if ( IsX360() && m_bOpenProgressOnStart )
+	{
+		StartProgressBar();
+		m_bOpenProgressOnStart = false;
+	}
+
 	// resize the background panel to the screen size
 	int wide, tall;
 	vgui::surface()->GetScreenSize(wide, tall);
@@ -848,35 +809,31 @@ void CGameUI::RunFrame()
 
 	// Run frames
 	g_VModuleLoader.RunFrame();
+	BasePanel()->RunFrame();
 
-	if (g_pTaskbar)
+	// Play the start-up music the first time we run frame
+	if ( IsPC() && m_bPlayGameStartupSound )
 	{
-		g_pTaskbar->RunFrame();
+		PlayGameStartupSound();
+		m_bPlayGameStartupSound = false;
 	}
 
-	if (m_bTryingToLoadTracker && g_hMutex && g_hWaitMutex)
+	if ( IsPC() && ( ( IsPosix() && m_bTryingToLoadFriends ) || 
+					( m_bTryingToLoadFriends && m_iFriendsLoadPauseFrames-- < 1 && g_hMutex && g_hWaitMutex ) ) )
 	{
-		// try and load tracker
-		unsigned int waitResult = Sys_WaitForSingleObject(g_hMutex, 0);
-		if (waitResult == SYS_WAIT_OBJECT_0 || waitResult == SYS_WAIT_ABANDONED)
+		// try and load Steam platform files
+		// GammaSource: don't wait on the old Steam platform mutex; another running Source game
+		// (e.g. the 2003 build) holds it and the main menu would never appear
+		Sys_WaitForSingleObject(g_hMutex, 0);
 		{
-			// we got the tracker mutex, so load tracker
+			// we got the mutex, so load Friends/Serverbrowser
 			// clear the loading flag
-			m_bTryingToLoadTracker = false;
-
-			g_VModuleLoader.LoadPlatformModules(m_FactoryList, m_iNumFactories, false);
-
-			// get our own interfaces
-			for (int i = 0; i < g_VModuleLoader.GetModuleCount(); i++)
-			{
-				if (!g_pFriendsUser && g_VModuleLoader.GetModuleFactory(i) )
-				{
-					g_pFriendsUser = (IFriendsUser *)(g_VModuleLoader.GetModuleFactory(i))(FRIENDSUSER_INTERFACE_VERSION, NULL);
-				}
-			}
+			m_bTryingToLoadFriends = false;
+			g_VModuleLoader.LoadPlatformModules(&m_GameFactory, 1, false);
 
 			// release the wait mutex
-			Sys_ReleaseMutex(g_hWaitMutex);
+			if ( !IsPosix() )
+				Sys_ReleaseMutex(g_hWaitMutex);
 
 			// notify the game of our game name
 			const char *fullGamePath = engine->GetGameDirectory();
@@ -887,134 +844,181 @@ void CGameUI::RunFrame()
 			}
 			if ( pathSep )
 			{
-				g_VModuleLoader.PostMessageToAllModules(new KeyValues("ActiveGameName", "name", pathSep + 1));
+				KeyValues *pKV = new KeyValues("ActiveGameName" );
+				pKV->SetString( "name", pathSep + 1 );
+				pKV->SetInt( "appid", engine->GetAppID() );
+				KeyValues *modinfo = new KeyValues("ModInfo");
+				if ( modinfo->LoadFromFile( g_pFullFileSystem, "gameinfo.txt" ) )
+				{
+					pKV->SetString( "game", modinfo->GetString( "game", "" ) );
+				}
+				modinfo->deleteThis();
+				
+				g_VModuleLoader.PostMessageToAllModules( pKV );
 			}
 
 			// notify the ui of a game connect if we're already in a game
 			if (m_iGameIP)
 			{
-				g_VModuleLoader.PostMessageToAllModules(new KeyValues("ConnectedToGame", "ip", m_iGameIP, "port", m_iGamePort));
+				SendConnectedToGameMessage();
 			}
 		}
 	}
-
-/*	if( m_pMaster )
-	{
-		m_pMaster->Frame();
-	}
-	*/
-
-	if( vgui::surface()->GetModalPanel() )
-	{
-		vgui::surface()->PaintTraverse( staticPanel->GetVPanel());
-	}
 }
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Called when the game connects to a server
 //-----------------------------------------------------------------------------
-void CGameUI::ConnectToServer(const char *game, int IP, int port)
+void CGameUI::OLD_OnConnectToServer(const char *game, int IP, int port)
 {
+	// Nobody should use this anymore because the query port and the connection port can be different.
+	// Use OnConnectToServer2 instead.
+	Assert( false );
+	OnConnectToServer2( game, IP, port, port );
+}
 
-	//engine->pfnClientCmd("mp3 stop\n");
-	// SRC version
-//	engine->ClientCmd("stop\n");
-	baseuifuncs->HideGameUI();
-
-	// start running our version query if we are not running steam
-/*	if( !engine->CheckParm("-steam", NULL) )
-	{
-		MasterVersionCheckQuery();
-	}
-*/
+//-----------------------------------------------------------------------------
+// Purpose: Called when the game connects to a server
+//-----------------------------------------------------------------------------
+void CGameUI::OnConnectToServer2(const char *game, int IP, int connectionPort, int queryPort)
+{
 	m_iGameIP = IP;
-	m_iGamePort = port;
+	m_iGameConnectionPort = connectionPort;
+	m_iGameQueryPort = queryPort;
 
-	g_VModuleLoader.PostMessageToAllModules(new KeyValues("ConnectedToGame", "ip", IP, "port", port));
+	SendConnectedToGameMessage();
+}
+
+
+void CGameUI::SendConnectedToGameMessage()
+{
+	KeyValues *kv = new KeyValues( "ConnectedToGame" );
+	kv->SetInt( "ip", m_iGameIP );
+	kv->SetInt( "connectionport", m_iGameConnectionPort );
+	kv->SetInt( "queryport", m_iGameQueryPort );
+
+	g_VModuleLoader.PostMessageToAllModules( kv );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Called when the game disconnects from a server
 //-----------------------------------------------------------------------------
-void CGameUI::DisconnectFromServer()
+void CGameUI::OnDisconnectFromServer( uint8 eSteamLoginFailure )
 {
-	ActivateGameUI();
-
 	m_iGameIP = 0;
-	m_iGamePort = 0;
+	m_iGameConnectionPort = 0;
+	m_iGameQueryPort = 0;
+
 	g_VModuleLoader.PostMessageToAllModules(new KeyValues("DisconnectedFromGame"));
+
+	if ( eSteamLoginFailure == STEAMLOGINFAILURE_NOSTEAMLOGIN )
+	{
+		if ( g_hLoadingDialog )
+		{
+			g_hLoadingDialog->DisplayNoSteamConnectionError();
+		}
+	}
+	else if ( eSteamLoginFailure == STEAMLOGINFAILURE_VACBANNED )
+	{
+		if ( g_hLoadingDialog )
+		{
+			g_hLoadingDialog->DisplayVACBannedError();
+		}
+	}
+	else if ( eSteamLoginFailure == STEAMLOGINFAILURE_LOGGED_IN_ELSEWHERE )
+	{
+		if ( g_hLoadingDialog )
+		{
+			g_hLoadingDialog->DisplayLoggedInElsewhereError();
+		}
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: activates the loading dialog on level load start
 //-----------------------------------------------------------------------------
-void CGameUI::LoadingStarted(const char *resourceType, const char *resourceName)
+void CGameUI::OnLevelLoadingStarted( bool bShowProgressDialog )
 {
-	g_VModuleLoader.PostMessageToAllModules(new KeyValues("LoadingStarted", "type", resourceType, "name", resourceName));
+	g_VModuleLoader.PostMessageToAllModules( new KeyValues( "LoadingStarted" ) );
 
-	if (!stricmp(resourceType, "transition"))
+	// notify
+	BasePanel()->OnLevelLoadingStarted();
+
+	if ( bShowProgressDialog )
 	{
-		// activate the loading image
-		staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_LOADINGTRANSITION);
+		StartProgressBar();
 	}
-	else
-	{
-		staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_LOADING);
-	}
+
+	// Don't play the start game sound if this happens before we get to the first frame
+	m_bPlayGameStartupSound = false;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: closes any level load dialog
 //-----------------------------------------------------------------------------
-void CGameUI::LoadingFinished(const char *resourceType, const char *resourceName)
+void CGameUI::OnLevelLoadingFinished(bool bError, const char *failureReason, const char *extendedReason)
 {
-	// notify all the modules
-	g_VModuleLoader.PostMessageToAllModules(new KeyValues("LoadingFinished", "type", resourceType, "name", resourceName));
+	StopProgressBar( bError, failureReason, extendedReason );
 
-	// stop drawing loading screen
-	staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_DESKTOPIMAGE);
+	// notify all the modules
+	g_VModuleLoader.PostMessageToAllModules( new KeyValues( "LoadingFinished" ) );
 
 	// hide the UI
-	baseuifuncs->HideGameUI();
+	HideGameUI();
+
+	// notify
+	BasePanel()->OnLevelLoadingFinished();
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Updates progress bar
+// Output : Returns true if screen should be redrawn
+//-----------------------------------------------------------------------------
+bool CGameUI::UpdateProgressBar(float progress, const char *statusText)
+{
+	// if either the progress bar or the status text changes, redraw the screen
+	bool bRedraw = false;
+
+	if ( ContinueProgressBar( progress ) )
+	{
+		bRedraw = true;
+	}
+		
+	if ( SetProgressBarStatusText( statusText ) )
+	{
+		bRedraw = true;
+	}
+
+	return bRedraw;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CGameUI::StartProgressBar(const char *progressType, int progressSteps)
+void CGameUI::StartProgressBar()
 {
-//	TRACE_FUNCTION("CGameUI::StartProgressBar");
-
-	if (!g_hLoadingDialog.Get())
+	if ( !g_hLoadingDialog.Get() )
 	{
 		g_hLoadingDialog = new CLoadingDialog(staticPanel);
 	}
 
-	// close the start menu
-	staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_LOADING);
-	m_pszCurrentProgressType = progressType;
-	if (m_flProgressStartTime < 0.001f)
-	{
-		m_flProgressStartTime = (float)vgui::system()->GetCurrentTime();
-	}
-
 	// open a loading dialog
-	g_hLoadingDialog->SetProgressRange(0 , progressSteps); 
-	g_hLoadingDialog->SetProgressPoint(0);
-	g_hLoadingDialog->DisplayProgressBar(progressType, "invalid");
+	m_szPreviousStatusText[0] = 0;
+	g_hLoadingDialog->SetProgressPoint(0.0f);
+	g_hLoadingDialog->Open();
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: returns true if the screen should be updated
 //-----------------------------------------------------------------------------
-int CGameUI::ContinueProgressBar(int progressPoint, float progressFraction)
+bool CGameUI::ContinueProgressBar( float progressFraction )
 {
 	if (!g_hLoadingDialog.Get())
-		return 0;
+		return false;
 
-	g_hLoadingDialog->SetProgressPoint(progressPoint);
-	return 1;
+	g_hLoadingDialog->Activate();
+	return g_hLoadingDialog->SetProgressPoint(progressFraction);
 }
 
 //-----------------------------------------------------------------------------
@@ -1030,10 +1034,10 @@ void CGameUI::StopProgressBar(bool bError, const char *failureReason, const char
 	if (!g_hLoadingDialog.Get())
 		return;
 
-	if (bError)
+	if ( !IsX360() && bError )
 	{
 		// turn the dialog to error display mode
-		g_hLoadingDialog->DisplayError(failureReason,extendedReason);
+		g_hLoadingDialog->DisplayGenericError(failureReason, extendedReason);
 	}
 	else
 	{
@@ -1041,21 +1045,26 @@ void CGameUI::StopProgressBar(bool bError, const char *failureReason, const char
 		g_hLoadingDialog->Close();
 		g_hLoadingDialog = NULL;
 	}
-
-	// stop drawing loading screen
-	staticPanel->SetBackgroundRenderState(CBasePanel::BACKGROUND_DESKTOPIMAGE);
+	// should update the background to be in a transition here
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: sets loading info text
 //-----------------------------------------------------------------------------
-int CGameUI::SetProgressBarStatusText(const char *statusText)
+bool CGameUI::SetProgressBarStatusText(const char *statusText)
 {
 	if (!g_hLoadingDialog.Get())
-		return 0;
+		return false;
+
+	if (!statusText)
+		return false;
+
+	if (!stricmp(statusText, m_szPreviousStatusText))
+		return false;
 
 	g_hLoadingDialog->SetStatusText(statusText);
-	return 1;
+	Q_strncpy(m_szPreviousStatusText, statusText, sizeof(m_szPreviousStatusText));
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -1081,25 +1090,197 @@ void CGameUI::SetSecondaryProgressBarText(const char *statusText)
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: If the user's Steam subscription expires during play and the user 
-//			has not told Steam to cache their password, Steam needs to have 
-//			them re-enter it.
+// Purpose: Returns prev settings
 //-----------------------------------------------------------------------------
-void CGameUI::GetSteamPassword( const char *szAccountName, const char *szUserName )
+bool CGameUI::SetShowProgressText( bool show )
 {
-	//TRACE_FUNCTION("CGameUI::GetSteamPassword");
-	ActivateGameUI();
+	if (!g_hLoadingDialog.Get())
+		return false;
 
-	CSteamPasswordDialog *pSteamPasswordDialog = new CSteamPasswordDialog(staticPanel, szAccountName, szUserName);
-
-	// Center it, keeping requested size
-	int x, y, ww, wt, wide, tall;
-	vgui::surface()->GetWorkspaceBounds( x, y, ww, wt );
-	pSteamPasswordDialog->GetSize(wide, tall);
-	pSteamPasswordDialog->SetPos(x + ((ww - wide) / 2), y + ((wt - tall) / 2));
-
-	pSteamPasswordDialog->RequestFocus();
-
-	pSteamPasswordDialog->SetVisible(true);
+	return g_hLoadingDialog->SetShowProgressText( show );
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we're currently playing the game
+//-----------------------------------------------------------------------------
+bool CGameUI::IsInLevel()
+{
+	const char *levelName = engine->GetLevelName();
+	if (levelName && levelName[0] && !engine->IsLevelMainMenuBackground())
+	{
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we're at the main menu and a background level is loaded
+//-----------------------------------------------------------------------------
+bool CGameUI::IsInBackgroundLevel()
+{
+	const char *levelName = engine->GetLevelName();
+	if (levelName && levelName[0] && engine->IsLevelMainMenuBackground())
+	{
+		return true;
+	}
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we're in a multiplayer game
+//-----------------------------------------------------------------------------
+bool CGameUI::IsInMultiplayer()
+{
+	return (IsInLevel() && engine->GetMaxClients() > 1);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we're playing back a replay
+//-----------------------------------------------------------------------------
+bool CGameUI::IsInReplay()
+{
+	return g_pEngineClientReplay && g_pEngineClientReplay->IsPlayingReplayDemo();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we're console ui
+//-----------------------------------------------------------------------------
+bool CGameUI::IsConsoleUI()
+{
+	return m_bIsConsoleUI;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if we've saved without closing the menu
+//-----------------------------------------------------------------------------
+bool CGameUI::HasSavedThisMenuSession()
+{
+	return m_bHasSavedThisMenuSession;
+}
+
+void CGameUI::SetSavedThisMenuSession( bool bState )
+{
+	m_bHasSavedThisMenuSession = bState;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CGameUI::ShowNewGameDialog( int chapter )
+{
+	char val[32];
+	Q_snprintf( val, sizeof(val), "%d", chapter);
+	staticPanel->OnOpenNewGameDialog(val);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Makes the loading background dialog visible, if one has been set
+//-----------------------------------------------------------------------------
+void CGameUI::ShowLoadingBackgroundDialog()
+{
+	if ( g_hLoadingBackgroundDialog )
+	{
+		vgui::ipanel()->SetParent( g_hLoadingBackgroundDialog, staticPanel->GetVPanel() );
+		vgui::ipanel()->PerformApplySchemeSettings( g_hLoadingBackgroundDialog );
+		vgui::ipanel()->SetVisible( g_hLoadingBackgroundDialog, true );		
+		vgui::ipanel()->MoveToFront( g_hLoadingBackgroundDialog );
+		vgui::ipanel()->SendMessage( g_hLoadingBackgroundDialog, new KeyValues( "activate" ), staticPanel->GetVPanel() );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Hides the loading background dialog, if one has been set
+//-----------------------------------------------------------------------------
+void CGameUI::HideLoadingBackgroundDialog()
+{
+	if ( g_hLoadingBackgroundDialog )
+	{
+		vgui::ipanel()->SetParent( g_hLoadingBackgroundDialog, NULL );
+		vgui::ipanel()->SetVisible( g_hLoadingBackgroundDialog, false );		
+		vgui::ipanel()->MoveToBack( g_hLoadingBackgroundDialog );
+		vgui::ipanel()->SendMessage( g_hLoadingBackgroundDialog, new KeyValues( "deactivate" ), staticPanel->GetVPanel() );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns whether a loading background dialog has been set
+//-----------------------------------------------------------------------------
+bool CGameUI::HasLoadingBackgroundDialog()
+{
+	return ( 0 != g_hLoadingBackgroundDialog );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Xbox 360 calls from engine to GameUI 
+//-----------------------------------------------------------------------------
+void CGameUI::SessionNotification( const int notification, const int param )
+{
+	BasePanel()->SessionNotification( notification, param );
+}
+void CGameUI::SystemNotification( const int notification )
+{
+	BasePanel()->SystemNotification( notification );
+}
+void CGameUI::ShowMessageDialog( const uint nType, vgui::Panel *pOwner )
+{
+	BasePanel()->ShowMessageDialog( nType, pOwner );
+}
+void CGameUI::CloseMessageDialog( const uint nType )
+{
+	BasePanel()->CloseMessageDialog( nType );
+}
+void CGameUI::UpdatePlayerInfo( uint64 nPlayerId, const char *pName, int nTeam, byte cVoiceState, int nPlayersNeeded, bool bHost )
+{
+	BasePanel()->UpdatePlayerInfo( nPlayerId, pName, nTeam, cVoiceState, nPlayersNeeded, bHost );
+}
+void CGameUI::SessionSearchResult( int searchIdx, void *pHostData, XSESSION_SEARCHRESULT *pResult, int ping )
+{
+	BasePanel()->SessionSearchResult( searchIdx, pHostData, pResult, ping );
+}
+void CGameUI::OnCreditsFinished( void )
+{
+	BasePanel()->OnCreditsFinished();
+}
+bool CGameUI::ValidateStorageDevice( int *pStorageDeviceValidated )
+{
+	return BasePanel()->ValidateStorageDevice( pStorageDeviceValidated );
+}
+
+void CGameUI::SetProgressOnStart()
+{
+	m_bOpenProgressOnStart = true;
+}
+
+void CGameUI::OnConfirmQuit( void )
+{
+	BasePanel()->OnOpenQuitConfirmationDialog();
+}
+
+bool CGameUI::IsMainMenuVisible( void )
+{
+	CBasePanel *pBasePanel = BasePanel();
+	if ( pBasePanel )
+		return (pBasePanel->IsVisible() && pBasePanel->GetMenuAlpha() > 0 );
+	return false;
+}
+
+// Client DLL is providing us with a panel that it wants to replace the main menu with
+void CGameUI::SetMainMenuOverride( vgui::VPANEL panel )
+{
+	CBasePanel *pBasePanel = BasePanel();
+	if ( pBasePanel )
+	{
+		pBasePanel->SetMainMenuOverride( panel );
+	}
+}
+
+// Client DLL is telling us that a main menu command was issued, probably from its custom main menu panel
+void CGameUI::SendMainMenuCommand( const char *pszCommand )
+{
+	CBasePanel *pBasePanel = BasePanel();
+	if ( pBasePanel )
+	{
+		pBasePanel->RunMenuCommand( pszCommand );
+	}
+}

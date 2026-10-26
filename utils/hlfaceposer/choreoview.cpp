@@ -1,11 +1,12 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
+#include "cbase.h"
 #include <stdio.h>
-#include <mx/mxWindow.h>
+#include <mxtk/mxWindow.h>
 #include "mdlviewer.h"
 #include "hlfaceposer.h"
 #include "StudioModel.h"
@@ -23,7 +24,7 @@
 #include "choreowidgetdrawhelper.h"
 #include "choreoeventwidget.h"
 #include "viewerSettings.h"
-#include "cmdlib.h"
+#include "filesystem.h"
 #include "choreoviewcolors.h"
 #include "ActorProperties.h"
 #include "ChannelProperties.h"
@@ -33,148 +34,52 @@
 #include "snd_wave_source.h"
 #include "ifaceposerworkspace.h"
 #include "PhonemeEditor.h"
-#include "scriplib.h"
-#include "cmdlib.h"
 #include "iscenetokenprocessor.h"
 #include "InputProperties.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "ExpressionTool.h"
 #include "ControlPanel.h"
 #include "faceposer_models.h"
 #include "choiceproperties.h"
 #include "MatSysWin.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "GestureTool.h"
 #include "npcevent.h"
 #include "RampTool.h"
 #include "SceneRampTool.h"
 #include "KeyValues.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
+#include "cclookup.h"
+#include "iclosecaptionmanager.h"
+#include "AddSoundEntry.h"
+#include "isoundcombiner.h"
+#include <vgui/ILocalize.h>
+#include "scriplib.h"
+#include "WaveBrowser.h"
+#include "filesystem_init.h"
+#include "flexpanel.h"
+#include "tier3/choreoutils.h"
+#include "tier2/p4helpers.h"
 
+
+using namespace vgui;
+
+extern vgui::ILocalize *g_pLocalize;
 
 // 10x magnification
 #define MAX_TIME_ZOOM 1000
+#define TIME_ZOOM_STEP 4
 
 #define PHONEME_FILTER 0.08f
 #define PHONEME_DELAY  0.0f
 
 #define SCRUBBER_HEIGHT	15
+#define TIMELINE_NUMBERS_HEIGHT 11
+
+#define COPYPASTE_FILENAME	"scenes/copydatavcd.txt"
 
 extern double realtime;
-
-//-----------------------------------------------------------------------------
-// Purpose: Helper to scene module for parsing the .vcd file
-//-----------------------------------------------------------------------------
-class CSceneTokenProcessor : public ISceneTokenProcessor
-{
-public:
-	const char	*CurrentToken( void );
-	bool		GetToken( bool crossline );
-	bool		TokenAvailable( void );
-	void		Error( const char *fmt, ... );
-};
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : const
-//-----------------------------------------------------------------------------
-const char	*CSceneTokenProcessor::CurrentToken( void )
-{
-	return token;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : crossline - 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CSceneTokenProcessor::GetToken( bool crossline )
-{
-	return ::GetToken( crossline ) ? true : false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool CSceneTokenProcessor::TokenAvailable( void )
-{
-	return ::TokenAvailable() ? true : false;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *fmt - 
-//			... - 
-//-----------------------------------------------------------------------------
-void CSceneTokenProcessor::Error( const char *fmt, ... )
-{
-	char string[ 2048 ];
-	va_list argptr;
-	va_start( argptr, fmt );
-	vsprintf( string, fmt, argptr );
-	va_end( argptr );
-
-	Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, string );
-	::Error( string );
-}
-
-static CSceneTokenProcessor g_TokenProcessor;
-ISceneTokenProcessor *tokenprocessor = &g_TokenProcessor;
-
-// Try to keep shifted times at same absolute time
-static void RescaleGestureTimes( CChoreoEvent *event, float newstart, float newend )
-{
-	if ( !event || event->GetType() != CChoreoEvent::GESTURE )
-		return;
-
-	// Did it actually change
-	if ( newstart == event->GetStartTime() &&
-		 newend == event->GetEndTime() )
-	{
-		 return;
-	}
-
-	float newduration = newend - newstart;
-
-	float dt = 0.0f;
-	//If the end is moving, leave tags stay where they are (dt == 0.0f)
-	if ( newstart != event->GetStartTime() )
-	{
-		// Otherwise, if the new start is later, then tags need to be shifted backwards
-		dt -= ( newstart - event->GetStartTime() );
-	}
-
-	int count = event->GetNumAbsoluteTags( CChoreoEvent::SHIFTED );
-	int i;
-
-	for ( i = 0; i < count; i++ )
-	{
-		CEventAbsoluteTag *tag = event->GetAbsoluteTag( CChoreoEvent::SHIFTED, i );
-		float tagtime = tag->GetTime() * event->GetDuration();
-
-		tagtime += dt;
-
-		float frac = tagtime / newduration;
-		frac = clamp( frac, 0.0f, 1.0f );
-
-		tag->SetTime( frac );
-	}
-
-	float expansion =  newduration / event->GetDuration();
-
-	count = event->GetNumAbsoluteTags( CChoreoEvent::PLAYBACK );
-	for ( i = 0; i < count; i++ )
-	{
-		CEventAbsoluteTag *tag = event->GetAbsoluteTag( CChoreoEvent::PLAYBACK, i );
-		float tagtime = tag->GetTime() * event->GetDuration();
-
-		tagtime += dt;
-
-		tagtime = clamp( tagtime / newduration, 0.0f, 1.0f );
-
-		tag->SetTime( tagtime );
-	}
-}
+extern bool NameLessFunc( const char *const& name1, const char *const& name2 );
 
 // Try to keep shifted times at same absolute time
 static void RescaleExpressionTimes( CChoreoEvent *event, float newstart, float newend )
@@ -292,7 +197,11 @@ bool DoesAnyActorHaveAssociatedModelLoaded( CChoreoScene *scene )
 		if ( !modelname[ 0 ] )
 			continue;
 
-		int idx = models->FindModelByFilename( modelname );
+		char mdlname[ 256 ];
+		Q_strncpy( mdlname, modelname, sizeof( mdlname ) );
+		Q_FixSlashes( mdlname );
+
+		int idx = models->FindModelByFilename( mdlname );
 		if ( idx >= 0 )
 		{
 			return true;
@@ -325,11 +234,22 @@ StudioModel *FindAssociatedModel( CChoreoScene *scene, CChoreoActor *a )
 		}
 	}
 
+	// Is there any loaded model with the actorname in it?
+	int c = models->Count();
+	for ( int i = 0; i < c; i++ )
+	{
+		char const *modelname = models->GetModelName( i );
+		if ( !Q_stricmp( modelname, a->GetName() ) )
+		{
+			return models->GetStudioModel( i );
+		}
+	}
+
 	// Does any actor have an associated model which is loaded
 	if ( DoesAnyActorHaveAssociatedModelLoaded( scene ) )
 	{
 		// Then return NULL here so we don't override with the default an actor who has a valid model going
-		return model;
+		return NULL;
 	}
 
 	// Couldn't find it and nobody else has a loaded associated model, so just use the default model
@@ -357,8 +277,9 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 {
 	m_bRampOnly = false;
 
+	m_bForceProcess = false;
+
 	m_bSuppressLayout = true;
-	m_bHasLookTarget = false;
 
 	SetAutoProcess( true );
 
@@ -387,7 +308,7 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 	m_bResetSpeedScale = false;
 
 	m_nTopOffset = 0;
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	m_nLastVPixelsNeeded = -1;
 
@@ -409,8 +330,6 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 	m_nAutomatedAction	= SCENE_ACTION_UNKNOWN;
 	m_flAutomationDelay = 0.0f;
 	m_flAutomationTime = 0.0f;
-
-	m_nTimeZoom = 100;
 
 	m_pVertScrollBar = new mxScrollbar( this, 0, 0, 18, 100, IDC_CHOREOVSCROLL, mxScrollbar::Vertical );
 	m_pHorzScrollBar = new mxScrollbar( this, 0, 0, 18, 100, IDC_CHOREOHSCROLL, mxScrollbar::Horizontal );
@@ -453,6 +372,7 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 	m_nClickedY = 0;
 	m_nSelectedEvents = 0;
 	m_nClickedTag = -1;
+	m_nClickedChannelCloseCaptionButton = CChoreoChannelWidget::CLOSECAPTION_NONE;
 
 	// Mouse dragging
 	m_bDragging			= false;
@@ -461,6 +381,9 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 	m_nDragType			= DRAGTYPE_NONE;
 	m_hPrevCursor		= 0;
 
+	m_nMinX				= 0;
+	m_nMaxX				= 0;
+	m_bUseBounds		= false;
 
 	m_nScrollbarHeight	= 12;
 	m_nInfoHeight		= 30;
@@ -472,6 +395,8 @@ CChoreoView::CChoreoView( mxWindow *parent, int x, int y, int w, int h, int id )
 	m_bCanDraw = true;
 	m_bSuppressLayout = false;
 	m_flScrubberTimeOffset = 0.0f;
+
+	m_bShowCloseCaptionData = true;
 }
 
 //-----------------------------------------------------------------------------
@@ -482,7 +407,7 @@ bool CChoreoView::Close( void )
 {
 	if ( m_pScene && m_bDirty )
 	{
-		int retval = mxMessageBox( NULL, va( "Save changes to class '%s'?", GetChoreoFile() ), g_appTitle, MX_MB_YESNOCANCEL );
+		int retval = mxMessageBox( NULL, va( "Save changes to scene '%s'?", GetChoreoFile() ), g_appTitle, MX_MB_YESNOCANCEL );
 		if ( retval == 2 )
 		{
 			return false;
@@ -543,6 +468,11 @@ CChoreoView::~CChoreoView()
 //-----------------------------------------------------------------------------
 void CChoreoView::ReportSceneClearToTools( void )
 {
+	if ( m_pScene )
+	{
+		m_pScene->ResetSimulation();
+	}
+
 	g_pPhonemeEditor->ClearEvent();
 	g_pExpressionTool->LayoutItems( true );
 	g_pExpressionTool->redraw();
@@ -581,8 +511,12 @@ float SnapTime( float input, float granularity )
 //-----------------------------------------------------------------------------
 void CChoreoView::DrawTimeLine( CChoreoWidgetDrawHelper& drawHelper, RECT& rc, float left, float right )
 {
+	RECT rcFill = m_rcTimeLine;
+	rcFill.bottom -= TIMELINE_NUMBERS_HEIGHT;
+	drawHelper.DrawFilledRect( COLOR_CHOREO_DARKBACKGROUND, rcFill );
+
 	RECT rcLabel;
-	float granularity = 0.5f / GetTimeZoomScale();
+	float granularity = 0.5f / ((float)GetTimeZoom( GetToolName() ) / 100.0f);
 
 	drawHelper.DrawColoredLine( COLOR_CHOREO_TIMELINE, PS_SOLID, 1, rc.left, GetStartRow() - 1, rc.right, GetStartRow() - 1 );
 
@@ -882,7 +816,7 @@ void CChoreoView::redraw()
 	drawHelper.DrawColoredText( "Arial", fontsize, FW_NORMAL, 
 		RGB( 50, 50, 50 ), rcText, sz );
 
-	sprintf( sz, "Zoom: %.2fx", (float)m_nTimeZoom / 100.0f );
+	sprintf( sz, "Zoom: %.2fx", (float)GetTimeZoom( GetToolName() ) / 100.0f );
 
 	length = drawHelper.CalcTextWidth( "Arial", fontsize, FW_NORMAL, sz);
 
@@ -996,25 +930,7 @@ float CChoreoView::GetEndTime( void )
 //-----------------------------------------------------------------------------
 float CChoreoView::GetPixelsPerSecond( void )
 {
-	return m_flPixelsPerSecond * GetTimeZoomScale();
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float CChoreoView::GetTimeZoomScale( void )
-{
-	return ( float )m_nTimeZoom / 100.0f;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : scale - 
-//-----------------------------------------------------------------------------
-void CChoreoView::SetTimeZoomScale( int scale )
-{
-	m_nTimeZoom = scale;
+	return m_flPixelsPerSecond * (float)GetTimeZoom( GetToolName() ) / 100.0f;
 }
 
 //-----------------------------------------------------------------------------
@@ -1074,7 +990,7 @@ bool CChoreoView::IsMouseOverTimeline( int mx, int my )
 	pt.y = my;
 
 	RECT rcCheck = m_rcTimeLine;
-	rcCheck.bottom -= 8;
+	rcCheck.bottom -= TIMELINE_NUMBERS_HEIGHT;
 
 	if ( PtInRect( &rcCheck, pt ) )
 		return true;
@@ -1094,8 +1010,10 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 	CChoreoEventWidget		*e = NULL;
 	CChoreoGlobalEventWidget *ge = NULL;
 	int						ct = -1;
+	CEventAbsoluteTag		*at = NULL;
+	int						clickedCloseCaptionButton = CChoreoChannelWidget::CLOSECAPTION_NONE;
 
-	GetObjectsUnderMouse( mx, my, &a, &c, &e, &ge, &ct );
+	GetObjectsUnderMouse( mx, my, &a, &c, &e, &ge, &ct, &at, &clickedCloseCaptionButton );
 	
 	m_pClickedActor			= a;
 	m_pClickedChannel		= c;
@@ -1104,6 +1022,8 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 	m_nClickedX				= mx;
 	m_nClickedY				= my;
 	m_nClickedTag			= ct;
+	m_pClickedAbsoluteTag	= at;
+	m_nClickedChannelCloseCaptionButton = clickedCloseCaptionButton;
 
 	// Construct main
 	mxPopupMenu *pop = new mxPopupMenu();
@@ -1115,19 +1035,17 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 			pop->add( "Expression...", IDC_ADDEVENT_EXPRESSION );
 			pop->add( "WAV File...", IDC_ADDEVENT_SPEAK );
 			pop->add( "Gesture...", IDC_ADDEVENT_GESTURE );
+			pop->add( "NULL Gesture...", IDC_ADDEVENT_NULLGESTURE );
 			pop->add( "Look at actor...", IDC_ADDEVENT_LOOKAT );
 			pop->add( "Move to actor...", IDC_ADDEVENT_MOVETO );
 			pop->add( "Face actor...", IDC_ADDEVENT_FACE );
 			pop->add( "Fire Trigger...", IDC_ADDEVENT_FIRETRIGGER );
+			pop->add( "Generic(AI)...", IDC_ADDEVENT_GENERIC );
 			pop->add( "Sequence...", IDC_ADDEVENT_SEQUENCE );
 			pop->add( "Flex animation...", IDC_ADDEVENT_FLEXANIMATION );
 			pop->add( "Sub-scene...", IDC_ADDEVENT_SUBSCENE );
 			pop->add( "Interrupt...", IDC_ADDEVENT_INTERRUPT );
-
-			if ( e && e->GetEvent()->HasEndTime() )
-			{
-				pop->add( "Timing Tag...", IDC_ADDTIMINGTAG );
-			}
+			pop->add( "Permit Responses...", IDC_ADDEVENT_PERMITRESPONSES );
 
 			pop->addSeparator();
 		}
@@ -1149,6 +1067,12 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 				}
 				break;
 			}
+
+			if ( e->GetEvent()->HasEndTime() )
+			{
+				pop->add( "Timing Tag...", IDC_ADDTIMINGTAG );
+			}
+
 			pop->addSeparator();
 		}
 	}
@@ -1163,7 +1087,7 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 		}
 		newMenu->add( "Section Pause...", IDC_ADDEVENT_PAUSE );
 		newMenu->add( "Loop...", IDC_ADDEVENT_LOOP );
-		newMenu->add( "Stop point...", IDC_ADDEVENT_STOPPOINT );
+		newMenu->add( "Fire Completion...", IDC_ADDEVENT_STOPPOINT );
 	}
 	pop->addMenu( "New", newMenu );
 
@@ -1198,7 +1122,7 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 					break;
 				case CChoreoEvent::STOPPOINT:
 					{
-						editMenu->add( va( "Stop Point '%s'...", ge->GetEvent()->GetName() ), IDC_EDITGLOBALEVENT );
+						editMenu->add( va( "Fire Completion '%s'...", ge->GetEvent()->GetName() ), IDC_EDITGLOBALEVENT );
 					}
 					break;
 				}
@@ -1264,7 +1188,7 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 				break;
 			case CChoreoEvent::STOPPOINT:
 				{
-					deleteMenu->add( va( "Stop Point '%s'...", ge->GetEvent()->GetName() ), IDC_DELETEGLOBALEVENT );
+					deleteMenu->add( va( "Fire Completion '%s'...", ge->GetEvent()->GetName() ), IDC_DELETEGLOBALEVENT );
 				}
 				break;
 			}
@@ -1285,6 +1209,27 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 		mxPopupMenu *selectMenu = new mxPopupMenu();
 		selectMenu->add( "Select All", IDC_SELECTALL );
 		selectMenu->add( "Deselect All", IDC_DESELECTALL );
+		selectMenu->addSeparator();
+
+		selectMenu->add( "All events before", IDC_SELECTEVENTS_ALL_BEFORE );
+		selectMenu->add( "All events after", IDC_SELECTEVENTS_ALL_AFTER );
+		selectMenu->add( "Active events before", IDC_SELECTEVENTS_ACTIVE_BEFORE );
+		selectMenu->add( "Active events after", IDC_SELECTEVENTS_ACTIVE_AFTER );
+		selectMenu->add( "Channel events before", IDC_SELECTEVENTS_CHANNEL_BEFORE );
+		selectMenu->add( "Channel events after", IDC_SELECTEVENTS_CHANNEL_AFTER );
+
+		if ( a || c )
+		{
+			selectMenu->addSeparator();
+			if ( a )
+			{
+				selectMenu->add( va( "All events in actor '%s'", a->GetActor()->GetName() ), IDC_CV_ALLEVENTS_ACTOR );
+			}
+			if ( c )
+			{
+				selectMenu->add( va( "All events in channel '%s'", c->GetChannel()->GetName() ), IDC_CV_ALLEVENTS_CHANNEL );
+			}
+		}
 		pop->addMenu( "Select/Deselect", selectMenu );
 	}
 
@@ -1313,12 +1258,34 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 		if ( CountSelectedEvents() > 1 )
 		{
 			pop->add( va( "Delete events" ), IDC_DELETEEVENT );
+			pop->addSeparator();
+			pop->add( "Enable events", IDC_CV_ENABLEEVENTS );
+			pop->add( "Disable events", IDC_CV_DISABLEEVENTS );
 		}
 		else
 		{
 			pop->add( va( "Delete event '%s'", e->GetEvent()->GetName() ), IDC_DELETEEVENT );
+			pop->addSeparator();
+			if ( e->GetEvent()->GetActive() )
+			{
+				pop->add( va( "Disable event '%s'", e->GetEvent()->GetName() ), IDC_CV_DISABLEEVENTS );
+			}
+			else
+			{
+				pop->add( va( "Enable event '%s'", e->GetEvent()->GetName() ), IDC_CV_ENABLEEVENTS );
+			}
 		}
 	}
+
+	if ( m_rgABPoints[ 0 ].active && m_rgABPoints[ 1 ].active  )
+	{
+		pop->addSeparator();
+		mxPopupMenu *timeMenu = new mxPopupMenu();
+		timeMenu->add( "Insert empty space between marks (shifts events right)", IDC_INSERT_TIME );
+		timeMenu->add( "Delete events between marks (shifts remaining events left)", IDC_DELETE_TIME );
+		pop->addMenu( "Time Marks", timeMenu );
+	}
+
 
 	// Copy/paste
 	if ( CanPaste() || e )
@@ -1342,18 +1309,45 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 
 	// Export / import
 	pop->addSeparator();
+
 	if ( e )
 	{
+		mxPopupMenu *exportMenu = new mxPopupMenu();
 		if ( CountSelectedEvents() > 1 )
 		{
-			pop->add( va( "Export events..." ), IDC_EXPORTEVENTS );
+			exportMenu->add( va( "Export events to .vce..." ), IDC_EXPORTEVENTS );
 		}
 		else if ( e )
 		{
-			pop->add( va( "Export event '%s'...", e->GetEvent()->GetName() ), IDC_EXPORTEVENTS );
+			exportMenu->add( va( "Export event '%s' to .vce...", e->GetEvent()->GetName() ), IDC_EXPORTEVENTS );
 		}
+		exportMenu->add( va( "Export as .vcd..." ), IDC_EXPORT_VCD );
+		pop->addMenu( "Export", exportMenu );
 	}
-	pop->add( va( "Import events..." ), IDC_IMPORTEVENTS );
+
+	mxPopupMenu *importMenu = new mxPopupMenu();
+	importMenu->add( va( "Import events from .vce..." ), IDC_IMPORTEVENTS );
+	importMenu->add( va( "Merge from .vcd..." ), IDC_IMPORT_VCD );
+	pop->addMenu( "Import", importMenu );
+
+	bool bShowAlignLeft = ( CountSelectedEvents() + CountSelectedGlobalEvents() ) > 1 ? true : false;
+
+	if ( e && ( ( CountSelectedEvents() > 1 ) || bShowAlignLeft ) )
+	{
+		pop->addSeparator();
+
+		mxPopupMenu *alignMenu = new mxPopupMenu();
+		alignMenu->add( "Align Left", IDC_CV_ALIGN_LEFT );
+		if ( CountSelectedEvents() > 1 )
+		{
+			alignMenu->add( "Align Right", IDC_CV_ALIGN_RIGHT );
+			alignMenu->add( "Size to Smallest", IDC_CV_SAMESIZE_SMALLEST );
+			alignMenu->add( "Size to Largest", IDC_CV_SAMESIZE_LARGEST );
+		}
+		pop->addMenu( "Align", alignMenu );
+	}
+
+	// Misc.
 	pop->addSeparator();
 	pop->add( va( "Change scale..." ), IDC_CV_CHANGESCALE );
 	pop->add( va( "Check sequences" ), IDC_CV_CHECKSEQLENGTHS );
@@ -1361,18 +1355,51 @@ void CChoreoView::ShowContextMenu( int mx, int my )
 	pop->add( va( m_bRampOnly ? "Ramp normal" : "Ramp only" ), IDC_CV_TOGGLERAMPONLY );
 	pop->setChecked( IDC_CV_PROCESSSEQUENCES, m_bProcessSequences );
 
+	bool onmaster= ( m_pClickedChannel && 
+			m_pClickedChannel->GetCaptionClickedEvent() &&
+			m_pClickedChannel->GetCaptionClickedEvent()->GetCloseCaptionType() == CChoreoEvent::CC_MASTER ) ? true : false;
+	bool ondisabled = ( m_pClickedChannel && 
+			m_pClickedChannel->GetCaptionClickedEvent() &&
+			m_pClickedChannel->GetCaptionClickedEvent()->GetCloseCaptionType() == CChoreoEvent::CC_DISABLED ) ? true : false;
+
+	// The close captioning menu
+	if ( m_bShowCloseCaptionData && ( AreSelectedEventsCombinable() || AreSelectedEventsInSpeakGroup() || onmaster || ondisabled ) )
+	{
+		pop->addSeparator();
+		if ( AreSelectedEventsCombinable() )
+		{
+			pop->add( "Combine Speak Events", IDC_CV_COMBINESPEAKEVENTS );
+		}
+		if ( AreSelectedEventsInSpeakGroup() )
+		{
+			pop->add( "Uncombine Speak Events", IDC_CV_REMOVESPEAKEVENTFROMGROUP );
+		}
+		if ( onmaster )
+		{
+			// Can only change tokens for "combined" files
+			if ( m_pClickedChannel->GetCaptionClickedEvent()->GetNumSlaves() >= 1 )
+			{
+				pop->add( "Change Token", IDC_CV_CHANGECLOSECAPTIONTOKEN );
+			}
+			pop->add( "Disable captions", IDC_CV_TOGGLECLOSECAPTIONS );
+		}
+		if ( ondisabled )
+		{
+			pop->add( "Enable captions", IDC_CV_TOGGLECLOSECAPTIONS );
+		}
+	}
+
 	// Undo/redo
-	if ( m_nUndoLevel != 0 ||
-		m_nUndoLevel != m_UndoStack.Size() )
+	if ( CanUndo() || CanRedo() )
 	{
 
 		pop->addSeparator();
 
-		if ( m_nUndoLevel != 0 )
+		if ( CanUndo() )
 		{
 			pop->add( va( "Undo %s", GetUndoDescription() ), IDC_CVUNDO );
 		}
-		if ( m_nUndoLevel != m_UndoStack.Size() )
+		if ( CanRedo() )
 		{
 			pop->add( va( "Redo %s", GetRedoDescription() ), IDC_CVREDO );
 		}
@@ -1493,6 +1520,8 @@ void CChoreoView::AssociateModelToActor( CChoreoActor *actor, int modelindex )
 		actor->SetFacePoserModelName( "" );
 	}
 
+	RecomputeWaves();
+
 	PushRedo( "Associate model" );
 }
 
@@ -1501,18 +1530,13 @@ void CChoreoView::AssociateBSP( void )
 	if ( !m_pScene )
 		return;
 
-	// Show file io
-	const char *fullpath = mxGetOpenFileName( 
-		0, 
-		FacePoser_MakeWindowsSlashes( va( "%s/maps/", GetGameDirectory() ) ), 
-		"*.bsp" );
-	if ( !fullpath || !fullpath[ 0 ] )
-		return;
-
 	// Strip game directory and slash
 	char mapname[ 512 ];
-	filesystem->FullPathToRelativePath( fullpath, mapname );
-
+	if ( !FacePoser_ShowOpenFileNameDialog( mapname, sizeof( mapname ), "maps", "*.bsp" ) )
+	{
+		return;
+	}
+	
 	m_pScene->SetMapname( mapname );
 	redraw();
 }
@@ -1533,6 +1557,43 @@ void CChoreoView::DrawFocusRect( void )
 
 	ReleaseDC( NULL, dc );
 }
+
+int CChoreoView::GetSelectedEventWidgets( CUtlVector< CChoreoEventWidget * >& events )
+{
+	events.RemoveAll();
+
+	int c = 0;
+
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				if ( event->IsSelected() )
+				{
+					events.AddToTail( event );
+					c++;
+				}
+			}
+		}
+	}
+
+	return c;
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1575,6 +1636,20 @@ int CChoreoView::GetSelectedEvents( CUtlVector< CChoreoEvent * >& events )
 	return c;
 }
 
+int CChoreoView::CountSelectedGlobalEvents( void )
+{
+	int c = 0;
+	for ( int i = 0; i < m_SceneGlobalEvents.Size(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event || !event->IsSelected() )
+			continue;
+
+		++c;
+	}
+	return c;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Output : int
@@ -1611,6 +1686,111 @@ int CChoreoView::CountSelectedEvents( void )
 	return c;
 }
 
+bool CChoreoView::IsMouseOverEvent( CChoreoEventWidget *ew, int mx, int my )
+{
+	int tolerance = DRAG_EVENT_EDGE_TOLERANCE;
+
+	RECT bounds = ew->getBounds();
+	mx -= bounds.left;
+	my -= bounds.top;
+
+	if ( mx <= -tolerance )
+	{
+		return false;
+	}
+
+	CChoreoEvent *event = ew->GetEvent();
+	if ( event )
+	{
+		if ( event->HasEndTime() )
+		{
+			int rightside = ew->GetDurationRightEdge() ? ew->GetDurationRightEdge() : ew->w();
+
+			if ( mx > rightside + tolerance )
+			{
+				return false;
+			}
+		}
+	}
+
+	return true;
+}
+
+
+bool CChoreoView::IsMouseOverEventEdge( CChoreoEventWidget *ew, bool bLeftEdge, int mx, int my )
+{
+	int tolerance = DRAG_EVENT_EDGE_TOLERANCE;
+
+	RECT bounds = ew->getBounds();
+	mx -= bounds.left;
+	my -= bounds.top;
+
+	CChoreoEvent *event = ew->GetEvent();
+	if ( event && event->HasEndTime() )
+	{
+		if ( mx > -tolerance && mx <= tolerance )
+		{
+			return bLeftEdge;
+		}
+
+		int rightside = ew->GetDurationRightEdge() ? ew->GetDurationRightEdge() : ew->w();
+
+		if ( mx >= rightside - tolerance )
+		{
+			if ( mx > rightside + tolerance )
+			{
+				return false;
+			}
+			else
+			{
+				return !bLeftEdge;
+			}
+		}
+	}
+
+	return false;
+}
+
+int CChoreoView::GetEarliestEventIndex( CUtlVector< CChoreoEventWidget * >& events )
+{
+	int best = -1;
+	float minTime = FLT_MAX;
+
+	int c = events.Count();
+	for ( int i = 0; i < c; ++i )
+	{
+		CChoreoEvent *e = events[ i ]->GetEvent();
+		float t = e->GetStartTime();
+		if ( t < minTime )
+		{
+			minTime = t;
+			best = i;
+		}
+	}
+
+	return best;
+}
+
+int	 CChoreoView::GetLatestEventIndex( CUtlVector< CChoreoEventWidget * >& events )
+{
+	int best = -1;
+	float maxTime = FLT_MIN;
+
+	int c = events.Count();
+	for ( int i = 0; i < c; ++i )
+	{
+		CChoreoEvent *e = events[ i ]->GetEvent();
+		float t = e->GetEndTime();
+		if ( t > maxTime )
+		{
+			maxTime = t;
+			best = i;
+		}
+	}
+
+	return best;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : mx - 
@@ -1618,15 +1798,59 @@ int CChoreoView::CountSelectedEvents( void )
 //-----------------------------------------------------------------------------
 int CChoreoView::ComputeEventDragType( int mx, int my )
 {
+	int tolerance = DRAG_EVENT_EDGE_TOLERANCE;
+
 	// Iterate the events and see who's closest
 	CChoreoEventWidget *ew = GetEventUnderCursorPos( mx, my );
 	if ( !ew )
+	{
 		return DRAGTYPE_NONE;
+	}
+
+	// Deal with small windows by lowering tolerance
+	if ( ew->w() < 4 * tolerance )
+	{
+		tolerance = 2;
+	}
 
 	int tagnum = GetTagUnderCursorPos( ew, mx, my );
 	if ( tagnum != -1 && CountSelectedEvents() <= 1 )
 	{
 		return DRAGTYPE_EVENTTAG_MOVE;
+	}
+
+	CEventAbsoluteTag *tag = GetAbsoluteTagUnderCursorPos( ew, mx, my );
+	if ( tag != NULL && CountSelectedEvents() <= 1 )
+	{
+		return DRAGTYPE_EVENTABSTAG_MOVE;
+	}
+
+	if ( CountSelectedEvents() > 1 )
+	{
+		CUtlVector< CChoreoEventWidget * > events;
+		GetSelectedEventWidgets( events );
+
+		int iStart, iEnd;
+		iStart = GetEarliestEventIndex( events );
+		iEnd = GetLatestEventIndex( events );
+
+		if ( events.IsValidIndex( iStart ) )
+		{
+			// See if mouse is over left edge of starting event
+			if ( IsMouseOverEventEdge( events[ iStart ], true, mx, my ) )
+			{
+				return DRAGTYPE_RESCALELEFT;
+			}
+		}
+		if ( events.IsValidIndex( iEnd ) )
+		{
+			if ( IsMouseOverEventEdge( events[ iEnd ], false, mx, my ) )
+			{
+				return DRAGTYPE_RESCALERIGHT;
+			}
+		}
+
+		return DRAGTYPE_EVENT_MOVE;
 	}
 
 	CChoreoEvent *event = ew->GetEvent();
@@ -1638,66 +1862,39 @@ int CChoreoView::ComputeEventDragType( int mx, int my )
 		}
 	}
 
-	if ( CountSelectedEvents() > 1 )
+	if ( IsMouseOverEventEdge( ew, true, mx, my ) )
+	{
+		if ( GetAsyncKeyState( VK_SHIFT ) )
+			return DRAGTYPE_EVENT_STARTTIME_RESCALE;
+		return DRAGTYPE_EVENT_STARTTIME;
+	}
+
+	if ( IsMouseOverEventEdge( ew, false, mx, my ) )
+	{
+		if ( GetAsyncKeyState( VK_SHIFT ) )
+			return DRAGTYPE_EVENT_ENDTIME_RESCALE;
+		return DRAGTYPE_EVENT_ENDTIME;
+	}
+
+	if ( IsMouseOverEvent( ew, mx, my ) )
 	{
 		return DRAGTYPE_EVENT_MOVE;
 	}
 
-	int tolerance = DRAG_EVENT_EDGE_TOLERANCE;
-	// Deal with small windows by lowering tolerance
-	if ( ew->w() < 4 * tolerance )
-	{
-		tolerance = 2;
-	}
-
-	RECT bounds = ew->getBounds();
-	mx -= bounds.left;
-	my -= bounds.top;
-
-	if ( mx <= tolerance )
-	{
-		return DRAGTYPE_EVENT_STARTTIME;
-	}
-
-	if ( event )
-	{
-		if ( event->HasEndTime() )
-		{
-			int rightside = ew->GetDurationRightEdge() ? ew->GetDurationRightEdge() : ew->w();
-
-			if ( mx >= rightside - tolerance )
-			{
-				if ( mx > rightside + tolerance )
-				{
-					return DRAGTYPE_NONE;
-				}
-				else
-				{
-					return DRAGTYPE_EVENT_ENDTIME;
-				}
-			}
-		}
-	}
-
-	return DRAGTYPE_EVENT_MOVE;
+	return DRAGTYPE_NONE;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : mx - 
-//			my - 
-//-----------------------------------------------------------------------------
-void CChoreoView::StartDraggingGlobalEvent( int mx, int my )
+void CChoreoView::StartDraggingSceneEndTime( int mx, int my )
 {
-	m_nDragType = DRAGTYPE_GLOBALEVENT_MOVE;
+	m_nDragType = DRAGTYPE_SCENE_ENDTIME;
 
 	m_FocusRects.Purge();
 
 	RECT rcFocus;
-	rcFocus.left = m_pClickedGlobalEvent->x() + m_pClickedGlobalEvent->w() / 2;
+	rcFocus.left = mx;
 	rcFocus.top = 0;
-	rcFocus.right = rcFocus.left + 2;
 	rcFocus.bottom = h2();
+	rcFocus.right = rcFocus.left + 2;
 
 	POINT offset;
 	offset.x = 0;
@@ -1709,11 +1906,12 @@ void CChoreoView::StartDraggingGlobalEvent( int mx, int my )
 	fr.m_rcFocus = rcFocus;
 	fr.m_rcOrig = rcFocus;
 
+	// Relative tag events don't move
 	m_FocusRects.AddToTail( fr );
 
 	m_xStart = mx;
 	m_yStart = my;
-	m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEALL ) );
+	m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 
 	DrawFocusRect();
 
@@ -1727,7 +1925,16 @@ void CChoreoView::StartDraggingEvent( int mx, int my )
 {
 	m_nDragType = ComputeEventDragType( mx, my );
 	if ( m_nDragType == DRAGTYPE_NONE )
-		return;
+	{
+		if( m_pClickedGlobalEvent )
+		{
+			m_nDragType = DRAGTYPE_EVENT_MOVE;
+		}
+		else
+		{
+			return;
+		}
+	}
 
 	m_FocusRects.Purge();
 
@@ -1754,25 +1961,40 @@ void CChoreoView::StartDraggingEvent( int mx, int my )
 				if ( !event->IsSelected() )
 					continue;
 
-				if ( event == m_pClickedEvent && m_nClickedTag != -1 )
+				if ( event == m_pClickedEvent && 
+					( m_nClickedTag != -1 || m_pClickedAbsoluteTag ) )
 				{
 					int leftEdge = 0;
-					CEventRelativeTag *tag = event->GetEvent()->GetRelativeTag( m_nClickedTag );
-					if ( tag )
+					int tagWidth = 1;
+					if ( !m_pClickedAbsoluteTag )
+					{
+						CEventRelativeTag *tag = event->GetEvent()->GetRelativeTag( m_nClickedTag );
+						if ( tag )
+						{
+							// Determine left edcge
+							RECT bounds;
+							bounds = event->getBounds();
+							if ( bounds.right - bounds.left > 0 )
+							{
+								leftEdge = (int)( tag->GetPercentage() * (float)( bounds.right - bounds.left ) + 0.5f );
+							}
+						}
+					}
+					else
 					{
 						// Determine left edcge
 						RECT bounds;
 						bounds = event->getBounds();
 						if ( bounds.right - bounds.left > 0 )
 						{
-							leftEdge = (int)( tag->GetPercentage() * (float)( bounds.right - bounds.left ) + 0.5f );
+							leftEdge = (int)( m_pClickedAbsoluteTag->GetPercentage() * (float)( bounds.right - bounds.left ) + 0.5f );
 						}
 					}
 
-					rcFocus.left = event->x() + leftEdge - 4;
-					rcFocus.top = event->y() - 4;
-					rcFocus.right = rcFocus.left + 8;
-					rcFocus.bottom = rcFocus.top + 8;
+					rcFocus.left = event->x() + leftEdge - tagWidth;
+					rcFocus.top = event->y() - tagWidth;
+					rcFocus.right = rcFocus.left + 2 * tagWidth;
+					rcFocus.bottom = event->y() + event->h();
 				}
 				else
 				{
@@ -1804,7 +2026,33 @@ void CChoreoView::StartDraggingEvent( int mx, int my )
 			}
 		}
 	}
+
+	for ( int i = 0; i < m_SceneGlobalEvents.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *gew = m_SceneGlobalEvents[ i ];
+		if ( !gew )
+			continue;
+
+		if ( !gew->IsSelected() )
+			continue;
 	
+		rcFocus.left = gew->x() + gew->w() / 2;
+		rcFocus.top = 0;
+		rcFocus.right = rcFocus.left + 2;
+		rcFocus.bottom = h2();
+
+		POINT offset;
+		offset.x = 0;
+		offset.y = 0;
+		ClientToScreen( (HWND)getHandle(), &offset );
+		OffsetRect( &rcFocus, offset.x, offset.y );
+
+		CFocusRect fr;
+		fr.m_rcFocus = rcFocus;
+		fr.m_rcOrig = rcFocus;
+
+		m_FocusRects.AddToTail( fr );
+	}
 
 	m_xStart = mx;
 	m_yStart = my;
@@ -1816,13 +2064,22 @@ void CChoreoView::StartDraggingEvent( int mx, int my )
 	case DRAGTYPE_EVENTTAG_MOVE:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		break;
+	case DRAGTYPE_EVENTABSTAG_MOVE:
+		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_IBEAM ) );
+		break;
 	case DRAGTYPE_EVENT_MOVE:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEALL ) );
 		break;
 	case DRAGTYPE_EVENT_STARTTIME:
+	case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		break;
 	case DRAGTYPE_EVENT_ENDTIME:
+	case DRAGTYPE_EVENT_ENDTIME_RESCALE:
+		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
+		break;
+	case DRAGTYPE_RESCALELEFT:
+	case DRAGTYPE_RESCALERIGHT:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		break;
 	}
@@ -1830,6 +2087,27 @@ void CChoreoView::StartDraggingEvent( int mx, int my )
 	DrawFocusRect();
 
 	m_bDragging = true;
+}
+
+bool CChoreoView::IsMouseOverSceneEndTime( int mx )
+{
+	// See if mouse if over scene end time instead
+	if ( m_pScene )
+	{
+		float endtime = m_pScene->FindStopTime();
+
+		bool clip = false;
+		int lastpixel = GetPixelForTimeValue( endtime, &clip );
+		if ( !clip )
+		{
+			if ( abs( mx - lastpixel ) < DRAG_EVENT_EDGE_TOLERANCE )
+			{
+				return true;
+			}
+		}
+	}
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -1846,12 +2124,16 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 		return;
 	}
 
-	GetObjectsUnderMouse( mx, my, &m_pClickedActor, &m_pClickedChannel, &m_pClickedEvent, &m_pClickedGlobalEvent, &m_nClickedTag );
+	GetObjectsUnderMouse( mx, my, &m_pClickedActor, &m_pClickedChannel, &m_pClickedEvent, &m_pClickedGlobalEvent, &m_nClickedTag, &m_pClickedAbsoluteTag, &m_nClickedChannelCloseCaptionButton );
 
 	if ( m_pClickedEvent )
 	{
 		CChoreoEvent *e = m_pClickedEvent->GetEvent();
 		Assert( e );
+
+		int dtPreview = ComputeEventDragType( mx, my );
+		// Shift clicking on exact edge shouldn't toggle selection state
+		bool bIsEdgeRescale = ( dtPreview == DRAGTYPE_EVENT_ENDTIME_RESCALE || dtPreview == DRAGTYPE_EVENT_STARTTIME_RESCALE );
 
 		if ( !( event->modifiers & ( mxEvent::KeyCtrl | mxEvent::KeyShift ) ) )
 		{
@@ -1861,7 +2143,7 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 			}
 			TraverseWidgets( &CChoreoView::Select, m_pClickedEvent );
 		}
-		else
+		else if ( !bIsEdgeRescale )
 		{
 			m_pClickedEvent->SetSelected( !m_pClickedEvent->IsSelected() );
 		}
@@ -1873,11 +2155,17 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 		case CChoreoEvent::FLEXANIMATION:
 			{
 				g_pExpressionTool->SetEvent( e );
+				g_pFlexPanel->SetEvent( e );
 			}
 			break;
 		case CChoreoEvent::GESTURE:
 			{
 				g_pGestureTool->SetEvent( e );
+			}
+			break;
+		case CChoreoEvent::SPEAK:
+			{
+				g_pWaveBrowser->SetEvent( e );
 			}
 			break;
 		}
@@ -1892,7 +2180,21 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 	}
 	else if ( m_pClickedGlobalEvent )
 	{
-		StartDraggingGlobalEvent( mx, my );
+		if ( !( event->modifiers & ( mxEvent::KeyCtrl | mxEvent::KeyShift ) ) )
+		{
+			if ( !m_pClickedGlobalEvent->IsSelected() )
+			{
+				DeselectAll();
+			}
+			TraverseWidgets( &CChoreoView::Select, m_pClickedGlobalEvent );
+		}
+		else
+		{
+			m_pClickedGlobalEvent->SetSelected( !m_pClickedGlobalEvent->IsSelected() );
+		}
+
+		redraw();
+		StartDraggingEvent( mx, my );
 	}
 	else if ( IsMouseOverScrubArea( event ) )
 	{
@@ -1949,7 +2251,7 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 		}
 		else
 		{
-			float t = GetTimeValueForMouse( (short)event->x );
+			float t = GetTimeValueForMouse( mx );
 
 			ClampTimeToSelectionInterval( t );
 
@@ -1958,6 +2260,64 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 			// Unpause the scene
 			m_bPaused = false;
 			redraw();
+		}
+	}
+	else if ( IsMouseOverSceneEndTime( mx ) )
+	{
+		redraw();
+		StartDraggingSceneEndTime( mx, my );
+	}
+	else  if ( m_pClickedChannel && 
+		m_nClickedChannelCloseCaptionButton != CChoreoChannelWidget::CLOSECAPTION_NONE &&
+		m_nClickedChannelCloseCaptionButton != CChoreoChannelWidget::CLOSECAPTION_CAPTION )
+	{
+		switch ( m_nClickedChannelCloseCaptionButton )
+		{
+		default:
+		case CChoreoChannelWidget::CLOSECAPTION_EXPANDCOLLAPSE:
+			{
+				OnToggleCloseCaptionTags();
+			}
+			break;
+		case CChoreoChannelWidget::CLOSECAPTION_PREVLANGUAGE:
+			{
+				// Change language
+				int id = GetCloseCaptionLanguageId();
+				--id;
+				if ( id < 0 )
+				{
+					id = CC_NUM_LANGUAGES  - 1;
+					Assert( id >= 0 );
+				}
+				SetCloseCaptionLanguageId( id );
+				redraw();
+			}
+			break;
+		case CChoreoChannelWidget::CLOSECAPTION_NEXTLANGUAGE:
+			{
+				int id = GetCloseCaptionLanguageId();
+				++id;
+				if ( id >= CC_NUM_LANGUAGES )
+				{
+					id = 0;
+				}
+				SetCloseCaptionLanguageId( id );
+				redraw();
+			}
+			break;
+		case CChoreoChannelWidget::CLOSECAPTION_SELECTOR:
+			{
+				SetDirty( true );
+
+				PushUndo( "Change selector" );
+
+				m_pClickedChannel->HandleSelectorClicked();
+
+				PushRedo( "Change selector" );
+
+				redraw();
+			}
+			break;
 		}
 	}
 	else
@@ -1983,19 +2343,38 @@ void CChoreoView::MouseStartDrag( mxEvent *event, int mx, int my )
 		}
 	}
 
-
+	CalcBounds( m_nDragType );
 }
 
 void CChoreoView::OnDoubleClicked()
 {
 	if ( m_pClickedChannel )
 	{
-		SetDirty( true );
-		PushUndo( "Enable/disable Channel" );
+		switch (m_nClickedChannelCloseCaptionButton )
+		{
+		default:
+			break;
+		case CChoreoChannelWidget::CLOSECAPTION_NONE:
+			{
+				SetDirty( true );
+				PushUndo( "Enable/disable Channel" );
+		
+				m_pClickedChannel->GetChannel()->SetActive( !m_pClickedChannel->GetChannel()->GetActive() );
+		
+				PushRedo( "Enable/disable Channel" );
+			}
+			break;
+		case CChoreoChannelWidget::CLOSECAPTION_CAPTION:
+			{
+				CChoreoEvent *e = m_pClickedChannel->GetCaptionClickedEvent();
+				if ( e && e->GetNumSlaves() >= 1 )
+				{
+					OnChangeCloseCaptionToken( e );
+				}
+			}
+			break;
+		}
 
-		m_pClickedChannel->GetChannel()->SetActive( !m_pClickedChannel->GetChannel()->GetActive() );
-
-		PushRedo( "Enable/disable Channel" );
 		return;
 	}
 
@@ -2022,6 +2401,8 @@ void CChoreoView::MouseContinueDrag( mxEvent *event, int mx, int my )
 		return;
 
 	DrawFocusRect();
+
+	ApplyBounds( mx, my );
 
 	for ( int i = 0; i < m_FocusRects.Size(); i++ )
 	{
@@ -2052,49 +2433,116 @@ void CChoreoView::MouseContinueDrag( mxEvent *event, int mx, int my )
 			break;
 		case DRAGTYPE_EVENT_MOVE:
 		case DRAGTYPE_EVENTTAG_MOVE:
+		case DRAGTYPE_EVENTABSTAG_MOVE:
 			{
-				bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
-				int dy = my - m_yStart;
-
-				// Only allow jumping channels if shift is down
-				if ( !shiftdown )
-				{
-					dy = 0;
-				}
-				if ( abs( dy ) < m_pClickedEvent->GetItemHeight() )
-				{
-					dy = 0;
-				}
-				if ( m_nSelectedEvents > 1 )
-				{
-					dy = 0;
-				}
-				if ( m_nDragType == DRAGTYPE_EVENTTAG_MOVE )
-				{
-					dy = 0;
-				}
 				int dx = mx - m_xStart;
-				if ( m_pClickedEvent->GetEvent()->IsUsingRelativeTag() )
+				int dy = my - m_yStart;
+				if ( m_pClickedEvent )
 				{
-					dx = 0;
+					bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+					
+
+					// Only allow jumping channels if shift is down
+					if ( !shiftdown )
+					{
+						dy = 0;
+					}
+					if ( abs( dy ) < m_pClickedEvent->GetItemHeight() )
+					{
+						dy = 0;
+					}
+					if ( m_nSelectedEvents > 1 )
+					{
+						dy = 0;
+					}
+					if ( m_nDragType == DRAGTYPE_EVENTTAG_MOVE || m_nDragType == DRAGTYPE_EVENTABSTAG_MOVE )
+					{
+						dy = 0;
+					}
+					
+					if ( m_pClickedEvent->GetEvent()->IsUsingRelativeTag() )
+					{
+						dx = 0;
+					}
+				}
+				else
+				{
+					dy = 0;
 				}
 				OffsetRect( &f->m_rcFocus, dx, dy );
 			}
 			break;
-		case DRAGTYPE_GLOBALEVENT_MOVE:
-			{
-				OffsetRect( &f->m_rcFocus, ( mx - m_xStart ), 0 );
-			}
-			break;
 		case DRAGTYPE_EVENT_STARTTIME:
+		case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 			f->m_rcFocus.left += ( mx - m_xStart );
 			break;
 		case DRAGTYPE_EVENT_ENDTIME:
+		case DRAGTYPE_EVENT_ENDTIME_RESCALE:
 			f->m_rcFocus.right += ( mx - m_xStart );
+			break;
+		case DRAGTYPE_SCENE_ENDTIME:
+			OffsetRect( &f->m_rcFocus, ( mx - m_xStart ), 0 );
+			break;
+		case DRAGTYPE_RESCALELEFT:
+		case DRAGTYPE_RESCALERIGHT:
+			//f->m_rcFocus.right += ( mx - m_xStart );
 			break;
 		}
 	}
 
+	if ( m_nDragType == DRAGTYPE_RESCALELEFT || 
+		 m_nDragType == DRAGTYPE_RESCALERIGHT )
+	{
+		int c = m_FocusRects.Count();
+		int m_nStart = INT_MAX;
+		int m_nEnd = INT_MIN;
+
+		for ( int i = 0; i < c; ++i )
+		{
+			CFocusRect *f = &m_FocusRects[ i ];
+			if ( f->m_rcFocus.left < m_nStart )
+			{
+				m_nStart = f->m_rcFocus.left;
+			}
+			if ( f->m_rcFocus.right > m_nEnd )
+			{
+				m_nEnd = f->m_rcFocus.right;
+			}
+		}
+
+		// Now figure out rescaling logic
+		int dxPixels = mx - m_xStart;
+
+		int oldSize = m_nEnd - m_nStart;
+		if ( oldSize > 0 )
+		{
+			float rescale = 1.0f;
+			if ( m_nDragType == DRAGTYPE_RESCALERIGHT )
+			{
+				rescale = (float)( oldSize + dxPixels )/(float)oldSize;
+			}
+			else
+			{
+				rescale = (float)( oldSize - dxPixels )/(float)oldSize;
+			}
+
+			for ( int i = 0; i < c; ++i )
+			{
+				CFocusRect *f = &m_FocusRects[ i ];
+				int w = f->m_rcFocus.right - f->m_rcFocus.left;
+				if ( m_nDragType == DRAGTYPE_RESCALERIGHT )
+				{
+					f->m_rcFocus.left = m_nStart + ( int )( rescale * (float)( f->m_rcFocus.left - m_nStart ) + 0.5f );
+					f->m_rcFocus.right = f->m_rcFocus.left + ( int )( rescale * (float)w + 0.5f );
+				}
+				else
+				{
+					f->m_rcFocus.right = m_nEnd - ( int )( rescale * (float)( m_nEnd - f->m_rcFocus.right ) + 0.5f );
+					f->m_rcFocus.left = f->m_rcFocus.right - ( int )( rescale * (float)w + 0.5f );
+				}
+			}
+		}
+	}
 	DrawFocusRect();
 }
 
@@ -2112,10 +2560,18 @@ void CChoreoView::MouseMove( int mx, int my )
 	if ( dragtype == DRAGTYPE_NONE )
 	{
 		CChoreoGlobalEventWidget *ge = NULL;
-		GetObjectsUnderMouse( mx, my, NULL, NULL, NULL, &ge, NULL );
+		GetObjectsUnderMouse( mx, my, NULL, NULL, NULL, &ge, NULL, NULL, NULL );
 		if ( ge )
 		{
-			dragtype = DRAGTYPE_GLOBALEVENT_MOVE;
+			dragtype = DRAGTYPE_EVENT_MOVE;
+		}
+
+		if ( dragtype == DRAGTYPE_NONE )
+		{
+			if ( IsMouseOverSceneEndTime( mx ) )
+			{
+				dragtype = DRAGTYPE_SCENE_ENDTIME;
+			}
 		}
 	}
 
@@ -2131,83 +2587,21 @@ void CChoreoView::MouseMove( int mx, int my )
 	case DRAGTYPE_EVENTTAG_MOVE:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		break;
+	case DRAGTYPE_EVENTABSTAG_MOVE:
+		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_IBEAM ) );
+		break;
 	case DRAGTYPE_EVENT_MOVE:
-	case DRAGTYPE_GLOBALEVENT_MOVE:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEALL ) );
 		break;
 	case DRAGTYPE_EVENT_STARTTIME:
+	case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 	case DRAGTYPE_EVENT_ENDTIME:
+	case DRAGTYPE_EVENT_ENDTIME_RESCALE:
+	case DRAGTYPE_SCENE_ENDTIME:
+	case DRAGTYPE_RESCALELEFT:
+	case DRAGTYPE_RESCALERIGHT:
 		m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		break;
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : mx - 
-//			my - 
-//-----------------------------------------------------------------------------
-void CChoreoView::FinishDraggingGlobalEvent( int mx, int my )
-{
-	DrawFocusRect();
-
-	m_FocusRects.Purge();
-
-	m_bDragging = false;
-
-	if ( !m_pClickedGlobalEvent )
-		return;
-
-	CChoreoEvent *e = m_pClickedGlobalEvent->GetEvent();
-	if ( !e )
-		return;
-
-	// Figure out true dt
-	float dt = GetTimeDeltaForMouseDelta( mx, m_xStart );
-	if ( !dt )
-		return;
-
-	SetDirty( true );
-
-	char undotext[ 256 ];
-	undotext[0]=0;
-	switch( e->GetType() )
-	{
-	default:
-		Assert( 0 );
-		break;
-	case CChoreoEvent::SECTION:
-		{
-			Q_strcpy( undotext, "Move section pause" );
-		}
-		break;
-	case CChoreoEvent::LOOP:
-		{
-			Q_strcpy( undotext, "Move loop event" );
-		}
-		break;
-	case CChoreoEvent::STOPPOINT:
-		{
-			Q_strcpy( undotext, "Move stop event" );
-		}
-		break;
-	}
-
-	PushUndo( undotext );
-
-	e->OffsetTime( dt );
-	e->SnapTimes();
-
-	PushRedo( undotext );
-
-	InvalidateLayout();
-
-	m_nDragType = DRAGTYPE_NONE;
-
-	if ( m_hPrevCursor )
-	{
-		SetCursor( m_hPrevCursor );
-		m_hPrevCursor = 0;
 	}
 }
 
@@ -2216,7 +2610,7 @@ void CChoreoView::FinishDraggingGlobalEvent( int mx, int my )
 // Input  : *e - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CChoreoView::CheckGestureLength( CChoreoEvent *e, bool checkonly )
+bool CChoreoView::CheckGestureLength( CChoreoEvent *e, bool bCheckOnly )
 {
 	Assert( e );
 	if ( !e )
@@ -2232,39 +2626,12 @@ bool CChoreoView::CheckGestureLength( CChoreoEvent *e, bool checkonly )
 	if ( !model )
 		return false;
 
-	if ( !model->getStudioHeader() )
+	CStudioHdr *pStudioHdr = model->GetStudioHdr();
+	if ( !pStudioHdr )
 		return false;
 
-	int iSequence = model->LookupSequence( e->GetParameters() );
-	if ( iSequence < 0 )
-		return false;
-
-	bool bret = false;
-
-	bool looping = model->GetSequenceLoops( iSequence );
-	if ( looping )
-	{
-		Con_Printf( "gesture %s of model %s is marked as STUDIO_LOOPING!\n",
-			e->GetParameters(), model->getStudioHeader()->name );
-	}
-
-	float seqduration = model->GetDuration( iSequence );
-	float curduration;
-	e->GetGestureSequenceDuration( curduration );
-	if ( seqduration != 0.0f &&
-		seqduration != curduration )
-	{
-		bret = true;
-		if ( !checkonly )
-		{
-			e->SetGestureSequenceDuration( seqduration );
-		}
-	}
-
-	return bret;
+	return UpdateGestureLength( e, pStudioHdr, model->GetPoseParameters(), bCheckOnly );
 }
-
-
 
 
 //-----------------------------------------------------------------------------
@@ -2272,7 +2639,7 @@ bool CChoreoView::CheckGestureLength( CChoreoEvent *e, bool checkonly )
 // Input  : *e - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CChoreoView::DefaultGestureLength( CChoreoEvent *e, bool checkonly )
+bool CChoreoView::DefaultGestureLength( CChoreoEvent *e, bool bCheckOnly )
 {
 	Assert( e );
 	if ( !e )
@@ -2288,7 +2655,7 @@ bool CChoreoView::DefaultGestureLength( CChoreoEvent *e, bool checkonly )
 	if ( !model )
 		return false;
 
-	if ( !model->getStudioHeader() )
+	if ( !model->GetStudioHdr() )
 		return false;
 
 	int iSequence = model->LookupSequence( e->GetParameters() );
@@ -2301,7 +2668,7 @@ bool CChoreoView::DefaultGestureLength( CChoreoEvent *e, bool checkonly )
 	if ( seqduration != 0.0f )
 	{
 		bret = true;
-		if ( !checkonly )
+		if ( !bCheckOnly )
 		{
 			e->SetEndTime( e->GetStartTime() + seqduration );
 		}
@@ -2316,123 +2683,27 @@ bool CChoreoView::DefaultGestureLength( CChoreoEvent *e, bool checkonly )
 // Input  : *e - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CChoreoView::AutoaddGestureEvents( CChoreoEvent *e, bool checkonly )
+bool CChoreoView::AutoaddGestureKeys( CChoreoEvent *e, bool bCheckOnly )
 {
-	Assert( e );
 	if ( !e )
 		return false;
 
-	if ( e->GetType() != CChoreoEvent::GESTURE )
-	{
-		Con_Printf( "CheckGestureLength:  called on non-GESTURE event %s\n", e->GetName() );
-		return false;
-	}
-
 	StudioModel *model = FindAssociatedModel( e->GetScene(), e->GetActor() );
 	if ( !model )
 		return false;
 
-	if ( !model->getStudioHeader() )
+	CStudioHdr *pStudioHdr = model->GetStudioHdr();
+	if ( !pStudioHdr )
 		return false;
 
-	int iSequence = model->LookupSequence( e->GetParameters() );
-	if ( iSequence < 0 )
-		return false;
-
-	bool bret = false;
-
-	mstudioseqdesc_t *pSeqDesc = model->GetSeqDesc( iSequence );
-
-	for (int i = 0; i < pSeqDesc->numevents; i++)
-	{
-		mstudioevent_t *pSeqEvent = pSeqDesc->pEvent( i );
-		if (pSeqEvent->event == EVENT_FACEPOSER_TAG)
-		{
-			if ( !checkonly )
-			{
-				e->AddAbsoluteTag( CChoreoEvent::SHIFTED, pSeqEvent->options, pSeqEvent->cycle );
-				e->AddAbsoluteTag( CChoreoEvent::PLAYBACK, pSeqEvent->options, pSeqEvent->cycle );
-			}
-			bret = true;
-		}
-	}
-
-	return bret;
-}
-
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *e - 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-
-bool CChoreoView::AutoaddSequenceKeys( CChoreoEvent *e )
-{
-	StudioModel *model = FindAssociatedModel( e->GetScene(), e->GetActor() );
-	if ( !model )
-		return false;
-
-	if ( !model->getStudioHeader() )
-		return false;
-
-	int iSequence = model->LookupSequence( e->GetParameters() );
-	if ( iSequence < 0 )
-		return false;
-
-	bool bret = false;
-
-	KeyValues *seqKeyValues = new KeyValues("");
-	if ( seqKeyValues->LoadFromBuffer( model->GetFileName( ), model->GetKeyValueText( iSequence ) ) )
-	{
-		// Do we have a build point section?
-		KeyValues *pkvAllFaceposer = seqKeyValues->FindKey("faceposer");
-		if ( pkvAllFaceposer )
-		{
-			// Start grabbing the sounds and slotting them in
-			KeyValues *pkvFaceposer;
-			for ( pkvFaceposer = pkvAllFaceposer->GetFirstSubKey(); pkvFaceposer; pkvFaceposer = pkvFaceposer->GetNextKey() )
-			{
-				if (!stricmp( pkvFaceposer->GetName(), "event_ramp" ))
-				{
-					KeyValues *pkvTags;
-					for ( pkvTags = pkvFaceposer->GetFirstSubKey(); pkvTags; pkvTags = pkvTags->GetNextKey() )
-					{
-						float time  = atof( pkvTags->GetName() );
-						float weight  = pkvTags->GetFloat();
-						// e->AddRamp( time, weight );
-					}
-				}
-				else if (!stricmp( pkvFaceposer->GetName(), "length" ))
-				{
-					float seqduration  = pkvFaceposer->GetFloat();
-					// e->SetEndTime( e->GetStartTime() + seqduration );
-				} else if (!stricmp( pkvFaceposer->GetName(), "tags" ))
-				{
-					KeyValues *pkvTags;
-					for ( pkvTags = pkvFaceposer->GetFirstSubKey(); pkvTags; pkvTags = pkvTags->GetNextKey() )
-					{
-						float percentage  = pkvTags->GetInt() / model->GetMaxFrame();
-						e->AddAbsoluteTag( CChoreoEvent::SHIFTED, pkvTags->GetName(), percentage );
-						e->AddAbsoluteTag( CChoreoEvent::PLAYBACK, pkvTags->GetName(), percentage );
-					}
-				}
-			}
-		}
-
-		seqKeyValues->deleteThis();
-	}
-
-	return true;
+	return AutoAddGestureKeys( e, pStudioHdr, model->GetPoseParameters(), bCheckOnly );
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *e - 
 //-----------------------------------------------------------------------------
-bool CChoreoView::CheckSequenceLength( CChoreoEvent *e, bool checkonly )
+bool CChoreoView::CheckSequenceLength( CChoreoEvent *e, bool bCheckOnly )
 {
 	Assert( e );
 	if ( !e )
@@ -2448,90 +2719,180 @@ bool CChoreoView::CheckSequenceLength( CChoreoEvent *e, bool checkonly )
 	if ( !model )
 		return false;
 
-	if ( !model->getStudioHeader() )
+	CStudioHdr *pStudioHdr = model->GetStudioHdr();
+	if ( !pStudioHdr )
 		return false;
 
-	int iSequence = model->LookupSequence( e->GetParameters() );
-	if ( iSequence < 0 )
-		return false;
-
-	bool bret = false;
-
-	bool looping = model->GetSequenceLoops( iSequence );
-
-	float seqduration = model->GetDuration( iSequence );
-
-	if ( looping )
-	{
-		if ( e->IsFixedLength() )
-		{
-			if ( checkonly )
-				return true;
-
-			Con_Printf( "CheckSequenceLength:  %s is looping, removing fixed length flag\n",
-				e->GetName() );
-			bret = true;
-		}
-		e->SetFixedLength( false );
-
-		if ( !e->HasEndTime() )
-		{
-			if ( checkonly )
-				return true;
-
-			Con_Printf( "CheckSequenceLength:  %s is looping, setting default end time\n",
-				e->GetName() );
-
-			e->SetEndTime( e->GetStartTime() + seqduration );
-
-			bret = true;
-		}
-	}
-	else
-	{
-		if ( !e->IsFixedLength() )
-		{
-			if ( checkonly )
-				return true;
-
-			Con_Printf( "CheckSequenceLength:  %s is fixed length, removing looping flag\n",
-				e->GetName() );
-			bret = true;
-		}
-		e->SetFixedLength( true );
-
-		if ( e->HasEndTime() )
-		{
-			float dt = e->GetDuration();
-			if ( fabs( dt - seqduration ) > 0.01f )
-			{
-				if ( checkonly )
-					return true;
-
-				Con_Printf( "CheckSequenceLength:  %s has wrong duration, changing length from %f to %f seconds\n",
-					e->GetName(), dt, seqduration );
-				bret = true;
-			}
-		}
-		else
-		{
-			if ( checkonly )
-				return true;
-
-			Con_Printf( "CheckSequenceLength:  %s has wrong duration, changing length to %f seconds\n",
-				e->GetName(), seqduration );
-			bret = true;
-		}
-
-		if ( !checkonly )
-		{
-			e->SetEndTime( e->GetStartTime() + seqduration );
-		}
-	}
-
-	return bret;
+	return UpdateSequenceLength( e, pStudioHdr, model->GetPoseParameters(), bCheckOnly, true );
 }
 
+void CChoreoView::FinishDraggingSceneEndTime( mxEvent *event, int mx, int my )
+{
+	DrawFocusRect();
+
+	m_FocusRects.Purge();
+
+	m_bDragging = false;
+
+	float mouse_dt = GetTimeDeltaForMouseDelta( mx, m_xStart );
+	if ( !mouse_dt )
+	{
+		return;
+	}
+
+	SetDirty( true );
+
+	const char *desc = "Change Scene Duration";
+
+	PushUndo( desc );
+
+	float newendtime = GetTimeValueForMouse( mx );
+	float oldendtime = m_pScene->FindStopTime();
+
+	float scene_dt = newendtime - oldendtime;
+
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = a->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			int k;
+
+			CChoreoEvent *finalGesture = NULL;
+			for ( k = channel->GetNumEvents() - 1; k >= 0; k-- )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				CChoreoEvent *e = event->GetEvent();
+				if ( e->GetType() != CChoreoEvent::GESTURE )
+					continue;
+
+				if ( !finalGesture )
+				{
+					finalGesture = e;
+				}
+				else
+				{
+					if ( e->GetStartTime() > finalGesture->GetStartTime() )
+					{
+						finalGesture = e;
+					}
+				}
+			}
+
+
+			for ( k = channel->GetNumEvents() - 1; k >= 0; k-- )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				CChoreoEvent *e = event->GetEvent();
+
+				// Event starts after new end time, kill it
+				if ( e->GetStartTime() > newendtime )
+				{
+					channel->GetChannel()->RemoveEvent( e );
+					m_pScene->DeleteReferencedObjects( e );
+					continue;
+				}
+
+				// No change to normal events that end earlier than new time (but do change gestures)
+				if ( e->GetEndTime() < newendtime && 
+					e != finalGesture )
+				{
+					continue;
+				}
+
+				float dt = scene_dt;
+				if ( e->GetType() == CChoreoEvent::GESTURE )
+				{
+					if ( e->GetEndTime() < newendtime )
+					{
+						dt = newendtime - e->GetEndTime();
+					}
+				}
+
+				float newduration = e->GetDuration() + dt;
+				RescaleRamp( e, newduration );
+				switch ( e->GetType() )
+				{
+				default:
+					break;
+				case CChoreoEvent::GESTURE:
+					{
+						e->RescaleGestureTimes( e->GetStartTime(), e->GetEndTime() + dt, true );
+					}
+					break;
+				case CChoreoEvent::FLEXANIMATION:
+					{
+						RescaleExpressionTimes( e, e->GetStartTime(), e->GetEndTime() + dt );
+					}
+					break;
+				}
+				e->OffsetEndTime( dt );
+				e->SnapTimes();
+				e->ResortRamp();
+			}
+		}
+	}
+
+	// Remove event and move to new object
+	DeleteSceneWidgets();
+
+	m_nDragType = DRAGTYPE_NONE;
+
+	if ( m_hPrevCursor )
+	{
+		SetCursor( m_hPrevCursor );
+		m_hPrevCursor = 0;
+	}
+
+	PushRedo( desc );
+
+	CreateSceneWidgets();
+
+	InvalidateLayout();
+
+	g_pExpressionTool->LayoutItems( true );
+	g_pExpressionTool->redraw();
+	g_pGestureTool->redraw();
+	g_pRampTool->redraw();
+	g_pSceneRampTool->redraw();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called after association changes to reset .wav file images
+// Input  :  - 
+//-----------------------------------------------------------------------------
+void CChoreoView::RecomputeWaves()
+{
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *c = a->GetChannel( j );
+			if ( !c )
+				continue;
+
+			for ( int k = 0; k < c->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *e = c->GetEvent( k );
+				if ( !e )
+					continue;
+
+				e->RecomputeWave();
+			}
+		}
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -2552,14 +2913,23 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 		if ( m_pScene && m_pClickedEvent && m_pClickedEvent->GetEvent()->GetType() == CChoreoEvent::SPEAK )
 		{
 			// Show phone wav in wav viewer
-			SetCurrentWaveFile( va( "sound/%s", FacePoser_TranslateSoundName( m_pClickedEvent->GetEvent()->GetParameters() ) ), m_pClickedEvent->GetEvent() );
+			char sndname[ 512 ];
+			Q_strncpy( sndname, FacePoser_TranslateSoundName( m_pClickedEvent->GetEvent() ), sizeof( sndname ) );
+			if ( sndname[ 0 ] )
+			{
+				SetCurrentWaveFile( va( "sound/%s", sndname ), m_pClickedEvent->GetEvent() );
+			}
+			else
+			{
+				Warning( "Unable to resolve sound name for '%s', check actor associations\n", m_pClickedEvent->GetEvent()->GetName() );
+			}
 		}
 		return;
 	}
 
 	SetDirty( true );
 
-	char *desc = "";
+	char const *desc = "";
 
 	switch ( m_nDragType )
 	{
@@ -2568,16 +2938,27 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 			desc = "Event Move";
 			break;
 		case DRAGTYPE_EVENT_STARTTIME:
+		case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 			desc = "Change Start Time";
 			break;
 		case DRAGTYPE_EVENT_ENDTIME:
+		case DRAGTYPE_EVENT_ENDTIME_RESCALE:
 			desc = "Change End Time";
 			break;
 		case DRAGTYPE_EVENTTAG_MOVE:
 			desc = "Move Event Tag";
 			break;
+		case DRAGTYPE_EVENTABSTAG_MOVE:
+			desc = "Move Abs Event Tag";
+			break;
+		case DRAGTYPE_RESCALELEFT:
+		case DRAGTYPE_RESCALERIGHT:
+			desc = "Rescale Time";
+			break;
 	}
 	PushUndo( desc );
+
+	CUtlVector< CChoreoEvent * > rescaleHelper;
 
 	for ( int i = 0; i < m_SceneActors.Size(); i++ )
 	{
@@ -2612,6 +2993,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 						e->SnapTimes();
 						break;
 					case DRAGTYPE_EVENT_STARTTIME:
+					case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 						{
 							float newduration = e->GetDuration() - dt;
 							RescaleRamp( e, newduration );
@@ -2621,7 +3003,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 								break;
 							case CChoreoEvent::GESTURE:
 								{
-									RescaleGestureTimes( e, e->GetStartTime() + dt, e->GetEndTime() );
+									e->RescaleGestureTimes( e->GetStartTime() + dt, e->GetEndTime(), m_nDragType == DRAGTYPE_EVENT_STARTTIME );
 								}
 								break;
 							case CChoreoEvent::FLEXANIMATION:
@@ -2636,6 +3018,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 						}
 						break;
 					case DRAGTYPE_EVENT_ENDTIME:
+					case DRAGTYPE_EVENT_ENDTIME_RESCALE:
 						{
 							float newduration = e->GetDuration() + dt;
 							RescaleRamp( e, newduration );
@@ -2645,7 +3028,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 								break;
 							case CChoreoEvent::GESTURE:
 								{
-									RescaleGestureTimes( e, e->GetStartTime(), e->GetEndTime() + dt );
+									e->RescaleGestureTimes( e->GetStartTime(), e->GetEndTime() + dt, m_nDragType == DRAGTYPE_EVENT_ENDTIME );
 								}
 								break;
 							case CChoreoEvent::FLEXANIMATION:
@@ -2659,12 +3042,54 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 							e->ResortRamp();
 						}
 						break;
+					case DRAGTYPE_RESCALELEFT:
+					case DRAGTYPE_RESCALERIGHT:
+						{
+							rescaleHelper.AddToTail( e );
+						}
+						break;
 					case DRAGTYPE_EVENTTAG_MOVE:
 						{
 							// Get current x position
 							if ( m_nClickedTag != -1 )
 							{
 								CEventRelativeTag *tag = e->GetRelativeTag( m_nClickedTag );
+								if ( tag )
+								{
+									float dx = mx - m_xStart;
+									// Determine left edcge
+									RECT bounds;
+									bounds = event->getBounds();
+									if ( bounds.right - bounds.left > 0 )
+									{
+										int left = bounds.left + (int)( tag->GetPercentage() * (float)( bounds.right - bounds.left ) + 0.5f );
+
+										left += dx;
+
+										if ( left < bounds.left )
+										{
+											left = bounds.left;
+										}
+										else if ( left >= bounds.right )
+										{
+											left = bounds.right - 1;
+										}
+
+										// Now convert back to a percentage
+										float frac = (float)( left - bounds.left ) / (float)( bounds.right - bounds.left );
+
+										tag->SetPercentage( frac );
+									}
+								}
+							}
+						}
+						break;
+					case DRAGTYPE_EVENTABSTAG_MOVE:
+						{
+							// Get current x position
+							if ( m_pClickedAbsoluteTag != NULL )
+							{
+								CEventAbsoluteTag *tag = m_pClickedAbsoluteTag;
 								if ( tag )
 								{
 									float dx = mx - m_xStart;
@@ -2705,7 +3130,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 				case CChoreoEvent::SPEAK:
 					{
 						// Try and load wav to get length
-						CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( e->GetParameters() ) ) );
+						CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( e ) ) );
 						if ( wave )
 						{
 							e->SetEndTime( e->GetStartTime() + wave->GetRunningLength() );
@@ -2728,6 +3153,114 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 		}
 	}
 
+	if ( rescaleHelper.Count() > 0 )
+	{
+		int i;
+		// Determine start and end times for existing "selection"
+		float flStart = FLT_MAX;
+		float flEnd = FLT_MIN;
+		for ( i = 0; i < rescaleHelper.Count(); ++i )
+		{
+			CChoreoEvent *e = rescaleHelper[ i ];
+			float st = e->GetStartTime();
+			float ed = e->GetEndTime();
+
+			if ( st < flStart )
+			{
+				flStart = st;
+			}
+			if ( ed > flEnd )
+			{
+				flEnd = ed;
+			}
+		}
+
+		float flSelectionDuration = flEnd - flStart;
+		if ( flSelectionDuration > 0.0f )
+		{
+			float flNewDuration = 0.0f;
+			if ( m_nDragType == DRAGTYPE_RESCALELEFT )
+			{
+				flNewDuration = max( 0.1f, flSelectionDuration - dt );
+			}
+			else
+			{
+				flNewDuration = max( 0.1f, flSelectionDuration + dt );
+			}
+			float flScale = flNewDuration / flSelectionDuration;
+
+			for ( i = 0; i < rescaleHelper.Count(); ++i )
+			{
+				CChoreoEvent *e = rescaleHelper[ i ];
+				float st = e->GetStartTime();
+				float et = e->HasEndTime() ? e->GetEndTime() : e->GetStartTime();
+				float flTimeFromStart = st - flStart;
+				float flTimeFromEnd = flEnd - et;
+				float flDuration = e->GetDuration();
+			
+				float flNewStartTime = 0.0f;
+				float flNewDuration = 0.0f;
+
+				if ( m_nDragType == DRAGTYPE_RESCALELEFT )
+				{
+					float flNewEndTime = flEnd - flTimeFromEnd * flScale;
+					if ( !e->HasEndTime() || e->IsFixedLength() )
+					{
+						e->OffsetTime( flNewEndTime - flDuration - st );
+						continue;
+					}
+					flNewDuration = flDuration * flScale;
+					flNewStartTime = flNewEndTime - flNewDuration;
+				}
+				else
+				{
+					flNewStartTime = flTimeFromStart * flScale + flStart;
+					if ( !e->HasEndTime() || e->IsFixedLength() )
+					{
+						e->OffsetTime( flNewStartTime - st );
+						continue;
+					}
+					flNewDuration = flDuration * flScale;
+				}
+				
+				RescaleRamp( e, flNewDuration );
+				switch ( e->GetType() )
+				{
+				default:
+					break;
+				case CChoreoEvent::GESTURE:
+					{
+						e->RescaleGestureTimes( flNewStartTime, flNewStartTime + flNewDuration, m_nDragType == DRAGTYPE_EVENT_STARTTIME || m_nDragType == DRAGTYPE_EVENT_ENDTIME );
+					}
+					break;
+				case CChoreoEvent::FLEXANIMATION:
+					{
+						RescaleExpressionTimes( e, flNewStartTime, flNewStartTime + flNewDuration );
+					}
+					break;
+				}
+
+				e->SetStartTime( flNewStartTime );
+				Assert( e->HasEndTime() );
+				e->SetEndTime( flNewStartTime + flNewDuration );
+			}
+		}
+	}
+
+	for ( int i = 0; i < m_SceneGlobalEvents.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *gew = m_SceneGlobalEvents[ i ];
+		if ( !gew || !gew->IsSelected() )
+			continue;
+
+		CChoreoEvent *e = gew->GetEvent();
+		if ( !e )
+			continue;
+	
+		e->OffsetTime( dt );
+		e->SnapTimes();
+	}
+
 	m_nDragType = DRAGTYPE_NONE;
 
 	if ( m_hPrevCursor )
@@ -2736,57 +3269,62 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 		m_hPrevCursor = 0;
 	}
 
-	CChoreoEvent *e = m_pClickedEvent->GetEvent();
-	// See if event is moving to a new owner
-	CChoreoChannelWidget *chOrig, *chNew;
+	CChoreoEvent *e = m_pClickedEvent ? m_pClickedEvent->GetEvent() : NULL;
 
-	int dy = my - m_yStart;
-	bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
-	if ( !shiftdown )
-	{
-		dy = 0;
-	}
+	if ( e )
+	{		
+		// See if event is moving to a new owner
+		CChoreoChannelWidget *chOrig, *chNew;
 
-	if ( abs( dy ) < m_pClickedEvent->GetItemHeight() )
-	{
-		my = m_yStart;
-	}
-
-	chNew = GetChannelUnderCursorPos( mx, my );
-	
-	InvalidateLayout();
-
-	mx = m_xStart;
-	my = m_yStart;
-
-	chOrig = m_pClickedChannel;
-
-	if ( chOrig && chNew && chOrig != chNew )
-	{
-		// Swap underlying objects
-		CChoreoChannel *pOrigChannel, *pNewChannel;
-
-		pOrigChannel = chOrig->GetChannel();
-		pNewChannel = chNew->GetChannel();
-
-		Assert( pOrigChannel && pNewChannel );
-
-		// Remove event and move to new object
-		DeleteSceneWidgets();
-
-		pOrigChannel->RemoveEvent( e );
-		pNewChannel->AddEvent( e );
-
-		e->SetChannel( pNewChannel );
-
-		CreateSceneWidgets();
-	}
-	else
-	{
-		if ( e && e->GetType() == CChoreoEvent::SPEAK )
+		int dy = my - m_yStart;
+		bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+		if ( !shiftdown )
 		{
-			// Show phone wav in wav viewer
-			SetCurrentWaveFile( va( "sound/%s", FacePoser_TranslateSoundName( e->GetParameters() ) ), e );
+			dy = 0;
+		}
+
+		if ( abs( dy ) < m_pClickedEvent->GetItemHeight() )
+		{
+			my = m_yStart;
+		}
+
+		chNew = GetChannelUnderCursorPos( mx, my );
+		
+		InvalidateLayout();
+
+		mx = m_xStart;
+		my = m_yStart;
+
+		chOrig = m_pClickedChannel;
+
+		if ( chOrig && chNew && chOrig != chNew )
+		{
+			// Swap underlying objects
+			CChoreoChannel *pOrigChannel, *pNewChannel;
+
+			pOrigChannel = chOrig->GetChannel();
+			pNewChannel = chNew->GetChannel();
+
+			Assert( pOrigChannel && pNewChannel );
+
+			// Remove event and move to new object
+			DeleteSceneWidgets();
+
+			pOrigChannel->RemoveEvent( e );
+			pNewChannel->AddEvent( e );
+
+			e->SetChannel( pNewChannel );
+			e->SetActor( pNewChannel->GetActor() );
+
+			CreateSceneWidgets();
+		}
+		else
+		{
+			if ( e && e->GetType() == CChoreoEvent::SPEAK )
+			{
+				// Show phone wav in wav viewer
+				SetCurrentWaveFile( va( "sound/%s", FacePoser_TranslateSoundName( e ) ), e );
+			}
 		}
 	}
 
@@ -2802,6 +3340,7 @@ void CChoreoView::FinishDraggingEvent( mxEvent *event, int mx, int my )
 		case CChoreoEvent::FLEXANIMATION:
 			{
 				g_pExpressionTool->SetEvent( e );
+				g_pFlexPanel->SetEvent( e );
 			}
 			break;
 		case CChoreoEvent::GESTURE:
@@ -2833,6 +3372,8 @@ void CChoreoView::MouseFinishDrag( mxEvent *event, int mx, int my )
 	if ( !m_bDragging )
 		return;
 
+	ApplyBounds( mx, my );
+
 	switch ( m_nDragType )
 	{
 	case DRAGTYPE_SCRUBBER:
@@ -2858,12 +3399,17 @@ void CChoreoView::MouseFinishDrag( mxEvent *event, int mx, int my )
 		break;
 	case DRAGTYPE_EVENT_MOVE:
 	case DRAGTYPE_EVENT_STARTTIME:
+	case DRAGTYPE_EVENT_STARTTIME_RESCALE:
 	case DRAGTYPE_EVENT_ENDTIME:
+	case DRAGTYPE_EVENT_ENDTIME_RESCALE:
 	case DRAGTYPE_EVENTTAG_MOVE:
+	case DRAGTYPE_EVENTABSTAG_MOVE:
+	case DRAGTYPE_RESCALELEFT:
+	case DRAGTYPE_RESCALERIGHT:
 		FinishDraggingEvent( event, mx, my );
 		break;
-	case DRAGTYPE_GLOBALEVENT_MOVE:
-		FinishDraggingGlobalEvent( mx, my );
+	case DRAGTYPE_SCENE_ENDTIME:
+		FinishDraggingSceneEndTime( event, mx, my );
 		break;
 	default:
 		break;
@@ -2877,6 +3423,8 @@ void CChoreoView::MouseFinishDrag( mxEvent *event, int mx, int my )
 //-----------------------------------------------------------------------------
 int CChoreoView::handleEvent( mxEvent *event )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
@@ -2886,10 +3434,46 @@ int CChoreoView::handleEvent( mxEvent *event )
 
 	switch ( event->event )
 	{
+	case mxEvent::MouseWheeled:
+		{
+			CChoreoScene *scene = GetScene();
+			if ( scene )
+			{
+				int tz = GetTimeZoom( GetToolName() );
+				bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+				int stepMultipiler = shiftdown ? 5 : 1;
+
+				// Zoom time in  / out
+				if ( event->height > 0 )
+				{
+					tz = min( tz + TIME_ZOOM_STEP * stepMultipiler, MAX_TIME_ZOOM );
+				}
+				else
+				{
+					tz = max( tz - TIME_ZOOM_STEP * stepMultipiler, TIME_ZOOM_STEP );
+				}
+
+				SetTimeZoom( GetToolName(), tz, true );
+
+				CUtlVector< CChoreoEvent * > selected;
+				RememberSelectedEvents( selected );
+
+				DeleteSceneWidgets();
+				CreateSceneWidgets();
+
+				ReselectEvents( selected );
+
+				InvalidateLayout();
+				Con_Printf( "Zoom factor %i %%\n", GetTimeZoom( GetToolName() ) );
+			}
+			iret = 1;
+		}
+		break;
 	case mxEvent::Size:
 		{
-			m_nLastHPixelsNeeded = 0;
-			m_nLastVPixelsNeeded = 0;
+			// Force scroll bars to recompute
+			ForceScrollBarsToRecompute( false );
+
 			InvalidateLayout();
 			PositionControls();
 			iret = 1;
@@ -2966,11 +3550,21 @@ int CChoreoView::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::KeyDown:
 		{
+			iret = 1;
+
 			switch ( event->key )
 			{
+			default:
+				iret = 0;
+				break;
+			case 'E':
+				if ( GetAsyncKeyState( VK_CONTROL ) )
+				{
+					OnPlaceNextSpeakEvent();
+				}
+				break;
 			case VK_ESCAPE:
 				DeselectAll();
-				iret = 1;
 				break;
 			case 'C':
 				CopyEvents();
@@ -2979,9 +3573,128 @@ int CChoreoView::handleEvent( mxEvent *event )
 			case 'V':
 				PasteEvents();
 				redraw();
-				iret = 1;
 				break;
-			default:
+			case VK_DELETE:
+				{
+					if ( IsActiveTool() )
+					{
+						DeleteSelectedEvents();
+					}
+				}
+				break;
+			case VK_RETURN:
+				{
+					CUtlVector< CChoreoEvent * > events;
+					GetSelectedEvents( events );
+					if ( events.Count() == 1 )
+					{
+						if ( GetAsyncKeyState( VK_MENU ) )
+						{
+							EditEvent( events[ 0 ] );
+							redraw();
+							iret = 1;
+						}
+					}
+				}
+				break;
+			case 'Z':  // Undo/Redo
+				{
+					if ( GetAsyncKeyState( VK_CONTROL ) )
+					{
+						if ( GetAsyncKeyState( VK_SHIFT ) )
+						{
+							if ( CanRedo() )
+							{
+								Con_Printf( "Redo %s\n", GetRedoDescription() );
+								Redo();
+								iret = 1;
+							}
+						}
+						else
+						{
+							if ( CanUndo() )
+							{
+								Con_Printf( "Undo %s\n", GetUndoDescription() );
+								Undo();
+								iret = 1;
+							}
+						}
+					}
+				}
+				break;
+
+			case VK_SPACE:
+				{
+					if ( IsPlayingScene() )
+					{
+						StopScene();
+					}
+				}
+				break;
+			case 188: // VK_OEM_COMMA:
+				{
+					SetScrubTargetTime( 0.0f );
+				}
+				break;
+			case 190: // VK_OEM_PERIOD:
+				{
+					CChoreoScene *scene = GetScene();
+					if ( scene )
+					{
+						SetScrubTargetTime( scene->FindStopTime() );
+					}
+				}
+				break;
+			case VK_LEFT: 
+				{
+					CChoreoScene *scene = GetScene();
+					if ( scene && scene->GetSceneFPS() > 0 )
+					{
+						float curscrub = m_flScrub;
+						curscrub -= ( 1.0f / (float)scene->GetSceneFPS() );
+						curscrub = max( curscrub, 0.0f );
+						SetScrubTargetTime( curscrub );
+					}
+				}
+				break;
+			case VK_RIGHT: 
+				{
+					CChoreoScene *scene = GetScene();
+					if ( scene && scene->GetSceneFPS() > 0 )
+					{
+						float curscrub = m_flScrub;
+						curscrub += ( 1.0f / (float)scene->GetSceneFPS() );
+						curscrub = min( curscrub, scene->FindStopTime() );
+						SetScrubTargetTime( curscrub );
+					}
+				}
+				break;
+			case VK_HOME:
+				{
+					MoveTimeSliderToPos( 0 );
+				}
+				break;
+			case VK_END:
+				{
+					float maxtime = m_pScene->FindStopTime() - 1.0f;
+					int pixels = (int)( maxtime * GetPixelsPerSecond() );
+					MoveTimeSliderToPos( pixels - 1 );
+				}
+				break;
+			case VK_PRIOR:  // PgUp
+				{
+					int window = w2() - GetLabelWidth();
+					m_flLeftOffset = max( m_flLeftOffset - (float)window, 0.0f );
+					MoveTimeSliderToPos( (int)m_flLeftOffset );
+				}
+				break;
+			case VK_NEXT:   // PgDown
+				{
+					int window = w2() - GetLabelWidth();
+					int pixels = ComputeHPixelsNeeded();
+					m_flLeftOffset = min( m_flLeftOffset + (float)window, (float)pixels );
+					MoveTimeSliderToPos( (int)m_flLeftOffset );
+				}
 				break;
 			}
 		}
@@ -2992,7 +3705,47 @@ int CChoreoView::handleEvent( mxEvent *event )
 			switch ( event->action )
 			{
 			default:
-				iret = 0;
+				{
+					iret = 0;
+					int lang_index = event->action - IDC_CV_CC_LANGUAGESTART;
+					if ( lang_index >= 0 && lang_index < CC_NUM_LANGUAGES )
+					{
+						iret = 1;
+						SetCloseCaptionLanguageId( lang_index );
+					}
+				}
+				break;
+			case IDC_CV_TOGGLECLOSECAPTIONS:
+				{
+					OnToggleCloseCaptionsForEvent();
+				}
+				break;
+			case IDC_CV_CHANGECLOSECAPTIONTOKEN:
+				{
+					if ( m_pClickedChannel )
+					{
+						CChoreoEvent *e = m_pClickedChannel->GetCaptionClickedEvent();
+						if ( e && e->GetNumSlaves() >= 1 )
+						{
+							OnChangeCloseCaptionToken( e );
+						}
+					}
+				}
+				break;
+			case IDC_CV_REMOVESPEAKEVENTFROMGROUP:
+				{
+					OnRemoveSpeakEventFromGroup();
+				}
+				break;
+			case IDC_CV_COMBINESPEAKEVENTS:
+				{
+					OnCombineSpeakEvents();
+				}
+				break;
+			case IDC_CV_CC_SHOW:
+				{
+					OnToggleCloseCaptionTags();
+				}
 				break;
 			case IDC_CV_TOGGLERAMPONLY:
 				{
@@ -3036,6 +3789,14 @@ int CChoreoView::handleEvent( mxEvent *event )
 				ExportEvents();
 				redraw();
 				break;
+			case IDC_EXPORT_VCD:
+				ExportVCD();
+				redraw();
+				break;
+			case IDC_IMPORT_VCD:
+				ImportVCD();
+				redraw();
+				break;
 			case IDC_EXPRESSIONTOOL:
 				OnExpressionTool();
 				break;
@@ -3070,9 +3831,7 @@ int CChoreoView::handleEvent( mxEvent *event )
 				break;
 			case IDC_STOPSCENE:
 				Con_Printf( "Canceling playback\n" );
-				SetScrubTargetTime( m_flScrub );
-				FinishSimulation();
-				sound->Flush();
+				StopScene();
 				break;
 			case IDC_CHOREOVSCROLL:
 				{
@@ -3231,6 +3990,11 @@ int CChoreoView::handleEvent( mxEvent *event )
 					AddEvent( CChoreoEvent::INTERRUPT );
 				}
 				break;
+			case IDC_ADDEVENT_PERMITRESPONSES:
+				{
+					AddEvent( CChoreoEvent::PERMIT_RESPONSES );
+				}
+				break;
 			case IDC_ADDEVENT_EXPRESSION:
 				{
 					AddEvent( CChoreoEvent::EXPRESSION );
@@ -3244,6 +4008,11 @@ int CChoreoView::handleEvent( mxEvent *event )
 			case IDC_ADDEVENT_GESTURE:
 				{
 					AddEvent( CChoreoEvent::GESTURE );
+				}
+				break;
+			case IDC_ADDEVENT_NULLGESTURE:
+				{
+					AddEvent( CChoreoEvent::GESTURE, 1 );
 				}
 				break;
 			case IDC_ADDEVENT_LOOKAT:
@@ -3271,6 +4040,11 @@ int CChoreoView::handleEvent( mxEvent *event )
 					AddEvent( CChoreoEvent::FIRETRIGGER );
 				}
 				break;
+			case IDC_ADDEVENT_GENERIC:
+				{
+					AddEvent( CChoreoEvent::GENERIC );
+				}
+				break;
 			case IDC_ADDEVENT_SUBSCENE:
 				{
 					AddEvent( CChoreoEvent::SUBSCENE );
@@ -3294,6 +4068,16 @@ int CChoreoView::handleEvent( mxEvent *event )
 			case IDC_DELETEEVENT:
 				{
 					DeleteSelectedEvents();
+				}
+				break;
+			case IDC_CV_ENABLEEVENTS:
+				{
+					EnableSelectedEvents( true );
+				}
+				break;
+			case IDC_CV_DISABLEEVENTS:
+				{
+					EnableSelectedEvents( false );
 				}
 				break;
 			case IDC_MOVETOBACK:
@@ -3394,6 +4178,120 @@ int CChoreoView::handleEvent( mxEvent *event )
 					}
 				}
 				break;
+			case IDC_CV_ALLEVENTS_CHANNEL:
+				{
+					CChoreoChannelWidget *channel = m_pClickedChannel;
+					if ( channel )
+					{
+						SelectAllEventsInChannel( channel );
+					}
+				}
+				break;
+			case IDC_CV_ALLEVENTS_ACTOR:
+				{
+					CChoreoActorWidget *actor = m_pClickedActor;
+					if ( actor )
+					{
+						SelectAllEventsInActor( actor );
+					}
+				}
+				break;
+			case IDC_SELECTEVENTS_ALL_BEFORE:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = false;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_ALL;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_SELECTEVENTS_ALL_AFTER:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = true;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_ALL;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_SELECTEVENTS_ACTIVE_BEFORE:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = false;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_ACTIVE;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_SELECTEVENTS_ACTIVE_AFTER:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = true;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_ACTIVE;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_SELECTEVENTS_CHANNEL_BEFORE:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = false;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_CHANNEL;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_SELECTEVENTS_CHANNEL_AFTER:
+				{
+					SelectionParams_t params;
+					Q_memset( &params, 0, sizeof( params ) );
+					params.forward = true;
+					params.time = GetTimeValueForMouse( m_nClickedX );
+					params.type = SelectionParams_t::SP_CHANNEL;
+
+					SelectEvents( params );
+				}
+				break;
+			case IDC_INSERT_TIME:
+				{
+					OnInsertTime();
+				}
+				break;
+			case IDC_DELETE_TIME:
+				{
+					OnDeleteTime();
+				}
+				break;
+			case IDC_CV_ALIGN_LEFT:
+				{
+					OnAlign( true );
+				}
+				break;
+			case IDC_CV_ALIGN_RIGHT:
+				{
+					OnAlign( false );
+				}
+				break;
+			case IDC_CV_SAMESIZE_SMALLEST:
+				{
+					OnMakeSameSize( true );
+				}
+				break;
+			case IDC_CV_SAMESIZE_LARGEST:
+				{
+					OnMakeSameSize( false );
+				}
+				break;
 			}
 
 			if ( iret == 1 )
@@ -3414,6 +4312,8 @@ void CChoreoView::PlayScene( bool forward )
 	m_bForward = forward;
 	if ( !m_pScene )
 		return;
+
+	sound->Flush();
 
 	// Make sure phonemes are loaded
 	FacePoser_EnsurePhonemesLoaded();
@@ -3470,8 +4370,6 @@ void CChoreoView::PlayScene( bool forward )
 		SetScrubTargetTime( m_bForward ? sceneendtime : 0 );
 	}
 
-	expressions->NewMarkovIndices();
-
 	if ( g_viewerSettings.speedScale == 0.0f )
 	{
 		m_flLastSpeedScale = g_viewerSettings.speedScale;
@@ -3489,8 +4387,8 @@ void CChoreoView::PlayScene( bool forward )
 //-----------------------------------------------------------------------------
 void CChoreoView::MoveTimeSliderToPos( int x )
 {
-	m_nLeftOffset = x;
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_flLeftOffset = (float)x;
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
 	InvalidateRect( (HWND)m_pHorzScrollBar->getHandle(), NULL, TRUE );
 	InvalidateLayout();
 }
@@ -3520,13 +4418,13 @@ void CChoreoView::ProcessExpression( CChoreoScene *scene, CChoreoEvent *event )
 	if ( !model )
 		return;
 
-	studiohdr_t *hdr = model->getStudioHeader ();
+	CStudioHdr *hdr = model->GetStudioHdr();
 	if ( !hdr )
 	{
 		return;
 	}
 
-	CExpClass *p = expressions->FindClass( event->GetParameters() );
+	CExpClass *p = expressions->FindClass( event->GetParameters(), true );
 	if ( !p )
 	{
 		return;
@@ -3536,18 +4434,6 @@ void CChoreoView::ProcessExpression( CChoreoScene *scene, CChoreoEvent *event )
 	if ( !exp )
 	{
 		return;
-	}
-
-	// Resolve markov chains
-	exp = exp->GetExpression();
-
-	// Allow per model override to apply
-	if ( FacePoser_GetOverridesShowing() )
-	{
-		if ( exp->HasOverride() && exp->GetOverride() )
-		{
-			exp = exp->GetOverride();
-		}
 	}
 
 	CChoreoActor *a = event->GetActor();
@@ -3579,14 +4465,15 @@ void CChoreoView::ProcessExpression( CChoreoScene *scene, CChoreoEvent *event )
 
 	float flIntensity = event->GetIntensity( scene->GetTime() );
 
-	// Just add in to target values for correct actor
-	for ( i = 0; i < hdr->numflexcontrollers; i++ )
+	// blend in target values for correct actor
+	for ( LocalFlexController_t i = (LocalFlexController_t)0; i < hdr->numflexcontrollers(); i++ )
 	{
-		int j = hdr->pFlexcontroller( i )->link;
-
-		// FIXME: the events need to be processed in a specific order....
-		// current[ i ] = current[i] * (1.0f - weights[i]) + settings[ i ] * flIntensity * weights[i];
-		current[ i ] += settings[ i ] * flIntensity;
+		mstudioflexcontroller_t *pFlex = hdr->pFlexcontroller( i );
+		int j = pFlex->localToGlobal;
+		if ( j < 0 )
+			continue;
+		float s = clamp( weights[j] * flIntensity, 0.0, 1.0 );
+		current[ j ] = current[j] * (1.0f - s) + settings[ j ] * s;
 	}
 }
 
@@ -3595,7 +4482,7 @@ void CChoreoView::ProcessExpression( CChoreoScene *scene, CChoreoEvent *event )
 // Input  : *hdr - 
 //			*event - 
 //-----------------------------------------------------------------------------
-void SetupFlexControllerTracks( studiohdr_t *hdr, CChoreoEvent *event )
+void SetupFlexControllerTracks( CStudioHdr *hdr, CChoreoEvent *event )
 {
 	Assert( hdr );
 	Assert( event );
@@ -3610,9 +4497,35 @@ void SetupFlexControllerTracks( studiohdr_t *hdr, CChoreoEvent *event )
 	if ( event->GetTrackLookupSet() )
 		return;
 
-	for ( int i = 0; i < hdr->numflexcontrollers; i++ )
+	/*
+	// FIXME:  Brian hooked this stuff up for some took work, but at this point the .mdl files don't look like they've been updated to include the remapping data yet...
+	int c = hdr->numflexcontrollerremaps();
+	for ( i = 0; i < c; ++i )
 	{
-		int j = hdr->pFlexcontroller( i )->link;
+		mstudioflexcontrollerremap_t *remap = hdr->pFlexcontrollerRemap( i );
+		Msg( "remap %s\n", remap->pszName() );
+		Msg( "  type %d\n", remap->remaptype );
+		Msg( "  num remaps %d (stereo %s)\n", remap->numremaps, remap->stereo ? "true" : "false" );
+		for ( int j = 0 ; j < remap->numremaps; ++j )
+		{
+			int index = remap->pRemapControlIndex( j );
+			Msg( "  %d:  maps to %d (%s) with %s\n", j, index, hdr->pFlexcontroller( index )->pszName(), remap->pRemapControl( j ) );
+		}
+	}
+	*/
+
+	// Unlink stuff in case it doesn't exist
+	int	nTrackCount = event->GetNumFlexAnimationTracks();
+	for ( int i = 0; i < nTrackCount; ++i )
+	{
+		CFlexAnimationTrack *pTrack = event->GetFlexAnimationTrack( i );
+		pTrack->SetFlexControllerIndex( LocalFlexController_t(-1), -1, 0 );
+		pTrack->SetFlexControllerIndex( LocalFlexController_t(-1), -1, 1 );
+	}
+
+	for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); ++i )
+	{
+		int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 		char const *name = hdr->pFlexcontroller( i )->pszName();
 		if ( !name )
@@ -3636,21 +4549,39 @@ void SetupFlexControllerTracks( studiohdr_t *hdr, CChoreoEvent *event )
 		track->SetFlexControllerIndex( i, j, 0 );
 		if ( combo )
 		{
-			track->SetFlexControllerIndex( i + 1, hdr->pFlexcontroller( i + 1 )->link, 1 );
+			track->SetFlexControllerIndex( LocalFlexController_t(i + 1), hdr->pFlexcontroller( LocalFlexController_t(i + 1) )->localToGlobal, 1 );
 			track->SetComboType( true );
 		}
-		
+
+		float orig_min = track->GetMin( );
+		float orig_max = track->GetMax( );
+
 		// set range
-		if (hdr->pFlexcontroller( i )->max == 1.0f)
+		if (hdr->pFlexcontroller( i )->min == 0.0f || hdr->pFlexcontroller( i )->max == 1.0f)
 		{
+			track->SetInverted( false );
 			track->SetMin( hdr->pFlexcontroller( i )->min );
 			track->SetMax( hdr->pFlexcontroller( i )->max );
 		}
 		else
 		{
 			// invert ranges for wide ranged, makes sense considering flexcontroller names...
+			track->SetInverted( true );
 			track->SetMin( hdr->pFlexcontroller( i )->max );
 			track->SetMax( hdr->pFlexcontroller( i )->min );
+		}
+
+		// resample track based on this models dynamic range
+		if (track->GetNumSamples( 0 ) > 0)
+		{
+			float range = track->GetMax( ) - track->GetMin( );
+
+			for (int i = 0; i < track->GetNumSamples( 0 ); i++)
+			{
+				CExpressionSample	*sample = track->GetSample( i, 0 );
+				float rangedValue = orig_min * (1 - sample->value) + orig_max * sample->value;
+				sample->value = clamp( (rangedValue - track->GetMin( )) / range, 0.0, 1.0 );
+			}
 		}
 
 		// skip next flex since we've already assigned it
@@ -3676,7 +4607,7 @@ void CChoreoView::ProcessFlexAnimation( CChoreoScene *scene, CChoreoEvent *event
 	if ( !model )
 		return;
 
-	studiohdr_t *hdr = model->getStudioHeader ();
+	CStudioHdr *hdr = model->GetStudioHdr();
 	if ( !hdr )
 	{
 		return;
@@ -3710,6 +4641,9 @@ void CChoreoView::ProcessFlexAnimation( CChoreoScene *scene, CChoreoEvent *event
 
 	float weight = event->GetIntensity( scene->GetTime() );
 
+	CChoreoEventWidget *eventwidget = FindWidgetForEvent( event );
+	bool bUpdateSliders = (eventwidget && eventwidget->IsSelected() && model == models->GetActiveStudioModel() );
+
 	// Iterate animation tracks
 	for ( i = 0; i < event->GetNumFlexAnimationTracks(); i++ )
 	{
@@ -3719,7 +4653,21 @@ void CChoreoView::ProcessFlexAnimation( CChoreoScene *scene, CChoreoEvent *event
 
 		// Disabled
 		if ( !track->IsTrackActive() )
+		{
+			if ( bUpdateSliders )
+			{
+				for ( int side = 0; side < 1 + track->IsComboType(); side++ )
+				{
+					int controller = track->GetFlexControllerIndex( side );
+					if ( controller != -1 && !g_pFlexPanel->IsEdited( controller ))
+					{
+						g_pFlexPanel->SetSlider( controller, 0.0 );
+						g_pFlexPanel->SetInfluence( controller, 0.0f );
+					}
+				}
+			}
 			continue;
+		}
 
 		// Map track flex controller to global name
 		if ( track->IsComboType() )
@@ -3731,6 +4679,13 @@ void CChoreoView::ProcessFlexAnimation( CChoreoScene *scene, CChoreoEvent *event
 				{
 					// Get spline intensity for controller
 					float flIntensity = track->GetIntensity( scene->GetTime(), side );
+
+					if (bUpdateSliders && !g_pFlexPanel->IsEdited( controller ) )
+					{
+						g_pFlexPanel->SetSlider( controller, flIntensity );
+						g_pFlexPanel->SetInfluence( controller, 1.0f );
+					}
+
 					flIntensity = current[ controller ] * (1 - weight) + flIntensity * weight;
 					current[ controller ] = flIntensity;
 				}
@@ -3743,12 +4698,20 @@ void CChoreoView::ProcessFlexAnimation( CChoreoScene *scene, CChoreoEvent *event
 			{
 				// Get spline intensity for controller
 				float flIntensity = track->GetIntensity( scene->GetTime(), 0 );
+
+				if (bUpdateSliders && !g_pFlexPanel->IsEdited( controller ) )
+				{
+					g_pFlexPanel->SetSlider( controller, flIntensity );
+					g_pFlexPanel->SetInfluence( controller, 1.0f );
+				}
+
 				flIntensity = current[ controller ] * (1 - weight) + flIntensity * weight;
 				current[ controller ] = flIntensity;
 			}
 		}
 	}
 }
+
 
 #include "mapentities.h"
 
@@ -3768,26 +4731,32 @@ void CChoreoView::ProcessLookat( CChoreoScene *scene, CChoreoEvent *event )
 
 	Assert( a );
 
-	if (!stricmp( event->GetParameters(), a->GetName() ))
+	StudioModel *model = FindAssociatedModel( scene, a );
+	if ( !model )
 	{
-		g_viewerSettings.flHeadTurn = 0.0f;
-		g_viewerSettings.vecHeadTarget.Init();
-		g_viewerSettings.vecEyeTarget.Init();
-		m_bHasLookTarget = false;
+		return;
+	}
+
+	float flIntensity = event->GetIntensity( scene->GetTime() );
+
+	// clamp in-ramp to 0.3 seconds
+	float flDuration = scene->GetTime() - event->GetStartTime();
+	float flMaxIntensity = flDuration < 0.3f ? SimpleSpline( flDuration / 0.3f ) : 1.0f;
+	flDuration = event->GetEndTime() - scene->GetTime();
+	flMaxIntensity = min( flMaxIntensity, flDuration < 0.3f ? SimpleSpline( flDuration / 0.3f ) : 1.0f );
+	flIntensity = clamp( flIntensity, 0.0f, flMaxIntensity );
+
+	if (!stricmp( event->GetParameters(), a->GetName() ) || !stricmp( event->GetParameters(), "!self" ))
+	{
+		model->AddLookTargetSelf( flIntensity );
 	}
 	else if ( !stricmp( event->GetParameters(), "player" ) || 
 		!stricmp( event->GetParameters(), "!player" ) )
 	{
-		g_viewerSettings.flHeadTurn = event->GetIntensity( scene->GetTime() );
-		Vector vecTarget = g_viewerSettings.trans;
+		Vector vecTarget = model->m_origin;
 		vecTarget.z = 0;
 
-		g_viewerSettings.vecHeadTarget = vecTarget;
-		g_viewerSettings.vecEyeTarget= vecTarget;
-
-		AddHeadTarget( g_viewerSettings.flHeadTurn, vecTarget, vecTarget );
-
-		m_bHasLookTarget = true;
+		model->AddLookTarget( vecTarget, flIntensity );
 	}
 	else
 	{
@@ -3801,15 +4770,126 @@ void CChoreoView::ProcessLookat( CChoreoScene *scene, CChoreoEvent *event )
 		if ( event->GetPitch() != 0 ||
 			 event->GetYaw() != 0 )
 		{
-			g_viewerSettings.flHeadTurn = event->GetIntensity( scene->GetTime() );
-
 			QAngle angles( -(float)event->GetPitch(),
 				(float)event->GetYaw(),
 				0 );
 
 			matrix3x4_t matrix;
 
-			AngleMatrix( g_viewerSettings.rot, matrix );
+			AngleMatrix( model->m_angles, matrix );
+
+			Vector vecForward;
+			AngleVectors( angles, &vecForward );
+
+			Vector eyeTarget;
+			VectorRotate( vecForward, matrix, eyeTarget );
+			VectorScale( eyeTarget, 75, eyeTarget );
+
+			model->AddLookTarget( eyeTarget, flIntensity );
+		}
+		else
+		{
+			if ( mapentities->LookupOrigin( a->GetName(), orgActor, anglesActor ) )
+			{
+				if ( mapentities->LookupOrigin( event->GetParameters(), orgTarget, anglesDummy ) )
+				{
+					Vector delta = orgTarget - orgActor;
+					
+					matrix3x4_t matrix;
+					Vector lookTarget;
+
+					// Rotate around actor's placed forward direction since we look straight down x in faceposer/hlmv
+					AngleMatrix( anglesActor, matrix );
+					VectorIRotate( delta, matrix, lookTarget );
+					
+					model->AddLookTarget( lookTarget, flIntensity );
+					return;
+				}
+			}
+			// hack up something based on the name.
+			{
+				const char *cp = event->GetParameters();
+				float value = 0.0;
+				while (*cp)
+				{
+					value += *cp++;
+				}
+				value = cos( value );
+				value = acos( value );
+				QAngle angles( 0.0, value * 45 / M_PI, 0.0 );
+
+				matrix3x4_t matrix;
+				AngleMatrix( model->m_angles, matrix );
+
+				Vector vecForward;
+				AngleVectors( angles, &vecForward );
+
+				Vector eyeTarget;
+				VectorRotate( vecForward, matrix, eyeTarget );
+				VectorScale( eyeTarget, 75, eyeTarget );
+
+				model->AddLookTarget( eyeTarget, flIntensity );
+			}
+
+		}
+	}
+}
+
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns a target for Faceing
+// Input  : *event - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CChoreoView::GetTarget( CChoreoScene *scene, CChoreoEvent *event, Vector &vecTarget, QAngle &vecAngle )
+{
+	if ( !event->GetActor() )
+		return false;
+
+	CChoreoActor *a = event->GetActor();
+
+	Assert( a );
+
+	StudioModel *model = FindAssociatedModel( scene, a );
+	if ( !model )
+	{
+		return false;
+	}
+
+	if (!stricmp( event->GetParameters(), a->GetName() ))
+	{
+		vecTarget = vec3_origin;
+		return true;
+	}
+	else if ( !stricmp( event->GetParameters(), "player" ) || 
+		!stricmp( event->GetParameters(), "!player" ) )
+	{
+		vecTarget = model->m_origin;
+		vecTarget.z = 0;
+		vecAngle = model->m_angles;
+
+		return true;
+	}
+	else
+	{
+		mapentities->CheckUpdateMap( scene->GetMapname() );
+
+		Vector orgActor;
+		Vector orgTarget;
+		QAngle anglesActor;
+		QAngle anglesDummy;
+
+		if ( event->GetPitch() != 0 ||
+			 event->GetYaw() != 0 )
+		{
+			QAngle angles( -(float)event->GetPitch(),
+				(float)event->GetYaw(),
+				0 );
+
+			matrix3x4_t matrix;
+
+			AngleMatrix( model->m_angles, matrix );
 
 			QAngle angles2 = angles;
 			angles2.x *= 0.6f;
@@ -3828,14 +4908,10 @@ void CChoreoView::ProcessLookat( CChoreoScene *scene, CChoreoEvent *event )
 			VectorRotate( vecForward2, matrix, headTarget );
 
 			VectorScale( eyeTarget, 150, eyeTarget );
-			g_viewerSettings.vecEyeTarget = eyeTarget;
 
-			VectorScale( headTarget, 150, headTarget );
-			g_viewerSettings.vecHeadTarget = headTarget;
+			VectorScale( headTarget, 150, vecTarget );
+			return true;
 
-			AddHeadTarget( g_viewerSettings.flHeadTurn, eyeTarget, headTarget );
-
-			m_bHasLookTarget = true;
 		}
 		else
 		{
@@ -3850,20 +4926,73 @@ void CChoreoView::ProcessLookat( CChoreoScene *scene, CChoreoEvent *event )
 
 					// Rotate around actor's placed forward direction since we look straight down x in faceposer/hlmv
 					AngleMatrix( anglesActor, matrix );
-					VectorIRotate( delta, matrix, lookTarget );
+					VectorIRotate( delta, matrix, vecTarget );
 					
-					g_viewerSettings.flHeadTurn = event->GetIntensity( scene->GetTime() );
-
-					g_viewerSettings.vecHeadTarget = lookTarget;
-					g_viewerSettings.vecEyeTarget = lookTarget;
-
-					AddHeadTarget( g_viewerSettings.flHeadTurn, lookTarget, lookTarget );
-
-					m_bHasLookTarget = true;
+					return true;
 				}
 			}
 		}
 	}
+	return false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Apply lookat target
+// Input  : *event - 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+void CChoreoView::ProcessFace( CChoreoScene *scene, CChoreoEvent *event )
+{
+	Assert( event->GetType() == CChoreoEvent::FACE );
+
+	if ( !event->GetActor() )
+		return;
+
+	CChoreoActor *a = event->GetActor();
+
+	Assert( a );
+
+	StudioModel *model = FindAssociatedModel( scene, a );
+	if ( !model )
+	{
+		return;
+	}
+
+	Vector vecTarget;
+	QAngle vecAngle;
+
+	if (!GetTarget( scene, event, vecTarget, vecAngle ))
+	{
+		return;
+	}
+
+	/*
+	// FIXME: this is broke
+	float goalYaw = -(vecAngle.y > 180 ? 360 - vecAngle.y : vecAngle.y );
+
+	float intensity = event->GetIntensity( scene->GetTime() );
+
+	float diff = goalYaw * intensity;
+	float dir = 1.0;
+
+	if (diff < 0)
+	{
+		diff = -diff;
+		dir = -1;
+	}
+
+	float spineintensity = 0 * max( 0.0, (intensity - 0.5) / 0.5 );
+	float goalSpineYaw = min( diff * (1.0 - spineintensity), 30 );
+	//float idealYaw = info->m_flInitialYaw + (diff - m_goalBodyYaw * dir - m_goalSpineYaw * dir) * dir;
+	// float idealYaw = UTIL_AngleMod( info->m_flInitialYaw + diff * intensity );
+
+	// FIXME: this is broke
+	// model->SetSpineYaw( goalSpineYaw * dir);
+	// model->SetBodyYaw( goalBodyYaw * dir );
+
+	// Msg("yaw %.1f : %.1f (%.1f)\n", info->m_flInitialYaw, idealYaw, intensity ); 
+	*/
 }
 
 //-----------------------------------------------------------------------------
@@ -3879,7 +5008,6 @@ void CChoreoView::ProcessLoop( CChoreoScene *scene, CChoreoEvent *event )
 	if ( IsScrubbing() )
 		return;
 
-	float t = scene->GetTime();
 	float backtime = (float)atof( event->GetParameters() );
 
 	bool process = true;
@@ -3905,13 +5033,19 @@ void CChoreoView::ProcessLoop( CChoreoScene *scene, CChoreoEvent *event )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Apply lookat target
+// Purpose: Add a gesture layer
 // Input  : *event - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 void CChoreoView::ProcessGesture( CChoreoScene *scene, CChoreoEvent *event )
 {
 	Assert( event->GetType() == CChoreoEvent::GESTURE );
+
+	// NULL event is just a placeholder
+	if ( !Q_stricmp( event->GetName(), "NULL" ) )
+	{
+		return;
+	}
 
 	StudioModel *model = FindAssociatedModel( scene, event->GetActor()  );
 	if ( !model )
@@ -3925,17 +5059,20 @@ void CChoreoView::ProcessGesture( CChoreoScene *scene, CChoreoEvent *event )
 	Assert( a );
 
 	int iSequence = model->LookupSequence( event->GetParameters() );
+	if (iSequence < 0)
+		return;
 
 	// Get spline intensity for controller
 	float eventlocaltime = scene->GetTime() - event->GetStartTime();
 
-	float referencetime = event->GetShiftedTimeFromReferenceTime( eventlocaltime / event->GetDuration() ) * event->GetDuration();
+	float referencetime = event->GetOriginalPercentageFromPlaybackPercentage( eventlocaltime / event->GetDuration() ) * event->GetDuration();
 
 	float resampledtime = event->GetStartTime() + referencetime;
 
 	float cycle = event->GetCompletion( resampledtime );
 
-	int iLayer = model->GetNewAnimationLayer( scene->GetChannelIndex( event->GetChannel() ) );
+	int iLayer = model->GetNewAnimationLayer( a->FindChannelIndex( event->GetChannel() ) );
+
 	model->SetOverlaySequence( iLayer, iSequence, event->GetIntensity( scene->GetTime() ) );
 	model->SetOverlayRate( iLayer, cycle, 0.0 );
 }
@@ -3943,7 +5080,7 @@ void CChoreoView::ProcessGesture( CChoreoScene *scene, CChoreoEvent *event )
 
 
 //-----------------------------------------------------------------------------
-// Purpose: Apply lookat target
+// Purpose: Apply a sequence
 // Input  : *event - 
 //-----------------------------------------------------------------------------
 void CChoreoView::ProcessSequence( CChoreoScene *scene, CChoreoEvent *event )
@@ -3967,6 +5104,62 @@ void CChoreoView::ProcessSequence( CChoreoScene *scene, CChoreoEvent *event )
 	Assert( a );
 
 	int iSequence = model->LookupSequence( event->GetParameters() );
+	if (iSequence < 0)
+		return;
+
+	float flFrameRate;
+	float flGroundSpeed;
+	model->GetSequenceInfo( iSequence, &flFrameRate, &flGroundSpeed );
+
+	float cycle;
+	bool looping = model->GetSequenceLoops( iSequence );
+	if (looping)
+	{
+		float dt = scene->GetTime() - event->m_flPrevTime;
+		event->m_flPrevTime = scene->GetTime();
+		dt = clamp( dt, 0.0, 0.1 );
+		cycle = event->m_flPrevCycle + flFrameRate * dt;
+		cycle = cycle - (int)cycle;
+		event->m_flPrevCycle = cycle;
+	}
+	else
+	{
+		float dt = scene->GetTime() - event->GetStartTime();
+		cycle = flFrameRate * dt;
+		cycle = cycle - (int)(cycle);
+	}
+
+	// FIXME: shouldn't sequences always be lower priority than gestures?
+	int iLayer = model->GetNewAnimationLayer( a->FindChannelIndex( event->GetChannel() ) );
+	model->SetOverlaySequence( iLayer, iSequence, event->GetIntensity( scene->GetTime() ) );
+	model->SetOverlayRate( iLayer, cycle, 0.0 );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Apply a walking animation
+// Input  : *event - 
+//-----------------------------------------------------------------------------
+void CChoreoView::ProcessMoveto( CChoreoScene *scene, CChoreoEvent *event )
+{
+	Assert( event->GetType() == CChoreoEvent::MOVETO );
+
+	if ( !m_bProcessSequences )
+	{
+		return;
+	}
+
+	StudioModel *model = FindAssociatedModel( scene, event->GetActor()  );
+	if ( !model )
+		return;
+
+	if ( !event->GetActor() )
+		return;
+
+	int iSequence = GetMovetoSequence( scene, event, model );
+	if (iSequence < 0)
+		return;
+
 	float flFrameRate;
 	float flGroundSpeed;
 	model->GetSequenceInfo( iSequence, &flFrameRate, &flGroundSpeed );
@@ -3975,11 +5168,71 @@ void CChoreoView::ProcessSequence( CChoreoScene *scene, CChoreoEvent *event )
 	float cycle = flFrameRate * dt;
 	cycle = cycle - (int)(cycle);
 
-	int iLayer = model->GetNewAnimationLayer( scene->GetChannelIndex( event->GetChannel() ) );
-	model->SetOverlaySequence( iLayer, iSequence, event->GetIntensity( scene->GetTime() ) );
+	float idealAccel = 100;
+
+	// accel to ideal
+	float t1 = flGroundSpeed / idealAccel;
+
+	float intensity = 1.0;
+
+	if (dt < t1)
+	{
+		intensity = dt / t1;
+	}
+	else if (event->GetDuration() - dt < t1)
+	{
+		intensity = (event->GetDuration() - dt) / t1;
+	}
+
+	// movement should always be higher priority than postures, but not gestures....grrr, any way to tell them apart?
+	int iLayer = model->GetNewAnimationLayer( 0 /* a->FindChannelIndex( event->GetChannel() ) */ );
+	model->SetOverlaySequence( iLayer, iSequence, intensity );
 	model->SetOverlayRate( iLayer, cycle, 0.0 );
 }
 
+
+
+int CChoreoView::GetMovetoSequence( CChoreoScene *scene, CChoreoEvent *event, StudioModel *model )
+{
+	// FIXME: needs to pull from event (activity or sequence?)
+	if ( !event->GetParameters2() || !event->GetParameters2()[0] )
+		return model->LookupSequence( "walk_all" );
+
+	// Custom distance styles are appended to param2 with a space as a separator
+	const char *pszAct = Q_strstr( event->GetParameters2(), " " );
+	if ( pszAct )
+	{
+		char szActName[256];
+		Q_strncpy( szActName, event->GetParameters2(), sizeof(szActName) );
+		szActName[ (pszAct-event->GetParameters2()) ] = '\0';
+		pszAct = szActName;
+	}
+	else
+	{
+		pszAct = event->GetParameters2();
+	}
+
+	if ( !Q_strcmp( pszAct, "Walk" ) )
+	{
+		pszAct = "ACT_WALK";
+	}
+	else if ( !Q_strcmp( pszAct, "Run" ) )
+	{
+		pszAct = "ACT_RUN";
+	}
+	else if ( !Q_strcmp( pszAct, "CrouchWalk" ) )
+	{
+		pszAct = "ACT_WALK_CROUCH";
+	}
+
+	int iSequence = model->LookupActivity( pszAct );
+
+	if (iSequence == -1)
+	{
+		return model->LookupSequence( "walk_all" );
+	}
+	return iSequence;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -4004,28 +5257,28 @@ void CChoreoView::ProcessPause( CChoreoScene *scene, CChoreoEvent *event )
 
 	// Check for auto resume/cancel
 	ParseFromMemory( (char *)event->GetParameters(), strlen( event->GetParameters() ) );
-	if ( g_TokenProcessor.TokenAvailable() )
+	if ( tokenprocessor->TokenAvailable() )
 	{
-		g_TokenProcessor.GetToken( false );
-		if ( !stricmp( g_TokenProcessor.CurrentToken(), "automate" ) )
+		tokenprocessor->GetToken( false );
+		if ( !stricmp( tokenprocessor->CurrentToken(), "automate" ) )
 		{
-			if ( g_TokenProcessor.TokenAvailable() )
+			if ( tokenprocessor->TokenAvailable() )
 			{
-				g_TokenProcessor.GetToken( false );
-				if ( !stricmp( g_TokenProcessor.CurrentToken(), "Cancel" ) )
+				tokenprocessor->GetToken( false );
+				if ( !stricmp( tokenprocessor->CurrentToken(), "Cancel" ) )
 				{
 					m_nAutomatedAction = SCENE_ACTION_CANCEL;
 				}
-				else if ( !stricmp( g_TokenProcessor.CurrentToken(), "Resume" ) )
+				else if ( !stricmp( tokenprocessor->CurrentToken(), "Resume" ) )
 				{
 					m_nAutomatedAction = SCENE_ACTION_RESUME;
 				}
 
-				if ( g_TokenProcessor.TokenAvailable() && 
+				if ( tokenprocessor->TokenAvailable() && 
 					m_nAutomatedAction != SCENE_ACTION_UNKNOWN )
 				{
-					g_TokenProcessor.GetToken( false );
-					m_flAutomationDelay = (float)atof( g_TokenProcessor.CurrentToken() );
+					tokenprocessor->GetToken( false );
+					m_flAutomationDelay = (float)atof( tokenprocessor->CurrentToken() );
 
 					if ( m_flAutomationDelay > 0.0f )
 					{
@@ -4046,7 +5299,7 @@ void CChoreoView::ProcessPause( CChoreoScene *scene, CChoreoEvent *event )
 //-----------------------------------------------------------------------------
 void CChoreoView::ProcessEvent( float currenttime, CChoreoScene *scene, CChoreoEvent *event )
 {
-	if ( !event)
+	if ( !event || !event->GetActive() )
 		return;
 
 	CChoreoActor *actor = event->GetActor();
@@ -4072,6 +5325,9 @@ void CChoreoView::ProcessEvent( float currenttime, CChoreoScene *scene, CChoreoE
 	case CChoreoEvent::LOOKAT:
 		ProcessLookat( scene, event );
 		break;
+	case CChoreoEvent::FACE:
+		ProcessFace( scene, event );
+		break;
 	case CChoreoEvent::GESTURE:
 		ProcessGesture( scene, event );
 		break;
@@ -4084,11 +5340,17 @@ void CChoreoView::ProcessEvent( float currenttime, CChoreoScene *scene, CChoreoE
 	case CChoreoEvent::SPEAK:
 		ProcessSpeak( scene, event );
 		break;
+	case CChoreoEvent::MOVETO:
+		ProcessMoveto( scene, event );
+		break;
 	case CChoreoEvent::STOPPOINT:
 		// Nothing
 		break;
 	case CChoreoEvent::INTERRUPT:
 		ProcessInterrupt( scene, event );
+		break;
+	case CChoreoEvent::PERMIT_RESPONSES:
+		ProcessPermitResponses( scene, event );
 		break;
 	default:
 		break;
@@ -4103,7 +5365,7 @@ void CChoreoView::ProcessEvent( float currenttime, CChoreoScene *scene, CChoreoE
 //-----------------------------------------------------------------------------
 bool CChoreoView::CheckEvent( float currenttime, CChoreoScene *scene, CChoreoEvent *event )
 {
-	if ( !event)
+	if ( !event || !event->GetActive() )
 		return true;
 
 	CChoreoActor *actor = event->GetActor();
@@ -4137,6 +5399,8 @@ bool CChoreoView::CheckEvent( float currenttime, CChoreoScene *scene, CChoreoEve
 	case CChoreoEvent::MOVETO:
 		break;
 	case CChoreoEvent::INTERRUPT:
+		break;
+	case CChoreoEvent::PERMIT_RESPONSES:
 		break;
 	default:
 		break;
@@ -4222,8 +5486,6 @@ void CChoreoView::FinishSimulation( void )
 
 //	m_pScene->ResetSimulation();
 
-	expressions->NewMarkovIndices();
-
 	m_bSimulating = false;
 	m_bPaused = false;
 
@@ -4263,13 +5525,9 @@ void CChoreoView::SceneThink( float time )
 			ResetTargetSettings();
 
 			models->ClearOverlaysSequences();
-
-			ResetHeadTarget();
-
+			
 			// Tell scene to go
 			m_pScene->Think( time );
-
-			UpdateHeadTarget();
 
 			// Move flexes toward their targets
 			UpdateCurrentSettings();
@@ -4293,17 +5551,13 @@ void CChoreoView::SceneThink( float time )
 
 		if ( !anyscrub &&
 			 !anyprocessing &&
-			 autoprocess
-		 )
+			 autoprocess &&
+			 !m_bForceProcess )
 		{
 			sound->StopAll();
 
-			if ( !m_bHasLookTarget )
-			{
-				g_viewerSettings.flHeadTurn = 0.0f;
-				g_viewerSettings.vecHeadTarget.Init();
-				g_viewerSettings.vecEyeTarget.Init();
-			}
+			// why clear lookat?
+			//models->ClearModelTargets( false );
 		}
 	}
 }
@@ -4328,13 +5582,13 @@ void CChoreoView::LayoutScene( void )
 	rcClient.top += GetStartRow();
 	OffsetRect( &rcClient, 0, -m_nTopOffset );
 
-	m_flStartTime = m_nLeftOffset / GetPixelsPerSecond();
+	m_flStartTime = m_flLeftOffset / GetPixelsPerSecond();
 
 	m_flEndTime = m_flStartTime + (float)( rcClient.right - GetLabelWidth() ) / GetPixelsPerSecond();
 
 	m_rcTimeLine = rcClient;
 	m_rcTimeLine.top = GetCaptionHeight() + SCRUBBER_HEIGHT;
-	m_rcTimeLine.bottom = rcClient.top - 1;
+	m_rcTimeLine.bottom = m_rcTimeLine.top + 44;
 
 	int currentRow = rcClient.top + 2;
 	int itemHeight;
@@ -4453,6 +5707,13 @@ void CChoreoView::InvalidateLayout( void )
 	if ( ComputeVPixelsNeeded() != m_nLastVPixelsNeeded )
 	{
 		RepositionVSlider();
+	}
+
+	// Recheck gesture start/end times
+	if ( m_pScene )
+	{
+		m_pScene->ReconcileGestureTimes();
+		m_pScene->ReconcileCloseCaption();
 	}
 
 	m_bLayoutIsValid = false;
@@ -4627,7 +5888,10 @@ void CChoreoView::RepositionHSlider( void )
 {
 	int pixelsneeded = ComputeHPixelsNeeded();
 
-	if ( pixelsneeded <= w2() )
+	int w = w2();
+	int lw = GetLabelWidth();
+
+	if ( pixelsneeded <= ( w - lw ) )
 	{
 		m_pHorzScrollBar->setVisible( false );
 	}
@@ -4635,14 +5899,14 @@ void CChoreoView::RepositionHSlider( void )
 	{
 		m_pHorzScrollBar->setVisible( true );
 	}
-	m_pHorzScrollBar->setBounds( 0, h2() - m_nScrollbarHeight, w2() - m_nScrollbarHeight, m_nScrollbarHeight );
+	m_pHorzScrollBar->setBounds( 0, h2() - m_nScrollbarHeight, w - m_nScrollbarHeight, m_nScrollbarHeight );
 
-	m_nLeftOffset = max( 0, m_nLeftOffset );
-	m_nLeftOffset = min( pixelsneeded, m_nLeftOffset );
+	m_flLeftOffset = max( 0.f, m_flLeftOffset );
+	m_flLeftOffset = min( (float)pixelsneeded, m_flLeftOffset );
 
 	m_pHorzScrollBar->setRange( 0, pixelsneeded );
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
-	m_pHorzScrollBar->setPagesize( w2() );
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
+	m_pHorzScrollBar->setPagesize(w - lw );
 
 	m_nLastHPixelsNeeded = pixelsneeded;
 }
@@ -4651,13 +5915,13 @@ void CChoreoView::RepositionHSlider( void )
 // Purpose: 
 // Input  : dirty - 
 //-----------------------------------------------------------------------------
-void CChoreoView::SetDirty( bool dirty )
+void CChoreoView::SetDirty( bool dirty, bool clearundo /*=true*/ )
 {
 	bool changed = dirty != m_bDirty;
 
 	m_bDirty = dirty;
 
-	if ( !dirty )
+	if ( !dirty && clearundo )
 	{
 		WipeUndo();
 		redraw();
@@ -4683,27 +5947,10 @@ void CChoreoView::New( void )
 		}
 	}
 
-	char workingdir[ 256 ];
-	Q_getwd( workingdir );
-	strlwr( workingdir );
-	COM_FixSlashes( workingdir );
-
-	// Show file io
-	bool inScenesAlready = false;
-	if ( strstr( workingdir, va( "%s/scenes", GetGameDirectory() ) ) )
+	char scenefile[ 512 ];
+	if ( FacePoser_ShowSaveFileNameDialog( scenefile, sizeof( scenefile ), "scenes", "*.vcd" ) )
 	{
-		inScenesAlready = true;
-	}
-	const char *filename = mxGetSaveFileName( 
-		this, 
-		inScenesAlready ? "." : FacePoser_MakeWindowsSlashes( va( "%s/scenes/", GetGameDirectory() ) ), 
-		"*.vcd" );
-	if ( filename && filename[ 0 ] )
-	{
-		char scenefile[ 512 ];
-		strcpy( scenefile, filename );
-		StripExtension( scenefile );
-		DefaultExtension( scenefile, ".vcd" );
+		Q_DefaultExtension( scenefile, ".vcd", sizeof( scenefile ) );
 		
 		m_pScene = new CChoreoScene( this );
 		g_MDLViewer->InitGridSettings();
@@ -4758,16 +6005,27 @@ void CChoreoView::Save( void )
 	if ( !m_pScene )
 		return;
 
+	if ( !MakeFileWriteablePrompt( GetChoreoFile(), "VCD File" ) )
+	{
+		Con_Printf( "Not saving changes to %s\n", GetChoreoFile() );
+		return;
+	}
+
 	Con_Printf( "Saving changes to %s\n", GetChoreoFile() );
 
-	MakeFileWriteable( GetChoreoFile() );
-	if (!m_pScene->SaveToFile( GetChoreoFile() ))
+	CP4AutoEditAddFile checkout( GetChoreoFile() );
+	if ( !m_pScene->SaveToFile( GetChoreoFile() ) )
 	{
   		mxMessageBox( this, va( "Unable to write \"%s\"", GetChoreoFile() ),
   			"SaveToFile", MX_MB_OK | MX_MB_ERROR );
 	}
 
-	SetDirty( false );
+	g_MDLViewer->OnVCDSaved();
+
+	// Refresh the suffix
+	SetChoreoFile( GetChoreoFile() );
+
+	SetDirty( false, false );
 	redraw();
 }
 
@@ -4779,52 +6037,30 @@ void CChoreoView::SaveAs( void )
 	if ( !m_pScene )
 		return;
 
-	char workingdir[ 256 ];
-	Q_getwd( workingdir );
-	strlwr( workingdir );
-	COM_FixSlashes( workingdir );
-
-	// Show file io
-	bool inScenesAlready = false;
-	if ( strstr( workingdir, va( "%s/scenes", GetGameDirectory() ) ) )
-	{
-		inScenesAlready = true;
-	}
-	const char *filename = mxGetSaveFileName( 
-		this, 
-		inScenesAlready ? "." : FacePoser_MakeWindowsSlashes( va( "%s/scenes/", GetGameDirectory() ) ), 
-		"*.vcd" );
-	if ( !filename || !filename[ 0 ] )
+	char scenefile[ 512 ];
+	if ( !FacePoser_ShowSaveFileNameDialog( scenefile, sizeof( scenefile ), "scenes", "*.vcd" ) )
 		return;
 
-	char scenefile[ 512 ];
-	strcpy( scenefile, filename );
-	StripExtension( scenefile );
-	DefaultExtension( scenefile, ".vcd" );
+	Q_DefaultExtension( scenefile, ".vcd", sizeof( scenefile ) );
 	
-	// Strip out the game directory
-	//
-	char relative[ 512 ];
-	strcpy( relative, scenefile );
-	if ( strchr( scenefile, ':' ) )
-	{
-		filesystem->FullPathToRelativePath( scenefile, relative );
-	}
+	Con_Printf( "Saving %s\n", scenefile );
 
+	MakeFileWriteable( scenefile );
 
 	// Change filename
-	SetChoreoFile( relative );
+	SetChoreoFile( scenefile );
 
-	Con_Printf( "Saving %s\n", GetChoreoFile() );
-
-	MakeFileWriteable( GetChoreoFile() );
+	// Write it out baby
+	CP4AutoEditAddFile checkout( scenefile );
 	if (!m_pScene->SaveToFile( GetChoreoFile() ))
 	{
   		mxMessageBox( this, va( "Unable to write \"%s\"", GetChoreoFile() ),
   			"SaveToFile", MX_MB_OK | MX_MB_ERROR );
 	}
 
-	SetDirty( false );
+	g_MDLViewer->OnVCDSaved();
+
+	SetDirty( false, false );
 }
 
 //-----------------------------------------------------------------------------
@@ -4832,17 +6068,99 @@ void CChoreoView::SaveAs( void )
 //-----------------------------------------------------------------------------
 void CChoreoView::Load( void )
 {
-	const char *filename = NULL;
-	
-	filename = mxGetOpenFileName( 
-		this, 
-		// mxGetOpenFilename likes backslashes instead
-		FacePoser_MakeWindowsSlashes( va( "%s/scenes/", GetGameDirectory() ) ),
-		"*.vcd" );
+	char scenefile[ 512 ];
+	if ( !FacePoser_ShowOpenFileNameDialog( scenefile, sizeof( scenefile ), "scenes", "*.vcd" ) )
+	{
+		return;
+	}
 
-	if ( !filename || !filename[ 0 ] )
+	Q_DefaultExtension( scenefile, ".vcd", sizeof( scenefile ) );
+
+	LoadSceneFromFile( scenefile );
+
+	m_nextFileList.RemoveAll();
+}
+
+void CChoreoView::LoadNext( void )
+{
+	if (GetChoreoFile() == NULL)
 		return;
 
+	char fixedupFile[ 512 ];
+	V_FixupPathName( fixedupFile, sizeof( fixedupFile ), GetChoreoFile() );
+
+	char relativeFile[ 512 ];
+	filesystem->FullPathToRelativePath( fixedupFile, relativeFile, sizeof( relativeFile ) );
+
+	char relativePath[ 512 ];
+	Q_ExtractFilePath( relativeFile, relativePath, sizeof( relativePath ) );
+
+	if (m_nextFileList.Count() == 0)
+	{
+		// iterate files in the local directory
+		char path[ 512 ];
+		strcpy( path, relativePath );
+		strcat( path, "/*.vcd" );
+
+		FileFindHandle_t hFindFile;
+		char const *fn = filesystem->FindFirstEx( path, "MOD", &hFindFile );
+		if ( fn )
+		{
+			while ( fn )
+			{
+				// Don't do anything with directories
+				if ( !filesystem->FindIsDirectory( hFindFile ) )
+				{
+					CUtlString s = fn;
+					m_nextFileList.AddToTail( s );
+				}
+
+				fn = filesystem->FindNext( hFindFile );
+			}
+
+			filesystem->FindClose( hFindFile );
+		}
+	}
+
+	// look for a match, then pick the next in the list
+	const char *fileBase;
+	fileBase = V_UnqualifiedFileName( fixedupFile );
+
+	for (int i = 0; i < m_nextFileList.Count(); i++)
+	{
+		if (!stricmp( fileBase, m_nextFileList[i] ))
+		{
+			char fileName[512];
+			strcpy( fileName, relativePath );
+			if (i < m_nextFileList.Count() - 1)
+			{
+				strcat( fileName, m_nextFileList[i+1] );
+			}
+			else
+			{
+				strcat( fileName, m_nextFileList[0] );
+			}
+
+			LoadSceneFromFile( fileName );
+			break;
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *filename - 
+//-----------------------------------------------------------------------------
+void CChoreoView::LoadSceneFromFile( const char *filename )
+{
+	if ( filename[ 0 ] == '/' ||
+		 filename[ 0 ] == '\\' )
+	{
+		++filename;
+	}
+
+	char fn[ 512 ];
+	Q_strncpy( fn, filename, sizeof( fn ) );
 	if ( m_pScene )
 	{
 		Close();
@@ -4852,33 +6170,17 @@ void CChoreoView::Load( void )
 		}
 	}
 
-	LoadSceneFromFile( filename );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *filename - 
-//-----------------------------------------------------------------------------
-void CChoreoView::LoadSceneFromFile( const char *filename )
-{
-	// Strip out the game directory
-	//
-	char relative[ 512 ];
-	strcpy( relative, filename );
-	if ( strchr( filename, ':' ) )
-	{
-		filesystem->FullPathToRelativePath( filename, relative );
-	}
-
-	m_pScene = LoadScene( filename );
+	m_pScene = LoadScene( fn );
 	g_MDLViewer->InitGridSettings();
 	if ( !m_pScene )
 		return;
 
+	g_MDLViewer->OnFileLoaded( fn );
+
 	ShowButtons( true );
 
 	CChoreoWidget::m_pScene = m_pScene;
-	SetChoreoFile( relative );
+	SetChoreoFile( fn );
 
 	bool cleaned = FixupSequenceDurations( m_pScene, false );
 
@@ -4887,9 +6189,8 @@ void CChoreoView::LoadSceneFromFile( const char *filename )
 	DeleteSceneWidgets();
 	CreateSceneWidgets();
 
-	// Force scroll bars to resize
-	m_nLastHPixelsNeeded = -1;
-	m_nLastVPixelsNeeded = -1;
+	// Force scroll bars to recompute
+	ForceScrollBarsToRecompute( false );
 
 	InvalidateLayout();
 }
@@ -5121,7 +6422,7 @@ void CChoreoView::EditChannel( CChoreoChannel *channel )
 	memset( &params, 0, sizeof( params ) );
 
 	strcpy( params.m_szDialogTitle, "Edit Channel" );
-	strcpy( params.m_szName, channel->GetName() );
+	V_strcpy_safe( params.m_szName, channel->GetName() );
 
 	if ( !ChannelProperties( &params ) )
 		return;
@@ -5180,7 +6481,7 @@ void CChoreoView::NewActor( void )
 {
 	if ( !m_pScene )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "You must load or create a scene file first\n" );
+		Con_ErrorPrintf( "You must load or create a scene file first\n" );
 		return;
 	}
 
@@ -5287,7 +6588,7 @@ void CChoreoView::EditActor( CChoreoActor *actor )
 	memset( &params, 0, sizeof( params ) );
 
 	strcpy( params.m_szDialogTitle, "Edit Actor" );
-	strcpy( params.m_szName, actor->GetName() );
+	V_strcpy_safe( params.m_szName, actor->GetName() );
 
 	if ( !ActorProperties( &params ) )
 		return;
@@ -5311,7 +6612,7 @@ void CChoreoView::EditActor( CChoreoActor *actor )
 // Purpose: 
 // Input  : type - 
 //-----------------------------------------------------------------------------
-void CChoreoView::AddEvent( int type )
+void CChoreoView::AddEvent( int type, int subtype /*= 0*/, char const *defaultparameters /*= NULL*/ )
 {
 	int mx, my;
 	mx = m_nClickedX;
@@ -5339,11 +6640,14 @@ void CChoreoView::AddEvent( int type )
 	POINT pt;
 	pt.x = mx;
 	pt.y = my;
-	// Offset by label area
-	pt.x += GetLabelWidth();
 
 	CEventParams params;
 	memset( &params, 0, sizeof( params ) );
+
+	if ( defaultparameters )
+	{
+		Q_strncpy( params.m_szParameters, defaultparameters, sizeof( params.m_szParameters ) );
+	}
 
 	strcpy( params.m_szDialogTitle, "Create Event" );
 
@@ -5353,6 +6657,12 @@ void CChoreoView::AddEvent( int type )
 	params.m_bFixedLength = false;
 	params.m_bResumeCondition = false;
 	params.m_flStartTime = GetTimeValueForMouse( pt.x );
+	params.m_bCloseCaptionNoAttenuate = false;
+	params.m_bForceShortMovement = false;
+	params.m_bSyncToFollowingGesture = false;
+	params.m_bDisabled = false;
+	params.m_bPlayOverScript = false;
+
 	switch ( type )
 	{
 	case CChoreoEvent::EXPRESSION:
@@ -5360,11 +6670,19 @@ void CChoreoView::AddEvent( int type )
 	case CChoreoEvent::GESTURE:
 	case CChoreoEvent::SEQUENCE:
 	case CChoreoEvent::LOOKAT:
+	case CChoreoEvent::MOVETO:
 	case CChoreoEvent::FACE:
 	case CChoreoEvent::SUBSCENE:
 	case CChoreoEvent::INTERRUPT:
+	case CChoreoEvent::GENERIC:
+	case CChoreoEvent::PERMIT_RESPONSES:
 		params.m_bHasEndTime = true;
 		params.m_flEndTime = params.m_flStartTime + 0.5f;
+		if ( type == CChoreoEvent::GESTURE && subtype == 1 )
+		{
+			strcpy( params.m_szDialogTitle, "Create <NULL> Gesture" );
+			strcpy( params.m_szName, "NULL" );
+		}
 		break;
 	case CChoreoEvent::SPEAK:
 		params.m_bFixedLength = true;
@@ -5381,25 +6699,56 @@ void CChoreoView::AddEvent( int type )
 
 	while (1)
 	{
-		if (!EventProperties( &params ))
-			return;
+		SetScrubTargetTime( m_flScrub );
+		FinishSimulation();
+		sound->Flush();
 
-		if (strlen( params.m_szName ) <= 0 )
+		m_bForceProcess = true;
+		if (!EventProperties( &params ))
 		{
-			mxMessageBox( this, "Event must have a valid name",
-				"AddEvent", MX_MB_OK | MX_MB_ERROR );
+			m_bForceProcess = false;
+			return;
 		}
-		else if ( ( type != CChoreoEvent::FLEXANIMATION ) && 
-				 ( type != CChoreoEvent::INTERRUPT ) &&
-				( strlen( params.m_szParameters ) <= 0 ) )
+		m_bForceProcess = false;
+
+		if ( Q_strlen( params.m_szName ) <= 0 )
 		{
-			mxMessageBox( this, va( "No parameters specified for %s\n", params.m_szName ),
-				"AddEvent", MX_MB_OK | MX_MB_ERROR );
+			mxMessageBox( this, va( "Event must have a valid name" ),
+				"Edit Event", MX_MB_OK | MX_MB_ERROR );
+			continue;
 		}
-		else
+
+		if ( Q_strlen( params.m_szParameters ) <= 0 )
 		{
-			break;	
+			bool shouldBreak = false;
+
+			switch ( params.m_nType )
+			{
+			case CChoreoEvent::FLEXANIMATION:
+			case CChoreoEvent::INTERRUPT:
+			case CChoreoEvent::PERMIT_RESPONSES:
+				shouldBreak = true;
+				break;
+			case CChoreoEvent::GESTURE:
+				if ( subtype == 1 )
+				{
+					shouldBreak = true;
+				}
+				break;
+			default:
+				// Have to have a non-null parameters block
+				break;
+			}
+			
+			if ( !shouldBreak )
+			{
+				mxMessageBox( this, va( "No parameters specified for %s\n", params.m_szName ),
+					"Edit Event", MX_MB_OK | MX_MB_ERROR );
+				continue;
+			}
 		}
+		
+		break;
 	}
 
 	SetDirty( true );
@@ -5413,7 +6762,17 @@ void CChoreoView::AddEvent( int type )
 		event->SetName( params.m_szName );
 		event->SetParameters( params.m_szParameters );
 		event->SetParameters2( params.m_szParameters2 );
+		event->SetParameters3( params.m_szParameters3 );
 		event->SetStartTime( params.m_flStartTime );
+
+		event->SetResumeCondition( params.m_bResumeCondition );
+		event->SetLockBodyFacing( params.m_bLockBodyFacing );
+		event->SetDistanceToTarget( params.m_flDistanceToTarget );
+		event->SetForceShortMovement( params.m_bForceShortMovement );
+		event->SetSyncToFollowingGesture( params.m_bSyncToFollowingGesture );
+		event->SetActive( !params.m_bDisabled );
+		event->SetPlayOverScript( params.m_bPlayOverScript );
+
 		if ( params.m_bUsesTag )
 		{
 			event->SetUsingRelativeTag( true, params.m_szTagName, params.m_szTagWav );
@@ -5456,17 +6815,17 @@ void CChoreoView::AddEvent( int type )
 		case CChoreoEvent::SEQUENCE:
 			{
 				CheckSequenceLength( event, false );
-				AutoaddSequenceKeys( event);
+				// AutoaddSequenceKeys( event);
 			}
 			break;
 		case CChoreoEvent::GESTURE:
 			{
 				DefaultGestureLength( event, false );
-				AutoaddGestureEvents( event, false );
-				// AutoaddSequenceKeys( event );
+				AutoaddGestureKeys( event, false );
 			}
 			break;
 		case CChoreoEvent::LOOKAT:
+		case CChoreoEvent::FACE:
 			{
 				if ( params.usepitchyaw )
 				{
@@ -5483,12 +6842,14 @@ void CChoreoView::AddEvent( int type )
 		case CChoreoEvent::SPEAK:
 			{
 				// Try and load wav to get length
-				CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event->GetParameters() ) ) );
+				CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event ) ) );
 				if ( wave )
 				{
 					event->SetEndTime( params.m_flStartTime + wave->GetRunningLength() );
 					delete wave;
 				}
+
+				event->SetSuppressingCaptionAttenuation( params.m_bCloseCaptionNoAttenuate );
 			}
 			break;
 		}
@@ -5545,7 +6906,7 @@ void CChoreoView::AddGlobalEvent( CChoreoEvent::EVENTTYPE type )
 		break;
 	case CChoreoEvent::STOPPOINT:
 		{
-			strcpy( params.m_szDialogTitle, "Add Stop Point" );
+			strcpy( params.m_szDialogTitle, "Add Fire Completion" );
 		}
 		break;
 	}
@@ -5588,7 +6949,7 @@ void CChoreoView::AddGlobalEvent( CChoreoEvent::EVENTTYPE type )
 		break;
 	case CChoreoEvent::STOPPOINT:
 		{
-			Q_strcpy( undotext, "Add Loop Point" );
+			Q_strcpy( undotext, "Add Fire Completion" );
 		}
 		break;
 	}
@@ -5654,7 +7015,7 @@ void CChoreoView::EditGlobalEvent( CChoreoEvent *event )
 	case CChoreoEvent::SECTION:
 		{
 			strcpy( params.m_szDialogTitle, "Edit Pause Point" );
-			strcpy( params.m_szAction, event->GetParameters() );
+			V_strcpy_safe( params.m_szAction, event->GetParameters() );
 		}
 		break;
 	case CChoreoEvent::LOOP:
@@ -5667,7 +7028,7 @@ void CChoreoView::EditGlobalEvent( CChoreoEvent *event )
 		break;
 	case CChoreoEvent::STOPPOINT:
 		{
-			strcpy( params.m_szDialogTitle, "Edit Stop Point" );
+			strcpy( params.m_szDialogTitle, "Edit Fire Completion" );
 			strcpy( params.m_szAction, "" );
 		}
 		break;
@@ -5713,7 +7074,7 @@ void CChoreoView::EditGlobalEvent( CChoreoEvent *event )
 		break;
 	case CChoreoEvent::STOPPOINT:
 		{
-			Q_strcpy( undotext, "Edit Stop Point" );
+			Q_strcpy( undotext, "Edit Fire Completion" );
 		}
 		break;
 	}
@@ -5778,7 +7139,7 @@ void CChoreoView::DeleteGlobalEvent( CChoreoEvent *event )
 		break;
 	case CChoreoEvent::STOPPOINT:
 		{
-			Q_strcpy( undotext, "Delete Stop Point" );
+			Q_strcpy( undotext, "Delete Fire Completion" );
 		}
 		break;
 	}
@@ -5815,28 +7176,32 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 
 	// Copy in current even properties
 	params.m_nType = event->GetType();
+	params.m_bDisabled = !event->GetActive();
 
 	switch ( params.m_nType )
 	{
 		case CChoreoEvent::EXPRESSION:
 		case CChoreoEvent::SEQUENCE:
+		case CChoreoEvent::MOVETO:
 		case CChoreoEvent::SPEAK:
 		case CChoreoEvent::GESTURE:
 		case CChoreoEvent::INTERRUPT:
-			strcpy( params.m_szParameters2, event->GetParameters2() );
-			strcpy( params.m_szParameters, event->GetParameters() );
-			strcpy( params.m_szName, event->GetName() );
+		case CChoreoEvent::PERMIT_RESPONSES:
+		case CChoreoEvent::GENERIC:
+			V_strcpy_safe( params.m_szParameters3, event->GetParameters3() );
+			V_strcpy_safe( params.m_szParameters2, event->GetParameters2() );
+			V_strcpy_safe( params.m_szParameters, event->GetParameters() );
+			V_strcpy_safe( params.m_szName, event->GetName() );
 			break;
 		case CChoreoEvent::FACE:
-		case CChoreoEvent::MOVETO:
 		case CChoreoEvent::LOOKAT:
 		case CChoreoEvent::FIRETRIGGER:
 		case CChoreoEvent::FLEXANIMATION:
 		case CChoreoEvent::SUBSCENE:
-			strcpy( params.m_szParameters, event->GetParameters() );
-			strcpy( params.m_szName, event->GetName() );
+			V_strcpy_safe( params.m_szParameters, event->GetParameters() );
+			V_strcpy_safe( params.m_szName, event->GetName() );
 
-			if ( params.m_nType == CChoreoEvent::LOOKAT )
+			if ( params.m_nType == CChoreoEvent::LOOKAT || params.m_nType == CChoreoEvent::FACE )
 			{
 				if ( event->GetPitch() != 0 ||
 					 event->GetYaw() != 0 )
@@ -5861,34 +7226,72 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 
 	params.m_bFixedLength = event->IsFixedLength();
 	params.m_bResumeCondition = event->IsResumeCondition();
+	params.m_bLockBodyFacing = event->IsLockBodyFacing();
+	params.m_flDistanceToTarget = event->GetDistanceToTarget();
+	params.m_bForceShortMovement = event->GetForceShortMovement();
+	params.m_bSyncToFollowingGesture = event->GetSyncToFollowingGesture();
+	params.m_bPlayOverScript = event->GetPlayOverScript();
 	params.m_bUsesTag = event->IsUsingRelativeTag();
+	params.m_bCloseCaptionNoAttenuate = event->IsSuppressingCaptionAttenuation();
+
 	if ( params.m_bUsesTag )
 	{
-		strcpy( params.m_szTagName, event->GetRelativeTagName() );
-		strcpy( params.m_szTagWav, event->GetRelativeWavName() );
+		V_strcpy_safe( params.m_szTagName, event->GetRelativeTagName() );
+		V_strcpy_safe( params.m_szTagWav, event->GetRelativeWavName() );
 	}
 
 	while (1)
 	{
-		if (!EventProperties( &params ))
-			return;
+		SetScrubTargetTime( m_flScrub );
+		FinishSimulation();
+		sound->Flush();
 
-		if (strlen( params.m_szName ) <= 0 )
+		m_bForceProcess = true;
+		if (!EventProperties( &params ))
+		{
+			m_bForceProcess = false;
+			return;
+		}
+		m_bForceProcess = false;
+
+		if ( Q_strlen( params.m_szName ) <= 0 )
 		{
 			mxMessageBox( this, va( "Event %s must have a valid name", event->GetName() ),
-				"AddEvent", MX_MB_OK | MX_MB_ERROR );
+				"Edit Event", MX_MB_OK | MX_MB_ERROR );
+			continue;
 		}
-		else if ( ( params.m_nType != CChoreoEvent::FLEXANIMATION ) && 
-				( params.m_nType  != CChoreoEvent::INTERRUPT ) && 
-				( strlen( params.m_szParameters ) <= 0 ) )
+
+		if ( Q_strlen( params.m_szParameters ) <= 0 )
 		{
-			mxMessageBox( this, va( "No parameters specified for %s\n", params.m_szName ),
-				"AddEvent", MX_MB_OK | MX_MB_ERROR );
+			bool shouldBreak = false;
+
+			switch ( params.m_nType )
+			{
+			case CChoreoEvent::FLEXANIMATION:
+			case CChoreoEvent::INTERRUPT:
+			case CChoreoEvent::PERMIT_RESPONSES:
+				shouldBreak = true;
+				break;
+			case CChoreoEvent::GESTURE:
+				if ( !Q_stricmp( params.m_szName, "NULL" ) )
+				{ 
+					shouldBreak = true;
+				}
+				break;
+			default:
+				// Have to have a non-null parameters block
+				break;
+			}
+			
+			if ( !shouldBreak )
+			{
+				mxMessageBox( this, va( "No parameters specified for %s\n", params.m_szName ),
+					"Edit Event", MX_MB_OK | MX_MB_ERROR );
+				continue;
+			}
 		}
-		else
-		{
-			break;
-		}
+		
+		break;
 	}
 
 
@@ -5899,8 +7302,15 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 	event->SetName( params.m_szName );
 	event->SetParameters( params.m_szParameters );
 	event->SetParameters2( params.m_szParameters2 );
+	event->SetParameters3( params.m_szParameters3 );
 	event->SetStartTime( params.m_flStartTime );
 	event->SetResumeCondition( params.m_bResumeCondition );
+	event->SetLockBodyFacing( params.m_bLockBodyFacing );
+	event->SetDistanceToTarget( params.m_flDistanceToTarget );
+	event->SetForceShortMovement( params.m_bForceShortMovement );
+	event->SetSyncToFollowingGesture( params.m_bSyncToFollowingGesture );
+	event->SetActive( !params.m_bDisabled );
+	event->SetPlayOverScript( params.m_bPlayOverScript );
 	if ( params.m_bUsesTag )
 	{
 		event->SetUsingRelativeTag( true, params.m_szTagName, params.m_szTagWav );
@@ -5923,7 +7333,7 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 			break;
 		case CChoreoEvent::GESTURE:
 			{
-				RescaleGestureTimes( event, event->GetStartTime(), event->GetEndTime() + dt );
+				event->RescaleGestureTimes( event->GetStartTime(), event->GetEndTime() + dt, true );
 			}
 			break;
 		case CChoreoEvent::FLEXANIMATION:
@@ -5948,12 +7358,14 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 	case CChoreoEvent::SPEAK:
 		{
 			// Try and load wav to get length
-			CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event->GetParameters() ) ) );
+			CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event ) ) );
 			if ( wave )
 			{
 				event->SetEndTime( params.m_flStartTime + wave->GetRunningLength() );
 				delete wave;
 			}
+
+			event->SetSuppressingCaptionAttenuation( params.m_bCloseCaptionNoAttenuate );
 		}
 		break;
 	case CChoreoEvent::SUBSCENE:
@@ -5975,9 +7387,12 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 	case CChoreoEvent::GESTURE:
 		{
 			CheckGestureLength( event, false );
+			AutoaddGestureKeys( event, false );
+			g_pGestureTool->redraw();
 		}
 		break;
 	case CChoreoEvent::LOOKAT:
+	case CChoreoEvent::FACE:
 		{
 			if ( params.usepitchyaw )
 			{
@@ -6001,6 +7416,66 @@ void CChoreoView::EditEvent( CChoreoEvent *event )
 	InvalidateLayout();
 }
 
+void CChoreoView::EnableSelectedEvents( bool state )
+{
+	if ( !m_pScene )
+		return;
+
+	SetDirty( true );
+
+	// If we right clicked on an unseleced event, then select it for the user.
+	if ( CountSelectedEvents() == 0 )
+	{
+		CChoreoEventWidget *event = m_pClickedEvent;
+		if ( event )
+		{
+			event->SetSelected( true );
+		}
+	}
+
+	char const *desc = state ? "Enable Events" : "Disable Events";
+
+	PushUndo( desc );
+
+	// Find the appropriate event by iterating across all actors and channels
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = a->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = channel->GetNumEvents() - 1; k >= 0; k-- )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event->IsSelected() )
+					continue;
+
+				event->GetEvent()->SetActive( state );
+			}
+		}
+	}
+
+	for ( int i = 0; i < m_SceneGlobalEvents.Size(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event || !event->IsSelected() )
+			continue;
+
+		event->GetEvent()->SetActive( state );
+	}
+
+	PushRedo( desc );
+
+	// Redraw
+	InvalidateLayout();
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *event - 
@@ -6015,6 +7490,8 @@ void CChoreoView::DeleteSelectedEvents( void )
 	PushUndo( "Delete Events" );
 
 	int deleteCount = 0;
+
+	float oldstoptime = m_pScene->FindStopTime();
 
 	// Find the appropriate event by iterating across all actors and channels
 	for ( int i = 0; i < m_SceneActors.Size(); i++ )
@@ -6043,6 +7520,17 @@ void CChoreoView::DeleteSelectedEvents( void )
 		}
 	}
 
+	for ( int i = 0; i < m_SceneGlobalEvents.Size(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event || !event->IsSelected() )
+			continue;
+
+		m_pScene->DeleteReferencedObjects( event->GetEvent() );
+
+		deleteCount++;
+	}
+
 	DeleteSceneWidgets();
 
 	ReportSceneClearToTools();
@@ -6053,8 +7541,28 @@ void CChoreoView::DeleteSelectedEvents( void )
 
 	Con_Printf( "Deleted <%i> events\n", deleteCount );
 
+	if ( m_pScene->FindStopTime() != oldstoptime )
+	{
+		// Force scroll bars to recompute
+		ForceScrollBarsToRecompute( false );
+
+	}
 	// Redraw
 	InvalidateLayout();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : resetthumb - 
+//-----------------------------------------------------------------------------
+void CChoreoView::ForceScrollBarsToRecompute( bool resetthumb )
+{
+	if ( resetthumb )
+	{
+		m_flLeftOffset = 0.0f;
+	}
+	m_nLastHPixelsNeeded = -1;
+	m_nLastVPixelsNeeded = -1;
 }
 
 //-----------------------------------------------------------------------------
@@ -6064,23 +7572,21 @@ void CChoreoView::DeleteSelectedEvents( void )
 //-----------------------------------------------------------------------------
 CChoreoScene *CChoreoView::LoadScene( char const *filename )
 {
-	// Strip out the game directory
-	char relative[ 512 ];
-	strcpy( relative,filename );
-	if ( strchr( filename, ':' ) )
+	// If relative path, then make a full path
+	char pFullPathBuf[ MAX_PATH ];
+	if ( !Q_IsAbsolutePath( filename ) )
 	{
-		filesystem->FullPathToRelativePath( filename, relative );
+		filesystem->RelativePathToFullPath( filename, "GAME", pFullPathBuf, sizeof( pFullPathBuf ) );
+		filename = pFullPathBuf;
 	}
 
-	if ( FPFullpathFileExists( va( "%s/%s", GetGameDirectory(), (char *)relative ) ) )
-	{
-		LoadScriptFile( va( "%s/%s", GetGameDirectory(), (char *)relative ) );
+	if ( !filesystem->FileExists( filename ) )
+		return NULL;
 
-		CChoreoScene *scene = ChoreoLoadScene( this, &g_TokenProcessor, Con_Printf );
-		return scene;
-	}
+	LoadScriptFile( const_cast<char*>( filename ) );
 
-	return NULL;
+	CChoreoScene *scene = ChoreoLoadScene( filename, this, tokenprocessor, Con_Printf );
+	return scene;
 }
 
 //-----------------------------------------------------------------------------
@@ -6103,6 +7609,22 @@ bool CChoreoView::FixupSequenceDurations( CChoreoScene *scene, bool checkonly )
 		{
 		default:
 			break;
+		case CChoreoEvent::SPEAK:
+			{
+				// Try and load wav to get length
+				CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event ) ) );
+				if ( wave )
+				{
+					float endtime = event->GetStartTime() + wave->GetRunningLength();
+					if ( event->GetEndTime() != endtime )
+					{
+						event->SetEndTime( event->GetStartTime() + wave->GetRunningLength() );
+						bret = true;
+					}
+					delete wave;
+				}
+			}
+			break;
 		case CChoreoEvent::SEQUENCE:
 			{
 				if ( CheckSequenceLength( event, checkonly ) )
@@ -6114,6 +7636,10 @@ bool CChoreoView::FixupSequenceDurations( CChoreoScene *scene, bool checkonly )
 		case CChoreoEvent::GESTURE:
 			{
 				if ( CheckGestureLength( event, checkonly ) )
+				{
+					bret = true;
+				}
+				if ( AutoaddGestureKeys( event, checkonly ) )
 				{
 					bret = true;
 				}
@@ -6132,6 +7658,9 @@ bool CChoreoView::FixupSequenceDurations( CChoreoScene *scene, bool checkonly )
 //-----------------------------------------------------------------------------
 void CChoreoView::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEvent *event )
 {
+	if ( !event || !event->GetActive() )
+		return;
+
 	CChoreoActor *actor = event->GetActor();
 	if ( actor && !actor->GetActive() )
 	{
@@ -6181,14 +7710,55 @@ void CChoreoView::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEve
 		{
 			if ( ShouldProcessSpeak() )
 			{
+				// See if we should trigger CC
+				char soundname[ 512 ];
+				Q_strncpy( soundname, event->GetParameters(), sizeof( soundname ) );
+
+				float actualEndTime = event->GetEndTime();
+
+				if ( event->GetCloseCaptionType() == CChoreoEvent::CC_MASTER )
+				{
+					char tok[ CChoreoEvent::MAX_CCTOKEN_STRING ];
+					if ( event->GetPlaybackCloseCaptionToken( tok, sizeof( tok ) ) )
+					{
+						float duration = max( event->GetDuration(), event->GetLastSlaveEndTime() - event->GetStartTime() );
+
+						closecaptionmanager->Process( tok, duration, GetCloseCaptionLanguageId() );
+
+						// Use the token as the sound name lookup, too.
+						if ( event->IsUsingCombinedFile() &&
+							 ( event->GetNumSlaves() > 0 ) ) 
+						{
+							Q_strncpy( soundname, tok, sizeof( soundname ) );
+							actualEndTime = max( actualEndTime, event->GetLastSlaveEndTime() );
+						}
+					}
+				}
+
 				StudioModel *model = FindAssociatedModel( scene, event->GetActor() );
 
 				CAudioMixer *mixer = event->GetMixer();
 				if ( !mixer || !sound->IsSoundPlaying( mixer ) )
 				{
+					CSoundParameters params;
+
+					float volume = VOL_NORM;
+					gender_t gender = GENDER_NONE;
+					if (model)
+					{
+						gender = soundemitter->GetActorGender( model->GetFileName() );
+					}
+					
+					if ( !Q_stristr( soundname, ".wav" ) &&
+						soundemitter->GetParametersForSound( soundname, params, gender ) )
+					{
+						volume = params.volume;
+					}
+
 					sound->PlaySound( 
 						model, 
-						va( "sound/%s", FacePoser_TranslateSoundName( event->GetParameters() ) ),
+						volume,
+						va( "sound/%s", FacePoser_TranslateSoundName( soundname, model ) ),
 						&mixer );
 					event->SetMixer( mixer );
 				}
@@ -6198,7 +7768,7 @@ void CChoreoView::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEve
 					mixer->SetDirection( m_flFrameTime >= 0.0f );
 					float starttime, endtime;
 					starttime = event->GetStartTime();
-					endtime = event->GetEndTime();
+					endtime = actualEndTime;
 
 					float soundtime = endtime - starttime;
 					if ( soundtime > 0.0f )
@@ -6220,26 +7790,6 @@ void CChoreoView::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEve
 		break;
 	case CChoreoEvent::EXPRESSION:
 		{
-			// Get a new markov group id each time we start a meta-event
-			CExpClass *p = expressions->FindClass( event->GetParameters() );
-			if ( p )
-			{
-				CExpression *exp = p->FindExpression( event->GetParameters2() );
-
-				// Allow overrides
-				if ( FacePoser_GetOverridesShowing() )
-				{
-					if ( exp && exp->HasOverride() && exp->GetOverride() )
-					{
-						exp = exp->GetOverride();
-					}
-				}
-
-				if ( exp && exp->GetType() == CExpression::TYPE_MARKOV )
-				{
-					exp->NewMarkovIndex();
-				}
-			}
 		}
 		break;
 	case CChoreoEvent::LOOP:
@@ -6264,6 +7814,9 @@ void CChoreoView::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEve
 //-----------------------------------------------------------------------------
 void CChoreoView::EndEvent( float currenttime, CChoreoScene *scene, CChoreoEvent *event )
 {
+	if ( !event || !event->GetActive() )
+		return;
+
 	CChoreoActor *actor = event->GetActor();
 	if ( actor && !actor->GetActive() )
 	{
@@ -6342,6 +7895,45 @@ int CChoreoView::GetTagUnderCursorPos( CChoreoEventWidget *event, int mx, int my
 	return -1;
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *event - 
+//			mx - 
+//			my - 
+//-----------------------------------------------------------------------------
+CEventAbsoluteTag *CChoreoView::GetAbsoluteTagUnderCursorPos( CChoreoEventWidget *event, int mx, int my )
+{
+	if ( !event )
+	{
+		return NULL;
+	}
+
+	for ( int i = 0; i < event->GetEvent()->GetNumAbsoluteTags( CChoreoEvent::PLAYBACK ); i++ )
+	{
+		CEventAbsoluteTag *tag = event->GetEvent()->GetAbsoluteTag( CChoreoEvent::PLAYBACK, i );
+		if ( !tag )
+			continue;
+
+		// Determine left edcge
+		RECT bounds;
+		bounds = event->getBounds();
+		int left = bounds.left + (int)( tag->GetPercentage() * (float)( bounds.right - bounds.left ) + 0.5f );
+
+		int tolerance = 3;
+
+		if ( abs( mx - left ) < tolerance )
+		{
+			if ( abs( my - bounds.top ) < tolerance )
+			{
+				return tag;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : mx - 
@@ -6352,7 +7944,8 @@ int CChoreoView::GetTagUnderCursorPos( CChoreoEventWidget *event, int mx, int my
 //-----------------------------------------------------------------------------
 void CChoreoView::GetObjectsUnderMouse( int mx, int my, CChoreoActorWidget **actor,
 	CChoreoChannelWidget **channel, CChoreoEventWidget **event, CChoreoGlobalEventWidget **globalevent,
-	int *clickedTag )
+	int *clickedTag,
+	CEventAbsoluteTag **absolutetag, int *clickedCCArea )
 {
 	if ( actor )
 	{
@@ -6361,6 +7954,10 @@ void CChoreoView::GetObjectsUnderMouse( int mx, int my, CChoreoActorWidget **act
 	if ( channel )
 	{
 		*channel = GetChannelUnderCursorPos( mx, my );
+		if ( *channel && clickedCCArea )
+		{
+			*clickedCCArea = (*channel)->GetChannelItemUnderMouse( mx, my );
+		}
 	}
 	if ( event )
 	{
@@ -6381,6 +7978,18 @@ void CChoreoView::GetObjectsUnderMouse( int mx, int my, CChoreoActorWidget **act
 			*clickedTag = -1;
 		}
 	}
+	if ( absolutetag )
+	{
+		if ( event && *event )
+		{
+			*absolutetag = GetAbsoluteTagUnderCursorPos( *event, mx, my );
+		}
+		else
+		{
+			*absolutetag = NULL;
+		}
+	}
+
 
 	m_nSelectedEvents = CountSelectedEvents();
 }
@@ -6500,6 +8109,15 @@ CChoreoEventWidget *CChoreoView::GetEventUnderCursorPos( int mx, int my )
 	check.x = mx;
 	check.y = my;
 
+	if ( mx < GetLabelWidth() )
+		return NULL;
+
+	if ( my < GetStartRow() )
+		return NULL;
+
+	if ( my >= h2() - ( m_nInfoHeight + m_nScrollbarHeight ) )
+		return NULL;
+
 	CChoreoEventWidget *event;
 	for ( int i = 0; i < channel->GetNumEvents(); i++ )
 	{
@@ -6564,6 +8182,15 @@ void CChoreoView::TraverseWidgets( CVMEMBERFUNC pfn, CChoreoWidget *param1 )
 			}
 		}
 	}
+
+	for ( int i = 0; i < m_SceneGlobalEvents.Size(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event )
+			continue;
+
+		(this->*pfn)( event, param1 );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -6604,13 +8231,102 @@ void CChoreoView::Select( CChoreoWidget *widget, CChoreoWidget *param1 )
 void CChoreoView::SelectAllEvents( CChoreoWidget *widget, CChoreoWidget *param1 )
 {
 	CChoreoEventWidget *ew = dynamic_cast< CChoreoEventWidget * >( widget );
-	if ( !ew )
-		return;
+	CChoreoGlobalEventWidget *gew = dynamic_cast< CChoreoGlobalEventWidget * >( widget );
 
-	if ( widget->IsSelected() )
-		return;
+	if ( ew || gew )
+	{
+		if ( widget->IsSelected() )
+			return;
 
-	widget->SetSelected( true );
+		widget->SetSelected( true );
+	}
+}
+
+bool CChoreoView::CreateAnimationEvent( int mx, int my, char const *animationname )
+{
+	if ( !animationname || !animationname[0] )
+		return false;
+
+	// Convert screen to client
+	POINT pt;
+	pt.x = mx;
+	pt.y = my;
+
+	ScreenToClient( (HWND)getHandle(), &pt );
+
+	if ( pt.x < 0 || pt.y < 0 )
+		return false;
+
+	if ( pt.x > w2() || pt.y > h2() )
+		return false;
+
+	pt.x -= GetLabelWidth();
+	m_nClickedX = pt.x;
+
+	GetObjectsUnderMouse( pt.x, pt.y, &m_pClickedActor, &m_pClickedChannel, &m_pClickedEvent, &m_pClickedGlobalEvent, &m_nClickedTag, &m_pClickedAbsoluteTag, &m_nClickedChannelCloseCaptionButton );
+
+	// Find channel actor and time ( uses screen space coordinates )
+	//
+	CChoreoChannelWidget *channel = GetChannelUnderCursorPos( pt.x, pt.y );
+	if ( !channel )
+	{
+		CChoreoActorWidget *actor = GetActorUnderCursorPos( pt.x, pt.y );
+		if ( !actor )
+			return false;
+
+		// Grab first channel
+		if ( !actor->GetNumChannels() )
+			return false;
+
+		channel = actor->GetChannel( 0 );
+	}
+
+	if ( !channel )
+		return false;
+
+	CChoreoChannel *pchannel = channel->GetChannel();
+	if ( !pchannel )
+	{
+		Assert( 0 );
+		return false;
+	}
+
+	// At this point we need to ask the user what type of even to create (gesture or sequence) and just show the approprite dialog
+	CChoiceParams params;
+	strcpy( params.m_szDialogTitle, "Create Animation Event" );
+
+	params.m_bPositionDialog = false;
+	params.m_nLeft = 0;
+	params.m_nTop = 0;
+	strcpy( params.m_szPrompt, "Type of event:" );
+
+	params.m_Choices.RemoveAll();
+
+	params.m_nSelected = 0;
+	ChoiceText text;
+	strcpy( text.choice, "gesture" );
+	params.m_Choices.AddToTail( text );
+	strcpy( text.choice, "sequence" );
+	params.m_Choices.AddToTail( text );
+
+	if ( !ChoiceProperties( &params ) )
+		return false;
+	
+	if ( params.m_nSelected < 0 )
+		return false;
+
+	switch ( params.m_nSelected )
+	{
+	default:
+	case 0:
+		AddEvent( CChoreoEvent::GESTURE, 0, animationname );
+		break;
+	case 1:
+		AddEvent( CChoreoEvent::SEQUENCE, 0, animationname );
+		break;
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -6730,11 +8446,11 @@ void CChoreoView::ResetTargetSettings( void )
 		}
 	}
 
-	m_bHasLookTarget = false;
+	models->ClearModelTargets( true );
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: copies the actors "settings" into the models FlexControllers
 // Input  : dt - 
 //-----------------------------------------------------------------------------
 void CChoreoView::UpdateCurrentSettings( void )
@@ -6754,17 +8470,27 @@ void CChoreoView::UpdateCurrentSettings( void )
 		if ( !model )
 			continue;
 
-		studiohdr_t *hdr = model->getStudioHeader();
+		CStudioHdr *hdr = model->GetStudioHdr();
 		if ( !hdr )
 			continue;
 
 		float *current = w->GetSettings();
 
-		for ( int j = 0; j < hdr->numflexcontrollers; j++ )
+		for ( LocalFlexController_t j = LocalFlexController_t(0); j < hdr->numflexcontrollers(); j++ )
 		{
-			int k = hdr->pFlexcontroller( j )->link;
+			int k = hdr->pFlexcontroller( j )->localToGlobal;
 
-			model->SetFlexController( j, current[ k ] );
+			if (k != -1)
+			{
+				if ( defaultModel == model && g_pFlexPanel->IsEdited( k ) )
+				{
+					model->SetFlexController( j, g_pFlexPanel->GetSlider( k ) );
+				}
+				else
+				{
+					model->SetFlexController( j, current[ k ] );
+				}
+			}
 		}
 	}
 }
@@ -6810,7 +8536,7 @@ void CChoreoView::AddEventRelativeTag( void )
 	CChoreoEvent *event = ew->GetEvent();
 	if ( !event->GetEndTime() )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Event Tag:  Can only tag events with an end time\n" );
+		Con_ErrorPrintf( "Event Tag:  Can only tag events with an end time\n" );
 		return;
 	}
 
@@ -6827,7 +8553,7 @@ void CChoreoView::AddEventRelativeTag( void )
 
 	if ( strlen( params.m_szInputText ) <= 0 )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Event Tag Name:  No name entered!\n" );
+		Con_ErrorPrintf( "Event Tag Name:  No name entered!\n" );
 		return;
 	}
 	
@@ -6856,6 +8582,37 @@ void CChoreoView::AddEventRelativeTag( void )
 	g_pGestureTool->redraw();
 	g_pRampTool->redraw();
 	g_pSceneRampTool->redraw();
+}
+
+CChoreoChannelWidget *CChoreoView::FindChannelForEvent( CChoreoEvent *event )
+{
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *c = a->GetChannel( j );
+			if ( !c )
+				continue;
+
+			for ( int k = 0; k < c->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *e = c->GetEvent( k );
+				if ( !e )
+					continue;
+
+				if ( e->GetEvent() != event )
+					continue;
+
+				return c;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -6923,7 +8680,7 @@ void CChoreoView::UpdateStatusArea( int mx, int my )
 	FLYOVER fo;
 
 	GetObjectsUnderMouse( mx, my, &fo.a, &fo.c, 
-		&fo.e, &fo.ge, &fo.tag );
+		&fo.e, &fo.ge, &fo.tag, &fo.at, &fo.ccbutton );
 
 	if ( fo.a )
 	{
@@ -6944,6 +8701,11 @@ void CChoreoView::UpdateStatusArea( int mx, int my )
 	if ( fo.tag != -1 )
 	{
 		m_Flyover.tag = fo.tag;
+	}
+	if ( fo.ccbutton != -1 )
+	{
+		m_Flyover.ccbutton = fo.ccbutton;
+		// m_Flyover.e = NULL;
 	}
 
 	RECT rcClip;
@@ -6989,6 +8751,11 @@ void CChoreoView::RedrawStatusArea( CChoreoWidgetDrawHelper& drawHelper, RECT& r
 	if ( m_Flyover.e )
 	{
 		m_Flyover.e->redrawStatus( drawHelper, rcInfo );
+	}
+	if ( m_Flyover.c &&
+		m_Flyover.ccbutton != -1 )
+	{
+		m_Flyover.c->redrawStatus( drawHelper, rcInfo, m_Flyover.ccbutton );
 	}
 
 	if ( m_pScene )
@@ -7137,7 +8904,7 @@ static char *CopyString( const char *in )
 	return n;
 }
 
-void CChoreoView::PushUndo( char *description )
+void CChoreoView::PushUndo( const char *description )
 {
 	Assert( !m_bRedoPending );
 	m_bRedoPending = true;
@@ -7155,7 +8922,7 @@ void CChoreoView::PushUndo( char *description )
 	m_nUndoLevel++;
 }
 
-void CChoreoView::PushRedo( char *description )
+void CChoreoView::PushRedo( const char *description )
 {
 	Assert( m_bRedoPending );
 	m_bRedoPending = false;
@@ -7207,7 +8974,7 @@ void CChoreoView::WipeRedo( void )
 //-----------------------------------------------------------------------------
 const char *CChoreoView::GetUndoDescription( void )
 {
-	if ( m_nUndoLevel != 0 )
+	if ( CanUndo() )
 	{
 		CVUndo *u = m_UndoStack[ m_nUndoLevel - 1 ];
 		return u->udescription;
@@ -7221,12 +8988,30 @@ const char *CChoreoView::GetUndoDescription( void )
 //-----------------------------------------------------------------------------
 const char *CChoreoView::GetRedoDescription( void )
 {
-	if ( m_nUndoLevel != m_UndoStack.Size() )
+	if ( CanRedo() )
 	{
 		CVUndo *u = m_UndoStack[ m_nUndoLevel ];
 		return u->rdescription;
 	}
 	return "???redo";
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CChoreoView::CanUndo()
+{
+	return m_nUndoLevel != 0;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : Returns true on success, false on failure.
+//-----------------------------------------------------------------------------
+bool CChoreoView::CanRedo()
+{
+	return m_nUndoLevel != m_UndoStack.Size();
 }
 
 //-----------------------------------------------------------------------------
@@ -7262,7 +9047,7 @@ CChoreoScene *CChoreoView::GetScene( void )
 
 bool CChoreoView::CanPaste( void )
 {
-	char const *copyfile = "scenes/copydata.txt";
+	char const *copyfile = COPYPASTE_FILENAME;
 
 	if ( !filesystem->FileExists( copyfile ) )
 	{
@@ -7277,49 +9062,9 @@ void CChoreoView::CopyEvents( void )
 	if ( !m_pScene )
 		return;
 
-	char const *copyfile = "scenes/copydata.txt";
-
-	CUtlVector< CChoreoEvent * > events;
-
-	// Find selected eventss
-	for ( int i = 0; i < m_SceneActors.Size(); i++ )
-	{
-		CChoreoActorWidget *a = m_SceneActors[ i ];
-		if ( !a )
-			continue;
-
-		for ( int j = 0; j < a->GetNumChannels(); j++ )
-		{
-			CChoreoChannelWidget *c = a->GetChannel( j );
-			if ( !c )
-				continue;
-
-			for ( int k = 0; k < c->GetNumEvents(); k++ )
-			{
-				CChoreoEventWidget *e = c->GetEvent( k );
-				if ( !e )
-					continue;
-
-				if ( !e->IsSelected() )
-					continue;
-
-				CChoreoEvent *event = e->GetEvent();
-				if ( !event )
-					continue;
-
-				events.AddToTail( event );
-			}
-		}
-	}
-
-	if ( events.Size() > 0 )
-	{
-		m_pScene->ExportEvents( copyfile, events );
-	}
-	else
-	{
-		Con_Printf( "No events selected\n" );
-	}
+	char const *copyfile = COPYPASTE_FILENAME;
+	MakeFileWriteable( copyfile );
+	ExportVCDFile( copyfile );
 }
 
 void CChoreoView::PasteEvents( void )
@@ -7327,31 +9072,12 @@ void CChoreoView::PasteEvents( void )
 	if ( !m_pScene )
 		return;
 
-	if ( !m_pClickedActor || !m_pClickedChannel )
-		return;
-
 	if ( !CanPaste() )
 		return;
 
-	char const *copyfile = va( "%s/scenes/copydata.txt", GetGameDirectory() );
+	char const *copyfile = COPYPASTE_FILENAME;
 
-	LoadScriptFile( (char *)copyfile );
-
-	DeselectAll();
-
-	float starttime = GetTimeValueForMouse( m_nClickedX, false );
-
-	SetDirty( true );
-
-	PushUndo( "Paste Events" );
-
-	m_pScene->ImportEvents( &g_TokenProcessor, m_pClickedActor->GetActor(), m_pClickedChannel->GetChannel(), starttime );
-
-	PushRedo( "Paste Events" );
-
-	CreateSceneWidgets();
-	// Redraw
-	InvalidateLayout();
+	ImportVCDFile( copyfile );
 }
 
 void CChoreoView::ImportEvents( void )
@@ -7362,27 +9088,30 @@ void CChoreoView::ImportEvents( void )
 	if ( !m_pClickedActor || !m_pClickedChannel )
 		return;
 
-	// Show file io
-	const char *fullpath = mxGetOpenFileName( 
-		0, 
-		FacePoser_MakeWindowsSlashes( va( "%s/scenes/", GetGameDirectory() ) ), 
-		"*.vce" );
-	if ( !fullpath || !fullpath[ 0 ] )
+	char eventfile[ 512 ];
+	if ( !FacePoser_ShowOpenFileNameDialog( eventfile, sizeof( eventfile ), "scenes", "*.vce" ) )
 		return;
-	if ( !FPFullpathFileExists( fullpath ) )
+	
+	char fullpathbuf[ 512 ];
+	char *fullpath = eventfile;
+	if ( !Q_IsAbsolutePath( eventfile ) )
+	{
+		filesystem->RelativePathToFullPath( eventfile, "GAME", fullpathbuf, sizeof( fullpathbuf ) );
+		fullpath = fullpathbuf;
+	}
+
+	if ( !filesystem->FileExists( fullpath ) )
 		return;
 
-	LoadScriptFile( (char *)fullpath );
+	LoadScriptFile( fullpath );
 
 	DeselectAll();
-
-	float starttime = GetTimeValueForMouse( m_nClickedX, false );
 
 	SetDirty( true );
 
 	PushUndo( "Import Events" );
 
-	m_pScene->ImportEvents( &g_TokenProcessor, m_pClickedActor->GetActor(), m_pClickedChannel->GetChannel(), starttime );
+	m_pScene->ImportEvents( tokenprocessor, m_pClickedActor->GetActor(), m_pClickedChannel->GetChannel() );
 
 	PushRedo( "Import Events" );
 
@@ -7395,31 +9124,11 @@ void CChoreoView::ImportEvents( void )
 
 void CChoreoView::ExportEvents( void )
 {
-	char workingdir[ 256 ];
-	Q_getwd( workingdir );
-	strlwr( workingdir );
-	COM_FixSlashes( workingdir );
-
-	// Show file io
-	bool inScenesAlready = false;
-	if ( strstr( workingdir, va( "%s/scenes", GetGameDirectory() ) ) )
-	{
-		inScenesAlready = true;
-	}
-	const char *fullpath = mxGetSaveFileName( 
-		this, 
-		inScenesAlready ? "." : FacePoser_MakeWindowsSlashes( va( "%s/scenes/", GetGameDirectory() ) ), 
-		"*.vce" );
-	if ( !fullpath || !fullpath[ 0 ] )
+	char eventfilename[ 512 ];
+	if ( !FacePoser_ShowSaveFileNameDialog( eventfilename, sizeof( eventfilename ), "scenes", "*.vce" ) )
 		return;
 
-	// Strip game directory and slash
-	char eventfilename[ 512 ];
-
-	filesystem->FullPathToRelativePath( fullpath, eventfilename );
-
-	StripExtension( eventfilename );
-	DefaultExtension( eventfilename, ".vce" );
+	Q_DefaultExtension( eventfilename, ".vce", sizeof( eventfilename ) );
 
 	Con_Printf( "Exporting events to %s\n", eventfilename );
 
@@ -7465,6 +9174,173 @@ void CChoreoView::ExportEvents( void )
 	{
 		Con_Printf( "No events selected\n" );
 	}
+}
+
+void CChoreoView::ExportVCDFile( char const *filename )
+{
+	Con_Printf( "Exporting to %s\n", filename );
+
+	// Unmark everything
+	m_pScene->MarkForSaveAll( false );
+
+	// Mark everything related to selected events
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *c = a->GetChannel( j );
+			if ( !c )
+				continue;
+
+			for ( int k = 0; k < c->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *e = c->GetEvent( k );
+				if ( !e )
+					continue;
+
+				if ( !e->IsSelected() )
+					continue;
+
+				CChoreoEvent *event = e->GetEvent();
+				if ( !event )
+					continue;
+
+				event->SetMarkedForSave( true );
+				if ( event->GetChannel() )
+				{
+					event->GetChannel()->SetMarkedForSave( true );
+				}
+				if ( event->GetActor() )
+				{
+					event->GetActor()->SetMarkedForSave( true );
+				}
+			}
+		}
+	}
+
+	m_pScene->ExportMarkedToFile( filename );
+}
+
+void CChoreoView::ImportVCDFile( char const *filename )
+{
+	CChoreoScene *merge = LoadScene( filename );
+	if ( !merge )
+	{
+		Con_Printf( "Couldn't load from .vcd %s\n", filename );
+		return;
+	}
+
+	DeselectAll();
+
+	CUtlRBTree< CChoreoEvent *, int > oldEvents( 0, 0, DefLessFunc( CChoreoEvent * ) );
+
+	int i;
+	for ( i = 0; i < m_SceneActors.Count(); ++i )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				oldEvents.Insert( event->GetEvent() );
+			}
+		}
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Merge/Import VCD" );
+
+	m_pScene->Merge( merge );
+
+	PushRedo( "Merge/Import VCD" );
+
+	DeleteSceneWidgets();
+	CreateSceneWidgets();
+
+	// Force scroll bars to recompute
+	ForceScrollBarsToRecompute( false );
+
+	// Now walk through the "new" events and select everything that wasn't already there (all of the stuff that was "added" during the merge)
+	for ( i = 0; i < m_SceneActors.Count(); ++i )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				if ( oldEvents.Find( event->GetEvent() ) == oldEvents.InvalidIndex() )
+				{
+					event->SetSelected( true );
+				}
+			}
+		}
+	}
+
+	// Redraw
+	InvalidateLayout();
+
+	Con_Printf( "Imported vcd '%s'\n", filename );
+
+	delete merge;
+
+	redraw();
+}
+
+void CChoreoView::ExportVCD()
+{
+	char scenefile[ 512 ];
+	if ( !FacePoser_ShowSaveFileNameDialog( scenefile, sizeof( scenefile ), "scenes", "*.vcd" ) )
+	{
+		return;
+	}
+
+	Q_DefaultExtension( scenefile, ".vcd", sizeof( scenefile ) );
+
+	ExportVCDFile( scenefile );
+}
+
+void CChoreoView::ImportVCD()
+{
+	if ( !m_pScene )
+		return;
+
+	if ( !m_pClickedActor || !m_pClickedChannel )
+		return;
+
+	char scenefile[ 512 ];
+	if ( !FacePoser_ShowOpenFileNameDialog( scenefile, sizeof( scenefile ), "scenes", "*.vcd" ) )
+	{
+		return;
+	}
+
+	ImportVCDFile( scenefile );
 }
 
 //-----------------------------------------------------------------------------
@@ -7520,12 +9396,49 @@ void CChoreoView::ProcessSpeak( CChoreoScene *scene, CChoreoEvent *event )
 
 	StudioModel *model = FindAssociatedModel( scene, event->GetActor() );
 
+	// See if we should trigger CC
+	char soundname[ 512 ];
+	Q_strncpy( soundname, event->GetParameters(), sizeof( soundname ) );
+
+	float actualEndTime = event->GetEndTime();
+
+	if ( event->GetCloseCaptionType() == CChoreoEvent::CC_MASTER )
+	{
+		char tok[ CChoreoEvent::MAX_CCTOKEN_STRING ];
+		if ( event->GetPlaybackCloseCaptionToken( tok, sizeof( tok ) ) )
+		{
+			// Use the token as the sound name lookup, too.
+			if ( event->IsUsingCombinedFile() &&
+				 ( event->GetNumSlaves() > 0 ) ) 
+			{
+				Q_strncpy( soundname, tok, sizeof( soundname ) );
+				actualEndTime = max( actualEndTime, event->GetLastSlaveEndTime() );
+			}
+		}
+	}
+
 	CAudioMixer *mixer = event->GetMixer();
 	if ( !mixer || !sound->IsSoundPlaying( mixer ) )
 	{
+		CSoundParameters params;
+		float volume = VOL_NORM;
+		
+		gender_t gender = GENDER_NONE;
+		if (model)
+		{
+			gender = soundemitter->GetActorGender( model->GetFileName() );
+		}
+
+		if ( !Q_stristr( soundname, ".wav" ) &&
+			soundemitter->GetParametersForSound( soundname, params, gender ) )
+		{
+			volume = params.volume;
+		}
+
 		sound->PlaySound( 
 			model, 
-			va( "sound/%s", FacePoser_TranslateSoundName( event->GetParameters() ) ), 
+			volume,
+			va( "sound/%s", FacePoser_TranslateSoundName( soundname, model ) ), 
 			&mixer );
 		event->SetMixer( mixer );
 	}
@@ -7537,7 +9450,7 @@ void CChoreoView::ProcessSpeak( CChoreoScene *scene, CChoreoEvent *event )
 	mixer->SetDirection( m_flFrameTime >= 0.0f );
 	float starttime, endtime;
 	starttime = event->GetStartTime();
-	endtime = event->GetEndTime();
+	endtime = actualEndTime;
 
 	float soundtime = endtime - starttime;
 	if ( soundtime <= 0.0f )
@@ -7556,11 +9469,15 @@ void CChoreoView::ProcessSpeak( CChoreoScene *scene, CChoreoEvent *event )
 
 	int dsample = cursample - realsample;
 
-	int onepercent = numsamples * 0.01f;
-
-	if ( abs( dsample ) > onepercent )
+	int samplelimit = mixer->GetSource()->SampleRate() * 0.02f; // don't shift until samples are off by this much
+	if (IsScrubbing())
 	{
-		mixer->SetSamplePosition( cursample );
+		samplelimit = mixer->GetSource()->SampleRate() * 0.01f; // make it shorter tolerance when scrubbing
+	}
+
+	if ( abs( dsample ) > samplelimit )
+	{
+		mixer->SetSamplePosition( cursample, IsScrubbing() );
 	}
 	mixer->SetActive( true );
 }
@@ -7608,7 +9525,16 @@ void CChoreoView::SetChoreoFile( char const *filename )
 	strcpy( m_szChoreoFile, filename );
 	if ( m_szChoreoFile[ 0 ] )
 	{
-		SetSuffix( va( " - %s", m_szChoreoFile ) );
+		char sz[ 256 ];
+		if ( IsFileWriteable( m_szChoreoFile ) )
+		{
+			Q_snprintf( sz, sizeof( sz ), " - %s", m_szChoreoFile );
+		}
+		else
+		{
+			Q_snprintf( sz, sizeof( sz ), " - %s [Read-Only]", m_szChoreoFile );
+		}
+		SetSuffix( sz );
 	}
 	else
 	{
@@ -7628,8 +9554,6 @@ char const *CChoreoView::GetChoreoFile( void ) const
 void CChoreoView::GetScrubHandleRect( RECT& rcHandle, bool clipped )
 {
 	float pixel = 0.0f;
-
-	float time = 0.0f;
 
 	if ( m_pScene )
 	{
@@ -7781,7 +9705,7 @@ void CChoreoView::ScrubThink( float dt, bool scrubbing, IFacePoserToolWindow *in
 	}
 
 	// Make sure we're solving head turns during playback
-	g_viewerSettings.solveHeadTurn = 1;
+	models->SetSolveHeadTurn( 1 );
 
 	if ( m_bPaused )
 	{
@@ -7872,11 +9796,15 @@ void CChoreoView::DrawScrubHandle( void )
 void CChoreoView::SetScrubTime( float t )
 {
 	m_flScrub = t;
+
+	m_bPaused = false;
 }
 
 void CChoreoView::SetScrubTargetTime( float t )
 {
 	m_flScrubTarget = t;
+
+	m_bPaused = false;
 }
 
 void CChoreoView::ClampTimeToSelectionInterval( float& timeval )
@@ -7897,8 +9825,50 @@ void CChoreoView::ShowButtons( bool show )
 	m_pPlaybackRate->setVisible( show );
 }
 	
+void CChoreoView::RememberSelectedEvents( CUtlVector< CChoreoEvent * >& list )
+{
+	GetSelectedEvents( list );
+}
+
+void CChoreoView::ReselectEvents( CUtlVector< CChoreoEvent * >& list )
+{
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				CChoreoEvent *check = event->GetEvent();
+				if ( list.Find( check ) != list.InvalidIndex() )
+				{
+					event->SetSelected( true );
+				}
+			}
+		}
+	}
+
+}
+
 void CChoreoView::OnChangeScale( void )
 {
+	CChoreoScene *scene = m_pScene;
+	if ( !scene )
+	{
+		return;
+	}
+
 	// Zoom time in  / out
 	CInputParams params;
 	memset( &params, 0, sizeof( params ) );
@@ -7906,20 +9876,26 @@ void CChoreoView::OnChangeScale( void )
 	strcpy( params.m_szDialogTitle, "Change Zoom" );
 	strcpy( params.m_szPrompt, "New scale (e.g., 2.5x):" );
 
-	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)m_nTimeZoom / 100.0f );
+	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)GetTimeZoom( GetToolName() ) / 100.0f );
 
 	if ( !InputProperties( &params ) )
 		return;
 
-	m_nTimeZoom = clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM );
+	SetTimeZoom( GetToolName(), clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM ), false );
 
-	m_nLeftOffset = 0;
-	m_nLastHPixelsNeeded = -1;
-	m_nLastVPixelsNeeded = -1;
+	// Force scroll bars to recompute
+	ForceScrollBarsToRecompute( false );
+
+	CUtlVector< CChoreoEvent * > selected;
+	RememberSelectedEvents( selected );
+
 	DeleteSceneWidgets();
 	CreateSceneWidgets();
+
+	ReselectEvents( selected );
+
 	InvalidateLayout();
-	Con_Printf( "Zoom factor %i %%\n", m_nTimeZoom );
+	Con_Printf( "Zoom factor %i %%\n", GetTimeZoom( GetToolName() ) );
 }
 
 void CChoreoView::OnCheckSequenceLengths( void )
@@ -7996,48 +9972,7 @@ void CChoreoView::InvalidateTrackLookup( void )
 	InvalidateTrackLookup_R( m_pScene );
 }
 
-void CChoreoView::ResetHeadTarget()
-{
-	m_HeadTarget.RemoveAll();
-}
 
-void CChoreoView::UpdateHeadTarget()
-{
-	int c = m_HeadTarget.Count();
-	if ( c <= 0 )
-		return;
-
-	float turn = 0.0f;
-	Vector eye;
-	Vector head;
-	eye.Init();
-	head.Init();
-	int i;
-	for ( i = 0; i < c; i++ )
-	{
-
-		HeadTarget *target = &m_HeadTarget[ i ];
-
-		turn += target->intensity;
-		eye += target->intensity * target->eyes;
-		head += target->intensity * target->head;
-	}
-
-	g_viewerSettings.flHeadTurn = clamp( turn, 0.0f, 1.0f );
-
-	g_viewerSettings.vecHeadTarget = head;
-	g_viewerSettings.vecEyeTarget = eye;
-}
-
-void CChoreoView::AddHeadTarget( float intensity, const Vector& eyeTarget, const Vector& headTarget )
-{
-	HeadTarget data;
-	data.intensity = intensity;
-	data.eyes = eyeTarget;
-	data.head = headTarget;
-
-	m_HeadTarget.AddToTail( data );
-}
 
 bool CChoreoView::IsRampOnly( void ) const
 {
@@ -8052,3 +9987,1661 @@ bool CChoreoView::IsRampOnly( void ) const
 void CChoreoView::ProcessInterrupt( CChoreoScene *scene, CChoreoEvent *event )
 {
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *scene - 
+//			*event - 
+//-----------------------------------------------------------------------------
+void CChoreoView::ProcessPermitResponses( CChoreoScene *scene, CChoreoEvent *event )
+{
+}
+
+void CChoreoView::ApplyBounds( int& mx, int& my )
+{
+	if ( !m_bUseBounds )
+		return;
+
+	mx = clamp( mx, m_nMinX, m_nMaxX );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns -1 if no event found
+// Input  : *channel - 
+//			*e - 
+//			forward - 
+// Output : float
+//-----------------------------------------------------------------------------
+float CChoreoView::FindNextEventTime( CChoreoEvent::EVENTTYPE type, CChoreoChannel *channel, CChoreoEvent *e, bool forward )
+{
+	bool foundone = false;
+	float bestTime = -1.0f;
+	float bestGap = 999999.0f;
+
+	int c = channel->GetNumEvents();
+	for ( int i = 0; i < c; i++ )
+	{
+		CChoreoEvent *test = channel->GetEvent( i );
+		if ( test->GetType() != type )
+			continue;
+
+		if ( forward )
+		{
+			float dt = test->GetStartTime() - e->GetEndTime();
+			if ( dt <= 0.0f )
+				continue;
+
+			if ( dt < bestGap )
+			{
+				foundone = true;
+				bestGap = dt;
+				bestTime = test->GetStartTime();
+			}
+		}
+		else
+		{
+			float dt = e->GetStartTime() - test->GetEndTime();
+			if ( dt <= 0.0f )
+				continue;
+
+			if ( dt < bestGap )
+			{
+				foundone = true;
+				bestGap = dt;
+				bestTime = test->GetEndTime();
+			}
+		}
+	}
+
+	return bestTime;
+}
+
+void CChoreoView::CalcBounds( int movetype )
+{
+	m_bUseBounds = false;
+	m_nMinX = 0;
+	m_nMaxX = 0;
+
+	if ( !m_pClickedEvent )
+		return;
+
+	switch ( movetype )
+	{
+	default:
+		break;
+	case DRAGTYPE_EVENT_MOVE:
+	case DRAGTYPE_EVENT_STARTTIME:
+	case DRAGTYPE_EVENT_ENDTIME:
+	case DRAGTYPE_EVENT_STARTTIME_RESCALE:
+	case DRAGTYPE_EVENT_ENDTIME_RESCALE:
+		{
+			m_nMinX = GetPixelForTimeValue( 0 );
+			m_nMaxX = GetPixelForTimeValue( m_pScene->FindStopTime() );
+
+			CChoreoEvent *e = m_pClickedEvent->GetEvent();
+
+			m_bUseBounds = false; // e && e->GetType() == CChoreoEvent::GESTURE;
+			// FIXME: use this for finding adjacent gesture edges (kenb)
+			if ( m_bUseBounds )
+			{
+				CChoreoChannel *channel = e->GetChannel();
+				Assert( channel );
+
+				float forwardTime = FindNextEventTime( e->GetType(), channel, e, true );
+				float reverseTime = FindNextEventTime( e->GetType(), channel, e, false );
+
+				// Compute pixel for time
+				int nextPixel = forwardTime != -1 ? GetPixelForTimeValue( forwardTime ) : m_nMaxX;
+				int prevPixel = reverseTime != -1 ? GetPixelForTimeValue( reverseTime ) : m_nMinX;
+
+				int startPixel = GetPixelForTimeValue( e->GetStartTime() );
+				int endPixel = GetPixelForTimeValue( e->GetEndTime() );
+
+				switch ( movetype )
+				{
+				case DRAGTYPE_EVENT_MOVE:
+					{
+						m_nMinX = prevPixel + ( m_xStart - startPixel ) + 1;
+						m_nMaxX = nextPixel - ( endPixel - m_xStart ) - 1;
+					}
+					break;
+				case DRAGTYPE_EVENT_STARTTIME:
+				case DRAGTYPE_EVENT_STARTTIME_RESCALE:
+					{
+						m_nMinX = prevPixel + ( m_xStart - startPixel ) + 1;
+					}
+					break;
+				case DRAGTYPE_EVENT_ENDTIME:
+				case DRAGTYPE_EVENT_ENDTIME_RESCALE:
+					{
+						m_nMaxX = nextPixel - ( endPixel - m_xStart ) - 1;
+					}
+					break;
+				}
+			}
+		}
+		break;
+	}
+}
+
+bool CChoreoView::ShouldSelectEvent( SelectionParams_t &params, CChoreoEvent *event )
+{
+	if ( params.forward )
+	{
+		if ( event->GetStartTime() >= params.time )
+			return true;
+	}
+	else
+	{
+		float endtime = event->HasEndTime() ? event->GetEndTime() : event->GetStartTime();
+
+		if ( endtime <= params.time )
+			return true;
+	}
+	return false;
+}
+
+void CChoreoView::SelectEvents( SelectionParams_t& params )
+{
+	if ( !m_pScene )
+		return;
+
+	if ( !m_pClickedActor )
+		return;
+
+	if ( params.type == SelectionParams_t::SP_CHANNEL && !m_pClickedChannel )
+		return;
+
+	//CChoreoActor *actor = m_pClickedActor->GetActor();
+	CChoreoChannel *channel = m_pClickedChannel ? m_pClickedChannel->GetChannel() : NULL;
+
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *a = m_SceneActors[ i ];
+		if ( !a )
+			continue;
+
+		//if ( a->GetActor() != actor )
+		//	continue;
+
+		for ( int j = 0; j < a->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *c = a->GetChannel( j );
+			if ( !c )
+				continue;
+
+			if ( params.type == SelectionParams_t::SP_CHANNEL &&
+				c->GetChannel() != channel )
+				continue;
+
+			if ( params.type == SelectionParams_t::SP_ACTIVE &&
+				!c->GetChannel()->GetActive() )
+				continue;
+
+			for ( int k = 0; k < c->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *e = c->GetEvent( k );
+				if ( !e )
+					continue;
+
+				CChoreoEvent *event = e->GetEvent();
+				if ( !event )
+					continue;
+
+				if ( !ShouldSelectEvent( params, event ) )
+					continue;
+
+				e->SetSelected( true );
+			}
+		}
+	}
+
+	// Now handle global events, too
+	for ( int i = 0; i < m_SceneGlobalEvents.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *e = m_SceneGlobalEvents[ i ];
+		if ( !e )
+			continue;
+
+		CChoreoEvent *event = e->GetEvent();
+		if ( !event )
+			continue;
+
+		if ( !ShouldSelectEvent( params, event ) )
+			continue;
+
+		e->SetSelected( true );
+	}
+
+	redraw();
+}
+
+void CChoreoView::SetTimeZoom( char const *tool, int tz, bool preserveFocus )
+{
+	if ( !m_pScene )
+		return;
+	
+	// No change
+	int oldZoom = GetTimeZoom( tool );
+	if ( tz == oldZoom )
+		return;
+
+	SetDirty( true );
+
+	POINT pt;
+	::GetCursorPos( &pt );
+	::ScreenToClient( (HWND)getHandle(), &pt );
+
+	// Now figure out time under cursor at old zoom scale
+	float t = GetTimeValueForMouse( pt.x, true );
+
+	m_pScene->SetTimeZoom( tool, tz );
+
+	if ( preserveFocus )
+	{
+		RECT rc;
+		GetClientRect( (HWND)getHandle(), &rc );
+		RECT rcClient = rc;
+		rcClient.top += GetStartRow();
+		OffsetRect( &rcClient, 0, -m_nTopOffset );
+		m_flStartTime = m_flLeftOffset / GetPixelsPerSecond();
+		m_flEndTime = m_flStartTime + (float)( rcClient.right - GetLabelWidth() ) / GetPixelsPerSecond();
+
+		// Now figure out tie under pt.x
+		float newT = GetTimeValueForMouse( pt.x, true );
+		if ( newT != t )
+		{
+			// We need to scroll over a bit
+			float pps = GetPixelsPerSecond();
+			float movePixels = pps * ( newT - t );
+
+			m_flLeftOffset -= movePixels;
+			if ( m_flLeftOffset < 0.0f )
+			{
+				//float fixup = - m_flLeftOffset;
+				m_flLeftOffset = 0;
+			}
+
+			// float maxtime = m_pScene->FindStopTime();
+			float flApparentEndTime = max( m_pScene->FindStopTime(), 5.0f ) + 5.0f;
+			if ( m_flEndTime > flApparentEndTime )
+			{
+				movePixels = pps * ( m_flEndTime - flApparentEndTime );
+				m_flLeftOffset = max( 0.0f, m_flLeftOffset - movePixels );
+			}
+		}
+	}
+
+	// Deal with the slider
+	RepositionHSlider();
+	redraw();
+}
+
+int CChoreoView::GetTimeZoom( char const *tool )
+{
+	if ( !m_pScene )
+		return 100;
+
+	return m_pScene->GetTimeZoom( tool );
+}
+
+void CChoreoView::CheckInsertTime( CChoreoEvent *e, float dt, float starttime, float endtime )
+{
+	// Not influenced
+	float eventend = e->HasEndTime() ? e->GetEndTime() : e->GetStartTime();
+	
+	if ( eventend < starttime )
+		return;
+
+	if ( e->GetStartTime() > starttime )
+	{
+		e->OffsetTime( dt );
+		e->SnapTimes();
+	}
+	else if ( !e->IsFixedLength() && e->HasEndTime() ) // the event starts before start, but ends after start time, need to insert space into the event, act like user dragged end time
+	{
+		float newduration = e->GetDuration() + dt;
+		RescaleRamp( e, newduration );
+		switch ( e->GetType() )
+		{
+		default:
+			break;
+		case CChoreoEvent::GESTURE:
+			{
+				e->RescaleGestureTimes( e->GetStartTime(), e->GetEndTime() + dt, true );
+			}
+			break;
+		case CChoreoEvent::FLEXANIMATION:
+			{
+				RescaleExpressionTimes( e, e->GetStartTime(), e->GetEndTime() + dt );
+			}
+			break;
+		}
+		e->OffsetEndTime( dt );
+		e->SnapTimes();
+		e->ResortRamp();
+	}
+
+	switch ( e->GetType() )
+	{
+	default:
+		break;
+	case CChoreoEvent::SPEAK:
+		{
+			// Try and load wav to get length
+			CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( e ) ) );
+			if ( wave )
+			{
+				e->SetEndTime( e->GetStartTime() + wave->GetRunningLength() );
+				delete wave;
+			}
+		}
+		break;
+	case CChoreoEvent::SEQUENCE:
+		{
+			CheckSequenceLength( e, false );
+		}
+		break;
+	case CChoreoEvent::GESTURE:
+		{
+			CheckGestureLength( e, false );
+		}
+		break;
+	}
+}
+
+void CChoreoView::OnInsertTime()
+{
+	if ( !m_rgABPoints[ 0 ].active &&
+		 !m_rgABPoints[ 1 ].active  )
+	{
+		return;
+	}
+
+	Con_Printf( "OnInsertTime()\n" );
+
+	float starttime = m_rgABPoints[ 0 ].time;
+	float endtime = m_rgABPoints[ 1 ].time;
+
+	// Sort samples correctly
+	if ( starttime > endtime )
+	{
+		float temp = starttime;
+		starttime = endtime;
+		endtime = temp;
+	}
+
+	float dt = endtime - starttime;
+	if ( dt == 0.0f )
+	{
+		// Nothing to do...
+		return;
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Insert Time" );
+
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				CChoreoEvent *e = event->GetEvent();
+				if ( !e )
+					continue;
+
+				CheckInsertTime( e, dt, starttime, endtime );
+			}
+		}
+	}
+
+	// Now handle global events, too
+	for ( int i = 0; i < m_SceneGlobalEvents.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event )
+			continue;
+
+		CChoreoEvent *e = event->GetEvent();
+		if ( !e )
+			continue;
+
+		CheckInsertTime( e, dt, starttime, endtime );
+	}
+
+	PushRedo( "Insert Time" );
+	InvalidateLayout();
+
+	g_pExpressionTool->LayoutItems( true );
+	g_pExpressionTool->redraw();
+	g_pGestureTool->redraw();
+	g_pRampTool->redraw();
+	g_pSceneRampTool->redraw();
+}
+
+void CChoreoView::CheckDeleteTime( CChoreoEvent *e, float dt, float starttime, float endtime, bool& deleteEvent )
+{
+	deleteEvent = false;
+
+	// Not influenced
+	float eventend = e->HasEndTime() ? e->GetEndTime() : e->GetStartTime();
+
+	if ( eventend < starttime )
+	{
+		return;
+	}
+
+	// On right side of start mark, just shift left
+	if ( e->GetStartTime() > starttime )
+	{
+		// If it has no duration and it's in the bounds then kill it.
+		if ( !e->HasEndTime() && e->GetStartTime() < endtime )
+		{
+			deleteEvent = true;
+			return;
+		}
+		else
+		{
+			float shift = e->GetStartTime() - starttime;
+			float maxoffset = min( dt, shift );
+	
+			e->OffsetTime( -maxoffset );
+			e->SnapTimes();
+		}
+	}
+	else if ( !e->IsFixedLength() && e->HasEndTime() ) // the event starts before start, but ends after start time, need to insert space into the event, act like user dragged end time
+	{
+		float shiftend = e->GetEndTime() - starttime;
+		float maxoffset = min( dt, shiftend );
+
+		float newduration = e->GetDuration() - maxoffset;
+		if ( newduration <= 0.0f )
+		{
+			deleteEvent = true;
+			return;
+		}
+		else
+		{
+			RescaleRamp( e, newduration );
+			switch ( e->GetType() )
+			{
+			default:
+				break;
+			case CChoreoEvent::GESTURE:
+				{
+					e->RescaleGestureTimes( e->GetStartTime(), e->GetEndTime() - maxoffset, true );
+				}
+				break;
+			case CChoreoEvent::FLEXANIMATION:
+				{
+					RescaleExpressionTimes( e, e->GetStartTime(), e->GetEndTime() - maxoffset );
+				}
+				break;
+			}
+			e->OffsetEndTime( -maxoffset );
+			e->SnapTimes();
+			e->ResortRamp();
+		}
+	}
+
+	switch ( e->GetType() )
+	{
+	default:
+		break;
+	case CChoreoEvent::SPEAK:
+		{
+			// Try and load wav to get length
+			CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( e ) ) );
+			if ( wave )
+			{
+				e->SetEndTime( e->GetStartTime() + wave->GetRunningLength() );
+				delete wave;
+			}
+		}
+		break;
+	case CChoreoEvent::SEQUENCE:
+		{
+			CheckSequenceLength( e, false );
+		}
+		break;
+	case CChoreoEvent::GESTURE:
+		{
+			CheckGestureLength( e, false );
+		}
+		break;
+	}
+}
+
+void CChoreoView::OnDeleteTime()
+{
+	if ( !m_rgABPoints[ 0 ].active &&
+		 !m_rgABPoints[ 1 ].active  )
+	{
+		return;
+	}
+
+	Con_Printf( "OnDeleteTime()\n" );
+
+	float starttime = m_rgABPoints[ 0 ].time;
+	float endtime = m_rgABPoints[ 1 ].time;
+
+	// Sort samples correctly
+	if ( starttime > endtime )
+	{
+		float temp = starttime;
+		starttime = endtime;
+		endtime = temp;
+	}
+
+	float dt = endtime - starttime;
+	if ( dt == 0.0f )
+	{
+		// Nothing to do...
+		return;
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Delete Time" );
+
+	CUtlVector< CChoreoEventWidget * > deletions;
+	CUtlVector< CChoreoGlobalEventWidget * > global_deletions;
+
+	for ( int i = 0; i < m_SceneActors.Size(); i++ )
+	{
+		CChoreoActorWidget *actor = m_SceneActors[ i ];
+		if ( !actor )
+			continue;
+
+		for ( int j = 0; j < actor->GetNumChannels(); j++ )
+		{
+			CChoreoChannelWidget *channel = actor->GetChannel( j );
+			if ( !channel )
+				continue;
+
+			for ( int k = 0; k < channel->GetNumEvents(); k++ )
+			{
+				CChoreoEventWidget *event = channel->GetEvent( k );
+				if ( !event )
+					continue;
+
+				CChoreoEvent *e = event->GetEvent();
+				if ( !e )
+					continue;
+
+				bool deleteEvent = false;
+
+				CheckDeleteTime( e, dt, starttime, endtime, deleteEvent );
+			
+				if ( deleteEvent )
+				{
+					deletions.AddToTail( event );
+				}
+			}
+		}
+	}
+
+	// Now handle global events, too
+	for ( int i = 0; i < m_SceneGlobalEvents.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+		if ( !event )
+			continue;
+
+		CChoreoEvent *e = event->GetEvent();
+		if ( !e )
+			continue;
+
+		bool deleteEvent = false;
+		CheckDeleteTime( e, dt, starttime, endtime, deleteEvent );
+
+		if ( deleteEvent )
+		{
+			global_deletions.AddToTail( event );
+		}
+	}
+
+	for ( int i = 0; i < deletions.Count(); i++ )
+	{
+		CChoreoEventWidget *w = deletions[ i ];
+
+		CChoreoEvent *e = w->GetEvent();
+		CChoreoChannel *channel = e->GetChannel();
+		if ( channel )
+		{
+			channel->RemoveEvent( e );
+		}
+		m_pScene->DeleteReferencedObjects( e );
+	}
+
+	for ( int i = 0; i < global_deletions.Count(); i++ )
+	{
+		CChoreoGlobalEventWidget *w = global_deletions[ i ];
+		CChoreoEvent *e = w->GetEvent();
+		m_pScene->DeleteReferencedObjects( e );
+	}
+
+	// Force scroll bars to recompute
+	ForceScrollBarsToRecompute( false );
+
+	if ( deletions.Count() > 0 || global_deletions.Count() > 0 )
+	{
+		DeleteSceneWidgets();
+		CreateSceneWidgets();
+	}
+
+	PushRedo( "Delete Time" );
+
+	InvalidateLayout();
+
+	g_pExpressionTool->LayoutItems( true );
+	g_pExpressionTool->redraw();
+	g_pGestureTool->redraw();
+	g_pRampTool->redraw();
+	g_pSceneRampTool->redraw();
+}
+
+void CChoreoView::OnModelChanged()
+{
+	InvalidateTrackLookup();
+	// OnCheckSequenceLengths();
+}
+
+void CChoreoView::SetShowCloseCaptionData( bool show )
+{
+	m_bShowCloseCaptionData = show;
+}
+
+bool CChoreoView::GetShowCloseCaptionData( void ) const
+{
+	return m_bShowCloseCaptionData;
+}
+
+void CChoreoView::OnToggleCloseCaptionTags()
+{
+	m_bShowCloseCaptionData = !m_bShowCloseCaptionData;
+	InvalidateLayout();
+}
+
+
+
+static bool EventStartTimeLessFunc( CChoreoEvent * const &p1, CChoreoEvent * const  &p2 )
+{
+	CChoreoEvent *w1;
+	CChoreoEvent *w2;
+
+	w1 = const_cast< CChoreoEvent * >( p1 );
+	w2 = const_cast< CChoreoEvent * >( p2 );
+
+	return w1->GetStartTime() < w2->GetStartTime();
+}
+
+bool CChoreoView::GenerateCombinedFile( char const *outfilename, char const *cctoken, gender_t gender, CUtlRBTree< CChoreoEvent * >& sorted )
+{
+	CUtlVector< CombinerEntry > work;
+
+	char actualfile[ 512 ];
+	soundemitter->GenderExpandString( gender, outfilename, actualfile, sizeof( actualfile ) );
+	if ( Q_strlen( actualfile ) <= 0 )
+	{
+		return false;
+	}
+
+	int i = sorted.FirstInorder();
+	if ( i != sorted.InvalidIndex() )
+	{
+		CChoreoEvent *e = sorted[ i ];
+
+		float startoffset = e->GetStartTime();
+
+		do
+		{
+			e = sorted[ i ];
+
+			float curoffset = e->GetStartTime();
+
+			CombinerEntry ce;
+			Q_snprintf( ce.wavefile, sizeof( ce.wavefile ), "sound/%s", FacePoser_TranslateSoundNameGender( e->GetParameters(), gender ) );
+			ce.startoffset = curoffset - startoffset;
+
+			work.AddToTail( ce );
+
+			i = sorted.NextInorder( i );
+		}
+		while ( i != sorted.InvalidIndex() );
+	}
+
+	bool ok = soundcombiner->CombineSoundFiles( filesystem, actualfile, work );
+	if ( !ok )
+	{
+		Con_ErrorPrintf( "Failed to create combined sound '%s':'%s'\n", cctoken, actualfile );
+		return false;
+	}
+	Con_Printf( "Created combined sound '%s':'%s'\n", cctoken, actualfile );
+	return true;
+}
+
+bool CChoreoView::ValidateCombinedFileCheckSum( char const *outfilename, char const *cctoken, gender_t gender, CUtlRBTree< CChoreoEvent * >& sorted )
+{
+	CUtlVector< CombinerEntry > work;
+
+	char actualfile[ 512 ];
+	soundemitter->GenderExpandString( gender, outfilename, actualfile, sizeof( actualfile ) );
+	if ( Q_strlen( actualfile ) <= 0 )
+	{
+		return false;
+	}
+
+	int i = sorted.FirstInorder();
+	if ( i != sorted.InvalidIndex() )
+	{
+		CChoreoEvent *e = sorted[ i ];
+
+		float startoffset = e->GetStartTime();
+
+		do
+		{
+			e = sorted[ i ];
+
+			float curoffset = e->GetStartTime();
+
+			CombinerEntry ce;
+			Q_snprintf( ce.wavefile, sizeof( ce.wavefile ), "sound/%s", FacePoser_TranslateSoundNameGender( e->GetParameters(), gender ) );
+			ce.startoffset = curoffset - startoffset;
+
+			work.AddToTail( ce );
+
+			i = sorted.NextInorder( i );
+		}
+		while ( i != sorted.InvalidIndex() );
+	}
+
+	return soundcombiner->IsCombinedFileChecksumValid( filesystem, actualfile, work );
+}
+
+void SuggestCaption( char *dest, int destlen, CUtlVector< CChoreoEvent * >& events )
+{
+	// Walk through events and concatenate current captions, or raw wav data if have any
+	dest[ 0 ] = 0;
+
+	int c = events.Count();
+	for ( int i = 0 ; i < c; ++i )
+	{
+		CChoreoEvent *e = events[ i ];
+
+		bool found = false;
+		char tok[ CChoreoEvent::MAX_CCTOKEN_STRING ];
+		if ( e->GetPlaybackCloseCaptionToken( tok, sizeof( tok ) ) )
+		{
+			wchar_t *localized = g_pLocalize->Find( tok );
+			if ( localized )
+			{
+				found = true;
+
+				char ansi[ 1024 ];
+				g_pLocalize->ConvertUnicodeToANSI( localized, ansi, sizeof( ansi ) );
+				Q_strncat( dest, ansi, destlen, COPY_ALL_CHARACTERS );
+			}
+		}
+		
+		if ( !found )
+		{
+			// See if the wav file has data...
+			CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( e ) ) );
+			if ( wave )
+			{
+				CSentence *sentence = wave->GetSentence();
+				if ( sentence )
+				{
+					Q_strncat( dest, sentence->GetText(), destlen, COPY_ALL_CHARACTERS );
+					found = true;
+				}
+			}
+		}
+
+		if ( found && Q_strlen( dest ) > 0 && i != c - 1 )
+		{
+			Q_strncat( dest, " ", destlen, COPY_ALL_CHARACTERS );
+		}
+	}
+}
+
+void CChoreoView::OnCombineSpeakEvents()
+{
+	if ( !m_pScene )
+		return;
+
+	CChoreoChannel *firstChannel = NULL;
+
+	CUtlVector< CChoreoEvent * >	selected;
+	GetSelectedEvents( selected );
+
+	int c = selected.Count();
+	// Find the appropriate event by iterating across all actors and channels
+	for ( int i = c - 1; i >= 0; --i )
+	{
+		CChoreoEvent *e = selected[ i ];
+
+		if ( e->GetType() != CChoreoEvent::SPEAK )
+		{
+			Con_ErrorPrintf( "Can't combine events, all events must be SPEAK events.\n" );
+			return;
+		}
+
+		if ( !firstChannel )
+		{
+			firstChannel = e->GetChannel();
+		}
+		else if ( e->GetChannel() != firstChannel )
+		{
+			Con_ErrorPrintf( "Can't combine events, all events must reside in the same channel.\n" );
+			return;
+		}
+	}
+
+	if ( selected.Count() < 2 )
+	{
+		Con_ErrorPrintf( "Can't combine events, must have at least two events selected.\n" );
+		return;
+	}
+
+	// Let the user pick a CC phrase
+	CCloseCaptionLookupParams params;
+	Q_strncpy( params.m_szDialogTitle, "Choose Close Caption Token", sizeof( params.m_szDialogTitle ) );
+
+	params.m_bPositionDialog = false;
+	params.m_nLeft = 0;
+	params.m_nTop = 0;
+
+	char playbacktoken[ CChoreoEvent::MAX_CCTOKEN_STRING ];
+	if ( !selected[0]->GetPlaybackCloseCaptionToken( playbacktoken, sizeof( playbacktoken ) ) )
+	{
+		return;
+	}
+
+	if ( !Q_stristr( playbacktoken, "_cc" ) )
+	{
+		Q_strncpy( params.m_szCCToken, va( "%s_cc", playbacktoken ), sizeof( params.m_szCCToken ) );
+	}
+	else
+	{
+		Q_strncpy( params.m_szCCToken, va( "%s", playbacktoken ), sizeof( params.m_szCCToken ) );
+	}
+
+	// User hit okay and value actually changed?
+	if ( !CloseCaptionLookup( &params ) &&
+		params.m_szCCToken[0] != 0 )
+	{
+		return;
+	}
+
+	// See if the token exists?
+	StringIndex_t stringIndex = g_pLocalize->FindIndex( params.m_szCCToken );
+	if ( INVALID_LOCALIZE_STRING_INDEX == stringIndex )
+	{
+		// Add token to closecaption_english file.
+		// Guess at string and ask user to confirm.
+		CInputParams ip;
+		memset( &ip, 0, sizeof( ip ) );
+
+		Q_strncpy( ip.m_szDialogTitle, "Add Close Caption", sizeof( ip.m_szDialogTitle ) );
+		Q_snprintf( ip.m_szPrompt, sizeof( ip.m_szPrompt ), "Token (%s):", params.m_szCCToken );
+
+		char suggested[ 2048 ];
+
+		SuggestCaption( suggested, sizeof( suggested ), selected );
+
+		Q_snprintf( ip.m_szInputText, sizeof( ip.m_szInputText ), "%s", suggested );
+
+		if ( !InputProperties( &ip ) )
+		{
+			Con_Printf( "Combining of sound events cancelled\n" );
+			return;
+		}
+
+		if ( Q_strlen( ip.m_szInputText ) == 0 )
+		{
+			Q_snprintf( ip.m_szInputText, sizeof( ip.m_szInputText ), "!!!%s", params.m_szCCToken );
+		}
+
+		char const *captionFile = "resource/closecaption_english.txt";
+
+		if ( !filesystem->IsFileWritable( captionFile, "GAME" ) )
+		{
+			Warning( "Forcing %s to be writable!!!\n", captionFile );
+			MakeFileWriteable( captionFile );
+		}
+
+		wchar_t unicode[ 2048 ];
+		g_pLocalize->ConvertANSIToUnicode( ip.m_szInputText, unicode, sizeof( unicode ) );
+
+		g_pLocalize->AddString( params.m_szCCToken, unicode, captionFile );
+		g_pLocalize->SaveToFile( captionFile );
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Combine Sound Events" );
+
+	c = selected.Count();
+	for ( int i = 0 ; i < c; ++i )
+	{
+		selected[ i ]->SetCloseCaptionToken( params.m_szCCToken );
+	}
+
+	PushRedo( "Combine Sound Events" );
+
+	// Redraw
+	InvalidateLayout();
+
+	Con_Printf( "Changed %i events to use close caption token '%s'\n", c, params.m_szCCToken );
+
+	// Sort the sounds by start time
+
+	CUtlRBTree< CChoreoEvent * >  sorted( 0, 0, EventStartTimeLessFunc );
+
+	// Sort items
+	c = selected.Count();
+	bool genderwildcard = false;
+	for ( int i = 0; i < c; i++ )
+	{
+		CChoreoEvent *e = selected[ i ];
+		sorted.Insert( e );
+
+		// Get the sound entry name and use it to look up the gender info
+		// Look up the sound level from the soundemitter system
+		if ( !genderwildcard )
+		{
+			genderwildcard = soundemitter->IsUsingGenderToken( e->GetParameters() );
+		}
+	}
+
+
+	char outfilename[ 512 ];
+	Q_memset( outfilename, 0, sizeof( outfilename ) );
+
+	CChoreoEvent *e = sorted[ sorted.FirstInorder() ];
+
+	// Update whether we use the $gender token
+	e->SetCombinedUsingGenderToken( genderwildcard );
+
+	if ( !e->ComputeCombinedBaseFileName( outfilename, sizeof( outfilename ), genderwildcard ) )
+	{
+		Con_ErrorPrintf( "Unable to regenerate wav file name for combined sound\n" );
+		return;
+	}
+
+	int soundindex = soundemitter->GetSoundIndex( e->GetParameters() );
+	char const *scriptfile = soundemitter->GetSourceFileForSound( soundindex );
+	if ( !scriptfile || !scriptfile[0] )
+	{
+		Con_ErrorPrintf( "Unable to find existing script to use for new combined sound entry.\n" );
+		return;
+	}
+
+	// Create a new sound entry for this sound
+	CAddSoundParams asp;
+	Q_memset( &asp, 0, sizeof( asp ) );
+	Q_strncpy( asp.m_szDialogTitle, "Add Combined Sound Entry", sizeof( asp.m_szDialogTitle ) );
+	Q_strncpy( asp.m_szWaveFile, outfilename + Q_strlen( "sound/"), sizeof( asp.m_szWaveFile ) );
+	Q_strncpy( asp.m_szScriptName, scriptfile, sizeof( asp.m_szScriptName ) );
+	Q_strncpy( asp.m_szSoundName, params.m_szCCToken, sizeof( asp.m_szSoundName ) );
+
+	asp.m_bAllowExistingSound = true;
+	asp.m_bReadOnlySoundName = true;
+
+	if ( !AddSound( &asp, (HWND)g_MDLViewer->getHandle() ) )
+	{
+		return;
+	}
+
+	if ( genderwildcard )
+	{
+		GenerateCombinedFile( outfilename, params.m_szCCToken, GENDER_MALE, sorted );
+		GenerateCombinedFile( outfilename, params.m_szCCToken, GENDER_FEMALE, sorted );
+	}
+	else
+	{
+		GenerateCombinedFile( outfilename, params.m_szCCToken, GENDER_NONE, sorted );
+	}
+}
+
+bool CChoreoView::ValidateCombinedSoundCheckSum( CChoreoEvent *e )
+{
+	if ( !e || e->GetType() != CChoreoEvent::SPEAK )
+		return false;
+
+	bool genderwildcard = e->IsCombinedUsingGenderToken();
+	char outfilename[ 512 ];
+	Q_memset( outfilename, 0, sizeof( outfilename ) );
+	if ( !e->ComputeCombinedBaseFileName( outfilename, sizeof( outfilename ), genderwildcard ) )
+	{
+		Con_ErrorPrintf( "Unable to regenerate wav file name for combined sound (%s)\n", e->GetCloseCaptionToken() );
+		return false;
+	}
+
+	bool checksumvalid = false;
+
+	CUtlRBTree< CChoreoEvent * > eventList( 0, 0, EventStartTimeLessFunc );
+
+	if ( !e->GetChannel()->GetSortedCombinedEventList( e->GetCloseCaptionToken(), eventList ) )
+	{
+		Con_ErrorPrintf( "Unable to generated combined event list (%s)\n", e->GetCloseCaptionToken() );
+		return false;
+	}
+
+
+	if ( genderwildcard )
+	{
+		checksumvalid = ValidateCombinedFileCheckSum( outfilename, e->GetCloseCaptionToken(), GENDER_MALE, eventList );
+		checksumvalid &= ValidateCombinedFileCheckSum( outfilename, e->GetCloseCaptionToken(), GENDER_FEMALE, eventList );
+	}
+	else
+	{
+		checksumvalid = ValidateCombinedFileCheckSum( outfilename, e->GetCloseCaptionToken(), GENDER_NONE, eventList );
+	}
+
+	return checksumvalid;
+}
+
+void CChoreoView::OnRemoveSpeakEventFromGroup()
+{
+	if ( !m_pScene )
+		return;
+
+	int i, c;
+
+	CUtlVector< CChoreoEvent * >	selected;
+	CUtlVector< CChoreoEvent * >	processlist;
+	if ( GetSelectedEvents( selected ) > 0 )
+	{
+
+		int c = selected.Count();
+		// Find the appropriate event by iterating across all actors and channels
+		for ( i = c - 1; i >= 0; --i )
+		{
+			CChoreoEvent *e = selected[ i ];
+			if ( e->GetType() != CChoreoEvent::SPEAK )
+			{
+				selected.Remove( i );
+				continue;
+			}
+
+			if ( e->GetCloseCaptionType() == CChoreoEvent::CC_DISABLED )
+			{
+				selected.Remove( i );
+				continue;
+			}
+
+			m_pClickedChannel->GetMasterAndSlaves( e, processlist );
+		}
+	}
+	else
+	{
+		m_pClickedChannel->GetMasterAndSlaves( m_pClickedChannel->GetCaptionClickedEvent(), processlist );
+	}
+
+	if ( selected.Count() < 1 )
+	{
+		Con_ErrorPrintf( "No eligible SPEAK event selected.\n" );
+		return;
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Remove speak event(s)" );
+
+	c = processlist.Count();
+	for ( i = 0 ; i < c; ++i )
+	{
+		processlist[ i ]->SetCloseCaptionToken( "" );
+		processlist[ i ]->SetCloseCaptionType( CChoreoEvent::CC_MASTER );
+		processlist[ i ]->SetUsingCombinedFile( false );
+		processlist[ i ]->SetRequiredCombinedChecksum( 0 );
+		processlist[ i ]->SetNumSlaves( 0 );
+		processlist[ i ]->SetLastSlaveEndTime( 0.0f );
+	}
+
+	PushRedo( "Remove speak event(s)" );
+
+	// Redraw
+	InvalidateLayout();
+	Con_Printf( "Reverted %i events to use default close caption token\n", c );
+}
+
+bool CChoreoView::AreSelectedEventsCombinable()
+{
+	CUtlVector< CChoreoEvent * > events;
+	if ( GetSelectedEvents( events ) <= 0 )
+		return false;
+
+	CChoreoChannel *firstChannel = NULL;
+
+	CUtlVector< CChoreoEvent * >	selected;
+	GetSelectedEvents( selected );
+
+	int c = selected.Count();
+	// Find the appropriate event by iterating across all actors and channels
+	for ( int i = c - 1; i >= 0; --i )
+	{
+		CChoreoEvent *e = selected[ i ];
+
+		if ( e->GetType() != CChoreoEvent::SPEAK )
+		{
+			return false;
+		}
+
+		if ( !firstChannel )
+		{
+			firstChannel = e->GetChannel();
+		}
+		else if ( e->GetChannel() != firstChannel )
+		{
+			return false;
+		}
+	}
+	return selected.Count() >= 2 ? true : false;
+}
+
+bool CChoreoView::AreSelectedEventsInSpeakGroup()
+{
+	CUtlVector< CChoreoEvent * > selected;
+	if ( GetSelectedEvents( selected ) <= 0 )
+	{
+		if ( m_pClickedChannel )
+		{
+			CChoreoEvent *e = m_pClickedChannel->GetCaptionClickedEvent();
+			if ( e && e->GetCloseCaptionType() == CChoreoEvent::CC_MASTER &&
+				 e->GetNumSlaves() >= 1 )
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
+	int c = selected.Count();
+	// Find the appropriate event by iterating across all actors and channels
+	for ( int i = c - 1; i >= 0; --i )
+	{
+		CChoreoEvent *e = selected[ i ];
+		if ( e->GetType() != CChoreoEvent::SPEAK )
+		{
+			selected.Remove( i );
+			continue;
+		}
+
+		if ( e->GetCloseCaptionType() == CChoreoEvent::CC_DISABLED )
+		{
+			selected.Remove( i );
+			continue;
+		}
+	}
+
+	return selected.Count() >= 1 ? true : false;
+
+}
+
+void CChoreoView::OnChangeCloseCaptionToken( CChoreoEvent *e )
+{
+	CCloseCaptionLookupParams params;
+	Q_strncpy( params.m_szDialogTitle, "Close Caption Token Lookup", sizeof( params.m_szDialogTitle ) );
+
+	params.m_bPositionDialog = false;
+	params.m_nLeft = 0;
+	params.m_nTop = 0;
+	// strcpy( params.m_szPrompt, "Choose model:" );
+
+	Q_strncpy( params.m_szCCToken, e->GetCloseCaptionToken(), sizeof( params.m_szCCToken ) );
+
+	// User hit okay and value actually changed?
+	if ( CloseCaptionLookup( &params ) && 
+		Q_stricmp( e->GetCloseCaptionToken(), params.m_szCCToken ) )
+	{
+		char oldToken[ CChoreoEvent::MAX_CCTOKEN_STRING ];
+		Q_strncpy( oldToken, e->GetCloseCaptionToken(), sizeof( oldToken ) );
+
+		CUtlVector< CChoreoEvent * > events;
+		m_pClickedChannel->GetMasterAndSlaves( e, events );
+
+		if ( events.Count() < 2 )
+		{
+			Con_ErrorPrintf( "Can't combine events, must have at least two events selected.\n" );
+		}
+
+		SetDirty( true );
+
+		PushUndo( "Change closecaption token" );
+
+		// Make the change...
+		int c = events.Count();
+		for ( int i = 0 ; i < c; ++i )
+		{
+			events[i]->SetCloseCaptionToken( params.m_szCCToken );
+		}
+
+		PushRedo( "Change closecaption token" );
+
+		InvalidateLayout();
+
+		Con_Printf( "Close Caption token for '%s' changed to '%s'\n", e->GetName(), params.m_szCCToken );
+	}
+}
+
+void CChoreoView::OnToggleCloseCaptionsForEvent()
+{
+	if ( !m_pClickedChannel )
+	{
+		return;
+	}
+
+	CChoreoEvent *e = m_pClickedChannel->GetCaptionClickedEvent();
+
+	if ( !e )
+	{
+		return;
+	}
+
+	CChoreoEvent::CLOSECAPTION newType = CChoreoEvent::CC_MASTER;
+	// Can't mess with slave
+	switch ( e->GetCloseCaptionType() )
+	{
+	default:
+	case CChoreoEvent::CC_SLAVE:
+		return;
+	case CChoreoEvent::CC_MASTER:
+		newType = CChoreoEvent::CC_DISABLED;
+		break;
+	case CChoreoEvent::CC_DISABLED:
+		newType = CChoreoEvent::CC_MASTER;
+		break;
+	}
+
+	SetDirty( true );
+
+	PushUndo( "Enable/disable captions" );
+
+	// Make the change...
+	e->SetCloseCaptionType( newType );
+
+	PushRedo( "Enable/disable captions" );
+
+	InvalidateLayout();
+
+	Con_Printf( "Close Caption type for '%s' changed to '%s'\n", e->GetName(), CChoreoEvent::NameForCCType( newType ) );
+
+}
+
+void CChoreoView::StopScene()
+{
+	SetScrubTargetTime( m_flScrub );
+	FinishSimulation();
+	sound->Flush();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  :  - 
+//-----------------------------------------------------------------------------
+template <class T>
+void DeleteAllAndPurge( T &tree )
+{
+	T::IndexType_t i;
+
+	for ( i = tree.FirstInorder(); i != T::InvalidIndex(); i = tree.NextInorder( i ) )
+	{
+		delete tree[i];
+	}
+
+	tree.Purge();
+}
+
+void CChoreoView::OnPlaceNextSpeakEvent()
+{
+	CUtlVector< CChoreoEvent * > list;
+	GetSelectedEvents( list );
+	if ( list.Count() != 1 )
+	{
+		Warning( "Can't place sound event, nothing selected\n" );
+		return;
+	}
+
+	CChoreoEvent *ev = list[ 0 ];
+	if ( ev->GetType() != CChoreoEvent::SPEAK )
+	{
+		Warning( "Can't place sound event, no previous sound event selected\n" );
+		return;
+	}
+
+	CChoreoChannelWidget *widget = FindChannelForEvent( ev );
+	if ( !widget )
+	{
+		Warning( "Can't place sound event, can't find channel widget for event\n" );
+		return;
+	}
+
+	CChoreoChannel *channel = widget->GetChannel();
+	if ( !channel )
+	{
+		Warning( "Can't place sound event, can't find channel for new event\n" );
+		return;
+	}
+
+	CUtlRBTree< char const *, int >		m_SortedNames( 0, 0, NameLessFunc );
+
+	int c = soundemitter->GetSoundCount();
+	for ( int i = 0; i < c; i++ )
+	{
+		char const *name = soundemitter->GetSoundName( i );
+		if ( name && name[ 0 ] )
+		{
+			m_SortedNames.Insert( strdup( name ) );
+		}
+	}
+
+	int idx = m_SortedNames.Find( ev->GetParameters() );
+	if ( idx == m_SortedNames.InvalidIndex() )
+	{
+		Warning( "Can't place sound event, can't find '%s' in sound list\n", ev->GetParameters() );
+		DeleteAllAndPurge( m_SortedNames );
+		return;
+	}
+
+	int nextIdx = m_SortedNames.NextInorder( idx );
+	if ( nextIdx == m_SortedNames.InvalidIndex() )
+	{
+		Warning( "Can't place sound event, can't next sound after '%s' in sound list\n", ev->GetParameters() );
+		DeleteAllAndPurge( m_SortedNames );
+		return;
+	}
+
+	DeselectAll();
+
+	SetDirty( true );
+
+	PushUndo( "Place Next Speak Event" );
+
+	CChoreoEvent *event = m_pScene->AllocEvent();
+	Assert( event );
+	if ( event )
+	{
+		// Copy everything for source event
+		*event = *ev;
+
+		event->SetParameters( m_SortedNames[ nextIdx ] );
+		// Start it at the end time...
+		event->SetStartTime( event->GetEndTime() );
+		event->SetResumeCondition( false );
+		event->ClearAllRelativeTags();
+		event->ClearAllTimingTags();
+		event->ClearAllAbsoluteTags( CChoreoEvent::PLAYBACK );
+		event->ClearAllAbsoluteTags( CChoreoEvent::ORIGINAL );
+
+		event->SetChannel( channel );
+		event->SetActor( channel->GetActor() );
+
+		// Try and load wav to get length
+		CAudioSource *wave = sound->LoadSound( va( "sound/%s", FacePoser_TranslateSoundName( event ) ) );
+		if ( wave )
+		{
+			event->SetEndTime( event->GetStartTime() + wave->GetRunningLength() );
+			delete wave;
+		}
+
+		DeleteSceneWidgets();
+
+		// Add to appropriate channel
+		channel->AddEvent( event );
+
+		CreateSceneWidgets();
+
+		CChoreoEventWidget *eventWidget = FindWidgetForEvent( event );
+		if ( eventWidget )
+		{
+			eventWidget->SetSelected( true );
+		}
+	
+		// Redraw
+		InvalidateLayout();
+	}
+
+	PushRedo( "Place Next Speak Event" );
+
+	DeleteAllAndPurge( m_SortedNames );
+}
+
+enum
+{
+	FM_LEFT = 0,
+	FM_RIGHT,
+	FM_SMALLESTWIDE,
+	FM_LARGESTWIDE
+};
+
+static int FindMetric( int type, CUtlVector< CChoreoEvent * > &list, float& value )
+{
+	float bestVal = 999999.0f;
+	int bestIndex = -1;
+	bool greater = true;
+
+	switch ( type )
+	{
+	default:
+	case FM_LEFT:
+	case FM_SMALLESTWIDE:
+		greater = false;
+		break;
+	case FM_RIGHT:
+	case FM_LARGESTWIDE:
+		bestVal = -bestVal;
+		greater = true;
+		break;
+	}
+	int c = list.Count();
+	for ( int i = 0; i < c; ++i )
+	{
+		CChoreoEvent *e = list[ i ];
+		if ( type != FM_LEFT &&
+			!e->HasEndTime() )
+			continue;
+
+		float val;
+		switch ( type )
+		{
+		default:
+		case FM_LEFT:
+			val = e->GetStartTime();
+			break;
+		case FM_RIGHT:
+			val = e->GetEndTime();
+			break;
+		case FM_SMALLESTWIDE:
+		case FM_LARGESTWIDE:
+			val = e->GetDuration();
+			break;
+		}
+
+		if ( greater )
+		{
+			if ( val <= bestVal )
+				continue;
+		}
+		else
+		{
+			if ( val >= bestVal )
+				continue;
+		}
+
+		bestVal		= val;
+		bestIndex	= i;
+	}
+
+	value = bestVal;
+	return bestIndex;
+}
+
+void CChoreoView::OnAlign( bool left )
+{
+	CUtlVector< CChoreoEvent * > list;
+	GetSelectedEvents( list );
+
+	if ( left )
+	{
+		for ( int i = 0; i < m_SceneGlobalEvents.Size(); i++ )
+		{
+			CChoreoGlobalEventWidget *event = m_SceneGlobalEvents[ i ];
+			if ( !event || !event->IsSelected() )
+				continue;
+
+			list.AddToTail( event->GetEvent() );
+		}
+	}
+
+	int numSel = list.Count();
+	if ( numSel < 2 )
+	{
+		Warning( "Can't align, must have at least two events selected\n" );
+		return;
+	}
+
+	float value;
+	int idx = FindMetric( left ? FM_LEFT : FM_RIGHT, list, value );
+	if ( idx == -1 )
+	{
+		return;
+	}
+
+	SetDirty( true );
+
+	char undotext[ 128 ];
+	Q_snprintf( undotext, sizeof( undotext ), "Align %s", left ? "Left" : "Right" );
+	PushUndo( undotext );
+
+	for ( int i = 0; i < numSel; ++i )
+	{
+		if ( i == idx )
+			continue;
+
+		CChoreoEvent *e = list[ i ];
+
+		float newStartTime = left ? value : ( value - e->GetDuration() );
+		float offset = newStartTime - e->GetStartTime();
+		e->OffsetTime( offset );
+	}
+
+	PushRedo( undotext );
+
+	InvalidateLayout();
+}
+
+void CChoreoView::OnMakeSameSize( bool smallest )
+{
+	CUtlVector< CChoreoEvent * > list;
+	int numSel = GetSelectedEvents( list );
+	if ( numSel < 2 )
+	{
+		Warning( "Can't align, must have at least two events selected\n" );
+		return;
+	}
+
+	float value;
+	int idx = FindMetric( smallest ? FM_SMALLESTWIDE : FM_LARGESTWIDE, list, value );
+	if ( idx == -1 )
+	{
+		return;
+	}
+
+	SetDirty( true );
+
+	char undotext[ 128 ];
+	Q_snprintf( undotext, sizeof( undotext ), "Size to %s", smallest ? "Smallest" : "Largest" );
+	PushUndo( undotext );
+
+	for ( int i = 0; i < numSel; ++i )
+	{
+		if ( i == idx )
+			continue;
+
+		list[ i ]->SetEndTime( list[ i ]->GetStartTime() + value );
+	}
+
+	PushRedo( undotext );
+
+	InvalidateLayout();
+}
+
+void CChoreoView::SelectAllEventsInActor( CChoreoActorWidget *actor )
+{
+	TraverseWidgets( &CChoreoView::SelectInActor, actor );
+	redraw();
+}
+
+void CChoreoView::SelectAllEventsInChannel( CChoreoChannelWidget *channel )
+{
+	TraverseWidgets( &CChoreoView::SelectInChannel, channel );
+	redraw();
+}
+
+void CChoreoView::SelectInActor( CChoreoWidget *widget, CChoreoWidget *param1 )
+{
+	CChoreoEventWidget *ev = dynamic_cast< CChoreoEventWidget * >( widget );
+	if ( !ev )
+		return;
+
+	if ( ev->IsSelected() )
+		return;
+
+	CChoreoChannel *ch = ev->GetEvent()->GetChannel();
+	if ( !ch )
+		return;
+	CChoreoActor *actor = ch->GetActor();
+	if ( !actor )
+		return;
+
+	CChoreoActorWidget *actorw = dynamic_cast< CChoreoActorWidget * >( param1 );
+	if ( !actorw )
+		return;
+
+	if ( actorw->GetActor() != actor )
+		return;
+
+	widget->SetSelected( true );
+}
+
+void CChoreoView::SelectInChannel( CChoreoWidget *widget, CChoreoWidget *param1 )
+{
+	CChoreoEventWidget *ev = dynamic_cast< CChoreoEventWidget * >( widget );
+	if ( !ev )
+		return;
+
+	if ( ev->IsSelected() )
+		return;
+
+	CChoreoChannel *ch = ev->GetEvent()->GetChannel();
+	if ( !ch )
+		return;
+
+	CChoreoChannelWidget *chw = dynamic_cast< CChoreoChannelWidget * >( param1 );
+	if ( !chw )
+		return;
+
+	if ( chw->GetChannel() != ch )
+		return;
+
+	widget->SetSelected( true );
+}
+

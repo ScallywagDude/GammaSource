@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef GRAPHPANEL_H
 #define GRAPHPANEL_H
@@ -11,8 +11,8 @@
 #endif
 
 #include <vgui_controls/Panel.h>
-#include "UtlLinkedList.h"
-#include "UtlVector.h"
+#include "utllinkedlist.h"
+#include "utlvector.h"
 
 namespace vgui
 {
@@ -22,6 +22,8 @@ namespace vgui
 //-----------------------------------------------------------------------------
 class GraphPanel : public Panel
 {
+	DECLARE_CLASS_SIMPLE( GraphPanel, Panel );
+
 public:
 	GraphPanel(Panel *parent, const char *name);
 	
@@ -72,8 +74,6 @@ private:
 	// rendering
 	int m_iGraphBarWidth;
 	int m_iGraphBarGapWidth;
-
-	typedef vgui::Panel BaseClass;
 };
 
 } // namespace vgui

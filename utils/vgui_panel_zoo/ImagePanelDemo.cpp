@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
+#include "vgui/IVGui.h"
 
-#include <VGUI_Controls.h>
-#include <VGUI_IScheme.h>
-#include <VGUI_ImagePanel.h>
-#include <VGUI_IImage.h>
+#include "vgui_controls/Controls.h"
+#include <vgui/IScheme.h>
+#include <vgui_controls/ImagePanel.h>
+#include <vgui/IImage.h>
 
 using namespace vgui;
 
@@ -62,7 +62,7 @@ void ImagePanelDemo::ApplySchemeSettings(IScheme *pScheme)
 	BaseClass::ApplySchemeSettings( pScheme );
 
 	// get an image
-	m_pImage = pScheme->GetImage("Resource/valve_logo");
+	m_pImage = scheme()->GetImage("Resource/valve_logo", false );
 
 	// now insert an image
 	m_pImagePanel->SetImage(m_pImage);

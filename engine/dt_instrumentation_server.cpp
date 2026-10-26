@@ -1,18 +1,19 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-
+//=============================================================================//
 #include "filesystem_engine.h"
 #include "filesystem.h"
 #include "dt_instrumentation_server.h"
 #include "dt_send.h"
+#include "tier1/utlstring.h"
 #include "utllinkedlist.h"
-#include "vstring.h"
 #include "dt.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 #define DELTA_DISTANCE_BAND			200
 #define NUM_DELTA_DISTANCE_BANDS	(8000/DELTA_DISTANCE_BAND)
@@ -23,7 +24,7 @@ class CDTISendTable
 {
 public:
 	// Which SendTable we're interested in.
-	VString			m_NetTableName;
+	CUtlString		m_NetTableName;
 
 	// How many cycles we've spent in certain calls.
 	CCycleCount		m_nCalcDeltaCycles;
@@ -74,9 +75,7 @@ void ServerDTI_Term()
 {
 	if ( !g_pServerDTIFilename )
 		return;
-
 	ServerDTI_Flush();
-
 	g_DTISendTables.PurgeAndDeleteElements();
 	g_pServerDTIFilename = 0;
 	g_bServerDTIEnabled = false;
@@ -168,7 +167,7 @@ void ServerDTI_Flush()
 				"\t%.3f"
 				"\t%.3f"
 				"\n",
-				(char const*)pTable->m_NetTableName,
+				pTable->m_NetTableName.String(),
 				
 				pTable->m_nCalcDeltaCalls,
 				pTable->m_nCalcDeltaCycles.GetMillisecondsF(),
@@ -259,7 +258,7 @@ void ServerDTI_Flush()
 			if ( !pTable->HadAnyAction() )
 				continue;
 
-			g_pFileSystem->FPrintf( fp, "%s", (char const*)pTable->m_NetTableName );
+			g_pFileSystem->FPrintf( fp, "%s", pTable->m_NetTableName.String() );
 			for ( int i=0; i < NUM_DELTA_DISTANCE_BANDS; i++ )
 			{
 				g_pFileSystem->FPrintf( fp, "\t%d", pTable->m_DistanceDeltaCounts[i] );
@@ -282,7 +281,7 @@ CDTISendTable* ServerDTI_HookTable( SendTable *pTable )
 	CDTISendTable *pRet = new CDTISendTable;
 	memset( pRet, 0, sizeof( *pRet ) );
 
-	pRet->m_NetTableName.CopyString( pTable->m_pNetTableName );
+	pRet->m_NetTableName.Set( pTable->m_pNetTableName );
 
 	g_DTISendTables.AddToTail( pRet );
 	return pRet;
@@ -303,7 +302,6 @@ void ServerDTI_AddEntityEncodeEvent( SendTable *pSendTable, float distToPlayer )
 	iDist = clamp( iDist, 0, NUM_DELTA_DISTANCE_BANDS - 1 );
 	pTable->m_DistanceDeltaCounts[iDist]++;
 }
-
 
 void _ServerDTI_HookTimer( const SendTable *pSendTable, ServerDTITimerType timerType, CCycleCount const &count )
 {
@@ -343,8 +341,7 @@ void _ServerDTI_HookTimer( const SendTable *pSendTable, ServerDTITimerType timer
 	}
 }
 
-
-void _ServerDTI_RegisterNetworkStateChange( SendTable *pSendTable, EntityChange_t changeType )
+void _ServerDTI_RegisterNetworkStateChange( SendTable *pSendTable, bool bStateChanged )
 {
 	CSendTablePrecalc *pPrecalc = pSendTable->m_pPrecalc;
 	if ( !pPrecalc || !pPrecalc->m_pDTITable )
@@ -352,10 +349,9 @@ void _ServerDTI_RegisterNetworkStateChange( SendTable *pSendTable, EntityChange_
 
 	CDTISendTable *pTable = pPrecalc->m_pDTITable;		
 
-	if ( changeType == ENTITY_CHANGE_AUTODETECT )
+	if ( bStateChanged )
 		++pTable->m_nChangeAutoDetects;
 	else
 		++pTable->m_nNoChanges;
 }
-
 

@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include <stdio.h>
 #include "resource.h"
 #include "SoundProperties_Multiple.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "soundentry.h"
 #include "cmdlib.h"
 #include "workspacemanager.h"
@@ -18,7 +18,7 @@
 
 static CSoundParams g_Params;
 
-static void PopulateChannelList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateChannelList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_CHANNEL );
 	if ( !control )
@@ -39,7 +39,7 @@ static void PopulateChannelList( HWND wnd, CSoundEmitterSystemBase::CSoundParame
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"CHAN_STATIC" ); 
 }
 
-static void PopulateVolumeList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateVolumeList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_VOLUME );
 	if ( !control )
@@ -54,7 +54,7 @@ static void PopulateVolumeList( HWND wnd, CSoundEmitterSystemBase::CSoundParamet
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"VOL_NORM" ); 
 }
 
-static void PopulateSoundlevelList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulateSoundlevelList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_SOUNDLEVEL );
 	if ( !control )
@@ -96,7 +96,7 @@ static void PopulateSoundlevelList( HWND wnd, CSoundEmitterSystemBase::CSoundPar
 	SendMessage( control, CB_ADDSTRING, 0, (LPARAM)"SNDLVL_150dB" );
 }
 
-static void PopulatePitchList( HWND wnd, CSoundEmitterSystemBase::CSoundParametersInternal *p )
+static void PopulatePitchList( HWND wnd, CSoundParametersInternal *p )
 {
 	HWND control = GetDlgItem( wnd, IDC_PITCH );
 	if ( !control )
@@ -124,19 +124,20 @@ static void SoundProperties_Multiple_OnOK( HWND hwndDlg )
 		if ( !item )
 			continue;
 
-		int idx = soundemitter->GetSoundIndex( item->GetName() );
-		if ( !soundemitter->IsValidIndex( idx ) )
+		int idx = g_pSoundEmitterSystem->GetSoundIndex( item->GetName() );
+		if ( !g_pSoundEmitterSystem->IsValidIndex( idx ) )
 		{
 			continue;
 		}
 
 
-		CSoundEmitterSystemBase::CSoundParametersInternal *baseparams = soundemitter->InternalGetParametersForSound( idx );
+		CSoundParametersInternal *baseparams = g_pSoundEmitterSystem->InternalGetParametersForSound( idx );
 		if ( !baseparams )
 			return;
 
 		// Start with old settings
-		CSoundEmitterSystemBase::CSoundParametersInternal outparams = *baseparams;
+		CSoundParametersInternal outparams;
+		outparams.CopyFrom( *baseparams );
 
 		char sz[ 128 ];
 		GetDlgItemText( hwndDlg, IDC_CHANNEL, sz, sizeof( sz ) );
@@ -153,13 +154,9 @@ static void SoundProperties_Multiple_OnOK( HWND hwndDlg )
 
 		bool owneronly = SendMessage( GetDlgItem( hwndDlg, IDC_OWNERONLY ), BM_GETCHECK, 0, 0 ) == BST_CHECKED ? true : false;
 
-		outparams.play_to_owner_only = owneronly;
+		outparams.SetOnlyPlayToOwner( owneronly );
 
-		bool noprecache = SendMessage( GetDlgItem( hwndDlg, IDC_NOPRECACHE ), BM_GETCHECK, 0, 0 ) == BST_CHECKED ? true : false;
-
-		outparams.precache = !noprecache;
-
-		soundemitter->UpdateSoundParameters( item->GetName(), outparams );
+		g_pSoundEmitterSystem->UpdateSoundParameters( item->GetName(), outparams );
 	}
 
 	// Repopulate things
@@ -185,15 +182,11 @@ static BOOL CALLBACK SoundProperties_MultipleDialogProc( HWND hwndDlg, UINT uMsg
 			CSoundEntry *entry = g_Params.items[ 0 ];
 			Assert( entry );
 
-			CSoundEmitterSystemBase::CSoundParametersInternal *p = entry->GetSoundParameters();
+			CSoundParametersInternal *p = entry->GetSoundParameters();
 			Assert( p );
 
-			SendMessage( GetDlgItem( hwndDlg, IDC_NOPRECACHE ), BM_SETCHECK, 
-				( WPARAM ) !p->precache ? BST_CHECKED : BST_UNCHECKED,
-				( LPARAM )0 );
-
 			SendMessage( GetDlgItem( hwndDlg, IDC_OWNERONLY ), BM_SETCHECK, 
-				( WPARAM ) p->play_to_owner_only ? BST_CHECKED : BST_UNCHECKED,
+				( WPARAM ) p->OnlyPlayToOwner() ? BST_CHECKED : BST_UNCHECKED,
 				( LPARAM )0 );
 
 			PopulateChannelList( hwndDlg, p );

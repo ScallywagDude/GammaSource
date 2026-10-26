@@ -1,13 +1,13 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "hlfaceposer.h"
 #include "faceposertoolwindow.h"
-#include "UtlVector.h"
-#include "vstdlib/strtools.h"
+#include "utlvector.h"
+#include "tier1/strtools.h"
 #include "MDLViewer.h"
 #include "choreowidgetdrawhelper.h"
 #include "StudioModel.h"
@@ -55,6 +55,11 @@ IFacePoserToolWindow *IFacePoserToolWindow::GetActiveTool( void )
 
 void IFacePoserToolWindow::SetActiveTool( IFacePoserToolWindow *tool )
 {
+	if ( tool != s_pActiveTool && s_pActiveTool )
+	{
+		InvalidateRect( (HWND)s_pActiveTool->GetMxWindow()->getHandle(), NULL, TRUE );
+		InvalidateRect( (HWND)tool->GetMxWindow()->getHandle(), NULL, TRUE );
+	}
 	s_pActiveTool = tool;
 }
 
@@ -162,6 +167,50 @@ IFacePoserToolWindow::~IFacePoserToolWindow( void )
 	g_Tools.FindAndRemove( this );
 }
 
+struct ToolTranslate
+{
+	char const *toolname;
+	float		xfrac;
+	float		yfrac;
+	float		wfrac;
+	float		hfrac;
+	bool		locked;
+};
+
+static ToolTranslate s_ToolTranslate[]=
+{
+	{ "3D View", 0.0, 0.0, 0.4, 0.5, false },
+	{ "ControlPanel", 0.4, 0.0, 0.2, 0.25, false },
+	{ "FlexPanel", 0.6, 0.0, 0.4, 0.25, false },
+	{ "RampTool", 0.4, 0.25, 0.6, 0.25, false },
+	{ "CChoreoView", 0.0, 0.5, 1.0, 0.45, false },
+//	{ "Status Window", 0.0, 0.85, 1.0, 0.15, false },
+};
+
+static bool TranslateToolPos( char const *toolname, int workspacew, int workspaceh, int& x, int& y, int &w, int &h, bool& locked )
+{
+	int c = ARRAYSIZE( s_ToolTranslate );
+
+	for ( int i = 0; i < c; ++i )
+	{
+		ToolTranslate& tt = s_ToolTranslate[ i ];
+
+		if ( !Q_stricmp( toolname, tt.toolname ) )
+		{
+			x = (int)((float)workspacew * tt.xfrac + 0.5f );
+			y = (int)((float)workspaceh * tt.yfrac + 0.5f );
+			w = (int)((float)workspacew * tt.wfrac + 0.5f );
+			h = (int)((float)workspaceh * tt.hfrac + 0.5f );
+			locked = tt.locked;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static int s_nToolCount = 0;
+
 void IFacePoserToolWindow::LoadPosition( void )
 {
 	bool visible;
@@ -173,8 +222,40 @@ void IFacePoserToolWindow::LoadPosition( void )
 
 	if ( w == 0 || h == 0 )
 	{
-		w = g_MDLViewer->w();
-		h = g_MDLViewer->h();
+		int idx = g_Tools.Find( this );
+		Assert( idx != g_Tools.InvalidIndex() );
+		if ( idx == 0 )
+		{
+			s_nToolCount = 0;
+		}
+
+		zoomed = false;
+		locked = false;
+		visible = true;
+
+		// Just do a simple tiling
+		w = g_MDLViewer->w2() * 0.5;
+		h = g_MDLViewer->h2() * 0.5;
+
+		x = g_MDLViewer->w2() * 0.25f + s_nToolCount * 20;
+		y = s_nToolCount * 20;
+
+		bool translated = TranslateToolPos
+		( 
+			GetToolName(), 
+			g_MDLViewer->w2(), 
+			g_MDLViewer->h2(),
+			x,
+			y,
+			w,
+			h,
+			locked
+		);
+		if ( !translated )
+		{
+			++s_nToolCount;
+			visible = false;
+		}
 	}
 
 	GetMxWindow()->setBounds( x, y, w, h );
@@ -226,7 +307,7 @@ IFacePoserToolWindow *IFacePoserToolWindow::GetTool( int index )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void IFacePoserToolWindow::Init( void )
+void IFacePoserToolWindow::InitTools( void )
 {
 	int c = GetToolCount();
 	int i;
@@ -236,6 +317,17 @@ void IFacePoserToolWindow::Init( void )
 
 		FacePoser_MakeToolWindow( tool->GetMxWindow(), true );
 		tool->GetMxWindow()->setLabel( tool->GetWindowTitle() );
+	}
+}
+
+void IFacePoserToolWindow::ShutdownTools( void )
+{
+	int c = GetToolCount();
+	int i;
+	for ( i = 0; i < c ; i++ )
+	{
+		IFacePoserToolWindow *tool = GetTool( i );
+		tool->Shutdown();
 	}
 }
 
@@ -344,6 +436,30 @@ bool IFacePoserToolWindow::HandleToolEvent( mxEvent *event )
 	case mxEvent::Close:
 		{
 			g_MDLViewer->UpdateWindowMenu();
+			handled = true;
+		}
+		break;
+	case mxEvent::ParentNotify:
+		{
+			mxWindow *w = GetMxWindow();
+			if ( w )
+			{
+				HWND wnd = (HWND)w->getHandle();
+				SetFocus( wnd );
+				SetWindowPos( wnd, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+				SetActiveTool( this );
+			}
+			handled = true;
+		}
+		break;
+	case mxEvent::PosChanged:
+		{
+			SetActiveTool( this );
+			mxWindow *w = GetMxWindow();
+			if ( w )
+			{
+				SetFocus( (HWND)w->getHandle() );
+			}
 			handled = true;
 		}
 		break;
@@ -456,7 +572,14 @@ void IFacePoserToolWindow::HandleToolRedraw( CChoreoWidgetDrawHelper& helper )
 
 	COLORREF textColor = GetSysColor( COLOR_MENUTEXT ); //GetSysColor( COLOR_INACTIVECAPTIONTEXT );
 
-	helper.DrawFilledRect( GetSysColor( COLOR_INACTIVECAPTION ), captionRect );
+	if ( IsActiveTool() )
+	{
+		helper.DrawFilledRect( GetSysColor( COLOR_ACTIVECAPTION ), captionRect );
+	}
+	else
+	{
+		helper.DrawFilledRect( GetSysColor( COLOR_INACTIVECAPTION ), captionRect );
+	}
 
 	captionRect.top += 1;
 
@@ -465,11 +588,10 @@ void IFacePoserToolWindow::HandleToolRedraw( CChoreoWidgetDrawHelper& helper )
 	helper.DrawColoredText( "Small Fonts", 9, FW_NORMAL, textColor, captionRect,
 		GetWindowTitle() );
 
-	RECT rcFrame = captionRect;
-	rcFrame.left = rcFrame.right - 50;
-	rcFrame.right = rcFrame.left + 30;
-
-	helper.DrawColoredText( "Small Fonts", 9, FW_NORMAL, textColor, rcFrame, va( "%i", m_nToolFrameCount ) );
+	//RECT rcFrame = captionRect;
+	//rcFrame.left = rcFrame.right - 50;
+	//rcFrame.right = rcFrame.left + 30;
+	// helper.DrawColoredText( "Small Fonts", 9, FW_NORMAL, textColor, rcFrame, va( "%i", m_nToolFrameCount ) );
 
 	lockRect.bottom++;
 	OffsetRect( &lockRect, 1, 1 );
@@ -573,6 +695,8 @@ bool IFacePoserToolWindow::ShouldAutoProcess( void )
 
 void IFacePoserToolWindow::EnableToolRedraw( bool enabled )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	s_bToolsCanDraw = enabled;
 
 	if ( s_bToolsCanDraw )
@@ -603,3 +727,20 @@ bool IFacePoserToolWindow::ToolCanDraw()
 
 	return true;
 }
+
+void IFacePoserToolWindow::OnModelChanged()
+{
+}
+
+void IFacePoserToolWindow::ModelChanged()
+{
+	int c = GetToolCount();
+	int i;
+	for ( i = 0; i < c ; i++ )
+	{
+		IFacePoserToolWindow *tool = GetTool( i );
+		tool->OnModelChanged();
+	}
+}
+
+

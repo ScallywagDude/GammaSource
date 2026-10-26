@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PROPERTYDIALOG_H
 #define PROPERTYDIALOG_H
@@ -23,15 +18,13 @@
 namespace vgui
 {
 
-class Button;
-class PropertySheet;
-enum KeyCode;
-
 //-----------------------------------------------------------------------------
 // Purpose: Simple frame that holds a property sheet
 //-----------------------------------------------------------------------------
 class PropertyDialog : public Frame
 {
+	DECLARE_CLASS_SIMPLE( PropertyDialog, Frame );
+
 public:
 	PropertyDialog(Panel *parent, const char *panelName);
 	~PropertyDialog();
@@ -43,6 +36,7 @@ public:
 	virtual void AddPage(Panel *page, const char *title);
 	virtual Panel *GetActivePage();
 	virtual void ResetAllData();
+	virtual void ApplyChanges();
 
 	// sets the text on the OK/Cancel buttons, overriding the default
 	void SetOKButtonText(const char *text);
@@ -59,11 +53,12 @@ public:
 		"ApplyChanges"		- sent when the OK / Apply button is pressed.  Changed data should be written into document.
 	*/
 
-	DECLARE_PANELMAP();
-
 protected:
 	// Called when the OK button is pressed.  Simply closes the dialog.
-	virtual void OnOK();
+	virtual bool OnOK(bool applyOnly);
+
+	// called when the Cancel button is pressed
+	virtual void OnCancel();
 
 	// vgui overrides
 	virtual void PerformLayout();
@@ -72,7 +67,7 @@ protected:
 	virtual void OnKeyCodeTyped(KeyCode code);
 	virtual void RequestFocus(int direction = 0);
 
-	void OnApplyButtonEnable();
+	MESSAGE_FUNC( OnApplyButtonEnable, "ApplyButtonEnable" );
 	void EnableApplyButton(bool bEnable);
 	
 private:
@@ -80,7 +75,8 @@ private:
 	Button *_okButton;
 	Button *_cancelButton;
 	Button *_applyButton;
-	typedef Frame BaseClass;
+
+	CPanelAnimationVar( int, m_iSheetInsetBottom, "sheetinset_bottom", "32" );
 };
 
 }; // vgui

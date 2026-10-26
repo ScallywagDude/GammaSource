@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "BaseGamesPage.h"
 #include "ServerListCompare.h"
 #include "util.h"
@@ -41,7 +40,7 @@ CBaseGamesPage::CBaseGamesPage(vgui::Panel *parent, const char *name) : Frame(pa
 
 	// load the password icon
 	m_pPasswordIcon = new ImagePanel(NULL, NULL);
-	m_pPasswordIcon->SetImage(scheme()->GetImage("server/icon_password", false));
+	m_pPasswordIcon->SetImage(scheme()->GetImage(scheme()->GetDefaultScheme(), "server/icon_password"));
 
 	// Init UI
 //	m_pConnect = new Button(this, "ConnectButton", "Connect");
@@ -126,7 +125,7 @@ void CBaseGamesPage::OnTick()
 void CBaseGamesPage::ApplySchemeSettings(vgui::IScheme *pScheme)
 {
 	BaseClass::ApplySchemeSettings(pScheme);
-	m_pGameList->SetFont(scheme()->GetIScheme(scheme()->GetDefaultScheme())->GetFont("DefaultSmall"));
+	m_pGameList->SetFont(scheme()->GetFont(scheme()->GetDefaultScheme(), "DefaultSmall"));
 }
 
 //-----------------------------------------------------------------------------
@@ -139,30 +138,22 @@ serveritem_t &CBaseGamesPage::GetServer(unsigned int serverID)
 
 
 //-----------------------------------------------------------------------------
-// Purpose: Implement the mandatory IGameList invalid-item sentinel.
-//-----------------------------------------------------------------------------
-int CBaseGamesPage::GetInvalidServerListID()
-{
-	return m_pGameList ? m_pGameList->InvalidItemID() : -1;
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: call to let the UI now whether the game list is currently refreshing
 //-----------------------------------------------------------------------------
 void CBaseGamesPage::SetRefreshing(bool state)
 {
-	if(!VInternetDlg::GetInstance())
+	if(!CServerPage::GetInstance())
 	{
 		return;
 	}
 
 	if (state)
 	{
-		VInternetDlg::GetInstance()->UpdateStatusText("Refreshing server list...");
+		CServerPage::GetInstance()->UpdateStatusText("Refreshing server list...");
 	}
 	else
 	{
-		VInternetDlg::GetInstance()->UpdateStatusText("");
+		CServerPage::GetInstance()->UpdateStatusText("");
 	}
 
 //	m_pRefreshMenu->FindChildByName("Refresh")->SetVisible(!state);
@@ -199,7 +190,7 @@ void CBaseGamesPage::OnCommand(const char *command)
 	}
 	else if (!stricmp(command, "config"))
 	{
-		VInternetDlg::GetInstance()->ConfigPanel();
+		CServerPage::GetInstance()->ConfigPanel();
 	}
 	else
 	{
@@ -228,20 +219,20 @@ void CBaseGamesPage::OnButtonToggled(Panel *panel, int state)
 
 void CBaseGamesPage::OnManage()
 {
-	if (m_pGameList->GetSelectedItemsCount())
+	if (m_pGameList->GetNumSelectedRows())
 	{
 		// get the server
-		unsigned int serverID = m_pGameList->GetItemData(m_pGameList->GetSelectedItem(0))->userData;
+		unsigned int serverID = m_pGameList->GetDataItem(m_pGameList->GetSelectedRow(0))->userData;
 
 
-		vgui::ivgui()->PostMessage(m_pParent->GetVPanel(),  new KeyValues("Manage", "serverID", serverID), GetVPanel());
+		PostMessage(m_pParent->GetVPanel(),  new KeyValues("Manage", "serverID", serverID));
 	}
 }
 
 
 void CBaseGamesPage::OurListPanel::OnMouseDoublePressed( vgui::MouseCode code )
 {
-	vgui::ivgui()->PostMessage(m_pParent->GetVPanel(),  new KeyValues("Manage"), GetVPanel());	
+	PostMessage(m_pParent->GetVPanel(),  new KeyValues("Manage"));	
 }
 
 //-----------------------------------------------------------------------------

@@ -1,21 +1,42 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #include "quakedef.h" // for MAX_OSPATH
 #include <stdlib.h>
 #include <assert.h>
-#include <malloc.h>
 #include "filesystem.h"
-#include "tgawriter.h"
+#include "bitmap/tgawriter.h"
+#include <tier2/tier2.h>
 
-IFileSystem *g_pFileSystem;
-CreateInterfaceFn g_FileSystemFactory = 0;
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-void FileSystem_Path_f( void )
+IFileSystem *g_pFileSystem = NULL;
+
+
+void fs_whitelist_spew_flags_changefn( IConVar *pConVar, const char *pOldValue, float flOldValue )
+{
+	if ( g_pFileSystem )
+	{
+		ConVarRef var( pConVar );
+		g_pFileSystem->SetWhitelistSpewFlags( var.GetInt() );
+	}
+}
+
+#if defined( _DEBUG )
+ConVar fs_whitelist_spew_flags( "fs_whitelist_spew_flags", "0", 0,
+	"Set whitelist spew flags to a combination of these values:\n"
+	"   0x0001 - list files as they are added to the CRC tracker\n"
+	"   0x0002 - show files the filesystem is telling the engine to reload\n"
+	"   0x0004 - show files the filesystem is NOT telling the engine to reload",
+	fs_whitelist_spew_flags_changefn );
+#endif
+
+CON_COMMAND( path, "Show the engine filesystem path." )
 {
 	if( g_pFileSystem )
 	{
@@ -23,21 +44,17 @@ void FileSystem_Path_f( void )
 	}
 }
 
-static ConCommand path( "path", FileSystem_Path_f );
-
-void FileSystem_Init( CreateInterfaceFn fileSystemFactory )
+CON_COMMAND( fs_printopenfiles, "Show all files currently opened by the engine." )
 {
-	g_FileSystemFactory = fileSystemFactory;
-
-	TGAWriter::SetFileSystem( g_FileSystemFactory );
-	g_pFileSystem = ( IFileSystem * )g_FileSystemFactory( FILESYSTEM_INTERFACE_VERSION, NULL );
-	assert( g_pFileSystem );
-	g_pFileSystem->SetWarningFunc( Warning );
+	if( g_pFileSystem )
+	{
+		g_pFileSystem->PrintOpenedFiles();
+	}
 }
 
-void FileSystem_Warning_Level( void )
+CON_COMMAND( fs_warning_level, "Set the filesystem warning level." )
 {
-	if( Cmd_Argc() != 2 )
+	if( args.ArgC() != 2 )
 	{
 		Warning( "\"fs_warning_level n\" where n is one of:\n" );
 		Warning( "\t0:\tFILESYSTEM_WARNING_QUIET\n" );
@@ -46,10 +63,11 @@ void FileSystem_Warning_Level( void )
 		Warning( "\t3:\tFILESYSTEM_WARNING_REPORTALLACCESSES\n" );
 		Warning( "\t4:\tFILESYSTEM_WARNING_REPORTALLACCESSES_READ\n" );
 		Warning( "\t5:\tFILESYSTEM_WARNING_REPORTALLACCESSES_READWRITE\n" );
+		Warning( "\t6:\tFILESYSTEM_WARNING_REPORTALLACCESSES_ASYNC\n" );
 		return;
 	}
 
-	int level = atoi( Cmd_Argv( 1 ) );
+	int level = atoi( args[ 1 ] );
 	switch( level )
 	{
 	case FILESYSTEM_WARNING_QUIET:
@@ -70,6 +88,9 @@ void FileSystem_Warning_Level( void )
 	case FILESYSTEM_WARNING_REPORTALLACCESSES_READWRITE:
 		Warning( "fs_warning_level = FILESYSTEM_WARNING_REPORTALLACCESSES_READWRITE\n" );
 		break;
+	case FILESYSTEM_WARNING_REPORTALLACCESSES_ASYNC:
+		Warning( "fs_warning_level = FILESYSTEM_WARNING_REPORTALLACCESSES_ASYNC\n" );
+		break;
 
 	default:
 		Warning( "fs_warning_level = UNKNOWN!!!!!!!\n" );
@@ -77,16 +98,6 @@ void FileSystem_Warning_Level( void )
 		break;
 	}
 	g_pFileSystem->SetWarningLevel( ( FileWarningLevel_t )level );
-}
-
-static ConCommand fs_warning_level( "fs_warning_level", FileSystem_Warning_Level );
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void FileSystem_Shutdown( void )
-{
 }
 
 
@@ -110,3 +121,18 @@ void FileSystem_UnloadModule(CSysModule *pModule)
 	Sys_UnloadModule(pModule);
 }
 
+
+void FileSystem_SetWhitelistSpewFlags()
+{
+#if defined( _DEBUG )
+	if ( !g_pFileSystem )
+	{
+		Assert( !"FileSystem_InitSpewFlags - no filesystem." );
+		return;
+	}
+	
+	g_pFileSystem->SetWhitelistSpewFlags( fs_whitelist_spew_flags.GetInt() );
+#endif
+}
+
+	

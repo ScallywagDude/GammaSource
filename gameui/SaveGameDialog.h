@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SAVEGAMEDIALOG_H
 #define SAVEGAMEDIALOG_H
@@ -11,40 +11,56 @@
 #pragma once
 #endif
 
-#include "taskframe.h"
-
-namespace vgui
-{
-	class ListPanel;
-}
+#include "BaseSaveGameDialog.h"
+#include "SaveGameBrowserDialog.h"
+#include "vgui_controls/KeyRepeat.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Save game dialog
 //-----------------------------------------------------------------------------
-class CSaveGameDialog : public CTaskFrame
+class CSaveGameDialog : public CBaseSaveGameDialog
 {
+	DECLARE_CLASS_SIMPLE( CSaveGameDialog, CBaseSaveGameDialog );
+
 public:
-
-	static const int SAVEGAME_MAPNAME_LEN;
-	static const int SAVEGAME_COMMENT_LEN;
-	static const int SAVEGAME_ELAPSED_LEN;
-
-
-	CSaveGameDialog(vgui::Panel *parent);
+	CSaveGameDialog( vgui::Panel *parent );
 	~CSaveGameDialog();
-	virtual void	OnCommand( const char *command );
-	virtual void	OnClose();
+
+	virtual void Activate();
+	static void FindSaveSlot( char *buffer, int bufsize );
 
 protected:
-	typedef CTaskFrame BaseClass;
-
-	void			CreateSavedGamesList( void );
-	void			ScanSavedGames( void );
-	bool			ParseSaveData( char const* pszFileName, char const* pszShortName, KeyValues *kv );
-	const char		*FindSaveSlot();
-
-	vgui::ListPanel		*m_pGameList;
+	virtual void OnCommand( const char *command );
+	virtual void OnScanningSaveGames();
 };
 
+#define SAVE_NUM_ITEMS 4
+
+//
+//
+//
+class CAsyncCtxSaveGame;
+
+class CSaveGameDialogXbox : public CSaveGameBrowserDialog
+{
+	DECLARE_CLASS_SIMPLE( CSaveGameDialogXbox, CSaveGameBrowserDialog );
+
+public:
+					CSaveGameDialogXbox( vgui::Panel *parent );
+	virtual void	PerformSelectedAction( void );
+	virtual void	UpdateFooterOptions( void );
+	virtual void	OnCommand( const char *command );
+	virtual void	OnDoneScanningSaveGames( void );
+
+private:
+	friend class CAsyncCtxSaveGame;
+	void			InitiateSaving();
+	void			SaveCompleted( CAsyncCtxSaveGame *pCtx );
+
+private:
+	bool					m_bGameSaving;
+	bool					m_bNewSaveAvailable;
+	SaveGameDescription_t	m_NewSaveDesc;
+};
 
 #endif // SAVEGAMEDIALOG_H

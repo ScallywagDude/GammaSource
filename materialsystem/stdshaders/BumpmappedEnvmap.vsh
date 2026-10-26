@@ -1,8 +1,10 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Shader specific constant:
-;	 c94, c95	= normal map transform
+;	 $SHADER_SPECIFIC_CONST_4, $SHADER_SPECIFIC_CONST_5	= normal map transform
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
@@ -74,8 +76,8 @@ mov oT3.w, $worldToEye.z
 ;------------------------------------------------------------------------------
 ; Texture coordinates (normal map)
 ;------------------------------------------------------------------------------
-dp4 oT0.x, $vTexCoord0, c94
-dp4 oT0.y, $vTexCoord0, c95
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_4
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_5
 
 
 &FreeRegister( \$projPos );

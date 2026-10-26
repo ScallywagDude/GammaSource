@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ROPE_SHARED_H
 #define ROPE_SHARED_H
@@ -59,6 +59,11 @@ enum
 	ROPE_LOCK_START_DIRECTION = 0x4,
 	ROPE_LOCK_END_DIRECTION = 0x8,
 };
+
+
+// Rope attachment points.
+#define ROPE_ATTACHMENT_START_POINT	1
+#define ROPE_ATTACHMENT_END_POINT	2
 
 
 #endif // ROPE_SHARED_H

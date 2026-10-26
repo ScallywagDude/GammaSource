@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "stdafx.h"
 #include <assert.h>
 #include <io.h>
@@ -44,7 +44,7 @@ void vprint( int depth, const char *fmt, ... )
 		}
 	}
 
-	::printf( string );
+	::printf( "%s", string );
 	OutputDebugString( string );
 
 	if ( fp )
@@ -267,26 +267,6 @@ void COM_FreeFile( unsigned char *buffer )
 	allocated -= nsize;
 
 	delete[] buffer;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *string - 
-//-----------------------------------------------------------------------------
-void UTIL_StripTrailingSlashes( char *string )
-{
-	while ( strlen( string ) >= 1 )
-	{
-		if ( string[ strlen( string ) - 1 ] == '/' ||
-			 string[ strlen( string ) - 1 ] == '\\' )
-		{
-			string[ strlen( string ) - 1 ] = 0;
-		}
-		else
-		{
-			break;
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------

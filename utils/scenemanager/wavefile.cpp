@@ -1,20 +1,22 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "wavefile.h"
 #include "sentence.h"
 #include "iscenemanagersound.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "snd_wave_source.h"
 #include "cmdlib.h"
 #include "workspacemanager.h"
 #include "vcdfile.h"
 #include "workspacebrowser.h"
 #include "multiplerequest.h"
+#include "UtlBuffer.h"
+#include "scenemanager_tools.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -36,6 +38,15 @@ CWaveFile::CWaveFile( CVCDFile *vcd, CSoundEntry *se, char const *filename )
 
 CWaveFile::~CWaveFile()
 {
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Output : int
+//-----------------------------------------------------------------------------
+int CWaveFile::GetLanguageId()
+{
+	return GetWorkspaceManager()->GetLanguageId();
 }
 
 void CWaveFile::EnsureSentence()
@@ -113,8 +124,6 @@ void CWaveFile::SetSentenceText( char const *newText )
 	if ( !Q_stricmp( GetSentenceText(), newText ) )
 		return;
 
-	m_Sentence.SetText( newText );
-
 	if ( !IsCheckedOut() )
 	{
 		int retval = MultipleRequest( va( "Check out '%s'?", GetFileName() ) );
@@ -123,6 +132,8 @@ void CWaveFile::SetSentenceText( char const *newText )
 
 		VSS_Checkout( GetFileName() );
 	}
+
+	m_Sentence.SetText( newText );
 
 	SceneManager_SaveSentenceToWavFile( GetFileName(), m_Sentence );
 }
@@ -260,3 +271,109 @@ void CWaveFile::SetThreadLoadedSentence( CSentence& sentence )
 	m_bSentenceLoaded = true;
 	m_Sentence = sentence;
 }
+
+#define WORD_DATA_EXTENSION	".txt"
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *tempfile - 
+//-----------------------------------------------------------------------------
+void CWaveFile::ExportValveDataChunk( char const *tempfile )
+{
+	EnsureSentence();
+
+	if ( m_Sentence.m_Words.Count() <= 0 )
+	{
+		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "CWaveFile::ExportValveDataChunk:  Sentence has no word data\n" );
+		return;
+	}
+
+	SafeCreatePath( va( "%s%s", SceneManager_GetGameDirectory(), (char *)tempfile ) );
+
+	FileHandle_t fh = filesystem->Open( tempfile, "wb" );
+	if ( !fh )
+	{
+		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "CWaveFile::ExportValveDataChunk:  Unable to write to %s (read-only?)\n", tempfile );
+		return;
+	}
+	else
+	{
+		// Buffer and dump data
+		CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
+
+		m_Sentence.SaveToBuffer( buf );
+
+		filesystem->Write( buf.Base(), buf.TellPut(), fh );
+		filesystem->Close(fh);
+
+		Con_Printf( "Exported %i words to %s\n", m_Sentence.m_Words.Count(), tempfile );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *tempfile - 
+//-----------------------------------------------------------------------------
+void CWaveFile::ImportValveDataChunk( char const *tempfile )
+{
+	EnsureSentence();
+
+	FileHandle_t fh = filesystem->Open( tempfile, "rb" );
+	if ( !fh )
+	{
+		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "CWaveFile::ImportValveDataChunk:  Unable to read from %s\n", tempfile );
+		return;
+	}
+
+	int len = filesystem->Size( fh );
+	if ( len <= 4 )
+	{
+		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "CWaveFile::ImportValveDataChunk:  File %s has length 0\n", tempfile );
+		return;
+	}
+
+	CSentence newSentence;
+
+	unsigned char *buf = new unsigned char[ len + 1 ];
+
+	filesystem->Read( buf, len, fh );
+	filesystem->Close( fh );
+
+	newSentence.InitFromDataChunk( (void *)( buf ), len );
+
+	delete[] buf;
+
+	// See if we can write it out...
+	if ( !IsCheckedOut() )
+	{
+		int retval = MultipleRequest( va( "Check out '%s'?", GetFileName() ) );
+		if ( retval != 0 )
+			return;
+
+		VSS_Checkout( GetFileName() );
+	}
+
+	if ( !IsCheckedOut() )
+	{
+		MakeFileWriteable( GetFileName() );
+		Con_Printf( "Unable to check out %s, forcing it to be writable instead!\n", GetFileName() );
+	}
+
+	Con_Printf( "Imported %i words from %s\n", newSentence.m_Words.Count(), tempfile );
+
+	m_Sentence = newSentence;
+
+	SceneManager_SaveSentenceToWavFile( GetFileName(), m_Sentence );
+}
+
+void CWaveFile::GetPhonemeExportFile( char *path, int maxlen )
+{
+	char relative[ 512 ];
+	strcpy( relative, GetFileName() );
+	Q_StripExtension( relative, relative, sizeof( relative ) );
+	Q_DefaultExtension( relative, WORD_DATA_EXTENSION, sizeof( relative ) );
+
+	Q_snprintf( path, maxlen, "phonemes/%s", relative );
+	Q_FixSlashes( path );
+}
+

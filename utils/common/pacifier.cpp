@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <stdio.h>
 #include "basetypes.h"
@@ -12,7 +12,9 @@
 
 
 static int g_LastPacifierDrawn = -1;
+static bool g_bPacifierSuppressed = false;
 
+#define clamp(a,b,c) ( (a) > (c) ? (c) : ( (a) < (b) ? (b) : (a) ) )
 
 void StartPacifier( char const *pPrefix )
 {
@@ -24,7 +26,9 @@ void StartPacifier( char const *pPrefix )
 void UpdatePacifier( float flPercent )
 {
 	int iCur = (int)(flPercent * 40.0f);
-	if( iCur != g_LastPacifierDrawn )
+	iCur = clamp( iCur, g_LastPacifierDrawn, 40 );
+	
+	if( iCur != g_LastPacifierDrawn && !g_bPacifierSuppressed )
 	{
 		for( int i=g_LastPacifierDrawn+1; i <= iCur; i++ )
 		{
@@ -49,6 +53,11 @@ void EndPacifier( bool bCarriageReturn )
 {
 	UpdatePacifier(1);
 	
-	if( bCarriageReturn )
+	if( bCarriageReturn && !g_bPacifierSuppressed )
 		Msg("\n");
+}
+
+void SuppressPacifier( bool bSuppress )
+{
+	g_bPacifierSuppressed = bSuppress;
 }

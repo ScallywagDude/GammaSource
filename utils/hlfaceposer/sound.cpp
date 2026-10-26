@@ -1,5 +1,13 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#pragma warning( disable : 4201 )
 #include <mmsystem.h>
 #include <stdio.h>
 #include <math.h>
@@ -12,10 +20,17 @@
 #include "expclass.h"
 #include "PhonemeConverter.h"
 #include "utlvector.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "sentence.h"
 #include "faceposer_models.h"
 #include "iclosecaptionmanager.h"
+#include "phonemeeditor.h"
+#include "wavebrowser.h"
+#include "choreoscene.h"
+#include "choreoview.h"
+#include "KeyValues.h"
+
+extern ISoundEmitterSystemBase *soundemitter;
 
 typedef struct channel_s
 {
@@ -62,8 +77,8 @@ public:
 
 private:
 	void	OpenDevice( void );
-	bool	ValidDevice( void ) { return m_deviceId >= 0; }
-	void	ClearDevice( void ) { m_deviceId = -1; }
+	bool	ValidDevice( void ) { return m_deviceId != 0xFFFFFFFF; }
+	void	ClearDevice( void ) { m_deviceId = 0xFFFFFFFF; }
 
 	// returns true if the new format is better
 	bool	BetterFormat( DWORD dwNewFormat, DWORD dwOldFormat );
@@ -90,7 +105,7 @@ CAudioWaveInput::CAudioWaveInput( void )
 {
 	memset( m_buffers, 0, sizeof( m_buffers ) );
 	int deviceCount = (int)waveInGetNumDevs();
-	UINT	deviceId;
+	UINT	deviceId = 0;
 	DWORD	deviceFormat = 0;
 
 	int i;
@@ -111,7 +126,7 @@ CAudioWaveInput::CAudioWaveInput( void )
 
 	if ( !deviceFormat )
 	{
-		m_deviceId = -1;
+		m_deviceId = 0xFFFFFFFF;
 		m_sampleSize = 0;
 		m_sampleRate = 0;
 		m_isStereo = false;
@@ -659,12 +674,6 @@ void CAudioWaveOutput::Flush( void )
 // mix a buffer up to time (time is absolute)
 void CAudioWaveOutput::Update( float time )
 {
-	channel_t channel;
-
-	channel.leftvol = 200;
-	channel.rightvol = 200;
-	channel.pitch = 1.0;
-
 	if ( !ValidDevice() )
 		return;
 
@@ -692,8 +701,6 @@ void CAudioWaveOutput::Update( float time )
 		// UNDONE: These numbers are constants
 		// calc number of samples (2 channels * 2 bytes per sample)
 		int sampleCount = pBuffer->hdr->dwBufferLength >> 2;
-		float oldTime = m_mixTime;
-
 		m_mixTime += sampleCount * (1.0f / OUTPUT_SAMPLE_RATE);
 
 		short *pSamples = reinterpret_cast<short *>(pBuffer->hdr->lpData);
@@ -725,12 +732,22 @@ void CAudioWaveOutput::Update( float time )
 				}
 				else
 				{
-					model = models->GetActiveStudioModel();
+					if ( g_pPhonemeEditor->IsActiveTool() || g_pWaveBrowser->IsActiveTool() )
+					{
+						model = models->GetActiveStudioModel();
+	
+					}
 				}
 
 				if ( model && !model->m_mouth.IsSourceReferenced( pSource->GetSource() ) )
 				{
-					model->m_mouth.AddSource( pSource->GetSource(), 0.0f );
+					CChoreoScene *pScene = g_pChoreoView->GetScene();
+					bool bIgnorePhonemes = pScene ? pScene->ShouldIgnorePhonemes() : false;
+					model->m_mouth.AddSource( pSource->GetSource(), bIgnorePhonemes );
+					if ( modelindex < 0 )
+					{
+						pSource->SetModelIndex( models->GetIndexForStudioModel( model ) );
+					}
 				}
 
 				int currentsample = pSource->GetSamplePosition();
@@ -738,7 +755,7 @@ void CAudioWaveOutput::Update( float time )
 
 				if ( pSource->GetActive() )
 				{
-					if ( !pSource->MixDataToDevice( &m_audioDevice, &channel, currentsample, sampleCount, SampleRate(), forward ) )
+					if ( !pSource->MixDataToDevice( &m_audioDevice, pSource->GetChannel(), currentsample, sampleCount, SampleRate(), forward ) )
 					{
 						// Source becomes inactive when last submitted sample is finally
 						//  submitted.  But it lingers until it's no longer referenced
@@ -760,7 +777,7 @@ void CAudioWaveOutput::Update( float time )
 					}
 					else
 					{
-						pSource->IncrementSamples( &channel, currentsample, sampleCount, SampleRate(), forward );
+						pSource->IncrementSamples( pSource->GetChannel(), currentsample, sampleCount, SampleRate(), forward );
 					}
 				}
 
@@ -1019,10 +1036,10 @@ public:
 	void		Flush( void );
 
 	CAudioSource *LoadSound( const char *wavfile );
-	void		PlaySound( StudioModel *source, const char *wavfile, CAudioMixer **ppMixer );
-	void		PlayPartialSound( StudioModel *model, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample );
+	void		PlaySound( StudioModel *source, float volume, const char *wavfile, CAudioMixer **ppMixer );
+	void		PlaySound( CAudioSource *source, float volume, CAudioMixer **ppMixer );
+	void		PlayPartialSound( StudioModel *model, float volume, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample );
 
-	void		PlaySound( CAudioSource *source, CAudioMixer **ppMixer );
 	bool		IsSoundPlaying( CAudioMixer *pMixer );
 	CAudioMixer *FindMixer( CAudioSource *source );
 
@@ -1116,6 +1133,22 @@ void CFacePoserSound::Init( void )
 {
 	m_flElapsedTime = 0.0f;
 	m_pAudio = CAudioOutput::Create();
+
+	// Load SoundOverrides for Faceposer
+
+	KeyValues *manifest = new KeyValues( "scripts/game_sounds_manifest.txt" );
+	if ( filesystem->LoadKeyValues( *manifest, IFileSystem::TYPE_SOUNDEMITTER, "scripts/game_sounds_manifest.txt", "GAME" ) )
+	{
+		for ( KeyValues *sub = manifest->GetFirstSubKey(); sub != NULL; sub = sub->GetNextKey() )
+		{
+			if ( !Q_stricmp( sub->GetName(), "faceposer_file" ) )
+			{
+				soundemitter->AddSoundOverrides( sub->GetString() );
+				continue;
+			}
+		}
+	}
+	manifest->deleteThis();
 }
 
 void CFacePoserSound::Shutdown( void )
@@ -1148,7 +1181,7 @@ CAudioSource *CFacePoserSound::LoadSound( const char *wavfile )
 	return wave;
 }
 
-void CFacePoserSound::PlaySound( StudioModel *model, const char *wavfile, CAudioMixer **ppMixer )
+void CFacePoserSound::PlaySound( StudioModel *model, float volume, const char *wavfile, CAudioMixer **ppMixer )
 {
 	if ( m_pAudio )
 	{
@@ -1161,6 +1194,7 @@ void CFacePoserSound::PlaySound( StudioModel *model, const char *wavfile, CAudio
 		{
 			*ppMixer = pMixer;
 		}
+		pMixer->SetVolume( volume );
 		m_pAudio->AddSource( pMixer );
 		if ( model )
 		{
@@ -1169,7 +1203,7 @@ void CFacePoserSound::PlaySound( StudioModel *model, const char *wavfile, CAudio
 	}
 }
 
-void CFacePoserSound::PlayPartialSound( StudioModel *model, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample )
+void CFacePoserSound::PlayPartialSound( StudioModel *model, float volume, const char *wavfile, CAudioMixer **ppMixer, int startSample, int endSample )
 {
 	if ( !m_pAudio )
 		return;
@@ -1184,13 +1218,14 @@ void CFacePoserSound::PlayPartialSound( StudioModel *model, const char *wavfile,
 	{
 		*ppMixer = mixer;
 	}
-	
-	m_pAudio->AddSource( mixer );
+
 	mixer->SetSamplePosition( startSample );
 	mixer->SetLoopPosition( endSample );
+	mixer->SetVolume( volume );
+	m_pAudio->AddSource( mixer );
 }
 
-void CFacePoserSound::PlaySound( CAudioSource *source, CAudioMixer **ppMixer )
+void CFacePoserSound::PlaySound( CAudioSource *source, float volume, CAudioMixer **ppMixer )
 {
 	if ( ppMixer )
 	{
@@ -1204,6 +1239,7 @@ void CFacePoserSound::PlaySound( CAudioSource *source, CAudioMixer **ppMixer )
 		{
 			*ppMixer = mixer;
 		}
+		mixer->SetVolume( volume );
 		m_pAudio->AddSource( mixer );
 	}
 }
@@ -1297,7 +1333,7 @@ void CFacePoserSound::AddViseme( float intensity, StudioModel *model, int phonem
 	int i;
 
 	Assert( model );
-	studiohdr_t *hdr = model->getStudioHeader ();
+	CStudioHdr *hdr = model->GetStudioHdr();
 	Assert( hdr );
 	if ( !hdr )
 		return;
@@ -1311,7 +1347,7 @@ void CFacePoserSound::AddViseme( float intensity, StudioModel *model, int phonem
 		info->settings = NULL;
 		info->amount = 0.0f;
 		
-		info->cl = expressions->FindClass( info->classname );
+		info->cl = expressions->FindClass( info->classname, true );
 		if ( info->cl )
 		{
 			info->exp = info->cl->FindExpression( ConvertPhoneme( phoneme ) );
@@ -1326,18 +1362,6 @@ void CFacePoserSound::AddViseme( float intensity, StudioModel *model, int phonem
 		{
 			info->valid = true;
 
-			// Resolve markov chains
-			info->exp = info->exp->GetExpression();
-
-			// Allow overrides
-			if ( FacePoser_GetOverridesShowing() )
-			{
-				if ( info->exp->HasOverride() && info->exp->GetOverride() )
-				{
-					info->exp = info->exp->GetOverride();
-				}
-			}
-
 			info->settings = info->exp->GetSettings();
 			Assert( info->settings );
 		}
@@ -1346,9 +1370,9 @@ void CFacePoserSound::AddViseme( float intensity, StudioModel *model, int phonem
 	ComputeBlendedSetting( g_PhonemeClasses, intensity );
 
 	// Look up the phoneme
-	for ( i = 0; i < hdr->numflexcontrollers; i++)
+	for ( LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 	{
-		int j = hdr->pFlexcontroller( i )->link;
+		int j = hdr->pFlexcontroller( i )->localToGlobal;
 
 		float add = 0.0f;
 
@@ -1385,17 +1409,17 @@ void CFacePoserSound::SetupWeights( void )
 			continue;
 
 		// Reset flexes
-		studiohdr_t *hdr = model->getStudioHeader();
+		CStudioHdr *hdr = model->GetStudioHdr();
 		if ( !hdr )
 			continue;
 
 		for ( int s = 0; s < model->m_mouth.GetNumVoiceSources(); s++ )
 		{
 			CVoiceData	*vd = model->m_mouth.GetVoiceSource( s );
-			if ( !vd )
+			if ( !vd || vd->ShouldIgnorePhonemes() )
 				continue;
 
-			CAudioSource *source = vd->m_pAudioSource;
+			CAudioSource *source = vd->GetSource();
 			// check for phoneme flexes
 			if ( !source )
 				continue;
@@ -1411,7 +1435,7 @@ void CFacePoserSound::SetupWeights( void )
 			// Zero faces if needed
 			models->CheckResetFlexes();
 
-			float pos = (float)mixer->GetSamplePosition();
+			float pos = (float)mixer->GetScrubPosition();
 
 			// Con_Printf( "pos %f for mixer %p\n", pos, mixer );
 
@@ -1440,16 +1464,43 @@ void CFacePoserSound::SetupWeights( void )
 						// if the filter starts within this phoneme, make sure the filter size is 
 						// at least least as long as the current phoneme, or until the end of the next phoneme, 
 						// whichever is smaller
-						if (t > phoneme->m_flStartTime && t < phoneme->m_flEndTime)
+						if (t > phoneme->GetStartTime() && t < phoneme->GetEndTime())
 						{
+							CPhonemeTag *next = NULL;
+							// try next phoneme, or first phoneme of next word
 							if (k < word->m_Phonemes.Size()-1)
 							{
-								dt = max( dt, min( word->m_Phonemes[ k+1 ]->m_flEndTime - t, phoneme->m_flEndTime - phoneme->m_flStartTime ) );
+								next = word->m_Phonemes[ k+1 ];
+							}
+							else if ( w < sentence->m_Words.Size() - 1  && sentence->m_Words[ w+1 ]->m_Phonemes.Size() )
+							{
+								next = sentence->m_Words[ w+1 ]->m_Phonemes[ 0 ];
+							}
+
+							// if I have a neighbor
+							if (next)
+							{
+								// and they're touching
+								if (next->GetStartTime() == phoneme->GetEndTime())
+								{
+									// no gap, so increase the blend length to the end of the next phoneme, as long as it's not longer than the current phoneme
+									dt = max( dt, min( next->GetEndTime() - t, phoneme->GetEndTime() - phoneme->GetStartTime() ) );
+								}
+								else
+								{
+									// dead space, so increase the blend length to the start of the next phoneme, as long as it's not longer than the current phoneme
+									dt = max( dt, min( next->GetStartTime() - t, phoneme->GetEndTime() - phoneme->GetStartTime() ) );
+								}
+							}
+							else
+							{
+								// last phoneme in list, increase the blend length to the length of the current phoneme
+								dt = max( dt, phoneme->GetEndTime() - phoneme->GetStartTime() );
 							}
 						}
 
-						float t1 = ( phoneme->m_flStartTime - t) / dt;
-						float t2 = ( phoneme->m_flEndTime - t) / dt;
+						float t1 = ( phoneme->GetStartTime() - t) / dt;
+						float t2 = ( phoneme->GetEndTime() - t) / dt;
 
 						if (t1 < 1.0 && t2 > 0)
 						{
@@ -1464,11 +1515,10 @@ void CFacePoserSound::SetupWeights( void )
 							// FIXME: simple box filter.  Should use something fancier
 							scale = (t2 - t1);
 
-							AddViseme( emphasis_intensity, model, phoneme->m_nPhonemeCode, scale );
+							AddViseme( emphasis_intensity, model, phoneme->GetPhonemeCode(), scale );
 						}
 					}
 				}
-
 				ProcessCloseCaptionData( model, t, sentence );
 			}
 		}
@@ -1479,12 +1529,12 @@ static int g_nSoundFrameCount = 0;
 
 void CFacePoserSound::ProcessCloseCaptionData( StudioModel *model, float curtime, CSentence* sentence )
 {
-	closecaptionmanager->Process( g_nSoundFrameCount, model, curtime, sentence );
+//	closecaptionmanager->Process( g_nSoundFrameCount, model, curtime, sentence, GetCloseCaptionLanguageId() );
 }
 
 void CFacePoserSound::Update( float dt )
 {
-	closecaptionmanager->PreProcess( g_nSoundFrameCount );
+//	closecaptionmanager->PreProcess( g_nSoundFrameCount );
 
 	if ( m_pAudio )
 	{
@@ -1492,7 +1542,7 @@ void CFacePoserSound::Update( float dt )
 		m_pAudio->Update( m_flElapsedTime );
 	}
 
-	closecaptionmanager->PostProcess( g_nSoundFrameCount, dt );
+//	closecaptionmanager->PostProcess( g_nSoundFrameCount, dt );
 
 	m_flElapsedTime += dt;
 	g_nSoundFrameCount++;
@@ -1539,8 +1589,8 @@ void CFacePoserSound::RenderWavToDC( HDC dc, RECT& outrect, COLORREF clr,
 {
 	channel_t channel;
 
-	channel.leftvol = 200;
-	channel.rightvol = 200;
+	channel.leftvol = 127;
+	channel.rightvol = 127;
 	channel.pitch = 1.0;
 
 	if ( !pWave )

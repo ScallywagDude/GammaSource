@@ -1,9 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include "dt.h"
 #include "dt_recv_eng.h"
@@ -13,7 +14,9 @@
 #include "utllinkedlist.h"
 #include "tier0/dbg.h"
 #include "dt_recv_decoder.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
+#include "dt_common_eng.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -51,8 +54,7 @@ class CClientSendTable;
 
 #define SENDPROP_VISIT( pTablePointer, tableCode, propCode )  FOR_EACH_PROP_R( SendTable, pTablePointer, tableCode, propCode )
 #define RECVPROP_VISIT( pTablePointer, tableCode, propCode )  FOR_EACH_PROP_R( RecvTable, pTablePointer, tableCode, propCode )
-
-
+#define SETUP_VISIT() class CDummyClass {} // Workaround for parser bug in VC7.1
 
 // ------------------------------------------------------------------------------------ //
 // Globals.
@@ -173,8 +175,18 @@ bool CompareRecvPropToSendProp( const RecvProp *pRecvProp, const SendProp *pSend
 	}
 }
 
+struct MatchingProp_t
+{
+	SendProp	*m_pProp;
+	RecvProp	*m_pMatchingRecvProp;
 
-static bool MatchRecvPropsToSendProps_R( char const *sendTableName, SendTable *pSendTable, RecvTable *pRecvTable )
+	static bool LessFunc( const MatchingProp_t& lhs, const MatchingProp_t& rhs )
+	{
+		return lhs.m_pProp < rhs.m_pProp;
+	}
+};
+
+static bool MatchRecvPropsToSendProps_R( CUtlRBTree< MatchingProp_t, unsigned short >& lookup, char const *sendTableName, SendTable *pSendTable, RecvTable *pRecvTable, bool bAllowMismatches, bool *pAnyMismatches )
 {
 	for ( int i=0; i < pSendTable->m_nProps; i++ )
 	{
@@ -192,21 +204,34 @@ static bool MatchRecvPropsToSendProps_R( char const *sendTableName, SendTable *p
 		{
 			if ( !CompareRecvPropToSendProp( pRecvProp, pSendProp ) )
 			{
-				DataTable_Warning( "RecvProp type doesn't match server type for %s/%s\n", pSendTable->GetName(), pSendProp->GetName() );
+				Warning( "RecvProp type doesn't match server type for %s/%s\n", pSendTable->GetName(), pSendProp->GetName() );
 				return false;
 			}
 
-			pSendProp->m_pMatchingRecvProp = pRecvProp;
+			MatchingProp_t info;
+			info.m_pProp = pSendProp;
+			info.m_pMatchingRecvProp = pRecvProp;
+
+			lookup.Insert( info );
 		}
 		else
 		{
-			DataTable_Warning( "Missing RecvProp for %s - %s/%s\n", sendTableName, pSendTable->GetName(), pSendProp->GetName() );
+			if ( pAnyMismatches )
+			{
+				*pAnyMismatches = true;
+			}
+
+			Warning( "Missing RecvProp for %s - %s/%s\n", sendTableName, pSendTable->GetName(), pSendProp->GetName() );
+			if ( !bAllowMismatches )
+			{
+				return false;
+			}
 		}
 
 		// Recurse.
 		if ( pSendProp->GetType() == DPT_DataTable )
 		{
-			if ( !MatchRecvPropsToSendProps_R( sendTableName, pSendProp->GetDataTable(), pRecvProp ? pRecvProp->GetDataTable() : 0 ) )
+			if ( !MatchRecvPropsToSendProps_R( lookup, sendTableName, pSendProp->GetDataTable(), FindRecvTable( pSendProp->GetDataTable()->m_pNetTableName ), bAllowMismatches, pAnyMismatches ) )
 				return false;
 		}
 	}
@@ -218,9 +243,10 @@ static bool MatchRecvPropsToSendProps_R( char const *sendTableName, SendTable *p
 // ------------------------------------------------------------------------------------ //
 // Interface functions.
 // ------------------------------------------------------------------------------------ //
-
 bool RecvTable_Init( RecvTable **pTables, int nTables )
 {
+	SETUP_VISIT();
+
 	for ( int i=0; i < nTables; i++ )
 	{
 		RECVPROP_VISIT( pTables[i], 
@@ -230,8 +256,7 @@ bool RecvTable_Init( RecvTable **pTables, int nTables )
 				
 				// Shouldn't have a decoder yet.
 				ErrorIfNot( !pTable->m_pDecoder,
-					("RecvTable_Init: table '%s' has a decoder already.", pTable->GetName())
-				);
+					("RecvTable_Init: table '%s' has a decoder already.", pTable->GetName()));
 				
 				pTable->SetInMainList( true );
 				g_RecvTables.AddToTail( pTable );
@@ -247,6 +272,10 @@ bool RecvTable_Init( RecvTable **pTables, int nTables )
 
 void RecvTable_Term( bool clearall /*= true*/ )
 {
+	DTI_Term();
+
+	SETUP_VISIT();
+
 	FOR_EACH_LL( g_RecvTables, i )
 	{
 		RECVPROP_VISIT( g_RecvTables[i],
@@ -270,69 +299,62 @@ void RecvTable_Term( bool clearall /*= true*/ )
 	g_ClientSendTables.PurgeAndDeleteElements();
 }
 
-
-bool RecvTable_RecvInfo( bf_read *pBuf, bool bNeedsDecoder )
+void RecvTable_FreeSendTable( SendTable *pTable )
 {
-	CClientSendTable *pClientSendTable = new CClientSendTable;
-	SendTable *pTable = &pClientSendTable->m_SendTable;
-	g_ClientSendTables.AddToTail( pClientSendTable );
-
-	// Read the name.
-	pTable->m_pNetTableName = pBuf->ReadAndAllocateString();
-
-	// Create a decoder for it if necessary.
-	if ( bNeedsDecoder )
+	for ( int iProp=0; iProp < pTable->m_nProps; iProp++ )
 	{
-		// Make a decoder for it.
-		CRecvDecoder *pDecoder = new CRecvDecoder;
-		g_RecvDecoders.AddToTail( pDecoder );
-		
-		RecvTable *pRecvTable = FindRecvTable( pTable->m_pNetTableName );
-		if ( !pRecvTable )
-		{
-			DataTable_Warning( "No matching RecvTable for SendTable '%s'.\n", pTable->m_pNetTableName );
-			return false;
-		}
+		SendProp *pProp = &pTable->m_pProps[iProp];
 
-		pRecvTable->m_pDecoder = pDecoder;
-		pDecoder->m_pTable = pRecvTable;
+		delete [] pProp->m_pVarName;
 
-		pDecoder->m_pClientSendTable = pClientSendTable;
-		pDecoder->m_Precalc.m_pSendTable = pClientSendTable->GetSendTable();
-		pClientSendTable->GetSendTable()->m_pPrecalc = &pDecoder->m_Precalc;
-
-		// Initialize array properties.
-		SetupArrayProps_R<RecvTable, RecvTable::PropType>( pRecvTable );
+		if ( pProp->m_pExcludeDTName )
+			delete [] pProp->m_pExcludeDTName;
 	}
 
+	if ( pTable->m_pProps )
+		delete [] pTable->m_pProps;
+
+	delete pTable;
+}
+
+
+SendTable *RecvTable_ReadInfos( bf_read *pBuf, int nDemoProtocol )
+{
+	SendTable *pTable = new SendTable;
+
+	pTable->m_pNetTableName = pBuf->ReadAndAllocateString();
 
 	// Read the property list.
 	pTable->m_nProps = pBuf->ReadUBitLong( PROPINFOBITS_NUMPROPS );
-	pTable->m_pProps = pTable->m_nProps ? new SendProp[ pTable->m_nProps ] : 0;
-	pClientSendTable->m_Props.SetSize( pTable->m_nProps );
+	pTable->m_pProps = pTable->m_nProps ? new SendProp[ pTable->m_nProps ] : NULL;
 
 	for ( int iProp=0; iProp < pTable->m_nProps; iProp++ )
 	{
-		CClientSendProp *pClientProp = &pClientSendTable->m_Props[iProp];
 		SendProp *pProp = &pTable->m_pProps[iProp];
 
 		pProp->m_Type = (SendPropType)pBuf->ReadUBitLong( PROPINFOBITS_TYPE );
 		pProp->m_pVarName = pBuf->ReadAndAllocateString();
-		pProp->SetFlags( pBuf->ReadUBitLong( PROPINFOBITS_FLAGS ) );
+
+		int nFlagsBits = PROPINFOBITS_FLAGS;
+        
+		// HACK to playback old demos. SPROP_NUMFLAGBITS was 11, now 13
+		// old nDemoProtocol was 2 
+		if ( nDemoProtocol == 2 )
+		{
+			nFlagsBits = 11;
+		}
+
+		pProp->SetFlags( pBuf->ReadUBitLong( nFlagsBits ) );
 
 		if ( pProp->m_Type == DPT_DataTable )
 		{
-			pClientProp->SetTableName( pBuf->ReadAndAllocateString() );
+			pProp->m_pExcludeDTName = pBuf->ReadAndAllocateString();
 		}
 		else
 		{
 			if ( pProp->IsExcludeProp() )
 			{
 				pProp->m_pExcludeDTName = pBuf->ReadAndAllocateString();
-			}
-			else if ( pProp->GetType() == DPT_String )
-			{
-				pProp->m_StringBufferLen = pBuf->ReadUBitLong( PROPINFOBITS_STRINGBUFFERLEN );
 			}
 			else if ( pProp->GetType() == DPT_Array )
 			{
@@ -347,11 +369,25 @@ bool RecvTable_RecvInfo( bf_read *pBuf, bool bNeedsDecoder )
 		}
 	}
 
-	return true;
+	return pTable;
 }
 
+bool RecvTable_RecvClassInfos( bf_read *pBuf, bool bNeedsDecoder, int nDemoProtocol )
+{
+	SendTable *pSendTable = RecvTable_ReadInfos( pBuf, nDemoProtocol );
+
+	if ( !pSendTable )
+		return false;
+
+	bool ret = DataTable_SetupReceiveTableFromSendTable( pSendTable, bNeedsDecoder );
+		
+	RecvTable_FreeSendTable( pSendTable );
+
+	return ret;
+}
 
 static void CopySendPropsToRecvProps( 
+	CUtlRBTree< MatchingProp_t, unsigned short >& lookup, 
 	const CUtlVector<const SendProp*> &sendProps, 
 	CUtlVector<const RecvProp*> &recvProps 
 	)
@@ -360,13 +396,31 @@ static void CopySendPropsToRecvProps(
 	for ( int iSendProp=0; iSendProp < sendProps.Count(); iSendProp++ )
 	{
 		const SendProp *pSendProp = sendProps[iSendProp];
-		recvProps[iSendProp] = pSendProp->m_pMatchingRecvProp;
+		MatchingProp_t search;
+		search.m_pProp = (SendProp *)pSendProp;
+		int idx = lookup.Find( search );
+		if ( idx == lookup.InvalidIndex() )
+		{
+			recvProps[iSendProp] = 0;
+		}
+		else
+		{
+			recvProps[iSendProp] = lookup[ idx ].m_pMatchingRecvProp;
+		}
 	}
 }
 
-
-bool RecvTable_CreateDecoders()
+bool RecvTable_CreateDecoders( const CStandardSendProxies *pSendProxies, bool bAllowMismatches, bool *pAnyMismatches )
 {
+	DTI_Init();
+
+	SETUP_VISIT();
+
+	if ( pAnyMismatches )
+	{
+		*pAnyMismatches = false;
+	}
+
 	// First, now that we've supposedly received all the SendTables that we need,
 	// set their datatable child pointers.
 	if ( !SetupClientSendTableHierarchy() )
@@ -379,25 +433,24 @@ bool RecvTable_CreateDecoders()
 
 		// It should already have been linked to its ClientSendTable.
 		Assert( pDecoder->m_pClientSendTable );
+		if ( !pDecoder->m_pClientSendTable )
+			return false;
 
 
 		// For each decoder, precalculate the SendTable's flat property list.
 		if ( !pDecoder->m_Precalc.SetupFlatPropertyArray() )
 			return false;
 
+		CUtlRBTree< MatchingProp_t, unsigned short >	PropLookup( 0, 0, MatchingProp_t::LessFunc );
 
-		// Clear the SendProp matches from any previous call to MatchRecvPropsToSendProps_R.
-		SENDPROP_VISIT( pDecoder->GetSendTable(), {}, pProp->m_pMatchingRecvProp = NULL )
-				
 		// Now match RecvProp with SendProps.
-		if ( !MatchRecvPropsToSendProps_R( pDecoder->GetSendTable()->m_pNetTableName, pDecoder->GetSendTable(), pDecoder->GetRecvTable() ) )
+		if ( !MatchRecvPropsToSendProps_R( PropLookup, pDecoder->GetSendTable()->m_pNetTableName, pDecoder->GetSendTable(), FindRecvTable( pDecoder->GetSendTable()->m_pNetTableName ), bAllowMismatches, pAnyMismatches ) )
 			return false;
 	
-
 		// Now fill out the matching RecvProp array.
 		CSendTablePrecalc *pPrecalc = &pDecoder->m_Precalc;
-		CopySendPropsToRecvProps( pPrecalc->m_Props, pDecoder->m_Props );
-		CopySendPropsToRecvProps( pPrecalc->m_DatatableProps, pDecoder->m_DatatableProps );
+		CopySendPropsToRecvProps( PropLookup, pPrecalc->m_Props, pDecoder->m_Props );
+		CopySendPropsToRecvProps( PropLookup, pPrecalc->m_DatatableProps, pDecoder->m_DatatableProps );
 	
 		DTI_HookRecvDecoder( pDecoder );
 	}
@@ -410,7 +463,8 @@ bool RecvTable_Decode(
 	RecvTable *pTable, 
 	void *pStruct, 
 	bf_read *pIn, 
-	int objectID
+	int objectID,
+	bool updateDTI
 	)
 {
 	CRecvDecoder *pDecoder = pTable->m_pDecoder;
@@ -420,17 +474,16 @@ bool RecvTable_Decode(
 
 	// While there are properties, decode them.. walk the stack as you go.
 	CClientDatatableStack theStack( pDecoder, (unsigned char*)pStruct, objectID );
-
-	int iStartBit = 0, nIndexBits = 0, iLastBit = pIn->GetNumBitsRead();
 	
-	int iProp;
+	theStack.Init();
+	int iStartBit = 0, nIndexBits = 0, iLastBit = pIn->GetNumBitsRead();
+	unsigned int iProp;
 	CDeltaBitsReader deltaBitsReader( pIn );
-	while ( deltaBitsReader.ReadNextPropIndex( &iProp ) )
+	while ( (iProp = deltaBitsReader.ReadNextPropIndex()) < MAX_DATATABLE_PROPS )
 	{
 		theStack.SeekToProp( iProp );
 		
 		const RecvProp *pProp = pDecoder->GetProp( iProp );
-		Assert( pProp );
 
 		// Instrumentation (store the # bits for the prop index).
 		if ( g_bDTIEnabled )
@@ -441,17 +494,28 @@ bool RecvTable_Decode(
 
 		DecodeInfo decodeInfo;
 		decodeInfo.m_pStruct = theStack.GetCurStructBase();
-		decodeInfo.m_pData = theStack.GetCurStructBase() + pProp->GetOffset();
+		
+		if ( pProp )
+		{
+			decodeInfo.m_pData = theStack.GetCurStructBase() + pProp->GetOffset();
+		}
+		else
+		{
+			// They're allowed to be missing props here if they're playing back a demo.
+			// This allows us to change the datatables and still preserve old demos.
+			decodeInfo.m_pData = NULL;
+		}
+
 		decodeInfo.m_pRecvProp = theStack.IsCurProxyValid() ? pProp : NULL; // Just skip the data if the proxies are screwed.
 		decodeInfo.m_pProp = pDecoder->GetSendProp( iProp );
 		decodeInfo.m_pIn = pIn;
 		decodeInfo.m_ObjectID = objectID;
 
-		g_PropTypeFns[pProp->GetType()].Decode( &decodeInfo );
+		g_PropTypeFns[ decodeInfo.m_pProp->GetType() ].Decode( &decodeInfo );
 		++g_nPropsDecoded;
 
 		// Instrumentation (store # bits for the encoded property).
-		if ( g_bDTIEnabled )
+		if ( updateDTI && g_bDTIEnabled )
 		{
 			iLastBit = pIn->GetNumBitsRead();
 			DTI_HookDeltaBits( pDecoder, iProp, iLastBit - iStartBit, nIndexBits );
@@ -469,71 +533,36 @@ void RecvTable_DecodeZeros( RecvTable *pTable, void *pStruct, int objectID )
 		("RecvTable_DecodeZeros: table '%s' missing a decoder.", pTable->GetName())
 	);
 
-	char zeroBuf[64]; // This should be more space than any property type uses (if it starts with zeros).
-	Q_memset( zeroBuf, 0, sizeof( zeroBuf ) );
-	bf_read buf( zeroBuf, sizeof( zeroBuf ) );
-
 	// While there are properties, decode them.. walk the stack as you go.
 	CClientDatatableStack theStack( pDecoder, (unsigned char*)pStruct, objectID );
+
+	theStack.Init();
+
 	for ( int iProp=0; iProp < pDecoder->GetNumProps(); iProp++ )
 	{	
 		theStack.SeekToProp( iProp );
 	
+		// They're allowed to be missing props here if they're playing back a demo.
+		// This allows us to change the datatables and still preserve old demos.
 		const RecvProp *pProp = pDecoder->GetProp( iProp );
-
-		buf.m_iCurBit = 0;
+		if ( !pProp )
+			continue;
 
 		DecodeInfo decodeInfo;
 		decodeInfo.m_pStruct = theStack.GetCurStructBase();
 		decodeInfo.m_pData = theStack.GetCurStructBase() + pProp->GetOffset();
 		decodeInfo.m_pRecvProp = theStack.IsCurProxyValid() ? pProp : NULL; // Just skip the data if the proxies are screwed.
 		decodeInfo.m_pProp = pDecoder->GetSendProp( iProp );
-		decodeInfo.m_pIn = &buf;
+		decodeInfo.m_pIn = NULL;
 		decodeInfo.m_ObjectID = objectID;
 
-		g_PropTypeFns[pProp->GetType()].Decode( &decodeInfo );
+		g_PropTypeFns[pProp->GetType()].DecodeZero( &decodeInfo );
 	}
 }
 
 
-// Copies pProp's state from pIn to pOut. pDecodeInfo MUST be setup by calling InitDecodeInfoForSkippingProps
-// with pIn.
-//
-// NOTE: this routine isn't optimal. If it shows up on the profiles, then it's easy to
-// make this fast by adding a special routine to copy a property's state to PropTypeFns.
-static void CopyPropState( 
-	CRecvDecoder *pDecoder, 
-	int iSendProp, 
-	bf_read *pIn, 
-	CDeltaBitsWriter *pOut, 
-	DecodeInfo *pDecodeInfo 
-	)
-{
-	const SendProp *pProp = pDecoder->GetSendProp( iSendProp );
 
-	// Sanity check.
-	Assert( pDecodeInfo->m_pData == 0 && pDecodeInfo->m_pStruct == 0 );
-	Assert( pDecodeInfo->m_pIn == pIn );
-
-	// Decode the data.
-	int iStartBit = pIn->GetNumBitsRead();
-	
-	pDecodeInfo->m_pProp = pProp;
-	g_PropTypeFns[ pProp->GetType() ].Decode( pDecodeInfo );
-
-	// Figure out how many bits it took.
-	int nBits = pIn->GetNumBitsRead() - iStartBit;
-	
-	// Read the data 
-	pIn->Seek( iStartBit );
-
-	pOut->WritePropIndex( iSendProp );
-	pOut->GetBitBuf()->WriteBitsFromBuffer( pIn, nBits );
-}
-
-
-
-bool RecvTable_MergeDeltas(
+int RecvTable_MergeDeltas(
 	RecvTable *pTable,
 
 	bf_read *pOldState,		// this can be null
@@ -542,7 +571,8 @@ bool RecvTable_MergeDeltas(
 	bf_write *pOut,
 
 	int objectID,
-	bool bDebugWatchInfo
+	int *pChangedProps,
+	bool updateDTI
 	)
 {
 	ErrorIfNot( pTable && pNewState && pOut,
@@ -551,8 +581,9 @@ bool RecvTable_MergeDeltas(
 
 	CRecvDecoder *pDecoder = pTable->m_pDecoder;
 	ErrorIfNot( pDecoder, ("RecvTable_MergeDeltas: table '%s' is missing its decoder.", pTable->GetName()) );
-	
 
+	int nChanged = 0;
+	
 	// Setup to read the delta bits from each buffer.
 	CDeltaBitsReader oldStateReader( pOldState );
 	CDeltaBitsReader newStateReader( pNewState );
@@ -560,55 +591,78 @@ bool RecvTable_MergeDeltas(
 	// Setup to write delta bits into the output.
 	CDeltaBitsWriter deltaBitsWriter( pOut );
 
-	// Setup to skip over the old state's properties if necessary.
-	DecodeInfo oldDataSkipper, newDataSkipper;
-	InitDecodeInfoForSkippingProps( &oldDataSkipper, pOldState, objectID );
-	InitDecodeInfoForSkippingProps( &newDataSkipper, pNewState, objectID );
-
-	int iOldProp = PROP_SENTINEL;
+	unsigned int iOldProp = ~0u;
 	if ( pOldState )
-		iOldProp = NextProp( &oldStateReader );
+		iOldProp = oldStateReader.ReadNextPropIndex();
 
-	int iNewProp = NextProp( &newStateReader );
+	int iStartBit = 0, nIndexBits = 0, iLastBit = pNewState->GetNumBitsRead();
+
+	unsigned int iNewProp = newStateReader.ReadNextPropIndex();
 	
 	while ( 1 )
 	{
 		// Write any properties in the previous state that aren't in the new state.
 		while ( iOldProp < iNewProp )
 		{
-			CopyPropState( pDecoder, iOldProp, pOldState, &deltaBitsWriter, &oldDataSkipper );
-			iOldProp = NextProp( &oldStateReader );
+			deltaBitsWriter.WritePropIndex( iOldProp );
+			oldStateReader.CopyPropData( deltaBitsWriter.GetBitBuf(), pDecoder->GetSendProp( iOldProp ) );
+			iOldProp = oldStateReader.ReadNextPropIndex();
 		}
 
 		// Check if we're at the end here so the while() statement above can seek the old buffer
 		// to its end too.
-		if ( iNewProp == PROP_SENTINEL )
+		if ( iNewProp >= MAX_DATATABLE_PROPS )
 			break;
 		
 		// If the old state has this property too, then just skip over its data.
 		if ( iOldProp == iNewProp )
 		{
-			SkipPropData( &oldDataSkipper, pDecoder->GetSendProp( iOldProp ) );
-			iOldProp = NextProp( &oldStateReader );
+			oldStateReader.SkipPropData( pDecoder->GetSendProp( iOldProp ) );
+			iOldProp = oldStateReader.ReadNextPropIndex();
+		}
+
+		// Instrumentation (store the # bits for the prop index).
+		if ( updateDTI && g_bDTIEnabled )
+		{
+			iStartBit = pNewState->GetNumBitsRead();
+			nIndexBits = iStartBit - iLastBit;
 		}
 
 		// Now write the new state's value.
-		CopyPropState( pDecoder, iNewProp, pNewState, &deltaBitsWriter, &newDataSkipper );
-		iNewProp = NextProp( &newStateReader );
+		deltaBitsWriter.WritePropIndex( iNewProp );
+		newStateReader.CopyPropData( deltaBitsWriter.GetBitBuf(), pDecoder->GetSendProp( iNewProp ) );
+	
+		if ( pChangedProps )
+		{
+			pChangedProps[nChanged] = iNewProp;
+		}
+
+		nChanged++;
+
+		// Instrumentation (store # bits for the encoded property).
+		if ( updateDTI && g_bDTIEnabled )
+		{
+			iLastBit = pNewState->GetNumBitsRead();
+			DTI_HookDeltaBits( pDecoder, iNewProp, iLastBit - iStartBit, nIndexBits );
+		}
+
+		iNewProp = newStateReader.ReadNextPropIndex();
 	}
+
+	Assert( nChanged <= MAX_DATATABLE_PROPS );
 
 	ErrorIfNot( 
 		!(pOldState && pOldState->IsOverflowed()) && !pNewState->IsOverflowed() && !pOut->IsOverflowed(),
 		("RecvTable_MergeDeltas: overflowed in RecvTable '%s'.", pTable->GetName())
 		);
 
-	return true;
+	return nChanged;
 }
 
 
-bool RecvTable_CopyEncoding( RecvTable *pTable, bf_read *pIn, bf_write *pOut, int objectID )
+void RecvTable_CopyEncoding( RecvTable *pTable, bf_read *pIn, bf_write *pOut, int objectID )
 {
-	return RecvTable_MergeDeltas( pTable, NULL, pIn, pOut, objectID, false );
+	RecvTable_MergeDeltas( pTable, NULL, pIn, pOut, objectID );
 }
 
 

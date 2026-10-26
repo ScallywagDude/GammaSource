@@ -1,42 +1,47 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose:  Implements the Effects API
-//
-// $Workfile:     $
-// $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
-// $NoKeywords: $
 // Created:  YWB 9/5/2000
-//=============================================================================
+//
+//===========================================================================//
 
 
 #include "quakedef.h"
 #include "r_efx.h"
 #include "r_efxextern.h"
+#include "r_local.h"
+#include "cl_main.h"
+#include "decal.h"
+#include "client.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // Effects API object.
 static CVEfx efx;
 
 // Engine internal accessor to effects api ( see cl_parsetent.cpp, etc. )
 CVEfx *g_pEfx = &efx;
+ 
+extern	CClientState	cl;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *name - 
-// Output : int
 //-----------------------------------------------------------------------------
 int CVEfx::Draw_DecalIndexFromName( char *name )
 {
-	return ::Draw_DecalIndexFromName( name );
+	bool found = false;
+	return ::Draw_DecalIndexFromName( name, &found );
 }
+
+//-----------------------------------------------------------------------------
+// Retrieve decal texture name from decal by index
+//-----------------------------------------------------------------------------
+const char *CVEfx::Draw_DecalNameFromIndex( int nIndex )
+{
+	return ::Draw_DecalNameFromIndex( nIndex );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -63,7 +68,7 @@ void CVEfx::DecalColorShoot( int textureIndex, int entity, const model_t *model,
 		VectorITransform( position, matrix, localPosition );
 	}
 
-	::R_DecalShoot( textureIndex, entity, model, localPosition, saxis, flags, rgbaColor );
+	::R_DecalShoot( textureIndex, entity, model, localPosition, saxis, flags, rgbaColor, NULL );
 }
 
 //-----------------------------------------------------------------------------
@@ -101,6 +106,23 @@ dlight_t *CVEfx::CL_AllocDlight( int key )
 	return ::CL_AllocDlight( key );
 }
 
+int CVEfx::CL_GetActiveDLights( dlight_t *pList[MAX_DLIGHTS] )
+{
+	int nOut = 0;
+	if ( g_bActiveDlights )
+	{
+		for ( int i=0; i < MAX_DLIGHTS; i++ )
+		{
+			if ( r_dlightactive & (1 << i) )
+			{
+				pList[nOut++] = &cl_dlights[i];
+			}
+		}
+	}
+	return nOut;
+}
+
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : key - 
@@ -109,6 +131,35 @@ dlight_t *CVEfx::CL_AllocDlight( int key )
 dlight_t *CVEfx::CL_AllocElight( int key )
 {
 	return ::CL_AllocElight( key );
+}
+
+
+// Given an elight key, find it. Does not search ordinary dlights. May return NULL.
+dlight_t *CVEfx::GetElightByKey( int key )
+{
+	if ( g_bActiveElights )
+	{
+		for ( unsigned int i = 0 ; i < MAX_ELIGHTS ; ++i )
+		{
+			// if the keys match...
+			if (cl_elights[i].key == key)
+			{
+				// then if the light is active, return it. If it's died,
+				// return NULL.
+				if ( cl_elights[i].die > cl.GetTime() ) 
+				{
+					return cl_elights + i;
+				}
+				else
+				{
+					return NULL;
+				}
+			}
+		}
+	}
+
+	// if we are down here, we found nothing, or no lights were active
+	return NULL;
 }
 
 // Expose it to the client .dll

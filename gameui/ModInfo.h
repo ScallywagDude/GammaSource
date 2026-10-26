@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MODINFO_H
 #define MODINFO_H
@@ -16,7 +16,7 @@
 class KeyValues;
 
 //-----------------------------------------------------------------------------
-// Purpose: contains all the data entered about a mod in liblist.gam
+// Purpose: contains all the data entered about a mod in gameinfo.txt
 //-----------------------------------------------------------------------------
 class CModInfo
 {
@@ -25,21 +25,39 @@ public:
 	~CModInfo();
 	void FreeModInfo();
 
-	// loads mod info from liblist.gam
+	// loads mod info from gameinfo.txt
 	void LoadCurrentGameInfo();
-	// loads mod info from previously loaded liblist.gam
-	void LoadGameInfoFromBuffer(const char *buffer, int bufferSize);
+
+	// loads gameinfo from null-terminated string
+	void LoadGameInfoFromBuffer( const char *buffer );
 
 	// data accessors
-	const char *GetStartMap();
-	const char *GetTrainMap();
-	bool IsMultiplayerOnly();
-	bool IsSinglePlayerOnly();
-	bool NoModels();
-	bool NoHiModel();
-	const char *GetGameDescription();
+   	const wchar_t *GetGameTitle();
+   	const wchar_t *GetGameTitle2();
+	const char *GetGameName();
+
+   	bool IsMultiplayerOnly();
+   	bool IsSinglePlayerOnly();
+
+	bool HasPortals();
+
+	bool NoDifficulty();
+  	bool NoModels();
+  	bool NoHiModel();
+  	bool NoCrosshair();
+	bool AdvCrosshair();
+	int AdvCrosshairLevel();
+   	const char *GetFallbackDir();
+	bool UseGameLogo();
+	bool UseBots();
+	bool HasHDContent();
+	bool SupportsVR();
+
+	KeyValues *GetHiddenMaps();
 
 private:
+	wchar_t m_wcsGameTitle[128];
+	wchar_t m_wcsGameTitle2[128];
 	KeyValues *m_pModData;
 };
 

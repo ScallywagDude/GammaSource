@@ -1,15 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// This file contains code to perform dynamic occlusion in the engine
-//=============================================================================
+//=============================================================================//
 
 #ifndef IOCCLUSIONSYSTEM_H
 #define	IOCCLUSIONSYSTEM_H
@@ -41,6 +36,13 @@ public:
 
 	// Test for occlusion (bounds specified in abs space)
 	virtual bool IsOccluded( const Vector &vecAbsMins, const Vector &vecAbsMaxs ) = 0;
+
+	// Sets global occlusion parameters
+	virtual void SetOcclusionParameters( float flMaxOccludeeArea, float flMinOccluderArea ) = 0;
+	virtual float MinOccluderArea() const = 0;
+
+	// Render debugging overlay
+	virtual void DrawDebugOverlays() = 0;
 };
 
 

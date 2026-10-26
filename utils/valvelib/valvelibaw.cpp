@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // valvelibaw.cpp : implementation file
 //
 
@@ -25,7 +32,6 @@ static char THIS_FILE[] = __FILE__;
 enum Config_t
 {
 	CONFIG_DEBUG = 0,
-	CONFIG_RELEASEWITHSYMBOLS,
 	CONFIG_RELEASE
 };
 
@@ -116,14 +122,11 @@ static void SetupCompilerSettings(ProjectInfo_t& info)
 	CString includePath;
 	if (info.m_Public)
 	{
-		includePath.Format("/I%scommon /I%spublic", info.m_RelativeSrcPath, 
+		includePath.Format("/I%spublic", info.m_RelativeSrcPath, 
 			info.m_RelativeSrcPath );
+
+		info.m_pConfig->AddToolSettings(varTool, (char const*)includePath, varj);
 	}
-	else
-	{
-		includePath.Format("/I%scommon", info.m_RelativeSrcPath );
-	}
-	info.m_pConfig->AddToolSettings(varTool, (char const*)includePath, varj);
 
 	// Control which version of the debug libraries to use (static single thread
 	// for normal projects, multithread for tools)
@@ -138,9 +141,9 @@ static void SetupCompilerSettings(ProjectInfo_t& info)
 	{
 		// Suppress use of non-filesystem stuff in new non-tool projects...
 		if (info.m_Config == CONFIG_DEBUG)
-			varSwitch = "/D \"fopen=dont_use_fopen\" /MLd";
+			varSwitch = "/D \"fopen=dont_use_fopen\" /MTd";
 		else
-			varSwitch = "/D \"fopen=dont_use_fopen\" /ML";
+			varSwitch = "/D \"fopen=dont_use_fopen\" /MT";
 	}
 	info.m_pConfig->AddToolSettings(varTool, varSwitch, varj);
 
@@ -199,7 +202,6 @@ static void SetupCompilerSettings(ProjectInfo_t& info)
 		break;
 
 	case CONFIG_RELEASE:
-	case CONFIG_RELEASEWITHSYMBOLS:
 		// Remove the following switches:
 		// /Zi - Generates complete debugging information 
 		// /ZI - Includes debug information in a program database compatible with Edit and Continue. 
@@ -221,24 +223,6 @@ static void SetupCompilerSettings(ProjectInfo_t& info)
 		info.m_pConfig->AddToolSettings(varTool, varSwitch, varj);
 		break;
 	}
-
-	// A little fixup for release with symbols
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-#ifndef STUPID_MS_BUG
-		CString oldPath;
-		oldPath.Format("/Fo\"%s___Win32_ReleaseWithSymbols/\" /Fd\"%s___Win32_ReleaseWithSymbols/\" /FR\"%s___Win32_ReleaseWithSymbols/\"", info.m_RootName, info.m_RootName, info.m_RootName  ); 
-		info.m_pConfig->RemoveToolSettings(varTool, (char const*)oldPath, varj);
-
-		varSwitch = "/Zi /Fo\"ReleaseWithSymbols/\" /Fd\"ReleaseWithSymbols/\" /FR\"ReleaseWithSymbols/\"";
-		info.m_pConfig->AddToolSettings(varTool, varSwitch, varj);
-#else
-		CString releaseStuff;
-		releaseStuff.Format("/D \"_MBCS\" /Zi /FR\"%s___Win32_ReleaseWithSymbols/\"", info.m_RootName ); 
-		info.m_pConfig->AddToolSettings(varTool, (char const*)releaseStuff, varj);
-#endif
-	}
-
 }
 
 //-----------------------------------------------------------------------------
@@ -255,15 +239,6 @@ static void SetupResourceCompilerSettings(ProjectInfo_t& info)
 	varTool   = "rc.exe";
 	varSwitch = "/d \"_AFXDLL\"";
 	info.m_pConfig->RemoveToolSettings(varTool, varSwitch, varj);
-
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-		varSwitch = "/d \"_DEBUG\"";
-		info.m_pConfig->RemoveToolSettings(varTool, varSwitch, varj);
-
-		varSwitch = "/d \"NDEBUG\"";
-		info.m_pConfig->AddToolSettings(varTool, varSwitch, varj);
-	}
 }
 
 
@@ -288,30 +263,6 @@ static void SetupLinkerSettings(ProjectInfo_t& info)
 	varSwitch = "tier0.lib";
 	info.m_pConfig->AddToolSettings(varTool, varSwitch, varj);
 	
-#ifndef STUPID_MS_BUG
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-		// Fixup the pdb file name
-		CString pdbFileName;
-		pdbFileName.Format( "/pdb:\"%s___Win32_ReleaseWithSymbols/%s.pdb\"", info.m_RootName, info.m_RootName );
-		info.m_pConfig->RemoveToolSettings(varTool, (char const*)pdbFileName, varj);
-
-		pdbFileName.Format( "/pdb:\"ReleaseWithSymbols/%s.pdb\"", info.m_RootName );
-		info.m_pConfig->AddToolSettings(varTool, (char const*)pdbFileName, varj);
-
-		// Fixup the importlib file name
-		if (info.m_Project == PROJECT_DLL)
-		{
-			CString implibFileName;
-			implibFileName.Format( "/implib:\"%s___Win32_ReleaseWithSymbols/%s.lib\"", info.m_RootName, info.m_RootName );
-			info.m_pConfig->RemoveToolSettings(varTool, (char const*)implibFileName, varj);
-
-			implibFileName.Format( "/implib:\"ReleaseWithSymbols/%s.lib\"", info.m_RootName );
-			info.m_pConfig->AddToolSettings(varTool, (char const*)implibFileName, varj);
-		}
-	}
-#endif
-
 	// Hook in the static library path
 	CString libPath;
 
@@ -336,27 +287,6 @@ static void SetupLinkerSettings(ProjectInfo_t& info)
 
 static void SetupLibSettings(ProjectInfo_t& info)
 {
-	// ARGHRHGHGHH!!!
-	// My beautiful plan of getting everything in a subdirectory that 
-	// doesn't has Foo___Win32_ReleaseWithSymbols is toast becasue of this
-	// one small bug that causes AddToolSettings to barf when you pass it lib.exe
-	// It works with obscure things like midl and bscmake. Why can't
-	// they get it right?  WAAAHH!!!
-
-#ifndef STUPID_MS_BUG
-	_variant_t varj = info.m_ConfigIndex;
-
-	// Browse settings...
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-		CString libFile;
-		libFile.Format("/out:\"%s___Win32_ReleaseWithSymbols\\%s.lib\"", info.m_RootName, info.m_RootName );
-		info.m_pConfig->RemoveToolSettings("lib.exe", (char const*)libFile, varj );
-
-		libFile.Format("/out:\"ReleaseWithSymbols\\%s.lib\"", info.m_RootName );
-		info.m_pConfig->AddToolSettings("lib.exe", (char const*)libFile, varj );
-	}
-#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -436,18 +366,6 @@ static void SetupCustomBuildSteps(ProjectInfo_t& info)
 
 static void SetupMIDLSettings(ProjectInfo_t& info)
 {
-	_bstr_t varSwitch;
-	_variant_t varj = info.m_ConfigIndex;
-
-	// MIDL settings...
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-		varSwitch = "/D \"_DEBUG\"";
-		info.m_pConfig->RemoveToolSettings("midl", varSwitch, varj);
-
-		varSwitch = "/D \"NDEBUG\"";
-		info.m_pConfig->AddToolSettings("midl", varSwitch, varj);
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -456,20 +374,6 @@ static void SetupMIDLSettings(ProjectInfo_t& info)
 
 static void SetupBrowseSettings(ProjectInfo_t& info)
 {
-#ifndef STUPID_MS_BUG
-	_variant_t varj = info.m_ConfigIndex;
-
-	// Browse settings...
-	if (info.m_Config == CONFIG_RELEASEWITHSYMBOLS)
-	{
-		CString browseFile;
-		browseFile.Format("/o\"%s___Win32_ReleaseWithSymbols/%s.bsc\"", info.m_RootName, info.m_RootName );
-		info.m_pConfig->RemoveToolSettings("bscmake", (char const*)browseFile, varj );
-
-		browseFile.Format("/o\"ReleaseWithSymbols/%s.bsc\"", info.m_RootName );
-		info.m_pConfig->AddToolSettings("bscmake", (char const*)browseFile, varj );
-	}
-#endif
 }
 
 void CValvelibAppWiz::CustomizeProject(IBuildProject* pProject)
@@ -498,8 +402,6 @@ void CValvelibAppWiz::CustomizeProject(IBuildProject* pProject)
 	pProj.Attach((DSProjectSystem::IBuildProject*)pProject, true);
 
 	// Add a release with symbols configuration
-	pProj->AddConfiguration( "ReleaseWithSymbols" );
-
 	pProj->get_Configurations(&pConfigs);
 	pConfigs->get_Count(&lNumConfigs);
 
@@ -556,11 +458,6 @@ void CValvelibAppWiz::CustomizeProject(IBuildProject* pProject)
 		{
 			info.m_Config = CONFIG_DEBUG;
 			info.m_BuildName = "Debug";
-		}
-		else if ( strstr( OLE2T(configName), "ReleaseWithSymbols" ) != 0 )
-		{
-			info.m_Config = CONFIG_RELEASEWITHSYMBOLS;
-			info.m_BuildName = "ReleaseWithSymbols";
 		}
 
 		// Not using MFC...

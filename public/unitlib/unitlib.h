@@ -1,16 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// Interfaces that all test cases must inherit from
-// and some macros to make it simple
-//=============================================================================
+//=============================================================================//
 	   
 #ifndef UNITLIB_H
 #define UNITLIB_H
@@ -20,6 +14,9 @@
 #endif
  
 #include "tier0/platform.h"
+#include "tier1/interface.h"
+#include "appframework/IAppSystem.h"
+
 
 //-----------------------------------------------------------------------------
 // Usage model for the UnitTest library
@@ -97,6 +94,13 @@
 
 
 //-----------------------------------------------------------------------------
+// All unit test libraries can be asked for a unit test 
+// AppSystem to perform connection
+//-----------------------------------------------------------------------------
+#define UNITTEST_INTERFACE_VERSION		"UnitTestV001"
+
+
+//-----------------------------------------------------------------------------
 //
 // NOTE: All classes and interfaces below you shouldn't use directly.
 // Use the DEFINE_TESTSUITE and DEFINE_TESTCASE macros instead.
@@ -106,7 +110,6 @@
 //-----------------------------------------------------------------------------
 // Test case + suite interface
 //-----------------------------------------------------------------------------
-
 class ITestCase
 {
 public:
@@ -130,22 +133,27 @@ public:
 // This is the main function exported by the unit test library used by
 // unit test DLLs to install their test cases into a list to be run
 //-----------------------------------------------------------------------------
-
 UNITLIB_INTERFACE	void UnitTestInstallTestCase( ITestCase* pTest );
 
 
 //-----------------------------------------------------------------------------
 // These are the methods used by the unit test running program to run all tests
 //-----------------------------------------------------------------------------
-
 UNITLIB_INTERFACE	int UnitTestCount();
 UNITLIB_INTERFACE	ITestCase* GetUnitTest( int i );
 
 
 //-----------------------------------------------------------------------------
+// Helper for unit test DLLs to expose IAppSystems
+//-----------------------------------------------------------------------------
+#define USE_UNITTEST_APPSYSTEM( _className )	\
+	static _className s_UnitTest ## _className;	\
+	EXPOSE_SINGLE_INTERFACE_GLOBALVAR( _className, IAppSystem, UNITTEST_INTERFACE_VERSION, s_UnitTest ## _className );
+	
+
+//-----------------------------------------------------------------------------
 // Base class for test cases
 //-----------------------------------------------------------------------------
-
 class UNITLIB_CLASS_INTERFACE CTestCase : public ITestCase
 {
 public:
@@ -163,7 +171,6 @@ private:
 //-----------------------------------------------------------------------------
 // Test suite class
 //-----------------------------------------------------------------------------
-
 class UNITLIB_CLASS_INTERFACE CTestSuite : public ITestSuite
 {
 public:
@@ -238,6 +245,26 @@ protected:
 	CTC ## _case s_TC ## _case;				\
 											\
 	void CTC ## _case ::RunTest()
+
+
+#define  _Shipping_AssertMsg( _exp, _msg, _executeExp, _bFatal )	\
+	do {																\
+		if (!(_exp)) 													\
+		{ 																\
+			_SpewInfo( SPEW_ASSERT, __TFILE__, __LINE__ );				\
+			SpewRetval_t ret = _SpewMessage(_msg);						\
+			_executeExp; 												\
+			if ( ret == SPEW_DEBUGGER)									\
+			{															\
+				if ( !ShouldUseNewAssertDialog() || DoNewAssertDialog( __TFILE__, __LINE__, _msg ) ) \
+					DebuggerBreak();									\
+				if ( _bFatal )											\
+					_ExitOnFatalAssert( __TFILE__, __LINE__ );			\
+			}															\
+		}																\
+	} while (0)
+
+#define  Shipping_Assert( _exp )           							_Shipping_AssertMsg( _exp, _T("Assertion Failed: ") _T(#_exp), ((void)0), false )
 
 
 #endif	// UNITLIB_H

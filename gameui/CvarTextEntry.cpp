@@ -1,18 +1,16 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "CvarTextEntry.h"
 #include "EngineInterface.h"
 #include <vgui/IVGui.h>
 #include "IGameUIFuncs.h"
-#include <KeyValues.h>
-
-// memdbgon must be the last include file in a .cpp file!!!
-#include <tier0/memdbgon.h>
+#include "tier1/KeyValues.h"
+#include "tier1/convar.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -52,7 +50,7 @@ void CCvarTextEntry::ApplySchemeSettings(IScheme *pScheme)
 	}
 }
 
-void CCvarTextEntry::ApplyChanges()
+void CCvarTextEntry::ApplyChanges( bool immediate )
 {
 	if ( !m_pszCvarName )
 		return;
@@ -63,23 +61,33 @@ void CCvarTextEntry::ApplyChanges()
 	if ( !szText[ 0 ] )
 		return;
 
-	char szCommand[ 256 ];
-	sprintf( szCommand, "%s \"%s\"\n", m_pszCvarName, szText );
-	engine->ClientCmd( szCommand );
-	strcpy( m_pszStartValue, szText );
+	if ( immediate )
+	{
+		// set immediately - don't wait for the next frame
+		ConVarRef newCvar( m_pszCvarName );
+		newCvar.SetValue( szText );
+	}
+	else
+	{
+		char szCommand[ 256 ];
+		sprintf( szCommand, "%s \"%s\"\n", m_pszCvarName, szText );
+		engine->ClientCmd_Unrestricted( szCommand );
+	}
+
+	Q_strncpy( m_pszStartValue, szText, sizeof( m_pszStartValue ) );
 }
 
 void CCvarTextEntry::Reset()
 {
 //	char *value = engine->pfnGetCvarString( m_pszCvarName );
-	ConVar const *var = cvar->FindVar( m_pszCvarName );
-	if ( !var )
+	ConVarRef var( m_pszCvarName );
+	if ( !var.IsValid() )
 		return;
-	const char *value = var->GetString();
+	const char *value = var.GetString();
 	if ( value && value[ 0 ] )
 	{
 		SetText( value );
-		strcpy( m_pszStartValue, value );
+		Q_strncpy( m_pszStartValue, value, sizeof( m_pszStartValue ) );
 	}
 }
 
@@ -102,13 +110,3 @@ void CCvarTextEntry::OnTextChanged()
 		PostActionSignal(new KeyValues("ControlModified"));
 	}
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Message mapping 
-//-----------------------------------------------------------------------------
-vgui::MessageMapItem_t CCvarTextEntry::m_MessageMap[] =
-{
-	MAP_MESSAGE( CCvarTextEntry, "TextChanged", OnTextChanged ),	// custom message
-};
-
-IMPLEMENT_PANELMAP( CCvarTextEntry, BaseClass );

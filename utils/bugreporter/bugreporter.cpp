@@ -1,8 +1,8 @@
-//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #define PROTECTED_THINGS_DISABLE
 #undef PROTECT_FILEIO_FUNCTIONS
 #undef fopen
@@ -17,17 +17,19 @@
 #include "bugreporter/bugreporter.h"
 #include "trktool.h"
 #include "filesystem_tools.h"
-#include "keyvalues.h"
+#include "KeyValues.h"
 
 #define SCR_TYPE 1
 
 #define TRACKER_SETTINGS	"resource/bugreporter.res"
 #define TRACKER_LOGIN		"cfg/bugreporter_login.res"
 
-#define DEFAULT_DBMS		"dbsone"
-#define DEFAULT_PROJECT		"hl2/tf2"
+#define DEFAULT_DBMS		"tracker"
+#define DEFAULT_PROJECT		"Half-Life 2"
 #define DEFAULT_USERNAME	""
 #define DEFAULT_PASSWORD	DEFAULT_USERNAME
+
+IBaseFileSystem *g_pFileSystem = NULL;
 
 class CBug
 {
@@ -46,6 +48,7 @@ public:
 		Q_memset( severity, 0, sizeof( severity ) );
 		Q_memset( priority, 0, sizeof( priority ) );
 		Q_memset( area, 0, sizeof( area ) );
+		Q_memset( mapnumber, 0, sizeof( mapnumber) );
 		Q_memset( reporttype, 0, sizeof( reporttype ) );
 		Q_memset( level, 0, sizeof( level ) );
 		Q_memset( build, 0, sizeof( build ) );
@@ -55,6 +58,10 @@ public:
 		Q_memset( savegame_unc, 0, sizeof( savegame_unc ) );
 		Q_memset( bsp_unc, 0, sizeof( bsp_unc ) );
 		Q_memset( vmf_unc, 0, sizeof( vmf_unc ) );
+		Q_memset( driverinfo, 0, sizeof( driverinfo ) );
+		Q_memset( misc, 0, sizeof( misc ) );
+
+		includedfiles.Purge();
 	}
 
 	char			title[ 256 ];
@@ -64,6 +71,7 @@ public:
 	char			severity[ 256 ];
 	char			priority[ 256 ];
 	char			area[ 256 ];
+	char			mapnumber[ 256 ];
 	char			reporttype[ 256 ];
 	char			level[ 256 ];
 	char			build[ 256 ];
@@ -73,6 +81,15 @@ public:
 	char			savegame_unc[ 256 ];
 	char			bsp_unc[ 256 ];
 	char			vmf_unc[ 256 ];
+	char			driverinfo[ 2048 ];
+	char			misc[ 1024 ];
+
+	struct incfile
+	{
+		char name[ 256 ];
+	};
+
+	CUtlVector< incfile >	includedfiles;
 };
 
 class CBugReporter : public IBugReporter
@@ -83,8 +100,10 @@ public:
 	virtual ~CBugReporter();
 
 	// Initialize and login with default username/password for this computer (from resource/bugreporter.res)
-	virtual bool		Init();
+	virtual bool		Init( CreateInterfaceFn engineFactory );
 	virtual void		Shutdown();
+
+	virtual bool		IsPublicUI() { return false; }
 
 	virtual char const	*GetUserName();
 	virtual char const	*GetUserName_Display();
@@ -107,8 +126,20 @@ public:
 	virtual int			GetAreaCount();
 	virtual char const	*GetArea( int index );
 
+	virtual int			GetAreaMapCount();
+	virtual char const	*GetAreaMap( int index );
+
+	virtual int			GetMapNumberCount();
+	virtual char const	*GetMapNumber( int index );
+
 	virtual int			GetReportTypeCount();
 	virtual char const	*GetReportType( int index );
+
+	virtual char const *GetRepositoryURL( void ) { return NULL; }
+	virtual char const *GetSubmissionURL( void ) { return NULL; }
+
+	virtual int			GetLevelCount(int area) { return 0; }
+	virtual char const	*GetLevel(int area, int index ) { return ""; }
 
 // Submission API
 	virtual void		StartNewBugReport();
@@ -124,6 +155,7 @@ public:
 	virtual void		SetSeverity( char const *severity );
 	virtual void		SetPriority( char const *priority );
 	virtual void		SetArea( char const *area );
+	virtual void		SetMapNumber ( char const *mapnumber );
 	virtual void		SetReportType( char const *reporttype );
 
 	virtual void		SetLevel( char const *levelnamne );
@@ -137,6 +169,25 @@ public:
 	virtual void		SetBSPName( char const *bsp_unc_address );
 	virtual void		SetVMFName( char const *vmf_unc_address );
 
+	virtual void		AddIncludedFile( char const *filename );
+	virtual void		ResetIncludedFiles();
+
+	virtual void		SetZipAttachmentName( char const *zipfilename ) {} // only used by public bug reporter
+
+	virtual void		SetDriverInfo( char const *info );
+
+	virtual void		SetMiscInfo( char const *info );
+
+	// These are stubbed here, but are used by the public version...
+	virtual void		SetCSERAddress( const struct netadr_s& adr ) {}
+	virtual void		SetExeName( char const *exename ) {}
+	virtual void		SetGameDirectory( char const *gamedir ) {}
+	virtual void		SetRAM( int ram ) {}
+	virtual void		SetCPU( int cpu ) {}
+	virtual void		SetProcessor( char const *processor ) {}
+	virtual void		SetDXVersion( unsigned int high, unsigned int low, unsigned int vendor, unsigned int device ) {}
+	virtual void		SetOSVersion( char const *osversion ) {}
+	virtual void		SetSteamUserID( void *steamid, int idsize ) {};
 private:
 
 	void				ReportError(TRK_UINT rc, char const *func, char const *msg );
@@ -144,6 +195,8 @@ private:
 	bool				PopulateLists();
 
 	bool				PopulateChoiceList( char const *listname, CUtlVector< CUtlSymbol >& list );
+
+	void				SubstituteBugId( int bugid, char *out, int outlen, CUtlBuffer& src );
 
 	CUtlSymbolTable				m_BugStrings;
 
@@ -153,6 +206,8 @@ private:
 	CUtlDict< CUtlSymbol, int >		m_InternalNameMapping;
 	CUtlVector< CUtlSymbol >	m_Priority;
 	CUtlVector< CUtlSymbol >	m_Area;
+	CUtlVector< CUtlSymbol >	m_AreaMap;
+	CUtlVector< CUtlSymbol >	m_MapNumber;
 	CUtlVector< CUtlSymbol >	m_ReportType;
 
 	TRK_HANDLE					trkHandle;
@@ -180,10 +235,73 @@ CBugReporter::~CBugReporter()
 	m_InternalNameMapping.Purge();
 	m_Priority.Purge();
 	m_Area.Purge();
+	m_MapNumber.Purge();
 	m_ReportType.Purge();
 
 	delete m_pBug;
 }
+
+struct TRKELookup
+{
+	unsigned int id;
+	char const *str;
+};
+
+#define TRKERROR( id )	{ id, #id }
+
+static TRKELookup g_Lookup[] =
+{
+	TRKERROR( TRK_SUCCESS ),
+	TRKERROR( TRK_E_VERSION_MISMATCH ),
+	TRKERROR( TRK_E_OUT_OF_MEMORY ),
+	TRKERROR( TRK_E_BAD_HANDLE ),
+	TRKERROR( TRK_E_BAD_INPUT_POINTER ),
+	TRKERROR( TRK_E_BAD_INPUT_VALUE ),
+	TRKERROR( TRK_E_DATA_TRUNCATED ),
+	TRKERROR( TRK_E_NO_MORE_DATA ),
+	TRKERROR( TRK_E_LIST_NOT_INITIALIZED ),
+	TRKERROR( TRK_E_END_OF_LIST ),
+	TRKERROR( TRK_E_NOT_LOGGED_IN ),
+	TRKERROR( TRK_E_SERVER_NOT_PREPARED ),
+	TRKERROR( TRK_E_BAD_DATABASE_VERSION ),
+	TRKERROR( TRK_E_UNABLE_TO_CONNECT ),
+	TRKERROR( TRK_E_UNABLE_TO_DISCONNECT ),
+	TRKERROR( TRK_E_UNABLE_TO_START_TIMER ),
+	TRKERROR( TRK_E_NO_DATA_SOURCES ),
+	TRKERROR( TRK_E_NO_PROJECTS ),
+	TRKERROR( TRK_E_WRITE_FAILED ),
+	TRKERROR( TRK_E_PERMISSION_DENIED ),
+	TRKERROR( TRK_E_SET_FIELD_DENIED ),
+	TRKERROR( TRK_E_ITEM_NOT_FOUND ),
+	TRKERROR( TRK_E_CANNOT_ACCESS_DATABASE ),
+	TRKERROR( TRK_E_CANNOT_ACCESS_QUERY ),
+	TRKERROR( TRK_E_CANNOT_ACCESS_INTRAY ),
+	TRKERROR( TRK_E_CANNOT_OPEN_FILE ),
+	TRKERROR( TRK_E_INVALID_DBMS_TYPE ),
+	TRKERROR( TRK_E_INVALID_RECORD_TYPE ),
+	TRKERROR( TRK_E_INVALID_FIELD ),
+	TRKERROR( TRK_E_INVALID_CHOICE ),
+	TRKERROR( TRK_E_INVALID_USER ),
+	TRKERROR( TRK_E_INVALID_SUBMITTER ),
+	TRKERROR( TRK_E_INVALID_OWNER ),
+	TRKERROR( TRK_E_INVALID_DATE ),
+	TRKERROR( TRK_E_INVALID_STORED_QUERY ),
+	TRKERROR( TRK_E_INVALID_MODE ),
+	TRKERROR( TRK_E_INVALID_MESSAGE ),
+	TRKERROR( TRK_E_VALUE_OUT_OF_RANGE ),
+	TRKERROR( TRK_E_WRONG_FIELD_TYPE ),
+	TRKERROR( TRK_E_NO_CURRENT_RECORD ),
+	TRKERROR( TRK_E_NO_CURRENT_NOTE ),
+	TRKERROR( TRK_E_NO_CURRENT_ATTACHED_FILE ),
+	TRKERROR( TRK_E_NO_CURRENT_ASSOCIATION ),
+	TRKERROR( TRK_E_NO_RECORD_BEGIN ),
+	TRKERROR( TRK_E_NO_MODULE ),
+	TRKERROR( TRK_E_USER_CANCELLED ),
+	TRKERROR( TRK_E_SEMAPHORE_TIMEOUT ),
+	TRKERROR( TRK_E_SEMAPHORE_ERROR ),
+	TRKERROR( TRK_E_INVALID_SERVER_NAME ),
+	TRKERROR( TRK_E_NOT_LICENSED )
+};
 
 void CBugReporter::ReportError(TRK_UINT rc, char const *func, char const *msg )
 {
@@ -198,7 +316,20 @@ void CBugReporter::ReportError(TRK_UINT rc, char const *func, char const *msg )
 			Msg( "%s %s Invalid field!\n", func,  msg );
 			break;
 		default:
-			Msg( "%s returned %i!\n", func,  rc );
+			int i = 0;
+			for ( i; i < ARRAYSIZE( g_Lookup ) ; ++i )
+			{
+				if ( g_Lookup[ i ].id == rc )
+				{
+					Msg( "%s returned %i - %s!\n", func,  rc, g_Lookup[ i ].str );
+					break;
+				}
+			}
+
+			if ( i >= ARRAYSIZE( g_Lookup ) )
+			{
+				Msg( "%s returned %i - %s!\n", func,  rc, "???" );
+			}
 			break;
 		}
     }
@@ -220,31 +351,57 @@ TRK_UINT CBugReporter::Login(TRK_HANDLE* pTrkHandle)
 		sizeof( username ),
 		"PVCSTRK.ini" );
 
+	if ( !Q_stricmp( username, DEFAULT_USERNAME) || !Q_stricmp( username, "BELMAPNTKY" ) ) // if userid1 didn't have a valid name in it try userid0
+	{
+		GetPrivateProfileStringA( 
+			"login", 
+			"userid0",
+			DEFAULT_USERNAME, // default
+			username,
+			sizeof( username ),
+			"PVCSTRK.ini" );
+	}
+
 	Q_strncpy( password, username, sizeof( password ) );
 
-	KeyValues *kv = new KeyValues( "tracker_login" );
-	Assert( kv );
-	if ( kv )
+	if ( g_pFileSystem )
 	{
-		if ( kv->LoadFromFile( g_pFileSystem, TRACKER_SETTINGS ) )
+		KeyValues *kv = new KeyValues( "tracker_login" );
+		Assert( kv );
+		if ( kv )
 		{
-			Q_strncpy( dbms, kv->GetString( "database_server", DEFAULT_DBMS ), sizeof( dbms ) );
-			Q_strncpy( proj, kv->GetString( "project_name", DEFAULT_PROJECT ), sizeof( proj ) );
-		}
-
-		kv->Clear();
-
-		// Load optional login info
-		if ( g_pFileSystem->FileExists( TRACKER_LOGIN, "GAME" ) )
-		{
-			if ( kv->LoadFromFile( g_pFileSystem, TRACKER_LOGIN ) )
+			if ( kv->LoadFromFile( g_pFileSystem, TRACKER_SETTINGS ) )
 			{
-				Q_strncpy( username, kv->GetString( "username", username ), sizeof( username ) );
-				Q_strncpy( password, kv->GetString( "password", password ), sizeof( password ) );
+				Q_strncpy( dbms, kv->GetString( "database_server", DEFAULT_DBMS ), sizeof( dbms ) );
+				Q_strncpy( proj, kv->GetString( "project_name", DEFAULT_PROJECT ), sizeof( proj ) );
 			}
-		}
 
-		kv->deleteThis();
+			kv->Clear();
+
+			// Load optional login info
+			if ( g_pFileSystem->FileExists( TRACKER_LOGIN, "GAME" ) )
+			{
+				if ( kv->LoadFromFile( g_pFileSystem, TRACKER_LOGIN ) )
+				{
+					Q_strncpy( username, kv->GetString( "username", username ), sizeof( username ) );
+					Q_strncpy( password, kv->GetString( "password", password ), sizeof( password ) );
+				}
+			}
+
+			kv->deleteThis();
+		}
+	}
+
+	bool maybeNoPVCSInstalled = false;
+
+	// We still don't know the username. . try to get it from the environment
+	if( username[0] == '\0' )
+	{
+		if( getenv( "username" ) )
+		{
+			Q_strncpy( username, getenv( "username" ), sizeof( username ) );
+			maybeNoPVCSInstalled = true;
+		}
 	}
 
 
@@ -273,7 +430,14 @@ TRK_UINT CBugReporter::Login(TRK_HANDLE* pTrkHandle)
 			TRK_USE_INI_FILE_DBMS_LOGIN);
 		if (rc != TRK_SUCCESS)
 		{
-			Msg("Bug reporter failed: Your tracker password must be your user name or blank.\n");
+			if ( maybeNoPVCSInstalled )
+			{
+				Msg("Bug reporter failed: Make sure you have PVCS installed and that you have logged into it successfully at least once.\n");
+			}
+			else
+			{
+				Msg("Bug reporter init failed: Your tracker password must be your user name or blank.\n");
+			}
 			return rc;
 		}
 	}
@@ -291,18 +455,20 @@ TRK_UINT CBugReporter::Login(TRK_HANDLE* pTrkHandle)
 // Purpose: Initialize and login with default username/password for this computer (from resource/bugreporter.res)
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool CBugReporter::Init()
+bool CBugReporter::Init( CreateInterfaceFn engineFactory )
 {
-	FileSystem_Init( true );
-	//filesystem = (IFileSystem *)(FileSystem_GetFactory()( FILESYSTEM_INTERFACE_VERSION, NULL ));
-	//if ( !filesystem )
-	//{
-		//AssertMsg( 0, "Failed to create/get IFileSystem" );
-		//return false;
-	//}
+	if ( engineFactory )
+	{
+		g_pFileSystem = (IFileSystem *)engineFactory( FILESYSTEM_INTERFACE_VERSION, NULL );
+		if ( !g_pFileSystem )
+		{
+			AssertMsg( 0, "Failed to create/get IFileSystem" );
+			return false;
+		}
+	}
 
 	TRK_UINT			rc;
-		rc = TrkHandleAlloc( TRK_VERSION_ID, &trkHandle);
+	rc = TrkHandleAlloc( TRK_VERSION_ID, &trkHandle);
 	if ( rc != TRK_SUCCESS )
 	{
 		ReportError(rc, "TrkHandleAlloc", "Failed to Allocate Tracker Handle!");
@@ -462,6 +628,32 @@ char const *CBugReporter::GetArea( int index )
 	return m_BugStrings.String( m_Area[ index ] );
 }
 
+int CBugReporter::GetAreaMapCount()
+{
+	return m_AreaMap.Count();
+}
+
+char const *CBugReporter::GetAreaMap( int index )
+{
+	if ( index < 0 || index >= m_AreaMap.Count() )
+		return "<<Invalid>>";
+
+	return m_BugStrings.String( m_AreaMap[ index ] );
+}
+
+int CBugReporter::GetMapNumberCount()
+{
+	return m_MapNumber.Count();
+}
+
+char const *CBugReporter::GetMapNumber( int index )
+{
+	if ( index < 0 || index >= m_MapNumber.Count() )
+		return "<<Invalid>>";
+
+	return m_BugStrings.String( m_MapNumber[ index ] );
+}
+
 int CBugReporter::GetReportTypeCount()
 {
 	return m_ReportType.Count();
@@ -493,6 +685,43 @@ void CBugReporter::CancelNewBugReport()
 		return;
 
 	m_pBug->Clear();
+}
+
+void CBugReporter::SubstituteBugId( int bugid, char *out, int outlen, CUtlBuffer& src )
+{
+	out[ 0 ] = 0;
+
+	char *dest = out;
+
+	src.SeekGet( CUtlBuffer::SEEK_HEAD, 0 );
+
+	char const *replace = "\\BugId\\";
+	int replace_len = Q_strlen( replace );
+
+	for ( int pos = 0; pos <= src.TellPut() && ( ( dest - out ) < outlen ); )
+	{
+		char const *str = ( char const * )src.PeekGet( pos );
+		if ( !Q_strnicmp( str, replace, replace_len ) )
+		{
+			*dest++ = '\\';
+
+			char num[ 32 ];
+			Q_snprintf( num, sizeof( num ), "%i", bugid );
+			char *pnum = num;
+			while ( *pnum )
+			{
+				*dest++ = *pnum++;
+			}
+
+			*dest++ = '\\';
+			pos += replace_len;
+			continue;
+		}
+
+		*dest++ = *str;
+		++pos;
+	}
+	*dest = 0;
 }
 
 bool CBugReporter::CommitBugReport( int& bugSubmissionId )
@@ -575,10 +804,22 @@ bool CBugReporter::CommitBugReport( int& bugSubmissionId )
 			"Failed to set area!");
 		//return false;
 	}
+	rc = TrkSetStringFieldValue( trkRecHandle,
+		"Map Number",
+		m_pBug->mapnumber );
+	if ( rc != TRK_SUCCESS )
+	{
+		ReportError(rc, "TrkSetStringFieldValue", 
+			"Failed to set map area!");
+		//return false;
+	}
 
-	CUtlBuffer buf( 0, 0, true );
 
-	buf.Printf( "level:  %s\nbuild:  %s\nposition:  setpos %s\norientation:  setang %s\n",
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
+
+	buf.Printf( "%s\n\n", m_pBug->desc );
+
+	buf.Printf( "level:  %s\nbuild:  %s\nposition:  setpos %s; setang %s\n",
 		m_pBug->level,
 		m_pBug->build,
 		m_pBug->position,
@@ -600,8 +841,23 @@ bool CBugReporter::CommitBugReport( int& bugSubmissionId )
 	{
 		buf.Printf( "vmf:  %s\n", m_pBug->vmf_unc );
 	}
+	if ( m_pBug->includedfiles.Count() > 0 )
+	{
+		int c = m_pBug->includedfiles.Count();
+		for ( int i = 0 ; i < c; ++i )
+		{
+			buf.Printf( "include:  %s\n", m_pBug->includedfiles[ i ].name );
+		}
+	}
+	if ( m_pBug->driverinfo[ 0 ] )
+	{
+		buf.Printf( "%s\n", m_pBug->driverinfo );
+	}
+	if ( m_pBug->misc[ 0 ] )
+	{
+		buf.Printf( "%s\n", m_pBug->misc );
+	}
 
-	buf.Printf( "\n\n%s\n", m_pBug->desc );
 	buf.PutChar( 0 );
 
 	rc = TrkSetDescriptionData( trkRecHandle,
@@ -634,6 +890,54 @@ bool CBugReporter::CommitBugReport( int& bugSubmissionId )
 	else
 	{
 		bugSubmissionId = (int)bugId;
+	}
+
+	rc = TrkGetSingleRecord( trkRecHandle, bugId, SCR_TYPE );
+	if ( rc != TRK_SUCCESS )
+	{
+		ReportError( rc, "TrkGetSingleRecord",
+			"Failed to open bug id for update" );
+		return false;
+	}
+
+	rc = TrkUpdateRecordBegin( trkRecHandle );
+	if ( rc != TRK_SUCCESS )
+	{
+		ReportError( rc, "TrkUpdateRecordBegin",
+			"Failed to open bug id for update" );
+		return false;
+	}
+	else
+	{
+		int textbuflen = 2 * buf.TellPut() + 1;
+
+		char *textbuf = new char [ textbuflen ];
+		Q_memset( textbuf, 0, textbuflen );
+
+		SubstituteBugId( (int)bugId, textbuf, textbuflen, buf );
+
+		// Update the description with the substituted text!!!
+		rc = TrkSetDescriptionData( trkRecHandle,
+			Q_strlen( textbuf ) + 1,
+			(const char * )textbuf,
+			0 );
+
+		delete[] textbuf;
+
+		if ( rc != TRK_SUCCESS )
+		{
+			ReportError(rc, "TrkSetDescriptionData(update)", 
+				"Failed to set description data!");
+			return false;
+		}
+
+		rc = TrkUpdateRecordCommit( trkRecHandle, &id );
+		if ( rc != TRK_SUCCESS )
+		{
+			ReportError(rc, "TrkUpdateRecordCommit", 
+				"Failed to TrkUpdateRecordCommit for bug Id #!");
+			return false;
+		}
 	}
 
 	m_pBug->Clear();
@@ -688,6 +992,12 @@ void CBugReporter::SetArea( char const *area )
 	Q_strncpy( m_pBug->area, area, sizeof( m_pBug->area ) );
 }
 
+void CBugReporter::SetMapNumber( char const *mapnumber )
+{
+	Assert( m_pBug);
+	Q_strncpy( m_pBug->mapnumber, mapnumber, sizeof( m_pBug->mapnumber ) );
+}
+
 void CBugReporter::SetReportType( char const *reporttype )
 {
 	Assert( m_pBug );
@@ -698,6 +1008,18 @@ void CBugReporter::SetLevel( char const *levelnamne )
 {
 	Assert( m_pBug );
 	Q_strncpy( m_pBug->level, levelnamne, sizeof( m_pBug->level ) );
+}
+
+void CBugReporter::SetDriverInfo( char const *info )
+{
+	Assert( m_pBug );
+	Q_strncpy( m_pBug->driverinfo, info, sizeof( m_pBug->driverinfo ) );
+}
+
+void CBugReporter::SetMiscInfo( char const *info )
+{
+	Assert( m_pBug );
+	Q_strncpy( m_pBug->misc, info, sizeof( m_pBug->misc ) );
 }
 
 void CBugReporter::SetPosition( char const *position )
@@ -742,6 +1064,18 @@ void CBugReporter::SetVMFName( char const *vmf_unc_address )
 	Q_strncpy( m_pBug->vmf_unc, vmf_unc_address, sizeof( m_pBug->vmf_unc ) );
 }
 
+void CBugReporter::AddIncludedFile( char const *filename )
+{
+	CBug::incfile includedfile;
+	Q_strncpy( includedfile.name, filename, sizeof( includedfile.name ) );
+	m_pBug->includedfiles.AddToTail( includedfile );
+}
+
+void CBugReporter::ResetIncludedFiles()
+{
+	m_pBug->includedfiles.Purge();
+}
+
 bool CBugReporter::PopulateChoiceList( char const *listname, CUtlVector< CUtlSymbol >& list )
 {
 	TRK_UINT rc;
@@ -775,6 +1109,7 @@ bool CBugReporter::PopulateLists()
 	CUtlSymbol none = m_BugStrings.AddString( "<<None>>" );
 
 	m_Area.AddToTail( none );
+	m_MapNumber.AddToTail( none );
 	m_Names.AddToTail( unassigned );
 	m_InternalNameMapping.Insert( "<<Unassigned>>", unassigned );
 	m_SortedDisplayNames.AddToTail( unassigned );
@@ -782,6 +1117,8 @@ bool CBugReporter::PopulateLists()
 	PopulateChoiceList( "Severity", m_Severity );
 	PopulateChoiceList( "Report Type", m_ReportType );
 	PopulateChoiceList( "Area", m_Area );
+	PopulateChoiceList( "Area@Dir%Map", m_AreaMap );
+	PopulateChoiceList( "Map Number", m_MapNumber );
 	PopulateChoiceList( "Priority", m_Priority );
 
 	// Need to gather  names, too

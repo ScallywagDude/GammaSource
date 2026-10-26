@@ -1,39 +1,111 @@
 # GammaSource
 
-Modernization of the historical 2003 Source-engine tree. The uploaded source, generated Visual Studio projects, restoration tools, and existing Git history are present on `main`. Game assets and a successful rebuilt runtime are separate verification requirements.
+GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons, NPCs, models, animations, maps, interface, HUD, physics behavior, and ground deformation.
 
-## Current milestone and work order
+## Project status
 
-**Source milestone: v26 (Phase 7 restoration and native Windows builds). Phase 7 is not complete.** Finish **Phase 7 — Weapon restoration**, then work on **Phase 3 — Rendering API modernization, shaders and lighting**, then continue the remaining phases. **Phase 3 includes Vulkan/OpenGL/DX11/DX12 modernization.**
-
-| Work | Status | Required verification |
+| Area | Status | Notes |
 | --- | --- | --- |
-| Phase 7: weapon restoration and HUD | **Active; must finish first** | Windows builds, per-branch assets, weapon behavior, 2002 HUD, HL1 weapon selection/icons, HUD color options, numeric Energy, animations, pickups, ammo and `impulse 101` |
-| Phase 3: Vulkan/OpenGL/DX11/DX12, shaders and lighting | **Next, after Phase 7** | Working backends, shader builds, GPU/runtime and in-game visual checks |
-| Remaining engine/gameplay, Steam/controller, cut-enemy and multiplayer work | Partial; follows the active priorities | Branch-specific build, runtime, network and asset tests |
+| **Windows x64 compilation** | **✅ COMPLETE** | Full Waf build completed successfully on October 25, 2026. |
+| Original beta weapons and ammo | **✅ COMPLETE** | Weapon values, ammo capacities, rates, pickups, beta hands, and weapon audits are complete. Preserve this work. |
+| Options and HUD configuration | **✅ COMPLETE** | Audio, mouse, video, borderless, advanced settings, and HUD color controls were exercised in runtime tests. |
+| Beta model and scene compatibility | **In verification** | Model conversion repairs are present; normal choreographed body sequences still need a dedicated runtime test. |
+| Beta physgun beam / HEV pickup / skybox | **In verification** | Source and assets are repaired; complete the targeted `zoo_item` visual test. |
+| Friendly fire | **Patch prepared** | `gamma_friendlyfire` defaults to enabled in the companion patch; rebuild and test it before claiming it is live in the executable. |
+| Stability and performance tuning | **Ongoing** | Continue with repeatable profiling, crash diagnostics, and long-session tests. |
 
-Phase labels follow the current project roadmap; older documents retain historical numbering. No phase is complete solely because a source or metadata check passes.
+A completed compilation target is not a claim that every map, scripted scene, or visual effect has passed a runtime test.
 
-## Published code milestones
+## Compilation — Windows x64
 
-- **v26 — Weapon restoration and native toolchain:** restored hopwire combat and the original remote-controlled manhack; reinstated six omitted TF2 weapons and their guidance/mortar dependencies; restored brickbat throwing and recovery. Fixed modern compiler compatibility, original assembly builds, static CRT/allocator linkage, dropped library dependencies, shader tooling and shared object-directory collisions. Added HL1-style weapon buckets with consistent icon sizing/tint, a HUD color tab in Options and an Energy counter beside Health and HEV Suit, keeping the 2002 amber style. All four legacy shader DLLs also build with the documented toolchain. **265 tests run: 262 passed, 3 skipped, 0 failures; replay preserves 7,118 files.** All four Release clients and servers and the Release engine have built successfully during this work; final checkpoint results and remaining runtime/art failures are recorded in [PHASE7_STATUS.md](PHASE7_STATUS.md) and [check results](modernize/reports/phase7_checks.json). New builds expose a startup crash and incompatible installed model layouts; no weapon is claimed gameplay-verified.
-- **v25 — Phase 7 weapon and build repairs:** sticky launcher and hopwire preserve ammunition on failed projectile creation; hopwire guards invalid owner/empty-ammo events; TF2 repair gun prioritizes injured passengers; internal rocket projectiles are excluded from weapon grants. Fixed legacy HUD sprite auditing, contradictory completion evidence, Windows test replay, and initial CRT/build linkage blockers. **217 tests run: 216 passed, 1 skipped, 0 failures.** Overlay replay preserves 7,072 protected files; all 153 projects pass structural checks. At v25, the first five Release build steps passed; shader tools, debug linkage and server compiler errors still blocked a rebuilt game. The v26 repairs and current blockers are recorded below. See [PHASE7_STATUS.md](PHASE7_STATUS.md) and [recorded check results](modernize/reports/phase7_checks.json).
-- **v24 — Layered VMT Patch/VTX diagnostics:** inherited material textures and independently located model companions; historical validation was 184 tests run, 183 passed, 1 skipped. The source is now uploaded; that earlier result does not certify the current checkout or gameplay.
+### Requirements
 
-## Publication and completion requirements
+- Windows 10 or Windows 11, 64-bit.
+- Visual Studio with **Desktop development with C++**, the MSVC x64 compiler/linker, and a Windows SDK.
+- Python 3, available through the Windows `py` launcher.
+- The unified `GammaSource/` directory, containing `waf`, `wscript`, `game/`, `engine/`, `gammasource_content_2018/`, and `legacy2003/`.
+- The original game assets and any content dependencies required for the playable installation. These are **not** generated by compiling the source.
 
-- Update **this README with every published code milestone**, including actual validation results and unresolved blockers.
-- Keep **one living [PHASE7_STATUS.md](PHASE7_STATUS.md)**. Update it in place; Git commits retain history. Do not create version-numbered Phase 7 status files.
-- Preserve the existing Git history and the **AI DISCLOSURE** and **Redistribution** sections verbatim.
-- Source registration, project membership, model headers and HUD atlas bounds are useful checks. Weapon completion still requires successful builds and actual visual/gameplay tests.
-- Keep local game assets and generated build outputs out of source milestones.
+Use an **x64 Native Tools Command Prompt for Visual Studio** for the commands below. Do not use the old 32-bit project-conversion scripts for this build.
+
+### 1. Open the engine source directory
+
+```bat
+cd /d "C:\path\to\GammaSource"
+```
+
+Use the single `GammaSource` directory. The Waf build files and active engine source are at its root; no separate engine checkout is needed.
+
+### 2. Configure the x64 Release build
+
+On a fresh checkout, run:
+
+```bat
+build_gammasource.cmd configure
+```
+
+The project's Windows configuration selects the **x64** compiler by default. Do **not** pass `--32bits` for this build.
+
+If the project was already configured successfully, you can proceed directly to the build. Reconfigure after changing the compiler, SDK, architecture, or important Waf settings.
+
+### 3. Compile the engine and game
+
+```bat
+build_gammasource.cmd
+```
+
+- `-j16`: allows up to 16 parallel build jobs. Reduce the number if your PC runs out of memory.
+- `-k`: continues independent build jobs after an error so the log captures additional failures. **It does not mean the build succeeded.**
+- Compilation outputs and Waf build records are written under `build/`.
+
+A successful run must end without unresolved compiler or linker errors. The October 25 handoff records a successful incremental full-target build using this command; it is **not** evidence of a fresh clean build on every machine.
+
+### 4. Prepare the playable game folder
+
+Compiling produces the engine/game binaries, **not** the complete set of maps, textures, sounds, converted models, shaders, and game configuration. These must be staged with the built binaries.
+
+The repository includes a staging script:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\stage_gammasource.ps1" -Dest "C:\GammaSourceBuilds" -Install "C:\path\to\engine-install" -Assets "C:\path\to\game-assets" -Beta2003 "C:\path\to\beta-content" -SteamHL2 "C:\path\to\Half-Life 2" -SteamTF2 "C:\path\to\Team Fortress 2" -SteamPortal "C:\path\to\Portal"
+```
+
+Run this command from the unified `GammaSource/` directory and adjust the paths to your local content. The wrapper always uses this same repository root for `gammasource_content_2018`; you do not need a separate `GammaSource-main` checkout. The underlying staging script can hard-link large assets when the source and destination are on the same volume. The staged folder may require substantial disk space. Verify all required asset roots before running it.
+
+Each staging run creates a dated output folder. Open that folder's `GammaSource_2018` directory and launch the included `play.cmd`.
+
+### 5. Verify the result
+
+1. Check the Waf exit status and preserve its full build log.
+2. Confirm the staged folder contains the launcher executable, engine DLLs, game DLLs, `gameinfo.txt`, and referenced content.
+3. Start `play.cmd` and verify the main menu and classic loading dialog.
+4. Load representative beta maps and check weapons, mandatory beta hands, physics, and deformable terrain.
+5. Run the remaining normal-scene and `zoo_item` visual checks before declaring those features verified.
+
+If Windows cannot load a DLL, check **architecture**, its actual file location, and transitive dependencies rather than assuming the launcher executable is broken.
+
+## Development priorities
+
+1. **Finish runtime verification:** exercise normal `logic_choreographed_scene` body sequences on `e3_lab` and `e3_hydra`; prior instanced-scene tests did not exercise normal body `SEQUENCE` playback.
+2. **Complete `zoo_item` visual verification:** inspect the sky, original HEV pickup, and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
+3. **Rebuild and runtime-test friendly fire:** confirm the `gamma_friendlyfire` toggle across the intended allied-damage paths.
+4. **Measure stability and performance:** record repeatable frame times, memory use, map-loading times, and long-session crashes.
+5. **Preserve original beta features:** no removal or replacement of beta HUD, weapons, hands, animations, NPCs, interface, ground deformation, maps, or effects.
+
+Use isolated test profiles when running automated gameplay checks. Do not overwrite the player's normal config, forcibly activate a test window, or terminate an existing game session.
+
+## Historical source milestones
+
+The earlier source milestones are retained as historical reference:
+
+- **v26 — Native toolchain and restoration:** legacy shader builds, CRT/linkage fixes, assembly compatibility, restored prototype gameplay code, HUD selector and Energy counter work. Recorded **265 tests: 262 passed, 3 skipped, 0 failures**. A later engine milestone superseded its earlier build and runtime blockers.
+- **v25 — Weapon and build repairs:** sticky launcher/hopwire ammunition safety, projectile and TF2 repair behavior fixes, HUD audits, build/linkage repairs. Recorded **217 tests: 216 passed, 1 skipped, 0 failures**.
+- **v24 — Material/model diagnostics:** layered VMT Patch lookup and VTX companion discovery. Historical validation: **184 tests: 183 passed, 1 skipped**.
+
+The current **x64** build uses the Waf workflow above; the older Win32 project instructions should not be used as its compilation procedure. The 2003 sources remain under `legacy2003/` for reference and targeted content conversion, not as a second active build. See [the unified layout guide](docs/UNIFIED_LAYOUT.md).
 
 ## AI DISCLOSURE
 Look, I'm ngl to you fam, ts is superrrr AI. I basically took the og source leak from 2003 and shoved that shit into Astra/Sol and were gonna see what happens with that, together.
 
 ## Redistribution
 Yeah so like don't sell this. This is Forcefully Open-Sourced (LEAKED PROPRIETARY SOFTWARE). The only reason I put it up is because come on, it's a 20+ year old version of a game engine that's HORRIBLY unfinished, I don't think they care about little passion projects like this. Do whatever with it, just make sure it's NOT FOR MONETARY VALUE.
-
-## Current Phase 7 verification
-
-The source inventory now contains **114 registered entries and 102 gameplay candidates**. Native model-layout checks reject the installed HL2/HL1/CS weapon models that previously passed header checks; TF2 content also uses replacement HL2 weapon models. **0 weapons are claimed gameplay-verified.** The single [Phase 7 status](PHASE7_STATUS.md) records current build, art and runtime evidence. Phase 3's rendering APIs, shaders and lighting start after Phase 7 is completed and tested.

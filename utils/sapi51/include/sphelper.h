@@ -68,7 +68,7 @@ public:
     {
         m_psz = NULL;
     }
-    CSpDynamicString(ULONG cchReserve)
+    CSpDynamicString(size_t cchReserve)
     {
         m_psz = (WCHAR *)::CoTaskMemAlloc(cchReserve * sizeof(WCHAR));
     }
@@ -86,7 +86,7 @@ public:
         Clear();
         if (pSrc)
         {
-            ULONG cbNeeded = (wcslen(pSrc) + 1) * sizeof(WCHAR);
+            size_t cbNeeded = (wcslen(pSrc) + 1) * sizeof(WCHAR);
             m_psz = (WCHAR *)::CoTaskMemAlloc(cbNeeded);
             SPDBG_ASSERT(m_psz);
             if (m_psz)
@@ -147,7 +147,7 @@ public:
     }
     unsigned int Length() const
     {
-        return (m_psz == NULL)? 0 : wcslen(m_psz);
+        return static_cast<unsigned int>( (m_psz == NULL)? 0 : wcslen(m_psz) );
     }
 
     operator WCHAR * () const
@@ -166,7 +166,7 @@ public:
     {
         if (pszSrc)
         {
-            ULONG lenSrc = wcslen(pszSrc);
+            size_t lenSrc = wcslen(pszSrc);
             if (lenSrc)
             {
                 ULONG lenMe = Length();
@@ -223,8 +223,8 @@ public:
 
     WCHAR * Append2(const WCHAR * pszSrc1, const WCHAR * pszSrc2)
     {
-        ULONG lenSrc1 = pszSrc1 ? wcslen(pszSrc1) : 0;
-        ULONG lenSrc2 = pszSrc2 ? wcslen(pszSrc2) : 0;
+        size_t lenSrc1 = pszSrc1 ? wcslen(pszSrc1) : 0;
+        size_t lenSrc2 = pszSrc2 ? wcslen(pszSrc2) : 0;
 
         if (lenSrc1 || lenSrc2)
         {
@@ -331,7 +331,7 @@ public:
     {
         if (m_psz)
         {
-            ULONG cch = wcslen(m_psz);
+            size_t cch = wcslen(m_psz);
             m_psz = (WCHAR *)::CoTaskMemRealloc(m_psz, (cch + 1) * sizeof(WCHAR));
         }
         return m_psz;
@@ -766,10 +766,10 @@ inline HRESULT SpFindBestToken(
     HRESULT hr = S_OK;
     
     const WCHAR *pszVendorPreferred = L"VendorPreferred";
-    const ulLenVendorPreferred = wcslen(pszVendorPreferred);
+    const size_t ulLenVendorPreferred = wcslen(pszVendorPreferred);
 
     // append VendorPreferred to the end of pszOptAttribs to force this preference
-    ULONG ulLen = pszOptAttribs ? wcslen(pszOptAttribs) + ulLenVendorPreferred + 1 : ulLenVendorPreferred;
+    size_t ulLen = pszOptAttribs ? wcslen(pszOptAttribs) + ulLenVendorPreferred + 1 : ulLenVendorPreferred;
     WCHAR *pszOptAttribsVendorPref = (WCHAR*)_alloca((ulLen+1)*sizeof(WCHAR));
     if (pszOptAttribsVendorPref)
     {
@@ -1415,7 +1415,7 @@ public:
     WAVEFORMATEX  * m_pCoMemWaveFormatEx; 
 
 
-    static CoMemCopyWFEX(const WAVEFORMATEX * pSrc, WAVEFORMATEX ** ppCoMemWFEX)
+    static HRESULT CoMemCopyWFEX(const WAVEFORMATEX * pSrc, WAVEFORMATEX ** ppCoMemWFEX)
     {
         ULONG cb = sizeof(WAVEFORMATEX) + pSrc->cbSize;
         *ppCoMemWFEX = (WAVEFORMATEX *)::CoTaskMemAlloc(cb);
@@ -2533,7 +2533,7 @@ inline HRESULT CreatePhraseFromWordArray(const WCHAR ** ppWords, ULONG cWords,
         return E_INVALIDARG;
     }
 
-    ULONG    cTotalChars = 0;
+    size_t   cTotalChars = 0;
     ULONG    i;
     WCHAR** pStringPtrArray = (WCHAR**)::CoTaskMemAlloc( cWords * sizeof(WCHAR *));
     if ( !pStringPtrArray )
@@ -2557,7 +2557,7 @@ inline HRESULT CreatePhraseFromWordArray(const WCHAR ** ppWords, ULONG cWords,
         ::CoTaskMemFree(pStringPtrArray);
         return E_OUTOFMEMORY;
     }
-    SPPHONEID* pphoneId = dsPhoneId;
+    SPPHONEID* pphoneId = (SPPHONEID*)dsPhoneId.m_psz;
 
     SPPHRASE Phrase;
     memset(&Phrase, 0, sizeof(Phrase));
@@ -2631,7 +2631,7 @@ inline HRESULT CreatePhraseFromWordArray(const WCHAR ** ppWords, ULONG cWords,
                 if (SUCCEEDED(hr))
                 {
                     pPhraseElement[i].pszPronunciation = pphoneId;
-                    pphoneId += wcslen(pphoneId) + 1;
+                    pphoneId += wcslen( (wchar_t*)pphoneId ) + 1;
                 }
             }
         }
@@ -2667,7 +2667,7 @@ inline HRESULT CreatePhraseFromWordArray(const WCHAR ** ppWords, ULONG cWords,
         *ppResultPhrase = cpPhrase.Detach();
     }
 
-    delete pPhraseElement;
+    delete [] pPhraseElement;
     ::CoTaskMemFree(pStringPtrArray);
 
     return hr;

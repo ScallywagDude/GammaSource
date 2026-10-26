@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef RAMPTOOL_H
 #define RAMPTOOL_H
@@ -11,9 +11,9 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "studio.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "faceposertoolwindow.h"
 
 class CChoreoEvent;
@@ -30,6 +30,13 @@ struct CExpressionSample;
 
 #define IDC_RT_CHANGESCALE			1005
 #define IDC_RAMPHSCROLL			1006
+#define IDC_RT_EDGEPROPERTIES	1007
+
+#define FP_RT_SELECTION_TOLERANCE				30.0f
+#define FP_RT_SELECTION_RECTANGLE_TOLERANCE		5.0f
+#define FP_RT_ADDSAMPLE_TOLERANCE				5.0f
+
+template< class T > class CCurveEditorHelper;
 
 class RampTool : public mxWindow, public IFacePoserToolWindow
 {
@@ -73,18 +80,28 @@ public:
 	void				SetScrubTargetTime( float t );
 
 	void				DrawSamplesSimple( CChoreoWidgetDrawHelper& drawHelper, CChoreoEvent *e, bool clearbackground, COLORREF sampleColor, RECT &rcSamples );
+	virtual void		OnModelChanged();
+
+	void				SetMousePositionForEvent( mxEvent *event );
+
+	int					NumSamples();
+	CExpressionSample	*GetSample( int idx );
+	void				PreDataChanged( char const *undodescription );
+	void				PostDataChanged( char const *redodescription );
+	CExpressionSample	*GetSampleUnderMouse( int mx, int my, float tolerance = FP_RT_SELECTION_TOLERANCE );
+	void				GetWorkList( bool reflect, CUtlVector< RampTool * >& list );
+
 private:
 
 	void				GetSampleTrayRect( RECT& rc );
 	void				DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples );
 
 	void				SelectPoints( void );
-	CExpressionSample	*GetSampleUnderMouse( mxEvent *event );
 	void				DeselectAll();
 	void				SelectAll();
 	void				Delete( void );
 
-	int					CountSelectedSamples( void );
+	int					CountSelected( void );
 	void				MoveSelectedSamples( float dfdx, float dfdy );
 
 	void				StartDragging( int dragtype, int startx, int starty, HCURSOR cursor );
@@ -96,6 +113,8 @@ private:
 	void				SetClickedPos( int x, int y );
 	float				GetTimeForClickedPos( void );
 	
+	void				DrawAutoHighlight( mxEvent *event );
+
 	void				ApplyBounds( int& mx, int& my );
 	void				CalcBounds( int movetype );
 	void				OnUndo( void );
@@ -103,6 +122,8 @@ private:
 
 	//CEventAbsoluteTag	*IsMouseOverTag( int mx, int my );
 	void				OnRevert( void );
+
+	void				OnEdgeProperties();
 
 	void				DrawTimingTags( CChoreoWidgetDrawHelper& drawHelper, RECT& rc );
 	void				DrawRelativeTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RECT& rc, CChoreoEvent *rampevent, CChoreoEvent *event, float starttime, float endtime );
@@ -113,12 +134,11 @@ private:
 	void				MoveTimeSliderToPos( int x );
 	void				OnChangeScale();
 	int					ComputeHPixelsNeeded( void );
-	void				SetTimeZoomScale( int scale );
-	float				GetTimeZoomScale( void );
 	float				GetPixelsPerSecond( void );
 	void				InvalidateLayout( void );
 	void				RepositionHSlider( void );
 	void				GetStartAndEndTime( float& st, float& ed );
+	float				GetEventEndTime();
 	float				GetTimeValueForMouse( int mx, bool clip = false );
 	int					GetPixelForTimeValue( float time, bool *clipped = NULL );
 
@@ -134,7 +154,7 @@ private:
 		DRAGTYPE_SELECTION,
 	};
 
-	char				m_szEvent[ 128 ];
+	int					m_nFocusEventGlobalID;
 
 	int					m_nMousePos[ 2 ];
 
@@ -162,11 +182,9 @@ private:
 	CChoreoEvent				*m_pLastEvent;
 
 	bool				m_bSuppressLayout;
-	// 100 == normal scale
-	int					m_nTimeZoom;
 	// Height/width of scroll bars
 	int					m_nScrollbarHeight;
-	int					m_nLeftOffset;
+	float				m_flLeftOffset;
 	mxScrollbar			*m_pHorzScrollBar;
 	int					m_nLastHPixelsNeeded;
 	// How many pixels per second we are showing in the UI
@@ -176,6 +194,10 @@ private:
 	float				m_flLastDuration;
 	bool				m_bInSetEvent;
 	float				m_flScrubberTimeOffset;
+	int					m_nUndoSetup;
+
+	CCurveEditorHelper< RampTool >	*m_pHelper;
+	friend class CChoreoView;
 };
 
 extern RampTool	*g_pRampTool;

@@ -1,21 +1,30 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
+#if !defined( _X360 )
 #define FD_SETSIZE 1024
-#define PROTECTED_THINGS_DISABLE
+#endif
 
 #include <assert.h>
-#include "..\common\winlite.h"
+#include "winlite.h"
+#if !defined( _X360 )
 #include "winsock.h"
+#else
+#include "winsockx.h"
+#endif
 #include "msgbuffer.h"
 #include "socket.h"
 #include "inetapi.h"
+#include "tier0/vcrmode.h"
 
-#include <vgui_controls/Controls.h>
-#include <vgui/IVGui.h>
+#include <VGUI/IVGui.h>
+
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: All socket I/O occurs on a thread
@@ -111,7 +120,7 @@ static DWORD WINAPI SocketThreadFunc( LPVOID threadobject )
 		int			count;
 
 		// Check for shutdown event
-		if ( WAIT_OBJECT_0 == WaitForSingleObject( socketthread->GetShutdownHandle(), 0 ) )
+		if ( WAIT_OBJECT_0 == VCRHook_WaitForSingleObject( socketthread->GetShutdownHandle(), 0 ) )
 		{
 			break;
 		}
@@ -126,8 +135,8 @@ static DWORD WINAPI SocketThreadFunc( LPVOID threadobject )
 		count = 0;
 		for ( sockets = socketthread->GetSocketList(); sockets; sockets = sockets->next )
 		{
-			FD_SET( sockets->socket->GetSocketNumber(), &fdset );
-			count++;
+			FD_SET( static_cast<u_int>( sockets->socket->GetSocketNumber() ), &fdset );
+			count = max( count, sockets->socket->GetSocketNumber() );
 		}
 
 		// Done
@@ -141,20 +150,28 @@ static DWORD WINAPI SocketThreadFunc( LPVOID threadobject )
 
 			// Block for 100000 usec, or until a message is in the queue
 			number = select( count + 1, &fdset, NULL, NULL, &tv );
+#if !defined( NO_VCR )
+			VCRGenericValue( "", &number, sizeof( number ) );
+#endif
 			if ( number > 0 )
 			{
-				// Iterate through socket list and see who has data waiting
-				//
+				// Iterate through socket list and see who has data waiting				//
 				// No changes to list right now
 				socketthread->Lock();
 
 				// Check FD_SET for incoming network messages
 				for ( sockets = socketthread->GetSocketList(); sockets; sockets = sockets->next )
 				{
-					// NOTE:  Do we really need this set check since the recvfrom is non-blocking
-					if ( FD_ISSET( sockets->socket->GetSocketNumber(), &fdset ) )
+					bool bSet = FD_ISSET( sockets->socket->GetSocketNumber(), &fdset );
+#if !defined( NO_VCR )
+					VCRGenericValue( "", &bSet, sizeof( bSet ) );
+#endif
+					if ( bSet )
 					{
-						sockets->socket->ReceiveData();
+						// keep reading as long as there is data on the socket
+						while (sockets->socket->ReceiveData())
+						{
+						}
 					}
 				}
 
@@ -163,8 +180,7 @@ static DWORD WINAPI SocketThreadFunc( LPVOID threadobject )
 			}
 		}
 
-		// Yield a small bit of time to main app
-		Sleep( 1 );
+		// no need to sleep here, much better let it sleep in the select
 	}
 
 	ExitThread( 0 );
@@ -186,8 +202,8 @@ CSocketThread::CSocketThread( void )
 	m_hShutdown	= CreateEvent( NULL, TRUE, FALSE, NULL );
 	assert( m_hShutdown );
 
-	m_hThread = CreateThread( NULL, 0, SocketThreadFunc, (void *)this, 0, &m_nThreadId );
-	assert( m_hThread );
+	m_hThread = 0;
+	m_nThreadId = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -196,6 +212,7 @@ CSocketThread::CSocketThread( void )
 CSocketThread::~CSocketThread( void )
 {
 	Lock();
+	if ( m_hThread )
 	{
 		SetEvent( m_hShutdown );
 		Sleep( 2 );
@@ -207,7 +224,10 @@ CSocketThread::~CSocketThread( void )
 //!! need to validate this line
 //	assert( !m_pSocketList );
 
-	CloseHandle( m_hThread );
+	if ( m_hThread )
+	{
+		CloseHandle( m_hThread );
+	}
 
 	CloseHandle( m_hShutdown );
 
@@ -309,7 +329,9 @@ float CSocketThread::GetClock( void )
 		// Increment clock
 		m_dCurrentTime += time;
 	}
-
+#if !defined( NO_VCR )
+	VCRGenericValue( "", &m_dCurrentTime, sizeof( m_dCurrentTime ) );
+#endif
 	// Convert to float
     return (float)m_dCurrentTime;
 }
@@ -336,10 +358,16 @@ int socketCount = 0;
 
 //-----------------------------------------------------------------------------
 // Purpose: Locks object and adds socket to thread
-// Input  : *socket - 
 //-----------------------------------------------------------------------------
 void CSocketThread::AddSocketToThread( CSocket *socket )
 {
+	// create the thread if it isn't there
+	if (!m_hThread)
+	{
+		m_hThread = VCRHook_CreateThread( NULL, 0, SocketThreadFunc, (void *)this, 0, &m_nThreadId );
+		assert( m_hThread );
+	}
+
 	socketCount++;
 
 	threadsocket_t *p = new threadsocket_t;
@@ -353,10 +381,12 @@ void CSocketThread::AddSocketToThread( CSocket *socket )
 
 //-----------------------------------------------------------------------------
 // Purpose: Locks list and removes specified socket from thread
-// Input  : *socket - 
 //-----------------------------------------------------------------------------
 void CSocketThread::RemoveSocketFromThread( CSocket *socket )
 {
+	if (!m_hThread)
+		return;
+
 	socketCount--;
 
 	Lock();
@@ -392,7 +422,7 @@ void CSocketThread::RemoveSocketFromThread( CSocket *socket )
 //-----------------------------------------------------------------------------
 void CSocketThread::Lock( void )
 {
-	EnterCriticalSection( &cs );
+	VCRHook_EnterCriticalSection( &cs );
 }
 
 //-----------------------------------------------------------------------------
@@ -405,8 +435,6 @@ void CSocketThread::Unlock( void )
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructs a message handler for incoming socket messages
-// Input  : *baseobject - 
-//			type - 
 //-----------------------------------------------------------------------------
 CMsgHandler::CMsgHandler( HANDLERTYPE type, void *typeinfo /*=NULL*/ )
 {
@@ -436,7 +464,6 @@ CMsgHandler::CMsgHandler( HANDLERTYPE type, void *typeinfo /*=NULL*/ )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Output : 
 //-----------------------------------------------------------------------------
 CMsgHandler::~CMsgHandler( void )
 {
@@ -444,8 +471,6 @@ CMsgHandler::~CMsgHandler( void )
 
 //-----------------------------------------------------------------------------
 // Purpose: Default message handler for received messages
-// Input  : *from - 
-//			*msg - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CMsgHandler::Process( netadr_t *from, CMsgBuffer *msg )
@@ -471,7 +496,7 @@ bool CMsgHandler::ProcessMessage( netadr_t *from, CMsgBuffer *msg )
 	{
 	case MSGHANDLER_BYTECODE:
 		msg->Push();
-		ch = msg->ReadByte();
+		ch = (unsigned char)msg->ReadByte();
 		msg->Pop();
 		if ( ch == m_ByteCode )
 		{
@@ -561,7 +586,11 @@ CSocket::CSocket( const char *socketname, int port /*= -1*/ ) : m_SendBuffer(soc
 	// Set up the socket
 	m_Socket = socket( PF_INET, SOCK_DGRAM, IPPROTO_UDP );
 	if ( m_Socket == -1 )
+	{
+		//int err = WSAGetLastError();
+		// WSANOTINITIALISED
 		return;
+	}
 
 	// Set it to non-blocking
 	if ( ioctlsocket ( m_Socket, FIONBIO, &_true ) == -1 )
@@ -596,12 +625,16 @@ CSocket::CSocket( const char *socketname, int port /*= -1*/ ) : m_SendBuffer(soc
 
 	address.sin_family = AF_INET;
 
-	// Bind the socket to specified port
-	if ( bind( m_Socket, (struct sockaddr *)&address, sizeof(address) ) == -1 )
+	// only bind if we're required to be on a certain port
+	if ( address.sin_port > 0)
 	{
-		closesocket (m_Socket);
-		m_Socket = 0;
-		return;
+		// Bind the socket to specified port
+		if ( bind( m_Socket, (struct sockaddr *)&address, sizeof(address) ) == -1 )
+		{
+			closesocket (m_Socket);
+			m_Socket = 0;
+			return;
+		}
 	}
 
 	// Mark as valid
@@ -740,7 +773,7 @@ int CSocket::Broadcast( int port, CMsgBuffer *msg /*= NULL*/ )
 	struct sockaddr	addr;
 	netadr_t to;
 
-	to.port = htons( port );
+	to.port = (unsigned short)htons( (unsigned short)port );
 	to.type = NA_BROADCAST;
 
 	net->NetAdrToSockAddr ( &to, &addr );
@@ -773,7 +806,7 @@ void CSocket::Frame( void )
 	if (!m_MsgBuffers.Size())
 		return;
 
-	EnterCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
+	VCRHook_EnterCriticalSection( (CRITICAL_SECTION *)m_pBufferCS );
 
 	// pass up all the receive buffers
 	for (int i = 0; i < m_MsgBuffers.Size(); i++)
@@ -853,7 +886,6 @@ unsigned int CSocket::GetUserData(void ) const
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the underlying socket id number for setting up the fd_set
-// Output : int
 //-----------------------------------------------------------------------------
 int CSocket::GetSocketNumber( void ) const
 {
@@ -863,7 +895,7 @@ int CSocket::GetSocketNumber( void ) const
 //-----------------------------------------------------------------------------
 // Purpose: Called once FD_ISSET is detected
 //-----------------------------------------------------------------------------
-void CSocket::ReceiveData( void )
+bool CSocket::ReceiveData( void )
 {
 	// Check for data
 	struct sockaddr	from;
@@ -872,31 +904,30 @@ void CSocket::ReceiveData( void )
 	unsigned char buffer[ CMsgBuffer::NET_MAXMESSAGE ];
 
 	fromlen = sizeof( from );
-	bytes = recvfrom ( m_Socket, (char *)buffer, CMsgBuffer::NET_MAXMESSAGE, 0, (struct sockaddr *)&from, &fromlen );
+	bytes = VCRHook_recvfrom( m_Socket, (char *)buffer, CMsgBuffer::NET_MAXMESSAGE, 0, (struct sockaddr *)&from, &fromlen );
 
-	int port = ntohs( ((struct sockaddr_in *)&from)->sin_port);
-
-	// Mark the time no matter what since FD_SET said there was data and we should have it now
-	float recvTime = GetClock();
+	//int port = ntohs( ((struct sockaddr_in *)&from)->sin_port);
 
 	// Socket error
 	if ( bytes == -1 )
 	{
-		return;
+		return false;
 	}
 
 	// Too much data, ignore it
 	if ( bytes >= CMsgBuffer::NET_MAXMESSAGE )
 	{
-		return;
+		return false;
 	}
 
 	// Packets must have -1 tag
 	if ( bytes < 4 )
 	{
-		return;
+		return false;
 	}
 
+	// Mark the time no matter what since FD_SET said there was data and we should have it now
+	float recvTime = GetClock();
 	
 	if( *(int *)&buffer[0] == -2 ) // its a split packet :)
 	{
@@ -924,7 +955,7 @@ void CSocket::ReceiveData( void )
 			{
 				m_iTotalPackets=0;
 			}
-			return; // TODO: add support for multiple fragments at one time?
+			return false; // TODO: add support for multiple fragments at one time?
 		}
 
 
@@ -942,7 +973,7 @@ void CSocket::ReceiveData( void )
 		if(m_iCurrentPackets==m_iTotalPackets) 
 		{
 
-			EnterCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
+			VCRHook_EnterCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
 
 			// Get from address
 			netadr_t addr;
@@ -981,7 +1012,7 @@ void CSocket::ReceiveData( void )
 			return;
 		*/
 
-		EnterCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
+		VCRHook_EnterCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
 
 		// Get from address
 		netadr_t addr;
@@ -999,8 +1030,6 @@ void CSocket::ReceiveData( void )
 
 		LeaveCriticalSection((CRITICAL_SECTION *)m_pBufferCS);
 	} 
-	else
-	{
-		return;
-	}
+
+	return true;
 }

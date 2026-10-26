@@ -1,14 +1,15 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $NoKeywords: $
-//=============================================================================
+//=====================================================================================//
 
 #include "filesystem.h"
 #include "filesystem_helpers.h"
 #include "characterset.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // wordbreak parsing set
 static characterset_t	g_BreakSet, g_BreakSetIncludingColons;
@@ -25,8 +26,10 @@ static void InitializeCharacterSets()
 }
 
 
-const char* ParseFile( const char* pFileBytes, char* pToken, bool* pWasQuoted )
+const char* ParseFileInternal( const char* pFileBytes, char* pTokenOut, bool* pWasQuoted, characterset_t *pCharSet, size_t nMaxTokenLen )
 {
+	pTokenOut[0] = 0;
+
 	if (pWasQuoted)
 		*pWasQuoted = false;
 
@@ -37,11 +40,10 @@ const char* ParseFile( const char* pFileBytes, char* pToken, bool* pWasQuoted )
 
 	// YWB:  Ignore colons as token separators in COM_Parse
 	static bool com_ignorecolons = false;  
-	characterset_t& breaks = com_ignorecolons ? g_BreakSet : g_BreakSetIncludingColons;
+	characterset_t& breaks = pCharSet ? *pCharSet : (com_ignorecolons ? g_BreakSet : g_BreakSetIncludingColons);
 	
 	int c;
-	int len = 0;
-	pToken[0] = 0;
+	unsigned int len = 0;
 	
 // skip whitespace
 skipwhite:
@@ -94,43 +96,34 @@ skipwhite:
 			c = *pFileBytes++;
 			if (c=='\"' || !c)
 			{
-				pToken[len] = 0;
+				pTokenOut[len] = 0;
 				return pFileBytes;
 			}
-			pToken[len] = c;
-			len++;
+			pTokenOut[len] = c;
+			len += ( len < nMaxTokenLen-1 ) ? 1 : 0;
 		}
 	}
 
 // parse single characters
 	if ( IN_CHARACTERSET( breaks, c ) )
 	{
-		pToken[len] = c;
-		len++;
-		pToken[len] = 0;
+		pTokenOut[len] = c;
+		len += ( len < nMaxTokenLen-1 ) ? 1 : 0;
+		pTokenOut[len] = 0;
 		return pFileBytes+1;
 	}
 
 // parse a regular word
 	do
 	{
-		pToken[len] = c;
+		pTokenOut[len] = c;
 		pFileBytes++;
-		len++;
+		len += ( len < nMaxTokenLen-1 ) ? 1 : 0;
 		c = *pFileBytes;
 		if ( IN_CHARACTERSET( breaks, c ) )
 			break;
 	} while (c>32);
 	
-	pToken[len] = 0;
+	pTokenOut[len] = 0;
 	return pFileBytes;
 }
-
-
-char* ParseFile( char* pFileBytes, char* pToken, bool* pWasQuoted )
-{
-	return (char*)ParseFile( (const char*)pFileBytes, pToken, pWasQuoted );
-}
-
-
-

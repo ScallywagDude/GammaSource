@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <assert.h>
 
@@ -18,6 +13,9 @@
 #include <vgui/IClientPanel.h>
 #include <vgui/IPanel.h>
 #include <vgui/ISurface.h>
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 using namespace vgui;
 
@@ -104,9 +102,30 @@ public:
 		((VPanel *)vguiPanel)->SetVisible(state);
 	}
 
+	virtual void SetEnabled(VPANEL vguiPanel, bool state)
+	{
+		((VPanel *)vguiPanel)->SetEnabled(state);
+	}
+
 	virtual bool IsVisible(VPANEL vguiPanel)
 	{
 		return ((VPanel *)vguiPanel)->IsVisible();
+	}
+
+	virtual bool IsEnabled(VPANEL vguiPanel)
+	{
+		return ((VPanel *)vguiPanel)->IsEnabled();
+	}
+
+	// Used by the drag/drop manager to always draw on top
+	virtual bool IsTopmostPopup( VPANEL vguiPanel )
+	{
+		return ((VPanel *)vguiPanel)->IsTopmostPopup();
+	}
+
+	virtual void SetTopmostPopup( VPANEL vguiPanel, bool state )
+	{
+		return ((VPanel *)vguiPanel)->SetTopmostPopup( state );
 	}
 
 	virtual void SetParent(VPANEL vguiPanel, VPANEL newParent)
@@ -122,6 +141,11 @@ public:
 	virtual VPANEL GetChild(VPANEL vguiPanel, int index)
 	{
 		return (VPANEL)((VPanel *)vguiPanel)->GetChild(index);
+	}
+
+	virtual CUtlVector< VPANEL > &GetChildren( VPANEL vguiPanel )
+	{
+		return (CUtlVector< VPANEL > &)((VPanel *)vguiPanel)->GetChildren();
 	}
 
 	virtual VPANEL GetParent(VPANEL vguiPanel)
@@ -157,14 +181,9 @@ public:
 		((VPanel *)vguiPanel)->SetPopup(state);
 	}
 
-	virtual bool Render_GetPopupVisible(VPANEL vguiPanel)
+	virtual bool IsFullyVisible( VPANEL vguiPanel )
 	{
-		return ((VPanel *)vguiPanel)->Render_IsPopupPanelVisible();
-	}
-
-	virtual void Render_SetPopupVisible(VPANEL vguiPanel, bool state)
-	{
-		((VPanel *)vguiPanel)->Render_SetPopupVisible(state);
+		return ((VPanel *)vguiPanel)->IsFullyVisible();
 	}
 
 	// calculates the panels current position within the hierarchy
@@ -199,6 +218,21 @@ public:
 		return ((VPanel *)vguiPanel)->GetScheme();
 	}
 
+	virtual bool IsProportional(VPANEL vguiPanel)
+	{
+		return Client(vguiPanel)->IsProportional();
+	}
+	
+	virtual bool IsAutoDeleteSet(VPANEL vguiPanel)
+	{
+		return Client(vguiPanel)->IsAutoDeleteSet();
+	}
+	
+	virtual void DeletePanel(VPANEL vguiPanel)
+	{
+		Client(vguiPanel)->DeletePanel();
+	}
+
 	virtual void SendMessage(VPANEL vguiPanel, KeyValues *params, VPANEL ifrompanel)
 	{
 		((VPanel *)vguiPanel)->SendMessage(params, ifrompanel);
@@ -206,81 +240,96 @@ public:
 
 	virtual void Think(VPANEL vguiPanel)
 	{
-		((VPanel *)vguiPanel)->Client()->Think();
+		Client(vguiPanel)->Think();
 	}
 
 	virtual void PerformApplySchemeSettings(VPANEL vguiPanel)
 	{
-		((VPanel *)vguiPanel)->Client()->PerformApplySchemeSettings();
+		Client(vguiPanel)->PerformApplySchemeSettings();
 	}
 
 	virtual void PaintTraverse(VPANEL vguiPanel, bool forceRepaint, bool allowForce)
 	{
-		((VPanel *)vguiPanel)->Client()->PaintTraverse(forceRepaint, allowForce);
+		Client(vguiPanel)->PaintTraverse(forceRepaint, allowForce);
 	}
 
 	virtual void Repaint(VPANEL vguiPanel)
 	{
-		((VPanel *)vguiPanel)->Client()->Repaint();
+		Client(vguiPanel)->Repaint();
 	}
 
 	virtual VPANEL IsWithinTraverse(VPANEL vguiPanel, int x, int y, bool traversePopups)
 	{
-		return ((VPanel *)vguiPanel)->Client()->IsWithinTraverse(x, y, traversePopups);
+		return Client(vguiPanel)->IsWithinTraverse(x, y, traversePopups);
 	}
 
 	virtual void OnChildAdded(VPANEL vguiPanel, VPANEL child)
 	{
-		((VPanel *)vguiPanel)->Client()->OnChildAdded(child);
+		Client(vguiPanel)->OnChildAdded(child);
 	}
 
 	virtual void OnSizeChanged(VPANEL vguiPanel, int newWide, int newTall)
 	{
-		((VPanel *)vguiPanel)->Client()->OnSizeChanged(newWide, newTall);
+		Client(vguiPanel)->OnSizeChanged(newWide, newTall);
 	}
 
 	virtual void InternalFocusChanged(VPANEL vguiPanel, bool lost)
 	{
-		((VPanel *)vguiPanel)->Client()->InternalFocusChanged(lost);
+		Client(vguiPanel)->InternalFocusChanged(lost);
 	}
 
 	virtual bool RequestInfo(VPANEL vguiPanel, KeyValues *outputData)
 	{
-		return ((VPanel *)vguiPanel)->Client()->RequestInfo(outputData);
+		return Client(vguiPanel)->RequestInfo(outputData);
 	}
 
 	virtual void RequestFocus(VPANEL vguiPanel, int direction = 0)
 	{
-		((VPanel *)vguiPanel)->Client()->RequestFocus();
+		Client(vguiPanel)->RequestFocus(direction);
+	}
+
+	virtual bool RequestFocusPrev(VPANEL vguiPanel, VPANEL existingPanel)
+	{
+		return Client(vguiPanel)->RequestFocusPrev(existingPanel);
+	}
+
+	virtual bool RequestFocusNext(VPANEL vguiPanel, VPANEL existingPanel)
+	{
+		return Client(vguiPanel)->RequestFocusNext(existingPanel);
 	}
 
 	virtual VPANEL GetCurrentKeyFocus(VPANEL vguiPanel)
 	{
-		return ((VPanel *)vguiPanel)->Client()->GetCurrentKeyFocus();
+		return Client(vguiPanel)->GetCurrentKeyFocus();
+	}
+
+	virtual int GetTabPosition(VPANEL vguiPanel)
+	{
+		return Client(vguiPanel)->GetTabPosition();
 	}
 
 	virtual Panel *GetPanel(VPANEL vguiPanel, const char *moduleName)
 	{
-		if (vguiPanel == surface()->GetEmbeddedPanel())
+		if (!vguiPanel)
 			return NULL;
 
-/*#ifdef _DEBUG
+		if (vguiPanel == g_pSurface->GetEmbeddedPanel())
+			return NULL;
+
 		// assert that the specified vpanel is from the same module as requesting the cast
-		if (stricmp(GetModuleName(vguiPanel), moduleName))
+		if ( !vguiPanel || V_stricmp(GetModuleName(vguiPanel), moduleName) )
 		{
-			// FIXME!!!!
-			// DON'T CHECK ME IN!!!
-			//assert(!("GetPanel() used to retrieve a Panel * from a different dll than which which it was created. This is bad, you can't pass Panel * across dll boundaries else you'll break the versioning.  Please only use a VPANEL."));
+			// assert(!("GetPanel() used to retrieve a Panel * from a different dll than which which it was created. This is bad, you can't pass Panel * across dll boundaries else you'll break the versioning.  Please only use a VPANEL."));
+			// this is valid for now
+			return NULL;
 		}
-#endif*/
-		return ((VPanel *)vguiPanel)->Client()->GetPanel();
+		return Client(vguiPanel)->GetPanel();
 	}
 
 	virtual const char *GetModuleName(VPANEL vguiPanel)
 	{
-		return ((VPanel *)vguiPanel)->Client()->GetModuleName();
+		return Client(vguiPanel)->GetModuleName();
 	}
-
 
 	virtual void SetKeyBoardInputEnabled( VPANEL vguiPanel, bool state ) 
 	{
@@ -302,7 +351,10 @@ public:
 		return ((VPanel *)vguiPanel)->IsKeyBoardInputEnabled();
 	}
 
-
+	virtual void SetSiblingPin(VPANEL vguiPanel, VPANEL newSibling, byte iMyCornerToPin = 0, byte iSiblingCornerToPinTo = 0 )
+	{
+		return ((VPanel *)vguiPanel)->SetSiblingPin( (VPanel *)newSibling, iMyCornerToPin, iSiblingCornerToPinTo );
+	}
 
 };
 

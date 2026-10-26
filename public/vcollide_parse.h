@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VCOLLIDE_PARSE_H
 #define VCOLLIDE_PARSE_H
@@ -25,10 +25,12 @@ struct solid_t
 
 struct fluid_t
 {
-	fluidparams_t params;
 	int index;
+	char surfaceprop[512];
 
-	fluid_t() {}
+	fluidparams_t params;
+
+	fluid_t() = default;
 	fluid_t( fluid_t const& src ) : params(src.params)
 	{
 		index = src.index;

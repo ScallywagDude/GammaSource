@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef CONTROLS_H
 #define CONTROLS_H
@@ -17,13 +12,15 @@
 #pragma once
 #endif
 
-//#include <vgui/VGUI.h>
+#include <vgui/VGUI.h>
+#include <vgui/IPanel.h>
+#include <vstdlib/IKeyValuesSystem.h>
 
-#include "interface.h"
+#include "tier1/interface.h"
+#include "vgui/MouseCode.h"
+#include "vgui/KeyCode.h"
+#include "tier3/tier3.h"
 
-class IFileSystem;
-class IKeyValues;
-class KeyValues;
 
 namespace vgui
 {
@@ -36,43 +33,67 @@ bool VGui_InitInterfacesList( const char *moduleName, CreateInterfaceFn *factory
 // returns the name of the module as specified above
 const char *GetControlsModuleName();
 
+class IPanel;
+class IInput;
+class ISchemeManager;
+class ISurface;
+class ISystem;
+class IVGui;
+
+//-----------------------------------------------------------------------------
+// Backward compat interfaces, use the interfaces grabbed in tier3
 // set of accessor functions to vgui interfaces
 // the appropriate header file for each is listed above the item
-
-// #include <vgui/IPanel.h>
-class IPanel *ipanel();
+//-----------------------------------------------------------------------------
 
 // #include <vgui/IInput.h>
-class IInput *input();
+inline vgui::IInput *input()
+{
+	return g_pVGuiInput;
+}
 
 // #include <vgui/IScheme.h>
-class ISchemeManager *scheme();
+inline vgui::ISchemeManager *scheme()
+{
+	return g_pVGuiSchemeManager;
+}
 
 // #include <vgui/ISurface.h>
-class ISurface *surface();
+inline vgui::ISurface *surface()
+{
+	return g_pVGuiSurface;
+}
 
 // #include <vgui/ISystem.h>
-class ISystem *system();
+inline vgui::ISystem *system()
+{
+	return g_pVGuiSystem;
+}
 
 // #include <vgui/IVGui.h>
-class IVGui *ivgui();
+inline vgui::IVGui *ivgui()
+{
+	return g_pVGui;
+}
 
-// #include <vgui/ILocalize.h>
-class ILocalize *localize();
-
-// #include "FileSystem.h"
-IFileSystem *filesystem();
-
-// #include "IKeyValues.h"
-IKeyValues *keyvalues();
+// #include <vgui/IPanel.h>
+inline vgui::IPanel *ipanel()
+{
+	return g_pVGuiPanel;
+}
 
 // predeclare all the vgui control class names
+class AnalogBar;
 class AnimatingImagePanel;
 class AnimationController;
 class BuildModeDialog;
 class Button;
 class CheckButton;
+class CheckButtonList;
+class CircularProgressBar;
+template< class T >class CvarToggleCheckButton;
 class ComboBox;
+class DirectorySelectDialog;
 class Divider;
 class EditablePanel;
 class FileOpenDialog;
@@ -81,8 +102,8 @@ class GraphPanel;
 class HTML;
 class ImagePanel;
 class Label;
-class LabelComboBox;
 class ListPanel;
+class ListViewPanel;
 class Menu;
 class MenuBar;
 class MenuButton;
@@ -98,14 +119,19 @@ class PropertySheet;
 class QueryBox;
 class RadioButton;
 class RichText;
+class ScalableImagePanel;
 class ScrollBar;
 class ScrollBarSlider;
 class SectionedListPanel;
 class Slider;
+class Splitter;
 class TextEntry;
 class ToggleButton;
-class Tooltip;
-class URLTextEntry;
+class BaseTooltip;
+class TextTooltip;
+class TreeView;
+class CTreeViewListControl;
+class URLLabel;
 class WizardPanel;
 class WizardSubPanel;
 
@@ -118,14 +144,18 @@ class Image;
 class ImageList;
 class TextImage;
 
-// vgui enumerations
-enum KeyCode;
-enum MouseCode;
-
 } // namespace vgui
 
 // hotkeys disabled until we work out exactly how we want to do them
 #define VGUI_HOTKEYS_ENABLED
-// #define VGUI_DRAW_HOTKEYS_ENABLED
+//#define VGUI_DRAW_HOTKEYS_ENABLED
+
+#define USING_BUILD_FACTORY( className )				\
+	extern className *g_##className##LinkerHack;		\
+	className *g_##className##PullInModule = g_##className##LinkerHack;
+
+#define USING_BUILD_FACTORY_ALIAS( className, factoryName )				\
+	extern className *g_##factoryName##LinkerHack;		\
+	className *g_##factoryName##PullInModule = g_##factoryName##LinkerHack;
 
 #endif // CONTROLS_H

@@ -1,0 +1,51 @@
+// GammaSource: 2003 beta hands drawn on retail viewmodels (game/client/gamma/c_betahands.cpp).
+// "donor": a beta viewmodel with its weapon materials hidden; its bones follow the retail model.
+// "bones": donor bone -> retail bone. The donor bone copies the retail bone (plus "align_pos" /
+//          "align_ang", in the retail bone's space). With '@' it instead keeps where it sits
+//          relative to the retail bone in the two models' idle animations.
+// Donor "Bip01 X Y" bones also map to retail "Bip01_X_Y" / "ValveBiped.Bip01_X_Y" by themselves.
+// Donor bones with no match keep their idle-pose relation to a mapped child or parent.
+// cl_betahands_tweak_pos / cl_betahands_tweak_ang adjust the alignment live.
+"BetaHands"
+{
+	"models/weapons/v_gamma_crossbow.mdl"
+	{
+		"donor" "models/weapons/v_betahands_ar2.mdl"
+		"retarget" "1"
+		"target_positions" "1"
+		"bone_prefix" "Crossbow_model."
+		"bones"
+		{
+			"Bip01" "@Crossbow_model.Base"
+			// The retail model bakes its right glove onto the crossbow bone.
+			"Dummy14" "@Crossbow_model.Crossbow_base"
+		}
+	}
+	"models/weapons/v_gamma_357.mdl"
+	{
+		"donor"		"models/weapons/v_betahands_pistol.mdl"
+		"align_pos"	"0 -2 -4"
+		"align_ang"	"90 0 0"
+		"bones"
+		{
+			// the beta pistol body follows the revolver; the right arm hangs off it
+			"Dummy14"		"Python"
+		}
+	}
+	"models/weapons/v_gamma_ar2future.mdl"
+	{
+		"donor"		"models/weapons/v_betahands_ar2.mdl"
+		"bones"
+		{
+			"Bip01"			"@Base"
+		}
+	}
+	"models/weapons/v_gamma_portalgun.mdl"
+	{
+		// Retarget reference-pose deltas: Chell and the beta hands use different bone axes.
+		"retarget" "1"
+		"anchor" "Bip01 R Hand"
+		"hide_bones" { "Bip01 L Clavicle" "1" }
+		"donor"		"models/weapons/v_betahands_pistol.mdl"
+	}
+}

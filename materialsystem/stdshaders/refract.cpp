@@ -1,67 +1,80 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "BaseVSShader.h"
+#include "convar.h"
+#include "refract_dx9_helper.h"
 
-#define MAXBLUR 1
+DEFINE_FALLBACK_SHADER( Refract, Refract_DX90 )
 
-BEGIN_VS_SHADER( Refract, 
-			  "Help for Refract" )
+BEGIN_VS_SHADER( Refract_DX90, "Help for Refract" )
 
 	BEGIN_SHADER_PARAMS
-		SHADER_PARAM( REFRACTAMOUNT, SHADER_PARAM_TYPE_FLOAT, "0", "" )
+		SHADER_PARAM_OVERRIDE( COLOR, SHADER_PARAM_TYPE_COLOR, "{255 255 255}", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( ALPHA, SHADER_PARAM_TYPE_FLOAT, "1.0", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM( REFRACTAMOUNT, SHADER_PARAM_TYPE_FLOAT, "2", "" )
 		SHADER_PARAM( REFRACTTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "refraction tint" )
-		SHADER_PARAM( DUDVMAP, SHADER_PARAM_TYPE_TEXTURE, "", "dudv bump map" )
-		SHADER_PARAM( NORMALMAP, SHADER_PARAM_TYPE_TEXTURE, "", "normal map" )
-		SHADER_PARAM( BUMPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $bumpmap" )
-		SHADER_PARAM( DUDVFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $dudvmap" )
-		SHADER_PARAM( BUMPTRANSFORM, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "$bumpmap texcoord transform" )
-		SHADER_PARAM( TIME, SHADER_PARAM_TYPE_FLOAT, "", "" )
-		SHADER_PARAM( BLURAMOUNT, SHADER_PARAM_TYPE_INTEGER, "", "0, 1, or 2 for how much blur you want" )
-		SHADER_PARAM( FADEOUTONSILHOUETTE, SHADER_PARAM_TYPE_BOOL, "", "0 for no fade out on silhouette, 1 for fade out on sillhouette" )
+		SHADER_PARAM( NORMALMAP, SHADER_PARAM_TYPE_TEXTURE, "models/shadertest/shader1_normal", "normal map" )
+		SHADER_PARAM( NORMALMAP2, SHADER_PARAM_TYPE_TEXTURE, "models/shadertest/shader1_normal", "normal map" )
+		SHADER_PARAM( BUMPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $normalmap" )
+		SHADER_PARAM( BUMPFRAME2, SHADER_PARAM_TYPE_INTEGER, "0", "frame number for $normalmap" )
+		SHADER_PARAM( BUMPTRANSFORM, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "$normalmap texcoord transform" )
+		SHADER_PARAM( BUMPTRANSFORM2, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "$normalmap texcoord transform" )
+		SHADER_PARAM( TIME, SHADER_PARAM_TYPE_FLOAT, "0.0f", "" )
+		SHADER_PARAM( BLURAMOUNT, SHADER_PARAM_TYPE_INTEGER, "1", "0, 1, or 2 for how much blur you want" )
+		SHADER_PARAM( FADEOUTONSILHOUETTE, SHADER_PARAM_TYPE_BOOL, "1", "0 for no fade out on silhouette, 1 for fade out on sillhouette" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
-		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "envmap frame number" )
+		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "envmap frame number" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
 		SHADER_PARAM( ENVMAPCONTRAST, SHADER_PARAM_TYPE_FLOAT, "0.0", "contrast 0 == normal 1 == color*color" )
 		SHADER_PARAM( ENVMAPSATURATION, SHADER_PARAM_TYPE_FLOAT, "1.0", "saturation 0 == greyscale 1 == normal" )
-		SHADER_PARAM( REFRACTTINTTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "", "" )
+		SHADER_PARAM( REFRACTTINTTEXTURE, SHADER_PARAM_TYPE_TEXTURE, "models/shadertest/shield", "" )
 		SHADER_PARAM( REFRACTTINTTEXTUREFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
-		SHADER_PARAM( FRESNELREFLECTION, SHADER_PARAM_TYPE_FLOAT, "0.0", "0.0 == no fresnel, 1.0 == full fresnel" )
+		SHADER_PARAM( FRESNELREFLECTION, SHADER_PARAM_TYPE_FLOAT, "1.0", "1.0 == mirror, 0.0 == water" )
+		SHADER_PARAM( NOWRITEZ, SHADER_PARAM_TYPE_INTEGER, "0", "0 == write z, 1 = no write z" )
+		SHADER_PARAM( MASKED, SHADER_PARAM_TYPE_BOOL, "0", "mask using dest alpha" )
+		SHADER_PARAM( VERTEXCOLORMODULATE, SHADER_PARAM_TYPE_BOOL, "0","Use the vertex color to effect refract color. alpha will adjust refract amount" )
+		SHADER_PARAM( FORCEALPHAWRITE, SHADER_PARAM_TYPE_BOOL, "0","Force the material to write alpha to the dest buffer" )
 	END_SHADER_PARAMS
-// FIXME: doesn't support fresnel!
-	SHADER_INIT_PARAMS()
+// FIXME: doesn't support Fresnel!
+
+	void SetupVars( Refract_DX9_Vars_t& info )
 	{
-		SET_FLAGS2( MATERIAL_VAR2_NEEDS_TANGENT_SPACES );
-		SET_FLAGS( MATERIAL_VAR_TRANSLUCENT );
-		if( !params[ENVMAPTINT]->IsDefined() )
-		{
-			params[ENVMAPTINT]->SetVecValue( 1.0f, 1.0f, 1.0f );
-		}
-		if( !params[ENVMAPCONTRAST]->IsDefined() )
-		{
-			params[ENVMAPCONTRAST]->SetFloatValue( 0.0f );
-		}
-		if( !params[ENVMAPSATURATION]->IsDefined() )
-		{
-			params[ENVMAPSATURATION]->SetFloatValue( 1.0f );
-		}
-		if( !params[ENVMAPFRAME]->IsDefined() )
-		{
-			params[ENVMAPFRAME]->SetIntValue( 0 );
-		}
-		if( !params[FRESNELREFLECTION]->IsDefined() )
-		{
-			params[FRESNELREFLECTION]->SetFloatValue( 1.0f );
-		}
+		info.m_nBaseTexture = BASETEXTURE;
+		info.m_nFrame = FRAME;
+		info.m_nRefractAmount = REFRACTAMOUNT;
+		info.m_nRefractTint = REFRACTTINT;
+		info.m_nNormalMap = NORMALMAP;
+		info.m_nNormalMap2 = NORMALMAP2;
+		info.m_nBumpFrame = BUMPFRAME;
+		info.m_nBumpFrame2 = BUMPFRAME2;
+		info.m_nBumpTransform = BUMPTRANSFORM;
+		info.m_nBumpTransform2 = BUMPTRANSFORM2;
+		info.m_nBlurAmount = BLURAMOUNT;
+		info.m_nFadeOutOnSilhouette = FADEOUTONSILHOUETTE;
+		info.m_nEnvmap = ENVMAP;
+		info.m_nEnvmapFrame = ENVMAPFRAME;
+		info.m_nEnvmapTint = ENVMAPTINT;
+		info.m_nEnvmapContrast = ENVMAPCONTRAST;
+		info.m_nEnvmapSaturation = ENVMAPSATURATION;
+		info.m_nRefractTintTexture = REFRACTTINTTEXTURE;
+		info.m_nRefractTintTextureFrame = REFRACTTINTTEXTUREFRAME;
+		info.m_nFresnelReflection = FRESNELREFLECTION;
+		info.m_nNoWriteZ = NOWRITEZ;
+		info.m_nMasked = MASKED;
+		info.m_nVertexColorModulate = VERTEXCOLORMODULATE;
+		info.m_nForceAlphaWrite = FORCEALPHAWRITE;
 	}
 
-	bool NeedsFrameBufferTexture( IMaterialVar **params ) const
+	SHADER_INIT_PARAMS()
 	{
-		return true;
+		Refract_DX9_Vars_t info;
+		SetupVars( info );
+		InitParamsRefract_DX9( this, params, pMaterialName, info );
 	}
 
 	SHADER_FALLBACK
@@ -74,145 +87,25 @@ BEGIN_VS_SHADER( Refract,
 
 	SHADER_INIT
 	{
-		if (params[DUDVMAP]->IsDefined() )
-		{
-			LoadTexture( DUDVMAP );
-		}
-		if (params[NORMALMAP]->IsDefined() )
-		{
-			LoadBumpMap( NORMALMAP );
-		}
-		if( params[ENVMAP]->IsDefined() )
-		{
-			LoadCubeMap( ENVMAP );
-		}
-		if( params[REFRACTTINTTEXTURE]->IsDefined() )
-		{
-			LoadTexture( REFRACTTINTTEXTURE );
-		}
-		if( !params[BLURAMOUNT]->IsDefined() )
-		{
-			params[BLURAMOUNT]->SetIntValue( 0 );
-		}
-		if( !params[FADEOUTONSILHOUETTE]->IsDefined() )
-		{
-			params[FADEOUTONSILHOUETTE]->SetIntValue( 0 );
-		}
+		Refract_DX9_Vars_t info;
+		SetupVars( info );
+		InitRefract_DX9( this, params, info );
 	}
 
-	inline int ComputePixelShaderIndex( int blurAmount, bool bFadeOutOnSilhouette,
-		bool bHasEnvmap, bool bRefractTintTexture )
-	{
-		// "BLUR" "0..1"
-		// "FADEOUTONSILHOUETTE" "0..1"
-		// "CUBEMAP" "0..1"
-		// "REFRACTTINTTEXTURE" "0..1"
-
-		int pshIndex = 0;
-		if( blurAmount )			pshIndex |= ( 1 << 0 );
-		if( bFadeOutOnSilhouette )	pshIndex |= ( 1 << 1 );
-		if( bHasEnvmap )			pshIndex |= ( 1 << 2 );
-		if( bRefractTintTexture )	pshIndex |= ( 1 << 3 );
-		return pshIndex;
-	}
-	
 	SHADER_DRAW
 	{
-		bool bIsModel = IS_FLAG_SET( MATERIAL_VAR_MODEL );
-		bool bHasEnvmap = params[ENVMAP]->IsDefined();
-		bool bRefractTintTexture = params[REFRACTTINTTEXTURE]->IsDefined();
-		bool bFadeOutOnSilhouette = params[FADEOUTONSILHOUETTE]->GetIntValue() != 0;
-		int blurAmount = params[BLURAMOUNT]->GetIntValue();
-		if( blurAmount < 0 )
+		Refract_DX9_Vars_t info;
+		SetupVars( info );
+		
+		// If ( snapshotting ) or ( we need to draw this frame )
+		bool bHasFlashlight = this->UsingFlashlight( params );
+		if ( ( pShaderShadow != NULL ) || ( bHasFlashlight == false ) )
 		{
-			blurAmount = 0;
+			DrawRefract_DX9( this, params, pShaderAPI, pShaderShadow, info, vertexCompression );
 		}
-		else if( blurAmount > MAXBLUR )
+		else
 		{
-			blurAmount = MAXBLUR;
+			Draw( false );
 		}
-		SHADOW_STATE
-		{
-			SetInitialShadowState( );
-			// renderable texture for refraction
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE2, true );
-			// normal map
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE3, true );
-			if( bHasEnvmap )
-			{
-				// envmap
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE4, true );
-			}
-			if( bRefractTintTexture )
-			{
-				// refract tint texture
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE5, true );
-			}
-			int fmt = VERTEX_POSITION | VERTEX_NORMAL;
-			int numBoneWeights = 0;
-			int userDataSize = 0;
-			if( bIsModel )
-			{
-				numBoneWeights = 3;
-				userDataSize = 4;
-				fmt |= VERTEX_BONE_INDEX;
-			}
-			else
-			{
-				fmt |= VERTEX_TANGENT_S | VERTEX_TANGENT_T;
-			}
-			pShaderShadow->VertexShaderVertexFormat( fmt, 1, 0, numBoneWeights, userDataSize );
-			pShaderShadow->SetVertexShader( "Refract_vs20" );
-			int pshIndex = ComputePixelShaderIndex( blurAmount != 0, 
-				bFadeOutOnSilhouette,
-				bHasEnvmap, 
-				bRefractTintTexture );
-			pShaderShadow->SetPixelShader( "Refract_ps20", pshIndex );
-		}
-		DYNAMIC_STATE
-		{
-			pShaderAPI->SetDefaultState();
-
-			if ( params[DUDVFRAME]->GetIntValue() == 0 )
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, DUDVMAP, BUMPFRAME );
-			}
-			else
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, DUDVMAP, DUDVFRAME );
-			}
-
-			pShaderAPI->BindFBTexture( SHADER_TEXTURE_STAGE2 );
-			BindTexture( SHADER_TEXTURE_STAGE3, NORMALMAP, BUMPFRAME );
-			if( bHasEnvmap )
-			{
-				BindTexture( SHADER_TEXTURE_STAGE4, ENVMAP, ENVMAPFRAME );
-			}
-			if( bRefractTintTexture )
-			{
-				BindTexture( SHADER_TEXTURE_STAGE5, REFRACTTINTTEXTURE, REFRACTTINTTEXTUREFRAME );
-			}
-
-			int numBones	= pShaderAPI->GetCurrentNumBones();
-
-			//	"NUM_BONES"				"0..3"
-			//  "MODEL"					"0..1"
-			int vshIndex = bIsModel * 4 + numBones;
-			pShaderAPI->SetVertexShaderIndex( vshIndex );
-
-			SetVertexShaderTextureTransform( 91, BUMPTRANSFORM );
-
-			SetPixelShaderConstant( 0, ENVMAPTINT );
-			SetPixelShaderConstant( 1, REFRACTTINT );
-			SetPixelShaderConstant( 2, ENVMAPCONTRAST );
-			SetPixelShaderConstant( 3, ENVMAPSATURATION );
-			float c5[4] = { params[REFRACTAMOUNT]->GetFloatValue(), 
-				params[REFRACTAMOUNT]->GetFloatValue(), 0.0f, 0.0f };
-			pShaderAPI->SetPixelShaderConstant( 5, c5, 1 );
-
-			FogToFogColor();
-		}
-		Draw();
 	}
 END_SHADER
-

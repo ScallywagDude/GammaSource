@@ -1,5 +1,5 @@
-; "REFLECT" "0..1"
-; "REFRACT" "0..1"
+; STATIC: "REFLECT" "0..1"
+; STATIC: "REFRACT" "0..1"
 ps.1.4
 ; T2 - refraction
 ; T3 - normal map
@@ -76,20 +76,21 @@ mul r0.a, r0.a, r0.a
 mul_sat r0.a, r0.a, 1-r1.a
 #endif
 
-#if REFLECT == 0 && REFRACT == 0
+#if !REFLECT && !REFRACT
 ; This is wrong!!!!
 mov r0.rgba, c0
 #endif
 
-#if REFLECT == 0 && REFRACT == 1
+#if !REFLECT && REFRACT
 mov r0.rgba, r2
 #endif
 
-#if REFLECT == 1 && REFRACT == 0
+#if REFLECT && !REFRACT
 mov r0.rgba, r4
 #endif
 
-#if REFLECT == 1 && REFRACT == 1
+#if REFLECT && REFRACT
 ; reflection * fresnel + refraction * ( 1 - fresnel )
 lrp r0.rgba, r0.a, r4, r2
 #endif
+

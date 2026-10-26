@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef PHYSICS_CONTROLLER_RAYCAST_VEHICLE_H
 #define PHYSICS_CONTROLLER_RAYCAST_VEHICLE_H
@@ -10,8 +10,6 @@
 #pragma once
 #endif
 
-#include "vector.h"
-#include "ivp_physics.hxx"
 #include "ivp_controller.hxx"
 #include "ivp_car_system.hxx"
 #include "ivp_controller_raycast_car.hxx"
@@ -37,6 +35,7 @@ public:
 
 	IPhysicsObject *GetWheel( int index );
 
+	virtual const char *get_controller_name() { return "sys:vehicle"; }
 protected:
 
 	void InitCarSystemWheels( const IVP_Template_Car_System *pCarSystem );

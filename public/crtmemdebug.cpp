@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -9,12 +9,17 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
+#if !defined(_STATIC_LINKED) || defined(_SHARED_LIB)
 
 #include "crtmemdebug.h"
 #ifdef USECRTMEMDEBUG
 #include <crtdbg.h>
 #endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 void CheckHeap( void )
 {
@@ -35,3 +40,5 @@ void InitCRTMemDebug( void )
 	_CRTDBG_DELAY_FREE_MEM_DF );
 #endif
 }
+
+#endif // !_STATIC_LINKED || _SHARED_LIB

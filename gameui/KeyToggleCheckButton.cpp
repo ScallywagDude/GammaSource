@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "KeyToggleCheckButton.h"
 #include "EngineInterface.h"
@@ -75,7 +75,7 @@ void CKeyToggleCheckButton::SetSelected( bool state )
 
 	char szCommand[ 256 ];
 
-	sprintf( szCommand, "%c%s\n", IsSelected() ? '+' : '-',
+	Q_snprintf( szCommand, sizeof( szCommand ), "%c%s\n", IsSelected() ? '+' : '-',
 		m_pszCmdName );
 
 	engine->pfnClientCmd( szCommand );
@@ -103,10 +103,10 @@ void CKeyToggleCheckButton::ApplyChanges()
 
 	char szCommand[ 256 ];
 
-	sprintf( szCommand, "%c%s\n", IsSelected() ? '+' : '-',
+	Q_snprintf( szCommand, sizeof( szCommand ), "%c%s\n", IsSelected() ? '+' : '-',
 		m_pszCmdName );
 
-	engine->ClientCmd( szCommand );
+	engine->ClientCmd_Unrestricted( szCommand );
 }
 
 //-----------------------------------------------------------------------------

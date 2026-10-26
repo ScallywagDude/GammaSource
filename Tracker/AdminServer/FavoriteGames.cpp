@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "FavoriteGames.h"
 
 #include "proto_oob.h"
@@ -16,8 +15,8 @@
 #include "serverpage.h"
 #include "DialogAddServer.h"
 #include "FavoriteGames.h"
-#include "FileSystem.h"
-#include "UtlBuffer.h"
+#include "filesystem.h"
+#include "tier1/utlbuffer.h"
 
 #include <VGUI_Controls.h>
 #include <VGUI_KeyValues.h>
@@ -223,7 +222,7 @@ void CFavoriteGames::AddNewServer(serveritem_t &newServer)
 	serveritem_t &server = m_Servers.GetServer(index);
 	server.hadSuccessfulResponse = true;
 	server.doNotRefresh = false;
-	server.listEntryID = m_pGameList->InvalidItemID();
+	server.listEntry = NULL;
 	server.serverID = index;
 }
 
@@ -242,17 +241,17 @@ void CFavoriteGames::ListReceived(bool moreAvailable, int lastUnique)
 //-----------------------------------------------------------------------------
 void CFavoriteGames::OnBeginConnect()
 {
-	if (!m_pGameList->GetSelectedItemsCount())
+	if (!m_pGameList->GetNumSelectedRows())
 		return;
 	
 	// get the server
-	int serverIndex = m_pGameList->GetItemData(m_pGameList->GetSelectedItem(0))->userData;
+	int serverIndex = m_pGameList->GetDataItem(m_pGameList->GetSelectedRow(0))->userData;
 	
 	// stop the current refresh
 	StopRefresh();
 	
 	// join the game
-	VInternetDlg::GetInstance()->JoinGame(this, serverIndex);
+	CServerPage::GetInstance()->JoinGame(this, serverIndex);
 }
 
 //-----------------------------------------------------------------------------
@@ -260,17 +259,17 @@ void CFavoriteGames::OnBeginConnect()
 //-----------------------------------------------------------------------------
 void CFavoriteGames::OnViewGameInfo()
 {
-	if (!m_pGameList->GetSelectedItemsCount())
+	if (!m_pGameList->GetNumSelectedRows())
 		return;
 	
 	// get the server
-	int serverIndex = m_pGameList->GetItemData(m_pGameList->GetSelectedItem(0))->userData;
+	int serverIndex = m_pGameList->GetDataItem(m_pGameList->GetSelectedRow(0))->userData;
 	
 	// stop the current refresh
 	StopRefresh();
 	
 	// join the game
-	VInternetDlg::GetInstance()->OpenGameInfoDialog(this, serverIndex);
+	CServerPage::GetInstance()->OpenGameInfoDialog(this, serverIndex);
 }
 
 //-----------------------------------------------------------------------------
@@ -288,11 +287,11 @@ void CFavoriteGames::ServerResponded(serveritem_t &server)
 {
 	// update UI
 	KeyValues *kv;
-	if (m_pGameList->IsValidItemID(server.listEntryID))
+	if (server.listEntry)
 	{
 		// we're updating an existing entry
-		kv = m_pGameList->GetItem(server.listEntryID);
-		m_pGameList->SetUserData(server.listEntryID, server.serverID);
+		kv = server.listEntry->kv;
+		server.listEntry->userData = server.serverID;
 	}
 	else
 	{
@@ -322,15 +321,15 @@ void CFavoriteGames::ServerResponded(serveritem_t &server)
 		kv->SetInt("Ping", server.ping);
 	}
 
-	if (!m_pGameList->IsValidItemID(server.listEntryID))
+	if (!server.listEntry)
 	{
 		// new server, add to list
-		int index = m_pGameList->AddItem(kv, server.serverID, false, false);
-		server.listEntryID = index;
+		int index = m_pGameList->AddItem(kv, server.serverID);
+		server.listEntry = m_pGameList->GetDataItem(index);
 	}
 	else
 	{
-		m_pGameList->ApplyItemChanges(server.listEntryID);
+		m_pGameList->ApplyItemChanges(server.listEntry->row);
 	}
 	
 	m_iServerRefreshCount++;
@@ -373,11 +372,11 @@ void CFavoriteGames::RefreshComplete()
 //-----------------------------------------------------------------------------
 void CFavoriteGames::OnOpenContextMenu(int row)
 {
-	CServerContextMenu *menu = VInternetDlg::GetInstance()->GetContextMenu();
-	if (m_pGameList->GetSelectedItemsCount())
+	CServerContextMenu *menu = CServerPage::GetInstance()->GetContextMenu();
+	if (m_pGameList->GetNumSelectedRows())
 	{
 		// get the server
-		unsigned int serverID = m_pGameList->GetItemData(m_pGameList->GetSelectedItem(0))->userData;
+		unsigned int serverID = m_pGameList->GetDataItem(m_pGameList->GetSelectedRow(0))->userData;
 		serveritem_t &server = m_Servers.GetServer(serverID);
 		
 		// activate context menu
@@ -400,11 +399,11 @@ void CFavoriteGames::OnOpenContextMenu(int row)
 void CFavoriteGames::OnRefreshServer(int serverID)
 {
 	// walk the list of selected servers refreshing them
-	for (int i = 0; i < m_pGameList->GetSelectedItemsCount(); i++)
+	for (int i = 0; i < m_pGameList->GetNumSelectedRows(); i++)
 	{
-		int row = m_pGameList->GetSelectedItem(i);
+		int row = m_pGameList->GetSelectedRow(i);
 
-		vgui::ListPanelItem *data = m_pGameList->GetItemData(row);
+		ListPanel::DATAITEM *data = m_pGameList->GetDataItem(row);
 		if (data)
 		{
 			serverID = data->userData;
@@ -425,10 +424,10 @@ void CFavoriteGames::OnRefreshServer(int serverID)
 void CFavoriteGames::OnRemoveFromFavorites()
 {
 	// iterate the selection
-	while (m_pGameList->GetSelectedItemsCount() > 0)
+	while (m_pGameList->GetNumSelectedRows() > 0)
 	{
-		int row = m_pGameList->GetSelectedItem(0);
-		int serverID = m_pGameList->GetItemData(row)->userData;
+		int row = m_pGameList->GetSelectedRow(0);
+		int serverID = m_pGameList->GetDataItem(row)->userData;
 		
 		if (serverID >= m_Servers.ServerCount())
 			continue;
@@ -436,11 +435,11 @@ void CFavoriteGames::OnRemoveFromFavorites()
 		serveritem_t &server = m_Servers.GetServer(serverID);
 		
 		// remove from favorites list
-		if (m_pGameList->IsValidItemID(server.listEntryID))
+		if (server.listEntry)
 		{
 			// find the row in the list and kill
-			m_pGameList->RemoveItem(server.listEntryID);
-			server.listEntryID = m_pGameList->InvalidItemID();
+			m_pGameList->RemoveItem(server.listEntry->row);
+			server.listEntry = NULL;
 		}
 		
 		server.doNotRefresh = true;
@@ -466,7 +465,7 @@ void CFavoriteGames::OnAddServerByName()
 int LoadFileIntoBuffer(CUtlBuffer &buf, char *pszFilename)
 {
 	// Open the file
-	FileHandle_t fh = filesystem()->Open( pszFilename, "rb" );
+	FileHandle_t fh = g_pFullFileSystem->Open( pszFilename, "rb" );
 	if (fh == 0)
 	{
 		MessageBox *dlg = new MessageBox ("Unable to open datafile.", false);
@@ -474,12 +473,12 @@ int LoadFileIntoBuffer(CUtlBuffer &buf, char *pszFilename)
 		return 0;	//file didn't load
 	}
 
-	int nFileSize = filesystem()->Size(fh);
+	int nFileSize = g_pFullFileSystem->Size(fh);
 	
 	// Read the file in one gulp
 	buf.EnsureCapacity( nFileSize );
-	int result = filesystem()->Read( buf.Base(), nFileSize, fh );
-	filesystem()->Close( fh );
+	int result = g_pFullFileSystem->Read( buf.Base(), nFileSize, fh );
+	g_pFullFileSystem->Close( fh );
 	
 	return nFileSize;	
 }
@@ -513,12 +512,12 @@ void CFavoriteGames::ImportFavorites()
 	}
 	
 	// see if the favorite server list file exists. 
-	FileHandle_t fh = filesystem()->Open(name, "rb");
+	FileHandle_t fh = g_pFullFileSystem->Open(name, "rb");
 	if ( !fh )
 	{
 		return;
 	}
-	filesystem()->Close(fh);
+	g_pFullFileSystem->Close(fh);
 	
 
 	// it exists! yay lets transfer the servers over into the server browser
@@ -528,7 +527,7 @@ void CFavoriteGames::ImportFavorites()
 	m_pImportFavoritesdlg->SetCommand("OnImportFavoritesFile");
 	m_pImportFavoritesdlg->AddActionSignalTarget(this);
 	// hide the ok button since they dont have to do anything
-	m_pImportFavoritesdlg->SetOKButtonVisible(false);
+	m_pImportFavoritesdlg->SetOkButtonVisible(false);
 	// don't let them close this window
 	m_pImportFavoritesdlg->DisableCloseButton(false);
 	// dont let them put this window on the menubar

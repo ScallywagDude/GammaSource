@@ -1,9 +1,8 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef WRITEBSP_H
 #define WRITEBSP_H
@@ -11,11 +10,10 @@
 #pragma once
 #endif
 
-
 #include "bspfile.h"
+#include "utlmap.h"
 
-
-typedef struct node_s node_t;
+struct node_t;
 
 //-----------------------------------------------------------------------------
 // Emits occluder faces
@@ -27,5 +25,10 @@ void EmitOccluderFaces (node_t *node);
 // Purpose: Free the list of faces stored at the leaves
 //-----------------------------------------------------------------------------
 void FreeLeafFaces( face_t *pLeafFaceList );
+
+//-----------------------------------------------------------------------------
+// Purpose: Make sure that we have a water lod control entity if we have water in the map.
+//-----------------------------------------------------------------------------
+void EnsurePresenceOfWaterLODControlEntity( void );
 
 #endif // WRITEBSP_H

@@ -1,9 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vbsp.h"
 #include "utlvector.h"
-#include "vmatrix.h"
+#include "mathlib/vmatrix.h"
 #include "iscratchpad3d.h"
-
+#include "csg.h"
+#include "fmtstr.h"
 
 int		c_active_portals;
 int		c_peak_portals;
@@ -58,8 +66,12 @@ int VisibleContents (int contents)
 	int		i;
 
 	for (i=1 ; i<=LAST_VISIBLE_CONTENTS ; i<<=1)
+	{
 		if (contents & i )
+		{
 			return i;
+		}
+	}
 
 	return 0;
 }
@@ -152,6 +164,20 @@ qboolean Portal_EntityFlood (portal_t *p, int s)
 	return true;
 }
 
+qboolean Portal_AreaLeakFlood (portal_t *p, int s)
+{
+	if ( !Portal_EntityFlood( p, s ) )
+		return false;
+
+	// can never cross through areaportal
+	if ( (p->nodes[0]->contents & CONTENTS_AREAPORTAL)
+	|| (p->nodes[1]->contents & CONTENTS_AREAPORTAL) )
+		return false;
+
+	// can flood through everything else
+	return true;
+}
+
 
 //=============================================================================
 
@@ -228,6 +254,18 @@ void PrintPortal (portal_t *p)
 	for (i=0 ; i<w->numpoints ; i++)
 		Msg ("(%5.0f,%5.0f,%5.0f)\n",w->p[i][0]
 		, w->p[i][1], w->p[i][2]);
+}
+
+// because of water areaportals support, the areaportal may not be the only brush on this node
+bspbrush_t *AreaportalBrushForNode( node_t *node )
+{
+	bspbrush_t *b = node->brushlist;
+	while ( b && !(b->original->contents & CONTENTS_AREAPORTAL) )
+	{
+		b = b->next;
+	}
+	Assert( b->original->entitynum != 0 );
+	return b;
 }
 
 /*
@@ -317,13 +355,12 @@ winding_t	*BaseWindingForNode (node_t *node)
 	Vector		normal;
 	vec_t		dist;
 
-	w = BaseWindingForPlane (mapplanes[node->planenum].normal
-		, mapplanes[node->planenum].dist);
+	w = BaseWindingForPlane (g_MainMap->mapplanes[node->planenum].normal, g_MainMap->mapplanes[node->planenum].dist);
 
 	// clip by all the parents
 	for (n=node->parent ; n && w ; )
 	{
-		plane = &mapplanes[n->planenum];
+		plane = &g_MainMap->mapplanes[n->planenum];
 
 		if (n->children[0] == node)
 		{	// take front
@@ -344,8 +381,6 @@ winding_t	*BaseWindingForNode (node_t *node)
 
 //============================================================
 
-qboolean WindingIsTiny (winding_t *w);
-
 /*
 ==================
 MakeNodePortal
@@ -359,8 +394,8 @@ void MakeNodePortal (node_t *node)
 	portal_t	*new_portal, *p;
 	winding_t	*w;
 	Vector		normal;
-	float		dist;
-	int			side;
+	float		dist = 0.0f;
+	int			side = 0;
 
 	w = BaseWindingForNode (node);
 
@@ -380,7 +415,9 @@ void MakeNodePortal (node_t *node)
 			dist = -p->plane.dist;
 		}
 		else
+		{
 			Error ("CutNodePortals_r: mislinked portal");
+		}
 
 		ChopWindingInPlace (&w, normal, dist, 0.1);
 	}
@@ -399,7 +436,7 @@ void MakeNodePortal (node_t *node)
 
 
 	new_portal = AllocPortal ();
-	new_portal->plane = mapplanes[node->planenum];
+	new_portal->plane = g_MainMap->mapplanes[node->planenum];
 	new_portal->onnode = node;
 	new_portal->winding = w;	
 
@@ -419,11 +456,11 @@ void SplitNodePortals (node_t *node)
 {
 	portal_t	*p, *next_portal, *new_portal;
 	node_t		*f, *b, *other_node;
-	int			side;
+	int			side = 0;
 	plane_t		*plane;
 	winding_t	*frontwinding, *backwinding;
 
-	plane = &mapplanes[node->planenum];
+	plane = &g_MainMap->mapplanes[node->planenum];
 	f = node->children[0];
 	b = node->children[1];
 
@@ -549,7 +586,16 @@ void MakeTreePortals_r (node_t *node)
 	{
 		if (node->mins[i] < (MIN_COORD_INTEGER-SIDESPACE) || node->maxs[i] > (MAX_COORD_INTEGER+SIDESPACE))
 		{
-			Warning("WARNING: node with unbounded volume\n");
+			const char *pMatName = "<NO BRUSH>";
+			// split by brush side
+			if ( node->side )
+			{
+				texinfo_t *pTexInfo = &texinfo[node->side->texinfo];
+				dtexdata_t *pTexData = GetTexData( pTexInfo->texdata );
+				pMatName = TexDataStringTable_GetString( pTexData->nameStringTableID );
+			}
+			Vector point = node->portals->winding->p[0];
+			Warning("WARNING: BSP node with unbounded volume (material: %s, near %s)\n", pMatName, VecToString(point) );
 			break;
 		}
 	}
@@ -582,12 +628,37 @@ FLOOD ENTITIES
 =========================================================
 */
 
-/*
-=============
-FloodPortals_r
-=============
-*/
+//-----------------------------------------------------------------------------
+// Purpose: Floods outward from the given node, marking visited nodes with
+//			the number of hops from a node with an entity. If we ever mark
+//			the outside_node for this tree, we've leaked.
+// Input  : node - 
+//			dist - 
+//-----------------------------------------------------------------------------
 void FloodPortals_r (node_t *node, int dist)
+{
+	portal_t	*p;
+	int			s;
+
+	node->occupied = dist;
+
+	for (p=node->portals ; p ; p = p->next[s])
+	{
+		s = (p->nodes[1] == node);
+
+		// Skip nodes that have already been marked.
+		if (p->nodes[!s]->occupied)
+			continue;
+
+		// Skip portals that lead to or from nodes with solid contents.
+		if (!Portal_EntityFlood (p, s))
+			continue;
+
+		FloodPortals_r (p->nodes[!s], dist+1);
+	}
+}
+
+void FloodAreaLeak_r( node_t *node, int dist )
 {
 	portal_t	*p;
 	int			s;
@@ -601,18 +672,39 @@ void FloodPortals_r (node_t *node, int dist)
 		if (p->nodes[!s]->occupied)
 			continue;
 
-		if (!Portal_EntityFlood (p, s))
+		if (!Portal_AreaLeakFlood (p, s))
 			continue;
 
-		FloodPortals_r (p->nodes[!s], dist+1);
+		FloodAreaLeak_r( p->nodes[!s], dist+1 );
 	}
 }
 
-/*
-=============
-PlaceOccupant
-=============
-*/
+void ClearOccupied_r( node_t *headnode )
+{
+	if ( !headnode )
+		return;
+
+	headnode->occupied = 0;
+	ClearOccupied_r( headnode->children[0] );
+	ClearOccupied_r( headnode->children[1] );
+}
+
+void FloodAreaLeak( node_t *headnode, node_t *pFirstSide )
+{
+	ClearOccupied_r( headnode );
+	FloodAreaLeak_r( pFirstSide, 2 );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: For the given entity at the given origin, finds the leaf node in the
+//			BSP tree that the entity occupies.
+//
+//			We then flood outward from that leaf to see if the entity leaks.
+// Input  : headnode - 
+//			origin - 
+//			occupant - 
+// Output : Returns false if the entity is in solid, true if it is not.
+//-----------------------------------------------------------------------------
 qboolean PlaceOccupant (node_t *headnode, Vector& origin, entity_t *occupant)
 {
 	node_t	*node;
@@ -623,7 +715,7 @@ qboolean PlaceOccupant (node_t *headnode, Vector& origin, entity_t *occupant)
 	node = headnode;
 	while (node->planenum != PLANENUM_LEAF)
 	{
-		plane = &mapplanes[node->planenum];
+		plane = &g_MainMap->mapplanes[node->planenum];
 		d = DotProduct (origin, plane->normal) - plane->dist;
 		if (d >= 0)
 			node = node->children[0];
@@ -633,8 +725,10 @@ qboolean PlaceOccupant (node_t *headnode, Vector& origin, entity_t *occupant)
 
 	if (node->contents == CONTENTS_SOLID)
 		return false;
+
 	node->occupant = occupant;
 
+	// Flood outward from here to see if this entity leaks.
 	FloodPortals_r (node, 1);
 
 	return true;
@@ -652,13 +746,12 @@ qboolean FloodEntities (tree_t *tree)
 	int		i;
 	Vector	origin;
 	char	*cl;
-	qboolean	inside, leaked;
+	qboolean	inside;
 	node_t *headnode;
 
 	headnode = tree->headnode;
 	qprintf ("--- FloodEntities ---\n");
 	inside = false;
-	leaked = false;
 	tree->outside_node.occupied = 0;
 
 	for (i=1 ; i<num_entities ; i++)
@@ -668,6 +761,7 @@ qboolean FloodEntities (tree_t *tree)
 			continue;
 
 		cl = ValueForKey (&entities[i], "classname");
+
 		origin[2] += 1;	// so objects on floor are ok
 
 		// nudge playerstart around if needed so clipping hulls allways
@@ -698,18 +792,13 @@ gotit: ;
 			if (PlaceOccupant (headnode, origin, &entities[i]))
 				inside = true;
 		}
-		if ( !leaked && tree->outside_node.occupied )
-		{
-			leaked = true;
-			Warning("Entity %s (%.2f %.2f %.2f) leaked!\n", cl, origin[0], origin[1], origin[2] );
-		}
-		
 	}
 
 	if (!inside)
 	{
 		qprintf ("no entities in open -- no filling\n");
 	}
+
 	if (tree->outside_node.occupied)
 	{
 		qprintf ("entity reached from outside -- no filling\n" );
@@ -717,6 +806,7 @@ gotit: ;
 
 	return (qboolean)(inside && !tree->outside_node.occupied);
 }
+
 
 /*
 =========================================================
@@ -737,6 +827,7 @@ bool IsAreaportalNode( node_t *node )
 FloodAreas_r
 =============
 */
+
 void FloodAreas_r (node_t *node, portal_t *pSeeThrough)
 {
 	portal_t	*p;
@@ -747,7 +838,7 @@ void FloodAreas_r (node_t *node, portal_t *pSeeThrough)
 	if ( IsAreaportalNode(node) )
 	{
 		// this node is part of an area portal
-		b = node->brushlist;
+		b = AreaportalBrushForNode( node );
 		e = &entities[b->original->entitynum];
 
 		// if the current area has allready touched this
@@ -758,7 +849,7 @@ void FloodAreas_r (node_t *node, portal_t *pSeeThrough)
 		// note the current area as bounding the portal
 		if (e->portalareas[1])
 		{
-			Warning("WARNING: areaportal entity %i touches > 2 areas\n", b->original->entitynum);
+			Warning("WARNING: areaportal entity %i (brush %i) touches > 2 areas\n", b->original->entitynum, b->original->id );
 			return;
 		}
 		
@@ -829,6 +920,57 @@ void FindAreas_r (node_t *node)
 	FloodAreas_r (node, NULL);
 }
 
+
+void ReportAreaportalLeak( tree_t *tree, node_t *node )
+{
+	portal_t *p, *pStart = NULL;
+	int s;
+
+	// Find a portal out of this areaportal into empty space
+	for (p=node->portals ; p ; p = p->next[s])
+	{
+		s = (p->nodes[1] == node);
+		if ( !Portal_EntityFlood( p, !s ) )
+			continue;
+		if ( p->nodes[!s]->contents & CONTENTS_AREAPORTAL )
+			continue;
+
+		pStart = p;
+		break;
+	}
+
+	if ( pStart )
+	{
+		s = pStart->nodes[0] == node;
+		Assert(!(pStart->nodes[s]->contents & CONTENTS_AREAPORTAL) );
+		// flood fill the area outside this areaportal brush
+		FloodAreaLeak( tree->headnode, pStart->nodes[s] );
+
+		// find the portal into the longest path around the portal
+		portal_t *pBest = NULL;
+		int bestDist = 0;
+		for (p=node->portals ; p ; p = p->next[s])
+		{
+			if ( p == pStart )
+				continue;
+
+			s = (p->nodes[1] == node);
+			if ( p->nodes[!s]->occupied > bestDist )
+			{
+				pBest = p;
+				bestDist = p->nodes[!s]->occupied;
+			}
+		}
+		if ( pBest )
+		{
+			s = (pBest->nodes[0] == node);
+			// write the linefile that goes from pBest to pStart
+			AreaportalLeakFile( tree, pStart, pBest, pBest->nodes[s] );
+		}
+	}
+}
+
+
 /*
 =============
 SetAreaPortalAreas_r
@@ -837,29 +979,30 @@ Just decend the tree, and for each node that hasn't had an
 area set, flood fill out from there
 =============
 */
-void SetAreaPortalAreas_r (node_t *node)
+void SetAreaPortalAreas_r (tree_t *tree, node_t *node)
 {
 	bspbrush_t	*b;
 	entity_t	*e;
 
 	if (node->planenum != PLANENUM_LEAF)
 	{
-		SetAreaPortalAreas_r (node->children[0]);
-		SetAreaPortalAreas_r (node->children[1]);
+		SetAreaPortalAreas_r (tree, node->children[0]);
+		SetAreaPortalAreas_r (tree, node->children[1]);
 		return;
 	}
 
 	if (IsAreaportalNode(node))
 	{
 		if (node->area)
-			return;		// allready set
+			return;		// already set
 
-		b = node->brushlist;
+		b = AreaportalBrushForNode( node );
 		e = &entities[b->original->entitynum];
 		node->area = e->portalareas[0];
 		if (!e->portalareas[1])
 		{
-			Warning("WARNING: areaportal entity %i, brush %i doesn't touch two areas\n", b->original->entitynum, b->original->brushnum);
+			ReportAreaportalLeak( tree, node );
+			Warning("\nBrush %i: areaportal brush doesn't touch two areas\n", b->original->id);
 			return;
 		}
 	}
@@ -873,9 +1016,35 @@ float AngleOffset( float flBaseAngle, float flTestAngle )
 	while( flTestAngle > flBaseAngle )
 		flTestAngle -= 2 * M_PI;
 
-	return fmod( flBaseAngle - flTestAngle, 2 * M_PI );
+	return fmod( flBaseAngle - flTestAngle, (float) (2 * M_PI) );
 }
 
+
+int FindUniquePoints( const Vector2D *pPoints, int nPoints, int *indexMap, int nMaxIndexMapPoints, float flTolerance )
+{
+	float flToleranceSqr = flTolerance * flTolerance;
+
+	// This could be slightly more efficient.
+	int nUniquePoints = 0;
+	for ( int i=0; i < nPoints; i++ )
+	{
+		int j;
+		for ( j=0; j < nUniquePoints; j++ )
+		{
+			if ( pPoints[i].DistToSqr( pPoints[indexMap[j]] ) < flToleranceSqr )
+				break;
+		}
+		if ( j == nUniquePoints )
+		{
+			if ( nUniquePoints >= nMaxIndexMapPoints )
+				Error( "FindUniquePoints: overflowed unique point list (size %d).", nMaxIndexMapPoints );
+
+			indexMap[nUniquePoints++] = i;
+		}
+	}
+	
+	return nUniquePoints;
+}
 
 // Build a 2D convex hull of the set of points.
 // This essentially giftwraps the points as it walks around the perimeter.
@@ -883,10 +1052,15 @@ int Convex2D( Vector2D const *pPoints, int nPoints, int *indices, int nMaxIndice
 {
 	int nIndices = 0;
 	bool touched[512];
+	int indexMap[512];
 
 	if( nPoints == 0 )
 		return 0;
 
+
+	// If we don't collapse the points into a unique set, we can loop around forever
+	// and max out nMaxIndices.
+	nPoints = FindUniquePoints( pPoints, nPoints, indexMap, ARRAYSIZE( indexMap ), 0.1f );
 	memset( touched, 0, nPoints*sizeof(touched[0]) );
 
 	// Find the (lower) left side.
@@ -894,22 +1068,21 @@ int Convex2D( Vector2D const *pPoints, int nPoints, int *indices, int nMaxIndice
 	int iBest = 0;
 	for( i=1; i < nPoints; i++ )
 	{
-		if( pPoints[i].x < pPoints[iBest].x ||
-			(pPoints[i].x == pPoints[iBest].x && pPoints[i].y < pPoints[iBest].y) )
+		if( pPoints[indexMap[i]].x < pPoints[indexMap[iBest]].x ||
+			(pPoints[indexMap[i]].x == pPoints[indexMap[iBest]].x && pPoints[indexMap[i]].y < pPoints[indexMap[iBest]].y) )
 		{
 			iBest = i;
 		}
 	}
 
 	touched[iBest] = true;
-	indices[0] = iBest;
+	indices[0] = indexMap[iBest];
 	nIndices = 1;
 
 	Vector2D curEdge( 0, 1 );
 
 	// Wind around clockwise.
-	bool bDone = false;
-	while( !bDone )
+	while( 1 )
 	{
 		Vector2D const *pStartPoint = &pPoints[ indices[nIndices-1] ];
 
@@ -920,34 +1093,38 @@ int Convex2D( Vector2D const *pPoints, int nPoints, int *indices, int nMaxIndice
 
 		for( i=0; i < nPoints; i++ )
 		{
-			Vector2D vTo = pPoints[i] - *pStartPoint;
-			if( vTo.LengthSqr() <= 0.1f )
+			Vector2D vTo = pPoints[indexMap[i]] - *pStartPoint;
+			float flDistToSqr = vTo.LengthSqr();
+			if ( flDistToSqr <= 0.1f )
 				continue;
 
 			// Get the angle from the edge to this point.
 			float flAngle = atan2( vTo.y, vTo.x );
 			flAngle = AngleOffset( flEdgeAngle, flAngle );
 
-			if( flAngle < flMinAngle )
+			if( fabs( flAngle - flMinAngle ) < 0.00001f )
 			{
-				flMinAngle = flAngle;
-				iMinAngle = i;
-			}
-			else if( fabs( flAngle - flMinAngle ) < 0.01f )
-			{
+				float flDistToTestSqr = pStartPoint->DistToSqr( pPoints[iMinAngle] );
+
 				// If the angle is the same, pick the point farthest away.
-				if( vTo.LengthSqr() > (pPoints[iMinAngle] - *pStartPoint).LengthSqr() )
+				// unless the current one is closing the face loop
+				if ( iMinAngle != indices[0] && flDistToSqr > flDistToTestSqr )
 				{
 					flMinAngle = flAngle;
-					iMinAngle = i;
+					iMinAngle = indexMap[i];
 				}
+			}
+			else if( flAngle < flMinAngle )
+			{
+				flMinAngle = flAngle;
+				iMinAngle = indexMap[i];
 			}
 		}
 
 		if( iMinAngle == -1 )
 		{
 			// Couldn't find a point?
-			assert( false );
+			Assert( false );
 			break;
 		}
 		else if( iMinAngle == indices[0] )
@@ -961,6 +1138,13 @@ int Convex2D( Vector2D const *pPoints, int nPoints, int *indices, int nMaxIndice
 			if( nIndices >= nMaxIndices )
 				break;
 
+			for ( int jj = 0; jj < nIndices; jj++ )
+			{
+				// if this assert hits, this routine is broken and is generating a spiral
+				// rather than a closed polygon - basically an edge overlap of some kind
+				Assert(indices[jj] != iMinAngle );
+			}
+
 			indices[nIndices] = iMinAngle;
 			++nIndices;
 		}
@@ -970,7 +1154,6 @@ int Convex2D( Vector2D const *pPoints, int nPoints, int *indices, int nMaxIndice
 	
 	return nIndices;
 }
-
 
 void FindPortalsLeadingToArea_R( 
 	node_t *pHeadNode, 
@@ -999,7 +1182,7 @@ void FindPortalsLeadingToArea_R(
 			p->nodes[0]->area == iDestArea && p->nodes[1]->area == iSrcArea )
 		{
 			// Make sure the plane normals point the same way.
-			plane_t *pMapPlane = &mapplanes[p->onnode->planenum];
+			plane_t *pMapPlane = &g_MainMap->mapplanes[p->onnode->planenum];
 			float flDot = fabs( pMapPlane->normal.Dot( pPlane->normal ) );
 			if( fabs( 1 - flDot ) < 0.01f )
 			{
@@ -1031,10 +1214,11 @@ void EmitClipPortalGeometry( node_t *pHeadNode, portal_t *pPortal, int iSrcArea,
 	for( int iPortal=0; iPortal < portals.Size(); iPortal++ )
 	{
 		portal_t *pPointPortal = portals[iPortal];
-
-		winding_t *pWinding = portals[iPortal]->winding;
+		winding_t *pWinding = pPointPortal->winding;
 		for( int i=0; i < pWinding->numpoints; i++ )
+		{
 			points.AddToTail( pWinding->p[i] );
+		}
 	}
 
 	// Get the 2D convex hull.
@@ -1066,9 +1250,15 @@ void EmitClipPortalGeometry( node_t *pHeadNode, portal_t *pPortal, int iSrcArea,
 	dp->m_FirstClipPortalVert = g_nClipPortalVerts;
 	dp->m_nClipPortalVerts = nIndices;
 
+	if ( nIndices >= 32 )
+	{
+		Warning( "Warning: area portal has %d verts. Could be a vbsp bug.\n", nIndices );
+	}
+
 	if( dp->m_FirstClipPortalVert + dp->m_nClipPortalVerts >= MAX_MAP_PORTALVERTS )
 	{
-		Error( "MAX_MAP_PORTALVERTS" );
+		Vector *p = pPortal->winding->p;
+		Error( "MAX_MAP_PORTALVERTS (probably a broken areaportal near %.1f %.1f %.1f ", p->x, p->y, p->z );
 	}
 	
 	for( i=0; i < nIndices; i++ )
@@ -1111,7 +1301,7 @@ void EmitAreaPortals (node_t *headnode)
 	dareaportal_t	*dp;
 
 	if (c_areas > MAX_MAP_AREAS)
-		Error ("MAX_MAP_AREAS");
+		Error ("Map is split into too many unique areas (max = %d)\nProbably too many areaportals", MAX_MAP_AREAS);
 	numareas = c_areas+1;
 	numareaportals = 1;		// leave 0 as an error
 
@@ -1140,7 +1330,7 @@ void EmitAreaPortals (node_t *headnode)
 
 				if( pLeadingPortal )
 				{
-					assert( pLeadingPortal->nodes[0]->area != pLeadingPortal->nodes[1]->area );
+					Assert( pLeadingPortal->nodes[0]->area != pLeadingPortal->nodes[1]->area );
 
 					dp = &dareaportals[numareaportals];
 					numareaportals++;
@@ -1149,8 +1339,8 @@ void EmitAreaPortals (node_t *headnode)
 					dp->otherarea = e->portalareas[iSide];
 					dp->planenum = pLeadingPortal->onnode->planenum;
 
-					assert( pLeadingPortal->nodes[0]->planenum == PLANENUM_LEAF );
-					assert( pLeadingPortal->nodes[1]->planenum == PLANENUM_LEAF );
+					Assert( pLeadingPortal->nodes[0]->planenum == PLANENUM_LEAF );
+					Assert( pLeadingPortal->nodes[1]->planenum == PLANENUM_LEAF );
 
 					if( pLeadingPortal->nodes[0]->area == dp->otherarea )
 					{
@@ -1181,13 +1371,13 @@ Mark each leaf with an area, bounded by CONTENTS_AREAPORTAL
 */
 void FloodAreas (tree_t *tree)
 {
-	int start = I_FloatTime();
+	int start = Plat_FloatTime();
 	qprintf ("--- FloodAreas ---\n");
 	Msg("Processing areas...");
 	FindAreas_r (tree->headnode);
-	SetAreaPortalAreas_r (tree->headnode);
+	SetAreaPortalAreas_r (tree, tree->headnode);
 	qprintf ("%5i areas\n", c_areas);
-	Msg("done (%d)\n", (int)(I_FloatTime() - start) );
+	Msg("done (%d)\n", (int)(Plat_FloatTime() - start) );
 }
 
 //======================================================
@@ -1255,6 +1445,47 @@ static float ComputeDistFromPlane( winding_t *pWinding, plane_t *pPlane, float m
 }
 
 
+//-----------------------------------------------------------------------------
+// Display portal error
+//-----------------------------------------------------------------------------
+static void DisplayPortalError( portal_t *p, int viscontents )
+{
+	char contents[3][1024];
+	PrintBrushContentsToString( p->nodes[0]->contents, contents[0], sizeof( contents[0] ) );
+	PrintBrushContentsToString( p->nodes[1]->contents, contents[1], sizeof( contents[1] ) );
+	PrintBrushContentsToString( viscontents, contents[2], sizeof( contents[2] ) );
+
+	Vector center;
+	WindingCenter( p->winding, center );
+	Warning( "\nFindPortalSide: Couldn't find a good match for which brush to assign to a portal near (%.1f %.1f %.1f)\n", center.x, center.y, center.z);
+	Warning( "Leaf 0 contents: %s\n", contents[0] );
+	Warning( "Leaf 1 contents: %s\n", contents[1] );
+	Warning( "viscontents (node 0 contents ^ node 1 contents): %s\n", contents[2] );
+	Warning( "This means that none of the brushes in leaf 0 or 1 that touches the portal has %s\n", contents[2] );
+	Warning( "Check for a huge brush enclosing the coordinates above that has contents %s\n", contents[2] );
+	Warning( "Candidate brush IDs: " );
+
+	CUtlVector<int> listed;
+	for (int j=0 ; j<2 ; j++)
+	{
+		node_t *n = p->nodes[j];
+		for (bspbrush_t *bb=n->brushlist ; bb ; bb=bb->next)
+		{
+			mapbrush_t *brush = bb->original;
+			if ( brush->contents & viscontents )
+			{
+				if ( listed.Find( brush->brushnum ) == -1 )
+				{
+					listed.AddToTail( brush->brushnum );
+					Warning( "Brush %d: ", brush->id );
+				}
+			}
+		}
+	}
+	Warning( "\n\n" );
+}
+
+
 //==============================================================
 
 /*
@@ -1291,7 +1522,7 @@ void FindPortalSide (portal_t *p)
 	for (j=0 ; j<2 ; j++)
 	{
 		n = p->nodes[j];
-		p1 = &mapplanes[p->onnode->planenum];
+		p1 = &g_MainMap->mapplanes[p->onnode->planenum];
 
 		for (bb=n->brushlist ; bb ; bb=bb->next)
 		{
@@ -1314,7 +1545,7 @@ void FindPortalSide (portal_t *p)
 					goto gotit;
 				}
 
-				p2 = &mapplanes[side->planenum&~1];
+				p2 = &g_MainMap->mapplanes[side->planenum&~1];
 
 				float dist = ComputeDistFromPlane( p->winding, p2, bestdist );
 				if (dist < bestdist)
@@ -1333,9 +1564,15 @@ gotit:
 	// Compute average dist, check for problems...
 	if ((bestdist / p->winding->numpoints) > 2)
 	{
-		Vector center;
-		WindingCenter( p->winding, center );
-		Warning("FindPortalSide: Couldn't find a good match for which brush to assign to a portal near (%.1f, %.1f, %.1f)\n", center.x, center.y, center.z);
+		static int nWarnCount = 0;
+		if ( nWarnCount < 8 )
+		{
+			DisplayPortalError( p, viscontents );
+			if ( ++nWarnCount == 8 )
+			{
+				Warning("*** Suppressing further FindPortalSide errors.... ***\n" );
+			}
+		}
 	}
 
 	p->sidefound = true;
@@ -1398,7 +1635,7 @@ void MarkVisibleSides (tree_t *tree, int startbrush, int endbrush, int detailScr
 	// clear all the visible flags
 	for (i=startbrush ; i<endbrush ; i++)
 	{
-		mb = &mapbrushes[i];
+		mb = &g_MainMap->mapbrushes[i];
 
 		if ( detailScreen != FULL_DETAIL )
 		{

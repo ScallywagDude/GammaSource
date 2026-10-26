@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef WAVEFILE_H
 #define WAVEFILE_H
@@ -11,7 +11,7 @@
 #endif
 
 #include "itreeitem.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "sentence.h"
 
 class CSoundEntry;
@@ -25,6 +25,8 @@ public:
 	CWaveFile( CVCDFile *vcd, CSoundEntry *se, char const *filename );
 
 	~CWaveFile();
+
+	static int GetLanguageId();
 
 	CVCDFile	*GetOwnerVCDFile();
 	CSoundEntry	*GetOwnerSoundEntry();
@@ -71,6 +73,11 @@ public:
 	virtual bool		IsChildLast( ITreeItem *child );
 
 	void				SetThreadLoadedSentence( CSentence& sentence );
+
+	void				ExportValveDataChunk( char const *tempfile );
+	void				ImportValveDataChunk( char const *tempfile );
+
+	void				GetPhonemeExportFile( char *path, int maxlen );
 
 private:
 

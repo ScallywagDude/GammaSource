@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "workspace.h"
 #include <KeyValues.h>
@@ -23,7 +23,7 @@ CWorkspace::CWorkspace( char const *filename )
 
 	Q_strncpy( m_szFile, filename, sizeof( m_szFile ) );
 	// By default, name is the same as the filename
-	ExtractFileBase( m_szFile, m_szName, sizeof( m_szName ) );
+	Q_FileBase( m_szFile, m_szName, sizeof( m_szName ) );
 	m_bDirty = false;
 	LoadFromFile();
 }
@@ -211,7 +211,7 @@ void CWorkspace::SaveToFile()
 {
 	SetDirty( false );
 
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.Printf( "%s\n{\n", GetName() );
 

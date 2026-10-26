@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #define WIN32_LEAN_AND_MEAN
@@ -14,7 +14,7 @@
 #include "AudioWaveOutput.h"
 #include "ISceneManagerSound.h"
 #include "utlvector.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "sentence.h"
 
 typedef struct channel_s
@@ -63,7 +63,7 @@ public:
 private:
 	void	OpenDevice( void );
 	bool	ValidDevice( void ) { return m_deviceId >= 0; }
-	void	ClearDevice( void ) { m_deviceId = -1; }
+	void	ClearDevice( void ) { m_deviceId = (UINT)-1; }
 
 	// returns true if the new format is better
 	bool	BetterFormat( DWORD dwNewFormat, DWORD dwOldFormat );
@@ -90,7 +90,7 @@ CAudioWaveInput::CAudioWaveInput( void )
 {
 	memset( m_buffers, 0, sizeof( m_buffers ) );
 	int deviceCount = (int)waveInGetNumDevs();
-	UINT	deviceId;
+	UINT	deviceId = (UINT)-1;
 	DWORD	deviceFormat = 0;
 
 	int i;
@@ -111,7 +111,7 @@ CAudioWaveInput::CAudioWaveInput( void )
 
 	if ( !deviceFormat )
 	{
-		m_deviceId = -1;
+		m_deviceId = (UINT)-1;
 		m_sampleSize = 0;
 		m_sampleRate = 0;
 		m_isStereo = false;
@@ -692,7 +692,7 @@ void CAudioWaveOutput::Update( float time )
 		// UNDONE: These numbers are constants
 		// calc number of samples (2 channels * 2 bytes per sample)
 		int sampleCount = pBuffer->hdr->dwBufferLength >> 2;
-		float oldTime = m_mixTime;
+		//float oldTime = m_mixTime;
 
 		m_mixTime += sampleCount * (1.0f / OUTPUT_SAMPLE_RATE);
 

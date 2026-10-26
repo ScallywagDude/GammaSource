@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // ThreadedTCPSocket.cpp : Defines the entry point for the console application.
 //
 
@@ -7,7 +14,7 @@
 #include "utllinkedlist.h"
 #include "threadhelpers.h"
 #include "iphelpers.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 
 
 #define SEND_KEEPALIVE_INTERVAL	3000
@@ -18,6 +25,21 @@
 
 static int g_KeepaliveSentinel = KEEPALIVE_SENTINEL;
 bool g_bHandleTimeouts = true;
+
+// If true, it'll set the socket thread priorities lower than normal.
+bool g_bSetTCPSocketThreadPriorities = true;
+
+// We get crashes at runtime if they don't link in the multithreaded runtime libraries,
+// so raise a ruckus if they're using singlethreaded libraries.
+#ifndef _MT
+	#pragma message( "**** WARNING **** ThreadedTCPSocket requires multithreaded runtime libraries to be used.\n" )
+	class MTChecker
+	{
+	public:
+		MTChecker() { Assert( false ); }
+	} g_MTChecker;
+#endif
+
 
 
 // ------------------------------------------------------------------------------------------------ //
@@ -138,7 +160,7 @@ private:
 		m_bWaitingForSendCompletion = false;
 		m_nBytesToReceive = -1;
 		m_bWaitingForSize = false;
-		m_ErrorSignal = 0;
+		m_bErrorSignal = false;
 		m_pRecvBuffer = NULL;
 	}
 
@@ -173,8 +195,14 @@ private:
 			return false;
 		}
 
-		Plat_SetThreadName( dwSendThreadID, "TCPSend" );
-		Plat_SetThreadName( dwRecvThreadID, "TCPRecv" );
+		if ( g_bSetTCPSocketThreadPriorities )
+		{
+			SetThreadPriority( m_hSendThread, THREAD_PRIORITY_LOWEST );
+			SetThreadPriority( m_hRecvThread, THREAD_PRIORITY_LOWEST );
+		}
+		
+		ThreadSetDebugName( (ThreadId_t)dwSendThreadID, "TCPSend" );
+		ThreadSetDebugName( (ThreadId_t)dwRecvThreadID, "TCPRecv" );
 
 		// Make sure to init the handler before the threads actually run, so it isn't handed data before initializing.
 		m_pHandler->Init( this );
@@ -256,7 +284,7 @@ private:
 			*((int*)pOut) = totalLength - 4;	// The length we prepend is the size of the data, not data size + integer for length.
 			pOut += 4;
 		}
-		for ( i=0; i < nChunks; i++ )
+		for ( int i=0; i < nChunks; i++ )
 		{
 			memcpy( pOut, pChunks[i], pChunkLengths[i] );
 			pOut += pChunkLengths[i];
@@ -484,10 +512,10 @@ private:
 			}
 			else
 			{
-				if ( m_NextPacketLen < 1 || m_NextPacketLen > 1024*1024*25 )
+				if ( m_NextPacketLen < 1 || m_NextPacketLen > 1024*1024*75 )
 				{
 					char str[512];
-					Q_snprintf( str, sizeof( str ), "Invalid packet size in RecvThread (size = %d)", m_nBytesToReceive );
+					Q_snprintf( str, sizeof( str ), "Invalid packet size in RecvThread (size = %d)", m_NextPacketLen );
 					HandleError( ITCPSocketHandler::SocketError, str );
 					return false;
 				}
@@ -580,6 +608,7 @@ private:
 						return 1;
 					}
 				}
+				break;
 
 				case WAIT_OBJECT_0:
 				{
@@ -628,12 +657,7 @@ private:
 	// This checks to see if either thread has signaled an error. If so, it shuts down the socket and returns true.
 	bool CheckErrorSignal()
 	{
-		LONG val = InterlockedIncrement( &m_ErrorSignal );
-		InterlockedDecrement( &m_ErrorSignal );
-
-		// If the incremented value here is greater than 1, then one or both of the threads has incremented
-		// it to signal an error state.
-		return ( val > 1 );
+		return m_bErrorSignal;
 	}
 
 	// This is called from any of the threads and signals that something went awry. It shuts down the object
@@ -679,7 +703,7 @@ private:
 		m_hExitThreadsEvent.SetEvent();
 		
 		// Notify the main thread so it can call Term() when it gets a chance.
-		InterlockedIncrement( &m_ErrorSignal );
+		m_bErrorSignal = true;
 	}
 
 
@@ -719,7 +743,7 @@ private:
 										// app when the packet is done being received.
 
 	
-	LONG m_ErrorSignal;
+	volatile bool m_bErrorSignal;
 
 	
 	CEvent m_hExitThreadsEvent;
@@ -762,6 +786,11 @@ public:
 		CTCPConnectSocket_Listener *pRet = new CTCPConnectSocket_Listener;
 		if ( !pRet )
 			return NULL;
+
+		if ( nQueueLength < 0 )
+		{
+			Error( "CTCPConnectSocket_Listener::Create - SOMAXCONN not allowed - causes some XP SP2 systems to stop receiving any network data (systemwide)." );
+		}
 
 		// Bind it to a socket and start listening.
 		CIPAddr addr( 0, 0, 0, 0, port ); // INADDR_ANY
@@ -895,7 +924,6 @@ public:
 		pRet->m_Socket = TCPBind( &localAddr );
 		if ( pRet->m_Socket == INVALID_SOCKET )
 		{
-			Assert( false );
 			pRet->Release();
 			return NULL;
 		}
@@ -1049,4 +1077,9 @@ void ThreadedTCP_EnableTimeouts( bool bEnable )
 	g_bHandleTimeouts = bEnable;
 }
 
+
+void ThreadedTCP_SetTCPSocketThreadPriorities( bool bSetTCPSocketThreadPriorities )
+{
+	g_bSetTCPSocketThreadPriorities = bSetTCPSocketThreadPriorities;
+}
 

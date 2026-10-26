@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SND_AUDIO_SOURCE_H
 #define SND_AUDIO_SOURCE_H
@@ -40,6 +35,11 @@ class CAudioSource;
 class IAudioDevice
 {
 public:
+	// Add a virtual destructor to silence the clang warning.
+	// This is harmless but not important since the only derived class
+	// doesn't have a destructor.
+	virtual ~IAudioDevice() {}
+
 	virtual void MixBegin( void ) = 0;
 	virtual void Mix8Mono( channel_t *pChannel, char *pData, int outputOffset, int inputOffset, int rateScaleFix, int outCount, int timecompress, bool forward = true ) = 0;
 	virtual void Mix8Stereo( channel_t *pChannel, char *pData, int outputOffset, int inputOffset, int rateScaleFix, int outCount, int timecompress, bool forward = true ) = 0;

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "bsplib.h"
 #include "vbsp.h"
 
@@ -21,10 +28,10 @@ void SaveVertexNormals( void )
 		{
 			if( g_numvertnormalindices == MAX_MAP_VERTNORMALINDICES )
 			{
-				Error( "g_numvertnormalindices == MAX_MAP_VERTNORMALINDICES" );
+				Error( "g_numvertnormalindices == MAX_MAP_VERTNORMALINDICES (%d)", MAX_MAP_VERTNORMALINDICES );
 			}
 			
-			g_vertnormalindices[g_numvertnormals] = g_numvertnormals;
+			g_vertnormalindices[g_numvertnormalindices] = g_numvertnormals;
 			g_numvertnormalindices++;
 		}
 
@@ -34,7 +41,7 @@ void SaveVertexNormals( void )
 		// goes away after vrad.
 		if( g_numvertnormals == MAX_MAP_VERTNORMALS )
 		{
-			Error( "g_numvertnormals == MAX_MAP_VERTNORMALS" );
+			Error( "g_numvertnormals == MAX_MAP_VERTNORMALS (%d)", MAX_MAP_VERTNORMALS );
 		}
 
 		g_vertnormals[g_numvertnormals] = dplanes[f->planenum].normal;

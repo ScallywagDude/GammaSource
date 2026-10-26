@@ -1,6 +1,15 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "dt_stack.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 CDatatableStack::CDatatableStack( CSendTablePrecalc *pPrecalc, unsigned char *pStructBase, int objectID )
 {
@@ -8,46 +17,31 @@ CDatatableStack::CDatatableStack( CSendTablePrecalc *pPrecalc, unsigned char *pS
 
 	m_pStructBase = pStructBase;
 	m_ObjectID = objectID;
-	m_nProxies = 0;
 	
 	m_iCurProp = 0;
 	m_pCurProp = NULL;
 
 	m_bInitted = false;
+
+#ifdef _DEBUG
+	memset( m_pProxies, 0xFF, sizeof( m_pProxies ) );
+#endif
 }
 
 
-void CDatatableStack::Init()
+void CDatatableStack::Init( bool bExplicitRoutes )
 {
-	Assert( m_nProxies == 0 );
-
-	// Walk down the tree and call all the datatable proxies as we hit them.
-	RecurseAndCallProxies( &m_pPrecalc->m_Root, m_pStructBase );
+	if ( bExplicitRoutes )
+	{
+		memset( m_pProxies, 0xFF, sizeof( m_pProxies[0] ) * m_pPrecalc->m_ProxyPaths.Count() );
+	}
+	else
+	{
+		// Walk down the tree and call all the datatable proxies as we hit them.
+		RecurseAndCallProxies( &m_pPrecalc->m_Root, m_pStructBase );
+	}
 
 	m_bInitted = true;
 }
 
-
-void CDatatableStack::RecurseAndCallProxies( CSendNode *pNode, unsigned char *pStructBase )
-{
-	if ( m_nProxies >= MAX_PROXY_RESULTS )
-		Error( "CDatatableStack::RecurseAndCallProxies - overflowed" );
-	
-	// Remember where the game code pointed us for this datatable's data so 
-	m_pProxies[m_nProxies] = pStructBase;
-	++m_nProxies;
-
-	for ( int iChild=0; iChild < pNode->GetNumChildren(); iChild++ )
-	{
-		CSendNode *pCurChild = pNode->GetChild( iChild );
-		
-		unsigned char *pNewStructBase = NULL;
-		if ( pStructBase )
-		{
-			pNewStructBase = CallPropProxy( pCurChild, pCurChild->m_iDatatableProp, pStructBase );
-		}
-
-		RecurseAndCallProxies( pCurChild, pNewStructBase );
-	}
-}
 

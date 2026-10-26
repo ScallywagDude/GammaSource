@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,16 +9,17 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MATSYSWIN_H
 #define MATSYSWIN_H
 #pragma once
 
 
-#include <mx/mxMatSysWindow.h>
+#include <mxtk/mxMatSysWindow.h>
 #include "materialsystem/imaterialsystem.h"
 #include "faceposertoolwindow.h"
+#include "interface.h"
 
 
 class MatSysWindow : public mxMatSysWindow, public IFacePoserToolWindow
@@ -41,26 +37,34 @@ public:
 
 	virtual void	redraw();
 
+	void			EnableStickySnapshotMode( void );
+	void			DisableStickySnapshotMode( void );
+	void			PushSnapshotMode( int nSnapShotSize );
+	void			PopSnapshotMode( void );
+
 	void			TakeSnapshotRect( const char *pFilename, int x, int y, int w, int h );
 	bool			IsSuppressingResize( void );
 	void			SuppressResize( bool suppress );
+
+	void			TakeScreenShot(const char *filename);
 
 	void			Frame( void );
 	void			DrawFrame( void );
 
 	void			SuppressBufferSwap( bool bSuppress );
 
-	// mxtk doesn't truly support accelerator keys, so hack in a raw check
-	void			CheckForAccleratorKeys( void );
-	
     void			*m_hWnd;
-	// void			*m_hDC;
-
-	void			*m_hMaterialSystemInst;
 
 private:
 	bool			m_bSuppressResize;
 	bool			m_bSuppressSwap;
+
+	// stack and sticky window mode
+	int					m_stickyDepth;
+	bool				m_bIsSticky;
+	int					m_snapshotDepth;
+	WINDOWPLACEMENT		m_wp;
+	HCURSOR				m_hPrevCursor;
 };
 
 extern MatSysWindow		*g_pMatSysWindow;
@@ -68,6 +72,10 @@ extern MatSysWindow		*g_pMatSysWindow;
 extern IMaterialSystem *g_pMaterialSystem;
 extern IMaterial *g_materialBackground;
 extern IMaterial *g_materialWireframe;
+extern IMaterial *g_materialWireframe;
+extern IMaterial *g_materialWireframeVertexColor;
+extern IMaterial *g_materialWireframeVertexColorNoCull;
+extern IMaterial *g_materialDebugCopyBaseTexture;
 extern IMaterial *g_materialFlatshaded;
 extern IMaterial *g_materialSmoothshaded;
 extern IMaterial *g_materialBones;
@@ -116,7 +124,7 @@ public:
 	bool			FindParameter(const char *s);
 	const char*		FindParameterArg(const char *s);
 
-	void			SetTitleText(const char *fmt, ...);
+	void			SetTitleText(PRINTF_FORMAT_STRING const char *fmt, ...);
 
 
 private:
@@ -173,10 +181,10 @@ public:
 // ---------------------------------------------------------------------------------------- //
 
 // Show an error dialog and quit.
-bool Sys_Error(const char *pMsg, ...);
+bool Sys_Error(PRINTF_FORMAT_STRING const char *pMsg, ...);
 
 // Print to the trace window.
-void con_Printf(const char *pMsg, ...);
+void con_Printf(PRINTF_FORMAT_STRING const char *pMsg, ...);
 
 // Returns true if the key is down.
 bool IsKeyDown(char key);

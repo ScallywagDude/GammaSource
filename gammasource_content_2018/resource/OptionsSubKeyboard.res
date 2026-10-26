@@ -1,0 +1,72 @@
+// GammaSource: bound 2018 controls with the original 2003 color/font scheme.
+"Resource/OptionsSubKeyboard.res"
+{
+	"listpanel_keybindlist"
+	{
+		"ControlName"	"SectionedListPanel"
+		"fieldName"	"listpanel_keybindlist"
+		"xpos"	"12"
+		"ypos"	"10"
+		"wide"	"480"
+		"tall"	"252"
+		"visible"	"1"
+		"enabled"	"1"
+		"tabPosition"	"0"
+	}
+	"Defaults"
+	{
+		"ControlName"	"Button"
+		"fieldName"	"Defaults"
+		"xpos"	"12"
+		"ypos"	"274"
+		"wide"	"110"
+		"tall"	"24"
+		"visible"	"1"
+		"enabled"	"1"
+		"tabPosition"	"0"
+		"labelText"	"Use defaults"
+		"command"	"Defaults"
+	}
+	"KeyAdvancedButton"
+	{
+		"ControlName"	"Button"
+		"fieldName"	"KeyAdvancedButton"
+		"xpos"	"130"
+		"ypos"	"274"
+		"wide"	"124"
+		"tall"	"24"
+		"visible"	"1"
+		"enabled"	"1"
+		"tabPosition"	"0"
+		"labelText"	"Advanced keys..."
+		"command"	"Advanced"
+	}
+	"ChangeKeyButton"
+	{
+		"ControlName"	"Button"
+		"fieldName"	"ChangeKeyButton"
+		"xpos"	"310"
+		"ypos"	"274"
+		"wide"	"84"
+		"tall"	"24"
+		"visible"	"1"
+		"enabled"	"1"
+		"tabPosition"	"0"
+		"labelText"	"Edit key"
+		"command"	"ChangeKey"
+	}
+	"ClearKeyButton"
+	{
+		"ControlName"	"Button"
+		"fieldName"	"ClearKeyButton"
+		"xpos"	"404"
+		"ypos"	"274"
+		"wide"	"84"
+		"tall"	"24"
+		"visible"	"1"
+		"enabled"	"1"
+		"tabPosition"	"0"
+		"labelText"	"Clear key"
+		"command"	"ClearKey"
+	}
+}

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IMATERIALPROXYFACTORY_H
 #define IMATERIALPROXYFACTORY_H
@@ -15,7 +15,7 @@
 
 class IMaterialProxy;
 
-class IMaterialProxyFactory
+abstract_class IMaterialProxyFactory
 {
 public:
 	virtual IMaterialProxy *CreateProxy( const char *proxyName ) = 0;

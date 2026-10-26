@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOACTIONEDITORS_H
 #define CL_DEMOACTIONEDITORS_H
@@ -12,13 +12,6 @@
 #endif
 
 #include <vgui_controls/Frame.h>
-namespace vgui
-{
-	class Panel;
-	class Button;
-	class TextEntry;
-	class ComboBox;
-}
 
 class CDemoEditorPanel;
 
@@ -27,7 +20,8 @@ class CDemoEditorPanel;
 //-----------------------------------------------------------------------------
 class CBaseActionEditDialog : public vgui::Frame
 {
-	typedef vgui::Frame BaseClass;
+	DECLARE_CLASS_SIMPLE( CBaseActionEditDialog, vgui::Frame );
+
 public:
 	CBaseActionEditDialog( CDemoEditorPanel *parent, CBaseDemoAction *action, bool newaction );
 
@@ -61,7 +55,8 @@ protected:
 //-----------------------------------------------------------------------------
 class CBaseActionWithTargetDialog : public CBaseActionEditDialog
 {
-	typedef CBaseActionEditDialog BaseClass;
+	DECLARE_CLASS_SIMPLE( CBaseActionWithTargetDialog, CBaseActionEditDialog );
+
 public:
 	CBaseActionWithTargetDialog( CDemoEditorPanel *parent, CBaseDemoAction *action, bool newaction );
 

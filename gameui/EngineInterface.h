@@ -1,10 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Includes all the headers/declarations necessary to access the
 //			engine interface
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ENGINEINTERFACE_H
 #define ENGINEINTERFACE_H
@@ -14,7 +14,7 @@
 #endif
 
 // these stupid set of includes are required to use the cdll_int interface
-#include "vector.h"
+#include "mathlib/vector.h"
 //#include "wrect.h"
 #define IN_BUTTONS_H
 
@@ -22,11 +22,13 @@
 #include "cdll_int.h"
 #include "icvar.h"
 
-// engine interface singleton accessor
+// engine interface singleton accessors
 extern IVEngineClient *engine;
 extern class IGameUIFuncs *gameuifuncs;
 extern class IEngineSound *enginesound;
-extern class IGameUIModelPreview *gameuimodelpreview;
-extern class IMatSystemSurface *gameuimatsurface;
+extern class IMatchmaking *matchmaking;
+extern class IXboxSystem  *xboxsystem;
+extern class IAchievementMgr *achievementmgr; 
+extern class CSteamAPIContext *steamapicontext;
 
 #endif // ENGINEINTERFACE_H

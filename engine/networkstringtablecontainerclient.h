@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef NETWORKSTRINGTABLECONTAINERCLIENT_H
 #define NETWORKSTRINGTABLECONTAINERCLIENT_H
@@ -11,43 +11,34 @@
 #pragma once
 #endif
 
-#include "inetworkstringtableclient.h"
+// #include "inetworkstringtableclient.h"
+#include "networkstringtabledefs.h"
+#include "netmessages.h"
 
-class CNetworkStringTableClient;
+
 class CUtlBuffer;
+class CNetworkStringTable;
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Client implementation of string list
 //-----------------------------------------------------------------------------
-class CNetworkStringTableContainerClient : public INetworkStringTableClient
+class CNetworkStringTableContainerClient : public INetworkStringTableContainer
 {
 public:
 	// Construction
 							CNetworkStringTableContainerClient( void );
 							~CNetworkStringTableContainerClient( void );
 
-	// Implement INetworkStringTableClient
-	virtual TABLEID			FindStringTable( const char *tableName );
-	virtual int				GetNumStrings( TABLEID stringTable );
-	virtual int				GetMaxStrings( TABLEID stringTable );
-	virtual const char		*GetString( TABLEID stringTable, int stringNumber );
-	virtual const void		*GetStringUserData( TABLEID stringTable, int stringNumber, int *length = 0 );
-	virtual void			SetStringChangedCallback( void *object, TABLEID stringTable, pfnStringChanged changeFunc );
+public: 
+	// implemenatation INetworkStringTableContainer
+	virtual INetworkStringTable	*CreateStringTable( const char *tableName, int maxentries );
+	virtual void				RemoveAllTables( void );
+	
+	virtual INetworkStringTable	*FindTable( const char *tableName ) const;
+	virtual INetworkStringTable	*GetTable( TABLEID stringTable ) const;
+	virtual int					GetNumTables( void ) const;
 
-	virtual int				FindStringIndex( TABLEID stringTable, char const *string );
-
-	virtual char const		*GetTableName( TABLEID stringTable );
-
-	// Table accessors
-	TABLEID					AddTable( const char *tableName, int maxentries );
-	CNetworkStringTableClient *GetTable( TABLEID stringTable );
-
-	// Parse initial definitions from server ( with initial values )
-	void					ParseTableDefinitions( void );
-	// Parse updated string data
-	void					ParseUpdate( void );
-	// Delete all table data
-	void					RemoveAllTables( void );
 	// Print contents to console
 	void					Dump( void );
 
@@ -55,7 +46,7 @@ public:
 	bool					ReadStringTables( CUtlBuffer& buf );
 
 private:
-	CUtlVector < CNetworkStringTableClient * > m_Tables;
+	CUtlVector < CNetworkStringTable* > m_Tables;
 };
 
 extern CNetworkStringTableContainerClient *networkStringTableContainerClient;

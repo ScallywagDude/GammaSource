@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright ï¿½ 1996-2001, Valve LLC, All rights reserved. ============
 //
 // Purpose:  Terrain modification classes.  One per mod type.
 //
@@ -10,9 +10,9 @@
 #pragma once
 #endif
 
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "terrainmod.h"
-#include "vmatrix.h"
+#include "mathlib/vmatrix.h"
 
 //-----------------------------------------------------------------------------
 // Terrain Modification Sphere

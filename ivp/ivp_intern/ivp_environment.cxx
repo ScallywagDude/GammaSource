@@ -19,6 +19,10 @@
 #define NULL 0
 #endif
 
+#include <ivp_mindist_intern.hxx>
+#include <ivp_mindist_minimize.hxx>
+#include <ivp_mindist_event.hxx>
+
 #include <ivp_debug.hxx>
 #include <ivp_debug_manager.hxx>
 #include <ivp_physic_private.hxx>
@@ -42,9 +46,6 @@
 #include <ivp_great_matrix.hxx>
 #include <ivp_constraint_local.hxx>
 
-#include <ivp_mindist_intern.hxx>
-#include <ivp_mindist_minimize.hxx>
-#include <ivp_mindist_event.hxx>
 #include <ivp_friction.hxx>
 
 #include <ivp_listener_collision.hxx>
@@ -60,6 +61,8 @@
 #include <ivp_betterstatisticsmanager.hxx>
 
 #include <ivp_authenticity.hxx>
+
+#include "ivp_polygon.hxx"
 
 #if !defined(IVP_VERSION_SDK) && !defined(IVP_VERSION_EVAL)
 #   pragma error("You have to define IVP_VERSION_SDK or IVP_VERSION_EVAL")
@@ -260,12 +263,12 @@ IVP_Environment::~IVP_Environment(){
       cdr->environment_is_going_to_be_deleted_event(this);
     }
     collision_delegator_roots.clear();
-    
+
     P_DELETE(short_term_mem);
     P_DELETE(sim_unit_mem);
     P_DELETE(cache_object_manager);
-    P_DELETE(auth_costumer_name);
-    
+    P_FREE(auth_costumer_name);
+
     environment_manager->environments.remove(this);
     this->delete_draw_vector_debug();
 } 
@@ -506,6 +509,16 @@ void IVP_Environment::delete_draw_vector_debug(){
     }
     this->draw_vectors=NULL;
 
+}
+
+void IVP_Environment::force_psi_on_next_simulation()
+{
+    double now_seconds = current_time.get_seconds();
+    IVP_Time_Event_PSI *last_event = time_manager->psi_event;
+    double diff_seconds = now_seconds - time_manager->base_time.get_seconds();
+
+    time_manager->min_hash->remove_minlist_elem(last_event->index);
+    last_event->index = time_manager->min_hash->add(last_event, diff_seconds);
 }
 
 IVP_Polygon *IVP_Environment::create_polygon(IVP_SurfaceManager *vic, const IVP_Template_Real_Object *templ,
@@ -1004,8 +1017,13 @@ void IVP_Environment::simulate_psi(IVP_Time /*psi_time*/){
     return;
 }
 
-void IVP_Environment::set_global_collision_tolerance( IVP_DOUBLE tolerance ){
+void IVP_Environment::set_global_collision_tolerance( IVP_DOUBLE tolerance, IVP_DOUBLE gravity_length ){
     ivp_mindist_settings.set_collision_tolerance( tolerance );
+    // CRACK - lol. according to both IDA and Ghidra, nothing is done with gravity_length
 }
 
-
+IVP_FLOAT IVP_Environment::get_global_collision_tolerance()
+{
+    //return ivp_mindist_settings.real_coll_dist;
+    return ivp_mindist_settings.min_coll_dists;
+}

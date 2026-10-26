@@ -1,0 +1,10 @@
+// GammaSource: Portal's sprites/portalgun_effects, renamed so HL2's own sprite of that name keeps working
+"UnlitGeneric"
+{
+	"$basetexture" "sprites/portalgun_effects"
+//	"$ignorez" 1
+	"$additive" 1
+	"$vertexcolor" 1
+	"$vertexalpha" 1
+}
+

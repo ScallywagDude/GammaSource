@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdio.h>
 #include "hlfaceposer.h"
 #include "RampTool.h"
@@ -17,15 +24,15 @@
 #include "FlexPanel.h"
 #include "mxExpressionTray.h"
 #include "ExpressionProperties.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "faceposer_models.h"
 #include "UtlBuffer.h"
-#include "FileSystem.h"
-#include "cmdlib.h"
-#include "scriplib.h"
+#include "filesystem.h"
 #include "iscenetokenprocessor.h"
 #include "choreoviewcolors.h"
 #include "MatSysWin.h"
+#include "curveeditorhelpers.h"
+#include "EdgeProperties.h"
 
 RampTool *g_pRampTool = 0;
 
@@ -39,17 +46,16 @@ RampTool *g_pRampTool = 0;
 // 10% per step
 #define TIME_ZOOM_STEP 2
 
-float SnapTime( float input, float granularity );
-StudioModel *FindAssociatedModel( CChoreoScene *scene, CChoreoActor *a );
-
 RampTool::RampTool( mxWindow *parent )
 : IFacePoserToolWindow( "RampTool", "Ramp" ), mxWindow( parent, 0, 0, 0, 0 )
 {
+	m_pHelper = new CCurveEditorHelper< RampTool >( this );
+
 	m_bSuppressLayout = false;
 
 	SetAutoProcess( true );
 
-	m_szEvent[0]		= 0;
+	m_nFocusEventGlobalID = -1;
 
 	m_flScrub			= 0.0f;
 	m_flScrubTarget		= 0.0f;
@@ -75,19 +81,21 @@ RampTool::RampTool( mxWindow *parent )
 	m_flPixelsPerSecond = 500.0f;
 
 	m_flLastDuration = 0.0f;
-	m_nTimeZoom = 100;
 	m_nScrollbarHeight	= 12;
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	m_pHorzScrollBar = new mxScrollbar( this, 0, 0, 18, 100, IDC_RAMPHSCROLL, mxScrollbar::Horizontal );
 	m_pHorzScrollBar->setVisible( false );
 
 	m_bInSetEvent = false;
 	m_flScrubberTimeOffset = 0.0f;
+
+	m_nUndoSetup = 0;
 }
 
 RampTool::~RampTool( void )
 {
+	delete m_pHelper;
 }
 
 void RampTool::SetEvent( CChoreoEvent *event )
@@ -99,12 +107,17 @@ void RampTool::SetEvent( CChoreoEvent *event )
 
 	if ( event == m_pLastEvent )
 	{
-		if ( event && event->GetDuration() != m_flLastDuration )
+		if ( event )
 		{
-			m_flLastDuration = event->GetDuration();
-			m_nLastHPixelsNeeded = -1;
-			m_nLeftOffset = 0;
-			InvalidateLayout();
+			if ( event->GetDuration() != m_flLastDuration )
+			{
+				m_flLastDuration = event->GetDuration();
+				m_nLastHPixelsNeeded = -1;
+				m_flLeftOffset = 0.0f;
+				InvalidateLayout();
+			}
+
+			m_nFocusEventGlobalID = event->GetGlobalID();
 		}
 
 		m_bInSetEvent = false;
@@ -113,10 +126,10 @@ void RampTool::SetEvent( CChoreoEvent *event )
 
 	m_pLastEvent = event;
 
-	m_szEvent[ 0 ] = 0;
+	m_nFocusEventGlobalID = -1;
 	if ( event )
 	{
-		strcpy( m_szEvent, event->GetName() );
+		m_nFocusEventGlobalID = event->GetGlobalID();
 	}
 	
 	if ( event )
@@ -127,7 +140,7 @@ void RampTool::SetEvent( CChoreoEvent *event )
 	{
 		m_flLastDuration = 0.0f;
 	}
-	m_nLeftOffset = 0;
+	m_flLeftOffset = 0.0f;
 	m_nLastHPixelsNeeded = -1;
 	InvalidateLayout();
 
@@ -139,6 +152,9 @@ void RampTool::SetEvent( CChoreoEvent *event )
 //-----------------------------------------------------------------------------
 CChoreoEvent *RampTool::GetSafeEvent( void )
 {
+	if ( m_nFocusEventGlobalID == -1 )
+		return NULL;
+
 	if ( !g_pChoreoView )
 		return NULL;
 
@@ -153,7 +169,7 @@ CChoreoEvent *RampTool::GetSafeEvent( void )
 		if ( !e || !e->HasEndTime() )
 			continue;
 
-		if ( !stricmp( m_szEvent, e->GetName() ) )
+		if ( e->GetGlobalID() == m_nFocusEventGlobalID )
 		{
 			return e;
 		}
@@ -509,7 +525,7 @@ void RampTool::ShowContextMenu( mxEvent *event, bool include_track_menus )
 	CChoreoEvent *e = GetSafeEvent();
 	if ( e )
 	{
-		if ( CountSelectedSamples() > 0 )
+		if ( CountSelected() > 0 )
 		{
 			pop->add( va( "Delete" ), IDC_RT_DELETE );
 			pop->add( "Deselect all", IDC_RT_DESELECT );
@@ -518,6 +534,8 @@ void RampTool::ShowContextMenu( mxEvent *event, bool include_track_menus )
 	}
 
 	pop->add( va( "Change scale..." ), IDC_RT_CHANGESCALE );
+	pop->addSeparator();
+	pop->add( "Edge Properties...", IDC_RT_EDGEPROPERTIES );
 
 	pop->popup( this, (short)event->x, (short)event->y );
 }
@@ -706,8 +724,6 @@ void RampTool::OnMouseMove( mxEvent *event )
 				break;
 			case DRAGTYPE_SELECTION:
 				{
-					int dy = my - m_nLastY;	
-
 					RECT rcFocus;
 					
 					rcFocus.left = m_nStartX < m_nLastX ? m_nStartX : m_nLastX;
@@ -748,6 +764,14 @@ void RampTool::OnMouseMove( mxEvent *event )
 			m_hPrevCursor = SetCursor( LoadCursor( NULL, IDC_SIZEWE ) );
 		}
 		*/
+
+		// See if anything is selected
+		if ( CountSelected() <= 0 )
+		{
+			// Nothing selected
+			// Draw auto highlight
+			DrawAutoHighlight( event );
+		}
 	}
 
 	m_nLastX = (short)event->x;
@@ -756,11 +780,19 @@ void RampTool::OnMouseMove( mxEvent *event )
 
 int	RampTool::handleEvent( mxEvent *event )
 {
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
+
 	int iret = 0;
 
 	if ( HandleToolEvent( event ) )
 	{
 		return iret;
+	}
+
+	// Give helper a shot at the event
+	if ( m_pHelper->HelperHandleEvent( event ) )
+	{
+		return 1;
 	}
 
 	switch ( event->event )
@@ -778,16 +810,26 @@ int	RampTool::handleEvent( mxEvent *event )
 		break;
 	case mxEvent::MouseWheeled:
 		{
-			// Zoom time in  / out
-			if ( event->height > 0 )
+			CChoreoScene *scene = g_pChoreoView->GetScene();
+			if ( scene )
 			{
-				m_nTimeZoom = min( m_nTimeZoom + TIME_ZOOM_STEP, MAX_TIME_ZOOM );
+				int tz = g_pChoreoView->GetTimeZoom( GetToolName() );
+				bool shiftdown = ( event->modifiers & mxEvent::KeyShift ) ? true : false;
+				int stepMultipiler = shiftdown ? 5 : 1;
+
+				// Zoom time in  / out
+				if ( event->height > 0 )
+				{
+					tz = min( tz + TIME_ZOOM_STEP * stepMultipiler, MAX_TIME_ZOOM );
+				}
+				else
+				{
+					tz = max( tz - TIME_ZOOM_STEP * stepMultipiler, TIME_ZOOM_STEP );
+				}
+
+				g_pChoreoView->SetPreservedTimeZoom( this, tz );
 			}
-			else
-			{
-				m_nTimeZoom = max( m_nTimeZoom - TIME_ZOOM_STEP, TIME_ZOOM_STEP );
-			}
-			RepositionHSlider();
+
 			redraw();
 			iret = 1;
 		}
@@ -820,7 +862,9 @@ int	RampTool::handleEvent( mxEvent *event )
 
 			if ( m_nDragType == DRAGTYPE_NONE )
 			{
-				CExpressionSample *sample = GetSampleUnderMouse( event );
+				bool ctrlDown = ( event->modifiers & mxEvent::KeyCtrl ) ? true : false;
+
+				CExpressionSample *sample = GetSampleUnderMouse( event->x, event->y, ctrlDown ? FP_RT_ADDSAMPLE_TOLERANCE : FP_RT_SELECTION_TOLERANCE );
 
 				if ( IsMouseOverScrubHandle( event ) )
 				{
@@ -847,8 +891,7 @@ int	RampTool::handleEvent( mxEvent *event )
 						}
 						else if ( sample->selected )
 						{
-							g_pChoreoView->SetDirty( true );
-							g_pChoreoView->PushUndo( "move ramp points" );
+							PreDataChanged( "move ramp points" );
 
 							StartDragging( 
 								rightbutton ? DRAGTYPE_MOVEPOINTS_TIME : DRAGTYPE_MOVEPOINTS_VALUE, 
@@ -877,16 +920,13 @@ int	RampTool::handleEvent( mxEvent *event )
 							float value = 1.0f - (float)( (short)event->y - rcSamples.top ) / (float)( rcSamples.bottom - rcSamples.top );
 							value = clamp( value, 0.0f, 1.0f );
 							
-							g_pChoreoView->SetDirty( true );
-							g_pChoreoView->PushUndo( "Add ramp point" );
+							PreDataChanged( "Add ramp point" );
 
 							e->AddRamp( t, value, false );
 
 							e->ResortRamp();
 
-							g_pChoreoView->PushRedo( "Add ramp point" );
-							
-							redraw();
+							PostDataChanged( "Add ramp point" );
 						}
 					}
 					else
@@ -971,9 +1011,6 @@ int	RampTool::handleEvent( mxEvent *event )
 				{
 					ApplyBounds( mx, my );
 
-					int dx = mx - m_nStartX;
-					int dy = my = m_nStartY;
-
 					if ( w2() > 0 )
 					{
 						float t = GetTimeValueForMouse( (short)event->x );
@@ -986,7 +1023,7 @@ int	RampTool::handleEvent( mxEvent *event )
 			case DRAGTYPE_MOVEPOINTS_VALUE:
 			case DRAGTYPE_MOVEPOINTS_TIME:
 				{
-					g_pChoreoView->PushRedo( "move ramp points" );
+					PostDataChanged( "move ramp points" );
 				}
 				break;
 			case DRAGTYPE_SELECTION:
@@ -1000,6 +1037,8 @@ int	RampTool::handleEvent( mxEvent *event )
 
 			SetMouseOverPos( mx, my );
 			DrawMouseOverPos();
+
+			redraw();
 
 			iret = 1;
 		}
@@ -1083,6 +1122,11 @@ int	RampTool::handleEvent( mxEvent *event )
 					OnChangeScale();
 				}
 				break;
+			case IDC_RT_EDGEPROPERTIES:
+				{
+					OnEdgeProperties();
+				}
+				break;
 			}
 		}
 		break;
@@ -1092,7 +1136,7 @@ int	RampTool::handleEvent( mxEvent *event )
 			switch ( event->key )
 			{
 			default:
-				iret = 0;
+				iret = g_pChoreoView->HandleZoomKey( this, event->key );
 				break;
 			case VK_ESCAPE:
 				DeselectAll();
@@ -1393,7 +1437,7 @@ void RampTool::DrawAbsoluteTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 		if ( !tag )
 			continue;
 
-		float tagtime = ( event->GetStartTime() + tag->GetTime() * event->GetDuration() ) - rampevent->GetStartTime();
+		float tagtime = ( event->GetStartTime() + tag->GetPercentage() * event->GetDuration() ) - rampevent->GetStartTime();
 		if ( tagtime < starttime || tagtime > endtime )
 			continue;
 
@@ -1402,6 +1446,15 @@ void RampTool::DrawAbsoluteTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 		if ( clipped )
 			continue;
 
+		// Don't add gesture tags except for the current event
+		if ( event != rampevent &&
+			 event->GetType() == CChoreoEvent::GESTURE )
+		{
+			continue;
+		}
+
+		COLORREF clr = event == rampevent ? RGB( 0, 100, 250 ) : RGB( 100, 100, 100 );
+
 		RECT rcMark;
 		rcMark = rc;
 		rcMark.top = rc.bottom - 8;
@@ -1409,7 +1462,7 @@ void RampTool::DrawAbsoluteTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 		rcMark.left = left - 4;
 		rcMark.right = left + 4;
 
-		drawHelper.DrawTriangleMarker( rcMark, RGB( 0, 100, 250 ) );
+		drawHelper.DrawTriangleMarker( rcMark, clr );
 
 		RECT rcText;
 		rcText = rcMark;
@@ -1421,7 +1474,7 @@ void RampTool::DrawAbsoluteTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 
 		rcText.bottom = rcText.top + 10;
 
-		drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 0, 100, 200 ), rcText, tag->GetName() );
+		drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, clr, rcText, tag->GetName() );
 	}
 }
 
@@ -1457,6 +1510,8 @@ void RampTool::DrawRelativeTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 
 		//int left = rc.left + (int)( frac * ( float )( rc.right - rc.left ) + 0.5f );
 
+		COLORREF clr = event == rampevent ? RGB( 0, 100, 250 ) : RGB( 100, 100, 100 );
+
 		RECT rcMark;
 		rcMark = rc;
 		rcMark.top = rc.bottom - 8;
@@ -1464,7 +1519,7 @@ void RampTool::DrawRelativeTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 		rcMark.left = left - 4;
 		rcMark.right = left + 4;
 
-		drawHelper.DrawTriangleMarker( rcMark, RGB( 0, 100, 200 ) );
+		drawHelper.DrawTriangleMarker( rcMark, clr );
 
 		RECT rcText;
 		rcText = rc;
@@ -1475,7 +1530,7 @@ void RampTool::DrawRelativeTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RE
 		rcText.left = left - len / 2;
 		rcText.right = rcText.left + len + 2;
 
-		drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 0, 100, 200 ), rcText, tag->GetName() );
+		drawHelper.DrawColoredText( "Arial", 9, FW_NORMAL, clr, rcText, tag->GetName() );
 	}
 }
 
@@ -1504,7 +1559,7 @@ void RampTool::RepositionHSlider( void )
 {
 	int pixelsneeded = ComputeHPixelsNeeded();
 
-	if ( pixelsneeded <= w2() )
+	if ( pixelsneeded <= w2() - 10 )
 	{
 		m_pHorzScrollBar->setVisible( false );
 	}
@@ -1514,12 +1569,12 @@ void RampTool::RepositionHSlider( void )
 	}
 	m_pHorzScrollBar->setBounds( 0, h2() - m_nScrollbarHeight, w2() - m_nScrollbarHeight, m_nScrollbarHeight );
 
-	m_nLeftOffset = max( 0, m_nLeftOffset );
-	m_nLeftOffset = min( pixelsneeded, m_nLeftOffset );
+	m_flLeftOffset = max( 0.f, m_flLeftOffset );
+	m_flLeftOffset = min( (float)pixelsneeded, m_flLeftOffset );
 
 	m_pHorzScrollBar->setRange( 0, pixelsneeded );
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
-	m_pHorzScrollBar->setPagesize( w2() );
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
+	m_pHorzScrollBar->setPagesize( w2() - 10 );
 
 	m_nLastHPixelsNeeded = pixelsneeded;
 }
@@ -1530,7 +1585,7 @@ void RampTool::RepositionHSlider( void )
 //-----------------------------------------------------------------------------
 float RampTool::GetPixelsPerSecond( void )
 {
-	return m_flPixelsPerSecond * GetTimeZoomScale();
+	return m_flPixelsPerSecond * (float)g_pChoreoView->GetTimeZoom( GetToolName() ) / 100.0f;
 }
 
 
@@ -1540,8 +1595,8 @@ float RampTool::GetPixelsPerSecond( void )
 //-----------------------------------------------------------------------------
 void RampTool::MoveTimeSliderToPos( int x )
 {
-	m_nLeftOffset = x;
-	m_pHorzScrollBar->setValue( m_nLeftOffset );
+	m_flLeftOffset = (float)x;
+	m_pHorzScrollBar->setValue( (int)m_flLeftOffset );
 	InvalidateRect( (HWND)m_pHorzScrollBar->getHandle(), NULL, TRUE );
 	InvalidateLayout();
 }
@@ -1570,8 +1625,22 @@ void RampTool::InvalidateLayout( void )
 //-----------------------------------------------------------------------------
 void RampTool::GetStartAndEndTime( float& st, float& ed )
 {
-	st = m_nLeftOffset / GetPixelsPerSecond();
+	st = m_flLeftOffset / GetPixelsPerSecond();
 	ed = st + (float)w2() / GetPixelsPerSecond();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  :  - 
+// Output : float
+//-----------------------------------------------------------------------------
+float RampTool::GetEventEndTime()
+{
+	CChoreoEvent *ev = GetSafeEvent();
+	if ( !ev )
+		return 1.0f;
+
+	return ev->GetDuration();
 }
 
 //-----------------------------------------------------------------------------
@@ -1630,27 +1699,14 @@ float RampTool::GetTimeValueForMouse( int mx, bool clip /*=false*/)
 	return st + frac * ( ed - st );
 }
 
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : float
-//-----------------------------------------------------------------------------
-float RampTool::GetTimeZoomScale( void )
-{
-	return ( float )m_nTimeZoom / 100.0f;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : scale - 
-//-----------------------------------------------------------------------------
-void RampTool::SetTimeZoomScale( int scale )
-{
-	m_nTimeZoom = scale;
-}
-
 void RampTool::OnChangeScale( void )
 {
+	CChoreoScene *scene = g_pChoreoView->GetScene();
+	if ( !scene )
+	{
+		return;
+	}
+
 	// Zoom time in  / out
 	CInputParams params;
 	memset( &params, 0, sizeof( params ) );
@@ -1658,17 +1714,17 @@ void RampTool::OnChangeScale( void )
 	strcpy( params.m_szDialogTitle, "Change Zoom" );
 	strcpy( params.m_szPrompt, "New scale (e.g., 2.5x):" );
 
-	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)m_nTimeZoom / 100.0f );
+	Q_snprintf( params.m_szInputText, sizeof( params.m_szInputText ), "%.2f", (float)g_pChoreoView->GetTimeZoom( GetToolName() ) / 100.0f );
 
 	if ( !InputProperties( &params ) )
 		return;
 
-	m_nTimeZoom = clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM );
+	g_pChoreoView->SetTimeZoom( GetToolName(), clamp( (int)( 100.0f * atof( params.m_szInputText ) ), 1, MAX_TIME_ZOOM ), false );
 
 	m_nLastHPixelsNeeded = -1;
-	m_nLeftOffset= 0;
+	m_flLeftOffset= 0.0f;
 	InvalidateLayout();
-	Con_Printf( "Zoom factor %i %%\n", m_nTimeZoom );
+	Con_Printf( "Zoom factor %i %%\n", g_pChoreoView->GetTimeZoom( GetToolName() ) );
 }
 
 void RampTool::DrawEventEnd( CChoreoWidgetDrawHelper& drawHelper )
@@ -1713,13 +1769,8 @@ void RampTool::DrawSamplesSimple( CChoreoWidgetDrawHelper& drawHelper, CChoreoEv
 		return;
 
 	float starttime = e->GetStartTime();
-	float endtime = e->GetEndTime();
 
 	COLORREF lineColor = sampleColor;
-	COLORREF dotColor = RGB( 0, 0, 255 );
-	COLORREF dotColorSelected = RGB( 240, 80, 20 );
-
-	float fx = 0.0f;
 
 	int width = rcSamples.right  - rcSamples.left;
 	if ( width <= 0.0f )
@@ -1730,8 +1781,6 @@ void RampTool::DrawSamplesSimple( CChoreoWidgetDrawHelper& drawHelper, CChoreoEv
 
 	float timestepperpixel = e->GetDuration() / (float)width;
 
-	float stoptime = endtime;
-	
 	float prev_value = e->GetIntensity( starttime );
 	int prev_x = rcSamples.left;
 	float prev_t = 0.0f;
@@ -1773,11 +1822,11 @@ void RampTool::DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples
 	COLORREF lineColor = RGB( 0, 0, 255 );
 	COLORREF dotColor = RGB( 0, 0, 255 );
 	COLORREF dotColorSelected = RGB( 240, 80, 20 );
-
-	float fx = 0.0f;
+	COLORREF shadowColor = RGB( 150, 150, 250 );
 
 	int height = rcSamples.bottom - rcSamples.top;
 	int bottom = rcSamples.bottom;
+	int top = rcSamples.top;
 
 	float timestepperpixel = 1.0f / GetPixelsPerSecond();
 
@@ -1785,6 +1834,63 @@ void RampTool::DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples
 	
 	float prev_t = starttime;
 	float prev_value = e->GetIntensity( prev_t );
+
+	if ( 0 )
+	{
+		COLORREF shadowColor = RGB( 150, 150, 250 );
+
+		// draw hermite version of time step
+		float i0, i1, i2;
+		float time10hz = starttime;
+
+		i0 = e->GetIntensity( time10hz + e->GetStartTime() );
+		i1 = i0;
+		time10hz = starttime + 0.1;
+		i2 = e->GetIntensity( time10hz + e->GetStartTime() );;
+		
+		for ( float t = starttime-timestepperpixel; t <= stoptime; t += timestepperpixel )
+		{
+			while (t >= time10hz)
+			{
+				time10hz += 0.1;
+				i0 = i1;
+				i1 = i2;
+				i2 = e->GetIntensity( time10hz + e->GetStartTime() );
+
+				bool clipped;
+				int x = GetPixelForTimeValue( time10hz, &clipped );
+				int y = bottom - i2 * height;
+				int dotsize = 4;
+
+				drawHelper.DrawCircle( 
+					shadowColor, 
+					x, y, 
+					dotsize,
+					false );
+			}
+
+			float value = Hermite_Spline( i0, i1, i2, (t - time10hz + 0.1) / 0.1 );
+
+			int prevx, x;
+
+			bool clipped1, clipped2;
+			x = GetPixelForTimeValue( t, &clipped1 );
+			prevx = GetPixelForTimeValue( prev_t, &clipped2 );
+
+			if ( !clipped1 && !clipped2 )
+			{
+				// Draw segment
+				drawHelper.DrawColoredLine( shadowColor, PS_SOLID, 1,
+					prevx, clamp( bottom - prev_value * height, top, bottom ),
+					x, clamp( bottom - value * height, top, bottom ) );
+			}
+
+			prev_t = t;
+			prev_value = value;
+		}
+	}
+
+
 
 	for ( float t = starttime-timestepperpixel; t <= stoptime; t += timestepperpixel )
 	{
@@ -1825,8 +1931,8 @@ void RampTool::DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples
 			continue;
 		int y = bottom - value * height;
 
-		int dotsize = 4;
-		int dotSizeSelected = 5;
+		int dotsize = 6;
+		int dotSizeSelected = 6;
 
 		COLORREF clr = dotColor;
 		COLORREF clrSelected = dotColorSelected;
@@ -1836,10 +1942,115 @@ void RampTool::DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples
 			x, y, 
 			start->selected ? dotSizeSelected : dotsize,
 			true );
+
+		if ( !start->selected )
+			continue;
+
+		if ( start->GetCurveType() == CURVE_DEFAULT )
+			continue;
+
+		// Draw curve type indicator...
+		char sz[ 128 ];
+		Q_snprintf( sz, sizeof( sz ), "%s", Interpolator_NameForCurveType( start->GetCurveType(), true ) );
+		RECT rc;
+		int fontSize = 9;
+		rc.top = clamp( y + 5, rcSamples.top + 2, rcSamples.bottom - 2 - fontSize );
+		rc.bottom = rc.top + fontSize + 1;
+		rc.left = x - 75;
+		rc.right = x + 175;
+		drawHelper.DrawColoredText( "Arial", fontSize, 500, shadowColor, rc, sz );
 	}
 }
 
-CExpressionSample *RampTool::GetSampleUnderMouse( mxEvent *event )
+void RampTool::DrawAutoHighlight( mxEvent *event )
+{
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return;
+
+	CExpressionSample *hover = GetSampleUnderMouse( event->x, event->y, 0.0f );
+	RECT rcSamples;
+	GetSampleTrayRect( rcSamples );
+
+	CChoreoWidgetDrawHelper drawHelper( this, rcSamples, true );
+
+	RECT rcClient = rcSamples;
+
+	COLORREF dotColor = RGB( 0, 0, 255 );
+	COLORREF dotColorSelected = RGB( 240, 80, 20 );
+	COLORREF clrHighlighted = RGB( 0, 200, 0 );
+
+	int height = rcClient.bottom - rcClient.top;
+	int bottom = rcClient.bottom;
+
+	int dotsize = 6;
+	int dotSizeSelected = 6;
+	int dotSizeHighlighted = 6;
+
+	COLORREF clr = dotColor;
+	COLORREF clrSelected = dotColorSelected;
+	COLORREF bgColor = RGB( 230, 230, 200 );
+
+	// Fixme, could look at 1st derivative and do more sampling at high rate of change?
+	// or near actual sample points!
+	int sampleCount = e->GetRampCount();
+	for ( int sample = 0; sample < sampleCount; sample++ )
+	{
+		CExpressionSample *start = e->GetRamp( sample );
+
+		float value = start->value;
+		bool clipped = false;
+		int x = GetPixelForTimeValue( start->time, &clipped );
+		if ( clipped )
+			continue;
+		int y = bottom - value * height;
+
+		if ( hover == start )
+		{
+			drawHelper.DrawCircle( 
+				bgColor, 
+				x, y, 
+				dotSizeHighlighted,
+				true );
+
+			drawHelper.DrawCircle( 
+				clrHighlighted, 
+				x, y, 
+				dotSizeHighlighted,
+				false );
+
+
+		}
+		else
+		{
+			drawHelper.DrawCircle( 
+				start->selected ? clrSelected : clr, 
+				x, y, 
+				start->selected ? dotSizeSelected : dotsize,
+				true );
+		}
+	}
+}
+
+int RampTool::NumSamples()
+{
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return 0;
+
+	return e->GetRampCount();
+}
+
+CExpressionSample *RampTool::GetSample( int idx )
+{
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return NULL;
+
+	return e->GetRamp( idx );
+}
+
+CExpressionSample *RampTool::GetSampleUnderMouse( int mx, int my, float tolerance /*= FP_RT_SELECTION_TOLERANCE*/ )
 {
 	CChoreoEvent *e = GetSafeEvent();
 	if ( !e )
@@ -1849,25 +2060,33 @@ CExpressionSample *RampTool::GetSampleUnderMouse( mxEvent *event )
 	GetSampleTrayRect( rcSamples );
 
 	POINT pt;
-	pt.x = event->x;
-	pt.y = event->y;
+	pt.x = mx;
+	pt.y = my;
 
 	if ( !PtInRect( &rcSamples, pt ) )
 		return NULL;
 
-	float timeperpixel = 1.0f / g_pRampTool->GetPixelsPerSecond();
-	float closest_dist = 999999.f;
+	pt.y -= rcSamples.top;
+
+	float closest_dist = 9999999.f;
 	CExpressionSample *bestsample = NULL;
 
-	// Search for closes
-	float t = GetTimeValueForMouse( event->x, false );
+	int height = rcSamples.bottom - rcSamples.top;
 
 	for ( int i = 0; i < e->GetRampCount(); i++ )
 	{
 		CExpressionSample *sample = e->GetRamp( i );
 		Assert( sample );
 
-		float dist = fabs( sample->time - t );
+		bool clipped = false;
+		int px = GetPixelForTimeValue( sample->time, &clipped );		
+		int py = height * ( 1.0f - sample->value ); 
+
+		int dx = px - pt.x;
+		int dy = py - pt.y;
+
+		float dist = sqrt( (float)(dx * dx + dy * dy) );
+
 		if ( dist < closest_dist )
 		{
 			bestsample = sample;
@@ -1876,8 +2095,9 @@ CExpressionSample *RampTool::GetSampleUnderMouse( mxEvent *event )
 
 	}
 
-	// Not close to any of them!!!
-	if ( closest_dist > ( 5.0f * timeperpixel ) )
+		// Not close to any of them!!!
+	if ( ( tolerance != 0.0f ) && 
+		( closest_dist > tolerance ) )
 		return NULL;
 
 	return bestsample;
@@ -1897,12 +2117,30 @@ void RampTool::SelectPoints( void )
 	rcSelection.top = m_nStartY < m_nLastY ? m_nStartY : m_nLastY;
 	rcSelection.bottom = m_nStartY < m_nLastY ? m_nLastY : m_nStartY;
 
-	InflateRect( &rcSelection, 3, 3 );
+	int selW = rcSelection.right - rcSelection.left;
+	int selH = rcSelection.bottom - rcSelection.top;
+
+	float tolerance = FP_RT_SELECTION_RECTANGLE_TOLERANCE;
+	// If they are just clicking and releasing in one spot, capture any items w/in a larger tolerance
+	if ( selW <= 2 && selH <= 2 )
+	{
+		tolerance = FP_RT_SELECTION_TOLERANCE;
+
+		CExpressionSample *sample = GetSampleUnderMouse( rcSelection.left + selW * 0.5f, rcSelection.top + selH * 0.5f );
+		if ( sample )
+		{
+			sample->selected = true;
+			return;
+		}
+	}
+	else
+	{
+		InflateRect( &rcSelection, 3, 3 );
+	}
 
 	RECT rcSamples;
 	GetSampleTrayRect( rcSamples );
 
-	int width = w2();
 	int height = rcSamples.bottom - rcSamples.top;
 
 	CChoreoEvent *e = GetSafeEvent();
@@ -1928,8 +2166,8 @@ void RampTool::SelectPoints( void )
 	float timestepperpixel = 1.0f / GetPixelsPerSecond();
 	float yfracstepperpixel = 1.0f / (float)height;
 
-	float epsx = 2*timestepperpixel;
-	float epsy = 2*yfracstepperpixel;
+	float epsx = tolerance*timestepperpixel;
+	float epsy = tolerance*yfracstepperpixel;
 
 	for ( int i = 0; i < e->GetRampCount(); i++ )
 	{
@@ -1941,11 +2179,11 @@ void RampTool::SelectPoints( void )
 		if ( sample->time - epsx > fright )
 			continue;
 
-		//if ( (1.0f - sample->value ) + epsy < ftop )
-		//	continue;
+		if ( (1.0f - sample->value ) + epsy < ftop )
+			continue;
 
-		//if ( (1.0f - sample->value ) - epsy > fbottom )
-		//	continue;
+		if ( (1.0f - sample->value ) - epsy > fbottom )
+			continue;
 
 		sample->selected = true;
 	}
@@ -1957,29 +2195,14 @@ void RampTool::SelectPoints( void )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int RampTool::CountSelectedSamples( void )
+int RampTool::CountSelected( void )
 {
-	int c = 0;
-	CChoreoEvent *e = GetSafeEvent();
-	if ( e )
-	{
-		int count = e->GetRampCount();
-
-		for ( int i = 0; i < count; i++ )
-		{
-			CExpressionSample *sample = e->GetRamp( i );
-			if ( !sample->selected )
-				continue;
-
-			c++;
-		}
-	}
-	return c;
+	return m_pHelper->CountSelected( false );
 }
 
 void RampTool::MoveSelectedSamples( float dfdx, float dfdy )
 {
-	int selecteditems = CountSelectedSamples();
+	int selecteditems = CountSelected();
 	if ( !selecteditems )
 		return;
 
@@ -2016,7 +2239,7 @@ void RampTool::DeselectAll( void )
 {
 	int i;
 
-	int selecteditems = CountSelectedSamples();
+	int selecteditems = CountSelected();
 	if ( !selecteditems )
 		return;
 
@@ -2060,12 +2283,11 @@ void RampTool::Delete( void )
 	if ( !e )
 		return;
 
-	int selecteditems = CountSelectedSamples();
+	int selecteditems = CountSelected();
 	if ( !selecteditems )
 		return;
 
-	g_pChoreoView->SetDirty( true );
-	g_pChoreoView->PushUndo( "Delete ramp points" );
+	PreDataChanged( "Delete ramp points" );
 
 	for ( i = e->GetRampCount() - 1; i >= 0 ; i-- )
 	{
@@ -2076,7 +2298,82 @@ void RampTool::Delete( void )
 		e->DeleteRamp( i );
 	}
 
-	g_pChoreoView->PushRedo( "Delete ramp points" );
+	PostDataChanged( "Delete ramp points" );
+}
 
+void RampTool::OnModelChanged()
+{
 	redraw();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *undodescription - 
+//-----------------------------------------------------------------------------
+void RampTool::PreDataChanged( char const *undodescription )
+{
+	if ( m_nUndoSetup  == 0 )
+	{
+		g_pChoreoView->SetDirty( true );
+		g_pChoreoView->PushUndo( undodescription );
+	}
+	++m_nUndoSetup;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *redodescription - 
+//-----------------------------------------------------------------------------
+void RampTool::PostDataChanged( char const *redodescription )
+{
+	--m_nUndoSetup;
+	if ( m_nUndoSetup == 0 )
+	{
+		g_pChoreoView->PushRedo( redodescription );
+		redraw();
+	}
+}
+
+
+void RampTool::SetMousePositionForEvent( mxEvent *event )
+{
+	POINT pt;
+	GetCursorPos( &pt );
+	ScreenToClient( (HWND)getHandle(), &pt );
+
+	event->x = pt.x;
+	event->y = pt.y;
+}
+
+void RampTool::OnEdgeProperties()
+{
+	CChoreoEvent *e = GetSafeEvent();
+	if ( !e )
+		return;
+
+	CEdgePropertiesParams params;
+	Q_memset( &params, 0, sizeof( params ) );
+	Q_strcpy( params.m_szDialogTitle, "Edge Properties" );
+
+	params.SetFromCurve( e->GetRamp() );
+
+	if ( !EdgeProperties( &params ) )
+	{
+		return;
+	}
+
+	char *undotext = "Change Event Ramp Edge Properties";
+	
+	PreDataChanged( undotext );
+
+	// Apply changes.
+	params.ApplyToCurve( e->GetRamp() );
+
+	PostDataChanged( undotext );
+}
+
+void RampTool::GetWorkList( bool reflect, CUtlVector< RampTool * >& list )
+{
+	NOTE_UNUSED( reflect );
+	list.AddToTail( this );
 }

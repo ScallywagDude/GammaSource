@@ -1,10 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include <mx/mx.h>
+//=============================================================================//
+#include <mxtk/mx.h>
 #include "mxStatusWindow.h"
 #include "hlfaceposer.h"
 #include "choreowidgetdrawhelper.h"
@@ -24,9 +24,7 @@ mxStatusWindow::mxStatusWindow(mxWindow *parent, int x, int y, int w, int h, con
 	for ( int i = 0; i < MAX_TEXT_LINES; i++ )
 	{
 		m_rgTextLines[ i ].m_szText[ 0 ] = 0;
-		m_rgTextLines[ i ].r = CONSOLE_R;
-		m_rgTextLines[ i ].g = CONSOLE_G;
-		m_rgTextLines[ i ].b = CONSOLE_B;
+		m_rgTextLines[ i ].rgb = CONSOLE_COLOR;
 		m_rgTextLines[ i ].curtime = 0;
 	}
 	m_nCurrentLine = 0;
@@ -63,7 +61,7 @@ void mxStatusWindow::redraw()
 	rcText.bottom = h2() - 4;
 	rcText.top = rcText.bottom - lineheight;
 
-	int minval = m_pScrollbar->getMinValue();
+	//int minval = m_pScrollbar->getMinValue();
 	int maxval = m_pScrollbar->getMaxValue();
 	int pagesize = m_pScrollbar->getPagesize();
 	int curval = m_pScrollbar->getValue();
@@ -87,8 +85,6 @@ void mxStatusWindow::redraw()
 
 		int line = ( rawline - offset ) & TEXT_LINE_MASK;
 
-		COLORREF clr = RGB( m_rgTextLines[ line ].r, m_rgTextLines[ line ].g, m_rgTextLines[ line ].b );
-
 		char *ptext = m_rgTextLines[ line ].m_szText;
 		
 		RECT rcTime = rcText;
@@ -106,7 +102,7 @@ void mxStatusWindow::redraw()
 		rcTime = rcText;
 		rcTime.left += 50;
 
-		helper.DrawColoredText( "Arial", STATUS_FONT_SIZE, FW_NORMAL, clr, rcTime, ptext );
+		helper.DrawColoredText( "Arial", STATUS_FONT_SIZE, FW_NORMAL, m_rgTextLines[ line ].rgb, rcTime, ptext );
 
 		OffsetRect( &rcText, 0, -lineheight );
 	}
@@ -124,7 +120,7 @@ bool mxStatusWindow::PaintBackground( void )
 	return false;
 }
 
-void mxStatusWindow::StatusPrint( int r, int g, int b, bool overwrite, const char *text )
+void mxStatusWindow::StatusPrint( COLORREF clr, bool overwrite, const char *text )
 {
 	float curtime = (float)Plat_FloatTime();
 
@@ -144,7 +140,7 @@ void mxStatusWindow::StatusPrint( int r, int g, int b, bool overwrite, const cha
 	{
 		if ( *in == '\n' || *in == '\r' )
 		{
-			*in++;
+			in++;
 		}
 		else
 		{
@@ -164,9 +160,7 @@ void mxStatusWindow::StatusPrint( int r, int g, int b, bool overwrite, const cha
 	strncpy( m_rgTextLines[ i ].m_szText, fixedtext, 511 );
 	m_rgTextLines[ i ].m_szText[ 511 ] = 0;
 
-	m_rgTextLines[ i ].r = r;
-	m_rgTextLines[ i ].g = g;
-	m_rgTextLines[ i ].b = b;
+	m_rgTextLines[ i ].rgb = clr;
 	m_rgTextLines[ i ].curtime = curtime;
 
 	m_nCurrentLine++;
@@ -188,7 +182,7 @@ void mxStatusWindow::PositionSliders( int sboffset )
 {
 	int lineheight = ( STATUS_FONT_SIZE + 2 );
 
-	int linesused = min( MAX_TEXT_LINES, m_nCurrentLine );
+	int linesused = min( (int)MAX_TEXT_LINES, m_nCurrentLine );
 	linesused = max( linesused, 1 );
 
 	int trueh = h2() - GetCaptionHeight();
@@ -256,6 +250,9 @@ int mxStatusWindow::handleEvent( mxEvent *event )
 
 	return iret;
 }
+#include "StudioModel.h"
+
+#include "faceposer_models.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -269,9 +266,7 @@ void mxStatusWindow::DrawActiveTool()
 	rcTool.right = w2() - 16;
 
 	rcTool.bottom = rcTool.top + 10;
-	rcTool.left = rcTool.right - 250;
-
-	CChoreoWidgetDrawHelper helper( this, rcTool, RGB( 100, 0, 0 ) );
+	rcTool.left = rcTool.right - 500;
 
 	char sz[ 256 ];
 
@@ -288,19 +283,22 @@ void mxStatusWindow::DrawActiveTool()
 		fps = 1.0f / dt;
 	}
 
-	sprintf( sz, "%s (%i) at %.3f (%.2f fps)", 
+	sprintf( sz, "%s (%i) at %.3f (%.2f fps) (soundcount %i)", 
 		activeTool ? activeTool->GetToolName() : "None", 
 		g_MDLViewer->GetCurrentFrame(), 
 		(float)realtime, 
-		fps );
+		fps,
+		models->CountActiveSources() );
 
 	lastrealtime = realtime;
 
-	int len = helper.CalcTextWidth( "Arial", 9, FW_NORMAL, sz );
+	int len = CChoreoWidgetDrawHelper::CalcTextWidth( "Courier New", 10, FW_NORMAL, sz );
+
+	CChoreoWidgetDrawHelper helper( this, rcTool, RGB( 32, 0, 0 ) );
 
 	rcTool.left = rcTool.right - len - 15;
 
-	helper.DrawColoredText( "Arial", 9, FW_NORMAL, RGB( 255, 0, 0 ), rcTool, sz );
+	helper.DrawColoredText( "Courier New", 10, FW_NORMAL, RGB( 255, 255, 200 ), rcTool, sz );
 }
 
 //-----------------------------------------------------------------------------

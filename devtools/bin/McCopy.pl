@@ -1,22 +1,25 @@
+use strict;
+
 # todo: make sure and create the target directory if it doesn't exist.
 # todo: make this work either direction
 # todo: fix any case problems
 
-$g_protocol_version = "mccopy1\n";
-$g_opt_port = 7070;
+my $g_protocol_version = "mccopy1\n";
+my $g_opt_port = 7070;
+my $g_server_md5 = 0;
 
 use IO::Socket;
 
 sub GetMD5
 {
-	local( $filename ) = shift;
+	my $filename = shift;
 	$filename =~ s,/,\\,g;
 #	print "$filename\n";
 	print ".";
-	local( $cmd ) = "md5.exe < \"$filename\"";
+	my( $cmd ) = "md5.exe < \"$filename\"";
 #	print $cmd . "\n";
 	open MD5, "$cmd|";
-	$out = <MD5>;
+	my $out = <MD5>;
 	close MD5;
 	$out =~ s/^.*\=\s+//;
 	$out =~ s/\n//g;
@@ -29,9 +32,9 @@ sub GetMD5
 ################################################################################################
 sub SendFileName
 {
-	local( $sock ) = shift;
-	local( $file ) = shift;
-	local( $isdir ) = -d $file;
+	my( $sock ) = shift;
+	my( $file ) = shift;
+	my( $isdir ) = -d $file;
 
 	if( $isdir )
 	{
@@ -42,13 +45,13 @@ sub SendFileName
 		}
 	}
 
-	local( @statinfo ) = stat $file;
+	my( @statinfo ) = stat $file;
 	if( @statinfo )
 	{
-		local( $mtime ) = $statinfo[9];
-		local( $mode ) = $statinfo[2];
-#		local( $mtimestr ) = scalar( localtime( $mtime ) );
-		local( $size ) = $statinfo[7];
+		my( $mtime ) = $statinfo[9];
+		my( $mode ) = $statinfo[2];
+#		my( $mtimestr ) = scalar( localtime( $mtime ) );
+		my( $size ) = $statinfo[7];
 		if( $isdir )
 		{
 			print $sock "d\n";
@@ -84,8 +87,8 @@ sub SendFileName
 
 sub SendDirName
 {
-	local( $sock ) = shift;
-	local( $dirname ) = shift;
+	my( $sock ) = shift;
+	my( $dirname ) = shift;
 	if( $dirname =~ m/\/\.$/ ||		# "."
 	    $dirname =~ m/\/\.\.$/ )	# ".."
 	{
@@ -94,10 +97,10 @@ sub SendDirName
 
 	local( *SRCDIR );
 	opendir SRCDIR, $dirname;
-	local( @dir ) = readdir SRCDIR;
+	my( @dir ) = readdir SRCDIR;
 	closedir SRCDIR;
 
-	local( $item );
+	my( $item );
 	while( $item = shift @dir )
 	{
 		&SendFileName( $sock, $dirname . "/" . $item );
@@ -106,16 +109,16 @@ sub SendDirName
 
 sub GetFile
 {
-	local( $sock ) = shift;
-	local( $filename ) = shift;
-	local( $localfilename ) = &AddBaseDir( $filename );
+	my( $sock ) = shift;
+	my( $filename ) = shift;
+	my( $localfilename ) = &AddBaseDir( $filename );
 	print "GetFile: $filename ($localfilename)\n";
 	local( *FILE );
 	open FILE, "<$localfilename";
 	binmode( FILE );
-	local( $filebits );
+	my( $filebits );
 	seek FILE, 0, 2;
-	local( $size ) = tell FILE;
+	my( $size ) = tell FILE;
 	if( $size < 0 )
 	{
 		die "$filename \$size == $size\n";
@@ -130,8 +133,8 @@ sub GetFile
 
 sub HandleCommand
 {
-	local( $sock ) = shift;
-	local( $cmd ) = shift;
+	my( $sock ) = shift;
+	my( $cmd ) = shift;
 
 	if( $cmd =~ m/dirlistmd5\s+(.*)$/ )
 	{
@@ -155,8 +158,8 @@ sub HandleCommand
 
 sub RunServer
 {
-	local( $hostname ) = `hostname`;
-#	local( $hostname ) = "localhost";
+	my( $hostname ) = `hostname`;
+#	my( $hostname ) = "localhost";
 	$hostname =~ s/\n//; # remove newlines
 
 	my $sock = new IO::Socket::INET (
@@ -168,7 +171,7 @@ sub RunServer
 									 );
 	die "Could not create socket: $!\n" unless $sock;
 
-	local( $clientnum ) = 0;
+	my( $clientnum ) = 0;
 	while( 1 )
 	{
 		my $new_sock = $sock->accept();
@@ -176,11 +179,12 @@ sub RunServer
 		if( fork() == 0 )
 		{
 			print "$clientnum: opening connection...\n";
-			$version = <$new_sock>;
+			my $version = <$new_sock>;
 			if( $version ne $g_protocol_version )
 			{
 				die "wrong protocol version: server: $g_protocol_version client: %version\n";
 			}
+			my $command;
 			while(defined($command = <$new_sock>)) 
 			{
 				print "$clientnum: command: $command";
@@ -251,7 +255,7 @@ sub Usage
 	print "perl McCopy.pl [options] srcdir dstdir\n";
 	print "\n";
 	print "ie:\n";
-	print "perl McCopy.pl --verbose --mirror-safe --test remotemachine:u:/hl u:/hl.work\n";
+	print "perl McCopy.pl --verbose --recursive remotemachine:u:/hl u:/hl.work\n";
 	print "\n";
 	print "where \"remotemachine\" is running a McCopy server\n";
 	print "\n";
@@ -286,59 +290,69 @@ sub Usage
 }
 
 # default command line options
-$g_opt_server = 0;
-$g_opt_test = 0;
-$g_opt_verbose = 0;
-$g_opt_recursive = 0;
-$g_opt_deletereadonly = 0;
-$g_opt_deletewritable = 0;
-$g_opt_clobberwritablenewer = 0;
-$g_opt_deleteexcluded = 0;
-$g_opt_deletedirs = 0;
-$g_opt_ignoretime = 0;
-$g_opt_ignoreperms = 0;
-$g_opt_ignoresize = 0;
-@g_opt_exclude;
-@g_opt_include;
-$g_opt_src;
-$g_opt_dst;
+my $g_opt_server = 0;
+my $g_opt_test = 0;
+my $g_opt_verbose = 0;
+my $g_opt_recursive = 0;
+my $g_opt_deletereadonly = 0;
+my $g_opt_deletewritable = 0;
+my $g_opt_clobberwritablenewer = 0;
+my $g_opt_deleteexcluded = 0;
+my $g_opt_deletedirs = 0;
+my $g_opt_ignoretime = 0;
+my $g_opt_ignoreperms = 0;
+my $g_opt_ignoresize = 0;
+my @g_opt_exclude;
+my @g_opt_include;
+my $g_opt_src;
+my $g_opt_dst;
+my $g_opt_md5;
 
-$g_src_is_local;
-$g_src_machine = "";
-$g_src_path;
+my $g_src_is_local;
+my $g_src_machine = "";
+my $g_src_path;
 
-$g_dst_is_local;
-$g_dst_machine = "";
-$g_dst_path;
+my $g_dst_is_local;
+my $g_dst_machine = "";
+my $g_dst_path;
 
 # indexed by $filename
-%g_remote_mtime;
-%g_remote_mode;
-%g_remote_isdir;
-%g_remote_size;
+my %g_remote_mtime;
+my %g_remote_mode;
+my %g_remote_isdir;
+my %g_remote_size;
+my %g_remote_md5;
 
-%g_local_mtime;
-%g_local_mode;
-%g_local_isdir;
-%g_local_size;
+my %g_local_mtime;
+my %g_local_mode;
+my %g_local_isdir;
+my %g_local_size;
+my %g_local_md5;
 
-%g_files_to_delete;
-%g_dirs_to_delete;
-%g_files_to_copy;
-%g_dirs_to_create;
+my %g_alreadycomparedtime;
+my %g_alreadycomparedpermissions;
+my %g_alreadycomparedsize;
+my %g_alreadycomparedmd5;
 
-$g_max_time_delta = 2; # in seconds
+my %g_files_to_delete;
+my %g_dirs_to_delete;
+my %g_files_to_copy;
+my %g_dirs_to_create;
+
+my $g_max_time_delta = 2; # in seconds
+
+my $g_basedir;
 
 sub BackToForwardSlash
 {
-	local( $path ) = shift;
+	my( $path ) = shift;
 	$path =~ s,\\,/,g;
 	return $path;
 }
 
 sub ForwardToBackSlash
 {
-	local( $path ) = shift;
+	my( $path ) = shift;
 	$path =~ s,/,\\,g;
 	return $path;
 }
@@ -351,7 +365,7 @@ sub SetBaseDir
 
 sub RemoveFileName
 {
-	local( $in ) = shift;
+	my( $in ) = shift;
 	$in = &BackToForwardSlash( $in );
 	$in =~ s,/[^/]*$,,;
 	return $in;
@@ -359,7 +373,7 @@ sub RemoveFileName
 
 sub RemovePath
 {
-	local( $in ) = shift;
+	my( $in ) = shift;
 	$in = &BackToForwardSlash( $in );
 	$in =~ s,^(.*)/([^/]*)$,$2,;
 	return $in;
@@ -368,24 +382,24 @@ sub RemovePath
 
 sub MakeDirHier
 {
-	local( $in ) = shift;
+	my( $in ) = shift;
 #	print "MakeDirHier( $in )\n";
 	$in = &BackToForwardSlash( $in );
-	local( @path );
+	my( @path );
 	while( $in =~ m,/, ) # while $in still has a slash
 	{
-		local( $end ) = &RemovePath( $in );
+		my( $end ) = &RemovePath( $in );
 		push @path, $end;
 #		print $in . "\n";
 		$in = &RemoveFileName( $in );
 	}
-	local( $i );
-	local( $numelems ) = scalar( @path );
-	local( $curpath );
+	my( $i );
+	my( $numelems ) = scalar( @path );
+	my( $curpath );
 	for( $i = $numelems - 1; $i >= 0; $i-- )
 	{
 		$curpath .= "/" . $path[$i];
-		local( $dir ) = $in . $curpath;
+		my( $dir ) = $in . $curpath;
 		if( !stat $dir )
 		{
 			print "mkdir $dir\n";
@@ -396,7 +410,7 @@ sub MakeDirHier
 
 sub RemoveBaseDir
 {
-	local( $path ) = shift;
+	my( $path ) = shift;
 #	print "removebasedir: $path ";
 	$path =~ s,^$g_basedir/,,;
 #	print "$path\n";
@@ -405,13 +419,13 @@ sub RemoveBaseDir
 
 sub AddBaseDir
 {
-	local( $path ) = shift;
+	my( $path ) = shift;
 	return $g_basedir . "/" . $path;
 }
 
 sub FixPath
 {
-	local( $path ) = shift;
+	my( $path ) = shift;
 	# backslash to forward slash
 	$path =~ s,\\,/,g;  
 	# remove trailing slash
@@ -421,7 +435,7 @@ sub FixPath
 
 sub ProcessLongCommand
 {
-	local( $cmd ) = shift;
+	my( $cmd ) = shift;
 	if( $cmd =~ m/--verbose/ )
 	{
 		$g_opt_verbose = 1;
@@ -496,7 +510,7 @@ sub ProcessLongCommand
 
 sub ProcessCommandLine
 {
-	local( $cmd );
+	my( $cmd );
 	while( $cmd = shift )
 	{
 		# hack - special case for exclude since it has an argument
@@ -636,7 +650,7 @@ sub ParseSrcDstPaths
 
 	if( $g_src_is_local )
 	{
-		die "local src directories not supported yet. . run the server on the other end.\n";
+		die "my src directories not supported yet. . run the server on the other end.\n";
 	}
 	if( !$g_dst_is_local )
 	{
@@ -676,8 +690,8 @@ if( $g_opt_server )
 
 sub GetRemoteDirList
 {
-	local( $sock ) = shift;
-	local( $remotedirname ) = shift;
+	my( $sock ) = shift;
+	my( $remotedirname ) = shift;
 	if( $g_opt_md5 )
 	{
 		print $sock "dirlistmd5 $remotedirname\n";
@@ -686,15 +700,20 @@ sub GetRemoteDirList
 	{
 		print $sock "dirlist $remotedirname\n";
 	}
-	local( $filename, $mtime, $mode, $size );
-	while( defined( $fileordir = <$sock> ) )
+	my( $filename, $mtime, $mode, $size );
+	my $fileordir;
+#	while( defined( $fileordir = <$sock> ) )
+	while( 1 )
 	{
+		$fileordir = <$sock>;
+		die "Lost connection!!!" if !defined( $fileordir );
 		last if $fileordir=~ m/^\n$/;
+		
 		$filename = <$sock>;
 		$mtime = <$sock>;
 		$mode = <$sock>;
 		$size = <$sock>;
-		$md5 = "";
+		my $md5 = "";
 		if( ( $fileordir =~ /f/i ) && $g_opt_md5 )
 		{
 			$md5 = <$sock>;
@@ -734,8 +753,8 @@ sub GetRemoteDirList
 
 sub GetLocalDirList_File
 {
-	local( $filename ) = shift;
-	local( $isdir ) = -d $filename;
+	my( $filename ) = shift;
+	my( $isdir ) = -d $filename;
 	if( $isdir )
 	{
 		if( $filename =~ m/\/\.$/ ||		# "."
@@ -749,14 +768,14 @@ sub GetLocalDirList_File
 	{
 		GetLocalDirList_Dir( $filename );
 	}
-	local( @statinfo ) = stat $filename;
+	my( @statinfo ) = stat $filename;
 	if( @statinfo )
 	{
-		local( $mtime ) = $statinfo[9];
-		local( $mode ) = $statinfo[2];
-#			local( $mtimestr ) = scalar( localtime( $mtime ) );
-		local( $size ) = $statinfo[7];
-		local( $filename_nobase ) = &RemoveBaseDir( $filename );
+		my( $mtime ) = $statinfo[9];
+		my( $mode ) = $statinfo[2];
+#			my( $mtimestr ) = scalar( localtime( $mtime ) );
+		my( $size ) = $statinfo[7];
+		my( $filename_nobase ) = &RemoveBaseDir( $filename );
 		$g_local_isdir{$filename_nobase} = $isdir;
 		$g_local_mtime{$filename_nobase} = $mtime;
 		$g_local_mode{$filename_nobase} = sprintf "%o", $mode;
@@ -768,13 +787,13 @@ sub GetLocalDirList_File
 	}
 	else
 	{
-		print "CAN'T STAT $file\n";
+		print "CAN'T STAT $filename\n";
 	}
 }
 
 sub GetLocalDirList_Dir
 {
-	local( $dirname ) = shift;
+	my( $dirname ) = shift;
 	if( $dirname =~ m/\/\.$/ ||		# "."
 		$dirname =~ m/\/\.\.$/ )	# ".."
 	{
@@ -783,10 +802,10 @@ sub GetLocalDirList_Dir
 
 	local( *SRCDIR );
 	opendir SRCDIR, $dirname;
-	local( @dir ) = readdir SRCDIR;
+	my( @dir ) = readdir SRCDIR;
 	closedir SRCDIR;
 
-	local( $item );
+	my( $item );
 	while( $item = shift @dir )
 	{
 		&GetLocalDirList_File( $dirname . "/" . $item );
@@ -795,8 +814,8 @@ sub GetLocalDirList_Dir
 
 sub IsExcluded
 {
-	local( $filename ) = shift;
-	local( $regexp );
+	my( $filename ) = shift;
+	my( $regexp );
 	foreach $regexp ( @g_opt_include )
 	{
 		if( eval "\$filename =~ $regexp" )
@@ -842,7 +861,7 @@ sub IsExcluded
 				}
 				else
 				{
-					print "excluding but keeping local copy of $filename\n" if( $g_opt_verbose );
+					print "excluding but keeping my copy of $filename\n" if( $g_opt_verbose );
 				}
 			}
 			else
@@ -861,7 +880,7 @@ sub CompareTime
 	{
 		return;
 	}
-	local( $filename ) = shift;
+	my( $filename ) = shift;
 	# hack! ignore directories. . seems like robocopy does too.
 	if( $g_remote_isdir{$filename} || $g_local_isdir{$filename} )
 	{
@@ -875,7 +894,7 @@ sub CompareTime
 	$g_alreadycomparedtime{$filename} = 1;
 
 	# compare times
-	local( $deltatime ) = $g_local_mtime{$filename} - $g_remote_mtime{$filename};
+	my( $deltatime ) = $g_local_mtime{$filename} - $g_remote_mtime{$filename};
 #	print "g_remote_mtime: " . $g_remote_mtime{$filename} . "\n";
 #	print "g_local_mtime: " . $g_local_mtime{$filename} . "\n";
 #	print "deltatime: $deltatime\n";
@@ -897,7 +916,7 @@ sub ComparePermissions
 	{
 		return;
 	}
-	local( $filename ) = shift;
+	my( $filename ) = shift;
 	if( defined( $g_alreadycomparedpermissions{$filename} ) )
 	{
 		return;
@@ -928,7 +947,7 @@ sub CompareSize
 	{
 		return;
 	}
-	local( $filename ) = shift;
+	my( $filename ) = shift;
 	if( defined( $g_alreadycomparedsize{$filename} ) )
 	{
 		return;
@@ -952,7 +971,7 @@ sub CompareMD5
 	{
 		return;
 	}
-	local( $filename ) = shift;
+	my( $filename ) = shift;
 	if( defined( $g_alreadycomparedmd5{$filename} ) )
 	{
 		return;
@@ -970,8 +989,8 @@ sub CompareMD5
 	}
 	else
 	{
-		local( $diff ) = 0;
-		local( $deltatime ) = $g_local_mtime{$filename} - $g_remote_mtime{$filename};
+		my( $diff ) = 0;
+		my( $deltatime ) = $g_local_mtime{$filename} - $g_remote_mtime{$filename};
 		if( $g_remote_size{$filename} != $g_local_size{$filename} )
 		{
 			$diff = 1;
@@ -1006,14 +1025,15 @@ my $sock = new IO::Socket::INET (
 die "Could not create socket: $!\n" unless $sock;
 
 print $sock $g_protocol_version;
-$remotedirname = $g_src_path;
+my $remotedirname = $g_src_path;
 print "Getting remote dirlist for $remotedirname\n";
 &GetRemoteDirList( $sock, $remotedirname );
 
-$localdirname = $g_dst_path;
+my $localdirname = $g_dst_path;
 print "Getting local dirlist for $localdirname\n";
 &GetLocalDirList_Dir( $localdirname );
 
+my $remote_filename;
 foreach $remote_filename (keys %g_remote_mtime)
 {
 	next if( &IsExcluded( $remote_filename ) );
@@ -1043,6 +1063,7 @@ foreach $remote_filename (keys %g_remote_mtime)
 	}
 }
 
+my $local_filename;
 foreach $local_filename (keys %g_local_mtime)
 {
 	next if( &IsExcluded( $local_filename ) );
@@ -1075,8 +1096,8 @@ foreach $local_filename (keys %g_local_mtime)
 
 sub IsWritable
 {
-	local( $file ) = shift;
-	local( $perms ) = oct( $g_local_mode{$file} );
+	my( $file ) = shift;
+	my( $perms ) = oct( $g_local_mode{$file} );
 	if( $perms & 2 )
 	{
 		return 1;
@@ -1089,7 +1110,7 @@ sub IsWritable
 
 sub UnlinkFile
 {
-	local( $file ) = shift;
+	my( $file ) = shift;
 	
 	print "del " . &ForwardToBackSlash( $file ) . "\n";
 	if( !$g_opt_test )
@@ -1101,7 +1122,7 @@ sub UnlinkFile
 
 sub UnlinkDir
 {
-	local( $file ) = shift;
+	my( $file ) = shift;
 	
 	print "rmdir " . &ForwardToBackSlash( $file ) . "\n";
 	if( !$g_opt_test )
@@ -1116,11 +1137,11 @@ sub UnlinkDir
 
 sub DeleteOrphanFile
 {
-	local( $file ) = shift;
+	my( $file ) = shift;
 #	print "\$g_local_isdir{$file} = $g_local_isdir{$file}\n";
 	#	print "DeleteOrphanFile( $file )\n";
-	local( $localfile ) = &AddBaseDir( $file );
-	local( $iswritable ) = &IsWritable( $file );
+	my( $localfile ) = &AddBaseDir( $file );
+	my( $iswritable ) = &IsWritable( $file );
 	if( $iswritable )
 	{
 		if( $g_opt_deletewritable )
@@ -1147,7 +1168,8 @@ sub DeleteOrphanFile
 
 sub DeleteOrphanDir
 {
-	local( $localdir ) = &AddBaseDir( $dir );
+	my $dir = shift;
+	my( $localdir ) = &AddBaseDir( $dir );
 	if( $g_opt_deletedirs )
 	{
 		&UnlinkDir( $localdir );
@@ -1161,14 +1183,14 @@ sub DeleteOrphanDir
 sub MakeLocalFileAttribsMatchRemote
 {
 	return if( $g_opt_test );
-	local( $file ) = shift;
-	local( $localfilename ) = &AddBaseDir( $file );
+	my( $file ) = shift;
+	my( $localfilename ) = &AddBaseDir( $file );
 
 	# Make it writable so that we can tweak permissions/time.
 	chmod 0666, $localfilename || die $!;
 
 	# Set the time on the file to match the remote
-	local( @statresult );
+	my( @statresult );
 	if( !( @statresult = stat $localfilename ) )
 	{
 		die "couldn't stat $localfilename locally\n";
@@ -1182,7 +1204,7 @@ sub MakeLocalFileAttribsMatchRemote
 
 sub CopyFileFromRemote
 {
-	local( $file ) = shift;
+	my( $file ) = shift;
 	if( &IsWritable( $file ) && !$g_opt_clobberwritablenewer && $g_local_mtime{$file} > $g_remote_mtime{$file} )
 	{
 		print "Would have copied \"$file\" (use --clobber-writable-newer to copy)\n";
@@ -1191,17 +1213,17 @@ sub CopyFileFromRemote
 	print "copy $file from remote ($g_remote_size{$file} bytes)\n";
 	if( !$g_opt_test )
 	{
-		local( $localfilename ) = &AddBaseDir( $file );
-		# make the local version writable so that we can write over it, if it exists
+		my( $localfilename ) = &AddBaseDir( $file );
+		# make the my version writable so that we can write over it, if it exists
 		if( $g_local_mtime{$file} )
 		{
 			chmod 0666, $localfilename || die $!;
 		}
 		print $sock "getfile $file\n";
-		local( $size ) = $g_remote_size{$file};
-		local( $filebits );
+		my( $size ) = $g_remote_size{$file};
+		my( $filebits );
 #		print "reading $file: $size\n";
-		local( $readsize ) = read $sock, $filebits, $size;
+		my( $readsize ) = read $sock, $filebits, $size;
 		if( $readsize != $size )
 		{
 			die "read size ($readsize) != expected size ($size) for $file\nYou either:\n\t1) lost your connection\n\t2) the remote file has changed since start of mccopy\n";
@@ -1224,32 +1246,34 @@ sub CopyFileFromRemote
 
 sub PrettifyTime
 {
-	local( $inseconds ) = shift;
-	local( $hours, $minutes, $seconds );
-	local( @blah ) = gmtime( $inseconds );
+	my( $inseconds ) = shift;
+	my( $hours, $minutes, $seconds );
+	my( @blah ) = gmtime( $inseconds );
 	$hours = $blah[2];
 	$minutes = $blah[1];
 	$seconds = $blah[0];
 	return sprintf "%02d:%02d:%02d", $hours, $minutes, $seconds;
 }
 
-# remove local files that aren't on remote
+# remove my files that aren't on remote
+my $file;
 foreach $file (keys %g_files_to_delete)
 {
 	&DeleteOrphanFile( $file );
 }
 
-# remove local dirs that aren't on remote
+# remove my dirs that aren't on remote
+my $dir;
 foreach $dir (sort { length $b <=> length $a } keys( %g_dirs_to_delete ) )
 {
 	&DeleteOrphanDir( $dir );
 }
 
 
-# create local dirs that are only on remote
+# create my dirs that are only on remote
 foreach $dir (sort { length $a <=> length $b } keys( %g_dirs_to_create) )
 {
-	local( $localdir ) = &AddBaseDir( $dir );
+	my( $localdir ) = &AddBaseDir( $dir );
 	print "mkdir $localdir, 0777\n";
 	if( !$g_opt_test )
 	{
@@ -1258,7 +1282,7 @@ foreach $dir (sort { length $a <=> length $b } keys( %g_dirs_to_create) )
 }
 
 # calculate the total size of files to transfer
-$totalbytes = 0;
+my $totalbytes = 0;
 foreach $file ( keys %g_files_to_copy )
 {
 	$totalbytes += $g_remote_size{$file};	
@@ -1267,14 +1291,15 @@ foreach $file ( keys %g_files_to_copy )
 print "$totalbytes bytes to copy\n";
 
 # copy files from remote that are different
-$bytescopied = 0;
-$starttime = time;
+my $bytescopied = 0;
+my $starttime = time;
 foreach $file (sort( keys %g_files_to_copy ) )
 {
 	&CopyFileFromRemote( $file );
 	$bytescopied += $g_remote_size{$file};
-	$curtime = time;
-	$deltatime = $curtime - $starttime;
+	my $curtime = time;
+	my $deltatime = $curtime - $starttime;
+	my $percentdone;
 	if( $totalbytes )
 	{
 		$percentdone = ( $bytescopied * 1.0 ) / $totalbytes;

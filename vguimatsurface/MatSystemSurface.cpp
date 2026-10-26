@@ -1,90 +1,173 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Implementation of the VGUI ISurface interface using the 
 // material system to implement it
 //
-// $Revision: $
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+#if defined( WIN32) && !defined( _X360 )
 #include <windows.h>
-#include "vstdlib/strtools.h"
+#endif
+#ifdef OSX
+#include <Carbon/Carbon.h>
+#endif
+
+#if defined( USE_SDL )
+#include <appframework/ilaunchermgr.h>
+ILauncherMgr *g_pLauncherMgr = NULL;
+#endif
+
+
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
 #include "tier0/dbg.h"
-#include "FileSystem.h"
-#include <vgui/vgui.h>
+#include "filesystem.h"
+#include <vgui/VGUI.h>
 #include <Color.h>
-#include "UtlVector.h"
+#include "utlbuffer.h"
+#include "utlvector.h"
 #include "Clip2D.h"
 #include <vgui_controls/Panel.h>
 #include <vgui/IInput.h>
 #include <vgui/Point.h>
+#include "bitmap/imageformat.h"
 #include "TextureDictionary.h"
 #include "Cursor.h"
-#include "input.h"
+#include "Input.h"
 #include <vgui/IHTML.h>
 #include <vgui/IVGui.h>
 #include "vgui_surfacelib/FontManager.h"
 #include "FontTextureCache.h"
-#include "vgui/htmlwindow.h"
 #include "MatSystemSurface.h"
+#include "inputsystem/iinputsystem.h"
 #include <vgui_controls/Controls.h>
 #include <vgui/ISystem.h>
 #include "icvar.h"
-#include "vguimatsurfacestats.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include <vgui/ILocalize.h>
-#include "VMatrix.h"
+#include "mathlib/vmatrix.h"
 #include <tier0/vprof.h>
-
+#include "materialsystem/itexture.h"
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
+#include <malloc.h>
+#endif
 #include "../vgui2/src/VPanel.h"
 #include <vgui/IInputInternal.h>
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+#include "xbox/xboxstubs.h"
+#include "../vgui2/src/Memorybitmap.h"
+
+#pragma warning( disable : 4706 )
+
+#include <vgui/IVguiMatInfo.h>
+#include <vgui/IVguiMatInfoVar.h>
+#include "materialsystem/imaterialvar.h"
+
+#pragma warning( default : 4706 )
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+
+
 #define VPANEL_NORMAL	((vgui::SurfacePlat *) NULL)
 #define VPANEL_MINIMIZED ((vgui::SurfacePlat *) 0x00000001)
 
-// #define ENABLE_HTMLWINDOW
-
 using namespace vgui;
 
-HWND thisWindow=0;
+static bool g_bSpewFocus = false;
+
+class CVguiMatInfoVar : public IVguiMatInfoVar
+{
+public:
+	CVguiMatInfoVar( IMaterialVar *pMaterialVar )
+	{
+		m_pMaterialVar = pMaterialVar;
+	}
+
+	// from IVguiMatInfoVar
+	virtual int GetIntValue ( void ) const
+	{
+		return m_pMaterialVar->GetIntValue();
+	}
+
+	virtual void SetIntValue ( int val )
+	{
+		m_pMaterialVar->SetIntValue( val );
+	}
+
+private:
+	IMaterialVar *m_pMaterialVar;
+};
+
+class CVguiMatInfo : public IVguiMatInfo
+{
+public:
+	CVguiMatInfo( IMaterial *pMaterial )
+	{
+		m_pMaterial = pMaterial;
+	}
+
+	// from IVguiMatInfo
+	virtual IVguiMatInfoVar* FindVarFactory( const char *varName, bool *found )
+	{
+		IMaterialVar *pMaterialVar = m_pMaterial->FindVar( varName, found );
+
+		if ( pMaterialVar == NULL )
+			return NULL;
+		return new CVguiMatInfoVar( pMaterialVar );
+	}
+
+	virtual int GetNumAnimationFrames( void )
+	{
+		return m_pMaterial->GetNumAnimationFrames();
+	}
+
+private:
+	IMaterial *m_pMaterial;
+};
+
 
 //-----------------------------------------------------------------------------
 // Globals...
 //-----------------------------------------------------------------------------
-IMaterialSystem *g_pMaterialSystem;
-IFileSystem *g_pFileSystem;
-vgui::IPanel *g_pIPanel;
-vgui::IInputInternal *g_pIInput;
-vgui::ISurface *g_pISurface;
-vgui::IVGui *g_pIVGUI;
-static CFontTextureCache g_FontTextureCache;
-ICvar	*g_pICvar = NULL;
-ConVar const *g_pCVr_speeds = NULL;
-int g_nCVr_speeds = 0;
-static bool g_bInDrawing;
+vgui::IInputInternal		*g_pIInput;
+static bool					g_bInDrawing;
+static CFontTextureCache	g_FontTextureCache;
 
-
+//-----------------------------------------------------------------------------
+// Singleton instance
+//-----------------------------------------------------------------------------
 CMatSystemSurface g_MatSystemSurface;
+EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CMatSystemSurface, ISurface, 
+						VGUI_SURFACE_INTERFACE_VERSION, g_MatSystemSurface );
+
+#if defined(LINUX) || defined(OSX) || defined(PLATFORM_BSD)
+CUtlDict< CMatSystemSurface::font_entry, unsigned short > CMatSystemSurface::m_FontData;
+#endif
+
 //-----------------------------------------------------------------------------
 // Make sure the panel is the same size as the viewport
 //-----------------------------------------------------------------------------
 CMatEmbeddedPanel::CMatEmbeddedPanel() : BaseClass( NULL, "MatSystemTopPanel" )
 {
 	SetPaintBackgroundEnabled( false );
+
+#if defined( _X360 )
+	SetPos( 0, 0 );
+	SetSize( GetSystemMetrics( SM_CXSCREEN ), GetSystemMetrics( SM_CYSCREEN ) );
+#endif
 }
 
 void CMatEmbeddedPanel::OnThink()
 {
 	int x, y, width, height;
-	g_pMaterialSystem->GetViewport( x, y, width, height );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	pRenderContext->GetViewport( x, y, width, height );
 	SetSize( width, height );
 	SetPos( x, y );
 	Repaint();
@@ -98,15 +181,6 @@ VPANEL CMatEmbeddedPanel::IsWithinTraverse(int x, int y, bool traversePopups)
 	return retval;
 }
 
-//-----------------------------------------------------------------------------
-// Singleton instance
-//-----------------------------------------------------------------------------
-
- 
-EXPOSE_SINGLE_INTERFACE_GLOBALVAR( CMatSystemSurface, ISurface, 
-						VGUI_SURFACE_INTERFACE_VERSION, g_MatSystemSurface );
-
-
 
 //-----------------------------------------------------------------------------
 // Constructor, destructor
@@ -116,21 +190,39 @@ CMatSystemSurface::CMatSystemSurface() : m_pEmbeddedPanel(NULL), m_pWhite(NULL)
 	m_iBoundTexture = -1; 
 	m_HWnd = NULL; 
 	m_bIn3DPaintMode = false;
+	m_b3DPaintRenderToTexture = false;
 	m_bDrawingIn3DWorld = false;
 	m_PlaySoundFunc = NULL;
 	m_bInThink = false;
+	m_bAllowJavaScript = false;
+	m_bAppDrivesInput = false;
+	m_nLastInputPollCount = 0;
 
 	m_hCurrentFont = NULL;
 	m_pRestrictedPanel = NULL;
 
-	_needKB = true;
-	_needMouse = true;
+	m_bNeedsKeyboard = true;
+	m_bNeedsMouse = true;
+	m_bUsingTempFullScreenBufferMaterial = false;
+	m_nFullScreenBufferMaterialId = -1;
 
 	memset( m_WorkSpaceInsets, 0, sizeof( m_WorkSpaceInsets ) );
+	m_nBatchedCharVertCount = 0;
+
+	m_nFullscreenViewportX = m_nFullscreenViewportY = 0;
+	m_nFullscreenViewportWidth = m_nFullscreenViewportHeight = 0;
+	m_pFullscreenRenderTarget = NULL;
+
+	m_cursorAlwaysVisible = false;
 }
 
 CMatSystemSurface::~CMatSystemSurface()
 {
+	if ( m_nFullScreenBufferMaterialId != -1 )
+	{
+		DestroyTextureID( m_nFullScreenBufferMaterialId );
+		m_nFullScreenBufferMaterialId = -1;
+	}
 }
 
 
@@ -139,65 +231,57 @@ CMatSystemSurface::~CMatSystemSurface()
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::Connect( CreateInterfaceFn factory )
 {
-	if ( !factory )
+	if ( !BaseClass::Connect( factory ) )
 		return false;
 
-	g_pFileSystem = (IFileSystem *)factory( FILESYSTEM_INTERFACE_VERSION, NULL );
-	if( !g_pFileSystem )
+	if ( !g_pFullFileSystem )
 	{
 		Warning( "MatSystemSurface requires the file system to run!\n" );
 		return false;
 	}
 
-	g_pMaterialSystem = (IMaterialSystem *)factory( MATERIAL_SYSTEM_INTERFACE_VERSION, NULL );
-	if( !g_pMaterialSystem )
+	if ( !g_pMaterialSystem )
 	{
 		Warning( "MatSystemSurface requires the material system to run!\n" );
 		return false;
 	}
 
-	g_pIPanel = (IPanel *)factory( VGUI_PANEL_INTERFACE_VERSION, NULL );
-	if( !g_pIPanel )
+	if ( !g_pVGuiPanel )
 	{
 		Warning( "MatSystemSurface requires the vgui::IPanel system to run!\n" );
 		return false;
 	}
 
 	g_pIInput = (IInputInternal *)factory( VGUI_INPUTINTERNAL_INTERFACE_VERSION, NULL );
-	if( !g_pIInput )
+	if ( !g_pIInput )
 	{
 		Warning( "MatSystemSurface requires the vgui::IInput system to run!\n" );
 		return false;
 	}
 
-	// It's okay if this comes back null
-	g_pICvar = ( ICvar *)factory( VENGINE_CVAR_INTERFACE_VERSION, NULL );
-	if ( g_pICvar )
-	{
-		g_pCVr_speeds = g_pICvar->FindVar( "r_speeds" );
-	}
-
-	g_pIVGUI = ( IVGui *)factory( VGUI_IVGUI_INTERFACE_VERSION, NULL );
-	if ( !g_pIVGUI )
+	if ( !g_pVGui )
 	{
 		Warning( "MatSystemSurface requires the vgui::IVGUI system to run!\n" );
 		return false;
 	}
 
-	g_pISurface = this;
+	Assert( g_pVGuiSurface == this );
 
 	// initialize vgui_control interfaces
-	if (!vgui::VGui_InitInterfacesList( "MATSURFACE", &factory, 1 ))
+	if ( !vgui::VGui_InitInterfacesList( "MATSURFACE", &factory, 1 ) )
 		return false;
+
+#ifdef USE_SDL
+	g_pLauncherMgr = (ILauncherMgr *)factory( SDLMGR_INTERFACE_VERSION, NULL );
+#endif
 
 	return true;	
 }
 
 void CMatSystemSurface::Disconnect()
 {
-	g_pMaterialSystem = NULL;
-	g_pFileSystem = NULL;
-	g_pIPanel = NULL;
+	g_pIInput = NULL;
+	BaseClass::Disconnect();
 }
 
 
@@ -210,29 +294,75 @@ void *CMatSystemSurface::QueryInterface( const char *pInterfaceName )
 	if (!Q_strncmp(	pInterfaceName, MAT_SYSTEM_SURFACE_INTERFACE_VERSION, Q_strlen(MAT_SYSTEM_SURFACE_INTERFACE_VERSION) + 1))
 		return (IMatSystemSurface*)this;
 
-	return NULL;
+	// We also implement the IMatSystemSurface interface
+	if (!Q_strncmp(	pInterfaceName, VGUI_SURFACE_INTERFACE_VERSION, Q_strlen(VGUI_SURFACE_INTERFACE_VERSION) + 1))
+		return (vgui::ISurface*)this;
+
+	return BaseClass::QueryInterface( pInterfaceName );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::InitFullScreenBuffer( const char *pszRenderTargetName )
+{
+	if ( !IsPC() )
+		return;
+
+	char pTemp[512];
+	Q_snprintf( pTemp, sizeof(pTemp), "VGUI_3DPaint_FullScreen_%s", pszRenderTargetName );
+	m_FullScreenBufferMaterial.Shutdown();
+
+	// Set up a material with which to reference the final image for subsequent display using vgui
+	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
+	pVMTKeyValues->SetString( "$basetexture", pszRenderTargetName );
+	pVMTKeyValues->SetInt( "$nocull", 1 );
+	pVMTKeyValues->SetInt( "$nofog", 1 );
+	pVMTKeyValues->SetInt( "$ignorez", 1 );
+	pVMTKeyValues->SetInt( "$translucent", 1 );
+	m_FullScreenBufferMaterial.Init( pTemp, TEXTURE_GROUP_OTHER, pVMTKeyValues );
+	m_FullScreenBufferMaterial->Refresh();
+
+	if ( m_nFullScreenBufferMaterialId != -1 )
+	{
+		DestroyTextureID( m_nFullScreenBufferMaterialId );
+	}
+	m_nFullScreenBufferMaterialId = -1;
+	m_FullScreenBuffer.Shutdown();
+
+	m_FullScreenBufferName = pszRenderTargetName;
+}
 
 //-----------------------------------------------------------------------------
 // Initialization and shutdown...
 //-----------------------------------------------------------------------------
 InitReturnVal_t CMatSystemSurface::Init( void )
 {
+	InitReturnVal_t nRetVal = BaseClass::Init();
+	if ( nRetVal != INIT_OK )
+		return nRetVal;
+
 	// Allocate a white material
-	bool bFound;
-	m_pWhite = g_pMaterialSystem->FindMaterial( "vgui/white", &bFound, false );
-	if (!m_pWhite)
+	KeyValues *pVMTKeyValues = new KeyValues( "UnlitGeneric" );
+	pVMTKeyValues->SetInt( "$vertexcolor", 1 );
+	pVMTKeyValues->SetInt( "$vertexalpha", 1 );
+	pVMTKeyValues->SetInt( "$ignorez", 1 );
+	pVMTKeyValues->SetInt( "$no_fullbright", 1 );
+	
+	if ( ! (CommandLine()->FindParm("-disable_matsurf_noculls")) )
 	{
-		Warning("Unable to load material vgui/white!\n");
-		return INIT_FAILED;
+		pVMTKeyValues->SetInt( "$nocull", 1 );	// skip this if user asks for the switch above
 	}
-	m_pWhite->IncrementReferenceCount();
+	
+	m_pWhite.Init( "VGUI_White", TEXTURE_GROUP_OTHER, pVMTKeyValues );
+
+	InitFullScreenBuffer( "_rt_FullScreen" );
 
 	m_DrawColor[0] = m_DrawColor[1] = m_DrawColor[2] = m_DrawColor[3] = 255;
 	m_nTranslateX = m_nTranslateY = 0;
 	EnableScissor( false );
 	SetScissorRect( 0, 0, 100000, 100000 );
+	m_flAlphaMultiplier = 1.0f;
 
 	// By default, use the default embedded panel
 	m_pDefaultEmbeddedPanel = new CMatEmbeddedPanel;
@@ -245,6 +375,7 @@ InitReturnVal_t CMatSystemSurface::Init( void )
 	m_DrawTextColor[0] = m_DrawTextColor[1] = m_DrawTextColor[2] = m_DrawTextColor[3] = 255;
 
 	m_bIn3DPaintMode = false;
+	m_b3DPaintRenderToTexture = false;
 	m_bDrawingIn3DWorld = false;
 	m_PlaySoundFunc = NULL;
 
@@ -254,54 +385,124 @@ InitReturnVal_t CMatSystemSurface::Init( void )
 	// Initialize cursors
 	InitCursors();
 
+	// fonts initialization
+	char language[64];
+	bool bValid;
+	if ( IsPC() )
+	{
+		bValid = system()->GetRegistryString( "HKEY_CURRENT_USER\\Software\\Valve\\Source\\Language", language, sizeof(language)-1 );
+	}
+	else
+	{
+		Q_strncpy( language, XBX_GetLanguageString(), sizeof( language ) );
+		bValid = true;
+	}
+
+	if ( bValid )
+	{
+		FontManager().SetLanguage( language );
+	}
+	else
+	{
+		FontManager().SetLanguage( "english" );
+	}
+
+#if defined(LINUX) || defined(OSX) || defined(PLATFORM_BSD)
+	FontManager().SetFontDataHelper( &CMatSystemSurface::FontDataHelper );
+#endif
+
+	// font manager needs the file system and material system for bitmap fonts
+	FontManager().SetInterfaces( g_pFullFileSystem, g_pMaterialSystem );
+
+	g_bSpewFocus = CommandLine()->FindParm( "-vguifocus" ) ? true : false;
+
 	return INIT_OK;
 }
 
-#include <malloc.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::Shutdown( void )
 {
+	for ( int i = m_FileTypeImages.First(); i != m_FileTypeImages.InvalidIndex(); i = m_FileTypeImages.Next( i ) )
+	{
+		delete m_FileTypeImages[ i ];
+	}
+	m_FileTypeImages.RemoveAll();
+
 	// Release all textures
 	TextureDictionary()->DestroyAllTextures();
 	m_iBoundTexture = -1;
 
-	// Release the white material
-	if ( m_pWhite )
-	{
-		m_pWhite->DecrementReferenceCount();
-		m_pWhite = NULL;
-	}
-
-	if (m_pDefaultEmbeddedPanel)
-		delete m_pDefaultEmbeddedPanel;
-
-#if defined( ENABLE_HTMLWINDOW )
-	// we need to delete these BEFORE we close our window down, as the browser is using it
-	// if this DOESN'T run then it will crash when we close the main window
-	for(int i=0;i<GetHTMLWindowCount();i++)
-	{
-		delete GetHTMLWindow(i);
-	}
-#endif
+	// Release the standard materials
+	m_pWhite.Shutdown();
+	m_FullScreenBufferMaterial.Shutdown();
+	m_FullScreenBuffer.Shutdown();
 
 	m_Titles.Purge();
 	m_PaintStateStack.Purge();
 
+#if defined( WIN32 ) && !defined( _X360 )
  	// release any custom font files
- 	{for (int i = 0; i < m_CustomFontFileNames.Count(); i++)
+	// use newer function if possible
+	HMODULE gdiModule = ::LoadLibrary( "gdi32.dll" );
+	typedef int (WINAPI *RemoveFontResourceExProc)(LPCTSTR, DWORD, PVOID);
+	RemoveFontResourceExProc pRemoveFontResourceEx = NULL;
+	if ( gdiModule )
+	{
+		pRemoveFontResourceEx = (RemoveFontResourceExProc)::GetProcAddress(gdiModule, "RemoveFontResourceExA");
+	}
+
+	for (int i = 0; i < m_CustomFontFileNames.Count(); i++)
  	{
- 		::RemoveFontResource(m_CustomFontFileNames[i].String());
- 	}}
+		if (pRemoveFontResourceEx)
+		{
+			// dvs: Keep removing the font until we get an error back. After consulting with Microsoft, it appears
+			// that RemoveFontResourceEx must sometimes be called multiple times to work. Doing this insures that
+			// when we load the font next time we get the real font instead of Ariel.
+			int nRetries = 0;
+			while ( (*pRemoveFontResourceEx)(m_CustomFontFileNames[i].String(), 0x10, NULL) && ( nRetries < 10 ) )
+			{
+				nRetries++;
+				Msg( "Removed font resource %s on attempt %d.\n", m_CustomFontFileNames[i].String(), nRetries );
+			}
+		}
+		else
+		{
+			// dvs: Keep removing the font until we get an error back. After consulting with Microsoft, it appears
+			// that RemoveFontResourceEx must sometimes be called multiple times to work. Doing this insures that
+			// when we load the font next time we get the real font instead of Ariel.
+			int nRetries = 0;
+			while ( ::RemoveFontResource(m_CustomFontFileNames[i].String()) && ( nRetries < 10 ) )
+			{
+				nRetries++;
+				Msg( "Removed font resource %s on attempt %d.\n", m_CustomFontFileNames[i].String(), nRetries );
+			}
+		}
+ 	}
+#endif
+
  	m_CustomFontFileNames.RemoveAll();
+	m_BitmapFontFileNames.RemoveAll();
+	m_BitmapFontFileMapping.RemoveAll();
+
+	Cursor_ClearUserCursors();
+
+#if defined( WIN32 ) && !defined( _X360 )
+	if ( gdiModule )
+	{
+		::FreeLibrary(gdiModule);
+	}
+#endif
+
+	BaseClass::Shutdown();
 }
 
 void CMatSystemSurface::SetEmbeddedPanel(VPANEL pEmbeddedPanel)
 {
 	m_pEmbeddedPanel = pEmbeddedPanel;
-	((VPanel *)pEmbeddedPanel)->Client()->RequestFocus();
+	((VPanel *)pEmbeddedPanel)->Client()->RequestFocus(0);
 }
 
 //-----------------------------------------------------------------------------
@@ -314,15 +515,23 @@ VPANEL CMatSystemSurface::GetEmbeddedPanel()
 
 //-----------------------------------------------------------------------------
 // Purpose: cap bits
+// Warning: if you change this, make sure the SurfaceV28 wrapper above reports
+//          the correct capabilities.
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::SupportsFeature(SurfaceFeature_e feature)
 {
 	switch (feature)
 	{
-	case ISurface::ESCAPE_KEY:
 	case ISurface::ANTIALIASED_FONTS:
 	case ISurface::DROPSHADOW_FONTS:
+		return true;
+
 	case ISurface::OUTLINE_FONTS:
+		if ( IsX360() )
+			return false;
+		return true;
+
+	case ISurface::ESCAPE_KEY:
 		return true;
 
 	case ISurface::OPENING_NEW_HTML_WINDOWS:
@@ -339,15 +548,26 @@ void CMatSystemSurface::AttachToWindow( void *hWnd, bool bLetAppDriveInput )
 {
 	InputDetachFromWindow( m_HWnd );
 	m_HWnd = hWnd;
-	
-	if ( !bLetAppDriveInput )
+	if ( hWnd )
+	{
 		InputAttachToWindow( hWnd );
+		m_bAppDrivesInput = bLetAppDriveInput;
+	}
+	else
+	{
+		// Never call RunFrame stuff
+		m_bAppDrivesInput = true;
+	}
 }
 
-
-void CMatSystemSurface::HandleWindowMessage( void *hwnd, unsigned int uMsg, unsigned int wParam, long lParam )
+bool CMatSystemSurface::HandleInputEvent( const InputEvent_t &event )
 {
-	InputHandleWindowMessage( hwnd, uMsg, wParam, lParam );
+	if ( !m_bAppDrivesInput )
+	{
+		g_pIInput->UpdateButtonState( event );
+	}
+
+	return InputHandleInputEvent( event );
 }
 
 
@@ -364,8 +584,10 @@ void CMatSystemSurface::DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatr
 	// FIXME: When should such panels be solved?!?
 	SolveTraverse( pRootPanel, false );
 
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+
 	// Force Z buffering to be on for all panels drawn...
-	g_pMaterialSystem->OverrideDepthEnable( true, false );
+	pRenderContext->OverrideDepthEnable( true, false );
 
 	Assert(!m_bDrawingIn3DWorld);
 	m_bDrawingIn3DWorld = true;
@@ -378,7 +600,7 @@ void CMatSystemSurface::DrawPanelIn3DSpace( vgui::VPANEL pRootPanel, const VMatr
 	FinishDrawing();
 
 	// Reset z buffering to normal state
-	g_pMaterialSystem->OverrideDepthEnable( false, true ); 
+	pRenderContext->OverrideDepthEnable( false, true ); 
 
 	m_bDrawingIn3DWorld = false;
 }
@@ -416,52 +638,87 @@ void CMatSystemSurface::StartDrawingIn3DSpace( const VMatrix &screenToWorld, int
 	MatrixMultiply( screenToWorld, pixelToScreen, pixelToWorld );
 
 	// make sure there is no translation and rotation laying around
-	g_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
-	g_pMaterialSystem->PushMatrix();
-	g_pMaterialSystem->LoadMatrix( pixelToWorld );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadMatrix( pixelToWorld );
 
 	// These are only here so that FinishDrawing works...
-	g_pMaterialSystem->MatrixMode( MATERIAL_PROJECTION );
-	g_pMaterialSystem->PushMatrix();
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
-	g_pMaterialSystem->PushMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
 
 	// Always enable scissoring (translate to origin because of the glTranslatef call above..)
 	EnableScissor( true );
 
 	m_nTranslateX = 0;
 	m_nTranslateY = 0;
+	m_flAlphaMultiplier = 1.0f;
 }
 
 
 //-----------------------------------------------------------------------------
 // Purpose: Setup ortho for vgui
 //-----------------------------------------------------------------------------
+
+// we may need to offset by 0.5 texels to account for the different in pixel vs. texel centers in dx7-9
+// however, we do this fixup already when we set up the texture coordinates for all materials/fonts
+// so in theory we shouldn't need to do any adjustments for setting up the screen
+// HOWEVER, we must do the offset, else the driver will think the text is something that should
+// be antialiased, so the text will look broken if antialiasing is turned on (usually forced on in the driver)
+float g_flPixelOffsetX = 0.5f;
+float g_flPixelOffsetY = 0.5f;
+
+bool g_bCheckedCommandLine = false;
+
+extern void ___stop___( void );
 void CMatSystemSurface::StartDrawing( void )
 {
+	MAT_FUNC;
+
+	if ( !g_bCheckedCommandLine )
+	{
+		g_bCheckedCommandLine = true;
+		
+		const char *pX = CommandLine()->ParmValue( "-pixel_offset_x", (const char*)NULL );
+		if ( pX )
+			g_flPixelOffsetX = atof( pX );
+
+		const char *pY = CommandLine()->ParmValue( "-pixel_offset_y", (const char*)NULL );
+		if ( pY )
+			g_flPixelOffsetY = atof( pY );
+	}
+
 	g_bInDrawing = true;
 	m_iBoundTexture = -1; 
 
 	int x, y, width, height;
 
-	g_pMaterialSystem->GetViewport( x, y, width, height);
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	pRenderContext->GetViewport( x, y, width, height);
 
-	m_pSurfaceExtents[0] = x;
-	m_pSurfaceExtents[1] = y;
-	m_pSurfaceExtents[2] = x + width;
-	m_pSurfaceExtents[3] = y + height;
+	// we don't want to include x and y from the viewport here. DX will 
+	// automatically translate any drawing we do into that viewport.
+	m_pSurfaceExtents[0] = 0;
+	m_pSurfaceExtents[1] = 0;
+	m_pSurfaceExtents[2] = width;
+	m_pSurfaceExtents[3] = height;
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_PROJECTION );
-	g_pMaterialSystem->PushMatrix();
-	g_pMaterialSystem->LoadIdentity();
-	g_pMaterialSystem->Scale( 1, -1, 1 );
-	g_pMaterialSystem->Ortho( -0.5f, -0.5f, width - 0.5f, height - 0.5f, -1, 1 ); // offset by 0.5 texels to account for the different in pixel vs. texel centers in dx7-9
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+	pRenderContext->Scale( 1, -1, 1 );
+	
+	//___stop___();
+	pRenderContext->Ortho( g_flPixelOffsetX, g_flPixelOffsetY, width + g_flPixelOffsetX, height + g_flPixelOffsetY, -1.0f, 1.0f ); 
 
 	// make sure there is no translation and rotation laying around
-	g_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
-	g_pMaterialSystem->PushMatrix();
-	g_pMaterialSystem->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
 	// Always enable scissoring (translate to origin because of the glTranslatef call above..)
 	EnableScissor( true );
@@ -469,9 +726,9 @@ void CMatSystemSurface::StartDrawing( void )
 	m_nTranslateX = 0;
 	m_nTranslateY = 0;
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
-	g_pMaterialSystem->PushMatrix();
-	g_pMaterialSystem->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 }
 
 //-----------------------------------------------------------------------------
@@ -479,27 +736,55 @@ void CMatSystemSurface::StartDrawing( void )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::FinishDrawing( void )
 {
+	MAT_FUNC;
+
 	// We're done with scissoring
 	EnableScissor( false );
 
 	// Restore the matrices
-	g_pMaterialSystem->MatrixMode( MATERIAL_PROJECTION );
-	g_pMaterialSystem->PopMatrix();
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
-	g_pMaterialSystem->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PopMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
-	g_pMaterialSystem->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PopMatrix();
 
   	Assert( g_bInDrawing );
 	g_bInDrawing = false;
 }
 
 
+//-----------------------------------------------------------------------------
 // frame
+//-----------------------------------------------------------------------------
 void CMatSystemSurface::RunFrame()
 {
+	int nPollCount = g_pInputSystem->GetPollCount();
+	if ( m_nLastInputPollCount == nPollCount )
+		return;
+
+	// If this isn't true, we've lost input!
+	if ( !m_bAppDrivesInput && m_nLastInputPollCount != nPollCount - 1 )
+	{
+		Assert( 0 );
+		Warning( "Vgui is losing input messages! Call brian!\n" );
+	}
+
+	m_nLastInputPollCount = nPollCount;
+
+	if ( m_bAppDrivesInput )
+		return;
+
+	// Generate all input messages
+	int nEventCount = g_pInputSystem->GetEventCount();
+	const InputEvent_t* pEvents = g_pInputSystem->GetEventData( );
+	for ( int i = 0; i < nEventCount; ++i )
+	{
+		HandleInputEvent( pEvents[i] );
+	}
 }
 
 
@@ -514,30 +799,27 @@ void CMatSystemSurface::SetupPaintState( const PaintState_t &paintState )
 		paintState.m_iScissorRight, paintState.m_iScissorBottom );
 }
 
-
 //-----------------------------------------------------------------------------
 // Indicates a particular panel is about to be rendered 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::PushMakeCurrent(VPANEL pPanel, bool useInSets)
 {
-//	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_PUSHMAKECURRENT_TIME );
-
 	int inSets[4] = {0, 0, 0, 0};
 	int absExtents[4];
 	int clipRect[4];
 
 	if (useInSets)
 	{
-		g_pIPanel->GetInset(pPanel, inSets[0], inSets[1], inSets[2], inSets[3]);
+		g_pVGuiPanel->GetInset(pPanel, inSets[0], inSets[1], inSets[2], inSets[3]);
 	}
 
-	g_pIPanel->GetAbsPos(pPanel, absExtents[0], absExtents[1]);
+	g_pVGuiPanel->GetAbsPos(pPanel, absExtents[0], absExtents[1]);
 	int wide, tall;
-	g_pIPanel->GetSize(pPanel, wide, tall);
+	g_pVGuiPanel->GetSize(pPanel, wide, tall);
 	absExtents[2] = absExtents[0] + wide;
 	absExtents[3] = absExtents[1] + tall;
 
-	g_pIPanel->GetClipRect(pPanel, clipRect[0], clipRect[1], clipRect[2], clipRect[3]);
+	g_pVGuiPanel->GetClipRect(pPanel, clipRect[0], clipRect[1], clipRect[2], clipRect[3]);
 
 	int i = m_PaintStateStack.AddToTail();
 	PaintState_t &paintState = m_PaintStateStack[i];
@@ -552,12 +834,19 @@ void CMatSystemSurface::PushMakeCurrent(VPANEL pPanel, bool useInSets)
 	paintState.m_iScissorTop	= clipRect[1] - m_pSurfaceExtents[1];
 	paintState.m_iScissorRight	= clipRect[2] - m_pSurfaceExtents[0];
 	paintState.m_iScissorBottom	= clipRect[3] - m_pSurfaceExtents[1];
+	
 	SetupPaintState( paintState );
 }
 
 void CMatSystemSurface::PopMakeCurrent(VPANEL pPanel)
 {
-//	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_POPMAKECURRENT_TIME );
+	//hushed MAT_FUNC;
+
+	// draw any remaining text
+	if ( m_nBatchedCharVertCount > 0 )
+	{
+		DrawFlushText();
+	}
 
 	int top = m_PaintStateStack.Count() - 1;
 
@@ -585,7 +874,7 @@ void CMatSystemSurface::DrawSetColor(int r, int g, int b, int a)
 	m_DrawColor[0]=(unsigned char)r;
 	m_DrawColor[1]=(unsigned char)g;
 	m_DrawColor[2]=(unsigned char)b;
-	m_DrawColor[3]=(unsigned char)a;
+	m_DrawColor[3]=(unsigned char)(a * m_flAlphaMultiplier);
 }
 
 void CMatSystemSurface::DrawSetColor(Color col)
@@ -605,7 +894,8 @@ void CMatSystemSurface::InternalSetMaterial( IMaterial *pMaterial )
 		pMaterial = m_pWhite;
 	}
 
-	m_pMesh = g_pMaterialSystem->GetDynamicMesh( true, NULL, NULL, pMaterial );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	m_pMesh = pRenderContext->GetDynamicMesh( true, NULL, NULL, pMaterial );
 }
 
 
@@ -624,6 +914,8 @@ void CMatSystemSurface::InitVertex( vgui::Vertex_t &vertex, int x, int y, float 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawTexturedLineInternal( const Vertex_t &a, const Vertex_t &b )
 {
+	MAT_FUNC;
+
 	Assert( !m_bIn3DPaintMode );
 
 	// Don't bother drawing fully transparent lines
@@ -632,11 +924,11 @@ void CMatSystemSurface::DrawTexturedLineInternal( const Vertex_t &a, const Verte
 
 	vgui::Vertex_t verts[2] = { a, b };
 	
-	verts[0].m_Position.x += m_nTranslateX;
-	verts[0].m_Position.y += m_nTranslateY;
+	verts[0].m_Position.x += m_nTranslateX + g_flPixelOffsetX;
+	verts[0].m_Position.y += m_nTranslateY + g_flPixelOffsetY;
 	
-	verts[1].m_Position.x += m_nTranslateX;
-	verts[1].m_Position.y += m_nTranslateY;
+	verts[1].m_Position.x += m_nTranslateX + g_flPixelOffsetX;
+	verts[1].m_Position.y += m_nTranslateY + g_flPixelOffsetY;
 
 	vgui::Vertex_t clippedVerts[2];
 
@@ -645,15 +937,15 @@ void CMatSystemSurface::DrawTexturedLineInternal( const Vertex_t &a, const Verte
 
 	meshBuilder.Begin( m_pMesh, MATERIAL_LINES, 1 );
 
+	meshBuilder.Position3f( clippedVerts[0].m_Position.x, clippedVerts[0].m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( m_DrawColor );
 	meshBuilder.TexCoord2fv( 0, clippedVerts[0].m_TexCoord.Base() );
-	meshBuilder.Position3f( clippedVerts[0].m_Position.x, clippedVerts[0].m_Position.y, 0 );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+	meshBuilder.Position3f( clippedVerts[1].m_Position.x, clippedVerts[1].m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( m_DrawColor );
 	meshBuilder.TexCoord2fv( 0, clippedVerts[1].m_TexCoord.Base() );
-	meshBuilder.Position3f( clippedVerts[1].m_Position.x, clippedVerts[1].m_Position.y, 0 );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
 	meshBuilder.End();
 	m_pMesh->Draw();
@@ -661,6 +953,8 @@ void CMatSystemSurface::DrawTexturedLineInternal( const Vertex_t &a, const Verte
 
 void CMatSystemSurface::DrawLine( int x0, int y0, int x1, int y1 )
 {
+	MAT_FUNC;
+
 	Assert( g_bInDrawing );
 
 	// Don't bother drawing fully transparent lines
@@ -689,6 +983,8 @@ void CMatSystemSurface::DrawTexturedLine( const Vertex_t &a, const Vertex_t &b )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawPolyLine( int *px, int *py ,int n )
 {
+	MAT_FUNC;
+
 	Assert( g_bInDrawing );
 
 	Assert( !m_bIn3DPaintMode );
@@ -720,15 +1016,15 @@ void CMatSystemSurface::DrawPolyLine( int *px, int *py ,int n )
 		if (!ClipLine( verts, clippedVerts ))
 			continue;
 
+		meshBuilder.Position3f( clippedVerts[0].m_Position.x+ g_flPixelOffsetX, clippedVerts[0].m_Position.y + g_flPixelOffsetY, m_flZPos );
 		meshBuilder.Color4ubv( m_DrawColor );
 		meshBuilder.TexCoord2fv( 0, clippedVerts[0].m_TexCoord.Base() );
-		meshBuilder.Position3f( clippedVerts[0].m_Position.x, clippedVerts[0].m_Position.y, 0 );
-		meshBuilder.AdvanceVertex();
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+		meshBuilder.Position3f( clippedVerts[1].m_Position.x+ g_flPixelOffsetX, clippedVerts[1].m_Position.y + g_flPixelOffsetY, m_flZPos );
 		meshBuilder.Color4ubv( m_DrawColor );
 		meshBuilder.TexCoord2fv( 0, clippedVerts[1].m_TexCoord.Base() );
-		meshBuilder.Position3f( clippedVerts[1].m_Position.x, clippedVerts[1].m_Position.y, 0 );
-		meshBuilder.AdvanceVertex();
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 	}
 
 	meshBuilder.End();
@@ -738,6 +1034,8 @@ void CMatSystemSurface::DrawPolyLine( int *px, int *py ,int n )
 
 void CMatSystemSurface::DrawTexturedPolyLine( const vgui::Vertex_t *p,int n )
 {
+	MAT_FUNC;
+
 	int iPrev = n - 1;
 	for ( int i=0; i < n; i++ )
 	{
@@ -752,8 +1050,8 @@ void CMatSystemSurface::DrawTexturedPolyLine( const vgui::Vertex_t *p,int n )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawQuad( const vgui::Vertex_t &ul, const vgui::Vertex_t &lr, unsigned char *pColor )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWQUAD_TIME );
-
+	MAT_FUNC;
+	
 	Assert( !m_bIn3DPaintMode );
 
 	if ( !m_pMesh )
@@ -761,25 +1059,25 @@ void CMatSystemSurface::DrawQuad( const vgui::Vertex_t &ul, const vgui::Vertex_t
 
 	meshBuilder.Begin( m_pMesh, MATERIAL_QUADS, 1 );
 
+	meshBuilder.Position3f( ul.m_Position.x, ul.m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( pColor );
-	meshBuilder.Position3f( ul.m_Position.x, ul.m_Position.y, 0 );
 	meshBuilder.TexCoord2f( 0, ul.m_TexCoord.x, ul.m_TexCoord.y );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+	meshBuilder.Position3f( lr.m_Position.x, ul.m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( pColor );
-	meshBuilder.Position3f( lr.m_Position.x, ul.m_Position.y, 0 );
 	meshBuilder.TexCoord2f( 0, lr.m_TexCoord.x, ul.m_TexCoord.y );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+	meshBuilder.Position3f( lr.m_Position.x, lr.m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( pColor );
-	meshBuilder.Position3f( lr.m_Position.x, lr.m_Position.y, 0 );
 	meshBuilder.TexCoord2f( 0, lr.m_TexCoord.x, lr.m_TexCoord.y );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+	meshBuilder.Position3f( ul.m_Position.x, lr.m_Position.y, m_flZPos );
 	meshBuilder.Color4ubv( pColor );
-	meshBuilder.Position3f( ul.m_Position.x, lr.m_Position.y, 0 );
 	meshBuilder.TexCoord2f( 0, ul.m_TexCoord.x, lr.m_TexCoord.y );
-	meshBuilder.AdvanceVertex();
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
 	meshBuilder.End();
 	m_pMesh->Draw();
@@ -789,9 +1087,9 @@ void CMatSystemSurface::DrawQuad( const vgui::Vertex_t &ul, const vgui::Vertex_t
 //-----------------------------------------------------------------------------
 // Purpose: Draws an array of quads
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawQuadArray( int quadCount, vgui::Vertex_t *pVerts, unsigned char *pColor )
+void CMatSystemSurface::DrawQuadArray( int quadCount, vgui::Vertex_t *pVerts, unsigned char *pColor, bool bShouldClip )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWQUADARRAY_TIME );
+	MAT_FUNC;
 
 	Assert( !m_bIn3DPaintMode );
 
@@ -800,30 +1098,74 @@ void CMatSystemSurface::DrawQuadArray( int quadCount, vgui::Vertex_t *pVerts, un
 
 	meshBuilder.Begin( m_pMesh, MATERIAL_QUADS, quadCount );
 
-	for (int i = 0; i < quadCount; ++i )
+	vgui::Vertex_t ulc;
+	vgui::Vertex_t lrc;
+	vgui::Vertex_t *pulc;
+	vgui::Vertex_t *plrc;
+
+	if ( bShouldClip )
 	{
-		vgui::Vertex_t &ul = pVerts[2*i];
-		vgui::Vertex_t &lr = pVerts[2*i + 1];
+		for ( int i = 0; i < quadCount; ++i )
+		{
+			PREFETCH360( &pVerts[ 2 * ( i + 1 ) ], 0 );
 
-		meshBuilder.Color4ubv( pColor );
-		meshBuilder.Position3f( ul.m_Position.x, ul.m_Position.y, 0 );
-		meshBuilder.TexCoord2f( 0, ul.m_TexCoord.x, ul.m_TexCoord.y );
-		meshBuilder.AdvanceVertex();
+			if ( !ClipRect( pVerts[2*i], pVerts[2*i + 1], &ulc, &lrc ) )
+			{
+				continue;	
+			}
+			pulc = &ulc;
+			plrc = &lrc;
 
-		meshBuilder.Color4ubv( pColor );
-		meshBuilder.Position3f( lr.m_Position.x, ul.m_Position.y, 0 );
-		meshBuilder.TexCoord2f( 0, lr.m_TexCoord.x, ul.m_TexCoord.y );
-		meshBuilder.AdvanceVertex();
+			meshBuilder.Position3f( pulc->m_Position.x, pulc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, pulc->m_TexCoord.x, pulc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
-		meshBuilder.Color4ubv( pColor );
-		meshBuilder.Position3f( lr.m_Position.x, lr.m_Position.y, 0 );
-		meshBuilder.TexCoord2f( 0, lr.m_TexCoord.x, lr.m_TexCoord.y );
-		meshBuilder.AdvanceVertex();
+			meshBuilder.Position3f( plrc->m_Position.x, pulc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, plrc->m_TexCoord.x, pulc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
-		meshBuilder.Color4ubv( pColor );
-		meshBuilder.Position3f( ul.m_Position.x, lr.m_Position.y, 0 );
-		meshBuilder.TexCoord2f( 0, ul.m_TexCoord.x, lr.m_TexCoord.y );
-		meshBuilder.AdvanceVertex();
+			meshBuilder.Position3f( plrc->m_Position.x, plrc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, plrc->m_TexCoord.x, plrc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+			meshBuilder.Position3f( pulc->m_Position.x, plrc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, pulc->m_TexCoord.x, plrc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+		}
+	}
+	else
+	{
+		for ( int i = 0; i < quadCount; ++i )
+		{
+			PREFETCH360( &pVerts[ 2 * ( i + 1 ) ], 0 );
+
+			pulc = &pVerts[2*i];
+			plrc = &pVerts[2*i + 1];
+
+			meshBuilder.Position3f( pulc->m_Position.x, pulc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, pulc->m_TexCoord.x, pulc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+			meshBuilder.Position3f( plrc->m_Position.x, pulc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, plrc->m_TexCoord.x, pulc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+			meshBuilder.Position3f( plrc->m_Position.x, plrc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, plrc->m_TexCoord.x, plrc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+			meshBuilder.Position3f( pulc->m_Position.x, plrc->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( pColor );
+			meshBuilder.TexCoord2f( 0, pulc->m_TexCoord.x, plrc->m_TexCoord.y );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+		}
 	}
 
 	meshBuilder.End();
@@ -835,14 +1177,139 @@ void CMatSystemSurface::DrawQuadArray( int quadCount, vgui::Vertex_t *pVerts, un
 // Purpose: Draws a rectangle colored with the current drawcolor
 //		using the white material
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawFilledRect(int x0,int y0,int x1,int y1)
+void CMatSystemSurface::DrawFilledRect( int x0, int y0, int x1, int y1 )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWFILLEDRECT_TIME );
+	MAT_FUNC;
+
+	Assert( g_bInDrawing );
+
+	// Don't even bother drawing fully transparent junk
+	if( m_DrawColor[3]!=0 )
+	{
+		vgui::Vertex_t rect[2];
+		vgui::Vertex_t clippedRect[2];
+		InitVertex( rect[0], x0, y0, 0, 0 );
+		InitVertex( rect[1], x1, y1, 0, 0 );
+
+		// Fully clipped?
+		if ( !ClipRect(rect[0], rect[1], &clippedRect[0], &clippedRect[1]) )
+			return;	
+		
+		InternalSetMaterial();
+		DrawQuad( clippedRect[0], clippedRect[1], m_DrawColor );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Draws an array of rectangles colored with the current drawcolor
+//		using the white material
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawFilledRectArray( IntRect *pRects, int numRects )
+{
+	MAT_FUNC;
 
 	Assert( g_bInDrawing );
 
 	// Don't even bother drawing fully transparent junk
 	if( m_DrawColor[3]==0 )
+		return;
+
+	if ( !m_pMesh )
+		return;
+
+	InternalSetMaterial( );
+
+	meshBuilder.Begin( m_pMesh, MATERIAL_QUADS, numRects );
+
+	for (int i = 0; i < numRects; ++i )
+	{
+		vgui::Vertex_t rect[2];
+		vgui::Vertex_t clippedRect[2];
+		InitVertex( rect[0], pRects[i].x0, pRects[i].y0, 0, 0 );
+		InitVertex( rect[1], pRects[i].x1, pRects[i].y1, 0, 0 );
+		
+		ClipRect( rect[0], rect[1], &clippedRect[0], &clippedRect[1] );
+	
+		vgui::Vertex_t &ul = clippedRect[0];
+		vgui::Vertex_t &lr = clippedRect[1];
+
+		meshBuilder.Position3f( ul.m_Position.x, ul.m_Position.y, m_flZPos );
+		meshBuilder.Color4ubv( m_DrawColor );
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 0>();
+
+		meshBuilder.Position3f( lr.m_Position.x, ul.m_Position.y, m_flZPos );
+		meshBuilder.Color4ubv( m_DrawColor );
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 0>();
+
+		meshBuilder.Position3f( lr.m_Position.x, lr.m_Position.y, m_flZPos );
+		meshBuilder.Color4ubv( m_DrawColor );
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 0>();
+
+		meshBuilder.Position3f( ul.m_Position.x, lr.m_Position.y, m_flZPos );
+		meshBuilder.Color4ubv( m_DrawColor );
+		meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 0>();
+	}
+
+	meshBuilder.End();
+	m_pMesh->Draw();
+}
+
+//-----------------------------------------------------------------------------
+// Draws a fade between the fadeStartPt and fadeEndPT with the current draw color oriented according to argument
+//   Example: DrawFilledRectFastFade( 10, 10, 100, 20, 50, 60, 255, 128, true );  
+//			  -this will draw 
+//					a solid rect (10,10,50,20) //alpha 255
+//					a solid rect (50,10,60,20) //alpha faded from 255 to 128
+//					a solid rect (60,10,100,20) //alpha 128
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawFilledRectFastFade( int x0, int y0, int x1, int y1, int fadeStartPt, int fadeEndPt, unsigned int alpha0, unsigned int alpha1, bool bHorizontal )
+{
+	if( bHorizontal )
+	{
+		if( alpha0 )
+		{
+			DrawSetColor( m_DrawColor[0], m_DrawColor[1], m_DrawColor[2], alpha0 );
+			DrawFilledRect( x0, y0, fadeStartPt, y1 );
+		}
+		DrawFilledRectFade( fadeStartPt, y0, fadeEndPt, y1, alpha0, alpha1, true );
+		if( alpha1 )
+		{
+			DrawSetColor( m_DrawColor[0], m_DrawColor[1], m_DrawColor[2], alpha1 );
+			DrawFilledRect( fadeEndPt, y0, x1, y1 );
+		}
+	}
+	else
+	{
+		if( alpha0 )
+		{
+			DrawSetColor( m_DrawColor[0], m_DrawColor[1], m_DrawColor[2], alpha0 );
+			DrawFilledRect( x0, y0, x1, fadeStartPt );
+		}
+		DrawFilledRectFade( x0, fadeStartPt, x1, fadeEndPt, alpha0, alpha1, false );
+		if( alpha1 )
+		{
+			DrawSetColor( m_DrawColor[0], m_DrawColor[1], m_DrawColor[2], alpha1 );
+			DrawFilledRect( x0, fadeEndPt, x1, y1 );
+		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Draws a fade with the current draw color oriented according to argument
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawFilledRectFade( int x0, int y0, int x1, int y1, unsigned int alpha0, unsigned int alpha1, bool bHorizontal )
+{
+	MAT_FUNC;
+
+	Assert( g_bInDrawing );
+
+	// Scale the desired alphas by the surface alpha
+	float alphaScale = m_DrawColor[3] / 255.f;
+	alpha0 *= alphaScale;
+	alpha1 *= alphaScale;
+
+	// Don't even bother drawing fully transparent junk
+	if ( alpha0 == 0 && alpha1 == 0 )
 		return;
 
 	vgui::Vertex_t rect[2];
@@ -854,16 +1321,68 @@ void CMatSystemSurface::DrawFilledRect(int x0,int y0,int x1,int y1)
 	if ( !ClipRect(rect[0], rect[1], &clippedRect[0], &clippedRect[1]) )
 		return;	
 	
-	InternalSetMaterial( );
-	DrawQuad( clippedRect[0], clippedRect[1], m_DrawColor );
-}
+	InternalSetMaterial();
 
+	unsigned char colors[4][4] = {{0}};
+	for ( int i=0; i<4; i++ )
+	{
+		// copy the rgb and leave the alpha at zero
+		Q_memcpy( colors[i], m_DrawColor, 3 );
+	}
+
+	unsigned char nAlpha0 = (alpha0 & 0xFF);
+	unsigned char nAlpha1 = (alpha1 & 0xFF);
+
+	if ( bHorizontal )
+	{
+		// horizontal fade
+		colors[0][3] = nAlpha0;
+		colors[1][3] = nAlpha1;
+		colors[2][3] = nAlpha1;
+		colors[3][3] = nAlpha0;
+	}
+	else
+	{
+		// vertical fade
+		colors[0][3] = nAlpha0;
+		colors[1][3] = nAlpha0;
+		colors[2][3] = nAlpha1;
+		colors[3][3] = nAlpha1;
+	}
+
+	meshBuilder.Begin( m_pMesh, MATERIAL_QUADS, 1 );
+
+	meshBuilder.Position3f( clippedRect[0].m_Position.x, clippedRect[0].m_Position.y, m_flZPos );
+	meshBuilder.Color4ubv( colors[0] );
+	meshBuilder.TexCoord2f( 0, clippedRect[0].m_TexCoord.x, clippedRect[0].m_TexCoord.y );
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+	meshBuilder.Position3f( clippedRect[1].m_Position.x, clippedRect[0].m_Position.y, m_flZPos );
+	meshBuilder.Color4ubv( colors[1] );
+	meshBuilder.TexCoord2f( 0, clippedRect[1].m_TexCoord.x, clippedRect[0].m_TexCoord.y );
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+	meshBuilder.Position3f( clippedRect[1].m_Position.x, clippedRect[1].m_Position.y, m_flZPos );
+	meshBuilder.Color4ubv( colors[2] );
+	meshBuilder.TexCoord2f( 0, clippedRect[1].m_TexCoord.x, clippedRect[1].m_TexCoord.y );
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+	meshBuilder.Position3f( clippedRect[0].m_Position.x, clippedRect[1].m_Position.y, m_flZPos );
+	meshBuilder.Color4ubv( colors[3] );
+	meshBuilder.TexCoord2f( 0, clippedRect[0].m_TexCoord.x, clippedRect[1].m_TexCoord.y );
+	meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+
+	meshBuilder.End();
+	m_pMesh->Draw();
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: Draws an unfilled rectangle in the current drawcolor
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawOutlinedRect(int x0,int y0,int x1,int y1)
 {		
+	MAT_FUNC;
+
 	// Don't even bother drawing fully transparent junk
 	if ( m_DrawColor[3] == 0 )
 		return;
@@ -880,6 +1399,8 @@ void CMatSystemSurface::DrawOutlinedRect(int x0,int y0,int x1,int y1)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawOutlinedCircle(int x, int y, int radius, int segments)
 {
+	MAT_FUNC;
+
 	Assert( g_bInDrawing );
 
 	Assert( !m_bIn3DPaintMode );
@@ -912,15 +1433,15 @@ void CMatSystemSurface::DrawOutlinedCircle(int x, int y, int radius, int segment
 
 		if (ClipLine( vertex, renderVertex ))
 		{
+			meshBuilder.Position3f( renderVertex[0].m_Position.x, renderVertex[0].m_Position.y, m_flZPos );
 			meshBuilder.Color4ubv( m_DrawColor );
 			meshBuilder.TexCoord2fv( 0, renderVertex[0].m_TexCoord.Base() );
-			meshBuilder.Position3f( renderVertex[0].m_Position.x, renderVertex[0].m_Position.y, 0 );
-			meshBuilder.AdvanceVertex();
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 
+			meshBuilder.Position3f( renderVertex[1].m_Position.x, renderVertex[1].m_Position.y, m_flZPos );
 			meshBuilder.Color4ubv( m_DrawColor );
 			meshBuilder.TexCoord2fv( 0, renderVertex[1].m_TexCoord.Base() );
-			meshBuilder.Position3f( renderVertex[1].m_Position.x, renderVertex[1].m_Position.y, 0 );
-			meshBuilder.AdvanceVertex();
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
 		}
 
 		vertex[0].m_Position = vertex[1].m_Position;
@@ -940,6 +1461,26 @@ int CMatSystemSurface::CreateNewTextureID( bool procedural /*=false*/ )
 	return TextureDictionary()->CreateTexture( procedural );
 }
 
+void CMatSystemSurface::DestroyTextureID( int id )
+{
+	TextureDictionary()->DestroyTexture( id );
+}
+
+bool CMatSystemSurface::DeleteTextureByID(int id)
+{
+	TextureDictionary()->DestroyTexture( id );
+	return false;
+}
+
+#ifdef _X360
+void CMatSystemSurface::UncacheUnusedMaterials()
+{
+	// unbind any currently set texture (which may be uncached)
+	DrawSetTexture( -1 );
+
+	// X360TBD: Need to only destroy "marked" textures
+}
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -963,6 +1504,24 @@ bool CMatSystemSurface::DrawGetTextureFile(int id, char *filename, int maxlen )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
+// Input  : id - texture id
+// Output : returns IMaterial for the referenced texture
+//-----------------------------------------------------------------------------
+IVguiMatInfo *CMatSystemSurface::DrawGetTextureMatInfoFactory(int id)
+{
+	if ( !TextureDictionary()->IsValidId( id ) )
+		return NULL;
+
+	IMaterial *texture = TextureDictionary()->GetTextureMaterial(id);
+
+	if ( texture == NULL )
+		return NULL;
+
+	return new CVguiMatInfo(texture);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 // Input  : *filename - 
 // Output : int
 //-----------------------------------------------------------------------------
@@ -971,13 +1530,23 @@ int CMatSystemSurface::DrawGetTextureId( char const *filename )
 	return TextureDictionary()->FindTextureIdForTextureFile( filename );
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *pTexture
+// Output : int
+//-----------------------------------------------------------------------------
+int CMatSystemSurface::DrawGetTextureId( ITexture *pTexture )
+{
+	return TextureDictionary()->CreateTextureByTexture( pTexture );
+}
+
+
 //-----------------------------------------------------------------------------
 // Associates a texture with a material file (also binds it)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextureFile(int id, const char *pFileName, int hardwareFilter, bool forceReload /*= false*/)
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWSETTEXTURE_TIME );
-
 	TextureDictionary()->BindTextureToFile( id, pFileName );
 	DrawSetTexture( id );
 }
@@ -988,10 +1557,13 @@ void CMatSystemSurface::DrawSetTextureFile(int id, const char *pFileName, int ha
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextureMaterial(int id, IMaterial *pMaterial)
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWSETTEXTURE_TIME );
-
 	TextureDictionary()->BindTextureToMaterial( id, pMaterial );
 	DrawSetTexture( id );
+}
+
+IMaterial *CMatSystemSurface::DrawGetTextureMaterial( int id )
+{
+	return TextureDictionary()->GetTextureMaterial( id );
 }
 
 
@@ -1004,9 +1576,21 @@ void CMatSystemSurface::ReferenceProceduralMaterial( int id, int referenceId, IM
 //-----------------------------------------------------------------------------
 // Binds a texture
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawSetTexture(int id)
+void CMatSystemSurface::DrawSetTexture( int id )
 {
-	m_iBoundTexture = id;
+	// if we're switching textures, flush any batched text
+	if ( id != m_iBoundTexture )
+	{
+		DrawFlushText();
+		m_iBoundTexture = id;
+
+		if ( IsX360() && id == -1 )
+		{
+			// ensure we unbind current material that may go away
+			CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+			pRenderContext->Bind( m_pWhite );
+		}
+	}
 }
 
 
@@ -1024,7 +1608,7 @@ void CMatSystemSurface::DrawGetTextureSize(int id, int &iWide, int &iTall)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawTexturedRect( int x0, int y0, int x1, int y1 )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWTEXTUREDRECT_TIME );
+	MAT_FUNC;
 
 	Assert( g_bInDrawing );
 
@@ -1054,7 +1638,7 @@ void CMatSystemSurface::DrawTexturedRect( int x0, int y0, int x1, int y1 )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawTexturedSubRect( int x0, int y0, int x1, int y1, float texs0, float text0, float texs1, float text1 )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWTEXTUREDRECT_TIME );
+	MAT_FUNC;
 
 	Assert( g_bInDrawing );
 
@@ -1091,8 +1675,10 @@ void CMatSystemSurface::DrawTexturedSubRect( int x0, int y0, int x1, int y1, flo
 //-----------------------------------------------------------------------------
 // Draws a textured polygon
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawTexturedPolygon(int n, Vertex_t *pVertices)
+void CMatSystemSurface::DrawTexturedPolygon(int n, Vertex_t *pVertices, bool bClipVertices /*= true*/ )
 {
+	MAT_FUNC;
+
 	Assert( !m_bIn3DPaintMode );
 
 	Assert( g_bInDrawing );
@@ -1101,30 +1687,48 @@ void CMatSystemSurface::DrawTexturedPolygon(int n, Vertex_t *pVertices)
 	if( (n == 0) || (m_DrawColor[3]==0) )
 		return;
 
-	int iCount;
-	Vertex_t **ppClippedVerts;
-
-	// Clip vertices...
-	iCount = ClipPolygon( n, pVertices, m_nTranslateX, m_nTranslateY, &ppClippedVerts );
-	if (iCount <= 0)
-		return;
-
-	IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(m_iBoundTexture);
-	InternalSetMaterial( pMaterial );
-
-	meshBuilder.Begin( m_pMesh, MATERIAL_POLYGON, iCount );
-
-	for (int i = 0; i < iCount; ++i)
+	if ( bClipVertices )
 	{
-		meshBuilder.Color4ubv( m_DrawColor );
-		meshBuilder.TexCoord2fv( 0, ppClippedVerts[i]->m_TexCoord.Base() );
-		meshBuilder.Position3f( ppClippedVerts[i]->m_Position.x, 
-			ppClippedVerts[i]->m_Position.y, 0 );
-		meshBuilder.AdvanceVertex();
-	}
+		int iCount;
+		Vertex_t **ppClippedVerts = NULL;
+		iCount = ClipPolygon( n, pVertices, m_nTranslateX, m_nTranslateY, &ppClippedVerts );
+		if (iCount <= 0)
+			return;
 
-	meshBuilder.End();
-	m_pMesh->Draw();
+		IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(m_iBoundTexture);
+		InternalSetMaterial( pMaterial );
+
+		meshBuilder.Begin( m_pMesh, MATERIAL_POLYGON, iCount );
+
+		for (int i = 0; i < iCount; ++i)
+		{
+			meshBuilder.Position3f( ppClippedVerts[i]->m_Position.x, ppClippedVerts[i]->m_Position.y, m_flZPos );
+			meshBuilder.Color4ubv( m_DrawColor );
+			meshBuilder.TexCoord2fv( 0, ppClippedVerts[i]->m_TexCoord.Base() );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+		}
+
+		meshBuilder.End();
+		m_pMesh->Draw();
+	}
+	else
+	{
+		IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(m_iBoundTexture);
+		InternalSetMaterial( pMaterial );
+
+		meshBuilder.Begin( m_pMesh, MATERIAL_POLYGON, n );
+
+		for (int i = 0; i < n; ++i)
+		{
+			meshBuilder.Position3f( pVertices[i].m_Position.x + m_nTranslateX, pVertices[i].m_Position.y + m_nTranslateY, m_flZPos );
+			meshBuilder.Color4ubv( m_DrawColor );
+			meshBuilder.TexCoord2fv( 0, pVertices[i].m_TexCoord.Base() );
+			meshBuilder.AdvanceVertexF<VTX_HAVEPOS | VTX_HAVECOLOR, 1>();
+		}
+
+		meshBuilder.End();
+		m_pMesh->Draw();
+	}
 }
 
 
@@ -1141,15 +1745,25 @@ void CMatSystemSurface::DrawTexturedPolygon(int n, Vertex_t *pVertices)
 //-----------------------------------------------------------------------------
 HFont CMatSystemSurface::CreateFont()
 {
+	MAT_FUNC;
+
 	return FontManager().CreateFont();
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: adds glyphs to a font created by CreateFont()
 //-----------------------------------------------------------------------------
-bool CMatSystemSurface::AddGlyphSetToFont(HFont font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int lowRange, int highRange)
+bool CMatSystemSurface::SetFontGlyphSet(HFont font, const char *windowsFontName, int tall, int weight, int blur, int scanlines, int flags, int nRangeMin, int nRangeMax)
 {
-	return FontManager().AddGlyphSetToFont(font, windowsFontName, tall, weight, blur, scanlines, flags, lowRange, highRange);
+	return FontManager().SetFontGlyphSet(font, windowsFontName, tall, weight, blur, scanlines, flags, nRangeMin, nRangeMax);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: adds glyphs to a font created by CreateFont()
+//-----------------------------------------------------------------------------
+bool CMatSystemSurface::SetBitmapFontGlyphSet(HFont font, const char *windowsFontName, float scalex, float scaley, int flags)
+{
+	return FontManager().SetBitmapFontGlyphSet(font, windowsFontName, scalex, scaley, flags);
 }
 
 //-----------------------------------------------------------------------------
@@ -1158,6 +1772,22 @@ bool CMatSystemSurface::AddGlyphSetToFont(HFont font, const char *windowsFontNam
 int CMatSystemSurface::GetFontTall(HFont font)
 {
 	return FontManager().GetFontTall(font);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns the requested height of a font
+//-----------------------------------------------------------------------------
+int CMatSystemSurface::GetFontTallRequested(HFont font)
+{
+	return FontManager().GetFontTallRequested(font);
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns the max height of a font
+//-----------------------------------------------------------------------------
+int CMatSystemSurface::GetFontAscent(HFont font, wchar_t wch)
+{
+	return FontManager().GetFontAscent(font,wch);
 }
 
 //-----------------------------------------------------------------------------
@@ -1187,6 +1817,16 @@ int CMatSystemSurface::GetCharacterWidth(HFont font, int ch)
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: returns the kerned width of this char
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::GetKernedCharWidth( HFont font, wchar_t ch, wchar_t chBefore, wchar_t chAfter, float &wide, float &abcA ) //, float &abcC )
+{
+	float abcC = 0.0f;
+	FontManager().GetKernedCharWidth(font, ch, chBefore, chAfter, wide, abcA, abcC );
+}
+
+
+//-----------------------------------------------------------------------------
 // Purpose: returns the area of a text string, including newlines
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::GetTextSize(HFont font, const wchar_t *text, int &wide, int &tall)
@@ -1197,100 +1837,304 @@ void CMatSystemSurface::GetTextSize(HFont font, const wchar_t *text, int &wide, 
 //-----------------------------------------------------------------------------
 // Purpose: adds a custom font file (only supports true type font files (.ttf) for now)
 //-----------------------------------------------------------------------------
-bool CMatSystemSurface::AddCustomFontFile(const char *fontFileName)
+bool CMatSystemSurface::AddCustomFontFile( const char *fontName, const char *fontFileName )
 {
-	// get local path
-	char *fullPath = (char *)_alloca(filesystem()->GetLocalPathLen(fontFileName) + 1);
-	if (!filesystem()->GetLocalPath(fontFileName, fullPath))
+	if ( IsX360() )
 	{
-		Msg("Couldn't find custom font file '%s'\n", fontFileName);
+		// custom fonts are not supported (not needed) on xbox, all .vfonts are offline converted to ttfs
+		// ttfs are mounted/handled elsewhere
+		return true;
+	}
+	MAT_FUNC;
+
+	char fullPath[MAX_PATH];
+	bool bFound = false;
+	// windows needs an absolute path for ttf
+	bFound = g_pFullFileSystem->GetLocalPath( fontFileName, fullPath, sizeof( fullPath ) );
+	if ( !bFound )
+	{
+		Warning( "Couldn't find custom font file '%s'\n", fontFileName );
 		return false;
 	}
-	strlwr(fullPath);
 
 	// only add if it's not already in the list
+	Q_strlower( fullPath );
 	CUtlSymbol sym(fullPath);
 	int i;
-	for (i = 0; i < m_CustomFontFileNames.Count(); i++)
+	for ( i = 0; i < m_CustomFontFileNames.Count(); i++ )
 	{
-		if (m_CustomFontFileNames[i] == sym)
+		if ( m_CustomFontFileNames[i] == sym )
 			break;
 	}
-	if (!m_CustomFontFileNames.IsValidIndex(i))
+	if ( !m_CustomFontFileNames.IsValidIndex( i ) )
 	{
-	 	m_CustomFontFileNames.AddToTail(fullPath);
+	 	m_CustomFontFileNames.AddToTail( fullPath );
+
+		if ( IsPC() )
+		{
+			// make sure it's on disk
+			// only do this once for each font since in steam it will overwrite the
+			// registered font file, causing windows to invalidate the font
+			g_pFullFileSystem->GetLocalCopy( fullPath );
+		}
+	}
+
+	// try and use the optimal custom font loader, will makes sure fonts are unloaded properly
+	// this function is in a newer version of the gdi library (win2k+), so need to try get it directly
+#if defined( WIN32 ) && !defined( _X360 )
+	bool successfullyAdded = false;
+	HMODULE gdiModule = ::LoadLibrary("gdi32.dll");
+	if (gdiModule)
+	{
+		typedef int (WINAPI *AddFontResourceExProc)(LPCTSTR, DWORD, PVOID);
+		AddFontResourceExProc pAddFontResourceEx = (AddFontResourceExProc)::GetProcAddress(gdiModule, "AddFontResourceExA");
+		if (pAddFontResourceEx)
+		{
+			int result = (*pAddFontResourceEx)(fullPath, 0x10, NULL);
+			if (result > 0)
+			{
+				successfullyAdded = true;
+			}
+		}
+		::FreeLibrary(gdiModule);
 	}
 
 	// add to windows
-	bool success = (::AddFontResource(fullPath) > 0);
-	if (!success)
+	bool success = successfullyAdded || (::AddFontResource(fullPath) > 0);
+	if ( !success )
 	{
-		Msg("Failed to load custom font file '%s'\n", fullPath);
+		Msg( "Failed to load custom font file '%s'\n", fullPath );
 	}
-	Assert(success);
+	Assert( success );
 	return success;
+#elif defined(LINUX) || defined(OSX) || defined(PLATFORM_BSD)
+
+	int size;
+	if ( CMatSystemSurface::FontDataHelper( fontName, size, fontFileName ) )
+		return true;
+	return false;
+
+#elif defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#else
+#error	
+#endif
 }
 
+#if defined(LINUX) || defined(OSX) || defined(PLATFORM_BSD)
 
-/*
-//-----------------------------------------------------------------------------
-// Creates a font
-//-----------------------------------------------------------------------------
-HFont CMatSystemSurface::CreateFont(const char *pName, int iTall, int iWide, 
-	float flRotation, int iWeight, bool bItalic, bool bUnderline, bool bStrikeout, 
-	bool bSymbol, bool bBorder, bool bAdditive, bool bOverbright )
+static void RemoveSpaces( CUtlString &str )
 {
-	int iFlags = 0;
-	if (bItalic)
-		iFlags |= FONT_ITALIC;
-	if (bUnderline)
-		iFlags |= FONT_UNDERLINE;
-	if (bStrikeout)
-		iFlags |= FONT_STRIKEOUT;
-	if (bSymbol)
-		iFlags |= FONT_SYMBOL;
-	if (bBorder)
-		iFlags |= FONT_BORDER;
-	if (bAdditive)
-		iFlags |= FONT_ADDITIVE;
-	if (bOverbright)
-		iFlags |= FONT_OVERBRIGHT;
+	char *dst = str.GetForModify();
 
-	return (HFont)CreateFontTemplate( pName, iTall, iWide, flRotation, iWeight, iFlags );
+	for( int i = 0; i < str.Length(); i++ )
+	{
+		if( ( str[ i ] != ' ' ) && ( str[ i ] != '-' ) )
+		{
+			*dst++ = str[ i ];
+		}
+	}
+
+	*dst = 0;
+}
+
+void *CMatSystemSurface::FontDataHelper( const char *pchFontName, int &size, const char *fontFileName )
+{
+	size = 0;
+
+	if( fontFileName )
+	{
+		// If we were given a fontFileName, then load that bugger and shove it in the cache.
+
+		// Just load the font data, decrypt in memory and register for this process
+		CUtlBuffer buf;
+		if ( !g_pFullFileSystem->ReadFile( fontFileName, NULL, buf ) )
+		{
+			Msg( "Failed to load custom font file '%s'\n", fontFileName );
+			return NULL;
+		}
+
+		FT_Face face;
+		const FT_Error error = FT_New_Memory_Face( FontManager().GetFontLibraryHandle(), (FT_Byte *)buf.Base(), buf.TellPut(), 0, &face );
+
+		if ( error  ) 
+		{
+			// FT_Err_Unknown_File_Format, etc.
+			Msg( "ERROR %d: UNABLE TO LOAD FONT FILE %s\n", error, fontFileName );
+			return NULL;
+		}
+
+		if( !pchFontName )
+		{
+			// If we weren't passed a font name for this thing, then use the one from the face.
+			pchFontName = face->family_name;
+			if ( !pchFontName || !pchFontName[ 0 ] )
+			{
+				pchFontName = FT_Get_Postscript_Name( face );
+			}
+		}
+
+		// Replace spaces and dashes with underscores.
+		CUtlString strFontName( pchFontName );
+		RemoveSpaces( strFontName );
+
+		font_entry entry;
+		entry.size = buf.TellPut();
+		entry.data = malloc( entry.size );
+		memcpy( entry.data, buf.Base(), entry.size );
+		m_FontData.Insert( strFontName.Get(), entry );
+
+		FT_Done_Face( face );
+
+		size = entry.size;
+		return entry.data;
+	}
+	else
+	{
+		// Replace spaces and dashes with underscores.
+		CUtlString strFontName( pchFontName );
+		RemoveSpaces( strFontName );
+
+		int iIndex = m_FontData.Find( strFontName.Get() );
+		if ( iIndex != m_FontData.InvalidIndex() )
+		{
+			size = m_FontData[ iIndex ].size;
+			return m_FontData[ iIndex ].data;
+		}
+	}
+
+	return NULL;
+}
+
+#endif // LINUX
+
+//-----------------------------------------------------------------------------
+// Purpose: adds a bitmap font file
+//-----------------------------------------------------------------------------
+bool CMatSystemSurface::AddBitmapFontFile( const char *fontFileName )
+{
+	MAT_FUNC;
+
+	bool bFound = false;
+	bFound = ( ( g_pFullFileSystem->GetDVDMode() == DVDMODE_STRICT ) || g_pFullFileSystem->FileExists( fontFileName, IsX360() ? "GAME" : NULL ) );
+	if ( !bFound )
+	{
+		Msg( "Couldn't find bitmap font file '%s'\n", fontFileName );
+		return false;
+	}
+	char path[MAX_PATH];
+	Q_strncpy( path, fontFileName, MAX_PATH );
+
+	// only add if it's not already in the list
+	Q_strlower( path );
+	CUtlSymbol sym( path );
+	int i;
+	for ( i = 0; i < m_BitmapFontFileNames.Count(); i++ )
+	{
+		if ( m_BitmapFontFileNames[i] == sym )
+			break;
+	}
+	if ( !m_BitmapFontFileNames.IsValidIndex( i ) )
+	{
+	 	m_BitmapFontFileNames.AddToTail( path );
+
+		if ( IsPC() )
+		{
+			// make sure it's on disk
+			// only do this once for each font since in steam it will overwrite the
+			// registered font file, causing windows to invalidate the font
+			g_pFullFileSystem->GetLocalCopy( path );
+		}
+	}
+
+	return true;
 }
 
 //-----------------------------------------------------------------------------
-// Font information
+// Purpose: 
 //-----------------------------------------------------------------------------
-int CMatSystemSurface::GetFontTall(HFont font)
+void CMatSystemSurface::SetBitmapFontName( const char *pName, const char *pFontFilename )
 {
-	IFontTemplate *pFontTemplate = GetFontTemplate(	(FontTemplateHandle_t)font );
-	return pFontTemplate->GetTall();
-}
+	char fontPath[MAX_PATH];
+	Q_strncpy( fontPath, pFontFilename, MAX_PATH );
+	Q_strlower( fontPath );
 
-void CMatSystemSurface::GetCharABCwide(HFont font, int ch, int &a, int &b, int &c)
-{
-	IFontTemplate *pFontTemplate = GetFontTemplate(	(FontTemplateHandle_t)font );
-	pFontTemplate->GetCharABCwide(ch, a, b, c);
+	CUtlSymbol sym( fontPath );
+	int i;
+	for (i = 0; i < m_BitmapFontFileNames.Count(); i++)
+	{
+		if ( m_BitmapFontFileNames[i] == sym )
+		{
+			// found it, update the mapping
+			int index = m_BitmapFontFileMapping.Find( pName );
+			if ( !m_BitmapFontFileMapping.IsValidIndex( index ) )
+			{
+				index = m_BitmapFontFileMapping.Insert( pName );	
+			}
+			m_BitmapFontFileMapping.Element( index ) = i;
+			break;
+		}
+	}
 }
-
-void CMatSystemSurface::GetTextSize(HFont font, const char *pText, int &iWide, int &iTall)
-{
-	IFontTemplate *pFontTemplate = GetFontTemplate(	(FontTemplateHandle_t)font );
-	pFontTemplate->GetTextSize(pText, iWide, iTall);
-}
-
 
 //-----------------------------------------------------------------------------
-// Draws a textured polygon
+// Purpose: 
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawSetTextFont(HFont font)
+const char *CMatSystemSurface::GetBitmapFontName( const char *pName )
 {
-//	CScreenDisable sd;
+	// find it in the mapping symbol table
+	int index = m_BitmapFontFileMapping.Find( pName );
+	if ( index == m_BitmapFontFileMapping.InvalidIndex() )
+	{
+		return "";
+	}
 
-	SetRenderFont( font );
+	return m_BitmapFontFileNames[m_BitmapFontFileMapping.Element( index )].String();
 }
-*/
+
+void CMatSystemSurface::ClearTemporaryFontCache( void )
+{
+	FontManager().ClearTemporaryFontCache();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Force a set of characters to be rendered into the font page.
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::PrecacheFontCharacters( HFont font, const wchar_t *pCharacterString )
+{
+	wchar_t *pCommonChars = L"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789,.!:-/%";
+	MAT_FUNC;
+
+	if ( !pCharacterString || !pCharacterString[0] )
+	{
+		// use the common chars, alternate languages are not handled
+		pCharacterString = pCommonChars;
+	}
+
+	StartDrawing();
+	DrawSetTextFont( font );
+
+	int numChars = 0;
+	while( pCharacterString[ numChars ] )
+	{
+		numChars++;
+	}
+	int *pTextureIDs_ignored = (int *)_alloca( numChars*sizeof( int ) );
+	float **pTexCoords_ignored = (float **)_alloca( numChars*sizeof( float * ) );
+	g_FontTextureCache.GetTextureForChars( m_hCurrentFont, FONT_DRAW_DEFAULT, pCharacterString, pTextureIDs_ignored, pTexCoords_ignored, numChars );
+
+	FinishDrawing();
+}
+
+const char *CMatSystemSurface::GetFontName( HFont font )
+{
+	return FontManager().GetFontName( font );
+}
+
+const char *CMatSystemSurface::GetFontFamilyName( HFont font )
+{
+	return FontManager().GetFontFamilyName( font );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -1307,6 +2151,18 @@ void CMatSystemSurface::DrawSetTextFont(HFont font)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawFlushText()
 {
+	if ( !m_nBatchedCharVertCount )
+		return;
+
+	{
+		// don't log entry unless actual work happens..
+		MAT_FUNC;
+		
+		IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(m_iBoundTexture);
+		InternalSetMaterial( pMaterial );
+		DrawQuadArray( m_nBatchedCharVertCount / 2, m_BatchedCharVerts, m_DrawTextColor );
+		m_nBatchedCharVertCount = 0;
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1314,17 +2170,35 @@ void CMatSystemSurface::DrawFlushText()
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextColor(int r, int g, int b, int a)
 {
-	m_DrawTextColor[0] = (unsigned char)r;
-	m_DrawTextColor[1] = (unsigned char)g;
-	m_DrawTextColor[2] = (unsigned char)b;
-	m_DrawTextColor[3] = (unsigned char)a;
+	int adjustedAlpha = (a * m_flAlphaMultiplier);
+
+	if ( r != m_DrawTextColor[0] || g != m_DrawTextColor[1] || b != m_DrawTextColor[2] || adjustedAlpha != m_DrawTextColor[3] )
+	{
+		// text color changed, flush any existing text
+		DrawFlushText();
+
+		m_DrawTextColor[0] = (unsigned char)r;
+		m_DrawTextColor[1] = (unsigned char)g;
+		m_DrawTextColor[2] = (unsigned char)b;
+		m_DrawTextColor[3] = (unsigned char)adjustedAlpha;
+	}
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: alternate color set
+//-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawSetTextColor(Color col)
 {
 	DrawSetTextColor(col[0], col[1], col[2], col[3]);
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: change the scale of a bitmap font
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawSetTextScale(float sx, float sy)
+{
+	FontManager().SetFontScale( m_hCurrentFont, sx, sy );
+}
 
 //-----------------------------------------------------------------------------
 // Text rendering location
@@ -1339,8 +2213,6 @@ void CMatSystemSurface::DrawSetTextPos(int x, int y)
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : x - 
-//			y - 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawGetTextPos(int& x,int& y)
 {
@@ -1350,12 +2222,40 @@ void CMatSystemSurface::DrawGetTextPos(int& x,int& y)
 	y = m_pDrawTextPos[1];
 }
 
+#pragma warning( disable : 4706 )
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : ch - 
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawUnicodeString( const wchar_t *pString, FontDrawType_t drawType /*= FONT_DRAW_DEFAULT */ )
+{
+	// skip fully transparent characters
+	if ( m_DrawTextColor[3] == 0 )
+		return;
+
+	//hushed MAT_FUNC;
+#ifdef POSIX
+	DrawPrintText( pString, V_wcslen( pString ) , drawType );
+#else
+	wchar_t	ch;
+
+	while ( ( ch = *pString++ ) )
+	{
+		DrawUnicodeChar( ch );	
+	}
+#endif
+}
+#pragma warning( default : 4706 )
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawUnicodeChar(wchar_t ch, FontDrawType_t drawType /*= FONT_DRAW_DEFAULT */ )
 {
+	// skip fully transparent characters
+	if ( m_DrawTextColor[3] == 0 )
+		return;
+	//hushed MAT_FUNC;
+
 	CharRenderInfo info;
 	info.drawType = drawType;
 	if ( DrawGetUnicodeCharRenderInfo( ch, info ) )
@@ -1366,13 +2266,10 @@ void CMatSystemSurface::DrawUnicodeChar(wchar_t ch, FontDrawType_t drawType /*= 
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : ch - 
-//			info - 
-// Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo& info )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWUNICODECHAR_TIME );
+	//hushed MAT_FUNC;
 
 	Assert( g_bInDrawing );
 	info.valid = false;
@@ -1382,6 +2279,8 @@ bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo
 		return info.valid;
 	}
 
+	PREFETCH360( &m_BatchedCharVerts[ m_nBatchedCharVertCount ], 0 );
+
 	info.valid = true;
 	info.ch = ch;
 	DrawGetTextPos(info.x, info.y);
@@ -1390,9 +2289,13 @@ bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo
 	info.fontTall = GetFontTall(m_hCurrentFont);
 
 	GetCharABCwide(m_hCurrentFont, ch, info.abcA, info.abcB, info.abcC);
+	bool bUnderlined = FontManager().GetFontUnderlined( m_hCurrentFont );
 	
 	// Do prestep before generating texture coordinates, etc.
-	info.x += info.abcA;
+	if ( !bUnderlined )
+	{
+		info.x += info.abcA;
+	}
 
 	// get the character texture from the cache
 	info.textureId = 0;
@@ -1403,8 +2306,24 @@ bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo
 		return info.valid;
 	}
 
+	int fontWide = info.abcB;
+	if ( bUnderlined )
+	{
+		fontWide += ( info.abcA + info.abcC );
+		info.x-= info.abcA;
+	}
+
+	// Because CharRenderInfo has a pointer to the verts, we need to keep m_BatchedCharVerts in sync, so if we 
+	//  will be flushing the text when we get to this char, flush it now instead.
+	if ( info.textureId != m_iBoundTexture )
+	{
+		DrawFlushText();
+	}
+
+	// This avoid copying the data in the nonclipped case!!! (X360)
+	info.verts = &m_BatchedCharVerts[ m_nBatchedCharVertCount ];
 	InitVertex( info.verts[0], info.x, info.y, texCoords[0], texCoords[1] );
-	InitVertex( info.verts[1], info.x + info.abcB, info.y + info.fontTall, texCoords[2], texCoords[3] );
+	InitVertex( info.verts[1], info.x + fontWide, info.y + info.fontTall, texCoords[2], texCoords[3] );
 
 	info.shouldclip = true;
 
@@ -1412,43 +2331,42 @@ bool CMatSystemSurface::DrawGetUnicodeCharRenderInfo( wchar_t ch, CharRenderInfo
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : info - 
+// Purpose: batches up characters for rendering
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawRenderCharInternal( const CharRenderInfo& info )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWPRINTCHAR_TIME );
+	//hushed MAT_FUNC;
 
 	Assert( g_bInDrawing );
-	// Don't even bother drawing fully transparent junk
-	if( m_DrawTextColor[3]==0 )
-		return;
-
-	vgui::Vertex_t clippedRect[2];
-
-	if ( info.shouldclip )
+	
+	// xbox opts out of pricey/pointless text clipping
+	if ( IsPC() && info.shouldclip )
 	{
-		// Fully clipped?
-		if ( !ClipRect(info.verts[0], info.verts[1], &clippedRect[0], &clippedRect[1]) )
+		Vertex_t clip[ 2 ];
+		clip[ 0 ] = info.verts[ 0 ];
+		clip[ 1 ] = info.verts[ 1 ];
+		if ( !ClipRect( clip[0], clip[1], &info.verts[0], &info.verts[1] ) )
+		{
+			// Fully clipped
 			return;	
-	}
-	else
-	{
-		clippedRect[0] = info.verts[0];
-		clippedRect[1] = info.verts[1];
+		}
 	}
 
-	IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(m_iBoundTexture);
-	InternalSetMaterial( pMaterial );
-	DrawQuad( clippedRect[0], clippedRect[1], m_DrawTextColor );
+	m_nBatchedCharVertCount += 2;
+
+	if ( m_nBatchedCharVertCount >= MAX_BATCHED_CHAR_VERTS - 2 )
+	{
+		DrawFlushText();
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : info - 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawRenderCharFromInfo( const CharRenderInfo& info )
 {
+	//hushed MAT_FUNC;
+
 	if ( !info.valid )
 		return;
 
@@ -1471,7 +2389,7 @@ void CMatSystemSurface::DrawRenderCharFromInfo( const CharRenderInfo& info )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDrawType_t drawType /*= FONT_DRAW_DEFAULT */ )
 {
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_DRAWPRINTTEXT_TIME );
+	MAT_FUNC;
 
 	Assert( g_bInDrawing );
 	if (!text)
@@ -1488,19 +2406,51 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
 
 	int iCount = 0;
 	vgui::Vertex_t *pQuads = (vgui::Vertex_t*)stackalloc((2 * iTextLen) * sizeof(vgui::Vertex_t) );
+	bool bUnderlined = FontManager().GetFontUnderlined( m_hCurrentFont );
 
 	int iTotalWidth = 0;
 	for (int i=0; i<iTextLen; ++i)
 	{
 		wchar_t ch = text[i];
 
+#if USE_GETKERNEDCHARWIDTH
+		//iTotalWidth += abcA;
+		float flWide;
+		float flabcA;
+		float flabcC;
+		wchar_t chBefore = 0;
+		wchar_t chAfter = 0;
+		if ( i > 0 )
+			chBefore = text[i-1];
+		if ( i < (iTextLen-1) )
+			chAfter = text[i+1];
+		FontManager().GetKernedCharWidth( m_hCurrentFont, ch, chBefore, chAfter, flWide, flabcA, flabcC );
+		
+		int abcA,abcB,abcC;
+		// also grab the single char dimensions so we match the texture size to the one in the font page,
+		// different to the amount we step ahead once rendered
+		GetCharABCwide(m_hCurrentFont, ch, abcA, abcB, abcC);
+		
+		int textureWide = abcB;
+		if ( bUnderlined )
+		{
+			textureWide += ( abcA + abcC );
+			x-= flabcA;
+		}
+#else
 		int abcA,abcB,abcC;
 		GetCharABCwide(m_hCurrentFont, ch, abcA, abcB, abcC);
-
-		iTotalWidth += abcA;
-		int iWide = abcB;
-
-		if ( !iswspace( ch ) )
+		int textureWide = abcB;
+		if ( bUnderlined )
+		{
+			textureWide += ( abcA + abcC );
+			x-= abcA;
+		}
+		float flabcA = abcA;
+		float flWide = abcA + abcB + abcC;
+#endif
+		
+		if ( !iswspace( ch ) || bUnderlined )
 		{
 			// get the character texture from the cache
 			int iTexId = 0;
@@ -1519,7 +2469,7 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
 				{
 					IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(iLastTexId);
 					InternalSetMaterial( pMaterial );
-					DrawQuadArray( iCount, pQuads, m_DrawTextColor );
+					DrawQuadArray( iCount, pQuads, m_DrawTextColor, IsPC() );
 					iCount = 0;
 				}
 
@@ -1530,19 +2480,31 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
  			vgui::Vertex_t &lr = pQuads[2*iCount + 1];
 			++iCount;
 
-			ul.m_Position.x = x + iTotalWidth;
+			ul.m_Position.x = x + iTotalWidth + floor(flabcA + 0.6);
 			ul.m_Position.y = y;
-			lr.m_Position.x = ul.m_Position.x + iWide;
+			lr.m_Position.x = ul.m_Position.x +  textureWide;
 			lr.m_Position.y = ul.m_Position.y + iTall;
 
 			// Gets at the texture coords for this character in its texture page
+			/*
+			float tex_U0_bias = prc->Knob("tex-U0-bias");
+			float tex_V0_bias = prc->Knob("tex-V0-bias");
+			float tex_U1_bias = prc->Knob("tex-U1-bias");
+			float tex_V1_bias = prc->Knob("tex-V1-bias");
+
+			ul.m_TexCoord[0] = texCoords[0] + tex_U0_bias;
+			ul.m_TexCoord[1] = texCoords[1] + tex_V0_bias;
+			lr.m_TexCoord[0] = texCoords[2] + tex_U1_bias;
+			lr.m_TexCoord[1] = texCoords[3] + tex_V1_bias;
+			*/
+
 			ul.m_TexCoord[0] = texCoords[0];
 			ul.m_TexCoord[1] = texCoords[1];
 			lr.m_TexCoord[0] = texCoords[2];
 			lr.m_TexCoord[1] = texCoords[3];
 		}
 
-		iTotalWidth += iWide + abcC;
+		iTotalWidth += floor(flWide+0.6);
 	}
 
 	// Draw any left-over characters
@@ -1550,7 +2512,7 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
 	{
 		IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial(iLastTexId);
 		InternalSetMaterial( pMaterial );
-		DrawQuadArray( iCount, pQuads, m_DrawTextColor );
+		DrawQuadArray( iCount, pQuads, m_DrawTextColor, IsPC() );
 	}
 
 	m_pDrawTextPos[0] += iTotalWidth;
@@ -1564,32 +2526,129 @@ void CMatSystemSurface::DrawPrintText(const wchar_t *text, int iTextLen, FontDra
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::GetScreenSize(int &iWide, int &iTall)
 {
+	if ( m_ScreenSizeOverride.m_bActive )
+	{
+		iWide = m_ScreenSizeOverride.m_nValue[ 0 ];
+		iTall = m_ScreenSizeOverride.m_nValue[ 1 ];
+		return;
+	}
+
 	int x, y;
-	g_pMaterialSystem->GetViewport( x, y, iWide, iTall );
+
+	// mikesart: This is just sticking in unnecessary BeginRender/EndRender calls to the queue.
+	//   CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	IMatRenderContext *pRenderContext = g_pMaterialSystem->GetRenderContext();
+	pRenderContext->GetViewport( x, y, iWide, iTall );
 }
 
+bool CMatSystemSurface::ForceScreenSizeOverride( bool bState, int wide, int tall )
+{
+	bool bWasSet = m_ScreenSizeOverride.m_bActive;
+	m_ScreenSizeOverride.m_bActive = bState;
+	m_ScreenSizeOverride.m_nValue[ 0 ] = wide;
+	m_ScreenSizeOverride.m_nValue[ 1 ] = tall;
+	return bWasSet;
+}
+
+// LocalToScreen, ParentLocalToScreen fixups for explicit PaintTraverse calls on Panels not at 0, 0 position
+bool CMatSystemSurface::ForceScreenPosOffset( bool bState, int x, int y )
+{
+	bool bWasSet = m_ScreenPosOverride.m_bActive;
+	m_ScreenPosOverride.m_bActive = bState;
+	m_ScreenPosOverride.m_nValue[ 0 ] = x;
+	m_ScreenPosOverride.m_nValue[ 1 ] = y;
+	return bWasSet;
+}
+
+void CMatSystemSurface::OffsetAbsPos( int &x, int &y )
+{
+	if ( !m_ScreenPosOverride.m_bActive )
+		return;
+
+	x += m_ScreenPosOverride.m_nValue[ 0 ];
+	y += m_ScreenPosOverride.m_nValue[ 1 ];
+}
+
+
+bool CMatSystemSurface::IsScreenSizeOverrideActive( void )
+{
+	return ( m_ScreenSizeOverride.m_bActive );
+}
+
+bool CMatSystemSurface::IsScreenPosOverrideActive( void )
+{
+	return ( m_ScreenPosOverride.m_bActive );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Notification of a new screen size
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::OnScreenSizeChanged( int nOldWidth, int nOldHeight )
+{
+	int iNewWidth, iNewHeight;
+	GetScreenSize( iNewWidth, iNewHeight );
+
+	Msg( "Changing resolutions from (%d, %d) -> (%d, %d)\n", nOldWidth, nOldHeight, iNewWidth, iNewHeight );
+
+	// update the root panel size
+	ipanel()->SetSize(m_pEmbeddedPanel, iNewWidth, iNewHeight);
+
+	// notify every panel
+	VPANEL panel = GetEmbeddedPanel();
+	ivgui()->PostMessage(panel, new KeyValues("OnScreenSizeChanged", "oldwide", nOldWidth, "oldtall", nOldHeight), NULL);
+
+	// Run a frame of the GUI to notify all subwindows of the message size change
+	ivgui()->RunFrame();
+
+	// clear font texture cache
+	ResetFontCaches();
+}
+
+// Causes fonts to get reloaded, etc.
+void CMatSystemSurface::ResetFontCaches()
+{
+	// Don't do this on x360!!!
+	if ( IsX360() )
+		return;
+
+	// clear font texture cache
+	g_FontTextureCache.Clear();
+	m_iBoundTexture = -1;
+
+	// reload fonts
+	FontManager().ClearAllFonts();
+	scheme()->ReloadFonts();
+	
+	// Run a frame of the GUI to notify all subwindows of the message size change
+	ivgui()->RunFrame();
+}
 
 //-----------------------------------------------------------------------------
 // Returns the size of the embedded panel
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::GetWorkspaceBounds(int &x, int &y, int &iWide, int &iTall)
 {
+	if ( m_ScreenSizeOverride.m_bActive )
+	{
+		x = y = 0;
+		iWide = m_ScreenSizeOverride.m_nValue[ 0 ];
+		iTall = m_ScreenSizeOverride.m_nValue[ 1 ];
+		return;
+	}
 	// NOTE: This is equal to the viewport size by default,
 	// but other embedded panels can be used
 	x = m_WorkSpaceInsets[0];
 	y = m_WorkSpaceInsets[1];
-	g_pIPanel->GetSize(m_pEmbeddedPanel, iWide, iTall);
+	g_pVGuiPanel->GetSize(m_pEmbeddedPanel, iWide, iTall);
 
 	iWide -= m_WorkSpaceInsets[2];
 	iTall -= m_WorkSpaceInsets[3];
 }
 
+
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : left - 
-//			top - 
-//			right - 
-//			bottom - 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::SetWorkspaceInsets( int left, int top, int right, int bottom )
 {
@@ -1623,18 +2682,18 @@ void CMatSystemSurface::SetMinimized(VPANEL panel, bool state)
 {
 	if (state)
 	{
-		g_pIPanel->SetPlat(panel, VPANEL_MINIMIZED);
-		g_pIPanel->SetVisible(panel, false);
+		g_pVGuiPanel->SetPlat(panel, VPANEL_MINIMIZED);
+		g_pVGuiPanel->SetVisible(panel, false);
 	}
 	else
 	{
-		g_pIPanel->SetPlat(panel, VPANEL_NORMAL);
+		g_pVGuiPanel->SetPlat(panel, VPANEL_NORMAL);
 	}
 }
 
 bool CMatSystemSurface::IsMinimized(vgui::VPANEL panel)
 {
-	return (g_pIPanel->Plat(panel) == VPANEL_MINIMIZED);
+	return (g_pVGuiPanel->Plat(panel) == VPANEL_MINIMIZED);
 
 }
 
@@ -1645,8 +2704,6 @@ void CMatSystemSurface::FlashWindow(VPANEL panel, bool state)
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *panel - 
-//			*title - 
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::SetTitle(VPANEL panel, const wchar_t *title)
 {
@@ -1664,8 +2721,6 @@ void CMatSystemSurface::SetTitle(VPANEL panel, const wchar_t *title)
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *panel - 
-// Output : char const
 //-----------------------------------------------------------------------------
 wchar_t const *CMatSystemSurface::GetTitle( VPANEL panel )
 {
@@ -1724,23 +2779,13 @@ bool CMatSystemSurface::IsWithin(int x, int y)
 
 bool CMatSystemSurface::ShouldPaintChildPanel(VPANEL childPanel)
 {
-	if (m_pRestrictedPanel && !g_pIPanel->HasParent(childPanel, m_pRestrictedPanel))
-		return false;
-
-	bool isPopup = ipanel()->IsPopup(childPanel);
-
-	if ( isPopup )
+	if ( m_pRestrictedPanel && ( m_pRestrictedPanel != childPanel ) && 
+		 !g_pVGuiPanel->HasParent( childPanel, m_pRestrictedPanel ) )
 	{
-		
-		HPanel p = ivgui()->PanelToHandle( childPanel );
-
-		int index = m_PopupList.Find( p );
-		if ( index != -1 )
-		{
-			ipanel()->Render_SetPopupVisible(childPanel, true);
-		}
+		return false;
 	}
 
+	bool isPopup = ipanel()->IsPopup(childPanel);
 	return !isPopup;
 }
 
@@ -1748,7 +2793,6 @@ bool CMatSystemSurface::RecreateContext(VPANEL panel)
 {
 	return false;
 }
-
 
 //-----------------------------------------------------------------------------
 // Focus-related methods
@@ -1761,10 +2805,10 @@ bool CMatSystemSurface::HasFocus()
 void CMatSystemSurface::BringToFront(VPANEL panel)
 {
 	// move panel to top of list
-	g_pIPanel->MoveToFront(panel);
+	g_pVGuiPanel->MoveToFront(panel);
 
 	// move panel to top of popup list
-	if ( g_pIPanel->IsPopup( panel ) )
+	if ( g_pVGuiPanel->IsPopup( panel ) )
 	{
 		MovePopupToFront( panel );
 	}
@@ -1822,12 +2866,40 @@ void CMatSystemSurface::GetCursorPos(int &x, int &y)
 
 void CMatSystemSurface::SetCursor(HCursor hCursor)
 {
-	_currentCursor = hCursor;
-	CursorSelect( hCursor );
+	if ( IsCursorLocked() )
+		return;
+
+	if ( _currentCursor != hCursor )
+	{
+		_currentCursor = hCursor;
+		CursorSelect( hCursor );
+	}
 }
 
-void CMatSystemSurface::EnableMouseCapture(VPANEL panel, bool state)
+void CMatSystemSurface::EnableMouseCapture( VPANEL panel, bool state )
 {
+#ifdef WIN32
+	if ( state )
+	{
+		::SetCapture( reinterpret_cast< HWND >( m_HWnd ) );
+	}
+	else
+	{
+		::ReleaseCapture();
+	}
+#elif defined( POSIX )
+	// SetCapture on Win32 makes all the mouse messages (move and button up/down) head to
+	//	the captured window. From what I can tell, this routine is called for modal dialogs
+	//	when you click down on a button. However the current behavior is to highlight the
+	//	buttons when you're over them, and trigger when you mouse up over the top - so I
+	//	don't believe that SetCapture is needed on Windows, and Linux is behaving exactly
+	//	the same as Win32 in all the tests I've run so far. (I've clicked on a lot of dialogs).
+	// I talked with Alfred about this and we haven't done any SetCapture stuff on OSX ever
+	//  and he says nobody has ever reported any regressions.
+	// So I've removed the Assert. 8/32/2012 - mikesart.
+#else
+#error
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1835,14 +2907,13 @@ void CMatSystemSurface::EnableMouseCapture(VPANEL panel, bool state)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::CreatePopup(VPANEL panel, bool minimized,  bool showTaskbarIcon, bool disabled , bool mouseInput , bool kbInput)
 {
-	if (!g_pIPanel->GetParent(panel))
+	if (!g_pVGuiPanel->GetParent(panel))
 	{
-		g_pIPanel->SetParent(panel, GetEmbeddedPanel());
+		g_pVGuiPanel->SetParent(panel, GetEmbeddedPanel());
 	}
 	((VPanel *)panel)->SetPopup(true);
 	((VPanel *)panel)->SetKeyBoardInputEnabled(kbInput);
 	((VPanel *)panel)->SetMouseInputEnabled(mouseInput);
-
 
 	HPanel p = ivgui()->PanelToHandle( panel );
 
@@ -1862,7 +2933,7 @@ void CMatSystemSurface::CreatePopup(VPANEL panel, bool minimized,  bool showTask
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::AddPanel(VPANEL panel)
 {
-	if (g_pIPanel->IsPopup(panel))
+	if (g_pVGuiPanel->IsPopup(panel))
 	{
 		// turn it into a popup menu
 		CreatePopup(panel, false);
@@ -1892,11 +2963,8 @@ int CMatSystemSurface::GetPopupCount(  )
 
 VPANEL CMatSystemSurface::GetPopup(  int index )
 {
-
 	HPanel p = m_PopupList[ index ];
-
 	VPANEL panel = ivgui()->HandleToPanel( p );
-
 	return panel;
 }
 
@@ -1928,6 +2996,7 @@ void CMatSystemSurface::RemovePopup( vgui::VPANEL panel )
 			continue;
 
 		m_PopupList.Remove( i );
+		break;
 	}
 }
 
@@ -1936,20 +3005,20 @@ void CMatSystemSurface::RemovePopup( vgui::VPANEL panel )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::AddPopupsToList( VPANEL panel )
 {
-	if (!g_pIPanel->IsVisible(panel))
+	if (!g_pVGuiPanel->IsVisible(panel))
 		return;
 
 	// Add to popup list as we visit popups
 	// Note:  popup list is cleared in RunFrame which occurs before this call!!!
-	if ( g_pIPanel->IsPopup( panel ) )
+	if ( g_pVGuiPanel->IsPopup( panel ) )
 	{
 		AddPopup( panel );
 	}
 
-	int count = g_pIPanel->GetChildCount(panel);
+	int count = g_pVGuiPanel->GetChildCount(panel);
 	for (int i = 0; i < count; ++i)
 	{
-		VPANEL child = g_pIPanel->GetChild(panel, i);
+		VPANEL child = g_pVGuiPanel->GetChild(panel, i);
 		AddPopupsToList( child );
 	}
 }
@@ -1961,18 +3030,28 @@ void CMatSystemSurface::AddPopupsToList( VPANEL panel )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::InternalSolveTraverse(VPANEL panel)
 {
+	VPanel * RESTRICT vp = (VPanel *)panel;
+
+	vp->TraverseLevel( 1 );
+	tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - %s", __FUNCTION__, vp->GetName() );
+
 	// solve the parent
-	((VPanel *)panel)->Solve();
+	vp->Solve();
 	
-	// now we can solve the children
-	for (int i = 0; i < ((VPanel *)panel)->GetChildCount(); i++)
+	CUtlVector< VPanel * > &children = vp->GetChildren();
+
+	// WARNING: Some of the think functions add/remove children, so make sure we
+	//  explicitly check for children.Count().
+	for ( int i = 0; i < children.Count(); ++i )
 	{
-		VPanel *child = ((VPanel *)panel)->GetChild(i);
+		VPanel *child = children[ i ];
 		if (child->IsVisible())
 		{
-			InternalSolveTraverse((VPANEL)child);
+			InternalSolveTraverse( (VPANEL)child );
 		}
 	}
+
+	vp->TraverseLevel( -1 );
 }
 
 //-----------------------------------------------------------------------------
@@ -1982,18 +3061,28 @@ void CMatSystemSurface::InternalSolveTraverse(VPANEL panel)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::InternalThinkTraverse(VPANEL panel)
 {
-	// think the parent
-	((VPanel *)panel)->Client()->Think();
+	VPanel * RESTRICT vp = (VPanel *)panel;
 
-	// and then the children...
-	for (int i = 0; i < ((VPanel *)panel)->GetChildCount(); i++)
+	vp->TraverseLevel( 1 );
+	tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - %s", __FUNCTION__, vp->GetName() );
+
+	// think the parent
+	vp->Client()->Think();
+
+	CUtlVector< VPanel * > &children = vp->GetChildren();
+
+	// WARNING: Some of the think functions add/remove children, so make sure we
+	//  explicitly check for children.Count().
+	for ( int i = 0; i < children.Count(); ++i )
 	{
-		VPanel *child = ((VPanel *)panel)->GetChild(i);
-		if (child->IsVisible())
+		VPanel *child = children[ i ];
+		if ( child->IsVisible() )
 		{
-			InternalThinkTraverse((VPANEL)child);
+			InternalThinkTraverse( (VPANEL)child );
 		}
 	}
+	
+	vp->TraverseLevel( -1 );
 }
 
 //-----------------------------------------------------------------------------
@@ -2001,18 +3090,26 @@ void CMatSystemSurface::InternalThinkTraverse(VPANEL panel)
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::InternalSchemeSettingsTraverse(VPANEL panel, bool forceApplySchemeSettings)
 {
-	// apply to the children...
-	for (int i = 0; i < ((VPanel *)panel)->GetChildCount(); i++)
-	{
+	VPanel * RESTRICT vp = (VPanel *)panel;
 
-		VPanel *child = ((VPanel *)panel)->GetChild(i);
+	vp->TraverseLevel( 1 );
+	tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - %s", __FUNCTION__, vp->GetName() );
+
+	CUtlVector< VPanel * > &children = vp->GetChildren();
+
+	// apply to the children...
+	for ( int i = 0; i < children.Count(); ++i )
+	{
+		VPanel *child = children[ i ];
 		if ( forceApplySchemeSettings || child->IsVisible() )
 		{	
 			InternalSchemeSettingsTraverse((VPANEL)child, forceApplySchemeSettings);
 		}
 	}
 	// and then the parent
-	((VPanel *)panel)->Client()->PerformApplySchemeSettings();
+	vp->Client()->PerformApplySchemeSettings();
+
+	vp->TraverseLevel( -1 );
 }
 
 //-----------------------------------------------------------------------------
@@ -2022,16 +3119,19 @@ void CMatSystemSurface::SolveTraverse(VPANEL panel, bool forceApplySchemeSetting
 {
 	{
 		VPROF( "InternalSchemeSettingsTraverse" );
+		tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - InternalSchemeSettingsTraverse", __FUNCTION__ );
 		InternalSchemeSettingsTraverse(panel, forceApplySchemeSettings);
 	}
 
 	{
 		VPROF( "InternalThinkTraverse" );
+		tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - InternalThinkTraverse", __FUNCTION__ );
 		InternalThinkTraverse(panel);
 	}
 
 	{
 		VPROF( "InternalSolveTraverse" );
+		tmZone( TELEMETRY_LEVEL1, TMZF_NONE, "%s - InternalSolveTraverse", __FUNCTION__ );
 		InternalSolveTraverse(panel);
 	}
 }
@@ -2041,124 +3141,380 @@ void CMatSystemSurface::SolveTraverse(VPANEL panel, bool forceApplySchemeSetting
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::RestrictPaintToSinglePanel(VPANEL panel)
 {
+	if ( panel && m_pRestrictedPanel && m_pRestrictedPanel == input()->GetAppModalSurface() )
+	{
+		return;	// don't restrict drawing to a panel other than the modal one - that's a good way to hang the game.
+	}
+
 	m_pRestrictedPanel = panel;
+
+	if ( !input()->GetAppModalSurface() )
+	{
+		input()->SetAppModalSurface( panel );	// if painting is restricted to this panel, it had better be modal, or else you can get in some bad state...
+	}
 }
 
 
-void CMatSystemSurface::PaintTraverse(VPANEL panel)
+//-----------------------------------------------------------------------------
+// Is a panel under the restricted panel?
+//-----------------------------------------------------------------------------
+bool CMatSystemSurface::IsPanelUnderRestrictedPanel( VPANEL panel )
 {
+	if ( !m_pRestrictedPanel )
+		return true;
+
+	while ( panel )
+	{
+		if ( panel == m_pRestrictedPanel )
+			return true;
+
+		panel = ipanel()->GetParent( panel );
+	}
+	return false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Main entry point for painting
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::PaintTraverseEx(VPANEL panel, bool paintPopups /*= false*/ )
+{
+	MAT_FUNC;
+
+	if ( !ipanel()->IsVisible( panel ) )
+		return;
+
 	VPROF( "CMatSystemSurface::PaintTraverse" );
-	MEASURE_TIMED_STAT( VGUIMATSURFACE_STATS_PAINTTRAVERSE_TIME );
-	bool topLevelDraw = false;
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	bool bTopLevelDraw = false;
 
 	if ( g_bInDrawing == false )
 	{
-		topLevelDraw = true;
+		// only set the 2d ortho mode once
+		bTopLevelDraw = true;
 		StartDrawing();
+
+		// clear z + stencil buffer
+		// NOTE: Stencil is used to get 3D painting in vgui panels working correctly 
+		pRenderContext->ClearBuffers( false, true, true );
+		pRenderContext->SetStencilEnable( true );
+		pRenderContext->SetStencilFailOperation( STENCILOPERATION_KEEP );
+		pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
+		pRenderContext->SetStencilPassOperation( STENCILOPERATION_REPLACE );
+		pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_GREATEREQUAL );
+		pRenderContext->SetStencilReferenceValue( 0 );
+		pRenderContext->SetStencilTestMask( 0xFFFFFFFF );
+		pRenderContext->SetStencilWriteMask( 0xFFFFFFFF );
 	}
 
-	if (!ipanel()->IsVisible(panel))
-		return;
+	float flOldZPos = m_flZPos;
 
-	if (panel == GetEmbeddedPanel())
+	// NOTE You might expect we'd have to draw these under the popups so they would occlude
+	// them, but there are a few things we do have to draw on top of, esp. the black
+	// panel that draws over the top of the engine to darken everything.
+	m_flZPos = 0.0f;								
+	if ( panel == GetEmbeddedPanel() )
 	{
-		if ( m_pRestrictedPanel ) // only paint the restricted panel
+		if ( m_pRestrictedPanel )
 		{
-			ipanel()->PaintTraverse(m_pRestrictedPanel, true);
+			// Paint the restricted panel, and its parent.
+			// NOTE: This call has guards to not draw popups. If the restricted panel
+			// is a popup, it won't draw here.
+			ipanel()->PaintTraverse( ipanel()->GetParent( m_pRestrictedPanel ), true );
 		}
 		else
 		{
-			int i;
-			{
-				VPROF( "CMatSystemSurface::PaintTraverse loop 1" );
-				for ( i = 0; i < GetPopupCount(); i++)
-				{
-					ipanel()->Render_SetPopupVisible( GetPopup( i ), false );
-				}
-			}
-			{
-				VPROF( "ipanel()->PaintTraverse" );
-				ipanel()->PaintTraverse(panel, true);
-			}
-
-
-			{
-				VPROF( "CMatSystemSurface::PaintTraverse loop 2" );
-				for ( i = 0; i < GetPopupCount(); i++)
-				{
-					if ( ipanel()->Render_GetPopupVisible( GetPopup( i ) ) )
-					{ 
-						ipanel()->PaintTraverse(GetPopup( i ), true);
-					}
-				}
-			}
+			// paint traverse the root panel, painting all children
+			VPROF( "ipanel()->PaintTraverse" );
+			ipanel()->PaintTraverse( panel, true );
 		}
 	}
 	else
 	{
-		ipanel()->PaintTraverse(panel, true);
+		// If it's a popup, it should already have been painted above
+		VPROF( "ipanel()->PaintTraverse" );
+		if ( !paintPopups || !ipanel()->IsPopup( panel ) )
+		{
+			ipanel()->PaintTraverse( panel, true );
+		}
 	}
 
-	if ( topLevelDraw )
+	// draw the popups
+	if ( paintPopups )
 	{
-		VPROF( "FinishDrawing" );	
+		// now draw the popups front to back
+		// since depth-test and depth-write are on, the front panels will occlude the underlying ones
+		{
+			VPROF( "CMatSystemSurface::PaintTraverse popups loop" );
+			int popups = GetPopupCount();
+			if ( popups > 254 )
+			{
+				Warning( "Too many popups! Rendering will be bad!\n" );
+			}
+
+			// HACK! Using stencil ref 254 so drag/drop helper can use 255.
+			int nStencilRef = 254;
+			for ( int i = popups - 1; i >= 0; --i )
+			{
+				VPANEL popupPanel = GetPopup( i );
+
+				if ( !popupPanel )
+					continue;
+
+				if ( !ipanel()->IsFullyVisible( popupPanel ) )
+					continue;
+
+				if ( !IsPanelUnderRestrictedPanel( popupPanel ) )
+					continue;
+
+				// This makes sure the drag/drop helper is always the first thing drawn
+				bool bIsTopmostPopup = ( (VPanel *)popupPanel )->IsTopmostPopup();
+
+				// set our z position
+				pRenderContext->SetStencilReferenceValue( bIsTopmostPopup ? 255 : nStencilRef );
+				--nStencilRef;
+
+				m_flZPos = ((float)(i) / (float)popups);
+				ipanel()->PaintTraverse( popupPanel, true );
+			}
+		}
+	}
+
+	// Restore the old Z Pos
+	m_flZPos = flOldZPos;
+
+	if ( bTopLevelDraw )
+	{
+		// only undo the 2d ortho mode once
+		VPROF( "FinishDrawing" );
+
+		// Reset stencil to normal state
+		pRenderContext->SetStencilEnable( false );
+
 		FinishDrawing();
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Draw a panel
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::PaintTraverse(VPANEL panel)
+{
+	PaintTraverseEx( panel, false );
 }
 
 
 //-----------------------------------------------------------------------------
 // Begins, ends 3D painting from within a panel paint() method
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::Begin3DPaint( int iLeft, int iTop, int iRight, int iBottom )
+void CMatSystemSurface::Begin3DPaint( int iLeft, int iTop, int iRight, int iBottom, bool bRenderToTexture )
 {
+	MAT_FUNC;
+
+	if ( IsX360() )
+	{
+		Assert( 0 );
+		return;
+	}
+
 	Assert( iRight > iLeft );
 	Assert( iBottom > iTop );
+
+	// Can't use this while drawing in the 3D world since it relies on
+	// whacking the shared depth buffer
+	Assert( !m_bDrawingIn3DWorld );
+	if ( m_bDrawingIn3DWorld )
+		return;
+
+	m_n3DLeft = iLeft;
+	m_n3DRight = iRight;
+	m_n3DTop = iTop;
+	m_n3DBottom = iBottom;
 
 	// Can't use this feature when drawing into the 3D world
 	Assert( !m_bDrawingIn3DWorld );
 	Assert( !m_bIn3DPaintMode );
 	m_bIn3DPaintMode = true;
+	m_b3DPaintRenderToTexture = bRenderToTexture;
 
 	// Save off the matrices in case the painting method changes them.
-	g_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
-	g_pMaterialSystem->PushMatrix();
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
-	g_pMaterialSystem->PushMatrix();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_PROJECTION );
-	g_pMaterialSystem->PushMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
 
-	// FIXME: Set the viewport to match the clip rectangle?
-	// Set the viewport to match the scissor rectangle
-	g_pMaterialSystem->Viewport( m_pSurfaceExtents[0] + m_nTranslateX + iLeft, 
-		m_pSurfaceExtents[1] + m_nTranslateY + iTop, iRight - iLeft, iBottom - iTop );
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+
+	if ( bRenderToTexture )
+	{
+
+		// For 3d painting, use the off-screen render target the material system allocates
+		// NOTE: We have to grab it here, as opposed to during init,
+		// because the mode hasn't been set by now.
+		if ( !m_FullScreenBuffer )
+		{
+			m_FullScreenBuffer.Init( materials->FindTexture( m_FullScreenBufferName, "render targets" ) );
+		}
+
+		// FIXME: Set the viewport to match the clip rectangle?
+		// Set the viewport to match the scissor rectangle
+		pRenderContext->PushRenderTargetAndViewport( m_FullScreenBuffer, 
+			0, 0, iRight - iLeft, iBottom - iTop );
+
+		// NOTE: Stencil is used to get 3D painting in vgui panels working correctly 
+		pRenderContext->SetStencilFailOperation( STENCILOPERATION_KEEP );
+		pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
+		pRenderContext->SetStencilPassOperation( STENCILOPERATION_REPLACE );
+		pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_EQUAL );
+
+		// Don't draw the 3D scene w/ stencil
+		pRenderContext->SetStencilEnable( false );
+	}
+	else
+	{
+		int clipLeft, clipTop, clipRight, clipBottom;
+		bool clipEnabled;
+		GetScissorRect( clipLeft, clipTop, clipRight, clipBottom, clipEnabled );
+		pRenderContext->PushRenderTargetAndViewport();
+		pRenderContext->Viewport( clipLeft + iLeft, clipTop + iTop, iRight - iLeft, iBottom - iTop );
+	}
+
+	pRenderContext->CullMode( MATERIAL_CULLMODE_CW );
+
+	pRenderContext->Flush();
 }
 
 void CMatSystemSurface::End3DPaint()
 {
+	MAT_FUNC;
+
+	if ( IsX360() )
+	{
+		Assert( 0 );
+		return;
+	}
+
 	// Can't use this feature when drawing into the 3D world
 	Assert( !m_bDrawingIn3DWorld );
 	Assert( m_bIn3DPaintMode );
 	m_bIn3DPaintMode = false;
 
+	// Reset stencil to set stencil everywhere we draw 
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+
+	pRenderContext->SetStencilEnable( true );
+	pRenderContext->SetStencilFailOperation( STENCILOPERATION_KEEP );
+	pRenderContext->SetStencilZFailOperation( STENCILOPERATION_KEEP );
+	pRenderContext->SetStencilPassOperation( STENCILOPERATION_REPLACE );
+	pRenderContext->SetStencilCompareFunction( STENCILCOMPARISONFUNCTION_GREATEREQUAL );
+
 	// Restore the matrices
-	g_pMaterialSystem->MatrixMode( MATERIAL_MODEL );
-	g_pMaterialSystem->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PopMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_VIEW );
-	g_pMaterialSystem->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PopMatrix();
 
-	g_pMaterialSystem->MatrixMode( MATERIAL_PROJECTION );
-	g_pMaterialSystem->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
 
 	// Restore the viewport (it was stored off in StartDrawing)
-	g_pMaterialSystem->Viewport( m_pSurfaceExtents[0], m_pSurfaceExtents[1],
-		m_pSurfaceExtents[2] - m_pSurfaceExtents[0], m_pSurfaceExtents[3] - m_pSurfaceExtents[1] );
+	pRenderContext->PopRenderTargetAndViewport();
+	pRenderContext->CullMode(MATERIAL_CULLMODE_CCW);
+
+	// Draw the full-screen buffer into the panel, if we rendering
+	// to a texture
+	if ( m_b3DPaintRenderToTexture )
+		DrawFullScreenBuffer( m_n3DLeft, m_n3DTop, m_n3DRight, m_n3DBottom );
 
 	// ReSet the material state
-	InternalSetMaterial(NULL);
+	InternalSetMaterial( NULL );
+}
+
+
+//-----------------------------------------------------------------------------
+// skin composition, force drawing
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::BeginSkinCompositionPainting()
+{
+	g_bInDrawing = true;
+}
+
+
+//-----------------------------------------------------------------------------
+// end drawing when finish skin composition
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::EndSkinCompositionPainting()
+{
+	g_bInDrawing = false;
+}
+
+
+//-----------------------------------------------------------------------------
+// Gets texture coordinates for drawing the full screen buffer
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::GetFullScreenTexCoords( int x, int y, int w, int h, float *pMinU, float *pMinV, float *pMaxU, float *pMaxV )
+{
+	int nTexWidth = m_FullScreenBuffer->GetActualWidth();
+	int nTexHeight = m_FullScreenBuffer->GetActualHeight();
+	float flOOWidth = 1.0f / nTexWidth;
+	float flOOHeight = 1.0f / nTexHeight;
+
+	*pMinU = ( (float)x + 0.5f ) * flOOWidth;
+	*pMinV = ( (float)y + 0.5f ) * flOOHeight;
+	*pMaxU = ( (float)(x+w) - 0.5f ) * flOOWidth;
+	*pMaxV = ( (float)(y+h) - 0.5f ) * flOOHeight;	
+}
+
+
+//-----------------------------------------------------------------------------
+// Draws the fullscreen buffer into the panel
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawFullScreenBuffer( int nLeft, int nTop, int nRight, int nBottom )
+{
+	MAT_FUNC;
+
+	// Draw a textured rectangle over the area
+	if ( m_nFullScreenBufferMaterialId == -1 )
+	{
+		m_nFullScreenBufferMaterialId = CreateNewTextureID();
+		DrawSetTextureMaterial( m_nFullScreenBufferMaterialId, m_FullScreenBufferMaterial );
+	}
+
+	float flGetAlphaMultiplier = DrawGetAlphaMultiplier();
+	unsigned char oldColor[4];
+	oldColor[0] = m_DrawColor[0];
+	oldColor[1] = m_DrawColor[1];
+	oldColor[2] = m_DrawColor[2];
+	oldColor[3] = m_DrawColor[3];
+
+	DrawSetAlphaMultiplier( 1.0f );
+	DrawSetColor( 255, 255, 255, 255 );
+
+	DrawSetTexture( m_nFullScreenBufferMaterialId );
+
+	float u0, u1, v0, v1;
+	GetFullScreenTexCoords( 0, 0, nRight - nLeft, nBottom - nTop, &u0, &v0, &u1, &v1 );
+	DrawTexturedSubRect( nLeft, nTop, nRight, nBottom, u0, v0, u1, v1 );
+
+	m_DrawColor[0] = oldColor[0];
+	m_DrawColor[1] = oldColor[1];
+	m_DrawColor[2] = oldColor[2];
+	m_DrawColor[3] = oldColor[3];
+	DrawSetAlphaMultiplier( flGetAlphaMultiplier );
+}
+
+
+//-----------------------------------------------------------------------------
+// Draws a rectangle, setting z to the current value
+//-----------------------------------------------------------------------------
+float CMatSystemSurface::GetZPos() const
+{
+	return m_flZPos;
 }
 
 
@@ -2169,6 +3525,8 @@ void CMatSystemSurface::End3DPaint()
 
 void CMatSystemSurface::DrawColoredCircle( int centerx, int centery, float radius, int r, int g, int b, int a )
 {
+	MAT_FUNC;
+
 	Assert( g_bInDrawing );
 	// Draw a circle
 	int iDegrees = 0;
@@ -2213,22 +3571,22 @@ void CMatSystemSurface::DrawColoredCircle( int centerx, int centery, float radiu
 //			... - 
 // Output : int - horizontal # of pixels drawn
 //-----------------------------------------------------------------------------
-int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, int g, int b, int a, char *fmt, va_list argptr )
+int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, int g, int b, int a, const char *fmt, va_list argptr )
 {
+	MAT_FUNC;
 	Assert( g_bInDrawing );
 	int len;
-	char data[ 1024 ];
+	char data[1024];
 
 	DrawSetTextPos( x, y );
 	DrawSetTextColor( r, g, b, a );
 
-	len = Q_vsnprintf(data, 1024, fmt, argptr);
+	len = Q_vsnprintf(data, sizeof( data ), fmt, argptr);
 
 	DrawSetTextFont( font );
 
 	wchar_t szconverted[ 1024 ];
-	vgui::localize()->ConvertANSIToUnicode( data, szconverted, 1024 );
-	
+	g_pVGuiLocalize->ConvertANSIToUnicode( data, szconverted, 1024 );
 	DrawPrintText( szconverted, wcslen(szconverted ) );
 
 	int totalLength = DrawTextLen( font, data );
@@ -2236,8 +3594,10 @@ int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, i
 	return x + totalLength;
 }
 
-int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, int g, int b, int a, char *fmt, ... )
+int CMatSystemSurface::DrawColoredText( vgui::HFont font, int x, int y, int r, int g, int b, int a, const char *fmt, ... )
 {
+	MAT_FUNC;
+
 	va_list argptr;
 	va_start( argptr, fmt );
 	int ret = DrawColoredText( font, x, y, r, g, b, a, fmt, argptr );
@@ -2276,17 +3636,17 @@ void CMatSystemSurface::SearchForWordBreak( vgui::HFont font, char *text, int& c
 //-----------------------------------------------------------------------------
 // Purpose: If text width is specified, reterns height of text at that width
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawTextHeight( vgui::HFont font, int w, int& h, char *fmt, ... )
+void CMatSystemSurface::DrawTextHeight( vgui::HFont font, int w, int& h, const char *fmt, ... )
 {
 	if ( !font )
 		return;
 
 	int len;
-	char data[ 8192 ];
+	char data[8192];
 
 	va_list argptr;
 	va_start( argptr, fmt );
-	len = Q_vsnprintf( data, 8192, fmt, argptr );
+	len = Q_vsnprintf( data, sizeof( data ), fmt, argptr );
 	va_end( argptr );
 
 	int x = 0;
@@ -2342,18 +3702,20 @@ void CMatSystemSurface::DrawTextHeight( vgui::HFont font, int w, int& h, char *f
 //-----------------------------------------------------------------------------
 // Draws text with current font at position and wordwrapped to the rect using color values specified
 //-----------------------------------------------------------------------------
-void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int w, int h, int r, int g, int b, int a, char *fmt, ... )
+void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int w, int h, int r, int g, int b, int a, const char *fmt, ... )
 {
+	MAT_FUNC;
+
 	Assert( g_bInDrawing );
 	if ( !font )
 		return;
 
 	int len;
-	char data[ 8192 ];
+	char data[8192];
 
 	va_list argptr;
 	va_start( argptr, fmt );
-	len = Q_vsnprintf( data, 8192, fmt, argptr );
+	len = Q_vsnprintf( data, sizeof( data ), fmt, argptr );
 	va_end( argptr );
 
 	DrawSetTextPos( x, y );
@@ -2398,14 +3760,6 @@ void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int
 		if ( y + ystep >= endy )
 			break;
 
-		if ( x == startx )
-		{
-			while ( data[ i ] && data[ i ] <= 32 && chars > 0 )
-			{
-				i++;
-				chars--;
-			}
-		}
 
 		if ( chars <= 0 )
 			continue;
@@ -2415,11 +3769,11 @@ void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int
 		DrawSetTextPos( x, y );
 
 		wchar_t szconverted[ 1024 ];
-		vgui::localize()->ConvertANSIToUnicode( word, szconverted, 1024 );
+		g_pVGuiLocalize->ConvertANSIToUnicode( word, szconverted, 1024 );
 		DrawPrintText( szconverted, wcslen(szconverted ) );
 
 		// Leave room for space, too
-		x += ( DrawTextLen( font, word ) + DrawTextLen( font, space ) );
+		x += DrawTextLen( font, word );
 	}
 }
 
@@ -2427,14 +3781,14 @@ void CMatSystemSurface::DrawColoredTextRect( vgui::HFont font, int x, int y, int
 //-----------------------------------------------------------------------------
 // Purpose: Determine length of text string
 //-----------------------------------------------------------------------------
-int	CMatSystemSurface::DrawTextLen( vgui::HFont font, char *fmt, ... )
+int	CMatSystemSurface::DrawTextLen( vgui::HFont font, const char *fmt, ... )
 {
 	va_list argptr;
-	char data[ 1024 ];
+	char data[1024];
 	int len;
 
 	va_start(argptr, fmt);
-	len = Q_vsnprintf(data, 1024, fmt, argptr);
+	len = Q_vsnprintf(data, sizeof( data ), fmt, argptr);
 	va_end(argptr);
 
 	int i;
@@ -2446,11 +3800,9 @@ int	CMatSystemSurface::DrawTextLen( vgui::HFont font, char *fmt, ... )
 		GetCharABCwide( font, data[i], a, b, c );
 
 		// Ignore a
-		if ( i != 0 )
-			x += a;
+		//	x += a;
 		x += b;
-		if ( i != len - 1 )
-			x += c;
+		x += c;
 	}
 
 	return x;
@@ -2461,9 +3813,31 @@ int	CMatSystemSurface::DrawTextLen( vgui::HFont font, char *fmt, ... )
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::DisableClipping( bool bDisable )
 {
+	// when the clipping rules change. flush any text we've
+	// queued up to draw so it gets clipped appropriatesly
+	DrawFlushText();
+
 	EnableScissor( !bDisable );
 }
 
+
+//-----------------------------------------------------------------------------
+// Fetch current clipping rectangle
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::GetClippingRect( int &left, int &top, int &right, int &bottom, bool &bClippingDisabled )
+{
+	bool bEnabled = true;
+	GetScissorRect( left, top, right, bottom, bEnabled );
+	bClippingDisabled = !bEnabled;
+}
+
+//-----------------------------------------------------------------------------
+// Set clipping rectangle
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::SetClippingRect( int left, int top, int right, int bottom )
+{
+	SetScissorRect( left, top, right, bottom );
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: unlocks the cursor state
@@ -2479,7 +3853,8 @@ bool CMatSystemSurface::IsCursorLocked() const
 //-----------------------------------------------------------------------------
 void CMatSystemSurface::SetMouseCallbacks( GetMouseCallback_t GetFunc, SetMouseCallback_t SetFunc )
 {
-	CursorSetMouseCallbacks( GetFunc, SetFunc );
+	// FIXME: Remove! This is obsolete
+	Assert(0);
 }
 
 
@@ -2491,63 +3866,39 @@ void CMatSystemSurface::EnableWindowsMessages( bool bEnable )
 	EnableInput( bEnable );
 }
 
-
-#if 0
-
-
-
-//-----------------------------------------------------------------------------
-// Purpose: This is sort of a hack, but it works.  When this object is in scope, it
-//  Sets scr_disabled_for_loading to true, thereby preventing vgui fonts with multiple font pages
-//  from drawing with bogus font pages for the not-yet-cached pages
-//-----------------------------------------------------------------------------
-extern qboolean scr_disabled_for_loading;
-class CScreenDisable
-{
-public:
-	CScreenDisable( void )
-	{
-		// Remember value
-		oldValue = scr_disabled_for_loading;
-		scr_disabled_for_loading = true;
-	}
-
-	~CScreenDisable( void )
-	{
-		// Restore
-		scr_disabled_for_loading = oldValue;
-	}
-private:
-	int			oldValue;
-};
-
-
-//-----------------------------------------------------------------------------
-void CMatSystemSurface::EnableMouseCapture(bool state)
-{
-//	_CVGuiMatSurface->enableMouseCapture(state);
-}
-
-void CMatSystemSurface::EnableMouseCapture(vgui::VPANEL panel, bool state)
-{
-	//!! undone
-}
-
-
-#endif
-
 void CMatSystemSurface::MovePopupToFront(VPANEL panel)
 {
 	HPanel p = ivgui()->PanelToHandle( panel );
 
 	int index = m_PopupList.Find( p );
 	if ( index == m_PopupList.InvalidIndex() )
-	{
 		return;
-	}
 
 	m_PopupList.Remove( index );
 	m_PopupList.AddToTail( p );
+
+	if ( g_bSpewFocus )
+	{
+		char const *pName = ipanel()->GetName( panel );
+		Msg( "%s moved to front\n", pName ? pName : "(no name)" ); 
+	}
+
+	// If the modal panel isn't a parent, restore it to the top, to prevent a hard lock
+	if ( input()->GetAppModalSurface() )
+	{
+		if ( !g_pVGuiPanel->HasParent(panel, input()->GetAppModalSurface()) )
+		{
+			HPanel p = ivgui()->PanelToHandle( input()->GetAppModalSurface() );
+			index = m_PopupList.Find( p );
+			if ( index != m_PopupList.InvalidIndex() )
+			{
+				m_PopupList.Remove( index );
+				m_PopupList.AddToTail( p );
+			}
+		}
+	}
+
+	ivgui()->PostMessage(panel, new KeyValues("OnMovedPopupToFront"), NULL);
 }
 
 void CMatSystemSurface::MovePopupToBack(VPANEL panel)
@@ -2585,9 +3936,14 @@ bool CMatSystemSurface::IsInThink( VPANEL panel)
 //-----------------------------------------------------------------------------
 bool CMatSystemSurface::IsCursorVisible()
 {
-	return (_currentCursor != dc_none);
+	return m_cursorAlwaysVisible || (_currentCursor != dc_none);
 }
 
+void CMatSystemSurface::SetCursorAlwaysVisible( bool visible )
+{
+	m_cursorAlwaysVisible = visible;
+	CursorSelect( visible ? dc_alwaysvisible_push : dc_alwaysvisible_pop );
+}
 
 bool CMatSystemSurface::IsTextureIDValid(int id)
 {
@@ -2595,58 +3951,57 @@ bool CMatSystemSurface::IsTextureIDValid(int id)
 	return true;
 }
 
+void CMatSystemSurface::SetAllowHTMLJavaScript( bool state )
+{ 
+	m_bAllowJavaScript = state; 
+}
+
 IHTML *CMatSystemSurface::CreateHTMLWindow(vgui::IHTMLEvents *events,VPANEL context)
 {
-#if defined( ENABLE_HTMLWINDOW )
-	HtmlWindow *IE = new HtmlWindow(events,context,reinterpret_cast<HWND>(m_HWnd));
-	IE->Show(false);
-	_htmlWindows.AddToTail(IE);
-	return dynamic_cast<IHTML *>(IE);
-#else
-	Assert( 0 );
+	Assert( !"CMatSystemSurface::CreateHTMLWindow" );
 	return NULL;
-#endif
 }
 
 
 void CMatSystemSurface::DeleteHTMLWindow(IHTML *htmlwin)
 {
-#if defined( ENABLE_HTMLWINDOW )
-	HtmlWindow *IE =static_cast<HtmlWindow *>(htmlwin);
-
-	if(IE)
-	{
-		_htmlWindows.FindAndRemove( IE );
-		delete IE;
-	}
-#else
-#error "GameUI now NEEDS the HTML component!!"
-#endif
 }
 
 
 
 void CMatSystemSurface::PaintHTMLWindow(IHTML *htmlwin)
 {
-#if defined( ENABLE_HTMLWINDOW )
-	HtmlWindow *IE = static_cast<HtmlWindow *>(htmlwin);
-	if(IE)
-	{
-		//HBITMAP bits;
-		HDC hdc = ::GetDC(reinterpret_cast<HWND>(m_HWnd));
-		IE->OnPaint(hdc);
-	}
-#endif
 }
 
-void CMatSystemSurface::DrawSetTextureRGBA(int id,const unsigned char* rgba,int wide,int tall,int hardwareFilter, bool forceUpload)
+bool CMatSystemSurface::BHTMLWindowNeedsPaint(IHTML *htmlwin)
 {
-	TextureDictionary()->SetTextureRGBA( id, (const char *)rgba, wide, tall );
+	return false;
+}
+
+//-----------------------------------------------------------------------------
+/*void CMatSystemSurface::DrawSetTextureRGBA( int id, const unsigned char* rgba, int wide, int tall )
+{
+	TextureDictionary()->SetTextureRGBAEx( id, (const char *)rgba, wide, tall, IMAGE_FORMAT_RGBA8888 );
+}*/
+
+void CMatSystemSurface::DrawSetTextureRGBA(int id, const unsigned char* rgba, int wide, int tall, int hardwareFilter, bool forceUpload)
+{
+	TextureDictionary()->SetTextureRGBAEx( id, (const char *)rgba, wide, tall, IMAGE_FORMAT_RGBA8888, false );
+}
+
+void CMatSystemSurface::DrawSetTextureRGBAEx( int id, const unsigned char* rgba, int wide, int tall, ImageFormat format )
+{
+	TextureDictionary()->SetTextureRGBAEx( id, (const char *)rgba, wide, tall, format, true );
 }
 
 void CMatSystemSurface::DrawSetSubTextureRGBA(int textureID, int drawX, int drawY, unsigned const char *rgba, int subTextureWide, int subTextureTall)
 {
 	TextureDictionary()->SetSubTextureRGBA( textureID, drawX, drawY, rgba, subTextureWide, subTextureTall );
+}
+
+void CMatSystemSurface::DrawUpdateRegionTextureRGBA( int nTextureID, int x, int y, const unsigned char *pchData, int wide, int tall, ImageFormat imageFormat )
+{
+	TextureDictionary()->UpdateSubTextureRGBA( nTextureID, x, y, pchData, wide, tall, imageFormat );
 }
 
 void CMatSystemSurface::SetModalPanel(VPANEL )
@@ -2655,7 +4010,7 @@ void CMatSystemSurface::SetModalPanel(VPANEL )
 
 VPANEL CMatSystemSurface::GetModalPanel()
 {
-return 0;
+	return 0;
 }
 
 void CMatSystemSurface::UnlockCursor()
@@ -2677,9 +4032,6 @@ VPANEL CMatSystemSurface::GetTopmostPopup()
 	return 0;
 }
 
-
-
-
 //-----------------------------------------------------------------------------
 // Purpose: gets the absolute coordinates of the screen (in screen space)
 //-----------------------------------------------------------------------------
@@ -2691,43 +4043,121 @@ void CMatSystemSurface::GetAbsoluteWindowBounds(int &x, int &y, int &wide, int &
 	GetScreenSize(wide, tall);
 }
 
+// returns true if the specified panel is a child of the current modal panel
+// if no modal panel is set, then this always returns TRUE
+static bool IsChildOfModalSubTree(VPANEL panel)
+{
+	if ( !panel )
+		return true;
+
+	VPANEL modalSubTree = input()->GetModalSubTree();
+
+	if ( modalSubTree )
+	{
+		bool restrictMessages = input()->ShouldModalSubTreeReceiveMessages();
+
+		// If panel is child of modal subtree, the allow messages to route to it if restrict messages is set
+		bool isChildOfModal = ipanel()->HasParent( panel, modalSubTree );
+		if ( isChildOfModal )
+		{
+			return restrictMessages;
+		}
+		// If panel is not a child of modal subtree, then only allow messages if we're not restricting them to the modal subtree
+		else
+		{
+			return !restrictMessages;
+		}
+	}
+
+	return true;
+}
 
 void CMatSystemSurface::CalculateMouseVisible()
 {
 	int i;
-	_needMouse = false;
-	_needKB = false;
+	m_bNeedsMouse = false;
+	m_bNeedsKeyboard = false;
 
-	for(i = 0 ; i < surface()->GetPopupCount() ; i++ )
+	if ( input()->GetMouseCapture() != 0 )
+		return;
+
+	int c = surface()->GetPopupCount();
+
+	VPANEL modalSubTree = input()->GetModalSubTree();
+	if ( modalSubTree )
 	{
-		VPanel *pop = (VPanel *)surface()->GetPopup(i) ;
-		
-		bool isVisible=pop->IsVisible();
-		VPanel *p= pop->GetParent();
+		for (i = 0 ; i < c ; i++ )
+		{
+			VPanel *pop = (VPanel *)surface()->GetPopup(i) ;
+			bool isChildOfModalSubPanel = IsChildOfModalSubTree( (VPANEL)pop );
+			if ( !isChildOfModalSubPanel )
+				continue;
 
-		while(p && isVisible)
-		{
-			if( p->IsVisible()==false)
+			bool isVisible=pop->IsVisible();
+			VPanel *p= pop->GetParent();
+
+			while (p && isVisible)
 			{
-				isVisible=false;
-				break;
+				if( p->IsVisible()==false)
+				{
+					isVisible=false;
+					break;
+				}
+				p=p->GetParent();
 			}
-			p=p->GetParent();
+
+			if ( isVisible )
+			{
+				m_bNeedsMouse = m_bNeedsMouse || pop->IsMouseInputEnabled();
+				m_bNeedsKeyboard = m_bNeedsKeyboard || pop->IsKeyBoardInputEnabled();
+
+				// Seen enough!!!
+				if ( m_bNeedsMouse && m_bNeedsKeyboard )
+					break;
+			}
 		}
-	
-		if(isVisible)
+	}
+	else
+	{
+		for (i = 0 ; i < c ; i++ )
 		{
-			_needMouse |= pop->IsMouseInputEnabled();
-			_needKB |= pop->IsKeyBoardInputEnabled();
+			VPanel *pop = (VPanel *)surface()->GetPopup(i) ;
+			
+			bool isVisible=pop->IsVisible();
+			VPanel *p= pop->GetParent();
+
+			while (p && isVisible)
+			{
+				if( p->IsVisible()==false)
+				{
+					isVisible=false;
+					break;
+				}
+				p=p->GetParent();
+			}
+		
+			if ( isVisible )
+			{
+				m_bNeedsMouse = m_bNeedsMouse || pop->IsMouseInputEnabled();
+				m_bNeedsKeyboard = m_bNeedsKeyboard || pop->IsKeyBoardInputEnabled();
+
+				// Seen enough!!!
+				if ( m_bNeedsMouse && m_bNeedsKeyboard )
+					break;
+			}
 		}
 	}
 
-	if(_needMouse)
+	if (m_bNeedsMouse)
 	{
-		if ( _currentCursor == vgui::dc_none )
-			SetCursor(vgui::dc_arrow);
-
+		// NOTE: We must unlock the cursor *before* the set call here.
+		// Failing to do this causes s_bCursorVisible to not be set correctly
+		// (UnlockCursor fails to set it correctly)
 		UnlockCursor();
+		if ( _currentCursor == vgui::dc_none )
+		{
+			SetCursor(vgui::dc_arrow);
+		}
 	}
 	else
 	{
@@ -2736,11 +4166,11 @@ void CMatSystemSurface::CalculateMouseVisible()
 	}
 }
 
-
 bool CMatSystemSurface::NeedKBInput()
 {
-	return _needKB;
+	return m_bNeedsKeyboard;
 }
+
 void CMatSystemSurface::SurfaceGetCursorPos(int &x, int &y)
 {
 	GetCursorPos( x, y );
@@ -2750,4 +4180,430 @@ void CMatSystemSurface::SurfaceSetCursorPos(int x, int y)
 	SetCursorPos( x, y );
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: global alpha setting functions
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::DrawSetAlphaMultiplier( float alpha /* [0..1] */ )
+{
+	m_flAlphaMultiplier = clamp(alpha, 0.0f, 1.0f);
+}
 
+//-----------------------------------------------------------------------------
+// Purpose: data accessor
+//-----------------------------------------------------------------------------
+float CMatSystemSurface::DrawGetAlphaMultiplier()
+{
+	return m_flAlphaMultiplier;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *curOrAniFile - 
+// Output : vgui::HCursor
+//-----------------------------------------------------------------------------
+vgui::HCursor CMatSystemSurface::CreateCursorFromFile( char const *curOrAniFile, char const *pPathID )
+{
+	return Cursor_CreateCursorFromFile( curOrAniFile, pPathID );
+}
+
+void CMatSystemSurface::SetPanelForInput( VPANEL vpanel )
+{
+	g_pIInput->AssociatePanelWithInputContext( DEFAULT_INPUT_CONTEXT, vpanel );
+	if ( vpanel )
+	{
+		m_bNeedsKeyboard = true;
+	}
+	else
+	{
+		m_bNeedsKeyboard = false;
+	}
+}
+
+#if defined( WIN32 ) && !defined( _X360 )
+static bool GetIconSize( ICONINFO& iconInfo, int& w, int& h )
+{
+	w = h = 0;
+
+	HBITMAP bitmap = iconInfo.hbmColor;
+	BITMAP bm;
+	if ( 0 == GetObject((HGDIOBJ)bitmap, sizeof(BITMAP), (LPVOID)&bm) ) 
+	{
+        return false; 
+	}
+
+	w = bm.bmWidth;
+	h = bm.bmHeight;
+
+	return true;
+}
+
+// If rgba is NULL, bufsize gets filled in w/ # of bytes required
+static bool GetIconBits( HDC hdc, ICONINFO& iconInfo, int& w, int& h, unsigned char *rgba, size_t& bufsize )
+{
+	if ( !iconInfo.hbmColor || !iconInfo.hbmMask )
+		return false;
+
+	if ( !rgba )
+	{
+		if ( !GetIconSize( iconInfo, w, h ) )
+			return false;
+		
+		bufsize = (size_t)( ( w * h ) << 2 );
+		return true;
+	}
+
+	bool bret = false;
+
+	Assert( w > 0 );
+	Assert( h > 0 );
+	Assert( bufsize == (size_t)( ( w * h ) << 2 ) );
+
+	DWORD *maskData = new DWORD[ w * h ];
+	DWORD *colorData =  new DWORD[ w * h ];
+	DWORD *output = (DWORD *)rgba;
+
+	BITMAPINFO bmInfo;
+
+	memset( &bmInfo, 0, sizeof( bmInfo ) );
+	bmInfo.bmiHeader.biSize = sizeof( bmInfo.bmiHeader );
+	bmInfo.bmiHeader.biWidth = w; 
+    bmInfo.bmiHeader.biHeight = h; 
+    bmInfo.bmiHeader.biPlanes = 1; 
+    bmInfo.bmiHeader.biBitCount = 32; 
+    bmInfo.bmiHeader.biCompression = BI_RGB; 
+
+	// Get the info about the bits
+	if ( GetDIBits( hdc, iconInfo.hbmMask, 0, h, maskData, &bmInfo, DIB_RGB_COLORS ) == h &&
+         GetDIBits( hdc, iconInfo.hbmColor, 0, h, colorData, &bmInfo, DIB_RGB_COLORS ) == h )
+	{
+		bret = true;
+
+		for ( int row = 0; row < h; ++row )
+		{
+			// Invert
+			int r = ( h - row - 1 );
+			int rowstart = r * w;
+
+			DWORD *color = &colorData[ rowstart ];
+			DWORD *mask = &maskData[ rowstart ];
+			DWORD *outdata = &output[ row * w ];
+
+			for ( int col = 0; col < w; ++col )
+			{
+				unsigned char *cr = ( unsigned char * )&color[ col ];
+
+				// Set alpha
+				cr[ 3 ] =  mask[ col ] == 0 ? 0xff : 0x00;
+				
+				// Swap blue and red
+				unsigned char t = cr[ 2 ];
+				cr[ 2 ] = cr[ 0 ];
+				cr[ 0 ] = t;
+
+				*( unsigned int *)&outdata[ col ] = *( unsigned int * )cr;
+			}
+		}
+	}
+
+	delete[] colorData;
+	delete[] maskData;
+
+	return bret;
+}
+
+static bool ShouldMakeUnique( char const *extension )
+{
+	if ( !Q_stricmp( extension, "cur" ) )
+		return true;
+	if ( !Q_stricmp( extension, "ani" ) )
+		return true;
+	return false;
+}
+#endif // !_X360
+
+vgui::IImage *CMatSystemSurface::GetIconImageForFullPath( char const *pFullPath )
+{
+	vgui::IImage *newIcon = NULL;
+
+#if defined( WIN32 ) && !defined( _X360 )
+	SHFILEINFO info = { 0 };
+	DWORD_PTR dwResult = SHGetFileInfo( 
+		pFullPath,
+		0,
+		&info,
+		sizeof( info ),
+		SHGFI_TYPENAME | SHGFI_ICON | SHGFI_SMALLICON | SHGFI_SHELLICONSIZE 
+	);
+	if ( dwResult )
+	{
+		if ( info.szTypeName[ 0 ] != 0 )
+		{
+			char ext[ 32 ];
+			Q_ExtractFileExtension( pFullPath, ext, sizeof( ext ) );
+
+			char lookup[ 512 ];
+			Q_snprintf( lookup, sizeof( lookup ), "%s", ShouldMakeUnique( ext ) ? pFullPath : info.szTypeName );
+			
+			// Now check the dictionary
+			unsigned short idx = m_FileTypeImages.Find( lookup );
+			if ( idx == m_FileTypeImages.InvalidIndex() )
+			{
+				ICONINFO iconInfo;
+				if ( 0 != GetIconInfo( info.hIcon, &iconInfo ) )
+				{
+					int w, h;
+					size_t bufsize = 0;
+					
+					HDC hdc = ::GetDC(reinterpret_cast<HWND>(m_HWnd));
+
+					if ( GetIconBits( hdc, iconInfo, w, h, NULL, bufsize ) )
+					{
+						byte *bits = new byte[ bufsize ];
+						if ( bits && GetIconBits( hdc, iconInfo, w, h, bits, bufsize ) )
+						{
+							newIcon = new MemoryBitmap( bits, w, h );
+						}
+						delete[] bits;
+					}
+
+					::ReleaseDC( reinterpret_cast<HWND>(m_HWnd), hdc );
+				}
+
+				idx = m_FileTypeImages.Insert( lookup, newIcon );
+			}
+
+			newIcon = m_FileTypeImages[ idx ];
+		}
+
+		DestroyIcon( info.hIcon );
+	}
+#endif
+	return newIcon;
+}
+
+const char *CMatSystemSurface::GetResolutionKey( void ) const
+{
+	Assert( !IsPC() );
+	int x, y, width, height;
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	pRenderContext->GetViewport( x, y, width, height );
+	if( height <= 480 )
+	{
+		return "_lodef";
+	}
+	else
+	{
+		return "_hidef";
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::Set3DPaintTempRenderTarget( const char *pRenderTargetName )
+{
+	MAT_FUNC;
+
+	Assert( !m_bUsingTempFullScreenBufferMaterial );
+	m_bUsingTempFullScreenBufferMaterial = true;
+
+	InitFullScreenBuffer( pRenderTargetName );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::Reset3DPaintTempRenderTarget( void )
+{
+	MAT_FUNC;
+
+	Assert( m_bUsingTempFullScreenBufferMaterial );
+	m_bUsingTempFullScreenBufferMaterial = false;
+
+	InitFullScreenBuffer( "_rt_FullScreen" );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets the origin of the viewport to render into if we were 
+//			rendering into the frame buffer. This version of the function is 
+//			mostly here for backward compatibility and always uses a NULL
+//			render target (i.e. the frame buffer.)
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::SetFullscreenViewport( int x, int y, int w, int h )
+{
+	SetFullscreenViewportAndRenderTarget( x, y, w, h, NULL );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Sets the origin of the viewport to render into if we were 
+//			rendering into the frame buffer. We might actually be generally
+//			using a render target but need to switch back to the frame buffer
+//			for some panels.
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::SetFullscreenViewportAndRenderTarget( int x, int y, int w, int h, ITexture *pRenderTarget ) 
+{ 
+	m_nFullscreenViewportX = x; 
+	m_nFullscreenViewportY = y; 
+	m_nFullscreenViewportWidth = w; 
+	m_nFullscreenViewportHeight = h; 
+	m_pFullscreenRenderTarget = pRenderTarget;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Gets the origin of the viewport to render into if we were 
+//			rendering into the frame buffer. We might actually be generally
+//			using a render target but need to switch back to the frame buffer
+//			for some panels.
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::GetFullscreenViewportAndRenderTarget( int & x, int & y, int & w, int & h, ITexture **ppRenderTarget ) 
+{ 
+	if( m_nFullscreenViewportHeight == 0 )
+	{
+		// this can't actually be zero. If it is, use the height of the screen instead
+		x = y = 0;
+		GetScreenSize( w, h );
+		if( ppRenderTarget)
+			*ppRenderTarget = NULL;
+	}
+	else
+	{
+		x = m_nFullscreenViewportX; 
+		y = m_nFullscreenViewportY; 
+		w = m_nFullscreenViewportWidth; 
+		h = m_nFullscreenViewportHeight;  
+		if( ppRenderTarget)
+			*ppRenderTarget = m_pFullscreenRenderTarget;
+	}
+}
+void CMatSystemSurface::GetFullscreenViewport( int & x, int & y, int & w, int & h ) 
+{
+	GetFullscreenViewportAndRenderTarget( x, y, w, h, NULL );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Handle switching in and out of "render to fullscreen" mode. We don't
+//			actually support this mode in tools.
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::PushFullscreenViewport()
+{
+	CMatRenderContextPtr pRenderContext( materials );
+
+	// the viewport x/y will be wrong because the render target is only for one eye. 
+	// Ask the surface for that information instead.
+	int vx, vy, vw, vh;
+	ITexture *pRenderTarget;
+	GetFullscreenViewportAndRenderTarget( vx, vy, vw, vh, &pRenderTarget );
+	pRenderContext->PushRenderTargetAndViewport( pRenderTarget, NULL, vx, vy, vw, vh );
+
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+	pRenderContext->Scale( 1, -1, 1 );
+	
+	//___stop___();
+	pRenderContext->Ortho( g_flPixelOffsetX, g_flPixelOffsetY, vw + g_flPixelOffsetX, vh + g_flPixelOffsetY, -1.0f, 1.0f ); 
+
+	DisableClipping( true );
+}
+
+void CMatSystemSurface::PopFullscreenViewport()
+{
+	CMatRenderContextPtr pRenderContext( materials );
+
+	pRenderContext->PopRenderTargetAndViewport();
+
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
+
+	DisableClipping( false );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Handle switching in and out of "render to fullscreen" mode. We don't
+//			actually support this mode in tools.
+//-----------------------------------------------------------------------------
+void CMatSystemSurface::SetSoftwareCursor( bool bUseSoftwareCursor )
+{
+	EnableSoftwareCursor( bUseSoftwareCursor );
+}
+
+void CMatSystemSurface::PaintSoftwareCursor()
+{
+	if( !ShouldDrawSoftwareCursor() )
+		return;
+
+	// this asks Windows for the position RIGHT NOW, which should be the least 
+	// latent notion we have of where to draw the cursor
+	int x, y;
+	GetCursorPos( x, y );
+
+	Color clr( 255, 255, 255, 255 );
+
+	float uOffset, vOffset;
+	int nTextureID = GetSoftwareCursorTexture( &uOffset, &vOffset );
+	if( nTextureID <= 0 )
+		return;
+
+	int w, h;
+	DrawGetTextureSize( nTextureID, w, h );
+
+	// the cursors are actually pretty big. Make them smaller.
+	w /= 2;
+	h /= 2;
+
+	int xOffset = (int)(uOffset * (float)w);
+	int yOffset = (int)(vOffset * (float)h);
+
+	Assert( !g_bInDrawing );
+	StartDrawing();
+
+	PaintState_t paintState;
+	paintState.m_iTranslateX = paintState.m_iTranslateY = 0;
+	paintState.m_iScissorLeft = paintState.m_iScissorTop = 0;
+	GetScreenSize( paintState.m_iScissorRight, paintState.m_iScissorBottom );
+
+	SetupPaintState( paintState );
+
+	DrawSetColor( clr );
+	DrawSetTexture( nTextureID );
+	DrawTexturedRect( x + xOffset, y + yOffset, x + xOffset + w, y + yOffset + h );
+	DrawSetTexture(0);
+
+	FinishDrawing();
+}
+
+int CMatSystemSurface::GetTextureNumFrames( int id )
+{
+	IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial( id );
+	if ( !pMaterial )
+	{
+		return 0;
+	}
+	return pMaterial->GetNumAnimationFrames();
+}
+
+void CMatSystemSurface::DrawSetTextureFrame( int id, int nFrame, unsigned int *pFrameCache )
+{
+	IMaterial *pMaterial = TextureDictionary()->GetTextureMaterial( id );
+	if ( !pMaterial )
+	{
+		return;
+	}
+
+	int nTotalFrames = pMaterial->GetNumAnimationFrames();
+	if ( !nTotalFrames )
+	{
+		return;
+	}
+
+	IMaterialVar *pFrameVar = pMaterial->FindVarFast( "$frame", pFrameCache );
+	if ( pFrameVar )
+	{
+		pFrameVar->SetIntValue( nFrame % nTotalFrames );
+	}
+}

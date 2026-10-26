@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PROGRESSBOX_H
 #define PROGRESSBOX_H
@@ -33,6 +28,8 @@ namespace vgui
 //-----------------------------------------------------------------------------
 class ProgressBox : public Frame
 {
+	DECLARE_CLASS_SIMPLE( ProgressBox, Frame );
+
 public:
 	// title - Text to be displayed in the title bar of the window
 	// text - Text message in the message box
@@ -50,33 +47,50 @@ public:
 	// updates progress bar, range [0, 1]
 	virtual void SetProgress(float progress);
 
+	// sets the info text
+	virtual void SetText(const char *text);
+
 	// toggles visibility of the close box.
-	virtual void DisableCloseButton(bool state);
+	virtual void SetCancelButtonVisible(bool state);
+
+	// toggles the enabled state of the cancel button (for if it needs to be disabled part way through a process)
+	virtual void SetCancelButtonEnabled(bool state);
+
+	/* custom messages:
+
+		"ProgressBoxCancelled"
+			sent if the user pressed the cancel button (must be enabled & visible for this to happen)
+
+	*/
 
 protected:
 	virtual void PerformLayout();
 	virtual void OnClose();
+	virtual void OnCloseFrameButtonPressed();
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual void OnThink();
+	virtual void OnCommand(const char *command);
+	virtual void OnTick();
 
-protected:
-	Label *m_pMessageLabel;
-	ProgressBar *m_pProgressBar;
+	// called when the update has been cancelled
+	virtual void OnCancel();
 
 private:
-	virtual void OnShutdownRequest();
+	MESSAGE_FUNC( OnShutdownRequest, "ShutdownRequest" );
 	void Init();
+	void UpdateTitle();
 
+	Label *m_pMessageLabel;
+	ProgressBar *m_pProgressBar;
+	Button *m_pCancelButton;
+
+	wchar_t m_wszTitleString[128];
 	wchar_t m_wcsInfoString[128];
 	wchar_t m_wszUnknownTimeString[128];
 
 	float m_flFirstProgressUpdate;
 	float m_flLastProgressUpdate;
 	float m_flCurrentProgress;
-
-	DECLARE_PANELMAP();
-
-	typedef Frame BaseClass;
 };
 
 } // namespace vgui

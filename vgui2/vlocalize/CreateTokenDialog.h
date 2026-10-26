@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CREATETOKENDIALOG_H
 #define CREATETOKENDIALOG_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
+#include <VGUI_controls/Frame.h>
 
 namespace vgui
 {
@@ -19,13 +19,14 @@ class Button;
 class TextEntry;
 };
 
+class CLocalizationDialog;
 //-----------------------------------------------------------------------------
 // Purpose: Creates a new token
 //-----------------------------------------------------------------------------
 class CCreateTokenDialog : public vgui::Frame
 {
 public:
-	CCreateTokenDialog();
+	CCreateTokenDialog( CLocalizationDialog *pLocalizationDialog );
 	~CCreateTokenDialog();
 
 	// prompts user to create a single token
@@ -44,6 +45,7 @@ private:
 	vgui::Button *m_pSkipButton;
 	vgui::TextEntry *m_pTokenName;
 	vgui::TextEntry *m_pTokenValue;
+	CLocalizationDialog *m_pLocalizationDialog;
 
 	bool m_bMultiToken;
 

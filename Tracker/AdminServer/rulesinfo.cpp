@@ -1,5 +1,4 @@
-#include <assert.h>
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: defines a RCon class used to send rcon commands to remote servers
 //
@@ -89,7 +88,7 @@ void CRulesInfo::RunFrame()
 
 }
 
-void CRulesInfo::UpdateServer(netadr_t *adr, CUtlVector<KeyValues *> *Rules)
+void CRulesInfo::UpdateServer(netadr_t *adr, CUtlVector<vgui::KeyValues *> *Rules)
 {
 
 	m_Server.hadSuccessfulResponse = true;
@@ -127,7 +126,7 @@ bool CRulesInfo::Refreshed()
 	return val;
 }
 
-CUtlVector<KeyValues *> *CRulesInfo::Rules() 
+CUtlVector<vgui::KeyValues *> *CRulesInfo::Rules() 
 {
 	return m_vRules;
 }

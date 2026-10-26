@@ -7,7 +7,7 @@
 ;   The only exception is c[a0.x+blah] where you have no choice.
 $g_NumRegisters = 12;
 
-# NOTE: These must match the same values in vsh_prep.pl!
+; NOTE: These must match the same values in vsh_prep.pl!
 $vPos				= "v0";
 $vBoneWeights		= "v1";
 $vBoneIndices		= "v2";
@@ -28,6 +28,7 @@ if( $g_dx9 )
 	{
 		dcl_position $vPos;
 	}
+	
 	if( $g_usesBoneWeights )
 	{
 		dcl_blendweight $vBoneWeights;
@@ -78,6 +79,12 @@ if( $g_dx9 )
 	}
 }
 
+# NOTE: These should match g_LightCombinations in vertexshaderdx8.cpp!
+# NOTE: Leave this on single lines or shit might blow up.
+@g_staticLightTypeArray = ( "none", "static", "none", "none", "none", "none", "none", "none", "none", "none", "none", "none", "static", "static", "static", "static", "static", "static", "static", "static", "static", "static" );
+@g_ambientLightTypeArray = ( "none", "none", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", 	"ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient", "ambient" );
+@g_localLightType1Array = ( "none", "none", "none", "spot", "point", "directional", "spot", "spot", "spot", "point", "point", "directional", "none", "spot", "point", "directional", "spot", "spot", "spot", "point", "point", "directional" );
+@g_localLightType2Array = ( "none", "none", "none", "none", "none", "none", "spot", "point", "directional", "point", "directional", "directional", "none", "none", "none", "none", "spot", "point", "directional", "point", "directional", "directional" );
 
 $cConstants0		= "c0";
 $cZero				= "c0.x";
@@ -85,11 +92,11 @@ $cOne				= "c0.y";
 $cTwo				= "c0.z";
 $cHalf				= "c0.w";
 
-$cConstants1		= "c1";
-$cOOGamma			= "c1.x";
-#$cThree				= "c1.y";  # NOTE NOTE NOTE: This is overbright now!!!!  Don't use $cThree!!!
-$cOneThird			= "c1.z";
-$cOverbrightFactor	= "c1.w";
+$cConstants1		    = "c1";
+$cOOGamma			    = "c1.x"; # 1/2.2
+$cOtherOverbrightFactor = "c1.y"; # overbright
+$cOneThird			    = "c1.z"; # 1/3
+$cOverbrightFactor      = "c1.w"; # 1/overbright
 
 $cEyePos			= "c2";
 $cWaterZ			= "c2.w";
@@ -98,10 +105,10 @@ $cEyePosWaterZ		= "c2";
 $cLightIndex		= "c3";
 $cLight0Offset		= "c3.x"; # 27
 $cLight1Offset		= "c3.y"; # 32
-$cColorToIntScale	= "c3.z"; # 3.0f * 255.0f ~= 765.01
-$cModel0Index		= "c3.w"; # 42
+$cColorToIntScale	= "c3.z"; # matrix array offset = 3.0f * 255.0f + 0.01 (epsilon ensures floor yields desired result)
+$cModel0Index		= "c3.w"; # base for start of skinning matrices
 
-# NOTE: These must match the same values in vsh_prep.pl!
+; NOTE: These must match the same values in vsh_prep.pl!
 $cModelViewProj0	= "c4";
 $cModelViewProj1	= "c5";
 $cModelViewProj2	= "c6";
@@ -112,16 +119,16 @@ $cViewProj1			= "c9";
 $cViewProj2			= "c10";
 $cViewProj3			= "c11";
 
-# NOTE: These must match the same values in vsh_prep.pl!
-$cModelView0		= "c12";
-$cModelView1		= "c13";
-$cModelView2		= "c14";
-$cModelView3		= "c15";
+; currently unused
+; c12, c13
+
+$SHADER_SPECIFIC_CONST_10 = "c14";
+$SHADER_SPECIFIC_CONST_11 = "c15";
 
 $cFogParams			= "c16";
 $cFogEndOverFogRange = "c16.x";
 $cFogOne			= "c16.y";
-$cHeightClipZ		= "c16.z";
+$cFogMaxDensity		= "c16.z";
 $cOOFogRange		= "c16.w"; # (1/(fogEnd-fogStart))
 
 $cViewModel0		= "c17";
@@ -136,9 +143,9 @@ $cAmbientColorNegY	= "c24";
 $cAmbientColorPosZ	= "c25";
 $cAmbientColorNegZ	= "c26";
 
-$cAmbientColorPosXOffset	= "21";
-$cAmbientColorPosYOffset	= "23";
-$cAmbientColorPosZOffset	= "25";
+$cAmbientColorPosXOffset = "21";
+$cAmbientColorPosYOffset = "23";
+$cAmbientColorPosZOffset = "25";
 
 $cLight0DiffColor	= "c27";
 $cLight0Dir			= "c28";
@@ -152,21 +159,26 @@ $cLight1Pos			= "c34";
 $cLight1SpotParams  = "c35"; # [ exponent, stopdot, stopdot2, 1 / (stopdot - stopdot2)
 $cLight1Atten		= "c36"; # [ constant, linear, quadratic, 0.0f ]
 
-# c37-c41 unused! (would be used for a third light if we had one)
-$cClipDirection		= "c37.x";
-$cClipDirectionTimesHeightClipZ	= "c37.y";
-$cModulationColor	= "c38";
-$cThree				= "c39.x";
+$cModulationColor	= "c37";
 
-# There are 16 model matrices for skinning
-# NOTE: These must match the same values in vsh_prep.pl!
-$cModel0			= "c42";
-$cModel1			= "c43";
-$cModel2			= "c44";
+$SHADER_SPECIFIC_CONST_0  = "c38";
+$SHADER_SPECIFIC_CONST_1  = "c39";
+$SHADER_SPECIFIC_CONST_2  = "c40";
+$SHADER_SPECIFIC_CONST_3  = "c41";
+$SHADER_SPECIFIC_CONST_4  = "c42";
+$SHADER_SPECIFIC_CONST_5  = "c43";
+$SHADER_SPECIFIC_CONST_6  = "c44";
+$SHADER_SPECIFIC_CONST_7  = "c45";
+$SHADER_SPECIFIC_CONST_8  = "c46";
+$SHADER_SPECIFIC_CONST_9  = "c47";
+; $SHADER_SPECIFIC_CONST_10 is c14
+; $SHADER_SPECIFIC_CONST_11 is c15
 
-# the last cmodel is c89
-
-# c90-c95 are reserved for shader specific constants
+; There are 16 model matrices for skinning
+; NOTE: These must match the same values in vsh_prep.pl!
+$cModel0			= "c48";
+$cModel1			= "c49";
+$cModel2			= "c50";
 
 sub OutputUsedRegisters
 {
@@ -204,7 +216,7 @@ sub AllocateRegister
 	&OutputUsedRegisters();
 }
 
-# pass in a reference to a var that contains a register. . ie \$var where var will constain "r1", etc
+; pass in a reference to a var that contains a register. . ie \$var where var will constain "r1", etc
 sub FreeRegister
 {
 	local( *reg ) = shift;
@@ -217,11 +229,11 @@ sub FreeRegister
 		&OutputUsedRegisters();
 		return;
 	}
-#	if( $regname ne g_allocatedname[$reg] )
-#	{
-#		; Error freeing $reg
-#		mov compileerror, freed unallocated register $regname
-#	}
+;	if( $regname ne g_allocatedname[$reg] )
+;	{
+;		; Error freeing $reg
+;		mov compileerror, freed unallocated register $regname
+;	}
 
 	if( ( $reg =~ m/r(.*)/ ) )
 	{
@@ -264,8 +276,49 @@ sub Cross
 
 sub RangeFog
 {
-	; Can either be viewPos or projPos since z should be the same for both.
-	local( $viewPos ) = shift;
+	local( $projPos ) = shift;
+	
+	;------------------------------
+	; Regular range fog
+	;------------------------------
+
+	; oFog.x = 1.0f = no fog
+	; oFog.x = 0.0f = full fog
+	; compute fog factor f = (fog_end - dist)*(1/(fog_end-fog_start))
+	; this is == to: (fog_end/(fog_end-fog_start) - dist/(fog_end-fog_start)
+	; which can be expressed with a single mad instruction!
+
+	; Compute |projPos|
+	local( $tmp );
+	&AllocateRegister( \$tmp );
+	dp3 $tmp.x, $projPos.xyw, $projPos.xyw
+	rsq $tmp.x, $tmp.x
+	rcp $tmp.x, $tmp.x
+
+	if( $g_dx9 )
+	{
+		mad $tmp, -$tmp.x, $cOOFogRange, $cFogEndOverFogRange
+		min $tmp, $tmp, $cOne
+		max oFog, $tmp.x, $cFogMaxDensity
+	}
+	else
+	{
+		mad $tmp, -$tmp.x, $cOOFogRange, $cFogEndOverFogRange
+		min $tmp, $tmp, $cOne
+		max oFog.x, $tmp.x, $cFogMaxDensity
+	}
+	&FreeRegister( \$tmp );
+}
+
+sub DepthFog
+{
+	local( $projPos ) = shift;
+	local( $dest ) = shift;
+
+	if ( $dest eq "" )
+	{
+		$dest = "oFog";
+	}
 
 	;------------------------------
 	; Regular range fog
@@ -276,87 +329,184 @@ sub RangeFog
 	; compute fog factor f = (fog_end - dist)*(1/(fog_end-fog_start))
 	; this is == to: (fog_end/(fog_end-fog_start) - dist/(fog_end-fog_start)
 	; which can be expressed with a single mad instruction!
+
+	; Compute |projPos|
+	local( $tmp );
+	&AllocateRegister( \$tmp );
+
 	if( $g_dx9 )
 	{
-		mad oFog, -$viewPos.z, $cOOFogRange, $cFogEndOverFogRange
+		mad $tmp, -$projPos.w, $cOOFogRange, $cFogEndOverFogRange
+		min $tmp, $tmp, $cOne
+		max $dest, $tmp.x, $cFogMaxDensity
 	}
 	else
 	{
-		mad oFog.x, -$viewPos.z, $cOOFogRange, $cFogEndOverFogRange
+		mad $tmp, -$projPos.w, $cOOFogRange, $cFogEndOverFogRange
+		min $tmp, $tmp, $cOne
+		max $dest.x, $tmp.x, $cFogMaxDensity
 	}
+
+	&FreeRegister( \$tmp );
 }
 
-sub WaterFog
+sub WaterRangeFog
 {
 	; oFog.x = 1.0f = no fog
 	; oFog.x = 0.0f = full fog
-;	mov oFog.x, $cOne
-;	return;
+
 	; only $worldPos.z is used out of worldPos
 	local( $worldPos ) = shift;
-	local( $viewPos ) = shift;
+	local( $projPos ) = shift;
 	
-	; $viewPos.z is the distance from the eye to the vertex
 	local( $tmp );
 	&AllocateRegister( \$tmp );
-	; Calculate the ratio of the line of sight integral through the water to the total line
-	; integral
-	; These could both be done in a single add if cWaterZ and cEyePos.z were in the same constant
-;	add $tmp.x, $cWaterZ, -$worldPos.z
-;	add $tmp.y, $cEyePos.z, -$worldPos.z
-	add $tmp.xy, $cEyePosWaterZ.wz, -$worldPos.z
 
-	; $tmp.x is the distance from the water surface to the vert
-	; $tmp.y is the distance from the eye position to the vert
+	; This is simple similar triangles. Imagine a line passing from the point directly vertically
+	; and another line passing from the point to the eye position.
+	; Let d = total distance from point to the eye
+	; Let h = vertical distance from the point to the eye
+	; Let hw = vertical distance from the point to the water surface
+	; Let dw = distance from the point to a point on the water surface that lies along the ray from point to eye
+	; Therefore d/h = dw/hw by similar triangles, or dw = d * hw / h.
+	; d = |projPos|, h = eyepos.z - worldPos.z, hw = waterheight.z - worldPos.z, dw = what we solve for
+
+	; Now, tmp.x = hw, and tmp.y = h
+	add $tmp.xy, $cEyePosWaterZ.wz, -$worldPos.z
 
 	; if $tmp.x < 0, then set it to 0
 	; This is the equivalent of moving the vert to the water surface if it's above the water surface
 	max $tmp.x, $tmp.x, $cZero
 
-	; $tmp.w = $tmp.x / $tmp.y
-	rcp $tmp.z, $tmp.y
-	mul $tmp.w, $tmp.x, $tmp.z
+	; Compute 1 / |projPos| = 1/d
+	dp3 $tmp.z, $projPos.xyw, $projPos.xyw
+	rsq $tmp.z, $tmp.z
 
-	; If the eye is under water, then always use the whole fog amount
-	; Duh, if the eye is under water, use regular fog!
-;	sge $tmp.z, $tmp.y, $cZero
-	; $tmp.z = 0 if the eye is underwater, otherwise $tmp.z = 1
-;	mul $tmp.w, $tmp.w, $tmp.z
-;	add $tmp.z, $cOne, -$tmp.z
-;	add $tmp.w, $tmp.w, $tmp.z
+	; Now we have h/d
+	mul $tmp.z, $tmp.z, $tmp.y
 
-	mul $tmp.w, $tmp.w, $viewPos.z
+	; Now we have d/h
+	rcp $tmp.w, $tmp.z
+	
+	; We finally have d * hw / h
 	; $tmp.w is now the distance that we see through water.
+	mul $tmp.w, $tmp.x, $tmp.w
 
 	if( $g_dx9 )
 	{
-		mad oFog, -$tmp.w, $cOOFogRange, $cFogOne
+		mad $tmp, -$tmp.w, $cOOFogRange, $cFogOne
+		min $tmp, $tmp, $cOne
+		max oFog, $tmp.x, $cFogMaxDensity
 	}
 	else
 	{
-		mad oFog.x, -$tmp.w, $cOOFogRange, $cFogOne
+		mad $tmp, -$tmp.w, $cOOFogRange, $cFogOne
+		min $tmp, $tmp, $cOne
+		max oFog.x, $tmp.x, $cFogMaxDensity
+	}
+
+	&FreeRegister( \$tmp );
+}
+
+sub WaterDepthFog
+{
+	; oFog.x = 1.0f = no fog
+	; oFog.x = 0.0f = full fog
+
+	; only $worldPos.z is used out of worldPos
+	local( $worldPos ) = shift;
+	local( $projPos ) = shift;
+	local( $dest ) = shift;
+	
+	if ( $dest eq "" )
+	{
+		$dest = "oFog";
+	}
+	
+	local( $tmp );
+	&AllocateRegister( \$tmp );
+
+	; This is simple similar triangles. Imagine a line passing from the point directly vertically
+	; and another line passing from the point to the eye position.
+	; Let d = total distance from point to the eye
+	; Let h = vertical distance from the point to the eye
+	; Let hw = vertical distance from the point to the water surface
+	; Let dw = distance from the point to a point on the water surface that lies along the ray from point to eye
+	; Therefore d/h = dw/hw by similar triangles, or dw = d * hw / h.
+	; d = projPos.w, h = eyepos.z - worldPos.z, hw = waterheight.z - worldPos.z, dw = what we solve for
+
+	; Now, tmp.x = hw, and tmp.y = h
+	add $tmp.xy, $cEyePosWaterZ.wz, -$worldPos.z
+
+	; if $tmp.x < 0, then set it to 0
+	; This is the equivalent of moving the vert to the water surface if it's above the water surface
+	max $tmp.x, $tmp.x, $cZero
+
+	; Now we have 1/h
+	rcp $tmp.z, $tmp.y
+
+	; Now we have d/h
+	mul $tmp.w, $projPos.w, $tmp.z
+
+	; We finally have d * hw / h
+	; $tmp.w is now the distance that we see through water.
+	mul $tmp.w, $tmp.x, $tmp.w
+
+	if( $g_dx9 )
+	{
+		mad $tmp, -$tmp.w, $cOOFogRange, $cFogOne
+		min $tmp, $tmp, $cOne
+		max $dest, $tmp.x, $cZero
+	}
+	else
+	{
+		mad $tmp, -$tmp.w, $cOOFogRange, $cFogOne
+		min $tmp, $tmp, $cOne
+		max $dest.x, $tmp.x, $cZero
 	}
 
 	&FreeRegister( \$tmp );
 }
 
 
-#------------------------------------------------------------------------------
-# Main fogging routine
-#------------------------------------------------------------------------------
+;------------------------------------------------------------------------------
+; Main fogging routine
+;------------------------------------------------------------------------------
 sub CalcFog
 {
+	if( !defined $DOWATERFOG )
+	{
+		die "CalcFog called without using \$DOWATERFOG\n";
+	}
+	my $fogType;
+	if( $DOWATERFOG == 0 )
+	{
+		$fogType = "rangefog";		
+	}
+	else
+	{
+		$fogType = "heightfog";
+	}
+
+#	print "\$fogType = $fogType\n";
+
 	; CalcFog
 	local( $worldPos ) = shift;
 	local( $projPos ) = shift;
+	local( $dest ) = shift;
 
-	if( $g_fogType eq "rangefog" )
+	if ( $dest eq "" )
 	{
-		&RangeFog( $projPos );
+		$dest = "oFog";
 	}
-	elsif( $g_fogType eq "heightfog" )
+
+	if( $fogType eq "rangefog" )
 	{
-		&WaterFog( $worldPos, $projPos );
+		&DepthFog( $projPos, $dest );
+	}
+	elsif( $fogType eq "heightfog" )
+	{
+		&WaterDepthFog( $worldPos, $projPos, $dest );
 	}
 	else
 	{
@@ -364,35 +514,24 @@ sub CalcFog
 	}	
 }
 
-
-sub DoHeightClip
+sub CalcRangeFog
 {
-	; DoHeightClip
-;	$texReg = $cClipDirection * ( $cHeightClipZ - $worldPos.z )
-;	$texReg = $cClipDirection * $cHeightClipZ - $cClipDirection * $worldPos.z
-;	$const = $cClipDirection * $cHeightClipZ;
-;	$texReg = $const - $cClipDirection * $worldPos.z
-;	$texReg = ( - $cClipDirection * $worldPos.z ) + $const
-
+	; CalcFog
 	local( $worldPos ) = shift;
-	local( $texReg ) = shift;
-	local( $tmp );
+	local( $projPos ) = shift;
 
-	# Do a user clip plan using texkill in the case that we don't have
-	# a detail texture.
-	# optimize!  Can probably do an arbitrary plane in one or two instructions.
-	if( 0 )
+	if( $DOWATERFOG == 0 )
 	{
-		&AllocateRegister( \$tmp );
-		add $tmp, -$worldPos.z, $cHeightClipZ
-		# This determines which side we are clipping on.
-		mul $texReg, $tmp, $cClipDirection
-		&FreeRegister( \$tmp );
+		&RangeFog( $projPos );
+	}
+	elsif( $DOWATERFOG == 1 )
+	{
+		&WaterRangeFog( $worldPos, $projPos );
 	}
 	else
 	{
-		mad $texReg, -$cClipDirection, $worldPos.z, $cClipDirectionTimesHeightClipZ	
-	}
+		die;
+	}	
 }
 
 sub GammaToLinear
@@ -479,9 +618,15 @@ sub ComputeSphereMapTexCoords
 
 sub SkinPosition
 {
-	local( $numBones ) = shift;
+#	print "\$SKINNING = $SKINNING\n";
 	local( $worldPos ) = shift;
-	if( $numBones == 0 )
+	
+	if( !defined $SKINNING )
+	{
+		die "using \$SKINNING without defining.\n";
+	}
+		
+	if( $SKINNING == 0 )
 	{
 		;
 		; 0 bone skinning (4 instructions)
@@ -493,71 +638,7 @@ sub SkinPosition
 		dp4 $worldPos.z, $vPos, $cModel2
 		mov $worldPos.w, $cOne
 	} 
-	elsif( $numBones == 1 )
-	{
-		;
-		; 1 bone skinning (6 instructions)
-		;
-
-		local( $boneIndices );
-		&AllocateRegister( \$boneIndices );
-
-		; Perform 1 bone skinning
-		; Transform position into world space
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		mov a0.x, $boneIndices.z
-
-		; position
-		dp4 $worldPos.x, $vPos, c[a0.x]
-		dp4 $worldPos.y, $vPos, c[a0.x + 1]
-		dp4 $worldPos.z, $vPos, c[a0.x + 2]
-		mov $worldPos.w, $cOne
-
-		&FreeRegister( \$boneIndices );
-	}
-	elsif( $numBones == 2 )
-	{
-		;
-		; 2 bone skinning (13 instructions)
-		;
-
-		local( $boneIndices );
-		local( $blendedMatrix0 );
-		local( $blendedMatrix1 );
-		local( $blendedMatrix2 );
-		&AllocateRegister( \$boneIndices );
-		&AllocateRegister( \$blendedMatrix0 );
-		&AllocateRegister( \$blendedMatrix1 );
-		&AllocateRegister( \$blendedMatrix2 );
-
-		; Transform position into world space using all bones
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		; r11 = boneindices at this point
-		; first matrix
-		mov a0.x, $boneIndices.z
-		mul $blendedMatrix0, $vBoneWeights.x, c[a0.x]
-		mul $blendedMatrix1, $vBoneWeights.x, c[a0.x+1]
-		mul $blendedMatrix2, $vBoneWeights.x, c[a0.x+2]
-		; second matrix
-		mov a0.x, $boneIndices.y
-		mad $blendedMatrix0, $vBoneWeights.y, c[a0.x], $blendedMatrix0
-		mad $blendedMatrix1, $vBoneWeights.y, c[a0.x+1], $blendedMatrix1
-		mad $blendedMatrix2, $vBoneWeights.y, c[a0.x+2], $blendedMatrix2
-
-		; position
-		dp4 $worldPos.x, $vPos, $blendedMatrix0
-		dp4 $worldPos.y, $vPos, $blendedMatrix1
-		dp4 $worldPos.z, $vPos, $blendedMatrix2
-		mov $worldPos.w, $cOne
-
-		&FreeRegister( \$boneIndices );
-		&FreeRegister( \$blendedMatrix0 );
-		&FreeRegister( \$blendedMatrix1 );
-		&FreeRegister( \$blendedMatrix2 );
-	}
-	elsif( $numBones == 3 )
+	else
 	{
 		;
 		; 3 bone skinning  (19 instructions)
@@ -566,6 +647,7 @@ sub SkinPosition
 		local( $blendedMatrix0 );
 		local( $blendedMatrix1 );
 		local( $blendedMatrix2 );
+		local( $localPos );
 		&AllocateRegister( \$boneIndices );
 		&AllocateRegister( \$blendedMatrix0 );
 		&AllocateRegister( \$blendedMatrix1 );
@@ -574,6 +656,11 @@ sub SkinPosition
 		; Transform position into world space using all bones
 		; denormalize d3dcolor to matrix index
 		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
+		if ( $g_x360 )
+		{
+			mov $boneIndices, $boneIndices.zyxw
+		}
+		
 		; r11 = boneindices at this point
 		; first matrix
 		mov a0.x, $boneIndices.z
@@ -598,7 +685,6 @@ sub SkinPosition
 		mad $blendedMatrix1, $boneIndices.w, c[a0.x+1], $blendedMatrix1
 		mad $blendedMatrix2, $boneIndices.w, c[a0.x+2], $blendedMatrix2
 		
-		; position
 		dp4 $worldPos.x, $vPos, $blendedMatrix0
 		dp4 $worldPos.y, $vPos, $blendedMatrix1
 		dp4 $worldPos.z, $vPos, $blendedMatrix2
@@ -611,13 +697,19 @@ sub SkinPosition
 	}
 }
 
+
 sub SkinPositionAndNormal
 {
-	local( $numBones ) = shift;
+#	print "\$SKINNING = $SKINNING\n";
 	local( $worldPos ) = shift;
 	local( $worldNormal ) = shift;
 
-	if( $numBones == 0 )
+	if( !defined $SKINNING )
+	{
+		die "using \$SKINNING without defining.\n";
+	}
+
+	if( $SKINNING == 0 )
 	{
 		;
 		; 0 bone skinning (13 instructions)
@@ -633,44 +725,16 @@ sub SkinPositionAndNormal
 		dp3 $worldNormal.y, $vNormal, $cModel1
 		dp3 $worldNormal.z, $vNormal, $cModel2
 	}
-	elsif( $numBones == 1 )
+	else
 	{
-		;
-		; 1 bone skinning (17 instructions)
-		;
-
-		local( $boneIndices );
-		&AllocateRegister( \$boneIndices );
-
-		; Perform 1 bone skinning
-		; Transform position into world space
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		mov a0.x, $boneIndices.z
-
-		; position
-		dp4 $worldPos.x, $vPos, c[a0.x]
-		dp4 $worldPos.y, $vPos, c[a0.x + 1]
-		dp4 $worldPos.z, $vPos, c[a0.x + 2]
-		mov $worldPos.w, $cOne
-
-		; normal
-		dp3 $worldNormal.x, $vNormal, c[a0.x]
-		dp3 $worldNormal.y, $vNormal, c[a0.x + 1]
-		dp3 $worldNormal.z, $vNormal, c[a0.x + 2]
-
-		&FreeRegister( \$boneIndices );
-	}
-	elsif( $numBones == 2 )
-	{
-		;
-		; 2 bone skinning (16 instructions)
-		;
-
 		local( $boneIndices );
 		local( $blendedMatrix0 );
 		local( $blendedMatrix1 );
 		local( $blendedMatrix2 );
+		local( $localPos );
+		local( $localNormal );
+		local( $normalLength );
+		local( $ooNormalLength );
 		&AllocateRegister( \$boneIndices );
 		&AllocateRegister( \$blendedMatrix0 );
 		&AllocateRegister( \$blendedMatrix1 );
@@ -679,48 +743,11 @@ sub SkinPositionAndNormal
 		; Transform position into world space using all bones
 		; denormalize d3dcolor to matrix index
 		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		; r11 = boneindices at this point
-		; first matrix
-		mov a0.x, $boneIndices.z
-		mul $blendedMatrix0, $vBoneWeights.x, c[a0.x]
-		mul $blendedMatrix1, $vBoneWeights.x, c[a0.x+1]
-		mul $blendedMatrix2, $vBoneWeights.x, c[a0.x+2]
-		; second matrix
-		mov a0.x, $boneIndices.y
-		mad $blendedMatrix0, $vBoneWeights.y, c[a0.x], $blendedMatrix0
-		mad $blendedMatrix1, $vBoneWeights.y, c[a0.x+1], $blendedMatrix1
-		mad $blendedMatrix2, $vBoneWeights.y, c[a0.x+2], $blendedMatrix2
+		if ( $g_x360 )
+		{
+			mov $boneIndices, $boneIndices.zyxw
+		}
 
-		; position
-		dp4 $worldPos.x, $vPos, $blendedMatrix0
-		dp4 $worldPos.y, $vPos, $blendedMatrix1
-		dp4 $worldPos.z, $vPos, $blendedMatrix2
-		mov $worldPos.w, $cOne
-
-		; normal
-		dp3 $worldNormal.x, $vNormal, $blendedMatrix0
-		dp3 $worldNormal.y, $vNormal, $blendedMatrix1
-		dp3 $worldNormal.z, $vNormal, $blendedMatrix2
-
-		&FreeRegister( \$boneIndices );
-		&FreeRegister( \$blendedMatrix0 );
-		&FreeRegister( \$blendedMatrix1 );
-		&FreeRegister( \$blendedMatrix2 );
-	}
-	elsif( $numBones == 3 )
-	{
-		local( $boneIndices );
-		local( $blendedMatrix0 );
-		local( $blendedMatrix1 );
-		local( $blendedMatrix2 );
-		&AllocateRegister( \$boneIndices );
-		&AllocateRegister( \$blendedMatrix0 );
-		&AllocateRegister( \$blendedMatrix1 );
-		&AllocateRegister( \$blendedMatrix2 );
-
-		; Transform position into world space using all bones
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
 		; r11 = boneindices at this point
 		; first matrix
 		mov a0.x, $boneIndices.z
@@ -745,7 +772,6 @@ sub SkinPositionAndNormal
 		mad $blendedMatrix1, $boneIndices.w, c[a0.x+1], $blendedMatrix1
 		mad $blendedMatrix2, $boneIndices.w, c[a0.x+2], $blendedMatrix2
 		
-		; position
 		dp4 $worldPos.x, $vPos, $blendedMatrix0
 		dp4 $worldPos.y, $vPos, $blendedMatrix1
 		dp4 $worldPos.z, $vPos, $blendedMatrix2
@@ -765,19 +791,36 @@ sub SkinPositionAndNormal
 
 sub SkinPositionNormalAndTangentSpace
 {
-	local( $numBones ) = shift;
+#	print "\$SKINNING = $SKINNING\n";
 	local( $worldPos ) = shift;
 	local( $worldNormal ) = shift;
 	local( $worldTangentS ) = shift;
 	local( $worldTangentT ) = shift;
-	if( $numBones == 0 )
+	local( $userData );
+	local( $localPos );
+	local( $localNormal );
+	local( $normalLength );
+	local( $ooNormalLength );
+	
+	if( !defined $SKINNING )
+	{
+		die "using \$SKINNING without defining.\n";
+	}
+
+# X360TBD: needed for compressed vertex format
+#	if ( $g_x360 )
+#	{
+#		&AllocateRegister( \$userData );
+#		; remap compressed range [0..1] to [-1..1]
+#		mad $userData, $vUserData, $cTwo, -$cOne
+#	}
+
+	if( $SKINNING == 0 )
 	{
 		;
 		; 0 bone skinning (13 instructions)
 		;
 		; Transform position + normal + tangentS + tangentT into world space
-
-		; position
 		dp4 $worldPos.x, $vPos, $cModel0
 		dp4 $worldPos.y, $vPos, $cModel1
 		dp4 $worldPos.z, $vPos, $cModel2
@@ -788,108 +831,31 @@ sub SkinPositionNormalAndTangentSpace
 		dp3 $worldNormal.y, $vNormal, $cModel1
 		dp3 $worldNormal.z, $vNormal, $cModel2
 
-		; tangents
-		dp3 $worldTangentS.x, $vUserData, $cModel0
-		dp3 $worldTangentS.y, $vUserData, $cModel1
-		dp3 $worldTangentS.z, $vUserData, $cModel2
+# X360TBD: needed for compressed vertex format
+#		if ( $g_x360 )
+#		{
+#			; tangents
+#			dp3 $worldTangentS.x, $userData, $cModel0
+#			dp3 $worldTangentS.y, $userData, $cModel1
+#			dp3 $worldTangentS.z, $userData, $cModel2
+#
+#			; calculate tangent t via cross( N, S ) * S[3]
+#			&Cross( $worldTangentT, $worldNormal, $worldTangentS );
+#			mul $worldTangentT.xyz, $userData.w, $worldTangentT.xyz
+#		}
+#		else
+		{
+			; tangents
+			dp3 $worldTangentS.x, $vUserData, $cModel0
+			dp3 $worldTangentS.y, $vUserData, $cModel1
+			dp3 $worldTangentS.z, $vUserData, $cModel2
 
-		; calculate tangent t via cross( N, S ) * S[3]
-		&Cross( $worldTangentT, $worldNormal, $worldTangentS );
-		mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
+			; calculate tangent t via cross( N, S ) * S[3]
+			&Cross( $worldTangentT, $worldNormal, $worldTangentS );
+			mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
+		}
 	}
-	elsif( $numBones == 1 )
-	{
-		;
-		; 1 bone skinning (17 instructions)
-		;
-
-		local( $boneIndices );
-		&AllocateRegister( \$boneIndices );
-
-		; Perform 1 bone skinning
-		; Transform position into world space
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		mov a0.x, $boneIndices.z
-
-		; position
-		dp4 $worldPos.x, $vPos, c[a0.x]
-		dp4 $worldPos.y, $vPos, c[a0.x + 1]
-		dp4 $worldPos.z, $vPos, c[a0.x + 2]
-		mov $worldPos.w, $cOne
-
-		; normal
-		dp3 $worldNormal.x, $vNormal, c[a0.x]
-		dp3 $worldNormal.y, $vNormal, c[a0.x + 1]
-		dp3 $worldNormal.z, $vNormal, c[a0.x + 2]
-
-		; tangents
-		dp3 $worldTangentS.x, $vUserData, c[a0.x]
-		dp3 $worldTangentS.y, $vUserData, c[a0.x + 1]
-		dp3 $worldTangentS.z, $vUserData, c[a0.x + 2]
-
-		; calculate tangent t via cross( N, S ) * S[3]
-		&Cross( $worldTangentT, $worldNormal, $worldTangentS );
-		mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
-
-		&FreeRegister( \$boneIndices );
-	}
-	elsif( $numBones == 2 )
-	{
-		;
-		; 2 bone skinning (22 instructions)
-		;
-
-		local( $boneIndices );
-		local( $blendedMatrix0 );
-		local( $blendedMatrix1 );
-		local( $blendedMatrix2 );
-		&AllocateRegister( \$boneIndices );
-		&AllocateRegister( \$blendedMatrix0 );
-		&AllocateRegister( \$blendedMatrix1 );
-		&AllocateRegister( \$blendedMatrix2 );
-
-		; Transform position into world space using all bones
-		; denormalize d3dcolor to matrix index
-		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
-		; r11 = boneindices at this point
-		; first matrix
-		mov a0.x, $boneIndices.z
-		mul $blendedMatrix0, $vBoneWeights.x, c[a0.x]
-		mul $blendedMatrix1, $vBoneWeights.x, c[a0.x+1]
-		mul $blendedMatrix2, $vBoneWeights.x, c[a0.x+2]
-		; second matrix
-		mov a0.x, $boneIndices.y
-		mad $blendedMatrix0, $vBoneWeights.y, c[a0.x], $blendedMatrix0
-		mad $blendedMatrix1, $vBoneWeights.y, c[a0.x+1], $blendedMatrix1
-		mad $blendedMatrix2, $vBoneWeights.y, c[a0.x+2], $blendedMatrix2
-
-		; position
-		dp4 $worldPos.x, $vPos, $blendedMatrix0
-		dp4 $worldPos.y, $vPos, $blendedMatrix1
-		dp4 $worldPos.z, $vPos, $blendedMatrix2
-		mov $worldPos.w, $cOne
-
-		; normal
-		dp3 $worldNormal.x, $vNormal, $blendedMatrix0
-		dp3 $worldNormal.y, $vNormal, $blendedMatrix1
-		dp3 $worldNormal.z, $vNormal, $blendedMatrix2
-
-		; tangents
-		dp3 $worldTangentS.x, $vUserData, $blendedMatrix0
-		dp3 $worldTangentS.y, $vUserData, $blendedMatrix1
-		dp3 $worldTangentS.z, $vUserData, $blendedMatrix2
-
-		; calculate tangent t via cross( N, S ) * S[3]
-		&Cross( $worldTangentT, $worldNormal, $worldTangentS );
-		mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
-
-		&FreeRegister( \$boneIndices );
-		&FreeRegister( \$blendedMatrix0 );
-		&FreeRegister( \$blendedMatrix1 );
-		&FreeRegister( \$blendedMatrix2 );
-	}
-	elsif( $numBones == 3 )
+	else
 	{
 		local( $boneIndices );
 		local( $blendedMatrix0 );
@@ -903,6 +869,11 @@ sub SkinPositionNormalAndTangentSpace
 		; Transform position into world space using all bones
 		; denormalize d3dcolor to matrix index
 		mad $boneIndices, $vBoneIndices, $cColorToIntScale, $cModel0Index
+		if ( $g_x360 )
+		{
+			mov $boneIndices, $boneIndices.zyxw
+		}
+
 		; r11 = boneindices at this point
 		; first matrix
 		mov a0.x, $boneIndices.z
@@ -938,20 +909,41 @@ sub SkinPositionNormalAndTangentSpace
 		dp3 $worldNormal.y, $vNormal, $blendedMatrix1
 		dp3 $worldNormal.z, $vNormal, $blendedMatrix2
 
-		; tangents
-		dp3 $worldTangentS.x, $vUserData, $blendedMatrix0
-		dp3 $worldTangentS.y, $vUserData, $blendedMatrix1
-		dp3 $worldTangentS.z, $vUserData, $blendedMatrix2
+# X360TBD: needed for compressed vertex format
+#		if ( $g_x360 )
+#		{
+#			; tangents
+#			dp3 $worldTangentS.x, $userData, $blendedMatrix0
+#			dp3 $worldTangentS.y, $userData, $blendedMatrix1
+#			dp3 $worldTangentS.z, $userData, $blendedMatrix2
+#
+#			; calculate tangent t via cross( N, S ) * S[3]
+#			&Cross( $worldTangentT, $worldNormal, $worldTangentS );
+#			mul $worldTangentT.xyz, $userData.w, $worldTangentT.xyz
+#		}
+#		else
+		{
+			; tangents
+			dp3 $worldTangentS.x, $vUserData, $blendedMatrix0
+			dp3 $worldTangentS.y, $vUserData, $blendedMatrix1
+			dp3 $worldTangentS.z, $vUserData, $blendedMatrix2
 
-		; calculate tangent t via cross( N, S ) * S[3]
-		&Cross( $worldTangentT, $worldNormal, $worldTangentS );
-		mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
+			; calculate tangent t via cross( N, S ) * S[3]
+			&Cross( $worldTangentT, $worldNormal, $worldTangentS );
+			mul $worldTangentT.xyz, $vUserData.w, $worldTangentT.xyz
+		}
 
 		&FreeRegister( \$boneIndices );
 		&FreeRegister( \$blendedMatrix0 );
 		&FreeRegister( \$blendedMatrix1 );
 		&FreeRegister( \$blendedMatrix2 );
 	}
+
+# X360TBD: needed for compressed vertex format
+#	if ( $g_x360 )
+#	{
+#		&FreeRegister( \$userData );
+#	}
 }
 
 sub ColorClamp
@@ -1013,14 +1005,30 @@ sub DirectionalLight
 	; DIRECTIONAL LIGHT
 	; compute n dot l
 	dp3 $nDotL.x, -c[a0.x + 1], $worldNormal
-	max $nDotL.x, $nDotL.x, c0.x			; Clamp to zero
+	
+	if ( $HALF_LAMBERT == 0 )
+	{
+		; lambert
+		max $nDotL.x, $nDotL.x, c0.x				; Clamp to zero
+	}
+	elsif ( $HALF_LAMBERT == 1 )
+	{
+		; half-lambert
+		mad $nDotL.x, $nDotL.x, $cHalf, $cHalf		; dot = (dot * 0.5 + 0.5)^2
+		mul $nDotL.x, $nDotL.x, $nDotL.x
+	}
+	else
+	{
+		die "\$HALF_LAMBERT is hosed\n";
+	}
+  
 	if( $add )
 	{
 		mad $linearColor.xyz, c[a0.x], $nDotL.x, $linearColor
 	}
 	else
 	{
-		mov $linearColor.xyz, c[a0.x], $nDotL.x
+		mul $linearColor.xyz, c[a0.x], $nDotL.x
 	}
 
 	&FreeRegister( \$nDotL );
@@ -1071,7 +1079,23 @@ sub PointLight
 
 	; compute n dot l, fold in distance attenutation
 	dp3 $tmp.x, $lightDir, $worldNormal
-	max $tmp.x, $tmp.x, c0.x				; Clamp to zero
+
+	if ( $HALF_LAMBERT == 0 )
+	{
+		; lambert
+		max $tmp.x, $tmp.x, c0.x				; Clamp to zero
+	}
+	elsif ( $HALF_LAMBERT == 1 )
+	{
+		; half-lambert
+		mad $tmp.x, $tmp.x, $cHalf, $cHalf		; dot = (dot * 0.5 + 0.5)^2
+		mul $tmp.x, $tmp.x, $tmp.x
+	}
+	else
+	{
+		die "\$HALF_LAMBERT is hosed\n";
+	}
+	
 	mul $tmp.x, $tmp.x, $lightDir.w
 	if( $add )
 	{
@@ -1079,7 +1103,7 @@ sub PointLight
 	}
 	else
 	{
-		mov $linearColor.xyz, c[a0.x], $tmp.x
+		mul $linearColor.xyz, c[a0.x], $tmp.x
 	}
 
 	&FreeRegister( \$lightDir );
@@ -1132,6 +1156,22 @@ sub SpotLight
 	; compute n dot l
 	dp3 $litSrc.x, $worldNormal, $lightDir
 	
+	if ( $HALF_LAMBERT == 0 )
+	{
+		; lambert
+		max $litSrc.x, $litSrc.x, c0.x				; Clamp to zero
+	}
+	elsif ( $HALF_LAMBERT == 1 )
+	{
+		; half-lambert
+		mad $litSrc.x, $litSrc.x, $cHalf, $cHalf	; dot = (dot * 0.5 + 0.5) ^ 2
+		mul $litSrc.x, $litSrc.x, $litSrc.x
+	}
+	else
+	{
+		die "\$HALF_LAMBERT is hosed\n";
+	}
+
 	; compute angular attenuation
 	dp3 $tmp.x, c[a0.x+1], -$lightDir				; dot = -delta * spot direction
 	sub $litSrc.y, $tmp.x, c[a0.x+3].z				; r2.y = dot - stopdot2
@@ -1156,7 +1196,7 @@ sub SpotLight
 	}
 	else
 	{
-		mov $linearColor.xyz, $tmp1, $tmp2.x
+		mul $linearColor.xyz, $tmp1, $tmp2.x
 	}
 
 	&FreeRegister( \$lightDir );
@@ -1193,22 +1233,39 @@ sub DoLight
 
 sub DoLighting
 {
-	local( $staticLightType ) = shift;
-	local( $ambientLightType ) = shift;
-	local( $localLightType1 ) = shift;
-	local( $localLightType2 ) = shift;
+	if( !defined $LIGHT_COMBO )
+	{
+		die "DoLighting called without using \$LIGHT_COMBO\n";
+	}
+	if ( !defined $HALF_LAMBERT )
+	{
+		die "DoLighting called without using \$HALF_LAMBERT\n";
+	}
+
+	my $staticLightType = $g_staticLightTypeArray[$LIGHT_COMBO];
+	my $ambientLightType = $g_ambientLightTypeArray[$LIGHT_COMBO];
+	my $localLightType1 = $g_localLightType1Array[$LIGHT_COMBO];
+	my $localLightType2 = $g_localLightType2Array[$LIGHT_COMBO];
+
+#	print "\$staticLightType = $staticLightType\n";
+#	print "\$ambientLightType = $ambientLightType\n";
+#	print "\$localLightType1 = $localLightType1\n";
+#	print "\$localLightType2 = $localLightType2\n";
+
 	local( $worldPos ) = shift;
 	local( $worldNormal ) = shift;
 
-	# special case for no lighting
+	; special case for no lighting
 	if( $staticLightType eq "none" && $ambientLightType eq "none" &&
 		$localLightType1 eq "none" && $localLightType2 eq "none" )
 	{
+		; Have to write something here since debug d3d runtime will barf otherwise.
+		mov oD0, $cOne
 		return;
 	}
 
-	# special case for static lighting only
-	# Don't need to bother converting to linear space in this case.
+	; special case for static lighting only
+	; Don't need to bother converting to linear space in this case.
 	if( $staticLightType eq "static" && $ambientLightType eq "none" &&
 		$localLightType1 eq "none" && $localLightType2 eq "none" )
 	{
@@ -1239,14 +1296,14 @@ sub DoLighting
 
 	if( $localLightType1 ne "none" )
 	{
-		mov a0.x, c3.x
+		mov a0.x, $cLight0Offset
 		&DoLight( $localLightType1, $worldPos, $worldNormal, $linearColor, $add );
 		$add = 1;
 	}
 
 	if( $localLightType2 ne "none" )
 	{
-		mov a0.x, c3.y
+		mov a0.x, $cLight1Offset
 		&DoLight( $localLightType2, $worldPos, $worldNormal, $linearColor, $add );
 		$add = 1;
 	}
@@ -1267,7 +1324,7 @@ sub DoLighting
 	}
 
 ;	mov oD0.xyz, $linearColor
-	mov oD0.w, c0.y				; make sure all components are defined
+	mov oD0.w, $cOne				; make sure all components are defined
 
 	free $linearColor
 	free $gammaColor
@@ -1275,12 +1332,23 @@ sub DoLighting
 
 sub DoDynamicLightingToLinear
 {
-	local( $ambientLightType ) = shift;
-	local( $localLightType1 ) = shift;
-	local( $localLightType2 ) = shift;
 	local( $worldPos ) = shift;
 	local( $worldNormal ) = shift;
 	local( $linearColor ) = shift;
+
+	if( !defined $LIGHT_COMBO )
+	{
+		die "DoLighting called without using \$LIGHT_COMBO\n";
+	}
+	if ( !defined $HALF_LAMBERT )
+	{
+		die "DoLighting called without using \$HALF_LAMBERT\n";
+	}
+
+	my $staticLightType = $g_staticLightTypeArray[$LIGHT_COMBO];
+	my $ambientLightType = $g_ambientLightTypeArray[$LIGHT_COMBO];
+	my $localLightType1 = $g_localLightType1Array[$LIGHT_COMBO];
+	my $localLightType2 = $g_localLightType2Array[$LIGHT_COMBO];
 
 	# No lights at all. . note that we don't even consider static lighting here.
 	if( $ambientLightType eq "none" &&
@@ -1299,16 +1367,27 @@ sub DoDynamicLightingToLinear
 
 	if( $localLightType1 ne "none" )
 	{
-		mov a0.x, c3.x
+		mov a0.x, $cLight0Offset
 		&DoLight( $localLightType1, $worldPos, $worldNormal, $linearColor, $add );
 		$add = 1;
 	}
 
 	if( $localLightType2 ne "none" )
 	{
-		mov a0.x, c3.y
+		mov a0.x, $cLight1Offset
 		&DoLight( $localLightType2, $worldPos, $worldNormal, $linearColor, $add );
 		$add = 1;
 	}
 }
 
+sub NotImplementedYet
+{
+	&AllocateRegister( \$projPos );
+	dp4 $projPos.x, $worldPos, $cViewProj0
+	dp4 $projPos.y, $worldPos, $cViewProj1
+	dp4 $projPos.z, $worldPos, $cViewProj2
+	dp4 $projPos.w, $worldPos, $cViewProj3
+	mov oPos, $projPos
+	&FreeRegister( \$projPos );
+	exit;
+}

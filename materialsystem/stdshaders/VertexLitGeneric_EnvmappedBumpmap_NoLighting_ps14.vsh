@@ -1,8 +1,11 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Shader specific constant:
-;	 c95	 = [sOffset, tOffset, 0, 0]
+;	 $SHADER_SPECIFIC_CONST_5	 = [sOffset, tOffset, 0, 0]
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
@@ -16,7 +19,7 @@ vs.1.1
 &AllocateRegister( \$worldTangentS );
 &AllocateRegister( \$worldTangentT );
 
-&SkinPositionNormalAndTangentSpace( $g_numBones, $worldPos, $worldNormal, 
+&SkinPositionNormalAndTangentSpace( $worldPos, $worldNormal, 
 					$worldTangentS, $worldTangentT );
 
 ;------------------------------------------------------------------------------
@@ -81,7 +84,7 @@ mov oT4.xyz, $eyeVector
 ;------------------------------------------------------------------------------
 ; Texture coordinates
 ;------------------------------------------------------------------------------
-dp4 oT0.x, $vTexCoord0, c94
-dp4 oT0.y, $vTexCoord0, c95
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_4
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_5
 
 

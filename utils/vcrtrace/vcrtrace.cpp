@@ -1,8 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // vcrtrace.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
+#include <time.h>
 #include "tier0/vcrmode.h"
+#include "tier1/utlvector.h"
 
 
 
@@ -14,7 +23,7 @@ class CVCRHelpers : public IVCRHelpers
 public:
 	virtual void	ErrorMessage( const char *pMsg )
 	{
-		printf("ERROR: %s\n", pMsg);
+		Msg("ERROR: %s\n", pMsg);
 	}
 
 	virtual void*	GetMainWindow()
@@ -28,7 +37,7 @@ static CVCRHelpers g_VCRHelpers;
 
 void ErrFunction( char const *pMsg )
 {
-	printf( "%s", pMsg );
+	Msg( "%s", pMsg );
 }
 
 
@@ -188,33 +197,68 @@ static char const* GetWMessageName(WMessage *pMessages, int nMessages, int msg)
 	return str;
 }
 
+FILE *g_fpTrace = NULL;
+bool g_bEndOfFile = false;
+
 template<class T>
-static void ReadVal(T &val)
+static void VCRTrace_ReadVal(T &val)
 {
-	g_pTrace->Read( &val, sizeof(val) );
+	if ( fread( &val, 1, sizeof( val ), g_fpTrace ) != sizeof( val ) )
+		g_bEndOfFile = true;
+}
+
+static void VCRTrace_Read( void *pOut, int size )
+{
+	if ( fread( pOut, 1, size, g_fpTrace ) != (size_t)size )
+		g_bEndOfFile = true;
+}
+
+void ReadAndPrintShortString( const char *pFormat )
+{
+	unsigned short len;
+	VCRTrace_ReadVal( len );
+
+	static CUtlVector<char> tempData;
+	if ( tempData.Count() < len )
+		tempData.SetSize( len );
+
+	VCRTrace_Read( tempData.Base(), len );
+	if ( len > 0 && ( tempData[len-2] == '\n' || tempData[len-2] == '\r' ) )
+		tempData[len-2] = 0;
+
+	Msg( pFormat, tempData.Base() );
 }
 
 static void VCR_TraceEvents()
 {
 	int iEvent = 0;
-	VCREvent event;
 
 	g_pTrace = g_pVCR->GetVCRTraceInterface();
 	
-	while( g_pVCR->GetMode() == VCR_Playback )
+	while ( !g_bEndOfFile )
 	{
 		++iEvent;
 
-		printf("%5d - ", iEvent);
+		unsigned char eventCode;
+		VCRTrace_Read( &eventCode, sizeof( eventCode ) );
 
-		event = g_pTrace->ReadEvent();
+		unsigned short iThread = 0;
+		if ( eventCode & 0x80 )
+		{
+			VCRTrace_Read( &iThread, sizeof( iThread ) );
+			eventCode &= ~0x80;
+		}
+
+		Msg( "%5d (thread %d): ", iEvent, iThread );
+
+		VCREvent event = (VCREvent)eventCode;
 		switch(event)
 		{
 			case VCREvent_Sys_FloatTime:
 			{
 				double ret;
-				g_pTrace->Read(&ret, sizeof(ret));
-				printf("Sys_FloatTime: %f\n", ret);
+				VCRTrace_Read(&ret, sizeof(ret));
+				Msg("Sys_FloatTime: %f\n", ret);
 			}
 			break;
 			
@@ -223,20 +267,28 @@ static void VCR_TraceEvents()
 				int ret;
 				char buf[8192];
 				
-				g_pTrace->Read(&ret, sizeof(ret));
+				VCRTrace_Read(&ret, sizeof(ret));
 
-				assert(ret < (int)sizeof(buf));
+				Assert(ret < (int)sizeof(buf));
 				if(ret == SOCKET_ERROR)
 				{
 					int err;
-					ReadVal(err);
+					VCRTrace_ReadVal(err);
 
-					printf("recvfrom: %d (error %s)\n", ret, GetWMessageName(g_WinsockMessages, sizeof(g_WinsockMessages)/sizeof(g_WinsockMessages[0]), err));
+					Msg("recvfrom: %d (error %s)\n", ret, GetWMessageName(g_WinsockMessages, sizeof(g_WinsockMessages)/sizeof(g_WinsockMessages[0]), err));
 				}
 				else
 				{
-					printf("recvfrom: %d\n", ret);
-					g_pTrace->Read(buf, ret);
+					Msg("recvfrom: %d\n", ret);
+					VCRTrace_Read(buf, ret);
+
+					char bFrom;
+					VCRTrace_ReadVal( bFrom );
+					if ( bFrom )
+					{
+						sockaddr_in from;
+						VCRTrace_Read( &from, sizeof( from ) );
+					}
 				}
 			}
 			break;
@@ -246,36 +298,36 @@ static void VCR_TraceEvents()
 				char len;
 				char buf[256];
 
-				g_pTrace->Read(&len, 1);
-				g_pTrace->Read(buf, len);
+				VCRTrace_Read(&len, 1);
+				VCRTrace_Read(buf, len);
 				buf[len] = 0;
 
-				printf("SyncToken: %s\n", buf);
+				Msg("SyncToken: %s\n", buf);
 			}
 			break;
 
 			case VCREvent_GetCursorPos:
 			{
 				POINT pt;
-				ReadVal(pt);
-				printf("GetCursorPos: (%d, %d)\n", pt.x, pt.y);
+				VCRTrace_ReadVal(pt);
+				Msg("GetCursorPos: (%d, %d)\n", pt.x, pt.y);
 			}
 			break;
 
 			case VCREvent_SetCursorPos:
 			{
 				int x, y;
-				g_pTrace->Read(&x, sizeof(x));
-				g_pTrace->Read(&y, sizeof(y));
-				printf("SetCursorPos: (%d, %d)\n", x, y);
+				VCRTrace_Read(&x, sizeof(x));
+				VCRTrace_Read(&y, sizeof(y));
+				Msg("SetCursorPos: (%d, %d)\n", x, y);
 			}
 			break;
 
 			case VCREvent_ScreenToClient:
 			{
 				POINT pt;
-				ReadVal(pt);
-				printf("ScreenToClient: (%d, %d)\n", pt.x, pt.y);
+				VCRTrace_ReadVal(pt);
+				Msg("ScreenToClient: (%d, %d)\n", pt.x, pt.y);
 			}
 			break;
 
@@ -284,15 +336,15 @@ static void VCR_TraceEvents()
 				int len;
 				char *f;
 
-				g_pTrace->Read(&len, sizeof(len));
+				VCRTrace_Read(&len, sizeof(len));
 				
 				if(len != -1)
 				{
 					f = (char*)malloc(len);
-					g_pTrace->Read(f, len);
+					VCRTrace_Read(f, len);
 				}
 				
-				printf("Cmd_Exec: %d\n", len);
+				Msg("Cmd_Exec: %d\n", len);
 			}
 			break;
 
@@ -301,27 +353,27 @@ static void VCR_TraceEvents()
 				int len;
 				char str[8192];
 
-				g_pTrace->Read(&len, sizeof(len));
-				assert(len < sizeof(str));
-				g_pTrace->Read(str, len);
+				VCRTrace_Read(&len, sizeof(len));
+				Assert(len < sizeof(str));
+				VCRTrace_Read(str, len);
 
-				printf("CmdLine: %s\n", str);
+				Msg("CmdLine: %s\n", str);
 			}
 			break;
 
 			case VCREvent_RegOpenKeyEx:
 			{
 				long ret;
-				ReadVal(ret);
-				printf("RegOpenKeyEx: %d\n", ret);
+				VCRTrace_ReadVal(ret);
+				Msg("RegOpenKeyEx: %d\n", ret);
 			}
 			break;
 
 			case VCREvent_RegSetValueEx:
 			{
 				long ret;
-				ReadVal(ret);
-				printf("RegSetValueEx: %d\n", ret);
+				VCRTrace_ReadVal(ret);
+				Msg("RegSetValueEx: %d\n", ret);
 			}
 			break;
 
@@ -331,30 +383,30 @@ static void VCR_TraceEvents()
 				unsigned long type, cbData;
 				char dummy;
 
-				ReadVal(ret);
-				ReadVal(type);
-				ReadVal(cbData);
+				VCRTrace_ReadVal(ret);
+				VCRTrace_ReadVal(type);
+				VCRTrace_ReadVal(cbData);
 				while(cbData)
 				{
-					ReadVal(dummy);
+					VCRTrace_ReadVal(dummy);
 					cbData--;
 				}
 
-				printf("RegQueryValueEx\n");
+				Msg("RegQueryValueEx\n");
 			}
 			break;
 
 			case VCREvent_RegCreateKeyEx:
 			{
 				long ret;
-				ReadVal(ret);
-				printf("RegCreateKeyEx: %d\n", ret);
+				VCRTrace_ReadVal(ret);
+				Msg("RegCreateKeyEx: %d\n", ret);
 			}
 			break;
 
 			case VCREvent_RegCloseKey:
 			{
-				printf("VCREvent_RegCloseKey");
+				Msg("VCREvent_RegCloseKey\n");
 			}
 			break;
 			
@@ -363,34 +415,34 @@ static void VCR_TraceEvents()
 				MSG msg;
 				int valid;
 
-				g_pTrace->Read(&valid, sizeof(valid));
+				VCRTrace_Read(&valid, sizeof(valid));
 				if(valid)
 				{
-					g_pTrace->Read(&msg, sizeof(MSG));
+					VCRTrace_Read(&msg, sizeof(MSG));
 				}
 
-				printf("PeekMessage - msg: %s, wParam: %x, lParam: %x\n", GetWMessageName(g_WMessages, sizeof(g_WMessages)/sizeof(g_WMessages[0]), msg.message), msg.wParam, msg.lParam);
+				Msg("PeekMessage - msg: %s, wParam: %x, lParam: %x\n", GetWMessageName(g_WMessages, sizeof(g_WMessages)/sizeof(g_WMessages[0]), msg.message), msg.wParam, msg.lParam);
 			}
 			break;
 
 			case VCREvent_GameMsg:
 			{
 				char valid;
-				g_pTrace->Read( &valid, sizeof(valid) );
+				VCRTrace_Read( &valid, sizeof(valid) );
 
 				if ( valid )
 				{
 					UINT uMsg;
 					WPARAM wParam;
 					LPARAM lParam;
-					g_pTrace->Read( &uMsg, sizeof(uMsg) );
-					g_pTrace->Read( &wParam, sizeof(wParam) );
-					g_pTrace->Read( &lParam, sizeof(lParam) );
-					printf( "GameMsg - msg: %s, wParam: %x, lParam: %x\n", GetWMessageName(g_WMessages, sizeof(g_WMessages)/sizeof(g_WMessages[0]), uMsg), wParam, lParam );
+					VCRTrace_Read( &uMsg, sizeof(uMsg) );
+					VCRTrace_Read( &wParam, sizeof(wParam) );
+					VCRTrace_Read( &lParam, sizeof(lParam) );
+					Msg( "GameMsg - msg: %s, wParam: %x, lParam: %x\n", GetWMessageName(g_WMessages, sizeof(g_WMessages)/sizeof(g_WMessages[0]), uMsg), wParam, lParam );
 				}
 				else
 				{
-					printf("GameMsg - <end>\n" );
+					Msg("GameMsg - <end>\n" );
 				}
 			}
 			break;
@@ -400,10 +452,10 @@ static void VCR_TraceEvents()
 				char val;
 				unsigned long nEvents;
 				
-				ReadVal( val );
-				ReadVal( nEvents );
+				VCRTrace_ReadVal( val );
+				VCRTrace_ReadVal( nEvents );
 
-				printf( "GetNumberOfConsoleInputEvents (returned %d, nEvents = %d)\n", val, nEvents );
+				Msg( "GetNumberOfConsoleInputEvents (returned %d, nEvents = %d)\n", val, nEvents );
 			}
 			break;
 
@@ -413,24 +465,148 @@ static void VCR_TraceEvents()
 				unsigned long nRead;
 				INPUT_RECORD recs[1024];
 
-				ReadVal( val );
+				VCRTrace_ReadVal( val );
 				if ( val )
 				{
-					ReadVal( nRead );
-					g_pTrace->Read( recs, nRead * sizeof( INPUT_RECORD ) );
+					VCRTrace_ReadVal( nRead );
+					VCRTrace_Read( recs, nRead * sizeof( INPUT_RECORD ) );
 				}
 				else
 				{
 					nRead = 0;
 				}
 
-				printf( "ReadConsoleInput (returned %d, nRead = %d)\n", val, nRead );
+				Msg( "ReadConsoleInput (returned %d, nRead = %d)\n", val, nRead );
+			}
+			break;
+
+			case VCREvent_GetKeyState:
+			{
+				short ret;
+				VCRTrace_ReadVal( ret );
+				Msg( "VCREvent_GetKeyState: %d\n", ret );
+			}
+			break;
+
+			case VCREvent_recv:
+			{
+				int ret;
+				
+				// Get the result from our file.
+				VCRTrace_ReadVal( ret );
+				if ( ret == SOCKET_ERROR )
+				{
+					int err;
+					VCRTrace_ReadVal( err );
+					Msg( "VCREvent_recv - SOCKET_ERROR - %d\n", err );
+				}
+				else
+				{
+					CUtlVector<char> dummyData;
+					dummyData.SetSize( ret );
+					VCRTrace_Read( dummyData.Base(), ret );
+					Msg( "VCREvent_recv - size %d", ret );
+				}
+			}
+			break;
+
+			case VCREvent_send:
+			{
+				int ret;
+
+				// Get the result from our file.
+				VCRTrace_ReadVal( ret );										   
+				if ( ret == SOCKET_ERROR )
+				{
+					int err;
+					VCRTrace_ReadVal(err);
+					Msg( "VCREvent_send - SOCKET_ERROR - %d\n", err );
+				}
+				else
+				{
+					Msg( "VCREvent_send - %d\n", ret );
+				}
+			}
+			break;
+
+			case VCREvent_Generic:
+			{
+				unsigned char nameLen;
+				VCRTrace_ReadVal( nameLen );
+				char testName[512] = "(none)";
+
+				if ( nameLen != 255 )
+				{
+					VCRTrace_Read( testName, nameLen );
+				}
+
+				int dataLen;
+				VCRTrace_ReadVal( dataLen );
+
+				CUtlVector<char> tempData;
+				tempData.SetSize( dataLen );
+				VCRTrace_Read( tempData.Base(), dataLen );
+
+				Msg( "VCREvent_Generic (name: %s, len: %d)\n", testName, dataLen );
+			}
+			break;
+
+			case VCREvent_CreateThread:
+			{
+				Msg( "VCREvent_CreateThread\n" );
+			}
+			break;
+
+			case VCREvent_WaitForSingleObject:
+			{
+				char val;
+				VCRTrace_ReadVal( val );
+				
+				Msg( "VCREvent_WaitForSingleObject " );
+				if ( val == 1 )
+					Msg( "(WAIT_OBJECT_0)\n" );
+				else if ( val == 2 )
+					Msg( "(WAIT_ABANDONED)\n" );
+				else
+					Msg( "(WAIT_TIMEOUT)\n" );
+			}
+			break;
+
+			case VCREvent_EnterCriticalSection:
+			{
+				Msg( "VCREvent_EnterCriticalSection\n" );
+			}
+			break;
+
+			case VCREvent_LocalTime:
+			{
+				tm today;
+				VCRTrace_ReadVal( today );
+				Msg( "VCREvent_LocalTime\n" );
+			}
+			break;
+
+			case VCREvent_Time:
+			{
+				long today;
+				VCRTrace_ReadVal( today );
+				Msg( "VCREvent_Time\n" );
+			}
+			break;
+
+			case VCREvent_GenericString:
+			{
+				Msg( "VCREvent_GenericString: " );
+
+				ReadAndPrintShortString( "[%s]  " );
+				ReadAndPrintShortString( "%s" );
+				Msg( "\n" );
 			}
 			break;
 
 			default:
 			{
-				printf( "***ERROR*** VCR_TraceEvent: invalid event" );
+				Msg( "***ERROR*** VCR_TraceEvent: invalid event" );
 				return;
 			}
 		}
@@ -438,17 +614,44 @@ static void VCR_TraceEvents()
 }
 
 
+SpewRetval_t MySpewOutput( SpewType_t spewType, tchar const *pMsg )
+{
+	printf( "%s", pMsg );
+	OutputDebugString( pMsg );
+
+	if ( spewType == SPEW_ASSERT )
+		return SPEW_DEBUGGER;
+	
+	else if ( spewType == SPEW_ERROR )
+		return SPEW_ABORT;
+	
+	else
+		return SPEW_CONTINUE;
+}
+
+
 int main(int argc, char* argv[])
 {
 	if(argc <= 1)
 	{
-		printf("vcrtrace <vcr filename>\n");
+		Msg("vcrtrace <vcr filename>\n");
 		return 1;
 	}
 
-	if( !g_pVCR->Start( argv[1], 0, &g_VCRHelpers ) )
+	SpewOutputFunc( MySpewOutput );
+
+	g_fpTrace = fopen( argv[1], "rb" );
+	if ( !g_fpTrace )
 	{
-		printf("Invalid or mission VCR file '%s'\n", argv[1]);
+		Msg("Invalid or mission VCR file '%s'\n", argv[1]);
+		return 1;
+	}
+
+	unsigned long version;
+	VCRTrace_ReadVal( version );
+	if ( version != VCRFILE_VERSION )
+	{
+		Msg( "Invalid VCR file version (is %d, but we need %d).\n", version, VCRFILE_VERSION );
 		return 1;
 	}
 

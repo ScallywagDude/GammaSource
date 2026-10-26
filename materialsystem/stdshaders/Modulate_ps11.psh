@@ -6,4 +6,3 @@ tex t0	; base color
 
 mul_sat r0.rgba, t0, v0
 lrp r0.rgb, r0.a, r0, c0
-

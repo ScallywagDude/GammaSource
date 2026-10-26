@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( ICODEPROCESSOR_H )
 #define ICODEPROCESSOR_H
 #ifdef _WIN32
@@ -49,6 +49,9 @@ public:
 
 	virtual void		SetLogFile( bool log ) = 0;
 	virtual bool		GetLogFile( void ) const = 0;
+
+	virtual void		SetCheckHungarian( bool check ) = 0;
+	virtual bool		GetCheckHungarian() const = 0;
 };
 
 extern ICodeProcessor *processor;

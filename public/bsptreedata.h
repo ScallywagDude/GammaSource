@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +7,9 @@
 //
 // The BSP tree leaf data system
 //
-//=============================================================================
+//=============================================================================//
+
+#include "tier0/platform.h"
 
 #if !defined( BSPTREEDATA )
 #define BSPTREEDATA
@@ -51,7 +48,7 @@ enum
 //
 //-----------------------------------------------------------------------------
 
-class ISpatialLeafEnumerator
+abstract_class ISpatialLeafEnumerator
 {
 public:
 	// call back with a leaf and a context
@@ -61,20 +58,20 @@ public:
 	// that passes the test; return true to continue enumerating,
 	// false to stop
 
-	virtual bool EnumerateLeaf( int leaf, int context ) = 0;
+	virtual bool EnumerateLeaf( int leaf, intp context ) = 0;
 };
 
-class ISpatialQuery
+abstract_class ISpatialQuery
 {
 public:
 	// Returns the number of leaves
 	virtual int LeafCount() const = 0;
 
 	// Enumerates the leaves along a ray, box, etc.
-	virtual bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, int context ) = 0;
+	virtual bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
 };
 
 
@@ -86,16 +83,20 @@ public:
 // a spatial partition of some sort to hold onto.
 //-----------------------------------------------------------------------------
 
-class IBSPTreeDataEnumerator
+abstract_class IBSPTreeDataEnumerator
 {
 public:
 	// call back with a userId and a context
-	virtual bool FASTCALL EnumerateElement( int userId, int context ) = 0;
+	virtual bool FASTCALL EnumerateElement( int userId, intp context ) = 0;
 };
 
-class IBSPTreeData
+abstract_class IBSPTreeData
 {
 public:
+	// Add a virtual destructor so that the derived class destructors will
+	// be called.
+	virtual ~IBSPTreeData() {}
+
 	// Initializes, shuts down
 	virtual void Init( ISpatialQuery* pBSPTree ) = 0;
 	virtual void Shutdown() = 0;
@@ -108,7 +109,7 @@ public:
 	virtual void ElementMoved( BSPTreeDataHandle_t handle, Vector const& mins, Vector const& maxs ) = 0;
 
 	// Enumerate elements in a particular leaf
-	virtual bool EnumerateElementsInLeaf( int leaf, IBSPTreeDataEnumerator* pEnum, int context ) = 0;
+	virtual bool EnumerateElementsInLeaf( int leaf, IBSPTreeDataEnumerator* pEnum, intp context ) = 0;
 
 	// Is the element in any leaves at all?
 	virtual bool IsElementInTree( BSPTreeDataHandle_t handle ) const = 0;
@@ -116,10 +117,10 @@ public:
 	// NOTE: These methods call through to the functions in the attached
 	// ISpatialQuery
 	// For convenience, enumerates the leaves along a ray, box, etc.
-	virtual bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, int context ) = 0;
-	virtual bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, int context ) = 0;
+	virtual bool EnumerateLeavesAtPoint( Vector const& pt, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesInBox( Vector const& mins, Vector const& maxs, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesInSphere( Vector const& center, float radius, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
+	virtual bool EnumerateLeavesAlongRay( Ray_t const& ray, ISpatialLeafEnumerator* pEnum, intp context ) = 0;
 };
 
 //-----------------------------------------------------------------------------

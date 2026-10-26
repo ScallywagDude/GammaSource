@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include <vgui_controls/Controls.h>
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_Button.h>
-#include <VGUI_MessageBox.h>
+#include <Keyvalues.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/MessageBox.h>
 
 
 using namespace vgui;
@@ -106,7 +106,7 @@ MessageMapItem_t MessageBoxDemo::m_MessageMap[] =
 	MAP_MESSAGE( MessageBoxDemo, "ButtonClicked", OnButtonClicked ), 
 };
 
-IMPLEMENT_PANELMAP(MessageBoxDemo, BaseClass);
+IMPLEMENT_PANELMAP(MessageBoxDemo, DemoPage);
 
 
 

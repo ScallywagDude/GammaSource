@@ -1,0 +1,6 @@
+// Private hand material for GammaSource retail viewmodel aliases.
+"UnlitGeneric"
+{
+	"$no_draw" "1"
+	"$basetexture" "tools/toolsnodraw"
+}

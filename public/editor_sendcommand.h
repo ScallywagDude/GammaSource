@@ -1,16 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Defines an interface to the map editor for the execution of
 //			editor shell commands from another application. Commands allow the
 //			creation and deletion of entities, AI nodes, and AI node connections.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef EDITOR_SENDCOMMAND_H
 #define EDITOR_SENDCOMMAND_H
 #pragma once
 
+class QAngle;
 
 //
 // Result codes from Worldcraft_SendCommand.
@@ -32,6 +33,8 @@ EditorSendResult_t Editor_CheckVersion(const char *pszMapName, int nMapVersion, 
 
 EditorSendResult_t Editor_CreateEntity(const char *pszEntity, float x, float y, float z, bool bShowUI = false);
 EditorSendResult_t Editor_DeleteEntity(const char *pszEntity, float x, float y, float z, bool bShowUI = false);
+EditorSendResult_t Editor_SetKeyValue(const char *pszEntity, float x, float y, float z, const char *pKey, const char *pValue, bool bShowUI = false);
+EditorSendResult_t Editor_RotateEntity(const char *pszEntity, float x, float y, float z, const QAngle &incrementalRotation, bool bShowUI = false);
 
 EditorSendResult_t Editor_CreateNode(const char *pszNodeClass, int nID, float x, float y,  float z, bool bShowUI = false);
 EditorSendResult_t Editor_DeleteNode(int nID, bool bShowUI = false);

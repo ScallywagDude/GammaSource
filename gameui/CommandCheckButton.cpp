@@ -1,16 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "CommandCheckButton.h"
 #include "EngineInterface.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
-
 
 using namespace vgui;
 
@@ -37,12 +36,12 @@ void CCommandCheckButton::SetSelected( bool state )
 
 	if ( IsSelected() && m_pszDown )
 	{
-		engine->ClientCmd( m_pszDown );
-		engine->ClientCmd( "\n" );
+		engine->ClientCmd_Unrestricted( m_pszDown );
+		engine->ClientCmd_Unrestricted( "\n" );
 	}
 	else if ( !IsSelected() && m_pszUp )
 	{
-		engine->ClientCmd( m_pszUp );
-		engine->ClientCmd( "\n" );
+		engine->ClientCmd_Unrestricted( m_pszUp );
+		engine->ClientCmd_Unrestricted( "\n" );
 	}
 }

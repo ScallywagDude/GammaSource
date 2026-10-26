@@ -1,0 +1,51 @@
+{
+  "format": "single-root-gammasource-v1",
+  "source_zip": "GammaSource_2018_FriendlyFire_Handoff_20261025.zip",
+  "root": "GammaSource/",
+  "path_map": {
+    "source-engine-master/": "GammaSource/",
+    "GammaSource-main/": "GammaSource/legacy2003/",
+    "GammaSource-main/gammasource_content_2018/": "GammaSource/gammasource_content_2018/",
+    "source-engine-master/README.md": "GammaSource/docs/ENGINE_README_ORIGINAL.md",
+    "GammaSource-main/README.md": "GammaSource/docs/README_2003_HISTORICAL.md",
+    "tools/": "GammaSource/tools/",
+    "verification/": "GammaSource/verification/",
+    "README_START_HERE.md": "GammaSource/docs/README_START_HERE.md",
+    "HANDOFF_FOR_CHATGPT_2026-10-25.md": "GammaSource/docs/HANDOFF_FOR_CHATGPT_2026-10-25.md",
+    "GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json": "GammaSource/docs/GammaSource_2018_FRIENDLY_FIRE_MANIFEST.json"
+  },
+  "source_modifications": [
+    "README.md (user-supplied)",
+    ".gitignore (legacy project exceptions)",
+    "legacy2003/modernize/port2018/tests/test_friendly_fire_overlay.py (new root path)"
+  ],
+  "additional_files": [
+    "build_gammasource.cmd",
+    "stage_gammasource.ps1",
+    "docs/UNIFIED_LAYOUT.md",
+    "UNIFIED_LAYOUT_MANIFEST.json"
+  ],
+  "runtime_build_verified": false,
+  "windows_waf_build_verified_after_merge": false,
+  "restored_historical_reference_assets": {
+    "source": "GammaSource_Beta_Core_Stability_Round8_Full_Source.zip",
+    "count": 14,
+    "files": [
+      "legacy2003/gammasource_content/scripts/mod_textures.txt",
+      "legacy2003/gammasource_content/MODEL_CONVERSION_MANIFEST.json",
+      "legacy2003/gammasource_content/resource/gammasource_loading.bmp",
+      "legacy2003/gammasource_content/models/weapons/v_crowbar.dx80.vtx",
+      "legacy2003/gammasource_content/models/weapons/v_smg1.dx7_2bone.vtx",
+      "legacy2003/gammasource_content/models/weapons/v_crowbar.mdl",
+      "legacy2003/gammasource_content/models/weapons/v_pistol.mdl",
+      "legacy2003/gammasource_content/models/weapons/v_pistol.dx7_2bone.vtx",
+      "legacy2003/gammasource_content/models/weapons/v_crowbar.dx7_2bone.vtx",
+      "legacy2003/gammasource_content/models/weapons/v_pistol.dx80.vtx",
+      "legacy2003/gammasource_content/models/weapons/v_smg1.mdl",
+      "legacy2003/gammasource_content/models/weapons/v_smg1.dx80.vtx",
+      "legacy2003/gammasource_content/materials/sprites/hud1.vtf",
+      "legacy2003/gammasource_content/materials/sprites/hud1.vmt"
+    ],
+    "runtime_overlay": false
+  }
+}

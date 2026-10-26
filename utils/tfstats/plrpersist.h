@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #pragma warning (disable:4786)
 //=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
 //

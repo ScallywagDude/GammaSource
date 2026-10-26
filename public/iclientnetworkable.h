@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ICLIENTNETWORKABLE_H
 #define ICLIENTNETWORKABLE_H
@@ -13,6 +13,7 @@
 
 
 #include "iclientunknown.h"
+#include "tier1/bitbuf.h"
 
 
 class IClientEntity;
@@ -22,8 +23,6 @@ class ClientClass;
 enum ShouldTransmitState_t
 {
 	SHOULDTRANSMIT_START=0,	// The entity is starting to be transmitted (maybe it entered the PVS).
-	
-	SHOULDTRANSMIT_STAY,	// Called each frame the entity continues to be transmitted by the server.
 	
 	SHOULDTRANSMIT_END		// Called when the entity isn't being transmitted by the server.
 							// This signals a good time to hide the entity until next time
@@ -42,7 +41,7 @@ enum DataUpdateType_t
 								// since it changes a bunch of existing code
 };
 
-class IClientNetworkable
+abstract_class IClientNetworkable
 {
 public:
 	// Gets at the containing class...
@@ -88,14 +87,18 @@ public:
 
 	// Ent Index is the server handle used to reference this entity.
 	// If the index is < 0, that indicates the entity is not known to the server
-	virtual int				entindex( void ) = 0;
+	virtual int				entindex( void ) const = 0;
 
-	// Server to client message received
-	virtual void			ReceiveMessage( const char *msgname, int length, void *data ) = 0;
+	// Server to client entity message received
+	virtual void			ReceiveMessage( int classID, bf_read &msg ) = 0;
 
 	// Get the base pointer to the networked data that GetClientClass->m_pRecvTable starts at.
 	// (This is usually just the "this" pointer).
 	virtual void*			GetDataTableBasePtr() = 0;
+
+	// Tells the entity that it's about to be destroyed due to the client receiving
+	// an uncompressed update that's caused it to destroy all entities & recreate them.
+	virtual void			SetDestroyedOnRecreateEntities( void ) = 0;
 };
 
 

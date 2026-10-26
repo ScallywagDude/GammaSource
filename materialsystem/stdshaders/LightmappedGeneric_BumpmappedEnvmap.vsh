@@ -1,8 +1,10 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Shader specific constant:
-;	 c95	 = [sOffset, tOffset, 0, 0]
+;	 $SHADER_SPECIFIC_CONST_5	 = [sOffset, tOffset, 0, 0]
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
@@ -87,8 +89,8 @@ mad oD0.xyz, $tangentEyeVect, $cHalf, $cHalf
 ;------------------------------------------------------------------------------
 ; Texture coordinates
 ;------------------------------------------------------------------------------
-dp4 oT0.x, $vTexCoord0, c90
-dp4 oT0.y, $vTexCoord0, c91
+dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 
 

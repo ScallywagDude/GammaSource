@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "disp_vrad.h"
 #include "utllinkedlist.h"
@@ -46,7 +46,7 @@ int FindNeighborCornerVert( CCoreDispInfo *pDisp, const Vector &vTest )
 }
 
 
-int GetAllNeighbors( const CCoreDispInfo *pDisp, int iNeighbors[512] )
+int GetAllNeighbors( const CCoreDispInfo *pDisp, int (&iNeighbors)[512] )
 {
 	int nNeighbors = 0;
 
@@ -78,13 +78,13 @@ int GetAllNeighbors( const CCoreDispInfo *pDisp, int iNeighbors[512] )
 }
 
 
-void BlendCorners( CCoreDispInfo *pListBase, int listSize )
+void BlendCorners( CCoreDispInfo **ppListBase, int listSize )
 {
 	CUtlVector<int> nbCornerVerts;
 
 	for ( int iDisp=0; iDisp < listSize; iDisp++ )
 	{
-		CCoreDispInfo *pDisp = &pListBase[iDisp];
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
 
 		int iNeighbors[512];
 		int nNeighbors = GetAllNeighbors( pDisp, iNeighbors );
@@ -108,7 +108,7 @@ void BlendCorners( CCoreDispInfo *pListBase, int listSize )
 			for ( int iNeighbor=0; iNeighbor < nNeighbors; iNeighbor++ )
 			{
 				int iNBListIndex = iNeighbors[iNeighbor];
-				CCoreDispInfo *pNeighbor = &pListBase[iNBListIndex];
+				CCoreDispInfo *pNeighbor = ppListBase[iNBListIndex];
 				
 				// Find out which vert it is on the neighbor.
 				int iNBCorner = FindNeighborCornerVert( pNeighbor, vCornerVert );
@@ -139,13 +139,13 @@ void BlendCorners( CCoreDispInfo *pListBase, int listSize )
 				25 );
 #endif
 
-			for ( iNeighbor=0; iNeighbor < nNeighbors; iNeighbor++ )
+			for ( int iNeighbor=0; iNeighbor < nNeighbors; iNeighbor++ )
 			{
 				int iNBListIndex = iNeighbors[iNeighbor];
 				if ( nbCornerVerts[iNeighbor] == -1 )
 					continue;
 
-				CCoreDispInfo *pNeighbor = &pListBase[iNBListIndex];
+				CCoreDispInfo *pNeighbor = ppListBase[iNBListIndex];
 				pNeighbor->SetNormal( nbCornerVerts[iNeighbor], vAverage );
 			}
 		}
@@ -153,11 +153,11 @@ void BlendCorners( CCoreDispInfo *pListBase, int listSize )
 }
 
 
-void BlendTJuncs( CCoreDispInfo *pListBase, int listSize )
+void BlendTJuncs( CCoreDispInfo **ppListBase, int listSize )
 {
 	for ( int iDisp=0; iDisp < listSize; iDisp++ )
 	{
-		CCoreDispInfo *pDisp = &pListBase[iDisp];
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
 
 		for ( int iEdge=0; iEdge < 4; iEdge++ )
 		{
@@ -170,8 +170,8 @@ void BlendTJuncs( CCoreDispInfo *pListBase, int listSize )
 			{
 				const Vector &vMidPoint = pDisp->GetVert( iMidPoint );
 
-				CCoreDispInfo *pNeighbor1 = &pListBase[pEdge->m_SubNeighbors[0].GetNeighborIndex()];
-				CCoreDispInfo *pNeighbor2 = &pListBase[pEdge->m_SubNeighbors[1].GetNeighborIndex()];
+				CCoreDispInfo *pNeighbor1 = ppListBase[pEdge->m_SubNeighbors[0].GetNeighborIndex()];
+				CCoreDispInfo *pNeighbor2 = ppListBase[pEdge->m_SubNeighbors[1].GetNeighborIndex()];
 
 				int iNBCorners[2];
 				iNBCorners[0] = FindNeighborCornerVert( pNeighbor1, vMidPoint );
@@ -204,11 +204,11 @@ void BlendTJuncs( CCoreDispInfo *pListBase, int listSize )
 }
 
 
-void BlendEdges( CCoreDispInfo *pListBase, int listSize )
+void BlendEdges( CCoreDispInfo **ppListBase, int listSize )
 {
 	for ( int iDisp=0; iDisp < listSize; iDisp++ )
 	{
-		CCoreDispInfo *pDisp = &pListBase[iDisp];
+		CCoreDispInfo *pDisp = ppListBase[iDisp];
 
 		for ( int iEdge=0; iEdge < 4; iEdge++ )
 		{
@@ -217,10 +217,10 @@ void BlendEdges( CCoreDispInfo *pListBase, int listSize )
 			for ( int iSub=0; iSub < 2; iSub++ )
 			{
 				CDispSubNeighbor *pSub = &pEdge->m_SubNeighbors[iSub];
-				CCoreDispInfo *pNeighbor = &pListBase[ pSub->GetNeighborIndex() ];
-
 				if ( !pSub->IsValid() )
 					continue;
+
+				CCoreDispInfo *pNeighbor = ppListBase[ pSub->GetNeighborIndex() ];
 
 				int iEdgeDim = g_EdgeDims[iEdge];
 
@@ -314,18 +314,18 @@ void BlendEdges( CCoreDispInfo *pListBase, int listSize )
 #endif
 
 
-void SmoothNeighboringDispSurfNormals( CCoreDispInfo *pListBase, int listSize )
+void SmoothNeighboringDispSurfNormals( CCoreDispInfo **ppListBase, int listSize )
 {
-#if defined( USE_SCRATCHPAD )
-	g_pPad = ScratchPad3D_Create();
-	ScratchPad_DrawOriginalNormals( pListBase, listSize );
-#endif
+//#if defined( USE_SCRATCHPAD )
+//	g_pPad = ScratchPad3D_Create();
+//	ScratchPad_DrawOriginalNormals( pListBase, listSize );
+//#endif
 
-	BlendTJuncs( pListBase, listSize );
+	BlendTJuncs( ppListBase, listSize );
 
-	BlendCorners( pListBase, listSize );
+	BlendCorners( ppListBase, listSize );
 
-	BlendEdges( pListBase, listSize );
+	BlendEdges( ppListBase, listSize );
 }
 
 

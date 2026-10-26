@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IPANEL_H
 #define IPANEL_H
@@ -18,7 +13,8 @@
 #endif
 
 #include <vgui/VGUI.h>
-#include "interface.h"
+#include "tier1/interface.h"
+#include "tier1/utlvector.h"
 
 #ifdef SendMessage
 #undef SendMessage
@@ -63,20 +59,29 @@ public:
 	virtual void SetParent(VPANEL vguiPanel, VPANEL newParent) = 0;
 	virtual int GetChildCount(VPANEL vguiPanel) = 0;
 	virtual VPANEL GetChild(VPANEL vguiPanel, int index) = 0;
+	virtual CUtlVector< VPANEL > &GetChildren( VPANEL vguiPanel ) = 0;
 	virtual VPANEL GetParent(VPANEL vguiPanel) = 0;
 	virtual void MoveToFront(VPANEL vguiPanel) = 0;
 	virtual void MoveToBack(VPANEL vguiPanel) = 0;
 	virtual bool HasParent(VPANEL vguiPanel, VPANEL potentialParent) = 0;
 	virtual bool IsPopup(VPANEL vguiPanel) = 0;
 	virtual void SetPopup(VPANEL vguiPanel, bool state) = 0;
-	virtual bool Render_GetPopupVisible( VPANEL vguiPanel ) = 0;
-	virtual void Render_SetPopupVisible( VPANEL vguiPanel, bool state ) = 0;
+	virtual bool IsFullyVisible( VPANEL vguiPanel ) = 0;
+
+	// gets the scheme this panel uses
+	virtual HScheme GetScheme(VPANEL vguiPanel) = 0;
+	// gets whether or not this panel should scale with screen resolution
+	virtual bool IsProportional(VPANEL vguiPanel) = 0;
+	// returns true if auto-deletion flag is set
+	virtual bool IsAutoDeleteSet(VPANEL vguiPanel) = 0;
+	// deletes the Panel * associated with the vpanel
+	virtual void DeletePanel(VPANEL vguiPanel) = 0;
 
 	// input interest
 	virtual void SetKeyBoardInputEnabled(VPANEL vguiPanel, bool state) = 0;
 	virtual void SetMouseInputEnabled(VPANEL vguiPanel, bool state) = 0;
-	virtual bool IsKeyBoardInputEnabled( VPANEL vguiPanel ) = 0;
-	virtual bool IsMouseInputEnabled( VPANEL vguiPanel ) = 0;
+	virtual bool IsKeyBoardInputEnabled(VPANEL vguiPanel) = 0;
+	virtual bool IsMouseInputEnabled(VPANEL vguiPanel) = 0;
 
 	// calculates the panels current position within the hierarchy
 	virtual void Solve(VPANEL vguiPanel) = 0;
@@ -100,7 +105,10 @@ public:
 	virtual void InternalFocusChanged(VPANEL vguiPanel, bool lost) = 0;
 	virtual bool RequestInfo(VPANEL vguiPanel, KeyValues *outputData) = 0;
 	virtual void RequestFocus(VPANEL vguiPanel, int direction = 0) = 0;
+	virtual bool RequestFocusPrev(VPANEL vguiPanel, VPANEL existingPanel) = 0;
+	virtual bool RequestFocusNext(VPANEL vguiPanel, VPANEL existingPanel) = 0;
 	virtual VPANEL GetCurrentKeyFocus(VPANEL vguiPanel) = 0;
+	virtual int GetTabPosition(VPANEL vguiPanel) = 0;
 
 	// used by ISurface to store platform-specific data
 	virtual SurfacePlat *Plat(VPANEL vguiPanel) = 0;
@@ -110,9 +118,20 @@ public:
 	// destinationModule needs to be passed in to verify that the returned Panel * is from the same module
 	// it must be from the same module since Panel * vtbl may be different in each module
 	virtual Panel *GetPanel(VPANEL vguiPanel, const char *destinationModule) = 0;
+
+	virtual bool IsEnabled(VPANEL vguiPanel) = 0;
+	virtual void SetEnabled(VPANEL vguiPanel, bool state) = 0;
+
+	// Used by the drag/drop manager to always draw on top
+	virtual bool IsTopmostPopup( VPANEL vguiPanel) = 0;
+	virtual void SetTopmostPopup( VPANEL vguiPanel, bool state ) = 0;
+
+	// sibling pins
+	virtual void SetSiblingPin(VPANEL vguiPanel, VPANEL newSibling, byte iMyCornerToPin = 0, byte iSiblingCornerToPinTo = 0 ) = 0;
+
 };
 
-#define VGUI_PANEL_INTERFACE_VERSION "VGUI_Panel006"
+#define VGUI_PANEL_INTERFACE_VERSION "VGUI_Panel009"
 
 } // namespace vgui
 

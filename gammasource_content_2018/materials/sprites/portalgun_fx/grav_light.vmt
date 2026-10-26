@@ -1,0 +1,10 @@
+// GammaSource: Portal's sprites/grav_light, renamed so HL2's own sprite of that name keeps working
+"UnlitGeneric"
+{
+	"$basetexture" "sprites/grav_flare"
+//	"$ignorez" 1
+	"$additive" 1
+	"$vertexcolor" 1
+	"$vertexalpha" 1
+}
+

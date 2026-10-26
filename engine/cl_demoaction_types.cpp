@@ -1,12 +1,11 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
+//=============================================================================//
+#include "client_pch.h"
 #include "cl_demoaction.h"
-#include <KeyValues.h>
 #include "cl_demoactionmanager.h"
 #include "demo.h"
 #include "shake.h"
@@ -14,8 +13,10 @@
 #include "tmessage.h"
 #include "sound.h"
 #include "soundflags.h"
-#include "screen.h"
 #include "cl_demoaction_types.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -46,7 +47,7 @@ bool CDemoActionSkipAhead::Init( KeyValues *pInitData )
 	if ( !BaseClass::Init( pInitData ) )
 		return false;
 
-	SetSkipToFrame( pInitData->GetInt( "skiptoframe", -1 ) );
+	SetSkipToTick( pInitData->GetInt( "skiptotick", -1 ) );
 	SetSkipToTime( pInitData->GetFloat( "skiptotime", -1.0f ) );
 
 	return true;
@@ -60,10 +61,10 @@ void CDemoActionSkipAhead::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 {
 	BaseClass::SaveKeysToBuffer( depth, buf );
 
-	if ( m_nSkipToFrame != -1 )
+	if ( m_nSkipToTick != -1 )
 	{
-		BufPrintf( depth, buf, "skiptoframe \"%i\"\n",
-			m_nSkipToFrame );
+		BufPrintf( depth, buf, "skiptotick \"%i\"\n",
+			m_nSkipToTick );
 	}
 	else
 	{
@@ -79,10 +80,10 @@ void CDemoActionSkipAhead::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 // Purpose: 
 // Input  : frame - 
 //-----------------------------------------------------------------------------
-void CDemoActionSkipAhead::SetSkipToFrame( int frame )
+void CDemoActionSkipAhead::SetSkipToTick( int frame )
 {
-	m_bUsingSkipFrame = frame != -1;
-	m_nSkipToFrame = frame;
+	m_bUsingSkipTick = frame != -1;
+	m_nSkipToTick = frame;
 }
 
 //-----------------------------------------------------------------------------
@@ -91,7 +92,7 @@ void CDemoActionSkipAhead::SetSkipToFrame( int frame )
 //-----------------------------------------------------------------------------
 void CDemoActionSkipAhead::SetSkipToTime( float t )
 {
-	m_bUsingSkipFrame = !( t != -1.0f );
+	m_bUsingSkipTick = !( t != -1.0f );
 	m_flSkipToTime = t;
 }
 
@@ -102,19 +103,21 @@ void CDemoActionSkipAhead::FireAction( void )
 
 	// Don't this this, instead wait for demo to notify us that it's finished skipping
 	// SetFinishedAction( true );
-	if ( m_bUsingSkipFrame )
+	if ( m_bUsingSkipTick )
 	{
-		demo->SkipToFrame( m_nSkipToFrame );
+		demoplayer->SkipToTick( m_nSkipToTick, false, false );
 	}
 	else
 	{
-		demo->SkipToTime( m_flSkipToTime );
+		demoplayer->SkipToTick( TIME_TO_TICKS(m_flSkipToTime), false, false );
 	}
+
 	SetFinishedAction( true );
-	SCR_BeginLoadingPlaque ();
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_SKIPAHEAD, CDemoActionSkipAhead );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -137,14 +140,16 @@ bool CDemoActionStopPlayback::Update( const DemoActionTimingContext& tc )
 
 void CDemoActionStopPlayback::FireAction( void )
 {
-	if ( demo->IsPlayingBack() )
+	if ( demoplayer->IsPlayingBack() )
 	{
 		Cbuf_AddText( "disconnect\n" );
 	}
 	SetActionFired( true );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_STOPPLAYBACK, CDemoActionStopPlayback );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -204,7 +209,9 @@ void CDemoActionPlayCommands::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 		GetCommandStream() );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_PLAYCOMMANDS, CDemoActionPlayCommands );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -313,7 +320,9 @@ void CDemoActionScreenFadeStart::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 	BufPrintf( depth, buf, "a \"%i\"\n", f->a );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_SCREENFADE_START, CDemoActionScreenFadeStart );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -469,8 +478,9 @@ void CDemoActionTextMessageStart::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 	BufPrintf( depth, buf, "a2 \"%i\"\n", tm->a2 );
 
 }
-
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_TEXTMESSAGE_START, CDemoActionTextMessageStart );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -512,9 +522,11 @@ void CDemoActionCDTrackStart::FireAction( void )
 {
 	if ( GetTrack() != -1 )
 	{
+#if 0
 		char szCommand[ 256 ];
 		Q_snprintf( szCommand, sizeof( szCommand ), "cd stop\ncd play %i\n", GetTrack() );
 		Cbuf_AddText( szCommand );
+#endif
 	}
 	SetFinishedAction( true );
 }
@@ -532,18 +544,24 @@ void CDemoActionCDTrackStart::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 		GetTrack() );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_PLAYCDTRACK_START, CDemoActionCDTrackStart );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 void CDemoActionCDTrackStop::FireAction( void )
 {
+#if 0
 	Cbuf_AddText( "cd stop\n" );
+#endif
 	SetFinishedAction( true );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_PLAYCDTRACK_STOP, CDemoActionCDTrackStop );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -591,7 +609,18 @@ void CDemoActionPlaySoundStart::FireAction( void )
 	CSfxTable *pSound = (CSfxTable*)S_PrecacheSound(GetSoundName());
 	if ( pSound )
 	{
-		S_StartDynamicSound( cl.viewentity, CHAN_AUTO, pSound, vDummyOrigin, 1.0, SNDLVL_IDLE, 0, PITCH_NORM );
+		StartSoundParams_t params;
+		params.staticsound = false;
+		params.soundsource = cl.m_nViewEntity;
+		params.entchannel = CHAN_AUTO;
+		params.pSfx = pSound;
+		params.origin = vDummyOrigin;
+		params.fvol = 1.0f;
+		params.soundlevel = SNDLVL_IDLE;
+		params.flags = 0;
+		params.pitch = PITCH_NORM;
+
+		S_StartSound( params );
 	}
 
 	SetFinishedAction( true );
@@ -609,7 +638,9 @@ void CDemoActionPlaySoundStart::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 	BufPrintf( depth, buf, "sound \"%s\"\n", GetSoundName() );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_PLAYSOUND_START, CDemoActionPlaySoundStart );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -624,9 +655,9 @@ bool CBaseDemoActionWithStopTime::Update( const DemoActionTimingContext& tc )
 
 	if ( GetActionFired() )
 	{
-		if ( m_bUsingStopFrame )
+		if ( m_bUsingStopTick )
 		{
-			if ( tc.curframe >= m_nStopFrame )
+			if ( tc.curtick >= m_nStopTick )
 			{
 				SetFinishedAction( true );
 			}
@@ -654,7 +685,7 @@ bool CBaseDemoActionWithStopTime::Init( KeyValues *pInitData )
 	if ( !BaseClass::Init( pInitData ) )
 		return false;
 
-	SetStopFrame( pInitData->GetInt( "stopframe", -1 ) );
+	SetStopTick( pInitData->GetInt( "stoptick", -1 ) );
 	SetStopTime( pInitData->GetFloat( "stoptime", -1.0f ) );
 
 	return true;
@@ -668,10 +699,10 @@ void CBaseDemoActionWithStopTime::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 {
 	BaseClass::SaveKeysToBuffer( depth, buf );
 
-	if ( m_nStopFrame != -1 )
+	if ( m_nStopTick != -1 )
 	{
-		BufPrintf( depth, buf, "stopframe \"%i\"\n",
-			m_nStopFrame );
+		BufPrintf( depth, buf, "stoptick \"%i\"\n",
+			m_nStopTick );
 	}
 	else
 	{
@@ -687,10 +718,10 @@ void CBaseDemoActionWithStopTime::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 // Purpose: 
 // Input  : frame - 
 //-----------------------------------------------------------------------------
-void CBaseDemoActionWithStopTime::SetStopFrame( int frame )
+void CBaseDemoActionWithStopTime::SetStopTick( int tick )
 {
-	m_bUsingStopFrame = frame != -1;
-	m_nStopFrame = frame;
+	m_bUsingStopTick = tick != -1;
+	m_nStopTick = tick;
 }
 
 //-----------------------------------------------------------------------------
@@ -699,7 +730,7 @@ void CBaseDemoActionWithStopTime::SetStopFrame( int frame )
 //-----------------------------------------------------------------------------
 void CBaseDemoActionWithStopTime::SetStopTime( float t )
 {
-	m_bUsingStopFrame = !( t != -1.0f );
+	m_bUsingStopTick = !( t != -1.0f );
 	m_flStopTime = t;
 }
 
@@ -761,8 +792,8 @@ float CDemoActionChangePlaybackRate::GetPlaybackRate( void ) const
 //-----------------------------------------------------------------------------
 void CDemoActionChangePlaybackRate::FireAction( void )
 {
-	m_flSavePlaybackRate = demo->GetPlaybackRateModifier();
-	demo->SetPlaybackRateModifier( m_flPlaybackRate );
+	// m_flSavePlaybackRate = demoplayer->Get	GetPlaybackRateModifier();
+	demoplayer->SetPlaybackTimeScale( m_flPlaybackRate );
 	SetActionFired( true );
 }
 
@@ -771,10 +802,12 @@ void CDemoActionChangePlaybackRate::FireAction( void )
 //-----------------------------------------------------------------------------
 void CDemoActionChangePlaybackRate::OnActionFinished( void )
 {
-	demo->SetPlaybackRateModifier( m_flSavePlaybackRate );
+	// demo->SetPlaybackRateModifier( m_flSavePlaybackRate );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_CHANGEPLAYBACKRATE, CDemoActionChangePlaybackRate );
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -833,15 +866,16 @@ float CDemoActionPausePlayback::GetPauseTime( void ) const
 //-----------------------------------------------------------------------------
 void CDemoActionPausePlayback::FireAction( void )
 {
-	demo->PausePlayback( GetPauseTime() );
+	demoplayer->PausePlayback( GetPauseTime() );
 	SetActionFired( true );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_PAUSE, CDemoActionPausePlayback );
+#include "tier0/memdbgon.h"
 
-extern float	scr_fov_value;
-extern float	src_demo_override_fov;
-extern double	host_time;
+extern float	scr_demo_override_fov;
+extern float	host_time;
 
 CDemoActionZoom::CDemoActionZoom()
 {
@@ -893,7 +927,7 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 		{
 			if ( m_bStayout )
 			{
-				src_demo_override_fov = m_flFinalFOV;
+				scr_demo_override_fov = m_flFinalFOV;
 				SetFinishedAction( true );
 				return true;
 			}
@@ -902,7 +936,7 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 			if ( elapsed <= intime )
 			{
 				// still going
-				src_demo_override_fov = m_flFinalFOV;
+				scr_demo_override_fov = m_flFinalFOV;
 				return true;
 			}
 
@@ -910,7 +944,7 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 			if ( elapsed > finishtime )
 			{
 				// Finished now
-				src_demo_override_fov = 0.0f;
+				scr_demo_override_fov = 0.0f;
 				SetFinishedAction( true );
 				return true;
 			}
@@ -928,7 +962,7 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 
 			frac = 1.0f - frac;
 
-			src_demo_override_fov = m_flOriginalFOV + frac * ( m_flFinalFOV - m_flOriginalFOV );
+			scr_demo_override_fov = m_flOriginalFOV + frac * ( m_flFinalFOV - m_flOriginalFOV );
 		}
 		else
 		{
@@ -943,7 +977,7 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 			}
 			frac = clamp( frac, 0.0f, 1.0f );
 
-			src_demo_override_fov = m_flOriginalFOV + frac * ( m_flFinalFOV - m_flOriginalFOV );
+			scr_demo_override_fov = m_flOriginalFOV + frac * ( m_flFinalFOV - m_flOriginalFOV );
 		}
 
 		return true;
@@ -954,9 +988,9 @@ bool CDemoActionZoom::Update( const DemoActionTimingContext& tc )
 
 void CDemoActionZoom::FireAction( void )
 {
-	m_flOriginalFOV		= scr_fov_value;
-	src_demo_override_fov = m_flOriginalFOV;
-	m_flFOVStartTime	= host_time;
+	m_flOriginalFOV	= g_EngineRenderer->GetFov();
+	scr_demo_override_fov = m_flOriginalFOV;
+	m_flFOVStartTime = host_time;
 }
 
 void CDemoActionZoom::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
@@ -978,4 +1012,6 @@ void CDemoActionZoom::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 		m_flHoldTime );
 }
 
+#include "tier0/memdbgoff.h"
 DECLARE_DEMOACTION( DEMO_ACTION_ZOOM, CDemoActionZoom );
+#include "tier0/memdbgon.h"

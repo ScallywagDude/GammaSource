@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef PERFSTATS_H
 #define PERFSTATS_H
@@ -13,6 +13,13 @@
 #include "studio.h"
 #include "optimize.h"
 
-void SpewPerfStats( studiohdr_t *pStudioHdr, OptimizedModel::FileHeader_t *vtxFile );
+enum
+{
+	SPEWPERFSTATS_SHOWSTUDIORENDERWARNINGS = 1,
+	SPEWPERFSTATS_SHOWPERF = 2,
+	SPEWPERFSTATS_SPREADSHEET = 4,
+};
+
+void SpewPerfStats( studiohdr_t *pStudioHdr, const char *pFilename, unsigned int flags );
 
 #endif // PERFSTATS_H

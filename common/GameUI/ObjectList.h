@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // ObjectList.h: interface for the ObjectList class.
 //
 //////////////////////////////////////////////////////////////////////

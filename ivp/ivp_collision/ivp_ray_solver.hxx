@@ -5,11 +5,6 @@
 #define IVP_RAY_SOLVER_INCLUDED
 
 
-#ifndef WIN32
-#	pragma interface
-#endif
-
-
 class IVP_Environment;
 class IVP_Real_Object;
 class IVP_Ball;
@@ -96,6 +91,7 @@ protected:
     friend class IVP_SurfaceManager_Grid;
 	friend class IVP_SurfaceManager_Mopp;
 	friend class hkMoppLongRayVirtualMachine;
+    friend class IVP_SurfaceManager_VirtualMesh;
     IVP_U_Point ray_start_point;
     IVP_U_Float_Point ray_center_point;
     IVP_U_Point ray_end_point;

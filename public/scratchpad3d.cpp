@@ -1,16 +1,19 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <stdio.h>
 #include "scratchpad3d.h"
+#include "tier0/dbg.h"
 
-#ifdef _LINUX
-#define __stdcall
-#endif
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+#ifndef POSIX
+// NOTE - linux doesn't need any of this code!
 
 extern "C"
 {
@@ -131,6 +134,31 @@ void CScratchPad3D::CCommand_RenderState::Write( IFileSystem* pFileSystem, FileH
 
 
 // ------------------------------------------------------------------------ //
+// CCommand_Text.
+// ------------------------------------------------------------------------ //
+
+void CScratchPad3D::CCommand_Text::Read( CFileRead *pFile )
+{
+	int strLen;
+	pFile->Read( &strLen, sizeof( strLen ) );
+	m_String.SetSize( strLen );
+	pFile->Read( m_String.Base(), strLen );
+
+	pFile->Read( &m_TextParams, sizeof( m_TextParams ) );
+}
+
+
+void CScratchPad3D::CCommand_Text::Write( IFileSystem* pFileSystem, FileHandle_t fp )
+{
+	int strLen = m_String.Count();
+	pFileSystem->Write( &strLen, sizeof( strLen ), fp );
+	pFileSystem->Write( m_String.Base(), strLen, fp );
+
+	pFileSystem->Write( &m_TextParams, sizeof( m_TextParams ), fp );
+}
+
+
+// ------------------------------------------------------------------------ //
 // CScratchPad3D internals.
 // ------------------------------------------------------------------------ //
 
@@ -150,7 +178,7 @@ void CScratchPad3D::AutoFlush()
 		Flush();
 }
 
-void CScratchPad3D::DrawRectGeneric( int iPlane, int otherDim1, int otherDim2, float planeDist, const Vector2D &vMin, const Vector2D &vMax, const Vector &vColor )
+void CScratchPad3D::DrawRectGeneric( int iPlane, int otherDim1, int otherDim2, float planeDist, const Vector2D &vMin, const Vector2D &vMax, const CSPColor &vColor )
 {
 	Vector verts[4];
 
@@ -206,10 +234,12 @@ bool CScratchPad3D::LoadCommandsFromFile( )
 			pCmd = new CCommand_Matrix;
 		else if( iCommand == COMMAND_RENDERSTATE )
 			pCmd = new CCommand_RenderState;
+		else if ( iCommand == COMMAND_TEXT )
+			pCmd = new CCommand_Text;
 
 		if( !pCmd )
 		{
-			assert( !"LoadCommandsFromFile: invalid file" );
+			Assert( !"LoadCommandsFromFile: invalid file" );
 			m_pFileSystem->Close( fp );
 			return false;
 		}
@@ -259,6 +289,11 @@ void CScratchPad3D::SetMapping(
 	AutoFlush();
 }
 
+bool CScratchPad3D::GetAutoFlush()
+{
+	return m_bAutoFlush;
+}
+
 void CScratchPad3D::SetAutoFlush( bool bAutoFlush )
 {
 	m_bAutoFlush = bAutoFlush;
@@ -298,17 +333,17 @@ void CScratchPad3D::DrawPolygon( CSPVertList const &verts )
 	AutoFlush();
 }
 
-void CScratchPad3D::DrawRectYZ( float xPos, const Vector2D &vMin, const Vector2D &vMax, const Vector &vColor )
+void CScratchPad3D::DrawRectYZ( float xPos, const Vector2D &vMin, const Vector2D &vMax, const CSPColor &vColor )
 {
 	DrawRectGeneric( 0, 1, 2, xPos, vMin, vMax, vColor );
 }
 
-void CScratchPad3D::DrawRectXZ( float yPos, const Vector2D &vMin, const Vector2D &vMax, const Vector &vColor )
+void CScratchPad3D::DrawRectXZ( float yPos, const Vector2D &vMin, const Vector2D &vMax, const CSPColor &vColor )
 {
 	DrawRectGeneric( 1, 0, 2, yPos, vMin, vMax, vColor );
 }
 
-void CScratchPad3D::DrawRectXY( float zPos, const Vector2D &vMin, const Vector2D &vMax, const Vector &vColor )
+void CScratchPad3D::DrawRectXY( float zPos, const Vector2D &vMin, const Vector2D &vMax, const CSPColor &vColor )
 {
 	DrawRectGeneric( 2, 0, 1, zPos, vMin, vMax, vColor );
 }
@@ -376,15 +411,28 @@ void CScratchPad3D::DrawWireframeBox( const Vector &vMin, const Vector &vMax, co
 		CSPVert(Vector(vMax.x, vMin.y, vMax.z), vColor) );
 }
 
+
+void CScratchPad3D::DrawText( const char *pStr, const CTextParams &params )
+{
+	CCommand_Text *cmd = new CCommand_Text;
+	m_Commands.AddToTail( cmd );
+
+	cmd->m_String.CopyArray( pStr, strlen( pStr ) + 1 );
+	cmd->m_TextParams = params;
+
+	AutoFlush();
+}
+
+
 void CScratchPad3D::Clear()
 {
 	FileHandle_t fp;
 	
-	while( !( fp = m_pFileSystem->Open(m_pFilename, "wb") ) )
+	while( ( fp = m_pFileSystem->Open(m_pFilename, "wb") ) == NULL )
 	{
 #ifdef _WIN32
 		Sleep( 5 );
-#elif _LINUX
+#elif POSIX
 		usleep( 5 );
 #endif
 	}
@@ -399,11 +447,11 @@ void CScratchPad3D::Flush()
 {
 	FileHandle_t fp;
 
-	while( !( fp = m_pFileSystem->Open(m_pFilename, "ab+") ) )
+	while( ( fp = m_pFileSystem->Open(m_pFilename, "ab+") ) == NULL )
 	{
 #ifdef _WIN32
 		Sleep( 5 );
-#elif _LINUX
+#elif POSIX
 		usleep( 5 );
 #endif
 	}
@@ -420,8 +468,14 @@ void CScratchPad3D::Flush()
 	DeleteCommands();
 }
 
-
-void CScratchPad3D::DrawImageBW( unsigned char const *pData, int width, int height, int pitchInBytes )
+void CScratchPad3D::DrawImageBW(
+		unsigned char const *pData, 
+		int width, 
+		int height, 
+		int pitchInBytes, 
+		bool bOutlinePixels, 
+		bool bOutlineImage,
+		Vector *vCorners )
 {
 	SPRGBA *pRGBA = new SPRGBA[width*height];
 	for( int y=0; y < height; y++ )
@@ -436,45 +490,114 @@ void CScratchPad3D::DrawImageBW( unsigned char const *pData, int width, int heig
 		}
 	}
 
-	DrawImageRGBA( pRGBA, width, height, width*sizeof(SPRGBA) );
+	DrawImageRGBA( pRGBA, width, height, width*sizeof(SPRGBA), bOutlinePixels, bOutlineImage, vCorners );
 	delete [] pRGBA;
 }
 
 
-void CScratchPad3D::DrawImageRGBA( SPRGBA *pData, int width, int height, int pitchInBytes )
+void CScratchPad3D::DrawPolygonsForPixels(
+		SPRGBA *pData, 
+		int width, 
+		int height, 
+		int pitchInBytes, 
+		Vector *vCorners )
 {
-	assert( pitchInBytes % sizeof(SPRGBA) == 0 );
+	// Scan top-down.
+	Vector vCurLeft = vCorners[1];
+	Vector vCurRight = vCorners[2];
+	
+	Vector vLeftInc = (vCorners[0] - vCorners[1]) / height;
+	Vector vRightInc = (vCorners[3] - vCorners[2]) / height;
+	
+	Vector vNextLeft = vCurLeft + vLeftInc;
+	Vector vNextRight = vCurRight + vRightInc;
 
-	SetMapping( 
-		Vector(0,0,0), 
-		Vector(width, height, 0),
-		Vector(-100,-100,0),
-		Vector(100,100,0) );
+	Vector vPolyBox[4];
+	Vector &vTopLeft = vPolyBox[0];
+	Vector &vTopRight = vPolyBox[1];
+	Vector &vBottomRight = vPolyBox[2];
+	Vector &vBottomLeft = vPolyBox[3];
 
-	// Draw solids.
-	int y;
-	SetRenderState( IScratchPad3D::RS_FillMode, IScratchPad3D::FillMode_Solid );
-	for( y=0; y < height; y++ )
+	for( int y=0; y < height; y++ )
 	{
+		vTopLeft = vCurLeft;
+		vBottomLeft = vNextLeft;
+		
+		Vector vTopXInc = (vCurRight - vCurLeft) / width;
+		Vector vBottomXInc = (vNextRight - vNextLeft) / width;
+
+		vTopRight = vTopLeft + vTopXInc;
+		vBottomRight = vBottomLeft + vBottomXInc;
+
 		SPRGBA *pSrc = &pData[ y * (pitchInBytes/sizeof(SPRGBA)) ];
 		for( int x=0; x < width; x++ )
 		{
-			Vector vDrawBox[4] = {Vector(x+0, y+0, 0), Vector(x+0, y+1, 0), Vector(x+1, y+1, 0), Vector(x+1, y+0, 0)};
-			DrawPolygon( CSPVertList( vDrawBox, 4, Vector(pSrc->r/255.1f, pSrc->g/255.1f, pSrc->b/255.1f) ) );
+			if ( pData )
+				DrawPolygon( CSPVertList( vPolyBox, 4, Vector(pSrc->r/255.1f, pSrc->g/255.1f, pSrc->b/255.1f) ) );
+			else
+				DrawPolygon( CSPVertList( vPolyBox, 4, Vector(1,1,1) ) );
+			
 			++pSrc;
+			vTopLeft += vTopXInc;
+			vTopRight += vTopXInc;
+			vBottomLeft += vBottomXInc;
+			vBottomRight += vBottomXInc;
 		}
+
+		vCurLeft += vLeftInc;
+		vNextLeft += vLeftInc;
+		vCurRight += vRightInc;
+		vNextRight += vRightInc;
+	}
+}
+
+
+void CScratchPad3D::DrawImageRGBA(
+		SPRGBA *pData, 
+		int width, 
+		int height, 
+		int pitchInBytes, 
+		bool bOutlinePixels,
+		bool bOutlineImage,
+		Vector *vCorners )
+{
+	Assert( pitchInBytes % sizeof(SPRGBA) == 0 );
+
+	Vector vDefaultCorners[4];
+	if ( !vCorners )
+	{
+		vCorners = vDefaultCorners;
+		vDefaultCorners[0].Init( -100, -100 );
+		vDefaultCorners[1].Init( -100, 100 );
+		vDefaultCorners[2].Init( 100,  100 );
+		vDefaultCorners[3].Init( 100, -100 );
 	}
 
+	// Don't auto-flush while drawing all these primitives.
+	bool bOldAutoFlush = m_bAutoFlush;
+	m_bAutoFlush = false;
+
+	// Draw solids.
+	SetRenderState( IScratchPad3D::RS_FillMode, IScratchPad3D::FillMode_Solid );
+	DrawPolygonsForPixels( pData, width, height, pitchInBytes, vCorners );
+
 	// Draw wireframe.
-	SetRenderState( IScratchPad3D::RS_FillMode, IScratchPad3D::FillMode_Wireframe );
-	for( y=0; y < height; y++ )
+	if ( bOutlinePixels )
 	{
-		for( int x=0; x < width; x++ )
-		{
-			Vector vDrawBox[4] = {Vector(x+0, y+0, 0), Vector(x+0, y+1, 0), Vector(x+1, y+1, 0), Vector(x+1, y+0, 0)};
-			DrawPolygon( CSPVertList( vDrawBox, 4 ) );
-		}
+		SetRenderState( IScratchPad3D::RS_FillMode, IScratchPad3D::FillMode_Wireframe );
+		DrawPolygonsForPixels( NULL, width, height, pitchInBytes, vCorners );
 	}
+
+	// Draw an outline around the whole image.
+	if ( bOutlineImage )
+	{
+		SetRenderState( IScratchPad3D::RS_FillMode, IScratchPad3D::FillMode_Wireframe );
+		DrawPolygon( CSPVertList( vCorners, 4 ) );
+	}
+
+	// Restore the old auto-flush state.
+	m_bAutoFlush = bOldAutoFlush;
+	AutoFlush();
 }
 
 
@@ -490,7 +613,7 @@ IFileSystem* ScratchPad3D_SetupFileSystem()
 
 	CreateInterfaceFn fn = Sys_GetFactory( pModule );
 	IFileSystem *pFileSystem;
-	if( !fn || !(pFileSystem = (IFileSystem *)fn( FILESYSTEM_INTERFACE_VERSION, NULL )) )
+	if( !fn || (pFileSystem = (IFileSystem *)fn( FILESYSTEM_INTERFACE_VERSION, NULL )) == NULL )
 	{
 		Sys_UnloadModule( pModule );
 		return NULL;
@@ -508,5 +631,5 @@ IScratchPad3D* ScratchPad3D_Create( char const *pFilename )
 	CScratchPad3D *pRet = new CScratchPad3D( pFilename, pFileSystem, true );
 	return pRet;
 }
-
+#endif // POSIX
 

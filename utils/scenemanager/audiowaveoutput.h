@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef AUDIOWAVEOUTPUT_H
 #define AUDIOWAVEOUTPUT_H
@@ -12,7 +12,7 @@
 #endif
 
 #include "sound.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 
 #define OUTPUT_BUFFER_COUNT		32
 #define MAX_CHANNELS			16

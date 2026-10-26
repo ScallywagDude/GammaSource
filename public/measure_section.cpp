@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <string.h>
 #include <stdlib.h>
 #include "basetypes.h"
@@ -29,6 +24,7 @@ double CMeasureSection::m_dNextResort = 0.0;
 
 ConVar	measure_resort( "measure_resort", "1.0", 0, "How often to re-sort profiling sections\n" );
 ConVar	game_speeds( "game_speeds","0" );
+extern ConVar host_speeds;
 
 //-----------------------------------------------------------------------------
 // Purpose: Creates a profiling section

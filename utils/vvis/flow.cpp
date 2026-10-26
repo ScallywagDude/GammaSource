@@ -1,6 +1,15 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "vis.h"
 #include "vmpi.h"
 
+int g_TraceClusterStart = -1;
+int g_TraceClusterStop = -1;
 /*
 
   each portal will have a list of all possible to see from first portal
@@ -74,7 +83,7 @@ winding_t *AllocStackWinding (pstack_t *stack)
 		}
 	}
 
-	Error ("AllocStackWinding: failed");
+	Error ("Out of memory. AllocStackWinding: failed");
 
 	return NULL;
 }
@@ -364,6 +373,99 @@ winding_t	*ClipToSeperators (winding_t *source, winding_t *pass, winding_t *targ
 }
 
 
+class CPortalTrace
+{
+public:
+	CUtlVector<Vector>	m_list;
+	CThreadFastMutex	m_mutex;
+} g_PortalTrace;
+
+void WindingCenter (winding_t *w, Vector &center)
+{
+	int		i;
+	float	scale;
+
+	VectorCopy (vec3_origin, center);
+	for (i=0 ; i<w->numpoints ; i++)
+		VectorAdd (w->points[i], center, center);
+
+	scale = 1.0/w->numpoints;
+	VectorScale (center, scale, center);
+}
+
+Vector ClusterCenter( int cluster )
+{
+	Vector mins, maxs;
+	ClearBounds(mins, maxs);
+	int count = leafs[cluster].portals.Count();
+	for ( int i = 0; i < count; i++ )
+	{
+		winding_t *w = leafs[cluster].portals[i]->winding;
+		for ( int j = 0; j < w->numpoints; j++ )
+		{
+			AddPointToBounds( w->points[j], mins, maxs );
+		}
+	}
+	return (mins + maxs) * 0.5f;
+}
+
+
+void DumpPortalTrace( pstack_t *pStack )
+{
+	AUTO_LOCK(g_PortalTrace.m_mutex);
+	if ( g_PortalTrace.m_list.Count() )
+		return;
+
+	Warning("Dumped cluster trace!!!\n");
+	Vector	mid;
+	mid = ClusterCenter( g_TraceClusterStart );
+	g_PortalTrace.m_list.AddToTail(mid);
+	for ( ; pStack != NULL; pStack = pStack->next )
+	{
+		winding_t *w = pStack->pass ? pStack->pass : pStack->portal->winding;
+		WindingCenter (w, mid);
+		g_PortalTrace.m_list.AddToTail(mid);
+		for ( int i = 0; i < w->numpoints; i++ )
+		{
+			g_PortalTrace.m_list.AddToTail(w->points[i]);
+			g_PortalTrace.m_list.AddToTail(mid);
+		}
+		for ( int i = 0; i < w->numpoints; i++ )
+		{
+			g_PortalTrace.m_list.AddToTail(w->points[i]);
+		}
+		g_PortalTrace.m_list.AddToTail(w->points[0]);
+		g_PortalTrace.m_list.AddToTail(mid);
+	}
+	mid = ClusterCenter( g_TraceClusterStop );
+	g_PortalTrace.m_list.AddToTail(mid);
+}
+
+void WritePortalTrace( const char *source )
+{
+	Vector	mid;
+	FILE	*linefile;
+	char	filename[1024];
+
+	if ( !g_PortalTrace.m_list.Count() )
+	{
+		Warning("No trace generated from %d to %d\n", g_TraceClusterStart, g_TraceClusterStop );
+		return;
+	}
+
+	sprintf (filename, "%s.lin", source);
+	linefile = fopen (filename, "w");
+	if (!linefile)
+		Error ("Couldn't open %s\n", filename);
+
+	for ( int i = 0; i < g_PortalTrace.m_list.Count(); i++ )
+	{
+		Vector p = g_PortalTrace.m_list[i];
+		fprintf (linefile, "%f %f %f\n", p[0], p[1], p[2]);
+	}
+	fclose (linefile);
+	Warning("Wrote %s!!!\n", filename);
+}
 
 /*
 ==================
@@ -389,6 +491,11 @@ void RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 	if ( g_bVMPIEarlyExit )
 		return;
 
+	if ( leafnum == g_TraceClusterStop )
+	{
+		DumpPortalTrace(&thread->pstack_head);
+		return;
+	}
 	thread->c_chains++;
 
 	leaf = &leafs[leafnum];
@@ -403,7 +510,7 @@ void RecursiveLeafFlow (int leafnum, threaddata_t *thread, pstack_t *prevstack)
 	vis = (long *)thread->base->portalvis;
 	
 	// check all portals for flowing into other leafs	
-	for (i=0 ; i<leaf->numportals ; i++)
+	for (i=0 ; i<leaf->portals.Count() ; i++)
 	{
 
 		p = leaf->portals[i];
@@ -559,36 +666,6 @@ of the final calculations.
 
 Calculates portalfront and portalflood bit vectors
 
-thinking about:
-
-typedef struct passage_s
-{
-	struct passage_s	*next;
-	struct portal_s		*to;
-	stryct sep_s		*seperators;
-	byte				*mightsee;
-} passage_t;
-
-typedef struct portal_s
-{
-	struct passage_s	*passages;
-	int					leaf;		// leaf portal faces into
-} portal_s;
-
-leaf = portal->leaf
-clear 
-for all portals
-
-
-calc portal visibility
-	clear bit vector
-	for all passages
-		passage visibility
-
-
-for a portal to be visible to a passage, it must be on the front of
-all separating planes, and both portals must be behind the mew portal
-
 ===============================================================================
 */
 
@@ -609,7 +686,7 @@ void SimpleFlood (portal_t *srcportal, int leafnum)
 
 	leaf = &leafs[leafnum];
 	
-	for (i=0 ; i<leaf->numportals ; i++)
+	for (i=0 ; i<leaf->portals.Count(); i++)
 	{
 		p = leaf->portals[i];
 		pnum = p - portals;
@@ -756,7 +833,7 @@ void RecursiveLeafBitFlow (int leafnum, byte *mightsee, byte *cansee)
 	leaf = &leafs[leafnum];
 	
 // check all portals for flowing into other leafs	
-	for (i=0 ; i<leaf->numportals ; i++)
+	for (i=0 ; i<leaf->portals.Count(); i++)
 	{
 		p = leaf->portals[i];
 		pnum = p - portals;

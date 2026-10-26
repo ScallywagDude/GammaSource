@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef OPTIONS_SUB_MOUSE_H
 #define OPTIONS_SUB_MOUSE_H
@@ -29,6 +29,8 @@ namespace vgui
 //-----------------------------------------------------------------------------
 class COptionsSubMouse : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( COptionsSubMouse, vgui::PropertyPage );
+
 public:
 	COptionsSubMouse(vgui::Panel *parent);
 	~COptionsSubMouse();
@@ -39,25 +41,38 @@ public:
 protected:
     virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
 
+	MESSAGE_FUNC_PTR( OnControlModified, "ControlModified", panel );
+	MESSAGE_FUNC_PTR( OnTextChanged, "TextChanged", panel );
+	MESSAGE_FUNC_PTR( OnCheckButtonChecked, "CheckButtonChecked", panel )
+	{
+		OnControlModified( panel );
+	}
+
+	void UpdateSensitivityLabel();
+	void UpdateAccelerationLabel();
+	void UpdateJoystickPanels();
+
 private:
-	DECLARE_PANELMAP();
-
-	void OnControlModified(vgui::Panel *panel);
-    void OnTextChanged(vgui::Panel *panel);
-    void UpdateSensitivityLabel();
-
 	CCvarNegateCheckButton		*m_pReverseMouseCheckBox;
-	CKeyToggleCheckButton		*m_pMouseLookCheckBox;
 	CCvarToggleCheckButton		*m_pMouseFilterCheckBox;
+	CCvarToggleCheckButton		*m_pMouseRawCheckBox;
+	vgui::CheckButton			*m_pMouseAccelerationCheckBox;
+
 	CCvarToggleCheckButton		*m_pJoystickCheckBox;
-	CKeyToggleCheckButton		*m_pJoystickLookCheckBox;
+	CCvarToggleCheckButton		*m_pJoystickSouthpawCheckBox;
+	CCvarToggleCheckButton		*m_pQuickInfoCheckBox;
+	CCvarToggleCheckButton		*m_pReverseJoystickCheckBox;
 
 	CCvarSlider					*m_pMouseSensitivitySlider;
     vgui::TextEntry             *m_pMouseSensitivityLabel;
 
-	CCvarToggleCheckButton		*m_pAutoAimCheckBox;
+	CCvarSlider					*m_pMouseAccelExponentSlider;
+	vgui::TextEntry             *m_pMouseAccelExponentLabel;
 
-	typedef vgui::PropertyPage BaseClass;
+	CCvarSlider					*m_pJoyYawSensitivitySlider;
+	vgui::Label					*m_pJoyYawSensitivityPreLabel;
+	CCvarSlider					*m_pJoyPitchSensitivitySlider;
+	vgui::Label					*m_pJoyPitchSensitivityPreLabel;
 };
 
 

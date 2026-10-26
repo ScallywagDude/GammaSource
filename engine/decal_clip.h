@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DECAL_CLIP_H
 #define DECAL_CLIP_H
@@ -12,27 +12,29 @@
 #endif
 
 
-#include "vector.h"
-#include "vector2d.h"
+#include "mathlib/vector.h"
+#include "mathlib/vector2d.h"
+#include "mathlib/compressed_vector.h"
 #include "materialsystem/imaterialsystem.h"
 #include "materialsystem/imaterial.h"
+#include "filesystem.h"
 #include "decal_private.h"
 #include "gl_model_private.h"
 
 
-#define MAX_DECALCLIPVERT		32
+#define MAX_DECALCLIPVERT		48
 
 
 class CDecalVert
 {
 public:
 	Vector		m_vPos;
+	int			m_decalIndex;		// used by the cache code
 
 	// These are the texcoords for the decal itself
-	Vector2D	m_tCoords;
-
+	Vector2D	m_ctCoords;
 	// Lightmap texcoords for the decal.
-	Vector2D	m_LMCoords;
+	Vector2D	m_cLMCoords;
 };
 
 
@@ -41,16 +43,15 @@ CDecalVert* R_DoDecalSHClip(
 	CDecalVert *pInVerts,
 	CDecalVert *pOutVerts, 
 	decal_t *pDecal, 
-	int nStartVerts, 
-	int *pVertCount );
+	int nStartVerts,
+	const Vector &vecNormal );
 
 // Generate clipped vertex list for decal pdecal projected onto polygon psurf
 CDecalVert* R_DecalVertsClip( 
 	CDecalVert *pOutVerts, 
 	decal_t *pDecal, 
-	int surfID, 
-	IMaterial *pMaterial, 
-	int *pVertCount );
+	SurfaceHandle_t surfID, 
+	IMaterial *pMaterial );
 
 // Compute the unscaled basis for the decal.
 void R_DecalComputeBasis( 
@@ -67,5 +68,6 @@ void R_SetupDecalTextureSpaceBasis(
 	Vector textureSpaceBasis[3],
 	float decalWorldScale[2] );
 
+extern ALIGN16 CDecalVert g_DecalClipVerts[MAX_DECALCLIPVERT] ALIGN16_POST;
 
 #endif // DECAL_CLIP_H

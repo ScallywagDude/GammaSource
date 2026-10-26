@@ -11,10 +11,6 @@
 #ifndef _IVP_ENVIRONMENT_INCLUDED
 #define _IVP_ENVIRONMENT_INCLUDED
 
-#ifndef WIN32
-#	pragma interface
-#endif
-
 #define IVP_Environment_Magic_Number 123456
 #define IVP_MOVEMENT_CHECK_COUNT 10 //do not always check movement state
 
@@ -131,7 +127,15 @@ public:
 #endif // HAVANA_CONSTRAINTS
 };
 
-
+class IVP_Cluster_Manager;
+class IVP_Mindist_Manager;
+class IVP_Cache_Object_Manager;
+class IVP_Time_Manager;
+class IVP_Listener_Collision;
+class IVP_Listener_Object;
+class IVP_Template_Real_Object;
+class IVP_Template_Ball;
+class IVP_Hull_Manager_Base;
 /********************************************************************************
  *	Name:	  	IVP_Environment     	
  *	Description:	The physical world:
@@ -283,7 +287,7 @@ public:
 
     IVP_FLOAT get_delta_PSI_time() { return delta_PSI_time; }
     IVP_FLOAT get_inv_delta_PSI_time() { return inv_delta_PSI_time; }
-
+    void force_psi_on_next_simulation();
     IVP_Time_CODE get_current_time_code(){ return current_time_code; }
     
     IVP_ENV_STATE get_env_state() { return state; };	// return state;
@@ -331,8 +335,8 @@ public:
     IVP_Time get_current_time(){ return current_time; }
     void 	set_delta_PSI_time( IVP_DOUBLE new_delta_PSI_time );		// range: IVP_MIN_DELTA_PSI_TIME - IVP_MAX_DELTA_PSI_TIME
     
-    static void set_global_collision_tolerance( IVP_DOUBLE tolerance = 0.01f);   // set the collision tolerance (try to go for higher values if possible)
-    
+    static void set_global_collision_tolerance( IVP_DOUBLE tolerance = 0.01f, IVP_DOUBLE gravity_length = 0.01f);   // set the collision tolerance (try to go for higher values if possible)
+    static IVP_FLOAT get_global_collision_tolerance();
     ////////// world creation
 
     // this is preleminary: allows to define breakable objects.

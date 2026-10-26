@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "TFStatsReport.h"
 
 unsigned char playerstatisticsmatchoffgifsrc[]={

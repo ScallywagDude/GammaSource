@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Wraps pointers to basic vgui interfaces
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
 #ifndef VGUI_INTERNAL_H
 #define VGUI_INTERNAL_H
@@ -19,8 +14,8 @@
 
 #include <vgui/VGUI.h>
 #include "interface.h"
-
-class IFileSystem;
+#include "tier3/tier3.h"
+#include "xbox/xboxstubs.h"
 
 namespace vgui
 {
@@ -28,28 +23,22 @@ namespace vgui
 bool VGui_InternalLoadInterfaces( CreateInterfaceFn *factoryList, int numFactories );
 
 // <vgui/IInputInternal.h> header
-class IInputInternal *input();
+extern class IInputInternal *g_pInput;
 
 // <vgui/IScheme.h> header
-class ISchemeManager *scheme();
+extern class ISchemeManager *g_pScheme;
 
 // <vgui/ISurface.h> header
-class ISurface *surface();
+extern class ISurface *g_pSurface;
 
 // <vgui/ISystem.h> header
-class ISystem *system();
+extern class ISystem *g_pSystem;
 
 // <vgui/IVGui.h> header
-class IVGui *ivgui();
-
-// "FileSystem.h" header
-IFileSystem *filesystem();
-
-// <vgui/ILocalize.h> header
-class ILocalize *localize();
+extern class IVGui *g_pIVgui;
 
 // <vgui/IPanel.h> header
-class IPanel *ipanel();
+extern class IPanel *g_pIPanel;
 
 // methods
 void vgui_strcpy(char *dst, int dstLen, const char *src);

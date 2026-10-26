@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PANELLISTPANEL_H
 #define PANELLISTPANEL_H
@@ -17,64 +12,91 @@
 #pragma once
 #endif
 
-#include <UtlLinkedList.h>
-#include <UtlVector.h>
+#include <utllinkedlist.h>
+#include <utlvector.h>
 #include <vgui/VGUI.h>
-#include <vgui_controls/Panel.h>
+#include <vgui_controls/EditablePanel.h>
 
 class KeyValues;
 
 namespace vgui
 {
-class ScrollBar;
-
 
 //-----------------------------------------------------------------------------
 // Purpose: A list of variable height child panels
-//  each list item consists of a label-panel pair. Height of the item is
-// determined from the lable.
+// each list item consists of a label-panel pair. Height of the item is
+// determined from the label.
 //-----------------------------------------------------------------------------
-class PanelListPanel : public Panel
+class PanelListPanel : public EditablePanel
 {
+	DECLARE_CLASS_SIMPLE( PanelListPanel, Panel );
+
 public:
 	PanelListPanel( vgui::Panel *parent, char const *panelName );
 	~PanelListPanel();
 
 	// DATA & ROW HANDLING
 	// The list now owns the panel
-	virtual int	computeVPixelsNeeded( void );
-	virtual int AddItem( Panel *labelPanel , Panel *panel);
-	virtual int	GetItemCount( void );
+	virtual int AddItem( Panel *labelPanel, Panel *panel );
+	int	GetItemCount() const;
+	int GetItemIDFromRow( int nRow ) const;
+
+	// Iteration. Use these until they return InvalidItemID to iterate all the items.
+	int FirstItem() const;
+	int NextItem( int nItemID ) const;
+	int InvalidItemID() const;
 
 	virtual Panel *GetItemLabel(int itemID); 
 	virtual Panel *GetItemPanel(int itemID); 
+
+    ScrollBar*  GetScrollbar() { return m_vbar; }
 
 	virtual void RemoveItem(int itemID); // removes an item from the table (changing the indices of all following items)
 	virtual void DeleteAllItems(); // clears and deletes all the memory used by the data items
 	void RemoveAll();
 
-	// PAINTING
+	// painting
 	virtual vgui::Panel *GetCellRenderer( int row );
 
-	// overrides
-	virtual void OnSizeChanged(int wide, int tall);
-	virtual void OnSliderMoved( int position );
-
-	virtual void MoveScrollBarToTop();
-
+	// layout
 	void SetFirstColumnWidth( int width );
 	int GetFirstColumnWidth();
+	void SetNumColumns( int iNumColumns );
+	int GetNumColumns( void );
+	void MoveScrollBarToTop();
 
-	DECLARE_PANELMAP();
+	// selection
+	void SetSelectedPanel( Panel *panel );
+	Panel *GetSelectedPanel();
+	/*
+		On a panel being selected, a message gets sent to it
+			"PanelSelected"		int "state"
+		where state is 1 on selection, 0 on deselection
+	*/
+
+	void		SetVerticalBufferPixels( int buffer );
+
+	void		ScrollToItem( int itemNumber );
+
+	CUtlVector< int > *GetSortedVector( void )
+	{
+		return &m_SortedItems;
+	}
+
+	int	ComputeVPixelsNeeded();
 
 protected:
-
+	// overrides
+	virtual void OnSizeChanged(int wide, int tall);
+	MESSAGE_FUNC_INT( OnSliderMoved, "ScrollBarSliderMoved", position );
 	virtual void PerformLayout();
-	virtual void PaintBackground();
-	virtual void ApplySchemeSettings(vgui::IScheme *pScheme, KeyValues *inResourceData);
+	virtual void ApplySchemeSettings(vgui::IScheme *pScheme);
+	virtual void OnMouseWheeled(int delta);
 
 private:
-	enum { SCROLLBAR_SIZE = 18, DEFAULT_HEIGHT = 24, PANELBUFFER = 5 };
+	
+
+	enum { DEFAULT_HEIGHT = 24, PANELBUFFER = 5 };
 
 	typedef struct dataitem_s
 	{
@@ -85,18 +107,19 @@ private:
 
 	// list of the column headers
 
-	CUtlLinkedList<DATAITEM*, int>		m_DataItems;
+	CUtlLinkedList<DATAITEM, int>		m_DataItems;
 	CUtlVector<int>						m_SortedItems;
 
 	ScrollBar				*m_vbar;
 	Panel					*m_pPanelEmbedded;
 
+	PHandle					m_hSelectedItem;
 	int						m_iFirstColumnWidth;
-	int						m_iScrollbarSize;
+	int						m_iNumColumns;
 	int						m_iDefaultHeight;
 	int						m_iPanelBuffer;
 
-	typedef vgui::Panel BaseClass;
+	CPanelAnimationVar( bool, m_bAutoHideScrollbar, "autohide_scrollbar", "0" );
 };
 
 }

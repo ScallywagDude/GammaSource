@@ -2,6 +2,8 @@ vs.1.1
 
 #include "macros.vsh"
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; The cable equation is:
 ; [L dot N] * C * T
@@ -12,7 +14,7 @@ vs.1.1
 ; N = particle normal (stored in the normal map)
 ; L = directional light direction
 ;
-;	c90		= Directional light direction // FIXME
+;	$SHADER_SPECIFIC_CONST_0		= Directional light direction
 ;------------------------------------------------------------------------------
 
 
@@ -35,7 +37,7 @@ mov		oPos, $projPos
 ;------------------------------------------------------------------------------
 
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2
@@ -90,16 +92,16 @@ mad		$t, -$r.zxyw, $tmp1.yzxw, $t
 
 &AllocateRegister( \$lightDirection );
 
-dp3		$lightDirection.x, $s, c90 ; FIXME
-dp3		$lightDirection.y, $t, c90 ; FIXME
-dp3		$lightDirection.z, $r, c90 ; FIXME
+dp3		$lightDirection.x, $s, $SHADER_SPECIFIC_CONST_0
+dp3		$lightDirection.y, $t, $SHADER_SPECIFIC_CONST_0
+dp3		$lightDirection.z, $r, $SHADER_SPECIFIC_CONST_0
 
 &FreeRegister( \$r );
 &FreeRegister( \$s );
 &FreeRegister( \$t );
 
 ; Scale into 0-1 range (we're assuming light direction was normalized prior to here)
-add		oD1, $lightDirection, $cHalf	; + 0.5 
+add		oT2, $lightDirection, $cHalf	; + 0.5 
 &FreeRegister( \$lightDirection );
 
 ;------------------------------------------------------------------------------

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 //
 // quakeasm.h: general asm header file
 //
@@ -32,8 +39,5 @@
 .extern C(snd_p)
 .extern C(snd_vol)
 .extern C(snd_out)
-.extern C(asmvright)
-.extern C(asmvup)
-.extern C(asmvpn)
 .extern C(BOPS_Error)
 

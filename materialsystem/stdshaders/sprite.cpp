@@ -1,21 +1,19 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
 // Implementation of the sprite shader
-//=============================================================================
+//=============================================================================//
 
 #include "BaseVSShader.h"
 #include <string.h>
 #include "const.h"
+#include "sprite_vs11.inc"
 
-DEFINE_FALLBACK_SHADER( Sprite, Sprite_DX8 )
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // WARNING!  Change these in engine/SpriteGn.h if you change them here!
 #define SPR_VP_PARALLEL_UPRIGHT		0
@@ -24,6 +22,8 @@ DEFINE_FALLBACK_SHADER( Sprite, Sprite_DX8 )
 #define SPR_ORIENTED				3
 #define SPR_VP_PARALLEL_ORIENTED	4
 
+
+DEFINE_FALLBACK_SHADER( Sprite, Sprite_DX8 )
 
 BEGIN_VS_SHADER( Sprite_DX8, 
 			  "Help for Sprite_DX8" )
@@ -35,8 +35,16 @@ BEGIN_VS_SHADER( Sprite_DX8,
 		SHADER_PARAM( IGNOREVERTEXCOLORS, SHADER_PARAM_TYPE_BOOL, "1", "ignore vertex colors" )
 	END_SHADER_PARAMS
 
+	SHADER_FALLBACK
+	{
+		if ( IsPC() && g_pHardwareConfig->GetDXSupportLevel() < 80 )
+			return "Sprite_DX6";
+		return 0;
+	}
+
 	SHADER_INIT_PARAMS()
 	{
+		// FIXME: This can share code with sprite.cpp
 		// FIXME: Not sure if this is the best solution, but it's a very]
 		// easy one. When graphics aren't enabled, we oftentimes need to get
 		// at the parameters of a shader. Therefore, we must set the default
@@ -86,16 +94,64 @@ BEGIN_VS_SHADER( Sprite_DX8,
 		}
 	}
 
-	SHADER_FALLBACK
-	{
-//		if (g_pHardwareConfig->GetDXSupportLevel() < 80)
-			return "Sprite_DX6";
-		return 0;
-	}
-
 	SHADER_INIT
 	{
 		LoadTexture( BASETEXTURE );
+	}
+
+#define SHADER_USE_VERTEX_COLOR		1
+#define SHADER_USE_CONSTANT_COLOR	2
+
+	void SetSpriteCommonShadowState( unsigned int shaderFlags )
+	{
+		s_pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+
+		unsigned int flags = VERTEX_POSITION;
+		if( shaderFlags & SHADER_USE_VERTEX_COLOR )
+		{
+			flags |= VERTEX_COLOR;
+		}
+		s_pShaderShadow->VertexShaderVertexFormat( flags, 1, 0, 0 );
+
+		sprite_vs11_Static_Index vshIndex;
+		bool vertexColor = ( shaderFlags & SHADER_USE_VERTEX_COLOR ) ? true : false;
+		vshIndex.SetVERTEXCOLOR( vertexColor );
+		s_pShaderShadow->SetVertexShader( "sprite_vs11", vshIndex.GetIndex() );
+
+		// "VERTEXCOLOR" "0..1"
+		// "CONSTANTCOLOR" "0..1"
+		int pshIndex = 0;
+		if ( shaderFlags & SHADER_USE_VERTEX_COLOR ) pshIndex |= 0x1;
+		if ( shaderFlags & SHADER_USE_CONSTANT_COLOR ) pshIndex |= 0x2;
+		s_pShaderShadow->SetPixelShader( "sprite_ps11", pshIndex );
+	}
+
+	void SetSpriteCommonDynamicState( unsigned int shaderFlags )
+	{
+		BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+
+		MaterialFogMode_t fogType = s_pShaderAPI->GetSceneFogMode();
+		int fogIndex = ( fogType == MATERIAL_FOG_LINEAR_BELOW_FOG_Z ) ? 1 : 0;
+		sprite_vs11_Dynamic_Index vshIndex;
+		vshIndex.SetSKINNING( 0 );
+		vshIndex.SetDOWATERFOG( fogIndex );
+		s_pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
+
+		s_pShaderAPI->SetPixelShaderIndex( 0 );
+		if ( shaderFlags & SHADER_USE_CONSTANT_COLOR )
+		{
+			SetPixelShaderConstant( 0, COLOR, ALPHA );
+		}
+
+	 	float color[4] = { 1.0, 1.0, 1.0, 1.0 };
+		s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_MODULATION_COLOR, color );
+
+		// identity base texture transorm
+		float ident[2][4] = { 
+			{ 1.0f, 0.0f, 0.0f, 0.0f },
+			{ 0.0f, 1.0f, 0.0f, 0.0f } 
+		};
+		s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, &ident[0][0], 2 ); 
 	}
 
 	SHADER_DRAW
@@ -110,343 +166,210 @@ BEGIN_VS_SHADER( Sprite_DX8,
 		case kRenderNormal:
 			SHADOW_STATE
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->VertexShaderVertexFormat( VERTEX_POSITION, 1, 0, 0, 0 );
-				pShaderShadow->SetVertexShader( "unlitgeneric" );
-				pShaderShadow->SetPixelShader( "SpriteRenderNormal", 0 );
+				FogToFogColor();
+				SetSpriteCommonShadowState( 0 );
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				SetSpriteCommonDynamicState( 0 );
 			}
 			Draw();
 			break;
 		case kRenderTransColor:
 		case kRenderTransTexture:
-#if 1
 			SHADOW_STATE
 			{
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-				int numTexCoords = 1;
-				pShaderShadow->VertexShaderVertexFormat( 
-					flags, numTexCoords, 0, 0, 0 );
-				pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-				pShaderShadow->SetPixelShader( "SpriteRenderTransColor", 0 );
+				FogToFogColor();
+
+				SetSpriteCommonShadowState( SHADER_USE_VERTEX_COLOR );
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				SetSpriteCommonDynamicState( SHADER_USE_VERTEX_COLOR );
 			}
 			Draw();
-#else
-			SHADOW_STATE
-			{
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
-			}
-			Draw();
-#endif
 			break;
 		case kRenderGlow:
 		case kRenderWorldGlow:
-#if 1
 			SHADOW_STATE
 			{
 				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableDepthTest( false );
+				pShaderShadow->DepthFunc( SHADER_DEPTHFUNC_ALWAYS );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-				int numTexCoords = 1;
-				pShaderShadow->VertexShaderVertexFormat( 
-					flags, numTexCoords, 0, 0, 0 );
-				pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-				pShaderShadow->SetPixelShader( "SpriteRenderTransColor", 0 );
+				FogToBlack();
+
+				SetSpriteCommonShadowState( SHADER_USE_VERTEX_COLOR );
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
+				SetSpriteCommonDynamicState( SHADER_USE_VERTEX_COLOR );
 			}
 			Draw();
-#else
-			SHADOW_STATE
-			{
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableDepthTest( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
-			}
-			Draw();
-#endif
 			break;
 		case kRenderTransAlpha:
-#if 1
+			// untested cut and past from kRenderTransAlphaAdd  . . same as first pass of that.
 			SHADOW_STATE
 			{
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-				int numTexCoords = 1;
-				pShaderShadow->VertexShaderVertexFormat( 
-					flags, numTexCoords, 0, 0, 0 );
-				pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-				pShaderShadow->SetPixelShader( "SpriteRenderTransColor", 0 );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
-			}
-			Draw();
-#else
-			SHADOW_STATE
-			{
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
 				FogToFogColor();
+
+				SetSpriteCommonShadowState( SHADER_USE_VERTEX_COLOR );
+			}
+			DYNAMIC_STATE
+			{
+				SetSpriteCommonDynamicState( SHADER_USE_VERTEX_COLOR );
 			}
 			Draw();
-#endif
 			break;
 		case kRenderTransAlphaAdd:
-#if 1
 			SHADOW_STATE
 			{
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_ONE, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-				int numTexCoords = 1;
-				pShaderShadow->VertexShaderVertexFormat( 
-					flags, numTexCoords, 0, 0, 0 );
-				pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-				pShaderShadow->SetPixelShader( "SpriteRenderTransColor", 0 );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
-			}
-			Draw();
-#else
-			SHADOW_STATE
-			{
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_ONE, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-			}
-			DYNAMIC_STATE
-			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
 				FogToFogColor();
+
+				SetSpriteCommonShadowState( SHADER_USE_VERTEX_COLOR );
+			}
+			DYNAMIC_STATE
+			{
+				SetSpriteCommonDynamicState( SHADER_USE_VERTEX_COLOR );
 			}
 			Draw();
-#endif
+
+			SHADOW_STATE
+			{
+				SetInitialShadowState();
+				pShaderShadow->EnableDepthWrites( false );
+				pShaderShadow->EnableBlending( true );
+				pShaderShadow->BlendFunc( SHADER_BLEND_ONE_MINUS_SRC_ALPHA, SHADER_BLEND_ONE );
+				FogToBlack();
+
+				SetSpriteCommonShadowState( SHADER_USE_VERTEX_COLOR );
+			}
+			DYNAMIC_STATE
+			{
+				SetSpriteCommonDynamicState( SHADER_USE_VERTEX_COLOR );
+			}
+			Draw();
 			break;
 
 		case kRenderTransAdd:
-#if 1
-			SHADOW_STATE
 			{
-				unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-				if( params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
+				unsigned int flags = SHADER_USE_CONSTANT_COLOR;
+				if( !params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
 				{
-					flags = VERTEX_POSITION;
+					flags |= SHADER_USE_VERTEX_COLOR;
 				}
-				else
+				SHADOW_STATE
 				{
-					flags = VERTEX_POSITION | VERTEX_COLOR;
+					pShaderShadow->EnableDepthWrites( false );
+					pShaderShadow->EnableBlending( true );
+					pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
+					FogToBlack();
+
+					SetSpriteCommonShadowState( flags );
 				}
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				int numTexCoords = 1;
-				pShaderShadow->VertexShaderVertexFormat( 
-					flags, numTexCoords, 0, 0, 0 );
-				if( params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
+				DYNAMIC_STATE
 				{
-					pShaderShadow->SetVertexShader( "unlitgeneric" );
+					SetSpriteCommonDynamicState( flags );
 				}
-				else
-				{
-					pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-				}
-				pShaderShadow->SetPixelShader( "SpriteRenderTransAdd", 0 );
-			}
-			DYNAMIC_STATE
-			{
-				float color[4];
-				params[COLOR]->GetVecValue( color, 3 );
-				color[3] = params[ALPHA]->GetFloatValue();
-				pShaderAPI->SetPixelShaderConstant( 0, color );
-//				SetColorState( COLOR, ALPHA );
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
 			}
 			Draw();
-#else
-			SHADOW_STATE
-			{
-				if( params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
-				{
-					pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 );
-				}
-				else
-				{
-					pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-				}
-				pShaderShadow->EnableConstantColor( true );
-				pShaderShadow->EnableDepthWrites( false );
-				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			}
-			DYNAMIC_STATE
-			{
-				SetColorState( COLOR, ALPHA );
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
-			}
-			Draw();
-#endif
 			break;
 		case kRenderTransAddFrameBlend:
-#if 1
 			{
 				float flFrame = params[FRAME]->GetFloatValue();
 				float flFade = params[ALPHA]->GetFloatValue();
+				unsigned int flags = SHADER_USE_CONSTANT_COLOR;
+				if( !params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
+				{
+					flags |= SHADER_USE_VERTEX_COLOR;
+				}
 				SHADOW_STATE
 				{
-					unsigned int flags = VERTEX_POSITION | VERTEX_COLOR;
-					if( params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
-					{
-						flags = VERTEX_POSITION;
-					}
-					else
-					{
-						flags = VERTEX_POSITION | VERTEX_COLOR;
-					}
 					pShaderShadow->EnableDepthWrites( false );
 					pShaderShadow->EnableBlending( true );
 					pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-					pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-					int numTexCoords = 1;
-					pShaderShadow->VertexShaderVertexFormat( 
-						flags, numTexCoords, 0, 0, 0 );
-					pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-					pShaderShadow->SetPixelShader( "SpriteRenderTransAdd", 0 );
+					FogToBlack();
+
+					SetSpriteCommonShadowState( flags );
 				}
 				DYNAMIC_STATE
 				{
 					float frameBlendAlpha = 1.0f - ( flFrame - ( int )flFrame );
-					float color[4];
-					color[0] = color[1] = color[2] = color[3] = flFade * frameBlendAlpha;
-					pShaderAPI->SetPixelShaderConstant( 0, color );
-					BindTexture( SHADER_TEXTURE_STAGE0, params[BASETEXTURE]->GetTextureValue(), ( int )flFrame );
-					FogToBlack();
+					ITexture *pTexture = params[BASETEXTURE]->GetTextureValue();
+					BindTexture( SHADER_SAMPLER0, pTexture, ( int )flFrame );
+
+					MaterialFogMode_t fogType = s_pShaderAPI->GetSceneFogMode();
+					int fogIndex = ( fogType == MATERIAL_FOG_LINEAR_BELOW_FOG_Z ) ? 1 : 0;
+					sprite_vs11_Dynamic_Index vshIndex;
+					vshIndex.SetSKINNING( 0 );
+					vshIndex.SetDOWATERFOG( fogIndex );
+					s_pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
+
+					float color[4] = { 1.0, 1.0, 1.0, 1.0 };
+					s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_MODULATION_COLOR, color );
+
+					s_pShaderAPI->SetPixelShaderIndex( 0 );
+	
+					color[0] = color[1] = color[2] = flFade * frameBlendAlpha;
+					color[3] = 1.0f;
+					s_pShaderAPI->SetPixelShaderConstant( 0, color );
+
+	
+					// identity base texture transorm
+					float ident[2][4] = { 
+						{ 1.0f, 0.0f, 0.0f, 0.0f },
+						{ 0.0f, 1.0f, 0.0f, 0.0f } 
+					};
+					s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, &ident[0][0], 2 ); 
 				}
 				Draw();
-
 				SHADOW_STATE
 				{
-					pShaderShadow->SetVertexShader( "unlitgeneric_vertexcolor" );
-					pShaderShadow->SetPixelShader( "SpriteRenderTransAdd", 0 );
+					FogToBlack();
+
+					SetSpriteCommonShadowState( flags );
 				}
 				DYNAMIC_STATE
 				{
 					float frameBlendAlpha = ( flFrame - ( int )flFrame );
-					float color[4];
-					color[0] = color[1] = color[2] = color[3] = flFade * frameBlendAlpha;
-					pShaderAPI->SetPixelShaderConstant( 0, color );
 					ITexture *pTexture = params[BASETEXTURE]->GetTextureValue();
 					int numAnimationFrames = pTexture->GetNumAnimationFrames();
-					BindTexture( SHADER_TEXTURE_STAGE0, pTexture, ( ( int )flFrame + 1 ) % numAnimationFrames );
-					FogToBlack();
+					BindTexture( SHADER_SAMPLER0, pTexture, ( ( int )flFrame + 1 ) % numAnimationFrames );
+
+					MaterialFogMode_t fogType = s_pShaderAPI->GetSceneFogMode();
+					int fogIndex = ( fogType == MATERIAL_FOG_LINEAR_BELOW_FOG_Z ) ? 1 : 0;
+					sprite_vs11_Dynamic_Index vshIndex;
+					vshIndex.SetSKINNING( 0 );
+					vshIndex.SetDOWATERFOG( fogIndex );
+					s_pShaderAPI->SetVertexShaderIndex( vshIndex.GetIndex() );
+
+					float color[4] = { 1.0, 1.0, 1.0, 1.0 };
+					s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_MODULATION_COLOR, color );
+
+					s_pShaderAPI->SetPixelShaderIndex( 0 );
+
+					color[0] = color[1] = color[2] = flFade * frameBlendAlpha;
+					color[3] = 1.0f;
+					s_pShaderAPI->SetPixelShaderConstant( 0, color );
+
+					// identity base texture transorm
+					float ident[2][4] = { 
+						{ 1.0f, 0.0f, 0.0f, 0.0f },
+						{ 0.0f, 1.0f, 0.0f, 0.0f } 
+					};
+					s_pShaderAPI->SetVertexShaderConstant( VERTEX_SHADER_SHADER_SPECIFIC_CONST_0, &ident[0][0], 2 ); 
 				}
 				Draw();
 			}
-#else
-			{
-				float flFrame = params[FRAME]->GetFloatValue();
-				float flFade = params[ALPHA]->GetFloatValue();
-				SHADOW_STATE
-				{
-					if( params[ IGNOREVERTEXCOLORS ]->GetIntValue() )
-					{
-						pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 );
-					}
-					else
-					{
-						pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
-					}
-					pShaderShadow->EnableConstantColor( true );
-					pShaderShadow->EnableDepthWrites( false );
-					pShaderShadow->EnableBlending( true );
-					pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-					pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-				}
-				DYNAMIC_STATE
-				{
-					float frameBlendAlpha = 1.0f - ( flFrame - ( int )flFrame );
-					pShaderAPI->Color3f( flFade * frameBlendAlpha, flFade * frameBlendAlpha, flFade * frameBlendAlpha );
-					ITextureInternal *pTexture = static_cast<ITextureInternal*>(params[BASETEXTURE]->GetTextureValue());
-					if( pTexture )
-						pTexture->Bind( SHADER_TEXTURE_STAGE0, ( int )flFrame );
-
-					FogToBlack();
-				}
-				Draw();
-				DYNAMIC_STATE
-				{
-					float frameBlendAlpha = ( flFrame - ( int )flFrame );
-					pShaderAPI->Color3f( flFade * frameBlendAlpha, flFade * frameBlendAlpha, flFade * frameBlendAlpha );
-					ITextureInternal *pTexture = static_cast<ITextureInternal*>(params[BASETEXTURE]->GetTextureValue());
-					int numAnimationFrames = pTexture->GetNumAnimationFrames();
-					if( pTexture )
-						pTexture->Bind( SHADER_TEXTURE_STAGE0, ( ( int )flFrame + 1 ) % numAnimationFrames );
-
-					FogToBlack();
-				}
-				Draw();
-			}
-#endif
-
 			break;
 		default:
 			ShaderWarning( "shader Sprite: Unknown sprite render mode\n" );

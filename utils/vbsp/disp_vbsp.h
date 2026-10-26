@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VBSP_DISPINFO_H
 #define VBSP_DISPINFO_H
@@ -19,7 +19,7 @@
 class CCoreDispInfo;
 
 
-extern CUtlVector<CCoreDispInfo> g_CoreDispInfos;
+extern CUtlVector<CCoreDispInfo*> g_CoreDispInfos;
 
 
 // Setup initial entries in g_dispinfo with some of the vertex data from the mapdisps.
@@ -34,7 +34,7 @@ void EmitDispLMAlphaAndNeighbors();
 // Setup a CCoreDispInfo given a mapdispinfo_t.
 // If pFace is non-NULL, then lightmap texture coordinates will be generated.
 void DispMapToCoreDispInfo( mapdispinfo_t *pMapDisp,
-							CCoreDispInfo *pCoreDispInfo, dface_t *pFace );
+	CCoreDispInfo *pCoreDispInfo, dface_t *pFace, int *pSwappedTexInfos );
 
 
 void DispGetFaceInfo( mapbrush_t *pBrush );

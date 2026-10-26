@@ -1,17 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
+#include <VGUI/IVGui.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_IScheme.h>
-#include <VGUI_AnimatingImagePanel.h>
-#include <VGUI_IImage.h>
+#include <vgui_controls/Controls.h>
+#include <vgui/IScheme.h>
+#include <vgui_controls/AnimatingImagePanel.h>
+#include <vgui/IImage.h>
 
 using namespace vgui;
 

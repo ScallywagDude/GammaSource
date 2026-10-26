@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef LABELEDCOMMANDCOMBOBOX_H
 #define LABELEDCOMMANDCOMBOBOX_H
@@ -14,10 +14,12 @@
 #include <vgui_controls/ComboBox.h>
 #include <vgui_controls/Label.h>
 #include <vgui_controls/Panel.h>
-#include "UtlVector.h"
+#include "utlvector.h"
 
 class CLabeledCommandComboBox : public vgui::ComboBox
 {
+	DECLARE_CLASS_SIMPLE( CLabeledCommandComboBox, vgui::ComboBox );
+
 public:
 	CLabeledCommandComboBox(vgui::Panel *parent, const char *panelName);
 	~CLabeledCommandComboBox();
@@ -38,13 +40,9 @@ public:
 		MAX_NAME_LEN = 256,
 		MAX_COMMAND_LEN = 256
 	};
-
-	DECLARE_PANELMAP();
 	
 private:
-	typedef vgui::ComboBox BaseClass;
-
-	void OnTextChanged( char const *text );
+	MESSAGE_FUNC_CHARPTR( OnTextChanged, "TextChanged", text );
 
 	struct COMMANDITEM
 	{

@@ -1,15 +1,10 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Methods associated with the cursor
 //
 // $Revision: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MATSURFACE_CURSOR_H
 #define MATSURFACE_CURSOR_H
@@ -18,7 +13,7 @@
 #pragma once
 #endif
 
-#include "vguimatsurface/IMatSystemSurface.h"
+#include "VGuiMatSurface/IMatSystemSurface.h"
 #include <vgui/Cursor.h>
 
 //-----------------------------------------------------------------------------
@@ -40,16 +35,17 @@ void ActivateCurrentCursor();
 
 
 //-----------------------------------------------------------------------------
+// Handles software cursors
+//-----------------------------------------------------------------------------
+void EnableSoftwareCursor( bool bEnable );
+bool ShouldDrawSoftwareCursor();
+int  GetSoftwareCursorTexture( float *px, float *py );
+
+//-----------------------------------------------------------------------------
 // handles mouse movement
 //-----------------------------------------------------------------------------
 void CursorSetPos(void *hwnd, int x, int y);
 void CursorGetPos(void *hwnd, int &x, int &y);
-
-
-//-----------------------------------------------------------------------------
-// Cursor callbacks
-//-----------------------------------------------------------------------------
-void CursorSetMouseCallbacks( GetMouseCallback_t getFunc, SetMouseCallback_t setFunc );
 
 
 //-----------------------------------------------------------------------------
@@ -63,6 +59,13 @@ void LockCursor( bool bEnable );
 //-----------------------------------------------------------------------------
 bool IsCursorLocked();
 
+//-----------------------------------------------------------------------------
+// Purpose: loads a custom cursor file from the file system
+//-----------------------------------------------------------------------------
+vgui::HCursor Cursor_CreateCursorFromFile( char const *curOrAniFile, char const *pPathID );
+
+// Helper for shutting down cursors
+void Cursor_ClearUserCursors();
 
 #endif // MATSURFACE_CURSOR_H
 

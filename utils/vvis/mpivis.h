@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef MPIVIS_H
 #define MPIVIS_H
@@ -11,7 +11,7 @@
 #endif
 
 
-void VVIS_SetupMPI( int argc, char **argv );
+void VVIS_SetupMPI( int &argc, char **&argv );
 
 
 void RunMPIBasePortalVis();

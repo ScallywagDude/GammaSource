@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ISERVERNETWORKABLE_H
 #define ISERVERNETWORKABLE_H
@@ -14,13 +14,16 @@
 
 #include "ihandleentity.h"
 #include "basetypes.h"
+#include "bitvec.h"
+#include "const.h"
+#include "bspfile.h"
 
 
-enum EntityChange_t
-{
-	ENTITY_CHANGE_AUTODETECT = 0,
-	ENTITY_CHANGE_NONE
-};
+
+// Entities can span this many clusters before we revert to a slower area checking algorithm
+#define	MAX_FAST_ENT_CLUSTERS	4
+#define	MAX_ENT_CLUSTERS	64
+#define MAX_WORLD_AREAS		8
 
 
 class ServerClass;
@@ -34,73 +37,77 @@ class CBaseNetworkable;
 class CCheckTransmitInfo
 {
 public:
-	// Entities use these in their CheckTransmit function to tell the engine whether or not the 
-	// entity should be transmitted.
-	int		WillTransmit( int iEdict ) const;
-	void	SetTransmit( int iEdict );
-	void	ClearTransmit( int iEdict );
+	edict_t	*m_pClientEnt;	// pointer to receiver edict
+	byte	m_PVS[PAD_NUMBER( MAX_MAP_CLUSTERS,8 ) / 8];
+	int		m_nPVSSize;		// PVS size in bytes
 
-public:
-
-	edict_t	*m_pClientEnt;
-	byte	*m_pPVS;
-	int		m_iArea;
-	byte	*m_pEdictBits;
+	CBitVec<MAX_EDICTS>	*m_pTransmitEdict;	// entity n is already marked for transmission
+	CBitVec<MAX_EDICTS>	*m_pTransmitAlways; // entity n is always sent even if not in PVS (HLTV and Replay only)
+	
+	int 	m_AreasNetworked; // number of networked areas 
+	int		m_Areas[MAX_WORLD_AREAS]; // the areas
+	
+	// This is used to determine visibility, so if the previous state
+	// is the same as the current state (along with pvs and areas networked),
+	// then the parts of the map that the player can see haven't changed.
+	byte	m_AreaFloodNums[MAX_MAP_AREAS];
+	int		m_nMapAreas;
 };
 
-inline int CCheckTransmitInfo::WillTransmit( int iEdict ) const
+//-----------------------------------------------------------------------------
+// Stores information necessary to perform PVS testing.
+//-----------------------------------------------------------------------------
+struct PVSInfo_t
 {
-	return m_pEdictBits[iEdict >> 3] & (1 << (iEdict & 7));
-}
+	// headnode for the entity's bounding box
+	short		m_nHeadNode;			
 
-inline void CCheckTransmitInfo::SetTransmit( int iEdict )
-{ 
-	m_pEdictBits[iEdict >> 3] |= (1 << (iEdict & 7)); 
-}
+	// number of clusters or -1 if too many
+	short		m_nClusterCount;		
 
-inline void CCheckTransmitInfo::ClearTransmit( int iEdict )
-{ 
-	m_pEdictBits[iEdict >> 3] &= ~(1 << (iEdict & 7)); 
-}
+	// cluster indices
+	unsigned short *m_pClusters;	
+
+	// For dynamic "area portals"
+	short		m_nAreaNum;
+	short		m_nAreaNum2;
+
+	// current position
+	float		m_vCenter[3];
+
+private:
+	unsigned short m_pClustersInline[MAX_FAST_ENT_CLUSTERS];
+
+	friend class CVEngineServer;
+};
 
 
 // IServerNetworkable is the interface the engine uses for all networkable data.
-class IServerNetworkable : public IHandleEntity
+class IServerNetworkable
 {
-public:
-	virtual					~IServerNetworkable() {}
-
-
 // These functions are handled automatically by the server_class macros and CBaseNetworkable.
 public:
+	// Gets at the entity handle associated with the collideable
+	virtual IHandleEntity	*GetEntityHandle() = 0;
 
 	// Tell the engine which class this object is.
 	virtual ServerClass*	GetServerClass() = 0;
 
-	// Return a combo of the EFL_ flags.
-	virtual int				GetEFlags() const = 0;
-	virtual void			SetEFlags( int iEFlags ) = 0;
-
 	virtual edict_t			*GetEdict() const = 0;
 
-public:
+	virtual const char*		GetClassName() const = 0;
+	virtual void			Release() = 0;
 
-	// This is called once per frame per client per visible area on each entity. The entity should
-	// call pInfo->SetShouldTransmit if it wants to be sent to the specified client.
-	//
-	// This is also where an entity can force other entities to be transmitted if it refers to them
-	// with ehandles.
-	virtual void			CheckTransmit( CCheckTransmitInfo *pInfo ) = 0;
-
-	// Asks whether a particular entity has changed network state this frame.
-	virtual EntityChange_t	DetectNetworkStateChanges() = 0;
-
-	// Called by the engine to indicate that its processed the state changes
-	virtual void			ResetNetworkStateChanges() = 0;
+	virtual int				AreaNum() const = 0;
 
 	// In place of a generic QueryInterface.
 	virtual CBaseNetworkable* GetBaseNetworkable() = 0;
 	virtual CBaseEntity*	GetBaseEntity() = 0; // Only used by game code.
+	virtual PVSInfo_t*		GetPVSInfo() = 0; // get current visibilty data
+
+protected:
+	// Should never call delete on this! 
+	virtual					~IServerNetworkable() {}
 };
 
 

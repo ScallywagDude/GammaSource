@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,10 +14,8 @@
 //-----------------------------------------------------------------------------
 enum TrackerMessageFlags_e
 {
-	MESSAGEFLAG_REQUESTAUTH = 1,	// message is requesting authorization from user
-	MESSAGEFLAG_AUTHED = 2,			// user has authorized themselves to you
-	MESSAGEFLAG_SYSTEM = 4,			// message is from the tracker system
-	
+	MESSAGEFLAG_SYSTEM = 1<<2,			// message is from the tracker system
+	MESSAGEFLAG_MARKETING = 1<<3,			// message is from the tracker system
 };
 
 

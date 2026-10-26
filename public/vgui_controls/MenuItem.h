@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MENUITEM_H
 #define MENUITEM_H
@@ -31,14 +26,18 @@ class Image;
 
 //-----------------------------------------------------------------------------
 // Purpose: The items in a menu
-// MenuItems MUST have the Menu class as parents.
+//			MenuItems MUST have the Menu class as parents.
 //-----------------------------------------------------------------------------
 class MenuItem : public Button
 {
+	DECLARE_CLASS_SIMPLE( MenuItem, Button );
+
 public:
-	MenuItem(Panel *parent, const char *panelName, const char *text, Menu *cascadeMenu = NULL, bool checkable = false);
-	MenuItem(Panel *parent, const char *panelName, const wchar_t *wszText, Menu *cascadeMenu = NULL, bool checkable = false);
+	MenuItem(Menu *parent, const char *panelName, const char *text, Menu *cascadeMenu = NULL, bool checkable = false);
+	MenuItem(Menu *parent, const char *panelName, const wchar_t *wszText, Menu *cascadeMenu = NULL, bool checkable = false);
 	~MenuItem();
+
+	virtual void Paint();
 
 	// Activate the menu item as if it had been selected by the user
 	virtual void FireActionSignal();
@@ -54,7 +53,7 @@ public:
 	void CloseCascadeMenu();
 
 	// Pass kill focus events up to parent on loss of focus
-	virtual void OnKillFocus();
+	MESSAGE_FUNC( OnKillFocus, "MenuClose" );
 
 	// Return true if this item triggers a cascading menu
 	bool HasMenu();
@@ -80,9 +79,9 @@ public:
 	void OnCursorMoved(int x, int y);
 
 	// Highlight item
-	void ArmItem();
+	MESSAGE_FUNC( ArmItem, "ArmItem" );
 	// Unhighlight item.
-	void DisarmItem();
+	MESSAGE_FUNC( DisarmItem, "DisarmItem" );
 
 	// is the item highlighted?
 	bool IsItemArmed();
@@ -97,21 +96,25 @@ public:
 	void SetChecked(bool state);
 
 	KeyValues *GetUserData();
-	void SetUserData(KeyValues *kv);
+	void SetUserData(const KeyValues *kv);
 
 	int GetActiveItem() { if ( m_pCascadeMenu ) { return m_pCascadeMenu->GetActiveItem(); } else { return 0; }} 
+
+	Menu *GetParentMenu();
+
+	void SetCurrentKeyBinding( char const *keyName );
+
+	virtual void GetContentSize( int& cw, int &ch );
 
 protected:
 	void OnKeyCodeReleased(KeyCode code);
 	void OnMenuClose();
-	void OnKeyModeSet();
+	MESSAGE_FUNC( OnKeyModeSet, "KeyModeSet" );
 
 	// vgui overrides
 	virtual void Init( void );
 	virtual void ApplySchemeSettings(IScheme *pScheme);
 	virtual IBorder *GetBorder(bool depressed, bool armed, bool selected, bool keyfocus);
-
-	DECLARE_PANELMAP();
 
 private:
 	enum { CHECK_INSET = 6 };
@@ -121,6 +124,8 @@ private:
 	TextImage *m_pCascadeArrow; // little arrow that appears to the right of menuitems that open a menu
 	Image *m_pCheck;  // the check that appears to the left of checked menu items
 	TextImage *m_pBlankCheck;  // a blank image same size as the check for when items are not checked.
+
+	TextImage	*m_pCurrentKeyBinding; // An optional indicator for the key currently bound to this menu item
 
 	KeyValues *m_pUserData;
 

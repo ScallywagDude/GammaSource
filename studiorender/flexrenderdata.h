@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef FLEXRENDERDATA_H
 #define FLEXRENDERDATA_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "utlvector.h"
 #include "studio.h"
 
@@ -22,18 +22,18 @@
 struct mstudiomesh_t;
 
 //-----------------------------------------------------------------------------
-// Stores flex vertex data for the lifetime of the model rendering
+// Used by flex vertex data cache
 //-----------------------------------------------------------------------------
 
-struct CachedVertex_t
+struct CachedPosNormTan_t
 {
 	Vector		m_Position;
 	Vector		m_Normal;
 	Vector4D	m_TangentS;
 
-	CachedVertex_t() {}
+	CachedPosNormTan_t() = default;
 
-	CachedVertex_t( CachedVertex_t const& src )
+	CachedPosNormTan_t( CachedPosNormTan_t const& src )
 	{
 		VectorCopy( src.m_Position, m_Position );
 		VectorCopy( src.m_Normal, m_Normal );
@@ -41,6 +41,30 @@ struct CachedVertex_t
 		Assert( m_TangentS.w == 1.0f || m_TangentS.w == -1.0f );
 	}
 };
+
+//-----------------------------------------------------------------------------
+// Used by world (decal) vertex data cache
+//-----------------------------------------------------------------------------
+
+struct CachedPosNorm_t
+{
+	Vector4DAligned	m_Position;
+	Vector4DAligned	m_Normal;
+
+	CachedPosNorm_t() = default;
+
+	CachedPosNorm_t( CachedPosNorm_t const& src )
+	{
+		Vector4DCopy( src.m_Position, m_Position );
+		Vector4DCopy( src.m_Normal, m_Normal );
+	}
+};
+
+
+//-----------------------------------------------------------------------------
+// Stores flex vertex data and world (decal) vertex data for the lifetime of the model rendering
+//-----------------------------------------------------------------------------
+
 
 class CCachedRenderData
 {
@@ -67,27 +91,45 @@ public:
 
 	// Is a particular vertex flexed?
 	bool IsVertexFlexed( int vertex ) const;
+	bool IsThinVertexFlexed( int vertex ) const;
 
 	// Checks to see if the vertex is defined
 	bool IsVertexPositionCached( int vertex ) const;
 
 	// Gets a flexed vertex
-	CachedVertex_t* GetFlexVertex( int vertex );
-
-	// Creates a new flexed vertex to be associated with a vertex
-	CachedVertex_t* CreateFlexVertex( int vertex );
+	CachedPosNormTan_t* GetFlexVertex( int vertex );
 
 	// Gets a flexed vertex
-	CachedVertex_t* GetWorldVertex( int vertex );
+	CachedPosNorm_t* GetThinFlexVertex( int vertex );
 
 	// Creates a new flexed vertex to be associated with a vertex
-	CachedVertex_t* CreateWorldVertex( int vertex );
+	CachedPosNormTan_t* CreateFlexVertex( int vertex );
+
+	// Creates a new flexed vertex to be associated with a vertex
+	CachedPosNorm_t* CreateThinFlexVertex( int vertex );
+
+	// Renormalizes the normals and tangents of the flex verts
+	void RenormalizeFlexVertices( bool bHasTangentData );
+
+	// Gets a decal vertex
+	CachedPosNorm_t* GetWorldVertex( int vertex );
+
+	// Creates a new decal vertex to be associated with a vertex
+	CachedPosNorm_t* CreateWorldVertex( int vertex );
+
+	template< class T >
+	void ComputeFlexedVertex_StreamOffset( studiohdr_t *pStudioHdr, mstudioflex_t *pflex, T *pvanim, int vertCount, float w1, float w2, float w3, float w4 );
+
+#ifdef PLATFORM_WINDOWS
+	void ComputeFlexedVertex_StreamOffset_Optimized( studiohdr_t *pStudioHdr, mstudioflex_t *pflex, mstudiovertanim_t *pvanim, int vertCount, float w1, float w2, float w3, float w4);
+	void ComputeFlexedVertexWrinkle_StreamOffset_Optimized( studiohdr_t *pStudioHdr, mstudioflex_t *pflex, mstudiovertanim_wrinkle_t *pvanim, int vertCount, float w1, float w2, float w3, float w4);
+#endif // PLATFORM_WINDOWS
 
 private:
 	// Used to create the flex render data. maps 
 	struct CacheIndex_t
 	{
-		int				m_Tag;
+		unsigned short	m_Tag;
 		unsigned short	m_VertexIndex;
 	};
 
@@ -96,8 +138,8 @@ private:
 	{
 		unsigned short	m_FirstIndex;
 		unsigned short	m_IndexCount;
-		int				m_Tag;
-		int				m_FlexTag;
+		unsigned short	m_Tag;
+		unsigned short	m_FlexTag;
 
 		CacheDict_t() : m_Tag(0), m_FlexTag(0) {}
 	};
@@ -106,25 +148,31 @@ private:
 	typedef CUtlVector< CacheMeshDict_t >	CacheModelDict_t;
 	typedef CUtlVector<	CacheModelDict_t >	CacheBodyPartDict_t;
 
-	// Flex data, temporarily allocated for the lifespan of rendering
+	// Flex data, allocated for the lifespan of rendering
 	// Can't use UtlVector due to alignment issues
-	int				m_FlexVertexCount;
-	CachedVertex_t	m_pFlexVerts[MAXSTUDIOVERTS+1];
+	int					m_FlexVertexCount;
+	CachedPosNormTan_t	m_pFlexVerts[MAXSTUDIOFLEXVERTS+1];
 
-	// World data, temporarily allocated for the lifespan of rendering
+	// Flex data, allocated for the lifespan of rendering
+	// Can't use UtlVector due to alignment issues
+	int				m_ThinFlexVertexCount;
+	CachedPosNorm_t	m_pThinFlexVerts[MAXSTUDIOFLEXVERTS+1];
+
+	// World data, allocated for the lifespan of rendering
 	// Can't use UtlVector due to alignment issues
 	int				m_WorldVertexCount;
-	CachedVertex_t	m_pWorldVerts[MAXSTUDIOVERTS+1];
+	CachedPosNorm_t	m_pWorldVerts[MAXSTUDIOVERTS+1];
 
-	// Maps actual mesh vertices into flex + world indices
+	// Maps actual mesh vertices into flex cache + world cache indices
 	int				m_IndexCount;
 	CacheIndex_t	m_pFlexIndex[MAXSTUDIOVERTS+1];
+	CacheIndex_t	m_pThinFlexIndex[MAXSTUDIOVERTS+1];
 	CacheIndex_t	m_pWorldIndex[MAXSTUDIOVERTS+1];
 
 	CacheBodyPartDict_t m_CacheDict;
 
 	// The flex tag
-	int m_CurrentTag;
+	unsigned short m_CurrentTag;
 
 	// the current body, model, and mesh
 	int m_Body;
@@ -133,7 +181,10 @@ private:
 
 	// mapping for the current mesh to flex data
 	CacheIndex_t*	m_pFirstFlexIndex;
+	CacheIndex_t*	m_pFirstThinFlexIndex;
 	CacheIndex_t*	m_pFirstWorldIndex;
+
+	friend class CStudioRender;
 };
 
 
@@ -146,16 +197,31 @@ inline bool CCachedRenderData::IsVertexFlexed( int vertex ) const
 	return (m_pFirstFlexIndex && (m_pFirstFlexIndex[vertex].m_Tag == m_CurrentTag));
 }
 
+inline bool CCachedRenderData::IsThinVertexFlexed( int vertex ) const
+{
+	return (m_pFirstThinFlexIndex && (m_pFirstThinFlexIndex[vertex].m_Tag == m_CurrentTag));
+}
+
 //-----------------------------------------------------------------------------
 // Gets an existing flexed vertex associated with a vertex
 //-----------------------------------------------------------------------------
 
-inline CachedVertex_t* CCachedRenderData::GetFlexVertex( int vertex )
+inline CachedPosNormTan_t* CCachedRenderData::GetFlexVertex( int vertex )
 {
-	assert( m_pFirstFlexIndex );
-	assert( m_pFirstFlexIndex[vertex].m_Tag == m_CurrentTag );
+	Assert( m_pFirstFlexIndex );
+	Assert( m_pFirstFlexIndex[vertex].m_Tag == m_CurrentTag );
 	return &m_pFlexVerts[ m_pFirstFlexIndex[vertex].m_VertexIndex ];
 }
+
+inline CachedPosNorm_t* CCachedRenderData::GetThinFlexVertex( int vertex )
+{
+	Assert( m_pFirstThinFlexIndex );
+	Assert( m_pFirstThinFlexIndex[vertex].m_Tag == m_CurrentTag );
+	return &m_pThinFlexVerts[ m_pFirstThinFlexIndex[vertex].m_VertexIndex ];
+}
+
+
+
 
 //-----------------------------------------------------------------------------
 // Checks to see if the vertex is defined
@@ -170,10 +236,10 @@ inline bool CCachedRenderData::IsVertexPositionCached( int vertex ) const
 // Gets an existing world vertex associated with a vertex
 //-----------------------------------------------------------------------------
 
-inline CachedVertex_t* CCachedRenderData::GetWorldVertex( int vertex )
+inline CachedPosNorm_t* CCachedRenderData::GetWorldVertex( int vertex )
 {
-	assert( m_pFirstWorldIndex );
-	assert( m_pFirstWorldIndex[vertex].m_Tag == m_CurrentTag );
+	Assert( m_pFirstWorldIndex );
+	Assert( m_pFirstWorldIndex[vertex].m_Tag == m_CurrentTag );
 	return &m_pWorldVerts[ m_pFirstWorldIndex[vertex].m_VertexIndex ];
 }
 
@@ -187,20 +253,83 @@ inline void CCachedRenderData::SetBodyModelMesh( int body, int model, int mesh)
 	m_Model = model;
 	m_Mesh = mesh;
 
+	Assert((m_Model >= 0) && (m_Body >= 0));
+	m_CacheDict[m_Body][m_Model].EnsureCount(m_Mesh+1);
+
 	// At this point, we should have all 3 defined.
 	CacheDict_t& dict = m_CacheDict[m_Body][m_Model][m_Mesh];
 
 	if (dict.m_Tag == m_CurrentTag)
 	{
 		m_pFirstFlexIndex = &m_pFlexIndex[dict.m_FirstIndex];
+		m_pFirstThinFlexIndex = &m_pThinFlexIndex[dict.m_FirstIndex];
 		m_pFirstWorldIndex = &m_pWorldIndex[dict.m_FirstIndex];
 	}
 	else
 	{
 		m_pFirstFlexIndex = 0;
+		m_pFirstThinFlexIndex = 0;
 		m_pFirstWorldIndex = 0;
 	}
 }
 
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//
+//  ** Only execute this function if device supports stream offset **
+//
+// Input  : pmesh - pointer to a studio mesh
+//          lod - integer lod (0 is most detailed)
+// Output : none
+//-----------------------------------------------------------------------------
+template< class T > 
+void CCachedRenderData::ComputeFlexedVertex_StreamOffset( studiohdr_t *pStudioHdr, mstudioflex_t *pflex, 
+	T *pvanim, int vertCount, float w1, float w2, float w3, float w4 )
+{
+	float w12 = w1 - w2;
+	float w34 = w3 - w4;
+	float flVertAnimFixedPointScale = pStudioHdr->VertAnimFixedPointScale();
+
+	CachedPosNorm_t *pFlexedVertex = NULL;
+	for (int j = 0; j < pflex->numverts; j++)
+	{
+		int n = pvanim[j].index;
+
+		// only flex the indices that are (still) part of this mesh at this lod
+		if ( n >= vertCount )
+			continue;
+
+		float s = pvanim[j].speed;
+		float b = pvanim[j].side;
+
+		Vector4DAligned vPosition, vNormal;
+		pvanim[j].GetDeltaFixed4DAligned( &vPosition, flVertAnimFixedPointScale );
+		pvanim[j].GetNDeltaFixed4DAligned( &vNormal, flVertAnimFixedPointScale );
+
+		if ( !IsThinVertexFlexed(n) )
+		{
+			// Add a new flexed vert to the flexed vertex list
+			pFlexedVertex = CreateThinFlexVertex(n);
+
+			Assert( pFlexedVertex != NULL);
+
+			pFlexedVertex->m_Position.InitZero();
+			pFlexedVertex->m_Normal.InitZero();
+		}
+		else
+		{
+			pFlexedVertex = GetThinFlexVertex(n);
+		}
+
+		s *= 1.0f / 255.0f;
+		b *= 1.0f / 255.0f;
+
+		float wa = w2 + w12 * s;
+		float wb = w4 + w34 * s;
+		float w = wa + ( wb - wa ) * b;
+		Vector4DWeightMAD( w, vPosition, pFlexedVertex->m_Position, vNormal, pFlexedVertex->m_Normal );
+	}
+}							 
 
 #endif // FLEXRENDERDATA_H

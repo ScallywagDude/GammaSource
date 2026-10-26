@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -23,7 +23,7 @@ CRulesInfoMsgHandlerDetails::CRulesInfoMsgHandlerDetails( CRulesInfo *baseobject
 	: CMsgHandler( type, typeinfo )
 { 
 	m_pRulesInfo = baseobject;
-	m_vRules = new CUtlVector<KeyValues *>();
+	m_vRules = new CUtlVector<vgui::KeyValues *>();
 }
 
 //-----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ bool CRulesInfoMsgHandlerDetails::Process( netadr_t *from, CMsgBuffer *msg )
 	// Read the data
 	for (int i = 0; i < pNumber; i++)
 	{
-		KeyValues *kv=new KeyValues("rules");
+		vgui::KeyValues *kv=new vgui::KeyValues("rules");
 		char *cvar,*value;
 		cvar = new char[50];
 		value = new char[50];

@@ -1,10 +1,11 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+#include "hlfaceposer.h"
 #include "mxExpressionTab.h"
 #include "mdlviewer.h"
 #include "expressions.h"
@@ -57,5 +58,5 @@ void mxExpressionTab::ShowRightClickMenu( int mx, int my )
 int	mxExpressionTab::getSelectedIndex () const
 {
 	// Convert based on override index
-	return expressions->ConvertOverrideClassIndex( m_nSelected );
+	return m_nSelected;
 }

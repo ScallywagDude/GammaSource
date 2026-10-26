@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include <mx/mx.h>
+//=============================================================================//
+#include "hlfaceposer.h"
+#include <mxtk/mx.h>
 #include "resource.h"
 #include "PhonemeProperties.h"
 #include "expressions.h"
 #include "expclass.h"
 #include "mdlviewer.h"
-#include "hlfaceposer.h"
 
 static CPhonemeParams g_Params;
 
@@ -114,7 +114,7 @@ static void CreateAndLayoutControls( HWND hwndDlg, CPhonemeParams* params )
 	// Make sure phonemes are loaded
 	FacePoser_EnsurePhonemesLoaded();
 
-	CExpClass *cl = expressions->FindClass( "phonemes" );
+	CExpClass *cl = expressions->FindClass( "phonemes", true );
 	if ( !cl )
 		return;
 
@@ -266,7 +266,7 @@ static bool ValidatePhonemeString( bool allowmultiple, char const *input, char *
 	// Make sure phonemes are loaded
 	FacePoser_EnsurePhonemesLoaded();
 
-	CExpClass *cl = expressions->FindClass( "phonemes" );
+	CExpClass *cl = expressions->FindClass( "phonemes", true );
 	if ( !cl )
 		return false;
 

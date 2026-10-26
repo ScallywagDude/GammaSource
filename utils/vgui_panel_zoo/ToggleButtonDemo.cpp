@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include <Keyvalues.h>
+#include <vgui_controls/Controls.h>
 
-#include <VGUI_ToggleButton.h>
+#include <vgui_controls/ToggleButton.h>
 
 
 using namespace vgui;
@@ -87,7 +87,7 @@ MessageMapItem_t ToggleButtonDemo::m_MessageMap[] =
 	MAP_MESSAGE( ToggleButtonDemo, "Toggle", OnToggleButtonToggled ),
 };
 
-IMPLEMENT_PANELMAP(ToggleButtonDemo, BaseClass);
+IMPLEMENT_PANELMAP(ToggleButtonDemo, DemoPage);
 
 
 

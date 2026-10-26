@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IFRAMEENCODER_H
 #define IFRAMEENCODER_H
@@ -12,14 +12,14 @@
 
 // A frame encoder is a codec that encodes and decodes data in fixed-size frames.
 // VoiceCodec_Frame handles queuing of data and the IVoiceCodec interface.
-class IFrameEncoder
+abstract_class IFrameEncoder
 {
 public:
 	virtual			~IFrameEncoder() {}
 
 	// This is called by VoiceCodec_Frame to see if it can initialize..
 	// Fills in the uncompressed and encoded frame size (both are in BYTES).
-	virtual bool	Init(int &rawFrameSize, int &encodedFrameSize) = 0;
+	virtual bool	Init(int quality, int &rawFrameSize, int &encodedFrameSize) = 0;
 
 	virtual void	Release() = 0;
 	

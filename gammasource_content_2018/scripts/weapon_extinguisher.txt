@@ -1,0 +1,91 @@
+// Fire extinguisher
+
+WeaponData
+{
+	"bucket_position_360"	"1"
+	"bucket_360"	"5"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Extinguisher"
+	"viewmodel"				"models/weapons/v_fire_extinguisher.mdl"
+	"playermodel"			"models/weapons/w_fire_extinguisher.mdl"
+	"anim_prefix"			"fire_extinguisher"
+	"bucket"				"5"
+	"bucket_position"		"1"
+
+	"clip_size"				"-1"
+	"clip2_size"			"-1"
+	"primary_ammo"			"None"
+	"secondary_ammo"		"Extinguisher"
+	"default_clip2"			"100"
+
+	"weight"				"1"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"empty"			"Weapon_Extinguisher.Empty"
+		"reload"		"Weapon_Extinguisher.Reload"
+	//	"single_shot"	"Weapon_Extinguisher.Single"
+		"single_shot"	"ExtinguisherJet.TurnOn"
+	    "special1"		"ExtinguisherJet.TurnOff"
+		"double_shot"	"Weapon_Extinguisher.Double"
+		// NPC SECTION
+		"single_shot_npc"	"Weapon_Extinguisher.NPC_Single"
+		"reload_npc"		"Weapon_Extinguisher.NPC_Reload"
+		"double_shot_npc"	"Weapon_Extinguisher.NPC_Double"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons4b"
+				"x"		"0"
+				"y"		"0"
+				"width"		"128"
+				"height"	"64"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons4b"
+				"x"		"0"
+				"y"		"0"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"60"
+				"width"		"73"
+				"height"	"15"
+		}
+		"ammo2"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"110"
+				"width"		"73"
+				"height"	"20"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

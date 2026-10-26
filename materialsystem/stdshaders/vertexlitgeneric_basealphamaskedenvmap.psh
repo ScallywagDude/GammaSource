@@ -1,4 +1,3 @@
-;	"TEXKILL"			"0..1"
 ps.1.1
 
 ;------------------------------------------------------------------------------
@@ -12,9 +11,6 @@ ps.1.1
 tex t0	; base color
 tex t1	; cube map
 tex t2	; envmap mask (in alpha channel)
-#if TEXKILL
-texkill t3
-#endif
 
 mul r0, t0, c3			; base times modulation
 mul r1, t1, 1-t2.a		; Envmap * mask (in alpha channel)

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VCOLLIDE_H
 #define VCOLLIDE_H
@@ -15,7 +15,9 @@ class CPhysCollide;
 
 struct vcollide_t
 {
-	int		solidCount;
+	unsigned short solidCount : 15;
+	unsigned short isPacked : 1;
+	unsigned short descSize;
 	// VPhysicsSolids
 	CPhysCollide	**solids;
 	char			*pKeyValues;

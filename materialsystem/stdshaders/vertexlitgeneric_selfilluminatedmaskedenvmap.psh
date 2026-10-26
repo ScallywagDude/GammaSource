@@ -1,4 +1,3 @@
-;	"TEXKILL"			"0..1"
 ps.1.1
 
 ;------------------------------------------------------------------------------
@@ -13,9 +12,6 @@ ps.1.1
 tex t0		; base 
 tex t1		; env map
 tex t2		; mask
-#if TEXKILL
-texkill t3
-#endif
 
 mul r0.rgb, t0, c3 +		; base times modulation
 mul r0.a, c3.a, t2.a		; alpha = mod alpha * mask alpha 

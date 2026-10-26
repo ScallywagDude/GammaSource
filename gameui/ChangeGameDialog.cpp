@@ -1,11 +1,19 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+
+#ifdef _XBOX
+#include "xbox/xbox_platform.h"
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+#if !defined( _X360 )
 #include <windows.h>
+#endif
 #include <stdio.h>
 
 #include "ChangeGameDialog.h"
@@ -57,7 +65,7 @@ void CChangeGameDialog::LoadModList()
 {
 	// look for third party games
 	char szSearchPath[_MAX_PATH + 5];
-	strcpy(szSearchPath, "*.*");
+	Q_strncpy(szSearchPath, "*.*", sizeof( szSearchPath ) );
 
 	// use local filesystem since it has to look outside path system, and will never be used under steam
 	WIN32_FIND_DATA wfd;
@@ -70,11 +78,11 @@ void CChangeGameDialog::LoadModList()
 		BOOL bMoreFiles;
 		while (1)
 		{
-			if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (strnicmp(wfd.cFileName, ".", 1)))
+			if ((wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) && (Q_strnicmp(wfd.cFileName, ".", 1)))
 			{
 				// Check for dlls\*.dll
 				char szDllDirectory[MAX_PATH + 16];
-				sprintf(szDllDirectory, "%s\\liblist.gam", wfd.cFileName);
+				Q_snprintf(szDllDirectory, sizeof( szDllDirectory ), "%s\\gameinfo.txt", wfd.cFileName);
 
 				FILE *f = fopen(szDllDirectory, "rb");
 				if (f)
@@ -89,14 +97,14 @@ void CChangeGameDialog::LoadModList()
 						buf[size] = 0;
 
 						CModInfo modInfo;
-						modInfo.LoadGameInfoFromBuffer(buf, size);
+						modInfo.LoadGameInfoFromBuffer(buf);
 
-						if (stricmp(modInfo.GetGameDescription(), ModInfo().GetGameDescription()))
+						if (strcmp(modInfo.GetGameName(), ModInfo().GetGameName()))
 						{
 							// Add the game directory.
 							strlwr(wfd.cFileName);
 							KeyValues *itemData = new KeyValues("Mod");
-							itemData->SetString("ModName", modInfo.GetGameDescription());
+							itemData->SetString("ModName", modInfo.GetGameName());
 							itemData->SetString("ModDir", wfd.cFileName);
 							m_pModList->AddItem(itemData, 0, false, false);
 						}
@@ -128,11 +136,11 @@ void CChangeGameDialog::OnCommand(const char *command)
 			{
 				// change the game dir and restart the engine
 				char szCmd[256];
-				sprintf(szCmd, "_setgamedir %s\n", kv->GetString("ModDir"));
-				engine->ClientCmd(szCmd);
+				Q_snprintf(szCmd, sizeof( szCmd ), "_setgamedir %s\n", kv->GetString("ModDir"));
+				engine->ClientCmd_Unrestricted(szCmd);
 
 				// Force restart of entire engine
-				engine->ClientCmd("_restart\n");
+				engine->ClientCmd_Unrestricted("_restart\n");
 			}
 		}
 	}
@@ -144,15 +152,6 @@ void CChangeGameDialog::OnCommand(const char *command)
 	{
 		BaseClass::OnCommand(command);
 	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CChangeGameDialog::OnClose()
-{
-	BaseClass::OnClose();
-	MarkForDeletion();
 }
 
 

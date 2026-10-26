@@ -1,11 +1,11 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "tier0/dbg.h"
 #include "basedialogparams.h"
 

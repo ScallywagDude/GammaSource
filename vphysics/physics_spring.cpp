@@ -1,16 +1,18 @@
-#include <stdio.h>
-#include "physics_object.h"
-#include "physics_environment.h"
-#include "convert.h"
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+#include "cbase.h"
 
-#include "ivp_physics.hxx"
-#include "ivp_core.hxx"
-#include "ivp_templates.hxx"
 #include "ivp_actuator.hxx"
 #include "ivp_actuator_spring.hxx"
 #include "ivp_listener_object.hxx"
-#include "isaverestore.h"
-#include "vphysics_saverestore.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 struct vphysics_save_cphysicsspring_t : public springparams_t
 {
@@ -20,17 +22,19 @@ struct vphysics_save_cphysicsspring_t : public springparams_t
 };
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_cphysicsspring_t )
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		constant,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		naturalLength,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		damping,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		relativeDamping,		FIELD_FLOAT ),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		startPosition,		FIELD_POSITION_VECTOR	),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		endPosition,		FIELD_POSITION_VECTOR	),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		useLocalPositions,	FIELD_BOOLEAN	),
-	DEFINE_FIELD( vphysics_save_cphysicsspring_t,		onlyStretch,	FIELD_BOOLEAN	),
+	DEFINE_FIELD( constant,				FIELD_FLOAT ),
+	DEFINE_FIELD( naturalLength,		FIELD_FLOAT ),
+	DEFINE_FIELD( damping,				FIELD_FLOAT ),
+	DEFINE_FIELD( relativeDamping,		FIELD_FLOAT ),
 
-	DEFINE_VPHYSPTR( vphysics_save_cphysicsspring_t, pObjStart ),
-	DEFINE_VPHYSPTR( vphysics_save_cphysicsspring_t, pObjEnd ),
+	// NOTE: These are stored as *relative* vectors, so we don't use FIELD_POSITION_VECTOR
+	DEFINE_FIELD( startPosition,		FIELD_VECTOR ),
+	DEFINE_FIELD( endPosition,			FIELD_VECTOR ),
+	DEFINE_FIELD( useLocalPositions,	FIELD_BOOLEAN ),
+	DEFINE_FIELD( onlyStretch,			FIELD_BOOLEAN ),
+
+	DEFINE_VPHYSPTR( pObjStart ),
+	DEFINE_VPHYSPTR( pObjEnd ),
 END_DATADESC()
 
 
@@ -78,12 +82,12 @@ CPhysicsSpring::CPhysicsSpring( CPhysicsObject *pObjectStart, CPhysicsObject *pO
 
 void CPhysicsSpring::AttachListener()
 {
-	if ( !(m_pObjStart->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjStart->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjStart->GetObject()->add_listener_object( this );
 	}
 
-	if ( !(m_pObjEnd->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjEnd->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjEnd->GetObject()->add_listener_object( this );
 	}
@@ -93,19 +97,19 @@ CPhysicsSpring::~CPhysicsSpring()
 {
 	if ( m_pSpring )
 	{
-		DetachListener();
 		delete m_pSpring;
+		DetachListener();
 	}
 }
 
 void CPhysicsSpring::DetachListener()
 {
-	if ( !(m_pObjStart->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjStart->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjStart->GetObject()->remove_listener_object( this );
 	}
 
-	if ( !(m_pObjEnd->GetCallbackFlags() & CALLBACK_NEVER_DELETED) )
+	if ( !(m_pObjEnd->CallbackFlags() & CALLBACK_NEVER_DELETED) )
 	{
 		m_pObjEnd->GetObject()->remove_listener_object( this );
 	}
@@ -123,20 +127,23 @@ void CPhysicsSpring::event_object_deleted( IVP_Event_Object * )
 
 void CPhysicsSpring::GetEndpoints( Vector* worldPositionStart, Vector* worldPositionEnd )
 {
-	IVP_U_Point world_coords;
+	Vector localHL;
+
+	if ( !m_pSpring )
+		return;
 
 	if ( worldPositionStart )
 	{
 		const IVP_Anchor *anchor = m_pSpring->get_actuator_anchor(0);
-		TransformLocalToIVP( anchor->object_pos, world_coords, m_pObjStart->GetObject(), true );
-		ConvertPositionToHL( world_coords, *worldPositionStart );
+		ConvertPositionToHL( anchor->object_pos, localHL );
+		m_pObjStart->LocalToWorld( worldPositionStart, localHL );
 	}
 
 	if ( worldPositionEnd )
 	{
 		const IVP_Anchor *anchor = m_pSpring->get_actuator_anchor(1);
-		TransformLocalToIVP( anchor->object_pos, world_coords, m_pObjEnd->GetObject(), true );
-		ConvertPositionToHL( world_coords, *worldPositionEnd );
+		ConvertPositionToHL( anchor->object_pos, localHL );
+		m_pObjEnd->LocalToWorld( worldPositionEnd, localHL );
 	}
 }
 
@@ -180,6 +187,11 @@ void CPhysicsSpring::SetSpringLength( float flSpringLength )
 
 void CPhysicsSpring::WriteToTemplate( vphysics_save_cphysicsspring_t &params )
 {
+	if ( !m_pSpring )
+	{
+		memset(&params, 0, sizeof(params));
+		return;
+	}
 	params.constant = m_pSpring->get_constant();
 	params.naturalLength = ConvertDistanceToHL( m_pSpring->get_spring_length_zero_force() );
 	params.damping = m_pSpring->get_damp_factor();
@@ -220,10 +232,10 @@ IPhysicsSpring *CreateSpring( IVP_Environment *pEnvironment, CPhysicsObject *pOb
 	if ( !pParams->useLocalPositions )
 	{
 		Vector local;
-		pObjectStart->WorldToLocal( local, pParams->startPosition );
+		pObjectStart->WorldToLocal( &local, pParams->startPosition );
 		ConvertPositionToIVP( local, ivpPosStart );
 
-		pObjectEnd->WorldToLocal( local, pParams->endPosition );
+		pObjectEnd->WorldToLocal( &local, pParams->endPosition );
 		ConvertPositionToIVP( local, ivpPosEnd );
 	}
 	else
@@ -259,7 +271,15 @@ bool RestorePhysicsSpring( const physrestoreparams_t &params, CPhysicsSpring **p
 	memset( &springTemplate, 0, sizeof(springTemplate) );
 	params.pRestore->ReadAll( &springTemplate );
 	CPhysicsEnvironment *pEnvironment = (CPhysicsEnvironment *)params.pEnvironment;
-	*ppSpring = (CPhysicsSpring *)pEnvironment->CreateSpring( springTemplate.pObjStart, springTemplate.pObjEnd, &springTemplate );
+	if ( springTemplate.pObjStart && springTemplate.pObjEnd )
+	{
+		*ppSpring = (CPhysicsSpring *)pEnvironment->CreateSpring( springTemplate.pObjStart, springTemplate.pObjEnd, &springTemplate );
+	}
+	else
+	{
+		DevMsg( "Failed to restore spring enpoints\n");
+		*ppSpring = NULL;
+	}
 
 	return true;
 }

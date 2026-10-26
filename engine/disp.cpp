@@ -1,27 +1,20 @@
-//=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
-#include "glquake.h"
+#include "render_pch.h"
 #include "gl_cvars.h"
 #include "gl_model_private.h"
 #include "gl_lightmap.h"
 #include "disp.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "gl_rsurf.h"
 #include "gl_matsysiface.h"
-#include "enginestats.h"
-#include "r_local.h"
 #include "zone.h"
 #include "materialsystem/imesh.h"
 #include "iscratchpad3d.h"
@@ -33,35 +26,66 @@
 #include "tier0/dbg.h"
 #include "gl_rmain.h"
 #include "lightcache.h"
-#include "r_local.h"
+#include "disp_tesselate.h"
+#include "shadowmgr.h"
+#include "debugoverlay.h"
 
-Vector modelorg;
-//
-// view origin
-//
-Vector	vup(0,0,0);
-Vector	vpn(0,0,0);
-Vector	vright(0,0,0);
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 
-// ------------------------------------------------------------------------------------ //
+//-----------------------------------------------------------------------------
 // Globals.
-// ------------------------------------------------------------------------------------ //
-
+//-----------------------------------------------------------------------------
+Vector modelorg;
 ConVar r_DispDrawAxes( "r_DispDrawAxes", "0" );
-ConVar r_DispSetLOD( "r_DispSetLOD", "0" );
 
-VMatrix	g_DispViewMatrix;
-float	g_flMaxError;
 
-// The mesh that we specify indices into while tesselating.
-static CMeshBuilder *g_pIndexMesh;
+//-----------------------------------------------------------------------------
+// CEngineTesselateHelper implements the abstract parts of the tesselation code.
+// We're only interested in the final triangles anyway, right??
+//-----------------------------------------------------------------------------
+class CEngineTesselateHelper : public CBaseTesselateHelper
+{
+public:
+	void EndTriangle()
+	{
+		// Put all triangles in here.
+		int iVertOffset = m_pDisp->m_iVertOffset;
 
-// The dispinfo currently in UpdateLOD.
-CDispInfo	*g_pOriginatingDisp;
+		// Add this tri to our mesh.
+		m_IndexMesh.Index( m_TempIndices[0] + iVertOffset );
+		m_IndexMesh.AdvanceIndex();
 
-// Static used once per frame
-float CDispInfo::g_flDispRadius = 0.0f;
+		m_IndexMesh.Index( m_TempIndices[1] + iVertOffset );
+		m_IndexMesh.AdvanceIndex();
+
+		m_IndexMesh.Index( m_TempIndices[2] + iVertOffset );
+		m_IndexMesh.AdvanceIndex();
+
+		// Store off the indices...
+		m_pDisp->m_Indices[m_nIndices]   = m_TempIndices[0] + iVertOffset;
+		m_pDisp->m_Indices[m_nIndices+1] = m_TempIndices[1] + iVertOffset;
+		m_pDisp->m_Indices[m_nIndices+2] = m_TempIndices[2] + iVertOffset;
+		
+		m_nIndices += 3;
+	}
+
+	DispNodeInfo_t& GetNodeInfo( int iNodeBit )
+	{
+		return m_pDisp->m_pNodeInfo[iNodeBit];
+	}
+
+
+public:
+
+	// The mesh that we specify indices into while tesselating.
+	CMeshBuilder m_IndexMesh;
+	CDispInfo *m_pDisp;
+};
+
+
+
 
 //-----------------------------------------------------------------------------
 // CDispInfo implementation.
@@ -83,57 +107,10 @@ void CDispInfo::UpdateBoundingBox()
 
 	for( int i=0; i < NumVerts(); i++ )
 	{
-		VectorMin( m_Verts[i].m_vPos, m_BBoxMin, m_BBoxMin );
-		VectorMax( m_Verts[i].m_vPos, m_BBoxMax, m_BBoxMax );
+		const Vector &pos = m_MeshReader.Position( i );
+		VectorMin( pos, m_BBoxMin, m_BBoxMin );
+		VectorMax( pos, m_BBoxMax, m_BBoxMax );
 	}
-
-	UpdateCenterAndRadius();
-}
-
-
-void CDispInfo::UpdateCenterAndRadius()
-{
-	m_vCenter = (m_BBoxMin + m_BBoxMax) * 0.5f;
-	m_flRadius = (m_BBoxMax - m_BBoxMin).Length() * 0.5f;
-}
-
-
-bool CDispInfo::IsInsideFrustum()
-{
-	if( R_CullBox(m_BBoxMin, m_BBoxMax) )
-	{
-		return false;
-	}
-
-	cplane_t nearPlane;
-	VectorCopy(vpn, nearPlane.normal);
-	nearPlane.dist = DotProduct(vpn, modelorg);
-	nearPlane.type = PLANE_ANYZ;
-	nearPlane.signbits = SignbitsForPlane (&nearPlane);
-
-	if( BoxOnPlaneSide(m_BBoxMin, m_BBoxMax, &nearPlane) == 2 )
-	{
-		return false;
-	}
-
-	return true;
-}
-
-
-bool CDispInfo::IsTriangleFrontfacing( unsigned short const *indices )
-{
-	if( g_bDispOrthoRender )
-		return true;
-
-	Vector const &v1 = m_Verts[indices[0]].m_vPos;
-	Vector const &v2 = m_Verts[indices[1]].m_vPos;
-	Vector const &v3 = m_Verts[indices[2]].m_vPos;
-
-	Vector vNormal = ( v3 - v1 ).Cross( v2 - v1 );
-	VectorNormalize( vNormal );
-	float flDist = vNormal.Dot( v1 );
-
-	return (vNormal.Dot( m_ViewerSphereCenter ) - flDist) > -CDispInfo::g_flDispRadius;
 }
 
 
@@ -148,7 +125,6 @@ inline void CDispInfo::DecalProjectVert( Vector const &vPos, CDispDecalBase *pDe
 	}
 	else
 	{
-		// FIXME: Change this multiplication if we do an actual projection
 		Vector3DMultiplyPosition( pInfo->m_WorldToShadow, vPos, out );
 	}
 }
@@ -157,9 +133,26 @@ inline void CDispInfo::DecalProjectVert( Vector const &vPos, CDispDecalBase *pDe
 // ----------------------------------------------------------------------------- //
 // This version works for normal decals
 // ----------------------------------------------------------------------------- //
-void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short decalHandle, CDispDecal *pDispDecal )
+void CDispInfo::TestAddDecalTri( int iIndexStart, unsigned short decalHandle, CDispDecal *pDispDecal )
 {
 	decal_t *pDecal = pDispDecal->m_pDecal;
+
+	// If the decal is too far away from the plane of this triangle, reject it.
+	unsigned short tempIndices[3] = 
+	{
+		(unsigned short)(m_MeshReader.Index( iIndexStart+0 ) - m_iVertOffset),
+		(unsigned short)(m_MeshReader.Index( iIndexStart+1 ) - m_iVertOffset),
+		(unsigned short)(m_MeshReader.Index( iIndexStart+2 ) - m_iVertOffset)
+	};
+	
+	const Vector &v0 = m_MeshReader.Position( tempIndices[0] );
+	const Vector &v1 = m_MeshReader.Position( tempIndices[1] );
+	const Vector &v2 = m_MeshReader.Position( tempIndices[2] );
+	
+	Vector vNormal = (v2 - v0).Cross( v1 - v0 );
+	VectorNormalize( vNormal );
+	if ( vNormal.Dot( pDecal->position - v0 ) >= pDispDecal->m_flSize )
+		return;
 
 	// Setup verts.
 	CDecalVert verts[3];
@@ -167,29 +160,37 @@ void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short dec
 	for( iVert=0; iVert < 3; iVert++ )
 	{
 		CDecalVert *pOutVert = &verts[iVert];
-		CDispRenderVert *pInVert = &m_Verts[tempIndices[iVert]];
 		
-		pOutVert->m_vPos = pInVert->m_vPos;
-		pOutVert->m_LMCoords = pInVert->m_LMCoords;
+		pOutVert->m_vPos = m_MeshReader.Position( tempIndices[iVert] );
 
+		{
+			float x = pOutVert->m_cLMCoords.x;
+			float y = pOutVert->m_cLMCoords.y;
+
+			m_MeshReader.TexCoord2f( tempIndices[iVert], 1, x, y );
+
+			pOutVert->m_cLMCoords.x = x;
+			pOutVert->m_cLMCoords.y = y;
+		}
 		// garymcthack - what about m_ParentTexCoords?
 		Vector tmp;
 		DecalProjectVert( pOutVert->m_vPos, pDispDecal, 0, tmp );
-		Vector2DCopy( tmp.AsVector2D(), pOutVert->m_tCoords );
+		pOutVert->m_ctCoords.x = tmp.x;
+		pOutVert->m_ctCoords.y = tmp.y;
 	}
 
 	// Clip them.
-	int outCount;
 	CDecalVert *pClipped;
-
 	CDecalVert *pOutVerts = NULL;
-	pClipped = R_DoDecalSHClip( &verts[0], pOutVerts, pDecal, 3, &outCount );
-	if ( outCount > 2 )
+	pClipped = R_DoDecalSHClip( &verts[0], pOutVerts, pDecal, 3, vec3_origin );
+	int outCount = pDecal->clippedVertCount;
+
+	if ( outCount > 2 ) 
 	{
-		outCount = min( outCount, CDispDecalFragment::MAX_VERTS );
+		outCount = min( outCount, (int)CDispDecalFragment::MAX_VERTS );
 
 		// Allocate a new fragment...
-		CDispDecalFragment* pFragment = AllocateDispDecalFragment( decalHandle );
+		CDispDecalFragment* pFragment = AllocateDispDecalFragment( decalHandle, outCount );
 
 		// Alrighty, store the triangles!
 		for( iVert=0; iVert < outCount; iVert++ )
@@ -198,10 +199,26 @@ void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short dec
 			// garymcthack - need to make this work for displacements
 			//				pFragment->m_tCoords[iVert] = pClipped[iVert].m_tCoords;
 			// garymcthack - need to change m_TCoords to m_ParentTexCoords
-			pFragment->m_pVerts[iVert].m_tCoords = pClipped[iVert].m_tCoords;
-			pFragment->m_pVerts[iVert].m_LMCoords = pClipped[iVert].m_LMCoords;
+			pFragment->m_pVerts[iVert].m_ctCoords = pClipped[iVert].m_ctCoords;
+			pFragment->m_pVerts[iVert].m_cLMCoords = pClipped[iVert].m_cLMCoords;
+		}
+/*
+		static int three = 0;
+		static int total = 0;
+
+		total++;
+		if( outCount == 3 )
+		{
+			three++;
 		}
 
+		//if( )
+		{
+			char buffer[256];
+			sprintf(buffer, "Verts: 3:%i 4+:%i (%i)\n",three, total, sizeof(CDecalVert));
+			Msg(buffer);
+		}
+		*/
 		pFragment->m_pDecal = pDecal;
 		pFragment->m_nVerts = outCount;
 		pDispDecal->m_nVerts += pFragment->m_nVerts;
@@ -213,14 +230,22 @@ void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short dec
 // ----------------------------------------------------------------------------- //
 // This version works for shadow decals
 // ----------------------------------------------------------------------------- //
-void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short decalHandle, CDispShadowDecal *pDecal )
+void CDispInfo::TestAddDecalTri( int iIndexStart, unsigned short decalHandle, CDispShadowDecal *pDecal )
 {
+	unsigned short tempIndices[3] = 
+	{
+		(unsigned short)(m_MeshReader.Index( iIndexStart+0 ) - m_iVertOffset),
+		(unsigned short)(m_MeshReader.Index( iIndexStart+1 ) - m_iVertOffset),
+		(unsigned short)(m_MeshReader.Index( iIndexStart+2 ) - m_iVertOffset)
+	};
 #ifndef SWDS
 	// Setup verts.
-	Vector* ppPosition[3];
-	ppPosition[0] = &m_Verts[tempIndices[0]].m_vPos;
-	ppPosition[1] = &m_Verts[tempIndices[1]].m_vPos;
-	ppPosition[2] = &m_Verts[tempIndices[2]].m_vPos;
+	Vector vPositions[3] ={
+		GetOverlayPos( &m_MeshReader, tempIndices[0] ),
+		GetOverlayPos( &m_MeshReader, tempIndices[1] ),
+		GetOverlayPos( &m_MeshReader, tempIndices[2] )
+	};
+	Vector* ppPosition[3] = { &vPositions[0], &vPositions[1], &vPositions[2] };
 
 	ShadowVertex_t** ppClipVertex;
 	int count = g_pShadowMgr->ProjectAndClipVertices( pDecal->m_Shadow, 3, ppPosition, &ppClipVertex );
@@ -231,20 +256,21 @@ void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short dec
 	Assert( count <= CDispShadowFragment::MAX_VERTS );
 
 	// Allocate a new fragment...
-	CDispShadowFragment* pFragment = AllocateShadowDecalFragment( decalHandle );
+	CDispShadowFragment* pFragment = AllocateShadowDecalFragment( decalHandle, count );
 
 	// Copy the fragment data in place
 	pFragment->m_nVerts = count;
+
 	for (int i = 0; i < count; ++i )
 	{
-		VectorCopy( ppClipVertex[i]->m_Position, pFragment->m_Verts[i] );
-		VectorCopy( ppClipVertex[i]->m_TexCoord, pFragment->m_TCoords[i] );
+		VectorCopy( ppClipVertex[i]->m_Position, pFragment->m_ShadowVerts[i].m_Position );
+		VectorCopy( ppClipVertex[i]->m_ShadowSpaceTexCoord, pFragment->m_ShadowVerts[i].m_ShadowSpaceTexCoord );
 
 		// Make sure it's been clipped
-		Assert( pFragment->m_TCoords[i][0] >= -1e-3f );
-		Assert( pFragment->m_TCoords[i][0] - 1.0f <= 1e-3f );
-		Assert( pFragment->m_TCoords[i][1] >= -1e-3f );
-		Assert( pFragment->m_TCoords[i][1] - 1.0f <= 1e-3f );
+		Assert( pFragment->m_ShadowVerts[i].m_ShadowSpaceTexCoord[0] >= -1e-3f );
+		Assert( pFragment->m_ShadowVerts[i].m_ShadowSpaceTexCoord[0] - 1.0f <= 1e-3f );
+		Assert( pFragment->m_ShadowVerts[i].m_ShadowSpaceTexCoord[1] >= -1e-3f );
+		Assert( pFragment->m_ShadowVerts[i].m_ShadowSpaceTexCoord[1] - 1.0f <= 1e-3f );
 	}
 
 	// Update the number of triangles in the decal
@@ -252,49 +278,6 @@ void CDispInfo::TestAddDecalTri( unsigned short *tempIndices, unsigned short dec
 	pDecal->m_nTris += pFragment->m_nVerts - 2;
 	Assert( pDecal->m_nTris != 0 );
 #endif
-}
-
-
-inline void CDispInfo::EndTriangle( CVertIndex const &nodeIndex, 
-							unsigned short *tempIndices, int &iCurTriVert )
-{
-	// End our current triangle here.
-	if( iCurTriVert )
-	{
-		Assert( iCurTriVert == 2 );
-		
-		// Finish the triangle.
-		tempIndices[2] = (unsigned short)VertIndex( nodeIndex ); 
-
-		// If r_DispEnableLOD is false, then we want to put all triangles in here.
-		if( r_DispEnableLOD.GetInt() == 0 || IsTriangleFrontfacing( tempIndices ) )
-		{
-			int iVertOffset = 0;
-			if ( r_DispUseStaticMeshes.GetInt() )
-				iVertOffset = m_iVertOffset;
-
-			// Add this tri to our mesh.
-			g_pIndexMesh->Index( tempIndices[0] + iVertOffset );
-			g_pIndexMesh->AdvanceIndex();
-
-			g_pIndexMesh->Index( tempIndices[1] + iVertOffset );
-			g_pIndexMesh->AdvanceIndex();
-
-			g_pIndexMesh->Index( tempIndices[2] + iVertOffset );
-			g_pIndexMesh->AdvanceIndex();
-
-			// Store off the indices...
-			m_Indices[m_nIndices]	= tempIndices[0];
-			m_Indices[m_nIndices+1] = tempIndices[1];
-			m_Indices[m_nIndices+2] = tempIndices[2];
-
-			m_nIndices += 3;
-		}
-
-		// Add on the last vertex to join to the next triangle.
-		tempIndices[0] = tempIndices[1];
-		iCurTriVert = 1;
-	}
 }
 
 
@@ -316,118 +299,6 @@ void CDispInfo::CullDecals(
 		}
 	}
 }
-	
-
-//-----------------------------------------------------------------------------
-// Tesselates a single node, doesn't deal with hierarchy
-//-----------------------------------------------------------------------------
-void CDispInfo::TesselateDisplacementNode( unsigned short *tempIndices, 
-			CVertIndex const &nodeIndex, int iLevel, int* pActiveChildren )
-{
-	int iPower = m_Power - iLevel;
-	int vertInc = 1 << (iPower - 1);
-
-	CTesselateWinding *pWinding = &g_TWinding;
-
-	// Starting at the bottom-left, wind clockwise picking up vertices and
-	// generating triangles.
-	int iCurTriVert = 0;
-	for( int iVert=0; iVert < pWinding->m_nVerts; iVert++ )
-	{
-		CVertIndex sideVert = BuildOffsetVertIndex( nodeIndex, pWinding->m_Verts[iVert].m_Index, vertInc );
-		
-		int iVertNode = pWinding->m_Verts[iVert].m_iNode;
-		bool bNode = (iVertNode != -1) && pActiveChildren[iVertNode];
-		if( bNode )
-		{
-			if( iCurTriVert == 2 )
-				EndTriangle( nodeIndex, tempIndices, iCurTriVert );
-			
-			iCurTriVert = 0;
-		}
-		else if( m_ActiveVerts.Get( VertIndex( sideVert ) ) )
-		{
-			// Ok, add a vert here.
-			tempIndices[iCurTriVert] = (unsigned short)VertIndex( sideVert );
-			iCurTriVert++;
-			if( iCurTriVert == 2 )
-				EndTriangle( nodeIndex, tempIndices, iCurTriVert );
-		}
-	}
-}
-
-
-//-----------------------------------------------------------------------------
-// Tesselates in a *breadth first* fashion
-//-----------------------------------------------------------------------------
-void CDispInfo::TesselateDisplacement_R(
-	unsigned short *tempIndices,
-	CVertIndex const &nodeIndex,
-	int iNodeBitIndex,
-	int iLevel )
-{
-	// Here's the node info for our current node
-	Assert( iNodeBitIndex < m_pPowerInfo->m_NodeCount );
-	DispNodeInfo_t& nodeInfo = m_pNodeInfo[iNodeBitIndex];
-
-	// Store off the current number of indices
-	int oldIndexCount = m_nIndices;
-
-	// Go through each quadrant. If there is an active child node, recurse down.
-	int bActiveChildren[4];
-	if( iLevel >= m_Power - 1 )
-	{
-		// This node has no children.
-		bActiveChildren[0] = bActiveChildren[1] = bActiveChildren[2] = bActiveChildren[3] = false;
-	}
-	else
-	{
-		int iNodeIndex = VertIndex( nodeIndex );
-
-		int iChildNodeBit = iNodeBitIndex + 1;
-		for( int iChild=0; iChild < 4; iChild++ )
-		{
-			CVertIndex const &childNode = m_pPowerInfo->m_pChildVerts[iNodeIndex].m_Verts[iChild];
-
-			// Make sure we really can tesselate here (a smaller neighbor displacement could
-			// have inactivated certain edge verts.
-			bActiveChildren[iChild] = m_ActiveVerts.Get( VertIndex( childNode ) );
-
-			if( bActiveChildren[iChild] )
-			{
-				TesselateDisplacement_R( tempIndices, childNode, iChildNodeBit, iLevel+1 );
-			}
-			else
-			{
-				// Make sure the triangle counts are cleared on this one because it may visit this
-				// node in GenerateDecalFragments_R if nodeInfo's CHILDREN_HAVE_TRIANGLES flag is set.
-				m_pNodeInfo[iChildNodeBit].m_Count = 0;
-				m_pNodeInfo[iChildNodeBit].m_Flags = 0;
-			}
-
-			iChildNodeBit += m_pPowerInfo->m_NodeIndexIncrements[iLevel];
-		}
-	}
-
-	// Set the child field
-	if ( m_nIndices != oldIndexCount )
-	{
-		nodeInfo.m_Flags = DispNodeInfo_t::CHILDREN_HAVE_TRIANGLES;
-		oldIndexCount = m_nIndices;
-	}
-	else
-	{
-		nodeInfo.m_Flags = 0;
-	}
-
-	// Now tesselate the node itself...
-	TesselateDisplacementNode(tempIndices, nodeIndex, iLevel, bActiveChildren);
-
-	// Now that we've tesselated, figure out how many indices we've added at this node
-	nodeInfo.m_Count = m_nIndices - oldIndexCount;
-	nodeInfo.m_FirstTesselationIndex = oldIndexCount;
-	Assert( nodeInfo.m_Count % 3 == 0 );
-}
 
 
 //-----------------------------------------------------------------------------
@@ -443,30 +314,28 @@ void CDispInfo::TesselateDisplacement()
 
 	int nMaxIndices = Square( GetSideLength() - 1 ) * 6;
 
-	CMeshBuilder mb;
-	mb.BeginModify( m_pMesh->m_pMesh, 0, 0, m_iIndexOffset, nMaxIndices );
-	g_pIndexMesh = &mb;
+	CEngineTesselateHelper helper;
+	helper.m_pDisp = this;
+	helper.m_IndexMesh.BeginModify( m_pMesh->m_pMesh, 0, 0, m_iIndexOffset, nMaxIndices );
+	helper.m_pActiveVerts = m_ActiveVerts.Base();
+	helper.m_pPowerInfo = GetPowerInfo();
+
 
 	// Generate the indices.
-	unsigned short tempIndices[6];
-	m_nIndices = 0;
-	TesselateDisplacement_R(
-		tempIndices,
-		m_pPowerInfo->m_RootNode,
-		0,			// node bit indexing CDispDecal::m_NodeIntersects
-		0);
+	::TesselateDisplacement<CEngineTesselateHelper>( &helper ); // (implemented in disp_tesselate.h)
 
-	mb.EndModify();
 
-	// Flag that we have retesselated so we don't keep redoing it.
-	m_bRetesselate = false;
+	helper.m_IndexMesh.EndModify();
+	m_nIndices = helper.m_nIndices;
 }
 
 
 void CDispInfo::SpecifyDynamicMesh()
 {
+	CMatRenderContextPtr pRenderContext( materials );
+
 	// Specify the vertices and indices.
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( true );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( true );
 	CMeshBuilder builder;
 	builder.Begin( pMesh, MATERIAL_TRIANGLES, NumVerts(), m_nIndices );
 
@@ -480,7 +349,7 @@ void CDispInfo::SpecifyDynamicMesh()
 
 			builder.TexCoord2fv( 0, pVert->m_vTexCoord.Base() );
 			builder.TexCoord2fv( 1, pVert->m_LMCoords.Base() );
-			builder.TexCoord2f( 2, pVert->m_BumpSTexCoordOffset, 0 );
+			builder.TexCoord2f( 2, m_BumpSTexCoordOffset, 0 );
 			
 			builder.Normal3fv( pVert->m_vNormal.Base() );
 			builder.TangentS3fv( pVert->m_vSVector.Base() );
@@ -491,7 +360,7 @@ void CDispInfo::SpecifyDynamicMesh()
 
 		for( int iIndex=0; iIndex < m_nIndices; iIndex++ )
 		{
-			builder.Index( m_Indices[iIndex] );
+			builder.Index( m_Indices[iIndex] - m_iVertOffset );
 			builder.AdvanceIndex();
 		}
 
@@ -503,10 +372,12 @@ void CDispInfo::SpecifyDynamicMesh()
 void CDispInfo::SpecifyWalkableDynamicMesh( void )
 {
 	// Specify the vertices and indices.
+	CMatRenderContextPtr pRenderContext( materials );
+
 #ifdef SWDS
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( false, NULL, NULL, NULL );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( false, NULL, NULL, NULL );
 #else
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( false, NULL, NULL, g_materialTranslucentSingleColor );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( false, NULL, NULL, g_materialTranslucentSingleColor );
 	g_materialTranslucentSingleColor->ColorModulate( 1.0f, 1.0f, 0.0f );
 	g_materialTranslucentSingleColor->AlphaModulate( 0.33f );
 #endif
@@ -533,14 +404,15 @@ void CDispInfo::SpecifyWalkableDynamicMesh( void )
 //-----------------------------------------------------------------------------
 void CDispInfo::SpecifyBuildableDynamicMesh( void )
 {
-
 	// Specify the vertices and indices.
+	CMatRenderContextPtr pRenderContext( materials );
+
 #ifdef SWDS
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( false, NULL, NULL, NULL );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( false, NULL, NULL, NULL );
 #else
 	g_materialTranslucentSingleColor->ColorModulate( 0.0f, 1.0f, 1.0f );
 	g_materialTranslucentSingleColor->AlphaModulate( 0.33f );
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( false, NULL, NULL, g_materialTranslucentSingleColor );
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( false, NULL, NULL, g_materialTranslucentSingleColor );
 #endif
 	CMeshBuilder builder;
 	builder.Begin( pMesh, MATERIAL_TRIANGLES, NumVerts(), m_nBuildIndexCount );
@@ -559,183 +431,6 @@ void CDispInfo::SpecifyBuildableDynamicMesh( void )
 		}
 
 	builder.End( false, true );
-}
-
-// Measures the screenspace distance from collapseVert to
-// the centerpoint of edge [vert1,vert2]. Returns true if the distance
-// is larger than the LOD threshold.
-bool CDispInfo::MeasureLineError( 
-	CVertIndex const &collapseVert ) 
-{
-	int iVertIndex = VertIndex( collapseVert );
-	Vector &vIn1 = m_Verts[iVertIndex].m_vPos;
-
-	unsigned short const *verts = m_pPowerInfo->m_pErrorEdges[iVertIndex].m_Values;
-	Vector  vIn2 = (m_Verts[verts[0]].m_vPos + m_Verts[verts[1]].m_vPos) * 0.5f;
-
-	Vector vTestVert = m_vCenter + (vIn2 - vIn1);
-    Vector v1;
-	g_DispViewMatrix.V3Mul( vTestVert, v1 );
-
-	float invz = 1.0f / v1.z;
-	v1.x = v1.x * 640.0f * invz;
-	v1.y = v1.y * 480.0f * invz;
-	return (v1.x*v1.x) + (v1.y*v1.y) > g_flMaxError;
-}	
-
-
-void CDispInfo::ResolveDependencies_R( CVertIndex const &vertIndex )
-{
-	int index = VertIndex( vertIndex );
-
-	Assert( m_AllowedVerts.Get( index ) );
-
-	// Is the vertex already here?
-	if( m_ActiveVerts.Get( index ) )
-		return;
-
-	// There are a few dependency configurations involving MID_TO_CORNER or CORNER_TO_MID
-	// displacements that are a real pain to detect ahead of time, so this code adds these
-	// dependencies as neighbors at runtime by detecting it here.
-	if( !m_bInUse )
-	{
-		g_pOriginatingDisp->AddExtraDependency( GetDispIndex() );
-		return;
-	}
-
-	// Mark this vertex as needed.
-	m_ActiveVerts.Set( index );
-	
-	// Activate all the parents.
-	CVertIndex const &viParent = m_pPowerInfo->m_pVertInfo[index].m_iParent;
-	if( viParent.x != -1 )
-		ResolveDependencies_R( viParent );
-
-	// Recursively resolve the dependencies.
-	for( int iDependency=0; iDependency < 2; iDependency++ )
-	{
-		CVertDependency *pDependency = &m_pPowerInfo->m_pVertInfo[index].m_Dependencies[iDependency];
-		if( !pDependency->IsValid() )
-			continue;
-
-		if( pDependency->m_iNeighbor == -1 )
-		{		
-			ResolveDependencies_R( pDependency->m_iVert );
-		}
-		else
-		{
-			CVertIndex depIndex;
-
-			CDispInfo *pNeighbor = (CDispInfo*)TransformIntoNeighbor(
-				this,
-				pDependency->m_iNeighbor,
-				vertIndex,
-				depIndex );
-
-			if( pNeighbor )
-				pNeighbor->ResolveDependencies_R( depIndex );
-		}
-	}		
-}	
-
-
-void CDispInfo::ActivateErrorTermVerts_R( CVertIndex const &nodeIndex, int iLevel )
-{
-	// Figure out the error for this node's vertex.
-	if( !m_ErrorVerts.Get( VertIndex( nodeIndex ) ) )
-		return;
-
-	// Flag this node and its vert as active.
-	int iNodeIndex = VertIndex( nodeIndex );
-
-	// Now test each neighbor vert to see if it should exist.
-	for( int i=0; i < 4; i++ )
-	{
-		CVertIndex const &sideVert = m_pPowerInfo->m_pSideVerts[iNodeIndex].m_Verts[i];
-
-		if( !m_ErrorVerts.Get( VertIndex( sideVert ) ) )
-			continue;
-
-		// Ok, this vertex is needed.. update dependencies.
-		ResolveDependencies_R( sideVert );
-	}
-
-	// Recurse into child nodes.
-	if( iLevel+1 < m_Power )
-	{
-		for( int iChild = 0; iChild < 4; iChild++ )
-		{
-			ActivateErrorTermVerts_R( m_pPowerInfo->m_pChildVerts[iNodeIndex].m_Verts[iChild], iLevel + 1 );
-		}
-	}
-	else
-	{
-		ResolveDependencies_R( nodeIndex );
-	}
-}
-
-
-void CDispInfo::ActivateErrorTermVerts()
-{
-	ActivateErrorTermVerts_R( CVertIndex( GetSideLength()/2, GetSideLength()/2 ), 0 );
-}
-
-
-void CDispInfo::MarkForRetesselation( CDispInfo **retesselate, int &nRetesselate )
-{
-	if( !m_bRetesselate )
-	{
-		if( nRetesselate < MAX_RETESSELATE )
-		{
-			retesselate[nRetesselate] = this;
-			++nRetesselate;
-		}
-		else
-		{
-			Assert( !"ReconcileEdges: retesselation list maxed out" );
-		}
-
-		m_bRetesselate = true;
-	}
-}
-
-void CDispInfo::ActivateActiveNeighborVerts()
-{
-	// All surfaces should take care of themselves!
-	if ( r_DispSetLOD.GetInt() != 0 )
-		return;
-
-	for( int iEdge=0; iEdge < 4; iEdge++ )
-	{
-		CDispNeighbor *pSide = &m_EdgeNeighbors[iEdge];
-		
-		for( int iSub=0; iSub < 2; iSub++ )
-		{
-			CDispSubNeighbor *pSub = &pSide->m_SubNeighbors[iSub];
-			CDispInfo *pNeighbor = GetDispByIndex( pSub->m_iNeighbor );
-			if( !pNeighbor )
-				continue;
-
-			CVertIndex myIndex, nbIndex;
-			CVertIndex myInc, nbInc;
-			int myEnd, iFreeDim;
-			SetupEdgeIncrements( this, iEdge, iSub, myIndex, myInc, nbIndex, nbInc, myEnd, iFreeDim );
-			
-			while( 1 )
-			{
-				myIndex += myInc;
-				nbIndex += nbInc;
-				if( myIndex[iFreeDim] >= myEnd )
-					break;
-				
-				// Process this vertex.
-				if( pNeighbor->m_ActiveVerts.Get( pNeighbor->VertIndex( nbIndex ) ) )
-				{
-					ResolveDependencies_R( myIndex );
-				}
-			}
-		}
-	}
 }
 
 
@@ -770,260 +465,29 @@ void CDispInfo::InitializeActiveVerts()
 }
 
 
-void CDispInfo::ActivateVerts( 
-	bool bFullyTesselate, 
-	const VMatrix &viewMatrix,
-	Vector const &vViewOrigin
-	 )
-{
-	if( bFullyTesselate )
-		g_flMaxError = 0.0f;
-	else
-		g_flMaxError = g_flDispToleranceSqr;
-
-
-	InitializeActiveVerts();
-
-	int nLOD = r_DispSetLOD.GetInt();
-	if ( nLOD != 0 )
-	{
-		nLOD = clamp( nLOD, 2, m_Power );
-
-		const CPowerInfo *pPowerInfo = GetPowerInfo();
-
-		int sideLength = GetSideLength();
-		CVertIndex index;
-		for( index.y = 0; index.y < sideLength; index.y++ )
-		{
-			for( index.x = 0; index.x < sideLength; index.x++ )
-			{
-				int iVertIndex = VertIndex( index );
-				if ( pPowerInfo->m_pVertInfo[iVertIndex].m_iNodeLevel <= nLOD )
-				{
-					m_ActiveVerts.Set( iVertIndex );
-				}
-			}
-		}
-
-		// Copy off the activated verts into our 'needed verts' list.
-		m_ErrorVerts.Copy( m_ActiveVerts );
-
-		return;
-	}
-
-	// Build a frame of reference staring at the center.
-	Vector vViewDir = m_vCenter - vViewOrigin;
-	VectorNormalize( vViewDir );
-
-	Vector vUp(0,0,1);
-	Vector vLeft = vUp.Cross( vViewDir );
-	vUp = vViewDir.Cross( vLeft );
-	VectorNormalize( vViewDir );
-	VectorNormalize( vUp );
-
-	g_DispViewMatrix.Init(
-		vLeft.x,	vLeft.y,	vLeft.z,	-vLeft.Dot(vViewOrigin),
-		vUp.x,		vUp.y,		vUp.z,		-vUp.Dot(vViewOrigin),
-		vViewDir.x, vViewDir.y, vViewDir.z, -vViewDir.Dot(vViewOrigin),
-		0,			0,			0,			1);
-
-	
-	// Test the error on each vert.
-	int sideLength = GetSideLength();
-	CVertIndex index;
-	for( index.y=0; index.y < sideLength; index.y++ )
-	{
-		for( index.x=0; index.x < sideLength; index.x++ )
-		{
-			int iVertIndex = VertIndex( index );
-
-			if( m_ActiveVerts.Get( iVertIndex ) || !m_AllowedVerts.Get( iVertIndex ) )
-				continue;
-		
-			if( MeasureLineError( index	) )
-			{
-				ResolveDependencies_R( index );
-			}
-		}
-	}
-
-	// Copy off the activated verts into our 'needed verts' list.
-	m_ErrorVerts.Copy( m_ActiveVerts );
-}
-
-
-void CDispInfo::DebugResolveActiveVerts()
-{
-#if defined(_DEBUG)
-	m_bInUse = true;
-
-	CVertIndex index;
-	for( index.y=0; index.y < GetSideLength(); index.y++ )
-	{
-		for( index.x=0; index.x < GetSideLength(); index.x++ )
-		{
-			int iVertIndex = VertIndex( index );
-
-			if( !m_ActiveVerts.Get( iVertIndex ) )
-				continue;
-			
-			m_ActiveVerts.Clear( iVertIndex );		
-			ResolveDependencies_R( index );
-		}
-	}
-
-	m_bInUse = false;
-#endif
-}
-
-
 void CDispInfo::ClearLOD()
 {
 	// First, everything as inactive.
 	m_ActiveVerts.ClearAll();
-	m_ErrorVerts.ClearAll();
 }
 
+extern ConVar mat_surfaceid;
+extern ConVar mat_surfacemat;
 
-int CDispInfo::GetDependencyList( unsigned short outList[MAX_TOTAL_DISP_DEPENDENCIES] )
+bool DispInfoRenderDebugModes()
 {
-	// TODO: precalculate this list!
-	int nOut = 0;
-	bool bOverflow = false;
+	if( ShouldDrawInWireFrameMode() || mat_luxels.GetInt() || r_DispWalkable.GetInt() || 
+		r_DispBuildable.GetInt() 
+#if !defined( SWDS )
+		|| mat_surfaceid.GetInt() || mat_surfacemat.GetInt()
+#endif // SWDS
+		)
+		return true;
 
-	int i;
-	for ( i=0; i < 4; i++ )
-	{
-		int j;
-		for ( j=0; j < 2; j++ )
-		{
-			int index = m_EdgeNeighbors[i].m_SubNeighbors[j].m_iNeighbor;
-			if ( index != 0xFFFF )
-				outList[nOut++] = index;
-		}
-
-		for ( j=0; j < m_CornerNeighbors[i].m_nNeighbors; j++ )
-		{
-			if ( nOut >= MAX_TOTAL_DISP_DEPENDENCIES )
-			{
-				bOverflow = true;
-			}
-			else
-			{
-				outList[nOut++] = m_CornerNeighbors[i].m_Neighbors[j];
-			}
-		}
-	}
-
-	for ( i=0; i < m_nExtraDependencies; i++ )
-	{
-		if ( nOut >= MAX_TOTAL_DISP_DEPENDENCIES )
-		{
-			bOverflow = true;
-		}
-		else
-		{
-			outList[nOut++] = m_ExtraDependencies[i];
-		}
-	}
-
-	if ( bOverflow )
-	{
-		ExecuteNTimes( 10, Warning( "CDispInfo::GetDependencyList: overflowed" ) );
-	}
-
-	return nOut;
+	return false;
 }
 
-
-// We get a crash in UpdateLOD without this pragma.
-void CDispInfo::UpdateLOD( 
-	bool bFullyTesselate,
-	VMatrix const& viewMatrix, 
-	Vector const &vViewOrigin,
-	Vector const &vViewerSphereCenter,
-	CDispInfo **retesselate, 
-	int &nRetesselate )
-{
-	CBitVec<CCoreDispInfo::MAX_VERT_COUNT> neighborStates[MAX_TOTAL_DISP_DEPENDENCIES];
-
-	// Remember that we updated this frame so we don't do it again.
-	m_LastUpdateFrameCount = r_framecount;
-
-	// Make a list of dependent displacement.s
-	unsigned short dependencies[MAX_TOTAL_DISP_DEPENDENCIES];
-	int nDependencies;
-
-	// Loop around rebuilding the dependency list until there are no more new dependencies.
-	// Note: 99.9% of the time this will only execute once - new dependencies will only show
-	//       up the first few times UpdateLOD is called and very rarely afterwards.
-	int nStartDependencies;
-	do
-	{
-		nStartDependencies = m_nExtraDependencies;
-		g_pOriginatingDisp = this;
-		m_bInUse = true;
-
-		nDependencies = GetDependencyList( dependencies );
-		
-		// First, clear all active verts in the neighbors.
-		for ( int iDependency=0; iDependency < nDependencies; iDependency++ )
-		{
-			CDispInfo *pNeighbor = GetDispByIndex( dependencies[iDependency] );
-
-			// Store off their active verts.
-			neighborStates[iDependency].Copy( pNeighbor->m_ActiveVerts, NumVerts() );
-
-			pNeighbor->InitializeActiveVerts();
-			pNeighbor->m_bInUse = true;
-		}
-
-		// Now query all the error terms and activate required verts.
-		ActivateVerts( bFullyTesselate, viewMatrix, vViewOrigin );
-
-	} while( m_nExtraDependencies != nStartDependencies );
-
-
-	// Now for each neighbor, activate all its error-term verts and all neighbor-active
-	// verts along its edges.
-	 int iDependency;
-	for ( iDependency=0; iDependency < nDependencies; iDependency++ )
-	{
-		CDispInfo *pNeighbor = GetDispByIndex( dependencies[iDependency] );
-
-		pNeighbor->ActivateErrorTermVerts();
-		pNeighbor->ActivateActiveNeighborVerts();
-	}
-
-	
-	// Clear the in-use flags and mark changed neighbors for retesselation.
-	for ( iDependency=0; iDependency < nDependencies; iDependency++ )
-	{
-		CDispInfo *pNeighbor = GetDispByIndex( dependencies[iDependency] );
-
-		if( !neighborStates[iDependency++].Compare( pNeighbor->m_ActiveVerts, NumVerts() ) )
-			pNeighbor->MarkForRetesselation( retesselate, nRetesselate );
-
-		pNeighbor->m_bInUse = false;
-	}
-
-	MarkForRetesselation( retesselate, nRetesselate );
-	m_bInUse = false;
-	m_bFullyTesselated = bFullyTesselate;
-	m_ViewerSphereCenter = vViewerSphereCenter;
-
-	g_pOriginatingDisp = NULL;
-
-
-	// If new neighbors got added, then redo this process.
-	if( m_nExtraDependencies != nStartDependencies )
-	{
-		UpdateLOD( bFullyTesselate, viewMatrix, vViewOrigin, 
-			vViewerSphereCenter, retesselate, nRetesselate );
-	}
-}
-
-bool CDispInfo::Render( CGroupMesh *pGroup )
+bool CDispInfo::Render( CGroupMesh *pGroup, bool bAllowDebugModes )
 {
 #ifndef SWDS
 	if( !m_pMesh )
@@ -1033,47 +497,85 @@ bool CDispInfo::Render( CGroupMesh *pGroup )
 	}
 
 	// Trivial reject?
-	if( !IsInsideFrustum() )
-	{
-		return false;
-	}
+	if( R_CullBox(m_BBoxMin, m_BBoxMax, g_Frustum) )
+		return false; 
 
-	// Wireframe? 
 	bool bNormalRender = true;
-	if( mat_wireframe.GetInt() )
+	if ( bAllowDebugModes )
 	{
-		materialSystemInterface->Bind( g_materialWireframe );
-		SpecifyDynamicMesh();
-		bNormalRender = false;
+		CMatRenderContextPtr pRenderContext( materials );
+
+		// Wireframe? 
+		if( ShouldDrawInWireFrameMode() )
+		{
+			pRenderContext->Bind( g_materialWireframe );
+			SpecifyDynamicMesh();
+			bNormalRender = false;
+		}
+		
+		if( mat_luxels.GetInt() )
+		{
+			pRenderContext->Bind( MSurf_TexInfo( m_ParentSurfID )->material );
+			//SpecifyDynamicMesh();
+
+			pGroup->m_pMesh->Draw( m_iIndexOffset, m_nIndices );
+
+			pRenderContext->Bind( g_materialDebugLuxels );
+			SpecifyDynamicMesh();
+			bNormalRender = false;
+		}
+
+		if ( r_DispWalkable.GetInt() || r_DispBuildable.GetInt() )
+		{
+			pRenderContext->Bind( MSurf_TexInfo( m_ParentSurfID )->material );
+			pGroup->m_pMesh->Draw( m_iIndexOffset, m_nIndices );
+
+			if ( r_DispWalkable.GetInt() )
+				SpecifyWalkableDynamicMesh();
+
+			if ( r_DispBuildable.GetInt() )
+				SpecifyBuildableDynamicMesh();
+
+			bNormalRender = false;
+		}
+
+#if !defined( SWDS )
+		if ( mat_surfaceid.GetInt() )
+		{
+			Vector bbMin, bbMax, vecCenter;
+			GetBoundingBox( bbMin, bbMax );
+			VectorAdd( bbMin, bbMax, vecCenter );
+			vecCenter *= 0.5f;
+
+			intp nInt = ( mat_surfaceid.GetInt() != 2 ) ? (intp)m_ParentSurfID : (msurface2_t*)m_ParentSurfID - host_state.worldbrush->surfaces2;
+			char buf[32];
+			Q_snprintf( buf, sizeof( buf ), "%d", (int)nInt );
+			CDebugOverlay::AddTextOverlay( vecCenter, 0, buf );
+		}
+
+		if ( mat_surfacemat.GetInt() )
+		{
+			Vector bbMin, bbMax, vecCenter;
+			GetBoundingBox( bbMin, bbMax );
+			VectorAdd( bbMin, bbMax, vecCenter );
+			vecCenter *= 0.5f;
+
+			mtexinfo_t * pTexInfo = MSurf_TexInfo(m_ParentSurfID);
+
+			const char *pFullMaterialName = pTexInfo->material ? pTexInfo->material->GetName() : "no material";
+			const char *pSlash = strrchr( pFullMaterialName, '/' );
+			const char *pMaterialName = strrchr( pFullMaterialName, '\\' );
+			if (pSlash > pMaterialName)
+				pMaterialName = pSlash;
+			if (pMaterialName)
+				++pMaterialName;
+			else
+				pMaterialName = pFullMaterialName;
+
+			CDebugOverlay::AddTextOverlay( vecCenter, 0, pMaterialName );
+		}
+#endif // SWDS
 	}
-	
-	if( mat_luxels.GetInt() )
-	{
-		materialSystemInterface->Bind( MSurf_TexInfo( m_ParentSurfID )->material );
-		//SpecifyDynamicMesh();
-
-		pGroup->m_pMesh->Draw( m_iIndexOffset, m_nIndices );
-
-		materialSystemInterface->Bind( g_materialDebugLuxels );
-		SpecifyDynamicMesh();
-		bNormalRender = false;
-	}
-
-	if ( r_DispWalkable.GetInt() || r_DispBuildable.GetInt() )
-	{
-		materialSystemInterface->Bind( MSurf_TexInfo( m_ParentSurfID )->material );
-		pGroup->m_pMesh->Draw( m_iIndexOffset, m_nIndices );
-
-		if ( r_DispWalkable.GetInt() )
-			SpecifyWalkableDynamicMesh();
-
-		if ( r_DispBuildable.GetInt() )
-			SpecifyBuildableDynamicMesh();
-
-		bNormalRender = false;
-	}
-
-//	g_EngineStats.IncrementCountedStat( ENGINE_STATS_NUM_DISP_TRIANGLES, m_nIndices / 3 );
 
 	// Mark it visible.
 	if( bNormalRender )
@@ -1101,120 +603,241 @@ bool CDispInfo::Render( CGroupMesh *pGroup )
 }
 
 
-// This goes with AddSingleDynamicLight..
-class CSingleLightAdder
+struct ProcessLightmapSampleData_t;
+
+typedef void ProcessLightmapSampleFunc_t( const ProcessLightmapSampleData_t &data, const Vector &vPos, const Vector &vNormal, const Vector &vTangentS, const Vector &vTangentT, int t, int s, int tmax, int smax );
+
+struct ProcessLightmapSampleData_t
 {
-public:
-
-	inline void	ProcessLightmapSample( Vector const &vPos, int t, int s, int tmax, int smax )
-	{
-		float distSqr = m_vLightOrigin.DistToSqr( vPos );
-		if( distSqr < m_LightDistSqr )
-		{
-			float scale = (distSqr != 0.0f) ? m_ooQuadraticAttn / distSqr : 1.0f;
-
-			// Apply a little extra attenuation
-			scale *= (1.0f - distSqr * m_ooRadiusSq);
-
-			if (scale > 2.0f)
-				scale = 2.0f;
-
-			int index = t*smax + s;
-			VectorMA( m_pBlocklight[index].AsVector3D(), scale, m_Intensity, 
-				m_pBlocklight[index].AsVector3D() );
-		}
-	}
-
 	float		m_ooQuadraticAttn;
 	float		m_ooRadiusSq;
-	Vector4D	*m_pBlocklight;
 	Vector		m_Intensity;
 	float		m_LightDistSqr;
 	Vector		m_vLightOrigin;
+	ProcessLightmapSampleFunc_t *pProcessLightmapSampleDataFunc;
 };
 
-
-void CDispInfo::AddSingleDynamicLight( dlight_t& dl, Vector4D *blocklight )
+#ifndef DEDICATED
+static void	ProcessLightmapSample( const ProcessLightmapSampleData_t &data, const Vector &vPos, const Vector &vNormal, const Vector &vTangentS, const Vector &vTangentT, int t, int s, int tmax, int smax )
 {
-#ifndef SWDS
-	CSingleLightAdder adder;
+	float distSqr = data.m_vLightOrigin.DistToSqr( vPos );
+	if( distSqr < data.m_LightDistSqr )
+	{
+		float scale = (distSqr != 0.0f) ? data.m_ooQuadraticAttn / distSqr : 1.0f;
 
-	adder.m_LightDistSqr = dl.radius * dl.radius;
+		// Apply a little extra attenuation
+		scale *= (1.0f - distSqr * data.m_ooRadiusSq);
 
-	float lightStyleValue = LightStyleValue( dl.style );
-	adder.m_Intensity[0] = TexLightToLinear( dl.color.r, dl.color.exponent ) * lightStyleValue;
-	adder.m_Intensity[1] = TexLightToLinear( dl.color.g, dl.color.exponent ) * lightStyleValue;
-	adder.m_Intensity[2] = TexLightToLinear( dl.color.b, dl.color.exponent ) * lightStyleValue;
+		if (scale > 2.0f)
+			scale = 2.0f;
 
-	float minlight = max( MIN_LIGHTING_VALUE, dl.minlight );
-	float ooQuadraticAttn = adder.m_LightDistSqr * minlight; // / maxIntensity;
-
-	adder.m_ooQuadraticAttn = ooQuadraticAttn;
-	adder.m_pBlocklight = blocklight;
-	adder.m_vLightOrigin = dl.origin;
-	adder.m_ooRadiusSq = 1.0f / (dl.radius * dl.radius);
-
-	// Touch all the lightmap samples.
-	IterateLightmapSamples( this, adder );
-#endif
+		int index = t*smax + s;
+		VectorMA( blocklights[0][index].AsVector3D(), 
+			scale, data.m_Intensity,
+			blocklights[0][index].AsVector3D() );
+	}
 }
 
+static void	ProcessLightmapSampleBumped( const ProcessLightmapSampleData_t &data, const Vector &vPos, const Vector &vNormal, const Vector &vTangentS, const Vector &vTangentT, int t, int s, int tmax, int smax )
+{
+	float distSqr = data.m_vLightOrigin.DistToSqr( vPos );
+	if( distSqr < data.m_LightDistSqr )
+	{
+		float scale = (distSqr != 0.0f) ? data.m_ooQuadraticAttn / distSqr : 1.0f;
+		
+		// Get the vector from the surface to the light in world space
+		Vector vLightVecWorld;
+		VectorSubtract( data.m_vLightOrigin, vPos, vLightVecWorld );
+		VectorNormalize( vLightVecWorld );
+
+		// Transform the vector from the surface to the light into tangent space
+		Vector vLightVecTangent;
+		vLightVecTangent.x = DotProduct( vTangentS, vLightVecWorld );
+		vLightVecTangent.y = DotProduct( vTangentT, vLightVecWorld );
+		vLightVecTangent.z = DotProduct( vNormal, vLightVecWorld );
+
+		// Apply a little extra attenuation
+		scale *= (1.0f - distSqr * data.m_ooRadiusSq);
+
+		if (scale > 2.0f)
+			scale = 2.0f;
+
+		int index = t*smax + s;
+		float directionalAtten;
+		directionalAtten = fpmax( 0.0f, vLightVecTangent.z );
+		VectorMA( blocklights[0][index].AsVector3D(), scale * directionalAtten, 
+			data.m_Intensity,
+			blocklights[0][index].AsVector3D() );
+		directionalAtten = fpmax( 0.0f, DotProduct( vLightVecTangent, g_localBumpBasis[0] ) );
+		VectorMA( blocklights[1][index].AsVector3D(), scale * directionalAtten, 
+			data.m_Intensity, 
+			blocklights[1][index].AsVector3D() );
+		directionalAtten = fpmax( 0.0f, DotProduct( vLightVecTangent, g_localBumpBasis[1] ) );
+		VectorMA( blocklights[2][index].AsVector3D(), scale * directionalAtten,
+			data.m_Intensity, 
+			blocklights[2][index].AsVector3D() );
+		directionalAtten = fpmax( 0.0f, DotProduct( vLightVecTangent, g_localBumpBasis[2] ) );
+		VectorMA( blocklights[3][index].AsVector3D(), scale * directionalAtten,
+			data.m_Intensity, 
+			blocklights[3][index].AsVector3D() );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Alpha channel modulation
 //-----------------------------------------------------------------------------
-class CSingleAlphaLightAdder
+static void	ProcessLightmapSampleAlpha( const ProcessLightmapSampleData_t &data, const Vector &vPos, const Vector &vNormal, const Vector &vTangentS, const Vector &vTangentT, int t, int s, int tmax, int smax )
 {
-public:
-
-	inline void	ProcessLightmapSample( Vector const &vPos, int t, int s, int tmax, int smax )
+	float distSqr = data.m_vLightOrigin.DistToSqr( vPos );
+	if( distSqr < data.m_LightDistSqr )
 	{
-		float distSqr = m_vLightOrigin.DistToSqr( vPos );
-		if( distSqr < m_LightDistSqr )
+		float scale = (distSqr != 0.0f) ? data.m_ooQuadraticAttn / distSqr : 1.0f;
+
+		// Apply a little extra attenuation
+		scale *= (1.0f - distSqr * data.m_ooRadiusSq);
+
+		if (scale > 1.0f)
+			scale = 1.0f;
+
+		int index = t*smax + s;
+		blocklights[0][index][3] += scale * data.m_Intensity[0];
+	}
+}
+#endif
+
+// This iterates over all the lightmap samples and for each one, calls:
+// T::ProcessLightmapSample( Vector const &vPos, int t, int s, int tmax, int smax );
+void IterateLightmapSamples( CDispInfo *pDisp, const ProcessLightmapSampleData_t &data )
+{
+	ASSERT_SURF_VALID( pDisp->m_ParentSurfID );
+
+	int smax = MSurf_LightmapExtents( pDisp->m_ParentSurfID )[0] + 1;
+	int tmax = MSurf_LightmapExtents( pDisp->m_ParentSurfID )[1] + 1;
+
+	unsigned char *pCurSample = &g_DispLightmapSamplePositions[pDisp->m_iLightmapSamplePositionStart];
+
+	for( int t = 0 ; t<tmax ; t++ )
+	{
+		for( int s=0 ; s<smax ; s++ )
 		{
-			float scale = (distSqr != 0.0f) ? m_ooQuadraticAttn / distSqr : 1.0f;
+			// Figure out what triangle this sample is on.
+			// NOTE: this usually stores 4 bytes per lightmap sample.
+			// It's a lot simpler and faster to just store the position but then it's
+			// 16 bytes instead of 4.
+			int iTri;
+			if( *pCurSample == 255 )
+			{
+				++pCurSample;
+				iTri = *pCurSample + 255;
+			}
+			else
+			{
+				iTri = *pCurSample;
+			}
+			++pCurSample;
 
-			// Apply a little extra attenuation
-			scale *= (1.0f - distSqr * m_ooRadiusSq);
+			float a = (float)*(pCurSample++) / 255.0f;
+			float b = (float)*(pCurSample++) / 255.0f;
+			float c = (float)*(pCurSample++) / 255.0f;
 
-			if (scale > 1.0f)
-				scale = 1.0f;
+			CTriInfo *pTri = &pDisp->m_pPowerInfo->m_pTriInfos[iTri];
+			Vector vPos = 
+				pDisp->m_MeshReader.Position( pTri->m_Indices[0] ) * a +
+				pDisp->m_MeshReader.Position( pTri->m_Indices[1] ) * b +
+				pDisp->m_MeshReader.Position( pTri->m_Indices[2] ) * c;
+			Vector vNormal, vTangentS, vTangentT;
+			if( pDisp->NumLightMaps() > 1 )
+			{
+				vNormal = 
+					pDisp->m_MeshReader.Normal( pTri->m_Indices[0] ) * a +
+					pDisp->m_MeshReader.Normal( pTri->m_Indices[1] ) * b +
+					pDisp->m_MeshReader.Normal( pTri->m_Indices[2] ) * c;
+				vTangentS = 
+					pDisp->m_MeshReader.TangentS( pTri->m_Indices[0] ) * a +
+					pDisp->m_MeshReader.TangentS( pTri->m_Indices[1] ) * b +
+					pDisp->m_MeshReader.TangentS( pTri->m_Indices[2] ) * c;
+				vTangentT = 
+					pDisp->m_MeshReader.TangentT( pTri->m_Indices[0] ) * a +
+					pDisp->m_MeshReader.TangentT( pTri->m_Indices[1] ) * b +
+					pDisp->m_MeshReader.TangentT( pTri->m_Indices[2] ) * c;
+			}
 
-			int index = t*smax + s;
-			m_pBlocklight[index][3] += scale * m_Intensity;
+			(*data.pProcessLightmapSampleDataFunc)( data, vPos, vNormal, vTangentS, vTangentT, t, s, tmax, smax );
 		}
 	}
+}
 
-	float		m_ooQuadraticAttn;
-	float		m_ooRadiusSq;
-	Vector4D	*m_pBlocklight;
-	float		m_Intensity;
-	float		m_LightDistSqr;
-	Vector		m_vLightOrigin;
-};
-
-void CDispInfo::AddSingleDynamicAlphaLight( dlight_t& dl, Vector4D *blocklight )
+void CDispInfo::AddSingleDynamicLight( dlight_t& dl )
 {
 #ifndef SWDS
-	CSingleAlphaLightAdder adder;
-
-	adder.m_LightDistSqr = dl.radius * dl.radius;
+	ProcessLightmapSampleData_t data;
+	data.m_LightDistSqr = dl.GetRadiusSquared();
 
 	float lightStyleValue = LightStyleValue( dl.style );
-	adder.m_Intensity = TexLightToLinear( dl.color.r, dl.color.exponent ) * lightStyleValue;
-	if ( dl.flags & DLIGHT_SUBTRACT_DISPLACEMENT_ALPHA )
-		adder.m_Intensity *= -1.0f;
+	data.m_Intensity[0] = TexLightToLinear( dl.color.r, dl.color.exponent ) * lightStyleValue;
+	data.m_Intensity[1] = TexLightToLinear( dl.color.g, dl.color.exponent ) * lightStyleValue;
+	data.m_Intensity[2] = TexLightToLinear( dl.color.b, dl.color.exponent ) * lightStyleValue;
 
-	float minlight = max( MIN_LIGHTING_VALUE, dl.minlight );
-	float ooQuadraticAttn = adder.m_LightDistSqr * minlight; // / maxIntensity;
+	float minlight = fpmax( g_flMinLightingValue, dl.minlight );
+	float ooQuadraticAttn = data.m_LightDistSqr * minlight; // / maxIntensity;
 
-	adder.m_ooQuadraticAttn = ooQuadraticAttn;
-	adder.m_pBlocklight = blocklight;
-	adder.m_vLightOrigin = dl.origin;
-	adder.m_ooRadiusSq = 1.0f / (dl.radius * dl.radius);
+	data.m_ooQuadraticAttn = ooQuadraticAttn;
+	data.m_vLightOrigin = dl.origin;
+	data.m_ooRadiusSq = 1.0f / dl.GetRadiusSquared();;
+	data.pProcessLightmapSampleDataFunc = &ProcessLightmapSample;
 
 	// Touch all the lightmap samples.
-	IterateLightmapSamples( this, adder );
+	IterateLightmapSamples( this, data );
+#endif
+}
+
+void CDispInfo::AddSingleDynamicLightBumped( dlight_t& dl )
+{
+#ifndef SWDS
+	ProcessLightmapSampleData_t data;
+
+	data.m_LightDistSqr = dl.GetRadiusSquared();
+
+	float lightStyleValue = LightStyleValue( dl.style );
+	data.m_Intensity[0] = TexLightToLinear( dl.color.r, dl.color.exponent ) * lightStyleValue;
+	data.m_Intensity[1] = TexLightToLinear( dl.color.g, dl.color.exponent ) * lightStyleValue;
+	data.m_Intensity[2] = TexLightToLinear( dl.color.b, dl.color.exponent ) * lightStyleValue;
+
+	float minlight = fpmax( g_flMinLightingValue, dl.minlight );
+	float ooQuadraticAttn = data.m_LightDistSqr * minlight; // / maxIntensity;
+
+	data.m_ooQuadraticAttn = ooQuadraticAttn;
+	data.m_vLightOrigin = dl.origin;
+	data.m_ooRadiusSq = 1.0f / dl.GetRadiusSquared();
+	data.pProcessLightmapSampleDataFunc = &ProcessLightmapSampleBumped;
+
+	// Touch all the lightmap samples.
+	IterateLightmapSamples( this, data );
+#endif
+}
+
+void CDispInfo::AddSingleDynamicAlphaLight( dlight_t& dl )
+{
+#ifndef SWDS
+	ProcessLightmapSampleData_t data;
+
+	data.m_LightDistSqr = dl.GetRadiusSquared();
+
+	float lightStyleValue = LightStyleValue( dl.style );
+	data.m_Intensity[0] = TexLightToLinear( dl.color.r, dl.color.exponent ) * lightStyleValue;
+	if ( dl.flags & DLIGHT_SUBTRACT_DISPLACEMENT_ALPHA )
+		data.m_Intensity *= -1.0f;
+
+	float minlight = max( g_flMinLightingValue, dl.minlight );
+	float ooQuadraticAttn = data.m_LightDistSqr * minlight; // / maxIntensity;
+
+	data.m_ooQuadraticAttn = ooQuadraticAttn;
+	data.m_vLightOrigin = dl.origin;
+	data.m_ooRadiusSq = 1.0f / dl.GetRadiusSquared();
+	data.pProcessLightmapSampleDataFunc = &ProcessLightmapSampleAlpha;
+
+	// Touch all the lightmap samples.
+	IterateLightmapSamples( this, data );
 #endif
 }
 
@@ -1260,7 +883,7 @@ bool CDispInfo::SetupDecalNodeIntersect_R( CVertIndex const &nodeIndex,
 			CVertIndex const &childNode = m_pPowerInfo->m_pChildVerts[iNodeIndex].m_Verts[iChild];
 
 			// If any of our children intersect, then we do too...
-			if (SetupDecalNodeIntersect_R( childNode, iChildNodeBit, pDispDecal, pInfo, iLevel + 1, pCache ))
+			if (SetupDecalNodeIntersect_R( childNode, iChildNodeBit, pDispDecal, pInfo, iLevel + 1, pCache ) )
 				anyChildIntersected = true;
 			iChildNodeBit += m_pPowerInfo->m_NodeIndexIncrements[iLevel];
 		}
@@ -1279,7 +902,7 @@ bool CDispInfo::SetupDecalNodeIntersect_R( CVertIndex const &nodeIndex,
 	Vector vMin, vMax;
 	if (!pCache->IsCached(iNodeIndex))
 	{
-		DecalProjectVert( m_Verts[iNodeIndex].m_vPos, pDispDecal, pInfo, pCache->m_ProjectedVert[iNodeIndex] );
+		DecalProjectVert( m_MeshReader.Position( iNodeIndex ), pDispDecal, pInfo, pCache->m_ProjectedVert[iNodeIndex] );
 		pCache->MarkCached(iNodeIndex);
 	}
 	vMin = pCache->m_ProjectedVert[iNodeIndex];
@@ -1294,7 +917,7 @@ bool CDispInfo::SetupDecalNodeIntersect_R( CVertIndex const &nodeIndex,
 		int iSideIndex = VertIndex(sideVert);
 		if (!pCache->IsCached(iSideIndex))
 		{
-			DecalProjectVert( m_Verts[iSideIndex].m_vPos, pDispDecal, pInfo, pCache->m_ProjectedVert[iSideIndex] );
+			DecalProjectVert( m_MeshReader.Position( iSideIndex ), pDispDecal, pInfo, pCache->m_ProjectedVert[iSideIndex] );
 			pCache->MarkCached(iSideIndex);
 		}
 
@@ -1304,7 +927,7 @@ bool CDispInfo::SetupDecalNodeIntersect_R( CVertIndex const &nodeIndex,
 		int iCornerIndex = VertIndex(cornerVert);
 		if (!pCache->IsCached(iCornerIndex))
 		{
-			DecalProjectVert( m_Verts[iCornerIndex].m_vPos, pDispDecal, pInfo, pCache->m_ProjectedVert[iCornerIndex] );
+			DecalProjectVert( m_MeshReader.Position( iCornerIndex ), pDispDecal, pInfo, pCache->m_ProjectedVert[iCornerIndex] );
 			pCache->MarkCached(iCornerIndex);
 		}
 
@@ -1317,7 +940,7 @@ bool CDispInfo::SetupDecalNodeIntersect_R( CVertIndex const &nodeIndex,
 	if( vMin.x <= 1 && vMax.x >= 0 && vMin.y <= 1 && vMax.y >= 0 )
 	{
 		// Z cull for shadows...
-		if (pInfo)
+		if( pInfo )
 		{
 			if ((vMax.z < 0) || (vMin.z > pInfo->m_MaxDist))
 				return false;
@@ -1340,8 +963,8 @@ void CDispInfo::SetupDecalNodeIntersect( CVertIndex const &nodeIndex, int iNodeB
 	static CDecalNodeSetupCache cache;
 	cache.ResetCache();
 
-	bool anyIntersection = SetupDecalNodeIntersect_R( nodeIndex, iNodeBitIndex,
-		pDispDecal, pInfo, 0, &cache );
+	bool anyIntersection = SetupDecalNodeIntersect_R( 
+		nodeIndex, iNodeBitIndex, pDispDecal, pInfo, 0, &cache );
 
 	pDispDecal->m_Flags |= CDispDecalBase::NODE_BITFIELD_COMPUTED;
 	if (anyIntersection)
@@ -1350,6 +973,31 @@ void CDispInfo::SetupDecalNodeIntersect( CVertIndex const &nodeIndex, int iNodeB
 		pDispDecal->m_Flags |= CDispDecalBase::NO_INTERSECTION;
 }
 
+
+Vector CDispInfo::GetFlatVert( int iVertex )
+{
+	int sideLength = m_pPowerInfo->GetSideLength();
+	int x = iVertex % sideLength;
+	int y = iVertex / sideLength;
+	
+	float ooInt = 1.0f / ( float )( sideLength - 1 );
+
+	// Lerp between the left and right edges to get a line along 'x'.
+	Vector endPts[2];
+	VectorLerp( m_BaseSurfacePositions[0], m_BaseSurfacePositions[1], y*ooInt, endPts[0] );
+	VectorLerp( m_BaseSurfacePositions[3], m_BaseSurfacePositions[2], y*ooInt, endPts[1] );
+	
+	// Lerp along the X line.
+	Vector vOutputPos;
+	VectorLerp( endPts[0], endPts[1], x*ooInt, vOutputPos );
+
+	// This can be used to verify that the position generated here is correct.
+	// It should be the same as CCoreDispInfo::GetFlatVert.
+	// Assert( vOutputPos.DistTo( m_Verts[iVertex].m_vFlatPos ) < 0.1f );
+	
+	// Voila!
+	return vOutputPos;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -1363,15 +1011,16 @@ void CDispInfo::ComputeLightmapAndTextureCoordinate( RayDispOutput_t const& outp
 	// lightmap coordinate
 	if( luv )
 	{
-		ComputePointFromBarycentric( m_Verts[output.ndxVerts[0]].m_LMCoords,
-			m_Verts[output.ndxVerts[1]].m_LMCoords,
-			m_Verts[output.ndxVerts[2]].m_LMCoords,
+		ComputePointFromBarycentric( 
+			m_MeshReader.TexCoordVector2D( output.ndxVerts[0], DISP_LMCOORDS_STAGE ),
+			m_MeshReader.TexCoordVector2D( output.ndxVerts[1], DISP_LMCOORDS_STAGE ),
+			m_MeshReader.TexCoordVector2D( output.ndxVerts[2], DISP_LMCOORDS_STAGE ),
 			output.u, output.v, *luv );
 
 		// luv is in the space of the accumulated lightmap page; we need to convert
 		// it to be in the space of the surface
 		int lightmapPageWidth, lightmapPageHeight;
-		materialSystemInterface->GetLightmapPageSize( 
+		materials->GetLightmapPageSize( 
 			SortInfoToLightmapPage(MSurf_MaterialSortID( m_ParentSurfID ) ),
 			&lightmapPageWidth, &lightmapPageHeight );
 
@@ -1418,7 +1067,7 @@ bool CDispInfo::TestRay( Ray_t const& ray, float start, float end, float& dist,
 						Vector2D* luv, Vector2D* tuv )
 {
 	// Get the index associated with this disp info....
-	int idx = DispInfo_ComputeIndex( host_state.worldmodel->brush.hDispInfos, this );
+	int idx = DispInfo_ComputeIndex( host_state.worldbrush->hDispInfos, this );
 	CDispCollTree* pTree = CollisionBSPData_GetCollisionTree( idx );
 	if (!pTree)
 		return false;
@@ -1435,7 +1084,8 @@ bool CDispInfo::TestRay( Ray_t const& ray, float start, float end, float& dist,
 	shortenedRay.Init( startpt, endpt );
 
 	RayDispOutput_t	output;
-	if (pTree->RayTest( shortenedRay, output ))
+	output.dist = 1.0f;
+	if (pTree->AABBTree_Ray( shortenedRay, output ))
 	{
 		Assert( (output.u <= 1.0f) && (output.v <= 1.0f ));
 		Assert( (output.u >= 0.0f) && (output.v >= 0.0f ));

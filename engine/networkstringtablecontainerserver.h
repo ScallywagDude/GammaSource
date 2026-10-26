@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef NETWORKSTRINGTABLECONTAINERSERVER_H
 #define NETWORKSTRINGTABLECONTAINERSERVER_H
@@ -13,9 +13,10 @@
 
 #include "inetworkstringtableserver.h"
 #include "utlvector.h"
+#include "bitbuf.h"
 
 class CNetworkStringTableServer;
-typedef struct client_s client_t;
+class client_t;
 class bf_write_t;
 
 //-----------------------------------------------------------------------------
@@ -47,13 +48,6 @@ public:
 	TABLEID					FindTable( const char *tableName );
 	CNetworkStringTableServer *GetTable( TABLEID stringTable );
 
-	// Networking data
-	void					CreateTableDefinitions( bf_write *msg );
-	void					MarkSignonStringsCurrent( void );
-
-	// Update a client (called once during packet sending per client)
-	void					UpdateClient( client_t *client, bf_write *msg );
-
 	// Delete all tables
 	void					RemoveAllTables( void );
 
@@ -63,8 +57,6 @@ public:
 
 	// Print table data to console
 	void					Dump( void );
-
-	void					CheckDirectUpdate( client_t *client );
 
 private:
 	// Guard

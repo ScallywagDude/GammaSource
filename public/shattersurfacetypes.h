@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined ( SHATTERSURFACETYPES_H )
 #define SHATTERSURFACETYPES_H
 #ifdef _WIN32

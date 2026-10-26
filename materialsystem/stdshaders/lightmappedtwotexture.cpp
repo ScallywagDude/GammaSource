@@ -1,12 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Lightmap only shader
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // FIXME!!  Need to make dx9 version so that "CENTROID" flags can be added!
 BEGIN_SHADER( LightmappedTwoTexture,
@@ -16,15 +19,16 @@ BEGIN_SHADER( LightmappedTwoTexture,
 		SHADER_PARAM( DETAIL, SHADER_PARAM_TYPE_TEXTURE, "shadertest/Detail", "detail" )
 		SHADER_PARAM( DETAILSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "detail scale" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
-		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
-		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTimesLightmapPlusMaskedCubicEnvMap_glass", "envmap mask" )
-		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
+		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "Frame for animated envmap" )
+		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_envmask", "envmap mask" )
+		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "0", "" )
 		SHADER_PARAM( ENVMAPMASKSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "envmap mask scale" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
 	{
+		SET_FLAGS2( MATERIAL_VAR2_LIGHTING_LIGHTMAP );
 		if( !params[ENVMAPMASKSCALE]->IsDefined() )
 			params[ENVMAPMASKSCALE]->SetFloatValue( 1.0f );
 
@@ -89,7 +93,7 @@ BEGIN_SHADER( LightmappedTwoTexture,
 	SHADER_FALLBACK
 	{
 		// The only thing we can't do here is masked env-mapped
-		if (g_pHardwareConfig->GetNumTextureUnits() < 2)
+		if (g_pHardwareConfig->GetSamplerCount() < 2)
 		{
 			return "LightmappedTwoTexture_DX5";
 		}
@@ -141,6 +145,7 @@ BEGIN_SHADER( LightmappedTwoTexture,
 			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
 				flags |= SHADER_DRAW_COLOR;
 			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
 		}
 		DYNAMIC_STATE
 		{
@@ -149,7 +154,6 @@ BEGIN_SHADER( LightmappedTwoTexture,
 			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
 			BindTexture( SHADER_TEXTURE_STAGE1, DETAIL );
 			SetModulationDynamicState();
-			DefaultFog();
 		}
 		Draw();
 
@@ -162,12 +166,15 @@ BEGIN_SHADER( LightmappedTwoTexture,
 
 	SHADER_DRAW
 	{
-		// Pass 1 : Base + env
+		// Pass 1 : Base + detail
 		FixedFunctionBaseTimesDetailPass(
 			BASETEXTURE, FRAME, BASETEXTURETRANSFORM, DETAIL, DETAILSCALE );
 
-		// Pass 2 : + env
-		bool envDefined = params[ENVMAP]->IsDefined();
+		// Pass 2 : * lightmap
+		FixedFunctionMultiplyByLightmapPass( BASETEXTURE, FRAME, BASETEXTURETRANSFORM );
+
+		// Pass 3 : + env
+		bool envDefined = params[ENVMAP]->IsTexture();
 		if (envDefined)
 		{
 			FixedFunctionAdditiveMaskedEnvmapPass(
@@ -175,8 +182,5 @@ BEGIN_SHADER( LightmappedTwoTexture,
 				ENVMAPFRAME, ENVMAPMASKFRAME, FRAME, 
 				BASETEXTURETRANSFORM, ENVMAPMASKSCALE, ENVMAPTINT );
 		}
-
-		// Pass 3 : * lightmap
-		FixedFunctionMultiplyByLightmapPass( BASETEXTURE, FRAME, BASETEXTURETRANSFORM );
 	}
 END_SHADER

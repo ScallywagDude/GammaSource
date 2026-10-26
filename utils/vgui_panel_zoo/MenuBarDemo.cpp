@@ -1,16 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_MenuBar.h>
-#include <VGUI_MenuButton.h>
-#include <VGUI_Menu.h> 
+#include <VGUI/IVGui.h>
+#include <Keyvalues.h>
+#include <vgui_controls/MenuBar.h>
+#include <vgui_controls/MenuButton.h>
+#include <vgui_controls/Menu.h> 
+#include "vgui/ISurface.h"
 
 using namespace vgui;
 
@@ -66,6 +67,68 @@ MenuBarDemo::MenuBarDemo(Panel *parent, const char *name) : DemoPage(parent, nam
 	pMenu->AddMenuItem("&SplitScreen",  new KeyValues ("SplitScreen"), this);
 	pMenu->AddMenuItem("&Properties",  new KeyValues ("Properties"), this);
 	pMenu->AddMenuItem("&Output",  new KeyValues ("Output"), this);
+	pMenuButton->SetMenu(pMenu);
+
+	m_pMenuBar->AddButton(pMenuButton);
+
+	// A menu 
+	pMenuButton = new MenuButton(this, "Big", "&HugeMenu");
+	pMenu = new Menu(pMenuButton, "HugeMenu");
+	int items = 150;
+	for ( int i = 0 ; i < items; ++i )
+	{
+		char sz[ 32 ];
+		Q_snprintf( sz, sizeof( sz ), "Item %03d", i + 1 );
+
+        int idx = pMenu->AddMenuItem( sz,  new KeyValues ( sz ), this);
+
+		if ( !(i % 4 ) )
+		{
+			char binding[ 256 ];
+			Q_snprintf( binding, sizeof( binding ), "Ctrl+%c", 'A' + ( rand() % 26 ) );
+			pMenu->SetCurrentKeyBinding( idx, binding );
+		}
+
+		if ( !(i % 7 ) )
+		{
+			pMenu->AddSeparator();
+		}
+	}
+	pMenuButton->SetMenu(pMenu);
+
+	m_pMenuBar->AddButton(pMenuButton);
+
+	pMenuButton = new MenuButton(this, "Big", "&HalfHuge");
+	pMenu = new Menu(pMenuButton, "HalfHuge");
+	int htotal = 0;
+	int itemHeight = pMenu->GetMenuItemHeight();
+
+	int workX, workY, workWide, workTall;
+	surface()->GetWorkspaceBounds(workX, workY, workWide, workTall);
+
+	int i = 0;
+	while ( htotal < ( workTall / 2 ) )
+	{
+		char sz[ 32 ];
+		Q_snprintf( sz, sizeof( sz ), "Item %03d", i + 1 );
+
+        int idx = pMenu->AddMenuItem( sz,  new KeyValues ( sz ), this);
+
+		if ( !(i % 4 ) )
+		{
+			char binding[ 256 ];
+			Q_snprintf( binding, sizeof( binding ), "Ctrl+%c", 'A' + ( rand() % 26 ) );
+			pMenu->SetCurrentKeyBinding( idx, binding );
+		}
+
+		if ( !(i % 7 ) )
+		{
+			pMenu->AddSeparator();
+			htotal += 3;
+		}
+		++i;
+		htotal += itemHeight;
+	}
 	pMenuButton->SetMenu(pMenu);
 
 	m_pMenuBar->AddButton(pMenuButton);

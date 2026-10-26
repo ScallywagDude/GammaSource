@@ -8,7 +8,7 @@ Sub ModuleHeader()
 	ActiveDocument.Selection.StartOfDocument
 
 	' Create the standard file prologue
-	Header = "//====== Copyright © 1996-2003, Valve Corporation, All rights reserved. =======" + vbCrLf 
+	Header = "//====== Copyright © 1996-2005, Valve Corporation, All rights reserved. =======" + vbCrLf 
 	Header = Header + "//" + vbCrLf 
 	Header = Header + "// Purpose: " + vbCrLf
 	Header = Header + "//" + vbCrLf 

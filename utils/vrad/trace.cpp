@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
 // trace.c
 
 //=============================================================================
@@ -5,26 +12,16 @@
 #include "vrad.h"
 #include "trace.h"
 #include "Cmodel.h"
+#include "mathlib/vmatrix.h"
+
 
 //=============================================================================
-
-//
-// Trace Nodes
-//
-typedef struct tnode_s
-{
-	int		type;
-	Vector	normal;
-	float	dist;
-	int		children[2];
-	int		pad;
-} tnode_t;
-
-tnode_t		*tnodes, *tnode_p;
 
 class CToolTrace : public CBaseTrace
 {
 public:
+	CToolTrace() {}
+
 	Vector		mins;
 	Vector		maxs;
 	Vector		extents;
@@ -32,6 +29,9 @@ public:
 	texinfo_t	*surface;
 
 	qboolean	ispoint;
+
+private:
+	 CToolTrace( const CToolTrace& );
 };
 
 
@@ -47,176 +47,138 @@ public:
 //=============================================================================
 
 bool DM_RayDispIntersectTest( CVRADDispColl *pTree, Vector& rayStart, Vector& rayEnd, CToolTrace *pTrace );
-void DM_ClipBoxToBrush( CToolTrace *trace, Vector const & mins, Vector const & maxs, Vector const& p1, Vector const& p2, dbrush_t *brush );
+void DM_ClipBoxToBrush( CToolTrace *trace, const Vector & mins, const Vector & maxs, const Vector& p1, const Vector& p2, dbrush_t *brush );
 
 //=============================================================================
 
-/*
-==============
-MakeTnode
-
-Converts the disk node structure into the efficient tracing structure
-==============
-*/
-// UNDONE: Detect SKY surfaces somehow?
-void MakeTnode (int nodenum)
+float TraceLeafBrushes( int leafIndex, const Vector &start, const Vector &end, CBaseTrace &traceOut )
 {
-	tnode_t			*t;
-	dplane_t		*plane;
-	int				i;
-	dnode_t 		*node;
-	
-	t = tnode_p++;
+	dleaf_t *pLeaf = dleafs + leafIndex;
+	CToolTrace trace;
+	memset( &trace, 0, sizeof(trace) );
+	trace.ispoint = true;
+	trace.startsolid = false;
+	trace.fraction = 1.0;
 
-	node = dnodes + nodenum;
-	plane = dplanes + node->planenum;
-
-	t->type = plane->type;
-	VectorCopy (plane->normal, t->normal);
-	t->dist = plane->dist;
-	
-	for (i=0 ; i<2 ; i++)
+	for ( int i = 0; i < pLeaf->numleafbrushes; i++ )
 	{
-		if (node->children[i] < 0)
+		int brushnum = dleafbrushes[pLeaf->firstleafbrush+i];
+		dbrush_t *b = &dbrushes[brushnum];
+		if ( !(b->contents & MASK_OPAQUE))
+			continue;
+
+		Vector zeroExtents = vec3_origin;
+		DM_ClipBoxToBrush( &trace, zeroExtents, zeroExtents, start, end, b);
+		if ( trace.fraction != 1.0 || trace.startsolid )
 		{
-            // set child node value -- this is needed for displacement collisions and detail faces
-			// this could be made more efficient with a more complete tree
-            t->children[i] = node->children[i];
+			if ( trace.startsolid )
+				trace.fraction = 0.0f;
+			traceOut = trace;
+			return trace.fraction;
 		}
-		else
-		{
-			t->children[i] = tnode_p - tnodes;
-			MakeTnode (node->children[i]);
-		}
-	}			
-}
-
-
-/*
-=============
-MakeTnodes
-
-Loads the node structure out of a .bsp file to be used for light occlusion
-=============
-*/
-void MakeTnodes (dmodel_t *bm)
-{
-	// 32 byte align the structs
-	tnodes = ( tnode_t* )calloc( 1, (numnodes+1) * sizeof(tnode_t));
-	tnodes = (tnode_t *)(((int)tnodes + 31)&~31);
-	tnode_p = tnodes;
-
-	MakeTnode (0);
-}
-
-
-//==========================================================
-
-
-// UNDONE: Should return CONTENTS_SKY or some sky marker
-// when sky surfaces are hit
-int TestLine_r (int node, Vector const& start, Vector const& stop, Ray_t& ray, PropTested_t& propTested,
-				DispTested_t &dispTested )
-{
-	tnode_t	*tnode;
-	float	front, back;
-	Vector	mid;
-	float	frac;
-	int		side;
-	int		r;
-
-    if( node < 0 )
-    {
-        int leafNumber = -node - 1;
-        dleaf_t *pLeaf = dleafs + leafNumber;
-        
-        if( pLeaf->contents & MASK_OPAQUE )
-            return 1;
-
-		//
-		// check solids in each leaf
-		//
-		if ( pLeaf->numleafbrushes )
-		{
-			//
-			// set the initial trace state
-			//
-			CToolTrace trace;
-			memset( &trace, 0, sizeof(trace) );
-			trace.ispoint = true;
-			trace.startsolid = false;
-			trace.fraction = 1.0;
-
-			for ( int i = 0; i < pLeaf->numleafbrushes; i++ )
-			{
-				int brushnum = dleafbrushes[pLeaf->firstleafbrush+i];
-				dbrush_t *b = &dbrushes[brushnum];
-				if ( !(b->contents & MASK_OPAQUE))
-					continue;
-
-				Vector zeroExtents = vec3_origin;
-				DM_ClipBoxToBrush( &trace, zeroExtents, zeroExtents, start, stop, b);
-				if ( trace.fraction != 1.0 || trace.startsolid )
-					return b->contents;
-			}
-		}
-        
-		// Try displacement surfaces
-		if( StaticDispMgr()->ClipRayToDispInLeaf( dispTested, ray, leafNumber ) )
-			return CONTENTS_SOLID;
-
-		// Try static props...
-		if (StaticPropMgr()->ClipRayToStaticPropsInLeaf( propTested, ray, leafNumber ))
-			return CONTENTS_SOLID;
-
-        // no occlusion
-        return 0;
-    }
-
-	tnode = &tnodes[node];
-	if ( tnode->type <= PLANE_Z )
-	{
-		front = start[tnode->type] - tnode->dist;
-		back = stop[tnode->type] - tnode->dist;
 	}
-	else
-	{
-		front = (start[0]*tnode->normal[0] + start[1]*tnode->normal[1] + start[2]*tnode->normal[2]) - tnode->dist;
-		back = (stop[0]*tnode->normal[0] + stop[1]*tnode->normal[1] + stop[2]*tnode->normal[2]) - tnode->dist;
-	}
-
-	if (front >= -ON_VIS_EPSILON && back >= -ON_VIS_EPSILON)
-		return TestLine_r (tnode->children[0], start, stop, ray, propTested, dispTested);
-	
-	if (front < ON_VIS_EPSILON && back < ON_VIS_EPSILON)
-		return TestLine_r (tnode->children[1], start, stop, ray, propTested, dispTested);
-
-	side = front < 0;
-	
-	frac = front / (front-back);
-
-	mid[0] = start[0] + (stop[0] - start[0])*frac;
-	mid[1] = start[1] + (stop[1] - start[1])*frac;
-	mid[2] = start[2] + (stop[2] - start[2])*frac;
-
-	r = TestLine_r (tnode->children[side], start, mid, ray, propTested, dispTested);
-	if (r)
-		return r;
-	return TestLine_r (tnode->children[!side], mid, stop, ray, propTested, dispTested);
+	traceOut = trace;
+	return 1.0f;
 }
 
-PropTested_t s_PropTested[MAX_TOOL_THREADS+1];
 DispTested_t s_DispTested[MAX_TOOL_THREADS+1];
 
-int TestLine (Vector const& start, Vector const& stop, int node, int iThread )
+// this just uses the average coverage for the triangle
+class CCoverageCount : public ITransparentTriangleCallback
 {
-	// Compute a bitfield, one per prop and disp...
-	StaticPropMgr()->StartRayTest( s_PropTested[iThread] );
-	StaticDispMgr()->StartRayTest( s_DispTested[iThread] );
-	Ray_t ray;
-	ray.Init( start, stop, vec3_origin, vec3_origin );
-	return TestLine_r( node, start, stop, ray, s_PropTested[iThread], s_DispTested[iThread] );
+public:
+	CCoverageCount()
+	{
+		m_coverage = Four_Zeros;
+	}
+
+	virtual bool VisitTriangle_ShouldContinue( const TriIntersectData_t &triangle, const FourRays &rays, fltx4 *pHitMask, fltx4 *b0, fltx4 *b1, fltx4 *b2, int32 hitID )
+	{
+		float color = g_RtEnv.GetTriangleColor( hitID ).x;
+		m_coverage = AddSIMD( m_coverage, AndSIMD ( *pHitMask, ReplicateX4 ( color ) ) );
+		m_coverage = MinSIMD( m_coverage, Four_Ones );
+
+		fltx4 onesMask = CmpEqSIMD( m_coverage, Four_Ones );
+
+		// we should continue if the ones that hit the triangle have onesMask set to zero
+		// so hitMask & onesMask != hitMask
+		// so hitMask & onesMask == hitMask means we're done
+		// so ts(hitMask & onesMask == hitMask) != 0xF says go on
+		return 0xF != TestSignSIMD ( CmpEqSIMD ( AndSIMD( *pHitMask, onesMask ), *pHitMask ) );
+	}
+
+	fltx4 GetCoverage()
+	{
+		return m_coverage;
+	}
+
+	fltx4 GetFractionVisible()
+	{
+		return SubSIMD ( Four_Ones, m_coverage );
+	}
+
+	fltx4 m_coverage;
+};
+
+// this will sample the texture to get a coverage at the ray intersection point
+class CCoverageCountTexture : public CCoverageCount
+{
+public:
+	virtual bool VisitTriangle_ShouldContinue( const TriIntersectData_t &triangle, const FourRays &rays, fltx4 *pHitMask, fltx4 *b0, fltx4 *b1, fltx4 *b2, int32 hitID )
+	{
+		int sign = TestSignSIMD( *pHitMask );
+		float addedCoverage[4];
+		for ( int s = 0; s < 4; s++)
+		{
+			addedCoverage[s] = 0.0f;
+			if ( ( sign >> s) & 0x1 )
+			{
+				addedCoverage[s] = ComputeCoverageFromTexture( b0->m128_f32[s], b1->m128_f32[s], b2->m128_f32[s], hitID );
+			}
+		}
+		m_coverage = AddSIMD( m_coverage, LoadUnalignedSIMD( addedCoverage ) );
+		m_coverage = MinSIMD( m_coverage, Four_Ones );
+		fltx4 onesMask = CmpEqSIMD( m_coverage, Four_Ones );
+
+		// we should continue if the ones that hit the triangle have onesMask set to zero
+		// so hitMask & onesMask != hitMask
+		// so hitMask & onesMask == hitMask means we're done
+		// so ts(hitMask & onesMask == hitMask) != 0xF says go on
+		return 0xF != TestSignSIMD ( CmpEqSIMD ( AndSIMD( *pHitMask, onesMask ), *pHitMask ) );
+	}
+};
+
+void TestLine( const FourVectors& start, const FourVectors& stop,
+               fltx4 *pFractionVisible, int static_prop_index_to_ignore )
+{
+	FourRays myrays;
+	myrays.origin = start;
+	myrays.direction = stop;
+	myrays.direction -= myrays.origin;
+	fltx4 len = myrays.direction.length();
+	myrays.direction *= ReciprocalSIMD( len );
+
+	RayTracingResult rt_result;
+	CCoverageCountTexture coverageCallback;
+
+	g_RtEnv.Trace4Rays(myrays, Four_Zeros, len, &rt_result, TRACE_ID_STATICPROP | static_prop_index_to_ignore, g_bTextureShadows ? &coverageCallback : 0 );
+
+	// Assume we can see the targets unless we get hits
+	float visibility[4];
+	for ( int i = 0; i < 4; i++ )
+	{
+		visibility[i] = 1.0f;
+		if ( ( rt_result.HitIds[i] != -1 ) &&
+		     ( rt_result.HitDistance.m128_f32[i] < len.m128_f32[i] ) )
+		{
+			visibility[i] = 0.0f;
+		}
+	}
+	*pFractionVisible = LoadUnalignedSIMD( visibility );
+	if ( g_bTextureShadows )
+		*pFractionVisible = MinSIMD( *pFractionVisible, coverageCallback.GetFractionVisible() );
 }
+
 
 
 /*
@@ -224,10 +186,9 @@ int TestLine (Vector const& start, Vector const& stop, int node, int iThread )
 DM_ClipBoxToBrush
 ================
 */
-void DM_ClipBoxToBrush( CToolTrace *trace, Vector const& mins, Vector const& maxs, Vector const& p1, Vector const& p2,
+void DM_ClipBoxToBrush( CToolTrace *trace, const Vector& mins, const Vector& maxs, const Vector& p1, const Vector& p2,
 						dbrush_t *brush)
 {
-	int			j;
 	dplane_t	*plane, *clipplane;
 	float		dist;
 	Vector		ofs;
@@ -260,8 +221,11 @@ void DM_ClipBoxToBrush( CToolTrace *trace, Vector const& mins, Vector const& max
 			// push the plane out apropriately for mins/maxs
 
 			// FIXME: use signbits into 8 way lookup for each mins/maxs
-			for (j=0 ; j<3 ; j++)
-			{
+			ofs.x = (plane->normal.x < 0) ? maxs.x : mins.x;
+			ofs.y = (plane->normal.y < 0) ? maxs.y : mins.y;
+			ofs.z = (plane->normal.z < 0) ? maxs.z : mins.z;
+//			for (j=0 ; j<3 ; j++)
+//			{
 				// Set signmask to either 0 if the sign is negative, or 0xFFFFFFFF is the sign is positive:
 				//int signmask = (((*(int *)&(plane->normal[j]))&0x80000000) >> 31) - 1;
 
@@ -269,12 +233,7 @@ void DM_ClipBoxToBrush( CToolTrace *trace, Vector const& mins, Vector const& max
 				//*(int *)&(ofs[j]) =    (~signmask) & (*(int *)&temp);
 				//float temp1 = mins[j];
 				//*(int *)&(ofs[j]) |=   (signmask) & (*(int *)&temp1);
-
-				if (plane->normal[j] < 0)
-					ofs[j] = maxs[j];
-				else
-					ofs[j] = mins[j];
-			}
+//			}
 			dist = DotProduct (ofs, plane->normal);
 			dist = plane->dist - dist;
 
@@ -327,7 +286,6 @@ void DM_ClipBoxToBrush( CToolTrace *trace, Vector const& mins, Vector const& max
 				continue;
 
 			dist = plane->dist;
-
 			d1 = DotProduct (p1, plane->normal) - dist;
 			d2 = DotProduct (p2, plane->normal) - dist;
 
@@ -382,218 +340,61 @@ void DM_ClipBoxToBrush( CToolTrace *trace, Vector const& mins, Vector const& max
 			trace->plane.dist = clipplane->dist;
 			trace->plane.normal = clipplane->normal;
 			trace->plane.type = clipplane->type;
-			trace->surface = &texinfo[leadside->texinfo];
+			if (leadside->texinfo!=-1)
+				trace->surface = &texinfo[leadside->texinfo];
+			else
+				trace->surface = 0;
 			trace->contents = brush->contents;
 		}
 	}
 }
 
-/*
-================
-DM_TraceToLeaf
-================
-*/
-void DM_TraceToLeaf (CToolTrace *trace, int leafnum)
+void TestLine_DoesHitSky( FourVectors const& start, FourVectors const& stop,
+	fltx4 *pFractionVisible, bool canRecurse, int static_prop_to_skip, bool bDoDebug )
 {
-	int			k;
-	int			brushnum;
-	dleaf_t		*leaf;
-	dbrush_t	*b;
+	FourRays myrays;
+	myrays.origin = start;
+	myrays.direction = stop;
+	myrays.direction -= myrays.origin;
+	fltx4 len = myrays.direction.length();
+	myrays.direction *= ReciprocalSIMD( len );
+	RayTracingResult rt_result;
+	CCoverageCountTexture coverageCallback;
 
-	leaf = &dleafs[leafnum];
+	g_RtEnv.Trace4Rays(myrays, Four_Zeros, len, &rt_result, TRACE_ID_STATICPROP | static_prop_to_skip, g_bTextureShadows? &coverageCallback : 0);
 
-	// trace line against all brushes in the leaf
-	for (k=0 ; k<leaf->numleafbrushes ; k++)
+	if ( bDoDebug )
 	{
-		brushnum = dleafbrushes[leaf->firstleafbrush+k];
-		b = &dbrushes[brushnum];
-		if ( !(b->contents & trace->contents))
-			continue;
-		DM_ClipBoxToBrush (trace, trace->mins, trace->maxs, trace->startpos, trace->endpos, b);
-		if (!trace->fraction)
-			return;
+		WriteTrace( "trace.txt", myrays, rt_result );
 	}
-}
 
-
-/*
-==================
-DM_RecursiveHullCheck
-
-==================
-*/
-
-void DM_RecursiveHullCheck( CToolTrace *trace, int num, float p1f, float p2f, Vector const& p1, Vector const& p2 )
-{
-	dnode_t		*node = NULL;
-	dplane_t	*plane;
-	float		t1 = 0, t2 = 0, offset = 0;
-	float		frac, frac2;
-	float		idist;
-	int			i;
-	Vector		mid;
-	int			side;
-	float		midf;
-
-	if (trace->fraction <= p1f)
-		return;		// already hit something nearer
-
-	// While loop here is to avoid recursion overhead
-	while( num >= 0)
+	float aOcclusion[4];
+	for ( int i = 0; i < 4; i++ )
 	{
-		//
-		// find the point distances to the seperating plane
-		// and the offset for the size of the box
-		//
-		node = dnodes + num;
-		plane = dplanes + node->planenum;
-
-		if (plane->type < 3)
+		aOcclusion[i] = 0.0f;
+		if ( ( rt_result.HitIds[i] != -1 ) &&
+		     ( rt_result.HitDistance.m128_f32[i] < len.m128_f32[i] ) )
 		{
-			t1 = p1[plane->type] - plane->dist;
-			t2 = p2[plane->type] - plane->dist;
-			offset = trace->extents[plane->type];
-		}
-		else
-		{
-			t1 = DotProduct (plane->normal, p1) - plane->dist;
-			t2 = DotProduct (plane->normal, p2) - plane->dist;
-			if (trace->ispoint)
-				offset = 0;
-			else
-				offset = fabs(trace->extents[0]*plane->normal[0]) +
-					fabs(trace->extents[1]*plane->normal[1]) +
-					fabs(trace->extents[2]*plane->normal[2]);
-		}
-
-		// see which sides we need to consider
-		if (t1 >= offset && t2 >= offset)
-		{
-			num = node->children[0];
-		}
-		else if (t1 < -offset && t2 < -offset)
-		{
-			num = node->children[1];
-		}
-		else
-		{
-			// In this case, we have to split
-			break;
+			int id = g_RtEnv.OptimizedTriangleList[rt_result.HitIds[i]].m_Data.m_IntersectData.m_nTriangleID;
+			if ( !( id & TRACE_ID_SKY ) )
+				aOcclusion[i] = 1.0f;
 		}
 	}
+	fltx4 occlusion = LoadUnalignedSIMD( aOcclusion );
+	if (g_bTextureShadows)
+		occlusion = MaxSIMD ( occlusion, coverageCallback.GetCoverage() );
 
-	// if < 0, we are in a leaf node
-	if (num < 0)
-	{
-		DM_TraceToLeaf (trace, -1-num);
-		return;
-	}
+	bool fullyOccluded = ( TestSignSIMD( CmpGeSIMD( occlusion, Four_Ones ) ) == 0xF );
 
-	// put the crosspoint DIST_EPSILON pixels on the near side
-	if (t1 < t2)
-	{
-		idist = 1.0/(t1-t2);
-		side = 1;
-		frac2 = (t1 + offset + DIST_EPSILON)*idist;
-		frac = (t1 - offset + DIST_EPSILON)*idist;
-	}
-	else if (t1 > t2)
-	{
-		idist = 1.0/(t1-t2);
-		side = 0;
-		frac2 = (t1 - offset - DIST_EPSILON)*idist;
-		frac = (t1 + offset + DIST_EPSILON)*idist;
-	}
-	else
-	{
-		side = 0;
-		frac = 1;
-		frac2 = 0;
-	}
-
-	// move up to the node
-	if (frac < 0)
-		frac = 0;
-	if (frac > 1)
-		frac = 1;
-		
-	midf = p1f + (p2f - p1f)*frac;
-	for (i=0 ; i<3 ; i++)
-		mid[i] = p1[i] + frac*(p2[i] - p1[i]);
-
-	DM_RecursiveHullCheck (trace, node->children[side], p1f, midf, p1, mid);
-
-	// go past the node
-	if (frac2 < 0)
-		frac2 = 0;
-	if (frac2 > 1)
-		frac2 = 1;
-		
-	midf = p1f + (p2f - p1f)*frac2;
-	for (i=0 ; i<3 ; i++)
-		mid[i] = p1[i] + frac2*(p2[i] - p1[i]);
-
-	DM_RecursiveHullCheck (trace, node->children[side^1], midf, p2f, mid, p2);
-}
-
-texinfo_t *TestLine_Surface( int node, Vector const& start, Vector const& stop, int iThread, bool canRecurse )
-{
-	CToolTrace trace;
-	// fill in a default trace
-	memset (&trace, 0, sizeof(trace));
-	trace.fraction = 1;
-	trace.surface = NULL;
-
-	if (!numnodes)	// map not loaded
-		return NULL;
-
-	trace.contents = MASK_OPAQUE;
-	VectorCopy (start, trace.startpos);
-	VectorCopy (stop, trace.endpos);
-	VectorCopy (vec3_origin, trace.mins);
-	VectorCopy (vec3_origin, trace.maxs);
-
-	trace.ispoint = true;
-	VectorClear (trace.extents);
-
-	//
-	// general sweeping through world
-	//
-	DM_RecursiveHullCheck( &trace, node, 0, 1, start, stop );
-
-	// Now clip the ray to the displacement surfaces
-	if( !trace.startsolid )
-	{
-		Vector end;
-		VectorSubtract( stop, start, end );
-		VectorMA( start, trace.fraction, end, end );
-
-		Ray_t ray;
-		ray.Init( start, end );
-		if ( StaticDispMgr()->ClipRayToDisp( s_DispTested[iThread], ray ) )
-			return 0;
-	}
-
-	// Now clip the ray to the static props
-	if ((trace.fraction != 1.0) && (!trace.startsolid))
-	{
-		Vector end;
-		VectorSubtract( stop, start, end );
-		VectorMA( start, trace.fraction, end, end );
-
-		Ray_t ray;
-		ray.Init( start, end, vec3_origin, vec3_origin );
-		if ( StaticPropMgr()->ClipRayToStaticProps( s_PropTested[iThread], ray ))
-			return 0;
-	}
-	
 	// if we hit sky, and we're not in a sky camera's area, try clipping into the 3D sky boxes
-	if (canRecurse && (trace.fraction != 1.0) && (!trace.startsolid) && (trace.surface) && (trace.surface->flags & SURF_SKY))
+	if ( (! fullyOccluded) && canRecurse && (! g_bNoSkyRecurse ) )
 	{
-		Vector dir = stop-start;
-		VectorNormalize(dir);
+		FourVectors dir = stop;
+		dir -= start;
+		dir.VectorNormalize();
 
-		int leafIndex = PointLeafnum(start);
+		int leafIndex = -1;
+		leafIndex = PointLeafnum( start.Vec( 0 ) );
 		if ( leafIndex >= 0 )
 		{
 			int area = dleafs[leafIndex].area;
@@ -604,27 +405,34 @@ texinfo_t *TestLine_Surface( int node, Vector const& start, Vector const& stop, 
 					int cam;
 					for (cam = 0; cam < num_sky_cameras; ++cam)
 					{
-						Vector skystart, skystop;
-						VectorMA( sky_cameras[cam].origin, sky_cameras[cam].world_to_sky, start, skystart );
-						skystop = skystart + dir*MAX_TRACE_LENGTH;
-						texinfo_t *skycamsurf = TestLine_Surface( 0, skystart, skystop, iThread, false );
-						if (!skycamsurf || !(skycamsurf->flags & SURF_SKY))
-						{
-							return skycamsurf;
-						}
+						FourVectors skystart, skytrans, skystop;
+						skystart.DuplicateVector( sky_cameras[cam].origin );
+						skystop = start;
+						skystop *= sky_cameras[cam].world_to_sky;
+						skystart += skystop;
+
+						skystop = dir;
+						skystop *= MAX_TRACE_LENGTH;
+						skystop += skystart;
+						TestLine_DoesHitSky ( skystart, skystop, pFractionVisible, false, static_prop_to_skip, bDoDebug );
+						occlusion = AddSIMD ( occlusion, Four_Ones );
+						occlusion = SubSIMD ( occlusion, *pFractionVisible );
 					}
 				}
 			}
 		}
 	}
 
-	return trace.surface;
+	occlusion = MaxSIMD( occlusion, Four_Zeros );
+	occlusion = MinSIMD( occlusion, Four_Ones );
+	*pFractionVisible = SubSIMD( Four_Ones, occlusion );
 }
 
 
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int PointLeafnum_r( Vector const &point, int ndxNode )
+int PointLeafnum_r( const Vector &point, int ndxNode )
 {
 	// while loop here is to avoid recursion overhead
 	while( ndxNode >= 0 )
@@ -658,7 +466,188 @@ int PointLeafnum_r( Vector const &point, int ndxNode )
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
-int PointLeafnum( Vector const &point )
+int PointLeafnum( const Vector &point )
 {
 	return PointLeafnum_r( point, 0 );
+}
+
+// this iterates the list of entities looking for _vradshadows 1
+// each brush entity containing this key is added to the raytracing environment
+// as a triangle soup model.
+
+dmodel_t *BrushmodelForEntity( entity_t *pEntity )
+{
+	const char *pModelname = ValueForKey( pEntity, "model" );
+	if ( Q_strlen(pModelname) > 1 )
+	{
+		int modelIndex = atol( pModelname + 1 );
+		if ( modelIndex > 0 && modelIndex < nummodels )
+		{
+			return &dmodels[modelIndex];
+		}
+	}
+	return NULL;
+}
+
+void AddBrushToRaytraceEnvironment( dbrush_t *pBrush, const VMatrix &xform )
+{
+	if ( !( pBrush->contents & MASK_OPAQUE ) )
+		return;
+
+	Vector v0, v1, v2;
+	for (int i = 0; i < pBrush->numsides; i++ )
+	{
+		dbrushside_t *side = &dbrushsides[pBrush->firstside + i];
+		dplane_t *plane = &dplanes[side->planenum];
+		texinfo_t *tx = &texinfo[side->texinfo];
+		winding_t *w = BaseWindingForPlane (plane->normal, plane->dist);
+
+		if ( tx->flags & SURF_SKY || side->dispinfo )
+			continue;
+
+		for (int j=0 ; j<pBrush->numsides && w; j++)
+		{
+			if (i == j)
+				continue;
+			dbrushside_t *pOtherSide = &dbrushsides[pBrush->firstside + j];
+			if (pOtherSide->bevel)
+				continue;
+			plane = &dplanes[pOtherSide->planenum^1];
+			ChopWindingInPlace (&w, plane->normal, plane->dist, 0);
+		}
+		if ( w )
+		{
+			for ( int j = 2; j < w->numpoints; j++ )
+			{
+				v0 = xform.VMul4x3(w->p[0]);
+				v1 = xform.VMul4x3(w->p[j-1]);
+				v2 = xform.VMul4x3(w->p[j]);
+				Vector fullCoverage;
+				fullCoverage.x = 1.0f;
+				g_RtEnv.AddTriangle(TRACE_ID_OPAQUE, v0, v1, v2, fullCoverage);
+			}
+			FreeWinding( w );
+		}
+	}
+}
+
+
+// recurse the bsp and build a list of brushes at the leaves under this node
+void GetBrushes_r( int node, CUtlVector<int> &list )
+{
+	if ( node < 0 )
+	{
+		int leafIndex = -1 - node;
+		// Add the solids in the leaf
+		for ( int i = 0; i < dleafs[leafIndex].numleafbrushes; i++ )
+		{
+			int brushIndex = dleafbrushes[dleafs[leafIndex].firstleafbrush + i];
+			if ( list.Find(brushIndex) < 0 )
+			{
+				list.AddToTail( brushIndex );
+			}
+		}
+	}
+	else
+	{
+		// recurse
+		dnode_t *pnode = dnodes + node;
+
+		GetBrushes_r( pnode->children[0], list );
+		GetBrushes_r( pnode->children[1], list );
+	}
+}
+
+
+void AddBrushes( dmodel_t *pModel, const VMatrix &xform )
+{
+	if ( pModel )
+	{
+		CUtlVector<int> brushList;
+		GetBrushes_r( pModel->headnode, brushList );
+		for ( int i = 0; i < brushList.Count(); i++ )
+		{
+			int ndxBrush = brushList[i];
+			AddBrushToRaytraceEnvironment( &dbrushes[ndxBrush], xform );
+		}
+	}
+}
+
+
+// Adds the brush entities that cast shadows to the raytrace environment
+void ExtractBrushEntityShadowCasters()
+{
+	for ( int i = 0; i < num_entities; i++ )
+	{
+		if ( IntForKey( &entities[i], "vrad_brush_cast_shadows" ) != 0 )
+		{
+			Vector origin;
+			QAngle angles;
+			GetVectorForKey( &entities[i], "origin", origin );
+			GetAnglesForKey( &entities[i], "angles", angles );
+			VMatrix xform;
+			xform.SetupMatrixOrgAngles( origin, angles );
+			AddBrushes( BrushmodelForEntity( &entities[i] ), xform );
+		}
+	}
+}
+
+void AddBrushesForRayTrace( void )
+{
+	if ( !nummodels )
+		return;
+
+	VMatrix identity;
+	identity.Identity();
+	
+	CUtlVector<int> brushList;
+	GetBrushes_r ( dmodels[0].headnode, brushList );
+
+	for ( int i = 0; i < brushList.Size(); i++ )
+	{
+		dbrush_t *brush = &dbrushes[brushList[i]];
+		AddBrushToRaytraceEnvironment ( brush, identity );
+	}
+
+	for ( int i = 0; i < dmodels[0].numfaces; i++ )
+	{
+		int ndxFace = dmodels[0].firstface + i;
+		dface_t *face = &g_pFaces[ndxFace];
+
+		texinfo_t *tx = &texinfo[face->texinfo];
+		if ( !( tx->flags & SURF_SKY ) )
+			continue;
+
+		Vector points[MAX_POINTS_ON_WINDING];
+
+		for ( int j = 0; j < face->numedges; j++ )
+		{
+			if ( j >= MAX_POINTS_ON_WINDING )
+				Error( "***** ERROR! MAX_POINTS_ON_WINDING reached!" );
+
+			if ( face->firstedge + j >= ARRAYSIZE( dsurfedges ) )
+				Error( "***** ERROR! face->firstedge + j >= ARRAYSIZE( dsurfedges )!" );
+
+			int surfEdge = dsurfedges[face->firstedge + j];
+			unsigned short v;
+
+			if (surfEdge < 0)
+				v = dedges[-surfEdge].v[1];
+			else
+				v = dedges[surfEdge].v[0];
+
+			if ( v >= ARRAYSIZE( dvertexes ) )
+				Error( "***** ERROR! v(%u) >= ARRAYSIZE( dvertexes(%d) )!", ( unsigned int )v, ARRAYSIZE( dvertexes ) );
+
+			dvertex_t *dv = &dvertexes[v];
+			points[j] = dv->point;
+		}
+
+		for ( int j = 2; j < face->numedges; j++ )
+		{
+			Vector fullCoverage;
+			fullCoverage.x = 1.0f;
+			g_RtEnv.AddTriangle ( TRACE_ID_SKY, points[0], points[j - 1], points[j], fullCoverage );
+		}
+	}
 }

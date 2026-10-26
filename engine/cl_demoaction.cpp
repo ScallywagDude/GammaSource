@@ -1,14 +1,15 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
+//=============================================================================//
+#include "client_pch.h"
 #include "cl_demoaction.h"
-#include <KeyValues.h>
 #include "cl_demoactionmanager.h"
-#include "UtlBuffer.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -99,6 +100,8 @@ bool CBaseDemoAction::HasActionFinished( void ) const
 	return m_bActionFinished;
 }
 
+#include "tier0/memdbgoff.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : sz - 
@@ -117,7 +120,7 @@ void *CBaseDemoAction::operator new( size_t sz )
 //-----------------------------------------------------------------------------
 void CBaseDemoAction::operator delete( void *pMem )
 {
-#ifdef _DEBUG
+#if defined( WIN32 ) && defined( _DEBUG )
 	// set the memory to a known value
 	int size = _msize( pMem );
 	Q_memset( pMem, 0xcd, size );
@@ -126,6 +129,8 @@ void CBaseDemoAction::operator delete( void *pMem )
 	// get the engine to free the memory
 	free( pMem );
 }
+
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -199,7 +204,7 @@ CBaseDemoAction	*CBaseDemoAction::CreateDemoAction( DEMOACTION actionType )
 	DEMOACTIONFACTORY_FUNC pfn = g_rgDemoTypeNames[ idx ].func;
 	if ( !pfn )
 	{
-		Con_Printf( "CBaseDemoAction::CreateDemoAction:  Missing factory for %s\n",
+		ConMsg( "CBaseDemoAction::CreateDemoAction:  Missing factory for %s\n",
 			NameForType( actionType ) );
 		return NULL;
 	}
@@ -244,7 +249,7 @@ CBaseActionEditDialog *CBaseDemoAction::CreateActionEditor( DEMOACTION actionTyp
 	DEMOACTIONEDIT_FUNC pfn = g_rgDemoTypeNames[ idx ].editfunc;
 	if ( !pfn )
 	{
-		Con_Printf( "CBaseDemoAction::CreateActionEditor:  Missing edit factory for %s\n",
+		ConMsg( "CBaseDemoAction::CreateActionEditor:  Missing edit factory for %s\n",
 			NameForType( actionType ) );
 		return NULL;
 	}
@@ -286,7 +291,7 @@ struct DemoTimingTagDictionary
 static DemoTimingTagDictionary g_rgDemoTimingTypeNames[ NUM_TIMING_TYPES ] =
 {
 	{ ACTION_USES_NEITHER			, "TimeDontCare" },
-	{ ACTION_USES_FRAME				, "TimeUseFrame" },
+	{ ACTION_USES_TICK				, "TimeUseTick" },
 	{ ACTION_USES_TIME				, "TimeUseClock" },
 };
 
@@ -300,7 +305,7 @@ char const *CBaseDemoAction::NameForType( DEMOACTION actionType )
 	int idx = (int)actionType;
 	if ( idx < 0 || idx >= NUM_DEMO_ACTIONS )
 	{
-		Con_Printf( "ERROR: CBaseDemoAction::NameForType type %i out of range\n", idx );
+		ConMsg( "ERROR: CBaseDemoAction::NameForType type %i out of range\n", idx );
 		return g_rgDemoTypeNames[ DEMO_ACTION_UNKNOWN ].name;
 	}
 	
@@ -341,7 +346,7 @@ char const *CBaseDemoAction::NameForTimingType( DEMOACTIONTIMINGTYPE timingType 
 	int idx = (int)timingType;
 	if ( idx < 0 || idx >= NUM_TIMING_TYPES )
 	{
-		Con_Printf( "ERROR: CBaseDemoAction::NameForTimingType type %i out of range\n", idx );
+		ConMsg( "ERROR: CBaseDemoAction::NameForTimingType type %i out of range\n", idx );
 		return g_rgDemoTimingTypeNames[ ACTION_USES_NEITHER ].name;
 	}
 	
@@ -415,9 +420,9 @@ void CBaseDemoAction::SaveKeysToBuffer( int depth, CUtlBuffer& buf )
 	default:
 	case ACTION_USES_NEITHER:
 		break;
-	case ACTION_USES_FRAME:
+	case ACTION_USES_TICK:
 		{
-			BufPrintf( depth, buf, "startframe \"%i\"\n", GetStartFrame() );
+			BufPrintf( depth, buf, "starttick \"%i\"\n", GetStartTick() );
 		}
 		break;
 	case ACTION_USES_TIME:
@@ -473,16 +478,16 @@ bool CBaseDemoAction::Init( KeyValues *pInitData )
 
 	SetActionName( actionname );
 
-	m_nStartFrame	= pInitData->GetInt( "startframe", -1 );
+	m_nStartTick	= pInitData->GetInt( "starttick", -1 );
 	m_flStartTime	= pInitData->GetFloat( "starttime", -1.0f );
 
-	if ( m_nStartFrame == -1 && m_flStartTime == -1.0f )
+	if ( m_nStartTick == -1 && m_flStartTime == -1.0f )
 	{
 		m_Timing = ACTION_USES_NEITHER;
 	}
-	else if ( m_nStartFrame != -1 )
+	else if ( m_nStartTick != -1 )
 	{
-		m_Timing = ACTION_USES_FRAME;
+		m_Timing = ACTION_USES_TICK;
 	}
 	else
 	{
@@ -504,10 +509,10 @@ bool CBaseDemoAction::Init( KeyValues *pInitData )
 // Purpose: 
 // Output : int
 //-----------------------------------------------------------------------------
-int CBaseDemoAction::GetStartFrame( void ) const
+int CBaseDemoAction::GetStartTick( void ) const
 {
-	Assert( m_Timing == ACTION_USES_FRAME );
-	return m_nStartFrame;
+	Assert( m_Timing == ACTION_USES_TICK );
+	return m_nStartTick;
 }
 
 //-----------------------------------------------------------------------------
@@ -524,10 +529,10 @@ float CBaseDemoAction::GetStartTime( void ) const
 // Purpose: 
 // Input  : frame - 
 //-----------------------------------------------------------------------------
-void CBaseDemoAction::SetStartFrame( int frame )
+void CBaseDemoAction::SetStartTick( int tick )
 {
-	Assert( m_Timing == ACTION_USES_FRAME );
-	m_nStartFrame = frame;
+	Assert( m_Timing == ACTION_USES_TICK );
+	m_nStartTick = tick;
 }
 
 //-----------------------------------------------------------------------------
@@ -566,9 +571,9 @@ bool CBaseDemoAction::Update( const DemoActionTimingContext& tc )
 	default:
 	case ACTION_USES_NEITHER:
 		return false;
-	case ACTION_USES_FRAME:
+	case ACTION_USES_TICK:
 		{
-			if ( GetStartFrame() >= tc.prevframe && GetStartFrame() <= tc.curframe )
+			if ( GetStartTick() >= tc.prevtick && GetStartTick() <= tc.curtick )
 			{
 				demoaction->InsertFireEvent( this );
 			}

@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( IPREDICTION_H )
 #define IPREDICTION_H
 #ifdef _WIN32
@@ -23,7 +18,7 @@
 
 
 #include "interface.h"
-#include "vector.h" // Solely to get at define for QAngle
+#include "mathlib/vector.h" // Solely to get at define for QAngle
 
 
 class IMoveHelper;
@@ -31,7 +26,7 @@ class IMoveHelper;
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into client side prediction system
 //-----------------------------------------------------------------------------
-class IPrediction
+abstract_class IPrediction
 {
 public:
 	virtual			~IPrediction( void ) {};
@@ -57,16 +52,12 @@ public:
 	virtual void	OnReceivedUncompressedPacket( void ) = 0;
 
 	// The engine needs to be able to access a few predicted values
-	virtual int		GetWaterLevel( void ) = 0;
 	virtual void	GetViewOrigin( Vector& org ) = 0;
 	virtual void	SetViewOrigin( Vector& org ) = 0;
 	virtual void	GetViewAngles( QAngle& ang ) = 0;
 	virtual void	SetViewAngles( QAngle& ang ) = 0;
 	virtual void	GetLocalViewAngles( QAngle& ang ) = 0;
 	virtual void	SetLocalViewAngles( QAngle& ang ) = 0;
-
-	virtual void	DemoReportInterpolatedPlayerOrigin( const Vector& eyePosition ) = 0;
-
 };
 
 extern IPrediction *g_pClientSidePrediction;

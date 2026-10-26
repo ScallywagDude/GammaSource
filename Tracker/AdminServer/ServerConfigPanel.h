@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,67 +11,25 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_PropertyPage.h>
-
-#include "rcon.h"
-
-namespace vgui
-{
-class Button;
-class ToggleButton;
-class RadioButton;
-class Label;
-class TextEntry;
-
-class ListPanel;
-
-class MessageBox;
-class ComboBox;
-class Panel;
-class PropertySheet;
-};
-
+#include "VarListPropertyPage.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: Dialog for displaying information about a game server
+// Purpose: Displays and allows modification to variable specific to the game
 //-----------------------------------------------------------------------------
-class CServerConfigPanel:public vgui::PropertyPage
+class CServerConfigPanel : public CVarListPropertyPage
 {
 public:
-	CServerConfigPanel(vgui::Panel *parent, const char *name,const char *mod);
+	CServerConfigPanel(vgui::Panel *parent, const char *name, const char *mod);
 	~CServerConfigPanel();
 
-	// property page handlers
-	virtual void OnPageShow();
-	virtual void OnPageHide();
-
-	void SetRcon(CRcon *rcon);
-
-	virtual void PerformLayout();
-
-	// set the rules for the panel to use
-	void SetRules(CUtlVector<KeyValues *> *rules);
-	void SetHostName(const char *name);
-
+protected:
+	// variable updates
+	virtual void OnResetData();
+	virtual void OnThink();
 
 private:
-
-	void OnSendConfig();
-
-	//vgui::TextEntry *m_pServerServerConfigPanel;
-	//vgui::TextEntry *m_pEnterServerConfigPanel;
-	vgui::Button *m_pSendConfigButton;
-
-	CRcon *m_pRcon;
-	CUtlVector<KeyValues *> *m_Rules; // the servers rules, so we can parse them
-	char m_sHostName[512]; // the hostname of the server, this isn't in a rule...	
-
-	DECLARE_PANELMAP();
-	typedef vgui::PropertyPage BaseClass;
+	float m_flUpdateTime;
+	typedef CVarListPropertyPage BaseClass;
 };
 
 #endif // SERVERCONFIGPANEL_H

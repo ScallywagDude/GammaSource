@@ -1,0 +1,19 @@
+// GammaSource 2018 build: the retail HL2 particle systems plus the Portal ones the portal gun needs
+particles_manifest
+{
+	"file"		"particles/error.pcf"
+	"file"		"particles/antlion_blood.pcf"
+	"file"		"particles/blood_impact.pcf"
+	"file"		"particles/water_impact.pcf"
+	"file"		"particles/fire_01.pcf"
+	"file"		"particles/burning_fx.pcf"
+	"file"		"particles/combineball.pcf"
+	"file"		"particles/vortigaunt_fx.pcf"
+	"file"		"particles/rocket_fx.pcf"
+
+	// Portal (portal content is mounted after HL2)
+	"file"		"particles/portalgun.pcf"
+	"file"		"particles/portal_projectile.pcf"
+	"file"		"particles/portals.pcf"
+	"file"		"particles/cleansers.pcf"
+}

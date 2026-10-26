@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,88 +9,146 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( IGAMEEVENTS_H )
 #define IGAMEEVENTS_H
 #ifdef _WIN32
 #pragma once
 #endif
 
-#include "interface.h"
+#include "tier1/interface.h"
 
-#define INTERFACEVERSION_GAMEEVENTSMANAGER	"GAMEEVENTSMANAGER001"
+#define INTERFACEVERSION_GAMEEVENTSMANAGER	"GAMEEVENTSMANAGER001"	// old game event manager, don't use it!
+#define INTERFACEVERSION_GAMEEVENTSMANAGER2	"GAMEEVENTSMANAGER002"	// new game event manager,
 
+#include "tier1/bitbuf.h"
 //-----------------------------------------------------------------------------
 // Purpose: Engine interface into global game event management
 //-----------------------------------------------------------------------------
 
 /* 
 
-The GameEventManager keeps track of all global game events. Game events are
-fired by game.dll for events like player death or team wins. Each event has a
-unique name and comes with a KeyValue structure providing informations about
-this event. Some events are generated also by the engine. KeyValues contains
-data about the event, some data keys are optional, but should not be used in
-other meanings:
+The GameEventManager keeps track and fires of all global game events. Game events 
+are fired by game.dll for events like player death or team wins. Each event has a
+unique name and comes with a KeyValue structure providing informations about this
+event. Some events are generated also by the engine.
 
-	"name" "string"  : name of this event, eg "player_death"
-	"time" "integer" : game time of this event in miliseconds since last
-                           change level
-	"prioity" "byte" : priority of this event 0..15 ( 15 = most important,
-                           eg a team win)
+Events are networked to connected clients and invoked there to. Therefore you
+have to specify all data fields and there data types in an public resource
+file which is parsed by server and broadcasted to it's clients. A typical game 
+event is defined like this:
 
-Mod developers may add their own events by register them first at the
-EventManager and the firing them, when they occur. This way, all registerd
-listener have a chance to keep track of the whole game. To ensure, that 3rd
-Party Tools  may use your new events, publish all you used events in a public
-file. For each new event you must provide the name and all used data keys and
-their data types. For example:
+	"game_start"				// a new game starts
+	{
+		"roundslimit"	"long"		// max round
+		"timelimit"		"long"		// time limit
+		"fraglimit"		"long"		// frag limit
+		"objective"		"string"	// round objective
+	}
 
-    event name 	: "player_death"
-    desciptions :  A player died for any reason (does not include
-                   disconnecting). For a suicide, KillerIndex == Victimindex and
-                   Reason contains 'world'or 'worldspawn'. For killings, Reason
-                   contains the weapon used.
-    data keys:	:  "VictimIndex" <integer> 
-                   "Reason" <string>
-                   "KillerIndex" <integer> 
-                   "Headshot" <bool> 
-   
-Common data types are strings("Hello World"), integer("1234"), float("12.34")
-and bool("0" or "1"). */
+All events must have unique names (case sensitive) and may have a list
+of data fields. each data field must specify a data type, so the engine
+knows how to serialize/unserialize that event for network transmission.
+Valid data types are string, float, long, short, byte & bool. If a 
+data field should not be broadcasted to clients, use the type "local".
+*/
 
-// these data types are allowed:
-#define GAME_EVENT_TYPE_STRING	"string"	// zero terminated ASCII string
-#define GAME_EVENT_TYPE_FLOAT	"float"		// 32 bit float
-#define	GAME_EVENT_TYPE_LONG	"long"		// 32 bit unsigned integer
-#define GAME_EVENT_TYPE_SHORT	"short"		// 16 bit unsigned integer
-#define	GAME_EVENT_TYPE_BYTE	"byte"		// 8 bit unsigned integer
-#define	GAME_EVENT_TYPE_BOOL	"bool"		// 0 or 1
 
-#define MAX_EVENT_NAME_LENGTH	32			// max game event name length
-#define MAX_EVENT_NUMBER		256			// max number of events allowed
+#define MAX_EVENT_NAME_LENGTH	32		// max game event name length
+#define MAX_EVENT_BITS			9		// max bits needed for an event index
+#define MAX_EVENT_NUMBER		(1<<MAX_EVENT_BITS)		// max number of events allowed
+#define MAX_EVENT_BYTES			1024	// max size in bytes for a serialized event
 
-class IRecipientFilter;
 class KeyValues;
+class CGameEvent;
 
-class IGameEventListener
+abstract_class IGameEvent
+{
+public:
+	virtual ~IGameEvent() {};
+	virtual const char *GetName() const = 0;	// get event name
+
+	virtual bool  IsReliable() const = 0; // if event handled reliable
+	virtual bool  IsLocal() const = 0; // if event is never networked
+	virtual bool  IsEmpty(const char *keyName = NULL) = 0; // check if data field exists
+	
+	// Data access
+	virtual bool  GetBool( const char *keyName = NULL, bool defaultValue = false ) = 0;
+	virtual int   GetInt( const char *keyName = NULL, int defaultValue = 0 ) = 0;
+	virtual float GetFloat( const char *keyName = NULL, float defaultValue = 0.0f ) = 0;
+	virtual const char *GetString( const char *keyName = NULL, const char *defaultValue = "" ) = 0;
+
+	virtual void SetBool( const char *keyName, bool value ) = 0;
+	virtual void SetInt( const char *keyName, int value ) = 0;
+	virtual void SetFloat( const char *keyName, float value ) = 0;
+	virtual void SetString( const char *keyName, const char *value ) = 0;
+};
+
+
+abstract_class IGameEventListener2
+{
+public:
+	virtual	~IGameEventListener2( void ) {};
+
+	// FireEvent is called by EventManager if event just occurred
+	// KeyValue memory will be freed by manager if not needed anymore
+	virtual void FireGameEvent( IGameEvent *event ) = 0;
+};
+
+abstract_class IGameEventManager2 : public IBaseInterface
+{
+public:
+	virtual	~IGameEventManager2( void ) {};
+
+	// load game event descriptions from a file eg "resource\gameevents.res"
+	virtual int LoadEventsFromFile( const char *filename ) = 0;
+
+	// removes all and anything
+	virtual void  Reset() = 0;	
+
+	// adds a listener for a particular event
+	virtual bool AddListener( IGameEventListener2 *listener, const char *name, bool bServerSide ) = 0;
+
+	// returns true if this listener is listens to given event
+	virtual bool FindListener( IGameEventListener2 *listener, const char *name ) = 0;
+
+	// removes a listener 
+	virtual void RemoveListener( IGameEventListener2 *listener) = 0;
+
+	// create an event by name, but doesn't fire it. returns NULL is event is not
+	// known or no listener is registered for it. bForce forces the creation even if no listener is active
+	virtual IGameEvent *CreateEvent( const char *name, bool bForce = false ) = 0;
+
+	// fires a server event created earlier, if bDontBroadcast is set, event is not send to clients
+	virtual bool FireEvent( IGameEvent *event, bool bDontBroadcast = false ) = 0;
+
+	// fires an event for the local client only, should be used only by client code
+	virtual bool FireEventClientSide( IGameEvent *event ) = 0;
+
+	// create a new copy of this event, must be free later
+	virtual IGameEvent *DuplicateEvent( IGameEvent *event ) = 0;
+
+	// if an event was created but not fired for some reason, it has to bee freed, same UnserializeEvent
+	virtual void FreeEvent( IGameEvent *event ) = 0;
+
+	// write/read event to/from bitbuffer
+	virtual bool SerializeEvent( IGameEvent *event, bf_write *buf ) = 0;
+	virtual IGameEvent *UnserializeEvent( bf_read *buf ) = 0; // create new KeyValues, must be deleted
+};
+
+// the old game event manager interface, don't use it. Rest is legacy support:
+
+abstract_class IGameEventListener
 {
 public:
 	virtual	~IGameEventListener( void ) {};
-	
-	// FireEvent is called by EventManager if event just occured
+
+	// FireEvent is called by EventManager if event just occurred
 	// KeyValue memory will be freed by manager if not needed anymore
 	virtual void FireGameEvent( KeyValues * event) = 0;
-
-	// the EventManager was updated, please re-register for all wanted events
-	virtual void GameEventsUpdated() = 0;
-
-	// an object is a local listener if it's a server side listener
-	// eg, true for server side plugins, false for client side listeners
-	virtual bool IsLocalListener() = 0;
 };
 
-class IGameEventManager : public IBaseInterface
+abstract_class IGameEventManager : public IBaseInterface
 {
 public:
 	virtual	~IGameEventManager( void ) {};
@@ -103,32 +156,38 @@ public:
 	// load game event descriptions from a file eg "resource\gameevents.res"
 	virtual int LoadEventsFromFile( const char * filename ) = 0;
 
-	// returns a CRC of current event table to verifiy that all using the same
-	virtual unsigned long GetEventTableCRC() = 0;
-
 	// removes all and anything
 	virtual void  Reset() = 0;	
 				
-	virtual int GetEventNumber() = 0;	// returns total number of registerd events
-	virtual KeyValues * GetEvent(const char * name) = 0; // returns keys for event
+	virtual KeyValues *GetEvent(const char * name) = 0; // returns keys for event
 	
 	// adds a listener for a particular event
-	virtual bool AddListener( IGameEventListener * listener, const char * event ) = 0;
+	virtual bool AddListener( IGameEventListener * listener, const char * event, bool bIsServerSide ) = 0;
 	// registers for all known events
-	virtual bool AddListener( IGameEventListener * listener) = 0; 
+	virtual bool AddListener( IGameEventListener * listener, bool bIsServerSide ) = 0; 
 	
 	// removes a listener 
 	virtual void RemoveListener( IGameEventListener * listener) = 0;
 		
 	// fires an global event, specific event data is stored in KeyValues
-	// local listeners will receive the event instantly 
-	// a network message will be send to remote listeners specified in 
-	// *filter.
-	virtual bool FireEvent( KeyValues * event, IRecipientFilter *filter) = 0;
+	// local listeners will receive the event instantly
+	// a network message will be send to all connected clients to invoke
+	// the same event there
+	virtual bool FireEvent( KeyValues * event ) = 0;
 
-	// fires a remote event only on this client
+	// fire a side server event, that it wont be broadcasted to player clients
+	virtual bool FireEventServerOnly( KeyValues * event ) = 0;
+
+	// fires an event only on this local client
 	// can be used to fake events coming over the network 
-	virtual bool FireRemoteEvent( KeyValues * event ) = 0;
+	virtual bool FireEventClientOnly( KeyValues * event ) = 0;
+
+	// write/read event to/from bitbuffer
+	virtual bool SerializeKeyValues( KeyValues *event, bf_write *buf, CGameEvent *eventtype = NULL ) = 0;
+	virtual KeyValues *UnserializeKeyValue( bf_read *msg ) = 0; // create new KeyValues, must be deleted
 };
+
+
+
 
 #endif // IGAMEEVENTS_H

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "tier0/dbg.h"
 #include <stdio.h>
@@ -258,6 +258,8 @@ int CDrawHelper::CalcTextWidth( const char *font, int pointsize, int weight, con
 	SelectObject( screen, oldFont );
 	DeleteObject( fnt );
 
+	ReleaseDC( NULL, screen );
+
 	return rcText.right;
 }
 
@@ -337,6 +339,8 @@ int CDrawHelper::CalcTextWidth( HFONT fnt, const char *fmt, ... )
 	DrawText( screen, output, -1, &rcText, DT_LEFT | DT_NOPREFIX | DT_VCENTER | DT_SINGLELINE | DT_CALCRECT );
 
 	SelectObject( screen, oldFont );
+
+	ReleaseDC( NULL, screen );
 
 	return rcText.right;
 }
@@ -697,6 +701,8 @@ POINTL CDrawHelper::DrawColoredRamp( COLORREF clr, int style, int width, int x1,
 	int dy = y2 - y1;
 
 	POINTL p;
+	p.x = 0L;
+	p.y = 0L;
 	for (float i = 0.1f; i <= 1.09f; i += 0.1f)
 	{
 		float j = 3.0f * i * i - 2.0f * i * i * i;
@@ -922,7 +928,7 @@ void CDrawHelper::ClipToRects( void )
 			HRGN addIn = CreateRectRgn( add.left, add.top, add.right, add.bottom );
 			HRGN result = CreateRectRgn( 0, 0, 100, 100 );
 
-			int success = CombineRgn( result, m_ClipRegion, addIn, RGN_AND );
+			CombineRgn( result, m_ClipRegion, addIn, RGN_AND );
 			
 			DeleteObject( m_ClipRegion );
 			DeleteObject( addIn );

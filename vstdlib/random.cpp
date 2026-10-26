@@ -1,18 +1,17 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Random number generator
 //
 // $Workfile: $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
+
 
 #include "vstdlib/random.h"
 #include <math.h>
+#include "dbg.h"
+
+#include "tier0/memdbgon.h"
 
 #define IA 16807
 #define IM 2147483647
@@ -57,6 +56,11 @@ float RandomFloat( float flMinVal, float flMaxVal )
 	return s_pUniformStream->RandomFloat( flMinVal, flMaxVal );
 }
 
+float RandomFloatExp( float flMinVal, float flMaxVal, float flExponent )
+{
+	return s_pUniformStream->RandomFloatExp( flMinVal, flMaxVal, flExponent );
+}
+
 int RandomInt( int iMinVal, int iMaxVal )
 {
 	return s_pUniformStream->RandomInt( iMinVal, iMaxVal );
@@ -80,12 +84,14 @@ CUniformRandomStream::CUniformRandomStream()
 
 void CUniformRandomStream::SetSeed( int iSeed )
 {
+	AUTO_LOCK( m_mutex );
 	m_idum = ( ( iSeed < 0 ) ? iSeed : -iSeed );
 	m_iy = 0;
 }
 
 int CUniformRandomStream::GenerateRandomNumber()
 {
+	AUTO_LOCK( m_mutex );
 	int j;
 	int k;
 	
@@ -112,6 +118,20 @@ int CUniformRandomStream::GenerateRandomNumber()
 	if (m_idum < 0) 
 		m_idum += IM;
 	j=m_iy/NDIV;
+
+	// We're seeing some strange memory corruption in the contents of s_pUniformStream. 
+	// Perhaps it's being caused by something writing past the end of this array? 
+	// Bounds-check in release to see if that's the case.
+	if (j >= NTAB || j < 0)
+	{
+		DebuggerBreakIfDebugging();
+		Warning("CUniformRandomStream had an array overrun: tried to write to element %d of 0..31. Contact Tom or Elan.\n", j);
+		// Ensure that NTAB is a power of two.
+		COMPILE_TIME_ASSERT( ( NTAB & ( NTAB - 1 ) ) == 0 );
+		// Clamp j.
+		j &= NTAB - 1;
+	}
+
 	m_iy=m_iv[j];
 	m_iv[j] = m_idum;
 
@@ -123,9 +143,25 @@ float CUniformRandomStream::RandomFloat( float flLow, float flHigh )
 	// float in [0,1)
 	float fl = AM * GenerateRandomNumber();
 	if (fl > RNMX) 
+	{
 		fl = RNMX;
+	}
+	return (fl * ( flHigh - flLow ) ) + flLow; // float in [low,high)
+}
 
-	return (fl * (flHigh-flLow)) + flLow; // float in [low,high)
+float CUniformRandomStream::RandomFloatExp( float flMinVal, float flMaxVal, float flExponent )
+{
+	// float in [0,1)
+	float fl = AM * GenerateRandomNumber();
+	if (fl > RNMX)
+	{
+		fl = RNMX;
+	}
+	if ( flExponent != 1.0f )
+	{
+		fl = powf( fl, flExponent );
+	}
+	return (fl * ( flMaxVal - flMinVal ) ) + flMinVal; // float in [low,high)
 }
 
 int CUniformRandomStream::RandomInt( int iLow, int iHigh )
@@ -134,8 +170,14 @@ int CUniformRandomStream::RandomInt( int iLow, int iHigh )
 	unsigned int maxAcceptable;
 	unsigned int x = iHigh-iLow+1;
 	unsigned int n;
+
+	// If you hit either of these assert, you're not getting back the random number that you thought you were.
+	Assert( x == iHigh-(int64)iLow+1 ); // Check that we didn't overflow int
+	Assert( x-1 <= MAX_RANDOM_RANGE ); // Check that the values provide an acceptable range
+
 	if (x <= 1 || MAX_RANDOM_RANGE < x-1)
 	{
+		Assert( iLow == iHigh ); // This is the only time it is OK to have a range containing a single number
 		return iLow;
 	}
 
@@ -175,6 +217,7 @@ CGaussianRandomStream::CGaussianRandomStream( IUniformRandomStream *pUniformStre
 //-----------------------------------------------------------------------------
 void CGaussianRandomStream::AttachToStream( IUniformRandomStream *pUniformStream )
 {
+	AUTO_LOCK( m_mutex );
 	m_pUniformStream = pUniformStream;
 	m_bHaveValue = false;
 }
@@ -185,6 +228,7 @@ void CGaussianRandomStream::AttachToStream( IUniformRandomStream *pUniformStream
 //-----------------------------------------------------------------------------
 float CGaussianRandomStream::RandomFloat( float flMean, float flStdDev )
 {
+	AUTO_LOCK( m_mutex );
 	IUniformRandomStream *pUniformStream = m_pUniformStream ? m_pUniformStream : s_pUniformStream;
 	float fac,rsq,v1,v2;
 

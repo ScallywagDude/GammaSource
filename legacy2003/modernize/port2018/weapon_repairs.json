@@ -1,0 +1,261 @@
+[
+  {
+    "root": "repo",
+    "path": "gammasource_content_2018/cfg/skill.cfg",
+    "edits": [
+      {
+        "old": "sk_max_gauss_round\t\"30\"\n\n// GammaSource 2003 weapons: 2018 loads skill.cfg, not skill1/2/3.cfg.\nsk_ar2_grenade_radius\t\"250\"\nsk_dmg_energy_grenade\t\"2\"\nsk_dmg_homer_grenade\t\"20\"\nsk_dmg_spit_grenade\t\"5\"\nsk_energy_grenade_radius\t\"100\"\nsk_fraggrenade_radius\t\"250\"\nsk_homer_grenade_radius\t\"100\"\nsk_max_ar2_grenade\t\"3\"\nsk_max_brickbat\t\"8\"\nsk_max_flare_round\t\"20\"\nsk_max_gauss_round\t\"150\"\nsk_max_large_round\t\"60\"\n",
+        "new": "sk_max_gauss_round\t\"30\"\n\n// GammaSource 2003 weapons: 2018 loads skill.cfg, not skill1/2/3.cfg.\nsk_dmg_energy_grenade\t\"2\"\nsk_dmg_homer_grenade\t\"20\"\nsk_energy_grenade_radius\t\"100\"\nsk_fraggrenade_radius\t\"250\"\nsk_homer_grenade_radius\t\"100\"\nsk_max_ar2_grenade\t\"3\"\nsk_max_brickbat\t\"9\"\nsk_max_flare_round\t\"20\"\nsk_max_gauss_round\t\"150\"\nsk_max_large_round\t\"60\"\n"
+      },
+      {
+        "old": "sk_plr_dmg_tripmine\t\"250\"\nsk_plr_max_dmg_gauss\t\"150\"\nsk_satchel_radius\t\"150\"\nsk_spit_grenade_radius\t\"50\"\nsk_tripmine_radius\t\"150\"\n",
+        "new": "sk_plr_dmg_tripmine\t\"250\"\nsk_plr_max_dmg_gauss\t\"150\"\nsk_satchel_radius\t\"150\"\nsk_tripmine_radius\t\"150\"\nsk_max_slam\t\"20\"\nsk_dmg_tripwire\t\"250\"\nsk_tripwire_radius\t\"150\"\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/shared/hl2/hl2_gamerules.cpp",
+    "edits": [
+      {
+        "old": "ConVar\tsk_plr_health_drop_time\t\t( \"sk_plr_health_drop_time\", \"30\", FCVAR_REPLICATED );\nConVar\tsk_plr_grenade_drop_time\t( \"sk_plr_grenade_drop_time\", \"30\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_ar2\t\t\t( \"sk_plr_dmg_ar2\",\"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_ar2\t\t\t( \"sk_npc_dmg_ar2\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_ar2\t\t\t\t( \"sk_max_ar2\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_ar2_altfire\t\t( \"sk_max_ar2_altfire\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_alyxgun\t\t( \"sk_plr_dmg_alyxgun\",\"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_alyxgun\t\t( \"sk_npc_dmg_alyxgun\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_alyxgun\t\t\t( \"sk_max_alyxgun\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_pistol\t\t( \"sk_plr_dmg_pistol\",\"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_pistol\t\t( \"sk_npc_dmg_pistol\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_pistol\t\t\t( \"sk_max_pistol\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_smg1\t\t\t( \"sk_plr_dmg_smg1\",\"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_smg1\t\t\t( \"sk_npc_dmg_smg1\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_smg1\t\t\t\t( \"sk_max_smg1\",\"0\", FCVAR_REPLICATED);\n\n// FIXME: remove these\nConVar\tsk_plr_dmg_flare_round\t( \"sk_plr_dmg_flare_round\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_flare_round\t( \"sk_npc_dmg_flare_round\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_flare_round\t\t( \"sk_max_flare_round\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_buckshot\t\t( \"sk_plr_dmg_buckshot\",\"0\", FCVAR_REPLICATED);\t\nConVar\tsk_npc_dmg_buckshot\t\t( \"sk_npc_dmg_buckshot\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_buckshot\t\t\t( \"sk_max_buckshot\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_plr_num_shotgun_pellets( \"sk_plr_num_shotgun_pellets\",\"7\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_rpg_round\t( \"sk_plr_dmg_rpg_round\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_rpg_round\t( \"sk_npc_dmg_rpg_round\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_rpg_round\t\t( \"sk_max_rpg_round\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_sniper_round\t( \"sk_plr_dmg_sniper_round\",\"0\", FCVAR_REPLICATED);\t\nConVar\tsk_npc_dmg_sniper_round\t( \"sk_npc_dmg_sniper_round\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_sniper_round\t\t( \"sk_max_sniper_round\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_max_slam\t\t\t\t( \"sk_max_slam\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_tripwire\t\t\t( \"sk_max_tripwire\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_molotov\t\t( \"sk_plr_dmg_molotov\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_molotov\t\t( \"sk_npc_dmg_molotov\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_molotov\t\t\t( \"sk_max_molotov\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_grenade\t\t( \"sk_plr_dmg_grenade\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_grenade\t\t( \"sk_npc_dmg_grenade\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_grenade\t\t\t( \"sk_max_grenade\",\"0\", FCVAR_REPLICATED);\n\n#ifdef HL2_EPISODIC\nConVar\tsk_max_hopwire\t\t\t( \"sk_max_hopwire\", \"3\", FCVAR_REPLICATED);\nConVar\tsk_max_striderbuster\t( \"sk_max_striderbuster\", \"3\", FCVAR_REPLICATED);\n#endif\n\nConVar sk_plr_dmg_brickbat\t( \"sk_plr_dmg_brickbat\",\"10\", FCVAR_REPLICATED);\t// GammaSource: back for the 2003 brickbat\nConVar sk_npc_dmg_brickbat\t( \"sk_npc_dmg_brickbat\",\"10\", FCVAR_REPLICATED);\nConVar sk_max_brickbat\t\t( \"sk_max_brickbat\",\"9\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_smg1_grenade\t( \"sk_plr_dmg_smg1_grenade\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_smg1_grenade\t( \"sk_npc_dmg_smg1_grenade\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_max_smg1_grenade\t\t( \"sk_max_smg1_grenade\",\"0\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_357\t\t\t( \"sk_plr_dmg_357\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_357\t\t\t( \"sk_npc_dmg_357\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_max_357\t\t\t\t( \"sk_max_357\", \"0\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_crossbow\t\t( \"sk_plr_dmg_crossbow\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_crossbow\t\t( \"sk_npc_dmg_crossbow\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_max_crossbow\t\t\t( \"sk_max_crossbow\", \"0\", FCVAR_REPLICATED );\n\nConVar\tsk_dmg_sniper_penetrate_plr( \"sk_dmg_sniper_penetrate_plr\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_dmg_sniper_penetrate_npc( \"sk_dmg_sniper_penetrate_npc\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_airboat\t\t( \"sk_plr_dmg_airboat\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_airboat\t\t( \"sk_npc_dmg_airboat\", \"0\", FCVAR_REPLICATED );\n\nConVar\tsk_max_gauss_round\t\t( \"sk_max_gauss_round\", \"0\", FCVAR_REPLICATED );\n\n// Gunship & Dropship cannons\nConVar\tsk_npc_dmg_gunship\t\t\t( \"sk_npc_dmg_gunship\", \"0\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_gunship_to_plr\t( \"sk_npc_dmg_gunship_to_plr\", \"0\", FCVAR_REPLICATED );\n\n//-----------------------------------------------------------------------------\n// Purpose: \n",
+        "new": "ConVar\tsk_plr_health_drop_time\t\t( \"sk_plr_health_drop_time\", \"30\", FCVAR_REPLICATED );\nConVar\tsk_plr_grenade_drop_time\t( \"sk_plr_grenade_drop_time\", \"30\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_ar2\t\t\t( \"sk_plr_dmg_ar2\",\"8\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_ar2\t\t\t( \"sk_npc_dmg_ar2\",\"3\", FCVAR_REPLICATED);\nConVar\tsk_max_ar2\t\t\t\t( \"sk_max_ar2\",\"60\", FCVAR_REPLICATED);\nConVar\tsk_max_ar2_altfire\t\t( \"sk_max_ar2_altfire\",\"3\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_alyxgun\t\t( \"sk_plr_dmg_alyxgun\",\"5\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_alyxgun\t\t( \"sk_npc_dmg_alyxgun\",\"3\", FCVAR_REPLICATED);\nConVar\tsk_max_alyxgun\t\t\t( \"sk_max_alyxgun\",\"150\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_pistol\t\t( \"sk_plr_dmg_pistol\",\"5\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_pistol\t\t( \"sk_npc_dmg_pistol\",\"3\", FCVAR_REPLICATED);\nConVar\tsk_max_pistol\t\t\t( \"sk_max_pistol\",\"150\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_smg1\t\t\t( \"sk_plr_dmg_smg1\",\"4\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_smg1\t\t\t( \"sk_npc_dmg_smg1\",\"3\", FCVAR_REPLICATED);\nConVar\tsk_max_smg1\t\t\t\t( \"sk_max_smg1\",\"225\", FCVAR_REPLICATED);\n\n// FIXME: remove these\nConVar\tsk_plr_dmg_flare_round\t( \"sk_plr_dmg_flare_round\",\"12\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_flare_round\t( \"sk_npc_dmg_flare_round\",\"2\", FCVAR_REPLICATED);\nConVar\tsk_max_flare_round\t\t( \"sk_max_flare_round\",\"20\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_buckshot\t\t( \"sk_plr_dmg_buckshot\",\"8\", FCVAR_REPLICATED);\t\nConVar\tsk_npc_dmg_buckshot\t\t( \"sk_npc_dmg_buckshot\",\"3\", FCVAR_REPLICATED);\nConVar\tsk_max_buckshot\t\t\t( \"sk_max_buckshot\",\"30\", FCVAR_REPLICATED);\nConVar\tsk_plr_num_shotgun_pellets( \"sk_plr_num_shotgun_pellets\",\"7\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_rpg_round\t( \"sk_plr_dmg_rpg_round\",\"100\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_rpg_round\t( \"sk_npc_dmg_rpg_round\",\"50\", FCVAR_REPLICATED);\nConVar\tsk_max_rpg_round\t\t( \"sk_max_rpg_round\",\"3\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_sniper_round\t( \"sk_plr_dmg_sniper_round\",\"20\", FCVAR_REPLICATED);\t\nConVar\tsk_npc_dmg_sniper_round\t( \"sk_npc_dmg_sniper_round\",\"100\", FCVAR_REPLICATED);\nConVar\tsk_max_sniper_round\t\t( \"sk_max_sniper_round\",\"30\", FCVAR_REPLICATED);\n\nConVar\tsk_max_slam\t\t\t\t( \"sk_max_slam\",\"20\", FCVAR_REPLICATED);\nConVar\tsk_max_tripwire\t\t\t( \"sk_max_tripwire\",\"20\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_molotov\t\t( \"sk_plr_dmg_molotov\",\"100\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_molotov\t\t( \"sk_npc_dmg_molotov\",\"50\", FCVAR_REPLICATED);\nConVar\tsk_max_molotov\t\t\t( \"sk_max_molotov\",\"5\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_grenade\t\t( \"sk_plr_dmg_grenade\",\"150\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_grenade\t\t( \"sk_npc_dmg_grenade\",\"75\", FCVAR_REPLICATED);\nConVar\tsk_max_grenade\t\t\t( \"sk_max_grenade\",\"5\", FCVAR_REPLICATED);\n\n#ifdef HL2_EPISODIC\nConVar\tsk_max_hopwire\t\t\t( \"sk_max_hopwire\", \"3\", FCVAR_REPLICATED);\nConVar\tsk_max_striderbuster\t( \"sk_max_striderbuster\", \"3\", FCVAR_REPLICATED);\n#endif\n\nConVar sk_plr_dmg_brickbat\t( \"sk_plr_dmg_brickbat\",\"3\", FCVAR_REPLICATED);\t// GammaSource: back for the 2003 brickbat\nConVar sk_npc_dmg_brickbat\t( \"sk_npc_dmg_brickbat\",\"2\", FCVAR_REPLICATED);\nConVar sk_max_brickbat\t\t( \"sk_max_brickbat\",\"9\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_smg1_grenade\t( \"sk_plr_dmg_smg1_grenade\",\"100\", FCVAR_REPLICATED);\nConVar\tsk_npc_dmg_smg1_grenade\t( \"sk_npc_dmg_smg1_grenade\",\"50\", FCVAR_REPLICATED);\nConVar\tsk_max_smg1_grenade\t\t( \"sk_max_smg1_grenade\",\"3\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_357\t\t\t( \"sk_plr_dmg_357\", \"40\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_357\t\t\t( \"sk_npc_dmg_357\", \"30\", FCVAR_REPLICATED );\nConVar\tsk_max_357\t\t\t\t( \"sk_max_357\", \"12\", FCVAR_REPLICATED );\n\nConVar\tsk_plr_dmg_crossbow\t\t( \"sk_plr_dmg_crossbow\", \"100\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_crossbow\t\t( \"sk_npc_dmg_crossbow\", \"10\", FCVAR_REPLICATED );\nConVar\tsk_max_crossbow\t\t\t( \"sk_max_crossbow\", \"10\", FCVAR_REPLICATED );\n\nConVar\tsk_dmg_sniper_penetrate_plr( \"sk_dmg_sniper_penetrate_plr\",\"0\", FCVAR_REPLICATED);\nConVar\tsk_dmg_sniper_penetrate_npc( \"sk_dmg_sniper_penetrate_npc\",\"0\", FCVAR_REPLICATED);\n\nConVar\tsk_plr_dmg_airboat\t\t( \"sk_plr_dmg_airboat\", \"3\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_airboat\t\t( \"sk_npc_dmg_airboat\", \"3\", FCVAR_REPLICATED );\n\nConVar\tsk_max_gauss_round\t\t( \"sk_max_gauss_round\", \"150\", FCVAR_REPLICATED );\n\n// Gunship & Dropship cannons\nConVar\tsk_npc_dmg_gunship\t\t\t( \"sk_npc_dmg_gunship\", \"40\", FCVAR_REPLICATED );\nConVar\tsk_npc_dmg_gunship_to_plr\t( \"sk_npc_dmg_gunship_to_plr\", \"3\", FCVAR_REPLICATED );\n\n//-----------------------------------------------------------------------------\n// Purpose: \n"
+      },
+      {
+        "old": "\n\n// GammaSource: 2003 ammo skill cvars\nConVar    sk_max_ar2_grenade\t\t( \"sk_max_ar2_grenade\",\"0\", FCVAR_REPLICATED );\nConVar    sk_max_large_round\t\t( \"sk_max_large_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_max_medium_round\t\t( \"sk_max_medium_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_max_ml_grenade\t\t\t( \"sk_max_ml_grenade\",\"0\", FCVAR_REPLICATED);\nConVar    sk_max_small_round\t\t( \"sk_max_small_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_ar2_grenade\t( \"sk_npc_dmg_ar2_grenade\",\"0\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_large_round\t( \"sk_npc_dmg_large_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_medium_round\t( \"sk_npc_dmg_medium_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_ml_grenade\t\t( \"sk_npc_dmg_ml_grenade\",\"0\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_small_round\t( \"sk_npc_dmg_small_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_ar2_grenade\t( \"sk_plr_dmg_ar2_grenade\",\"0\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_large_round\t( \"sk_plr_dmg_large_round\",\"0\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_medium_round\t( \"sk_plr_dmg_medium_round\",\"0\", FCVAR_REPLICATED);\t\nConVar    sk_plr_dmg_ml_grenade\t\t( \"sk_plr_dmg_ml_grenade\",\"0\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_small_round\t( \"sk_plr_dmg_small_round\",\"0\", FCVAR_REPLICATED );\n\nCAmmoDef *GetAmmoDef()\n{\n",
+        "new": "\n\n// GammaSource: 2003 ammo skill cvars\nConVar    sk_max_ar2_grenade\t\t( \"sk_max_ar2_grenade\",\"3\", FCVAR_REPLICATED );\nConVar    sk_max_large_round\t\t( \"sk_max_large_round\",\"60\", FCVAR_REPLICATED);\nConVar    sk_max_medium_round\t\t( \"sk_max_medium_round\",\"150\", FCVAR_REPLICATED);\nConVar    sk_max_ml_grenade\t\t\t( \"sk_max_ml_grenade\",\"3\", FCVAR_REPLICATED);\nConVar    sk_max_small_round\t\t( \"sk_max_small_round\",\"150\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_ar2_grenade\t( \"sk_npc_dmg_ar2_grenade\",\"50\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_large_round\t( \"sk_npc_dmg_large_round\",\"6\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_medium_round\t( \"sk_npc_dmg_medium_round\",\"4\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_ml_grenade\t\t( \"sk_npc_dmg_ml_grenade\",\"50\", FCVAR_REPLICATED);\nConVar    sk_npc_dmg_small_round\t( \"sk_npc_dmg_small_round\",\"2\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_ar2_grenade\t( \"sk_plr_dmg_ar2_grenade\",\"100\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_large_round\t( \"sk_plr_dmg_large_round\",\"15\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_medium_round\t( \"sk_plr_dmg_medium_round\",\"8\", FCVAR_REPLICATED);\t\nConVar    sk_plr_dmg_ml_grenade\t\t( \"sk_plr_dmg_ml_grenade\",\"100\", FCVAR_REPLICATED);\nConVar    sk_plr_dmg_small_round\t( \"sk_plr_dmg_small_round\",\"5\", FCVAR_REPLICATED );\n\nCAmmoDef *GetAmmoDef()\n{\n"
+      },
+      {
+        "old": "\t\tdef.AddAmmoType(\"StriderMinigunDirect\",\tDMG_BULLET,\t\t\t\tTRACER_LINE,\t\t\t2, 2, 15, 1.0 * 750 * 12, AMMO_FORCE_DROP_IF_CARRIED ); // hit like a 1.0kg weight at 750 ft/s\n\t\tdef.AddAmmoType(\"HelicopterGun\",\tDMG_BULLET,\t\t\t\t\tTRACER_LINE_AND_WHIZ,\t\"sk_npc_dmg_helicopter_to_plr\", \"sk_npc_dmg_helicopter\",\t\"sk_max_smg1\",\tBULLET_IMPULSE(400, 1225), AMMO_FORCE_DROP_IF_CARRIED | AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER );\n\t\tdef.AddAmmoType(\"AR2AltFire\",\t\tDMG_DISSOLVE,\t\t\t\tTRACER_NONE,\t\t\t0, 0, \"sk_max_ar2_altfire\", 0, 0 );\n\t\tdef.AddAmmoType(\"Grenade\",\t\t\tDMG_BURN,\t\t\t\t\tTRACER_NONE,\t\t\t\"sk_plr_dmg_grenade\",\t\t\"sk_npc_dmg_grenade\",\t\t\"sk_max_grenade\",\t\t0, 0);\n#ifdef HL2_EPISODIC\n\t\tdef.AddAmmoType(\"Hopwire\",\t\t\tDMG_BLAST,\t\t\t\t\tTRACER_NONE,\t\t\t\"sk_plr_dmg_grenade\",\t\t\"sk_npc_dmg_grenade\",\t\t\"sk_max_hopwire\",\t\t0, 0);\n\t\tdef.AddAmmoType(\"CombineHeavyCannon\",\tDMG_BULLET,\t\t\t\tTRACER_LINE,\t\t\t40,\t40, NULL, 10 * 750 * 12, AMMO_FORCE_DROP_IF_CARRIED ); // hit like a 10 kg weight at 750 ft/s\n",
+        "new": "\t\tdef.AddAmmoType(\"StriderMinigunDirect\",\tDMG_BULLET,\t\t\t\tTRACER_LINE,\t\t\t2, 2, 15, 1.0 * 750 * 12, AMMO_FORCE_DROP_IF_CARRIED ); // hit like a 1.0kg weight at 750 ft/s\n\t\tdef.AddAmmoType(\"HelicopterGun\",\tDMG_BULLET,\t\t\t\t\tTRACER_LINE_AND_WHIZ,\t\"sk_npc_dmg_helicopter_to_plr\", \"sk_npc_dmg_helicopter\",\t\"sk_max_smg1\",\tBULLET_IMPULSE(400, 1225), AMMO_FORCE_DROP_IF_CARRIED | AMMO_INTERPRET_PLRDAMAGE_AS_DAMAGE_TO_PLAYER );\n\t\tdef.AddAmmoType(\"AR2AltFire\",\t\tDMG_DISSOLVE,\t\t\t\tTRACER_NONE,\t\t\t0, 0, \"sk_max_ar2_altfire\", 0, 0 );\n#ifdef HL2_EPISODIC\n\t\tdef.AddAmmoType(\"Hopwire\",\t\t\tDMG_BLAST,\t\t\t\t\tTRACER_NONE,\t\t\t\"sk_plr_dmg_grenade\",\t\t\"sk_npc_dmg_grenade\",\t\t\"sk_max_hopwire\",\t\t0, 0);\n\t\tdef.AddAmmoType(\"CombineHeavyCannon\",\tDMG_BULLET,\t\t\t\tTRACER_LINE,\t\t\t40,\t40, NULL, 10 * 750 * 12, AMMO_FORCE_DROP_IF_CARRIED ); // hit like a 10 kg weight at 750 ft/s\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_gauss.cpp",
+    "edits": [
+      {
+        "old": "END_DATADESC()\n\n\nConVar sk_plr_dmg_gauss( \"sk_plr_dmg_gauss\", \"0\" );\nConVar sk_plr_max_dmg_gauss( \"sk_plr_max_dmg_gauss\", \"0\" );\n\n//-----------------------------------------------------------------------------\n// Purpose: \n",
+        "new": "END_DATADESC()\n\n\nConVar sk_plr_dmg_gauss( \"sk_plr_dmg_gauss\", \"25\" );\nConVar sk_plr_max_dmg_gauss( \"sk_plr_max_dmg_gauss\", \"150\" );\n\n//-----------------------------------------------------------------------------\n// Purpose: \n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_iceaxe.cpp",
+    "edits": [
+      {
+        "old": "#define\tICEAXE_RANGE\t60\n#define\tICEAXE_REFIRE\t0.25f\n\nConVar    sk_plr_dmg_iceaxe\t\t\t( \"sk_plr_dmg_iceaxe\",\"0\");\nConVar    sk_npc_dmg_iceaxe\t\t\t( \"sk_npc_dmg_iceaxe\",\"0\");\n\n//-----------------------------------------------------------------------------\n// CWeaponIceAxe\n",
+        "new": "#define\tICEAXE_RANGE\t60\n#define\tICEAXE_REFIRE\t0.25f\n\nConVar    sk_plr_dmg_iceaxe\t\t\t( \"sk_plr_dmg_iceaxe\",\"10\");\nConVar    sk_npc_dmg_iceaxe\t\t\t( \"sk_npc_dmg_iceaxe\",\"5\");\n\n//-----------------------------------------------------------------------------\n// CWeaponIceAxe\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/grenade_satchel.cpp",
+    "edits": [
+      {
+        "old": "// memdbgon must be the last include file in a .cpp file!!!\n#include \"tier0/memdbgon.h\"\n\nConVar    sk_plr_dmg_satchel\t\t( \"sk_plr_dmg_satchel\",\"0\");\nConVar    sk_npc_dmg_satchel\t\t( \"sk_npc_dmg_satchel\",\"0\");\nConVar    sk_satchel_radius\t\t\t( \"sk_satchel_radius\",\"0\");\n\nBEGIN_DATADESC( CSatchelCharge )\n\n",
+        "new": "// memdbgon must be the last include file in a .cpp file!!!\n#include \"tier0/memdbgon.h\"\n\nConVar    sk_plr_dmg_satchel\t\t( \"sk_plr_dmg_satchel\",\"150\");\nConVar    sk_npc_dmg_satchel\t\t( \"sk_npc_dmg_satchel\",\"75\");\nConVar    sk_satchel_radius\t\t\t( \"sk_satchel_radius\",\"150\");\n\nBEGIN_DATADESC( CSatchelCharge )\n\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/grenade_tripmine.cpp",
+    "edits": [
+      {
+        "old": "\nextern const char* g_pModelNameLaser;\n\nConVar    sk_plr_dmg_tripmine\t\t( \"sk_plr_dmg_tripmine\",\"0\");\nConVar    sk_npc_dmg_tripmine\t\t( \"sk_npc_dmg_tripmine\",\"0\");\nConVar    sk_tripmine_radius\t\t( \"sk_tripmine_radius\",\"0\");\n\nLINK_ENTITY_TO_CLASS( npc_tripmine, CTripmineGrenade );\n\n",
+        "new": "\nextern const char* g_pModelNameLaser;\n\nConVar    sk_plr_dmg_tripmine\t\t( \"sk_plr_dmg_tripmine\",\"250\");\nConVar    sk_npc_dmg_tripmine\t\t( \"sk_npc_dmg_tripmine\",\"125\");\nConVar    sk_tripmine_radius\t\t( \"sk_tripmine_radius\",\"150\");\n\nLINK_ENTITY_TO_CLASS( npc_tripmine, CTripmineGrenade );\n\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_hgm1.cpp",
+    "edits": [
+      {
+        "old": "END_SEND_TABLE()\n\nLINK_ENTITY_TO_CLASS( weapon_hmg1, CWeaponHMG1 );\n\nacttable_t\tCWeaponHMG1::m_acttable[] = \n{\n",
+        "new": "END_SEND_TABLE()\n\nLINK_ENTITY_TO_CLASS( weapon_hmg1, CWeaponHMG1 );\nPRECACHE_WEAPON_REGISTER( weapon_hmg1 );\n\nacttable_t\tCWeaponHMG1::m_acttable[] = \n{\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_tripwire.cpp",
+    "edits": [
+      {
+        "old": "\nLINK_ENTITY_TO_CLASS( weapon_tripwire, CWeapon_Tripwire );\n\n// BUGBUG: Enable this when the script & resources are checked in.\n//PRECACHE_WEAPON_REGISTER(weapon_tripwire);\n\nacttable_t\tCWeapon_Tripwire::m_acttable[] = \n{\n",
+        "new": "\nLINK_ENTITY_TO_CLASS( weapon_tripwire, CWeapon_Tripwire );\n\nPRECACHE_WEAPON_REGISTER( weapon_tripwire );\n\nacttable_t\tCWeapon_Tripwire::m_acttable[] = \n{\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_ar1.cpp",
+    "edits": [
+      {
+        "old": "\tvoid\tPrecache( void );\n\tbool\tDeploy( void );\n\n\tfloat GetFireRate( void ) {return RateOfFire[ m_ROF ];}\n\n\tint CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }\n\n\tvoid SecondaryAttack( void );\n\n\tvoid FireBullets(int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iBulletType, int iTracerFreq);\n\n\tvirtual const Vector& GetBulletSpread( void )\n\t{\n",
+        "new": "\tvoid\tPrecache( void );\n\tbool\tDeploy( void );\n\n\tfloat GetFireRate( void ) {return RateOfFire[ clamp( m_ROF, 0, MAX_SETTINGS - 1 ) ];}\n\n\tint CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }\n\n\tvoid SecondaryAttack( void );\n\n\tvirtual void FireBullets( const FireBulletsInfo_t &info ) OVERRIDE;\n\n\tvirtual const Vector& GetBulletSpread( void )\n\t{\n"
+      },
+      {
+        "old": "\n//=========================================================\n//=========================================================\nvoid CWeaponAR1::FireBullets(int cShots, const Vector &vecSrc, const Vector &vecDirShooting, const Vector &vecSpread, float flDistance, int iBulletType, int iTracerFreq)\n{\n\tif(CBasePlayer *pPlayer = ToBasePlayer( GetOwner() ))\n\t{\n\t\tpPlayer->FireBullets(cShots, vecSrc, vecDirShooting, vecSpread, flDistance, iBulletType, iTracerFreq, -1, -1, Damage[ m_ROF ] );\n\t}\n}\n\n\n",
+        "new": "\n//=========================================================\n//=========================================================\nvoid CWeaponAR1::FireBullets( const FireBulletsInfo_t &info )\n{\n\tFireBulletsInfo_t shot = info;\n\tshot.m_flDamage = Damage[ clamp( m_ROF, 0, MAX_SETTINGS - 1 ) ];\n\tBaseClass::FireBullets( shot );\n}\n\n\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_stickylauncher.cpp",
+    "edits": [
+      {
+        "old": "\tif ( pOwner == NULL )\n\t\treturn;\n\n\t//Allow a refire as fast as the player can click\n\tif ( !( pOwner->m_nButtons & IN_ATTACK ) )\n\t{\n\t\tm_flNextPrimaryAttack = gpGlobals->curtime - 0.1f;\n\t}\n\telse if ( ( pOwner->m_nButtons & IN_ATTACK ) && ( m_flNextPrimaryAttack < gpGlobals->curtime ) && ( m_iClip1 <= 0 ) )\n\t{\n\t\tDryFire();\n\t\treturn;\n",
+        "new": "\tif ( pOwner == NULL )\n\t\treturn;\n\n\t// Keep the declared fire interval when the attack button is released.\n\tif ( ( pOwner->m_nButtons & IN_ATTACK ) && ( m_flNextPrimaryAttack <= gpGlobals->curtime ) && ( m_iClip1 <= 0 ) )\n\t{\n\t\tDryFire();\n\t\treturn;\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/hl2/basehlcombatweapon.cpp",
+    "edits": [
+      {
+        "old": "\tif ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType) ) )\n\t\treturn;\n\n\tm_nShotsFired++;\n\n\tpPlayer->DoMuzzleFlash();\n",
+        "new": "\tif ( (UsesClipsForAmmo1() && m_iClip1 == 0) || ( !UsesClipsForAmmo1() && !pPlayer->GetAmmoCount(m_iPrimaryAmmoType) ) )\n\t\treturn;\n\n\tif ( m_nShotsFired == 0 )\n\t{\n\t\tm_flNextPrimaryAttack = gpGlobals->curtime;\n\t}\n\tm_nShotsFired++;\n\n\tpPlayer->DoMuzzleFlash();\n"
+      },
+      {
+        "old": "\t// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, \n\t// especially if the weapon we're firing has a really fast rate of fire.\n\tint iBulletsToFire = 0;\n\tfloat fireRate = GetFireRate();\n\n\t// MUST call sound before removing a round from the clip of a CHLMachineGun\n\twhile ( m_flNextPrimaryAttack <= gpGlobals->curtime )\n",
+        "new": "\t// To make the firing framerate independent, we may have to fire more than one bullet here on low-framerate systems, \n\t// especially if the weapon we're firing has a really fast rate of fire.\n\tint iBulletsToFire = 0;\n\tfloat fireRate = MAX( GetFireRate(), 0.01f );\n\n\t// MUST call sound before removing a round from the clip of a CHLMachineGun\n\twhile ( m_flNextPrimaryAttack <= gpGlobals->curtime )\n"
+      },
+      {
+        "old": "//-----------------------------------------------------------------------------\nvoid CHLSelectFireMachineGun::BurstThink( void )\n{\n\tCHLMachineGun::PrimaryAttack();\n\n\tm_iBurstSize--;\n\n",
+        "new": "//-----------------------------------------------------------------------------\nvoid CHLSelectFireMachineGun::BurstThink( void )\n{\n\tCBasePlayer *pOwner = ToBasePlayer( GetOwner() );\n\tif ( !pOwner || pOwner->GetActiveWeapon() != this || m_bInReload || m_iBurstSize <= 0 || m_iClip1 <= 0 )\n\t{\n\t\tm_iBurstSize = 0;\n\t\tSetThink( NULL );\n\t\treturn;\n\t}\n\n\tconst float flNextBurst = m_flNextPrimaryAttack;\n\tm_flNextPrimaryAttack = gpGlobals->curtime;\n\tCHLMachineGun::PrimaryAttack();\n\tm_flNextPrimaryAttack = MAX( flNextBurst, m_flNextPrimaryAttack.Get() );\n\n\tm_iBurstSize--;\n\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/hl2/item_ammo.cpp",
+    "edits": [
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL, \"Pistol\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL, FClassnameIs( this, \"item_box_srounds\" ) ? \"SmallRound\" : \"MediumRound\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL_LARGE, \"Pistol\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_PISTOL_LARGE, FClassnameIs( this, \"item_large_box_srounds\" ) ? \"SmallRound\" : \"MediumRound\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1, \"SMG1\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1, \"MediumRound\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_LARGE, \"SMG1\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_LARGE, \"MediumRound\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2, \"AR2\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2, FClassnameIs( this, \"item_box_lrounds\" ) ? \"LargeRound\" : \"AR2\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_LARGE, \"AR2\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_AR2_LARGE, FClassnameIs( this, \"item_large_box_lrounds\" ) ? \"LargeRound\" : \"AR2\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_RPG_ROUND, \"RPG_Round\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_RPG_ROUND, \"ML_Grenade\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_GRENADE, \"SMG1_Grenade\"))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n",
+        "new": "\t}\n\tbool MyTouch( CBasePlayer *pPlayer )\n\t{\n\t\tif (ITEM_GiveAmmo( pPlayer, SIZE_AMMO_SMG1_GRENADE, \"AR2_Grenade\" ))\n\t\t{\n\t\t\tif ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )\n\t\t\t{\n"
+      },
+      {
+        "old": "// Ammo type names\nconst char *CItem_AmmoCrate::m_lpzAmmoNames[NUM_AMMO_CRATE_TYPES] =\n{\n\t\"Pistol\",\t\t\n\t\"SMG1\",\t\t\t\n\t\"AR2\",\t\t\t\n\t\"RPG_Round\",\t\n\t\"Buckshot\",\t\t\n\t\"Grenade\",\n\t\"357\",\n\t\"XBowBolt\",\n\t\"AR2AltFire\",\n\t\"SMG1_Grenade\",\n};\n\n// Ammo amount given per +use\n",
+        "new": "// Ammo type names\nconst char *CItem_AmmoCrate::m_lpzAmmoNames[NUM_AMMO_CRATE_TYPES] =\n{\n\t\"MediumRound\",\t\t// weapon_pistol uses beta ammo\n\t\"MediumRound\",\t\t// weapon_smg1 uses beta ammo\n\t\"AR2\",\t\t\t\n\t\"ML_Grenade\",\t// weapon_rpg uses beta ammo\n\t\"Buckshot\",\t\t\n\t\"Grenade\",\n\t\"357\",\n\t\"XBowBolt\",\n\t\"AR2AltFire\",\n\t\"AR2_Grenade\",\t// weapon_smg1 secondary ammo\n};\n\n// Ammo amount given per +use\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/portal/portal_player.cpp",
+    "edits": [
+      {
+        "old": "\t{\n\t\tif (sv_cheats->GetBool())\n\t\t{\n\t\t\tgEvilImpulse101 = true;\n\n\t\t\tCBasePlayer::EquipSuit();\n",
+        "new": "\t{\n\t\tif (sv_cheats->GetBool())\n\t\t{\n#ifdef GAMMA_PORTALGUN\n\t\t\t// GammaSource grants the complete registered weapon roster and every\n\t\t\t// ammo type. Portal's retail-only list leaves beta weapons empty.\n\t\t\tBaseClass::CheatImpulseCommands( iImpulse );\n#else\n\t\t\tgEvilImpulse101 = true;\n\n\t\t\tCBasePlayer::EquipSuit();\n"
+      },
+      {
+        "old": "\t\t\t\tTakeHealth(25, DMG_GENERIC);\n\t\t\t}\n\t\t\t\n\t\t\tCWeaponPortalgun *pPortalGun = static_cast<CWeaponPortalgun*>(GiveNamedItem(\"weapon_portalgun\"));\n\n\t\t\tif (!pPortalGun)\n",
+        "new": "\t\t\t\tTakeHealth(25, DMG_GENERIC);\n\t\t\t}\n\t\t\t\n#endif // GAMMA_PORTALGUN\n\t\t\tCWeaponPortalgun *pPortalGun = static_cast<CWeaponPortalgun*>(GiveNamedItem(\"weapon_portalgun\"));\n\n\t\t\tif (!pPortalGun)\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/hl2/weapon_smg1.cpp",
+    "edits": [
+      {
+        "old": "\tvirtual void Equip( CBaseCombatCharacter *pOwner );\n\tbool\tReload( void );\n\n\tfloat\tGetFireRate( void ) { return 0.075f; }\t// 13.3hz\n\tint\t\tCapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }\n\tint\t\tWeaponRangeAttack2Condition(/* float flDot, float flDist */);\n\tActivity\tGetPrimaryAttackActivity( void );\n",
+        "new": "\tvirtual void Equip( CBaseCombatCharacter *pOwner );\n\tbool\tReload( void );\n\n\tfloat\tGetFireRate( void ) { return 0.1f; }\t// GammaSource 2003: 600 rounds per minute\n\tint\t\tCapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }\n\tint\t\tWeaponRangeAttack2Condition(/* float flDot, float flDist */);\n\tActivity\tGetPrimaryAttackActivity( void );\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/grenade_tripwire.cpp",
+    "edits": [
+      {
+        "old": "// memdbgon must be the last include file in a .cpp file!!!\n#include \"tier0/memdbgon.h\"\n\nConVar    sk_dmg_tripwire\t\t( \"sk_dmg_tripwire\",\"0\");\nConVar    sk_tripwire_radius\t( \"sk_tripwire_radius\",\"0\"); \n\n#define GRENADETRIPWIRE_FLYSOUND\t\"weapons/incoming1.wav\"\n#define GRENADETRIPWIRE_MISSILEMDL\t\"models/Weapons/ar2_grenade.mdl\"\n",
+        "new": "// memdbgon must be the last include file in a .cpp file!!!\n#include \"tier0/memdbgon.h\"\n\nConVar    sk_dmg_tripwire\t\t( \"sk_dmg_tripwire\",\"250\");\nConVar    sk_tripwire_radius\t( \"sk_tripwire_radius\",\"150\"); \n\n#define GRENADETRIPWIRE_FLYSOUND\t\"weapons/incoming1.wav\"\n#define GRENADETRIPWIRE_MISSILEMDL\t\"models/Weapons/ar2_grenade.mdl\"\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "vphysics/physics_material.cpp",
+    "edits": [
+      {
+        "old": "\t\t{\n\t\t\tCSurface prop;\n\t\t\tmemset( &prop.data, 0, sizeof(prop.data) );\n\t\t\tprop.m_name = m_strings.AddString( key );\n\t\t\tint baseMaterial = GetSurfaceIndex( key );\n\t\t\tif ( baseMaterial < 0 )\n",
+        "new": "\t\t{\n\t\t\tCSurface prop;\n\t\t\tmemset( &prop.data, 0, sizeof(prop.data) );\n\t\t\t// Optional movement multipliers default to neutral. Legacy surface\n\t\t\t// scripts omit these keys; zero would stop both walking and jumping.\n\t\t\t// Set them before inheritance so bases and explicit zero still win.\n\t\t\tprop.data.game.maxSpeedFactor = 1.0f;\n\t\t\tprop.data.game.jumpFactor = 1.0f;\n\t\t\tprop.m_name = m_strings.AddString( key );\n\t\t\tint baseMaterial = GetSurfaceIndex( key );\n\t\t\tif ( baseMaterial < 0 )\n"
+      }
+    ]
+  },
+  {
+    "root": "repo",
+    "path": "gammasource_content_2018/scripts/surfaceproperties.txt",
+    "create": "// \"surface group\" \n// { \n// \"property\" \t\"value\"\n// ...\n// }\n//\n// thickness: If this value is present, the material is not volumetrically solid\n// it means that the volume should be computed as the surface area times this\n// thickness (for automatic mass).  The inside space beneath the thickness value is air.\n//\n// physics parameters are:\n// density: this is the material density in kg / m^3 (water is 1000)\n// elasticity: This is the collision elasticity (0 - 1.0, 0.01 is soft, 1.0 is hard)\n// friction: this is the physical friction (0 - 1.0, 0.01 is slick, 1.0 is totally rough)\n// dampening: this is the physical drag on an object when in contact with this surface (0 - x, 0 none to x a lot)\n//\n// !!! Do not edit the physics properties (especially density) without the proper references !!!\n//\n// Sounds\n// \n// stepleft: footstep sound for left foot\n// stepright: footstep sound for right foot\n// impact: Physical impact sound\n// scrape: Looping physics friction sound\n// bulletimpact: bullet impact sound\n// bulletdecal: bullet impact decal name\n// gamematerial: game material index (can be a single letter or a number)\n// \n\n// NOTE: The properties of \"default\" will get copied into EVERY material who does not\n// \t override them!!!\n//\n// \"base\" means to use the parameters from that material as a base.\n// \"base\" must appear as the first key in a material\n//\n\n\n// -----------------------------\n// world materials\n// -----------------------------\n\n\"default\"\n{\n\t// GammaSource: 2018 movement consumes these factors; 2003 omitted them.\n\t\"maxspeedfactor\" \"1.0\"\n\t\"jumpfactor\" \"1.0\"\n\t\"density\"\t\"2000\"\n\t\"elasticity\"\t\"0.25\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Default.StepLeft\"\n\t\"stepright\"\t\"Default.StepRight\"\n\t\"bulletimpact\"\t\"Default.BulletImpact\"\n\t\"scrape\"\t\"Default.Scrape\"\n\t\"impact\"\t\"Default.Impact\"\n\t\"gamematerial\"\t\"C\"\n\t\"dampening\"\t\"0.0\"\n}\n\n// NOTE: Almost nothing is solid metal - so \"metal\" is sheet metal\n\"solidmetal\"\n{\n\t\"density\"\t\"2700\"\n\t\"elasticity\"\t\"0.25\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"SolidMetal.StepLeft\"\n\t\"stepright\"\t\"SolidMetal.StepRight\"\n\t\"impact\"\t\"SolidMetal.Impact\"\n\t\"scrape\"\t\"SolidMetal.Scrape\"\n\t\"bulletimpact\"\t\"SolidMetal.BulletImpact\"\n\t\"gamematerial\"\t\"M\"\n}\n\n// Assume that everything we are building\n// is large enough to be constructed out of a thin sheet of metal\n// only flag a few things as \"solidmetal\" (I-Beams, anvils, etc)\n\"metal\"\n{\n\t\"base\"\t\t\"solidmetal\"\n\t\"thickness\"\t\"0.1\"\n}\n\n\"dirt\"\n{\n\t\"density\"\t\"1600\"\n\t\"elasticity\"\t\"0.01\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Dirt.StepLeft\"\n\t\"stepright\"\t\"Dirt.StepRight\"\n\t\"impact\"\t\"Dirt.Impact\"\n\t\"scrape\"\t\"Dirt.Scrape\"\n\t\"bulletimpact\"\t\"Dirt.BulletImpact\"\n\t\"gamematerial\"\t\"D\"\n}\n\n\"mud\"\n{\n\t\"base\"\t\t \"dirt\"\n\t\"friction\"\t \"0.6\"\n\t\"maxspeedfactor\" \"0.5\"\n\t\"jumpfactor\" \t \"0.7\"\n\t\"stepleft\"\t \"Mud.StepLeft\"\n\t\"stepright\"\t \"Mud.StepRight\"\n\t\"dampening\"\t \"6.0\"\n}\n\n\"grass\"\n{\n\t\"base\"\t\t\"dirt\"\n\t\"stepleft\"\t\"Grass.StepLeft\"\n\t\"stepright\"\t\"Grass.StepRight\"\n}\n\n\"metalgrate\"\n{\n\t\"thickness\"\t\"0.5\"\n\t\"density\"\t\"1600\"\n\t\"elasticity\"\t\"0.25\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"MetalGrate.StepLeft\"\n\t\"stepright\"\t\"MetalGrate.StepRight\"\n\t\"impact\"\t\"MetalGrate.Impact\"\n\t\"scrape\"\t\"MetalGrate.Scrape\"\n\t\"bulletimpact\"\t\"MetalGrate.BulletImpact\"\n\t\"gamematerial\"\t\"G\"\n}\n\n// ~1mm thick metal\n\"metalvent\"\n{\n\t\"thickness\"\t\"0.04\"\n\t\"density\"\t\"2700\"\n\t\"elasticity\"\t\"0.1\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"MetalVent.StepLeft\"\n\t\"stepright\"\t\"MetalVent.StepRight\"\n\t\"impact\"\t\"MetalVent.Impact\"\n\t\"scrape\"\t\"MetalVent.Scrape\"\n\t\"bulletimpact\"\t\"MetalVent.BulletImpact\"\n\t\"gamematerial\"\t\"V\"\n}\n\n\"metalpanel\"\n{\n\t\"base\"\t\t\"metal\"\n\t\"thickness\"\t\"0.1\"\n\t\"density\"\t\"2700\"\n\t\"elasticity\"\t\"0.2\"\n\t\"friction\"\t\"0.8\"\n\t\"gamematerial\"\t\"M\"\n}\n\n\n\"tile\"\n{\n\t\"thickness\"\t\"0.5\"\n\t\"density\"\t\"2700\"\n\t\"elasticity\"\t\"0.3\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Tile.StepLeft\"\n\t\"stepright\"\t\"Tile.StepRight\"\n\t\"bulletimpact\"\t\"Tile.BulletImpact\"\n\t\"gamematerial\"\t\"T\"\n}\n\n\n\"wood\"\n{\n\t\"density\"\t\"700\"\n\t\"elasticity\"\t\"0.1\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Wood.StepLeft\"\n\t\"stepright\"\t\"Wood.StepRight\"\n\t\"bulletimpact\"\t\"Wood.BulletImpact\"\n\t\"impact\"\t\"Wood.Impact\"\n\t\"scrape\"\t\"Wood.Scrape\"\n\t\"gamematerial\"\t\"W\"\n}\n\n\"woodpanel\"\n{\n\t\"base\"\t\t\"wood\"\n\t\"thickness\"\t\"1.0\"\n\t\"density\"\t\"700\"\n\t\"elasticity\"\t\"0.1\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"WoodPanel.StepLeft\"\n\t\"stepright\"\t\"WoodPanel.StepRight\"\n}\n\n\"water\"\n{\n\t\"density\"\t\"1000\"\n\t\"elasticity\"\t\"0.1\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Water.StepLeft\"\n\t\"stepright\"\t\"Water.StepRight\"\n\t\"bulletimpact\"\t\"Water.BulletImpact\"\n\t\"gamematerial\"\t\"S\"\n}\n\n\"quicksand\"\n{\n\t\"density\"\t\"600\"\n\t\"elasticity\"\t\"2.0\"\n}\n\n// wade is a water material for walking in/on water at knee height\n\"wade\"\n{\n\t\"base\"\t\t\"water\"\n\t\"stepleft\"\t\"Wade.StepLeft\"\n\t\"stepright\"\t\"Wade.StepRight\"\n\t\"gamematerial\" \"X\"\n}\n\n// ladder is a fake material for walking on ladders\n\"ladder\"\n{\n\t\"base\"\t\t\"metal\"\n\t\"climbable\"\t\"1.0\"\n\t\"stepleft\"\t\"Ladder.StepLeft\"\n\t\"stepright\"\t\"Ladder.StepRight\"\n\t\"gamematerial\" \"X\"\n}\n\n\"glass\"\n{\n\t\"thickness\"\t\"0.5\"\n\t\"density\"\t\"2700\"\n\t\"elasticity\"\t\"0.2\"\n\t\"friction\"\t\"0.5\"\n\t\"bulletimpact\"\t\"Glass.BulletImpact\"\n\t\"gamematerial\"\t\"Y\"\n}\n\n\"computer\"\n{\n\t\"base\"\t\t\"metalgrate\"\n\t\"bulletimpact\"\t\"Computer.BulletImpact\"\n\t\"gamematerial\"\t\"P\"\n}\n\n\"concrete\"\n{\n\t\"density\"\t\"2400\"\n\t\"elasticity\"\t\"0.2\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Concrete.StepLeft\"\n\t\"stepright\"\t\"Concrete.StepRight\"\n\t\"bulletimpact\"\t\"Concrete.BulletImpact\"\n\t\"gamematerial\"\t\"C\"\n}\n\n// Solid rock (small sounds)\n\"rock\"\n{\n\t\"base\"\t\t\"concrete\"\n}\n\n// Large solid rock (large sounds)\n\"boulder\"\n{\n\t\"base\"\t\t\"rock\"\n}\n\n\"gravel\"\n{\n\t\"base\"\t\t\"rock\"\n\t\"friction\"\t\"0.4\"\n\t\"stepleft\"\t\"Gravel.StepLeft\"\n\t\"stepright\"\"Gravel.StepRight\"\n}\n\n\"brick\"\n{\n\t\"base\"\t\t\"concrete\"\n}\n\n\n\n\"chainlink\"\n{\n\t\"thickness\"\t\"0.5\"\n\t\"density\"\t\"1600\"\n\t\"elasticity\"\t\"0.25\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"ChainLink.StepLeft\"\n\t\"stepright\"\t\"ChainLink.StepRight\"\n\t\"impact\"\t\"ChainLink.Impact\"\n\t\"scrape\"\t\"ChainLink.Scrape\"\n\t\"bulletimpact\"\t\"ChainLink.BulletImpact\"\n\t\"gamematerial\"\t\"G\"\n}\n\n\n\"flesh\"\n{\n\t\"density\"\t\"900\"\n\t\"bulletimpact\"\t\"Flesh.BulletImpact\"\n\t\"impact\"\t\"Flesh.Impact\"\n\t\"scrape\"\t\"Flesh.Scrape\"\n\t\"gamematerial\"\t\"F\"\n}\n\n\"bloodyflesh\"\n{\n\t\"density\"\t\"900\"\n\t\"bulletimpact\"\t\"Flesh.BulletImpact\"\n\t\"impact\"\t\"Flesh.Impact\"\n\t\"scrape\"\t\"Flesh.Scrape\"\n\n\t\"gamematerial\"\t\"B\"\n}\n\n\"alienflesh\"\n{\n\t\"density\"\t\"900\"\n\t\"bulletimpact\"\t\"Flesh.BulletImpact\"\n\t\"impact\"\t\"Flesh.Impact\"\n\t\"scrape\"\t\"Flesh.Scrape\"\n\t\"gamematerial\"\t\"H\"\n}\n\n\"watermelon\"\n{\n\t\"density\"\t\"900\"\n\t\"bulletimpact\"\t\"Watermelon.BulletImpact\"\n\t\"impact\"\t\"Watermelon.Impact\"\n\t\"scrape\"\t\"Watermelon.Scrape\"\n\t\"gamematerial\"\t\"F\"\n}\n\n\n// Flesh for physics, metal for bullet fx\n\"armorflesh\"\n{\n\t\"base\"\t\t\"flesh\"\n\t\"bulletimpact\"\t\"ArmorFlesh.BulletImpact\"\n\t\"gamematerial\"\t\"M\"\n}\n\n\"snow\"\n{\n\t\"base\"\t\t\"dirt\"\n\t\"density\"\t\"800\"\n\t\"friction\"\t\"0.35\"\n}\n\n\"ice\"\n{\n\t\"density\"\t\"917\"\n\t\"friction\"\t\"0.1\"\n\t\"elasticity\"\t\"0.1\"\n}\n\n\n// UNDONE: Do proper values for these - I made them up so I would have good\n// initial values for all VMTs\n\"carpet\"\n{\n\t\"base\"\t\t\"dirt\"\n\t\"density\"\t\"500\"\n\t\"thickness\"\t\"0.1\"\n\t\"elasticity\"\t\"0.01\"\n\t\"friction\"\t\"0.8\"\n\t\"impact\"\t\"Carpet.Impact\"\n\t\"bulletimpact\"\t\"Carpet.BulletImpact\"\n\t\"scrape\"\t\"Carpet.Scrape\"\n}\n\n\n\"plaster\"\n{\n\t\"base\"\t\t\"dirt\"\n}\n\n\n\"cardboard\"\n{\n\t\"base\"\t\t\"dirt\"\n\t\"density\"\t\"500\"\n\t\"thickness\"\t\"0.25\"\n}\n\n\n\"sand\"\n{\n\t\"base\"\t\t\"dirt\"\n\t\"stepleft\"\t\"Sand.StepLeft\"\n\t\"stepright\"\t\"Sand.StepRight\"\n\t\"bulletimpact\"\t\"Sand.BulletImpact\"\n}\n\n\n\"plastic\"\n{\n\t\"base\"\t\t\"dirt\"\n}\n\n\n\"rubber\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\"0.2\"\n\t\"friction\"\t\t\"0.8\"\n}\n\n\"rubbertire\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\t\"0.2\"\n\t\"friction\"\t\t\"1.3\"\n}\n\n\"slidingrubbertire\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\t\"0.2\"\n\t\"friction\"\t\t\"0.2\"\n}\n\n\"brakingrubbertire\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\t\"0.2\"\n\t\"friction\"\t\t\"0.6\"\n}\n\n\"slidingrubbertire_front\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\t\"0.2\"\n\t\"friction\"\t\t\"0.2\"\n}\n\n\"slidingrubbertire_rear\"\n{\n\t\"base\"\t\t\t\"dirt\"\n\t\"elasticity\"\t\t\"0.2\"\n\t\"friction\"\t\t\"0.2\"\n}\n\n// -----------------------------\n// objects\n// -----------------------------\n\n\"metal_seafloorcar\"\n{\n\t\"base\"\t\t\"metal\"\n\t\"bulletimpact\"\t\"Metal_SeafloorCar.BulletImpact\"\n}\n\n\"glassbottle\"\n{\n\t\"base\"\t\t\"glass\"\n\t\"friction\"\t\"0.4\"\n\t\"elasticity\"\t\"0.3\"\n\t\"impact\"\t\"GlassBottle.Impact\"\n\t\"scrape\"\t\"GlassBottle.Scrape\"\n\t\"bulletimpact\"\t\"GlassBottle.BulletImpact\"\n}\n\n\"grenade\"\n{\n\t\"base\"\t\t\"metalpanel\"\n\t\"friction\"\t\"0.9\"\n\t\"elasticity\"\t\"0.01\"\n\t\"impact\"\t\"Grenade.Impact\"\n\t\"scrape\"\t\"Grenade.Scrape\"\n}\n\n\n\n\"canister\"\n{\n\t\"base\"\t\t\"metalpanel\"\n\t\"impact\"\t\"Canister.Impact\"\n\t\"scrape\"\t\"Canister.Scrape\"\n}\n\n\n\"metal_barrel\"\n{\n\t\"base\"\t\t\"metalpanel\"\n\t\"impact\"\t\"Metal_Barrel.Impact\"\n\t\"scrape\"\t\"Metal_Barrel.Scrape\"\n\t\"bulletimpact\"\t\"Metal_Barrel.BulletImpact\"\n}\n\n\n\n\n// ROLLER NPC\n\n\"roller\"\n{\n\t\"base\"\t\t\"metalpanel\"\n\t\"friction\"\t\"0.7\"\n\t\"elasticity\"\t\"0.3\"\n\t\"impact\"\t\"Roller.Impact\"\n}\n\n\n\"popcan\"\n{\n\t\"base\"\t\t\"metalpanel\"\n\t\"friction\"\t\"0.3\"\n\t\"elasticity\"\t\"0.99\"\n\t\"impact\"\t\"Popcan.Impact\"\n\t\"scrape\"\t\"Popcan.Scrape\"\n\t\"bulletimpact\"\t\"Popcan.BulletImpact\"\n}\n\n\n\"paper\"\n{\n\t\"base\"\t\t\"dirt\"\n}\n\n\n\"papercup\"\n{\n\t\"base\"\t\t\"paper\"\n\t\"friction\"\t\"0.8\"\n\t\"elasticity\"\t\"0.1\"\n\t\"impact\"\t\"Papercup.Impact\"\n\t\"scrape\"\t\"Popcan.Scrape\"\n}\n\n\n\"gunship\"\n{\n\t\"base\"\t\t\"metal\"\n\t\"friction\"\t\"0.3\"\n\t\"impact\"\t\"Gunship.Impact\"\n\t\"scrape\"\t\"Gunship.Scrape\"\n}\n\n\"strider\"\n{\n\t\"base\"\t\t\"metal\"\n\n\t\"impact\"\t\"Strider.Impact\"\n\t\"scrape\"\t\"Strider.Scrape\"\n\n}\n\n// weapon models - need sounds for when weapons drop\n// Maybe we'll want specific materials for each weapon?\n\"weapon\"\n{\n\t\"base\"\t\t\"metal\"\n}\n\n// for invisible collision materials (like sky)\n\"default_silent\"\n{\n\t\"gamematerial\"\t\"X\"\n}\n\n// special materials for player controller\n\"player\"\n{\n\t\"density\"\t\"1000\"\n\t\"friction\"\t\"0.5\"\n\t\"elasticity\"\t\"0.001\"\n}\n\n\"player_control_clip\"\n{\n\t\"gamematerial\"\t\"I\"\n}\n\n\"no_decal\"\n{\n\t\"gamematerial\" \"-\"\n}\n\n\"foliage\"\n{\n\t\"density\"\t\"700\"\n\t\"elasticity\"\t\"0.1\"\n\t\"friction\"\t\"0.8\"\n\t\"stepleft\"\t\"Wood.StepLeft\"\n\t\"stepright\"\t\"Wood.StepRight\"\n\t\"bulletimpact\"\t\"Wood.BulletImpact\"\n\t\"impact\"\t\"Wood.Impact\"\n\t\"scrape\"\t\"Wood.Scrape\"\n\t\"gamematerial\"\t\"O\"\n}\n"
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_brickbat.cpp",
+    "edits": [
+      {
+        "old": "    m_bNeedThrow=false; m_bNeedDraw=true;\n    BaseClass::Drop(velocity);\n}\n",
+        "new": "    m_bNeedThrow=false; m_bNeedDraw=true;\n    BaseClass::Drop(velocity);\n}\n\n// Fill the real per-variant inventory, not just its displayed reserve mirror.\nvoid CWeaponBrickbat::GiveMaxAmmo(void)\n{\n    if (!GetOwner() || m_iPrimaryAmmoType<0) return;\n    int remaining=MAX(0,GetAmmoDef()->MaxCarry(m_iPrimaryAmmoType));\n    const int first=ValidAmmoType();\n    for (int offset=0;offset<NUM_BRICKBAT_AMMO_TYPES;++offset)\n    {\n        const int type=(first+offset)%NUM_BRICKBAT_AMMO_TYPES;\n        m_nAmmoCount[type]=MIN(BrickBatAmmoArray[type].m_nMaxCarry,remaining);\n        remaining-=m_nAmmoCount[type];\n    }\n    SynchronizeAmmo();\n}\n\nvoid GammaGiveMaxBrickbatAmmo(CBasePlayer *player)\n{\n    CWeaponBrickbat *weapon=player ? dynamic_cast<CWeaponBrickbat *>(player->Weapon_OwnsThisType(\"weapon_brickbat\")) : NULL;\n    if (weapon) weapon->GiveMaxAmmo();\n}\n\nvoid CWeaponBrickbat::PrintAmmoState(void)\n{\n    CBaseCombatCharacter *owner=GetOwner();\n    Msg(\"GAMMA_BRICKBAT_VARIANTS active=%d rock=%d/5 bottle=%d/3 head=%d/1 reserve=%d\\n\",\n        ValidAmmoType(),m_nAmmoCount[BRICKBAT_ROCK],m_nAmmoCount[BRICKBAT_BOTTLE],\n        m_nAmmoCount[BRICKBAT_CREMATORHEAD],owner && m_iPrimaryAmmoType>=0 ? owner->GetAmmoCount(m_iPrimaryAmmoType) : 0);\n}\n\nCON_COMMAND_F(gamma_brickbat_info,\"Print the owned brickbat's per-variant ammunition\",FCVAR_CHEAT)\n{\n    CBasePlayer *player=UTIL_GetLocalPlayer();\n    CWeaponBrickbat *weapon=player ? dynamic_cast<CWeaponBrickbat *>(player->Weapon_OwnsThisType(\"weapon_brickbat\")) : NULL;\n    if (weapon) weapon->PrintAmmoState();\n}\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_brickbat.h",
+    "edits": [
+      {
+        "old": "    bool HasPrimaryAmmo(void);\n    bool HasAnyAmmo(void) { return HasPrimaryAmmo(); }\n    void SynchronizeAmmo(void);\n    void Equip(CBaseCombatCharacter *owner);\n    bool Holster(CBaseCombatWeapon *switchingTo=NULL);\n    void Drop(const Vector &velocity);\n",
+        "new": "    bool HasPrimaryAmmo(void);\n    bool HasAnyAmmo(void) { return HasPrimaryAmmo(); }\n    void SynchronizeAmmo(void);\n    void GiveMaxAmmo(void);\n    void PrintAmmoState(void);\n    void Equip(CBaseCombatCharacter *owner);\n    bool Holster(CBaseCombatWeapon *switchingTo=NULL);\n    void Drop(const Vector &velocity);\n"
+      }
+    ]
+  },
+  {
+    "root": "engine",
+    "path": "game/server/gamma/weapon_irifle.cpp",
+    "edits": [
+      {
+        "old": "\n\tvoid\tPrecache( void );\n\tbool\tDeploy( void );\n\n\tvoid\tPrimaryAttack( void );\n\tvirtual float GetFireRate( void ) { return 1; };\n",
+        "new": "\n\tvoid\tPrecache( void );\n\tbool\tDeploy( void );\n\tbool\tReload( void );\n\n\tvoid\tPrimaryAttack( void );\n\tvirtual float GetFireRate( void ) { return 1; };\n"
+      },
+      {
+        "old": "\t// Switching weapons must not manufacture ammunition.\n\treturn BaseClass::Deploy();\n}\n",
+        "new": "\t// Switching weapons must not manufacture ammunition.\n\treturn BaseClass::Deploy();\n}\n\n// The beta model has no ACT_VM_RELOAD. Reusing the previous idle sequence\n// accidentally turns a reload into its full five-second idle duration.\nbool CWeaponIRifle::Reload( void )\n{\n    Activity activity=ACT_VM_RELOAD;\n    if ( SelectWeightedSequence(activity)==ACTIVITY_NOT_AVAILABLE )\n        activity=ACT_VM_DRAW;\n    if ( SelectWeightedSequence(activity)==ACTIVITY_NOT_AVAILABLE )\n        return false;\n    if ( !DefaultReload(GetMaxClip1(),GetMaxClip2(),activity) )\n        return false;\n    WeaponSound(RELOAD);\n    return true;\n}\n"
+      }
+    ]
+  }
+]

@@ -1,33 +1,23 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-//=============================================================================
+//=============================================================================//
 
 #ifdef _WIN32
 #pragma warning (disable:4127)
 #pragma warning (disable:4244)
 #endif
 
-#include "ivp_physics.hxx"
-#include "ivp_core.hxx"
+#include "cbase.h"
 #include "ivp_controller.hxx"
 
-#include "utlvector.h"
-#include "convert.h"
-#include "vphysics_interface.h"
-#include "physics_object.h"
 #include "physics_motioncontroller.h"
-#include "physics_environment.h"
-#include "tier0/dbg.h"
-#include "vphysics_saverestore.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 struct vphysics_save_motioncontroller_t
 {
@@ -39,8 +29,8 @@ struct vphysics_save_motioncontroller_t
 
 
 BEGIN_SIMPLE_DATADESC( vphysics_save_motioncontroller_t )
-	DEFINE_VPHYSPTR_UTLVECTOR( vphysics_save_motioncontroller_t, m_objectList ),
-	DEFINE_FIELD( vphysics_save_motioncontroller_t,	m_nPriority,	FIELD_INTEGER ),
+	DEFINE_VPHYSPTR_UTLVECTOR( m_objectList ),
+	DEFINE_FIELD( m_nPriority,	FIELD_INTEGER ),
 END_DATADESC()
 
 
@@ -56,9 +46,10 @@ public:
 	{
 		m_coreList.FindAndRemove( core );
 	}
+	virtual const char *get_controller_name() { return "vphysics:motion"; }
 
 	virtual void SetEventHandler( IMotionEvent *handler );
-	virtual void AttachObject( IPhysicsObject *pObject );
+	virtual void AttachObject( IPhysicsObject *pObject, bool checkIfAlreadyAttached );
 	virtual void DetachObject( IPhysicsObject *pObject );
 
 	void RemoveCore( IVP_Core *pCore );
@@ -125,6 +116,7 @@ CPhysicsMotionController::CPhysicsMotionController( IMotionEvent *pHandler, CPhy
 
 CPhysicsMotionController::~CPhysicsMotionController( void )
 {
+	Assert( !m_pVEnv->IsInSimulation() );
 	for ( int i = 0; i < m_coreList.Count(); i++ )
 	{
 		m_coreList[i]->rem_core_controller( (IVP_Controller *)this );
@@ -139,11 +131,17 @@ void CPhysicsMotionController::do_simulation_controller(IVP_Event_Sim *event,IVP
 		{
 			IVP_U_Float_Point ivpSpeed, ivpRot;
 			IVP_Core *pCore = core_list->element_at(i);
-			Vector speed;
-			AngularImpulse rot;
 
 			IVP_Real_Object *pivp = pCore->objects.element_at(0);
 			IPhysicsObject *pPhys = static_cast<IPhysicsObject *>(pivp->client_data);
+			if ( !pPhys->IsMoveable() )
+				continue;
+
+			Vector speed;
+			AngularImpulse rot;
+			speed.Init();
+			rot.Init();
+
 			IMotionEvent::simresult_e ret = m_handler->Simulate( this, pPhys, event->delta_time, speed, rot );
 
 			switch( ret )
@@ -190,6 +188,8 @@ void CPhysicsMotionController::do_simulation_controller(IVP_Event_Sim *event,IVP
 				}
 				break;
 			}
+			// TODO(mastercoms): apply sv_maxvelocity?
+			//pCore->apply_velocity_limit();
 		}
 	}
 }
@@ -222,9 +222,8 @@ void CPhysicsMotionController::SetEventHandler( IMotionEvent *handler )
 	m_handler = handler;
 }
 
-void CPhysicsMotionController::AttachObject( IPhysicsObject *pObject )
+void CPhysicsMotionController::AttachObject( IPhysicsObject *pObject, bool checkIfAlreadyAttached )
 {
-	Assert(pObject);
 	// BUGBUG: Sometimes restore comes back with a NULL, REVISIT
 	if ( !pObject || pObject->IsStatic() )
 		return;
@@ -233,16 +232,22 @@ void CPhysicsMotionController::AttachObject( IPhysicsObject *pObject )
 	IVP_Real_Object *pIVP = pPhys->GetObject();
 	IVP_Core *pCore = pIVP->get_core();
 
-#if DEBUG
-	int index = m_coreList.Find(pCore);
-	if ( m_coreList.IsValidIndex(index) )
+	// UNDONE: On save/load, trigger-based motion controllers re-attach their objects.
+	// UNDONE: Do something cheaper about this?
+	// OPTIMIZE: Linear search here?
+	if ( checkIfAlreadyAttached )
 	{
-		Msg("Attached core twice!!!\n");
-		return;
+		int index = m_coreList.Find(pCore);
+		if ( m_coreList.IsValidIndex(index) )
+		{
+			DevMsg(1,"Attached core twice!!!\n");
+			return;
+		}
 	}
-#endif
 
 	m_coreList.AddToTail( pCore );
+
+	MEM_ALLOC_CREDIT();
 	pCore->add_core_controller( (IVP_Controller *)this );
 }
 
@@ -257,6 +262,7 @@ void CPhysicsMotionController::RemoveCore( IVP_Core *pCore )
 #endif
 		return;
 	}
+	//Assert( !m_pVEnv->IsInSimulation() );
 	m_coreList.Remove( index );
 	pCore->rem_core_controller( static_cast<IVP_Controller_Independent *>(this) );
 }
@@ -288,7 +294,7 @@ void CPhysicsMotionController::InitFromTemplate(  const vphysics_save_motioncont
 	int nObjectCount = controllerTemplate.m_objectList.Count();
 	for ( int i = 0; i < nObjectCount; ++i )
 	{
-		AttachObject( controllerTemplate.m_objectList[i] );
+		AttachObject( controllerTemplate.m_objectList[i], true );
 	}
 }
 

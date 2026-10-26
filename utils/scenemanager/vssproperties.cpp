@@ -1,11 +1,11 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include <stdio.h>
 #include "resource.h"
 #include "VSSProperties.h"

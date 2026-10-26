@@ -1,46 +1,50 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// This file contains code to perform dynamic occlusion in the engine
-//=============================================================================
+//===========================================================================//
 
 #include "IOcclusionSystem.h"
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "UtlSortVector.h"
 #include "utllinkedlist.h"
 #include "utlvector.h"
 #include "collisionutils.h"
+#include "filesystem.h"
 #include "gl_model_private.h"
 #include "gl_matsysiface.h"
-#include "glquake.h"
+#include "client.h"
+#include "gl_shader.h"
 #include "materialsystem/imesh.h"
 #include "tier0/vprof.h"
-
+#include "tier0/icommandline.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 // Uncomment this if you want to get a whole bunch of paranoid error checking
-//#define DEBUG_OCCLUSION_SYSTEM 1
+// #define DEBUG_OCCLUSION_SYSTEM 1
 
 
 //-----------------------------------------------------------------------------
 // Used to visualizes what the occlusion system is doing.
 //-----------------------------------------------------------------------------
-static ConVar r_visocclusion( "r_visocclusion", "0", 0, "Activate/deactivate wireframe rendering of what the occlusion system is doing." );
-static ConVar r_occlusion( "r_occlusion", "1", 0, "Activate/deactivate the occlusion system." );
-static ConVar r_occludermincount( "r_occludermincount", "6", 0, "At least this many occluders will be used, no matter how big they are." );
-static ConVar r_occlusionspew( "r_occlusionspew", "0", 0, "Activate/deactivates spew about what the occlusion system is doing." );
-static ConVar r_occluderminarea( "r_occluderminarea", "5", 0, "Prevents this occluder from being used if it takes up less than X% of the screen." );
-static ConVar r_occludeemaxarea( "r_occludeemaxarea", "5", 0, "Prevents occlusion testing for entities that take up more than X% of the screen." );
+#ifdef _X360
+#define DEFAULT_MIN_OCCLUDER_AREA  70.0f
+#else
+#define DEFAULT_MIN_OCCLUDER_AREA  5.0f
+#endif
+#define DEFAULT_MAX_OCCLUDEE_AREA  5.0f
 
+
+ConVar r_visocclusion( "r_visocclusion", "0", FCVAR_CHEAT, "Activate/deactivate wireframe rendering of what the occlusion system is doing." );
+ConVar r_occlusion( "r_occlusion", "1", 0, "Activate/deactivate the occlusion system." );
+static ConVar r_occludermincount( "r_occludermincount", "0", 0, "At least this many occluders will be used, no matter how big they are." );
+static ConVar r_occlusionspew( "r_occlusionspew", "0", FCVAR_CHEAT, "Activate/deactivates spew about what the occlusion system is doing." );
+ConVar r_occluderminarea( "r_occluderminarea", "0", 0, "Prevents this occluder from being used if it takes up less than X% of the screen. 0 means use whatever the level said to use." );
+ConVar r_occludeemaxarea( "r_occludeemaxarea", "0", 0, "Prevents occlusion testing for entities that take up more than X% of the screen. 0 means use whatever the level said to use." );
 
 #ifdef DEBUG_OCCLUSION_SYSTEM
 
@@ -50,6 +54,21 @@ static ConVar r_occtest( "r_occtest", "0" );
 bool s_bSpew = false;
 
 #endif // DEBUG_OCCLUSION_SYSTEM
+
+
+//-----------------------------------------------------------------------------
+// Visualization
+//-----------------------------------------------------------------------------
+struct EdgeVisualizationInfo_t
+{
+	Vector m_vecPoint[2];
+	unsigned char m_pColor[4];
+};
+
+//-----------------------------------------------------------------------------
+// Queued up rendering
+//-----------------------------------------------------------------------------
+static CUtlVector<EdgeVisualizationInfo_t> g_EdgeVisualization;
 
 
 //-----------------------------------------------------------------------------
@@ -92,6 +111,9 @@ public:
 
 	// Does this edge list occlude another winged edge list?
 	bool IsOccludingEdgeList( CWingedEdgeList &testList );
+
+	// Queues up stuff to visualize
+	void QueueVisualization( unsigned char *pColor );
 
 	// Renders the winged edge list
 	void Visualize( unsigned char *pColor );
@@ -543,12 +565,29 @@ inline CWingedEdgeList::WingedEdge_t *CWingedEdgeList::AdvanceActiveEdgeListToX(
 bool CWingedEdgeList::IsOccludingActiveEdgeList( CWingedEdgeList &testList, float y )
 {
 	WingedEdge_t *pTestEdge = testList.FirstActiveEdge();
-	pTestEdge = AdvanceActiveEdgeListToX( pTestEdge, -1.0f );
-	float flNextTestX = pTestEdge->m_flX;
 
 	// If the occludee is off screen, it's occluded
-	if ( flNextTestX >= 1.0f )
+	if ( pTestEdge->m_flX >= 1.0f )
 		return true;
+
+	pTestEdge = AdvanceActiveEdgeListToX( pTestEdge, -1.0f );
+
+	// If all occludee edges have x values <= -1.0f, it's occluded
+	if ( testList.AtListEnd( pTestEdge ) )
+		return true;
+
+	// Start at the first edge whose x value is <= -1.0f 
+	// if the occludee goes off the left side of the screen.
+	float flNextTestX = pTestEdge->m_flX;
+	if ( !testList.AtListStart( pTestEdge->m_pPrevActiveEdge ) )
+	{
+		// In this case, we should be on a span crossing from x <= -1.0f to x > 1.0f.
+		// Do the first occlusion test at x = -1.0f.
+		Assert( pTestEdge->m_flX > -1.0f );
+		pTestEdge = pTestEdge->m_pPrevActiveEdge;
+		Assert( pTestEdge->m_flX <= -1.0f );
+		flNextTestX = -1.0f;
+	}
 
 	WingedEdge_t *pOccluderEdge = FirstActiveEdge();
 	pOccluderEdge = AdvanceActiveEdgeListToX( pOccluderEdge, flNextTestX );
@@ -560,7 +599,7 @@ bool CWingedEdgeList::IsOccludingActiveEdgeList( CWingedEdgeList &testList, floa
 
 	float flCurrentX = flNextTestX;
 	float flNextOccluderX = pOccluderEdge->m_flX;
-	flNextTestX = pTestEdge->m_flX;
+	flNextTestX = pTestEdge->m_pNextActiveEdge->m_flX;
 
 	while ( true )
 	{
@@ -582,8 +621,15 @@ bool CWingedEdgeList::IsOccludingActiveEdgeList( CWingedEdgeList &testList, floa
 		{
 			flCurrentX = flNextTestX;
 			pTestEdge = pTestEdge->m_pNextActiveEdge;
-			pTestSurf = (pTestEdge->m_nEnterSurfID >= 0) ? &testList.m_Surfaces[pTestEdge->m_nEnterSurfID] : &m_BackSurface;
-			flNextTestX = pTestEdge->m_flX;
+			if ( pTestEdge->m_nEnterSurfID >= 0 )
+			{
+				pTestSurf = &testList.m_Surfaces[pTestEdge->m_nEnterSurfID];
+			}
+			else
+			{
+				pTestSurf = (pTestEdge->m_nLeaveSurfID >= 0) ? &testList.m_Surfaces[pTestEdge->m_nLeaveSurfID] : &m_BackSurface;
+			}
+			flNextTestX = pTestEdge->m_pNextActiveEdge->m_flX;
 		}
 		else
 		{
@@ -636,13 +682,22 @@ bool CWingedEdgeList::IsOccludingEdgeList( CWingedEdgeList &testList )
 		if ( !IsOccludingActiveEdgeList( testList, flCurrentY ) )
 			return false;
 
+		// If we got outside the screen bounds, then it's occluded!
+		if ( flCurrentY >= 1.0f )
+			return true;
+
 		float flTestY = testList.NextDiscontinuity();
 		float flOccluderY = NextDiscontinuity();
 		flCurrentY = min( flTestY, flOccluderY );
 
-		// If we got outside the screen bounds, then it's occluded!
-		if ( flCurrentY >= 1.0f )
-			return true;
+		// NOTE: This check here is to help occlusion @ the top of the screen
+		// We cut the occluders off at y = 1.0 + epsilon, which means there's
+		// not necessarily a discontinuity at y == 1.0. We need to create a discontinuity
+		// there so that the occluder edges are still being used.
+		if ( flCurrentY > 1.0f )
+		{
+			flCurrentY = 1.0f;
+		}
 
 		// If the occludee list is empty, then it's occluded! 
 		if ( !testList.AdvanceActiveEdgeList( flCurrentY ) )
@@ -654,6 +709,29 @@ bool CWingedEdgeList::IsOccludingEdgeList( CWingedEdgeList &testList )
 	}
 }
 
+
+//-----------------------------------------------------------------------------
+// Queues up stuff to visualize
+//-----------------------------------------------------------------------------
+void CWingedEdgeList::QueueVisualization( unsigned char *pColor )
+{
+#ifndef SWDS
+	if ( !r_visocclusion.GetInt() )
+		return;
+
+	int nFirst = g_EdgeVisualization.AddMultipleToTail( m_WingedEdges.Count() );
+	for ( int i = m_WingedEdges.Count(); --i >= 0; )
+	{
+		WingedEdge_t *pEdge = &m_WingedEdges[i];
+		EdgeVisualizationInfo_t &info = g_EdgeVisualization[nFirst + i];
+		info.m_vecPoint[0] = pEdge->m_vecPosition;
+		info.m_vecPoint[1] = pEdge->m_vecPositionEnd;
+		*(int*)(info.m_pColor) = *(int*)pColor;
+	}
+#endif
+}
+
+
 //-----------------------------------------------------------------------------
 // Renders the winged edge list for debugging
 //-----------------------------------------------------------------------------
@@ -663,32 +741,36 @@ void CWingedEdgeList::Visualize( unsigned char *pColor )
 	if ( !r_visocclusion.GetInt() )
 		return;
 
-	materialSystemInterface->MatrixMode( MATERIAL_MODEL );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	CMatRenderContextPtr pRenderContext( materials );
 
-	materialSystemInterface->MatrixMode( MATERIAL_VIEW );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	materialSystemInterface->MatrixMode( MATERIAL_PROJECTION );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	materialSystemInterface->Bind( g_pMaterialWireframeVertexColorIgnoreZ );
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+	pRenderContext->Bind( g_pMaterialWireframeVertexColorIgnoreZ );
+
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_LINES, m_WingedEdges.Count() );
 
 	int i;
-	for ( i = m_WingedEdges.Count(); --i >= 0; )
+	int nCount = m_WingedEdges.Count();
+	for ( i = nCount; --i >= 0; )
 	{
-		meshBuilder.Position3fv( m_WingedEdges[i].m_vecPosition.Base() );
+		WingedEdge_t *pEdge = &m_WingedEdges[i];
+		meshBuilder.Position3fv( pEdge->m_vecPosition.Base() );
 		meshBuilder.Color4ubv( pColor );
 		meshBuilder.AdvanceVertex();
 
-		meshBuilder.Position3fv( m_WingedEdges[i].m_vecPositionEnd.Base() );
+		meshBuilder.Position3fv( pEdge->m_vecPositionEnd.Base() );
 #ifdef DEBUG_OCCLUSION_SYSTEM
 		meshBuilder.Color4ub( 0, 0, 255, 255 );
 #else
@@ -700,14 +782,14 @@ void CWingedEdgeList::Visualize( unsigned char *pColor )
 	meshBuilder.End();
 	pMesh->Draw();
 
-	materialSystemInterface->MatrixMode( MATERIAL_MODEL );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PopMatrix();
 
-	materialSystemInterface->MatrixMode( MATERIAL_VIEW );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PopMatrix();
 
-	materialSystemInterface->MatrixMode( MATERIAL_PROJECTION );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
 #endif
 }
 
@@ -746,6 +828,7 @@ public:
 	void RemoveAll();
 
 	// Visualization
+	void QueueVisualization( unsigned char *pColor );
 	void Visualize( unsigned char *pColor );
 
 	// Access
@@ -781,10 +864,9 @@ private:
 		const Edge_t *m_pEdge;
 	};
 
-	struct EdgeCrossingInfo_t
+	enum
 	{
-		Edge_t *m_pFirstCrossing;
-		Edge_t *m_pLastCrossing;
+		MAX_EDGE_CROSSINGS = 64
 	};
 
 	typedef CUtlVector<Edge_t> EdgeList_t;
@@ -831,7 +913,7 @@ private:
 	void ReduceActiveEdgeList( CWingedEdgeList &newEdgeList, float flMinY, float flMaxY );
 
 	// Discovers the first edge crossing discontinuity
-	float LocateEdgeCrossingDiscontinuity( float flNextY, EdgeCrossingInfo_t *pInfo );
+	float LocateEdgeCrossingDiscontinuity( float flNextY, float flPrevY, int &nCount, Edge_t **pInfo );
 
 	// Generates a list of surfaces on the current scan line
 	void UpdateCurrentSurfaceZValues( float x, float y );
@@ -846,7 +928,7 @@ private:
 	void AdvanceActiveEdgeList( float flNextY );
 
 	void IntroduceNewActiveEdges( float y );
-	void ReorderActiveEdgeList( const EdgeCrossingInfo_t &info );
+	void ReorderActiveEdgeList( int nCount, Edge_t **ppInfo );
 
 	// Debugging spew
 	void SpewActiveEdgeList( float y, bool bHex = false );
@@ -854,8 +936,13 @@ private:
 	// Checks consistency of the edge list...
 	void CheckConsistency();
 
-	static bool EdgeLessFunc( const unsigned short& src1, const unsigned short& src2, void *pCtx );
-	static int SurfCompare( const void *elem1, const void *elem2 );
+	class EdgeLess
+	{
+	public:
+        bool Less( const unsigned short& src1, const unsigned short& src2, void *pCtx );
+	};
+
+	static int __cdecl SurfCompare( const void *elem1, const void *elem2 );
 
 private:
 	// Used to sort surfaces by screen area
@@ -863,7 +950,7 @@ private:
 
 	// List of all edges
 	EdgeList_t m_Edges;
-	CUtlSortVector<unsigned short> m_OrigSortIndices;
+	CUtlSortVector<unsigned short, EdgeLess > m_OrigSortIndices;
 	CUtlVector<unsigned short> m_SortIndices;
 	Edge_t m_StartTerminal;
 	Edge_t m_EndTerminal;
@@ -895,7 +982,7 @@ private:
 //-----------------------------------------------------------------------------
 // Used to sort the edge list
 //-----------------------------------------------------------------------------
-bool CEdgeList::EdgeLessFunc( const unsigned short& src1, const unsigned short& src2, void *pCtx )
+bool CEdgeList::EdgeLess::Less( const unsigned short& src1, const unsigned short& src2, void *pCtx )
 {
 	EdgeList_t *pEdgeList = (EdgeList_t*)pCtx;
 
@@ -923,7 +1010,7 @@ bool CEdgeList::EdgeLessFunc( const unsigned short& src1, const unsigned short& 
 //-----------------------------------------------------------------------------
 // Constructor
 //-----------------------------------------------------------------------------
-CEdgeList::CEdgeList() : m_Edges( 0, 32 ), m_OrigSortIndices( CEdgeList::EdgeLessFunc, 0, 32 )
+CEdgeList::CEdgeList() : m_Edges( 0, 32 ), m_OrigSortIndices( 0, 32 )
 {
 	m_OrigSortIndices.SetLessContext( &m_Edges );
 
@@ -1156,7 +1243,7 @@ void CEdgeList::AddEdge( Vector **ppEdgeVertices, int nSurfID )
 // Used to sort the surfaces
 //-----------------------------------------------------------------------------
 CEdgeList::Surface_t *CEdgeList::s_pSortSurfaces = NULL;
-int CEdgeList::SurfCompare( const void *elem1, const void *elem2 )
+int __cdecl CEdgeList::SurfCompare( const void *elem1, const void *elem2 )
 {
 	int nSurfID1 = *(int*)elem1;
 	float flArea1 = s_pSortSurfaces[nSurfID1].m_flArea;
@@ -1181,16 +1268,23 @@ void CEdgeList::CullSmallOccluders()
 	// Sort the surfaces by screen area, in descending order
 	int nSurfCount = m_Surfaces.Count();
 	s_pSortSurfaces = m_Surfaces.Base();
-	qsort( m_SurfaceSort.Base(), nSurfCount, sizeof(int), SurfCompare );
+
+	if( m_SurfaceSort.Base() )
+		qsort( m_SurfaceSort.Base(), nSurfCount, sizeof(int), SurfCompare );
 
 	// We're going to keep the greater of r_occludermin + All surfaces with a screen area >= r_occluderarea
 	int nMinSurfaces = r_occludermincount.GetInt();
 
 	// The *2 here is because surf areas are 2x bigger than actual
 	float flMinScreenArea = r_occluderminarea.GetFloat() * 0.02f;
+	if ( flMinScreenArea == 0.0f )
+	{
+		flMinScreenArea = OcclusionSystem()->MinOccluderArea() * 0.02f;
+	}
+
 	bool *bUseSurface = (bool*)stackalloc( nSurfCount * sizeof(bool) );
 	memset( bUseSurface, 0, nSurfCount * sizeof(bool) );
-	
+
 	int i;
 	for ( i = 0; i < nSurfCount; ++i )
 	{
@@ -1199,6 +1293,8 @@ void CEdgeList::CullSmallOccluders()
 			break;
 		bUseSurface[nSurfID] = true;
 	}
+
+	MEM_ALLOC_CREDIT();
 
 	int nEdgeCount = m_OrigSortIndices.Count();
 	m_SortIndices.RemoveAll();
@@ -1533,16 +1629,15 @@ void CEdgeList::ReduceActiveEdgeList( CWingedEdgeList &wingedEdgeList, float flM
 //-----------------------------------------------------------------------------
 // Discovers the first edge crossing discontinuity
 //-----------------------------------------------------------------------------
-float CEdgeList::LocateEdgeCrossingDiscontinuity( float flNextY, EdgeCrossingInfo_t *pInfo )
+float CEdgeList::LocateEdgeCrossingDiscontinuity( float flNextY, float flPrevY, int &nCount, Edge_t **ppInfo )
 {
+	nCount = 0;
 	float flCurrX = -FLT_MAX;
 	float flNextX = -FLT_MAX;
 	float flCurrY = flNextY;
 
 	Vector2D vecDelta, vecIntersection;
 	
-	pInfo->m_pFirstCrossing = NULL;
-	pInfo->m_pLastCrossing = NULL;
 	Edge_t *pCurEdge;
 	for ( pCurEdge = FirstActiveEdge(); !AtListEnd(pCurEdge); flCurrX = flNextX, pCurEdge = pCurEdge->m_pNextActiveEdge )
 	{
@@ -1585,20 +1680,30 @@ float CEdgeList::LocateEdgeCrossingDiscontinuity( float flNextY, EdgeCrossingInf
 		float flYCrossing = pPrevEdge->m_vecPosition.y + t;
 		
 		// Precision errors...
-		if ( flYCrossing >= flNextY )
+		// NOTE: The optimizer unfortunately causes this test to not return ==
+		// if the bitpattern of flYCrossing and flNextY are the exact same, because it's
+		// doing the test with the 80bit fp registers. flYCrossing is still sitting in the register
+		// from the computation on the line above, but flNextY isn't. Therefore it returns not equal.
+		// That's why I have to do the explicit bitpattern check.
+		if ( ( flYCrossing >= flNextY ) || ( *(int*)&flYCrossing == *(int*)&flNextY ) )
 			continue;
 
-		flNextX = pPrevEdge->m_vecPosition.x + t * pPrevEdge->m_flDxDy;
-		pInfo->m_pLastCrossing = pCurEdge;
+		if ( flYCrossing < flPrevY )
+		{
+			flYCrossing = flPrevY;
+		}
 
-		// This check is necessary to deal with the case where more than 2 edges meet at the same point
+		// If we advanced in Y, then reset the edge crossings
 		if ( flCurrY != flYCrossing )
 		{
-			pInfo->m_pFirstCrossing = pPrevEdge;
 			flCurrY	= flYCrossing;
+			nCount = 0;
 		}
+		
+		Assert( nCount < MAX_EDGE_CROSSINGS );
+		flNextX = pPrevEdge->m_vecPosition.x + t * pPrevEdge->m_flDxDy;
+		ppInfo[nCount++] = pCurEdge;
 	}
-
 	return flCurrY;
 }
 
@@ -1647,30 +1752,54 @@ void CEdgeList::AdvanceActiveEdgeList( float flCurrY )
 //-----------------------------------------------------------------------------
 // Reorders the active edge list based on where edge crossings occur
 //-----------------------------------------------------------------------------
-void CEdgeList::ReorderActiveEdgeList( const EdgeCrossingInfo_t &info )
+void CEdgeList::ReorderActiveEdgeList( int nCount, Edge_t **ppCrossings )
 {
-	// Re-order the list where the edge crossing occurred.
-	// For all edges that passed through the exact same point, we need only
-	// reverse the order of those edges. At the same time, slam the X value of each
-	// crossing edge to reduce precision errors
-	Edge_t *pFirstCrossing = info.m_pFirstCrossing;
-	Edge_t *pLastCrossing = info.m_pLastCrossing;
-
-	// First, bring shared (or nearly shared) edges into the crossing list...
-	while( pFirstCrossing->m_pPrevActiveEdge->m_flX == pFirstCrossing->m_flX )
+	int nCurCrossing = 0;
+	while ( nCurCrossing < nCount )
 	{
-		pFirstCrossing = pFirstCrossing->m_pPrevActiveEdge;
-	}
+		// Re-order the list where the edge crossing occurred.
+		// For all edges that passed through the exact same point, we need only
+		// reverse the order of those edges. At the same time, slam the X value of each
+		// crossing edge to reduce precision errors
 
-	// Slam all x values to be the same to avoid precision errors...
-	// This guarantees that this crossing at least will occur
-	float flXCrossing = pFirstCrossing->m_flX;
-	float flLastXCrossing = pLastCrossing->m_flX;
-	pLastCrossing->m_flX = flXCrossing;
-	while( pLastCrossing->m_pNextActiveEdge->m_flX == flLastXCrossing )
-	{
-		pLastCrossing = pLastCrossing->m_pNextActiveEdge;
-		pLastCrossing->m_flX = flXCrossing;
+		Edge_t *pCurCrossing = ppCrossings[nCurCrossing++];
+		Edge_t *pFirstCrossing = pCurCrossing->m_pPrevActiveEdge;
+
+		// First, bring shared (or nearly shared) edges into the crossing list...
+		while ( pFirstCrossing->m_pPrevActiveEdge->m_flX == pFirstCrossing->m_flX )
+		{
+			pFirstCrossing = pFirstCrossing->m_pPrevActiveEdge;
+		}
+
+		// Find the last crossing...
+		Edge_t *pLastCrossing = pCurCrossing->m_pNextActiveEdge;
+		Edge_t *pPrevCrossing = pCurCrossing;
+		while ( true )
+		{
+			if ( (nCurCrossing < nCount) && (pLastCrossing == ppCrossings[nCurCrossing]) )
+			{
+				pPrevCrossing = pLastCrossing;
+				pLastCrossing = pLastCrossing->m_pNextActiveEdge;
+				++nCurCrossing;
+				continue;
+			}
+
+			if ( pPrevCrossing->m_flX != pLastCrossing->m_flX )
+				break;
+
+			pLastCrossing = pLastCrossing->m_pNextActiveEdge;
+		}
+
+		// This should always be true, since there's always an edge at FLT_MAX.
+		Assert( pLastCrossing );
+
+		// Slam all x values to be the same to avoid precision errors...
+		// This guarantees that this crossing at least will occur
+		float flXCrossing = pFirstCrossing->m_flX;
+		for ( Edge_t *pCrossing = pFirstCrossing->m_pNextActiveEdge; pCrossing != pLastCrossing; pCrossing = pCrossing->m_pNextActiveEdge )
+		{
+			pCrossing->m_flX = flXCrossing;
+		}
 	}
 
 	// Now re-insert everything to take into account other edges which may well have 
@@ -1751,7 +1880,7 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 		newEdgeList.AddSurface( m_Surfaces[i].m_Plane );
 	}
 
-	EdgeCrossingInfo_t edgeCrossingInfo;
+	Edge_t *pEdgeCrossings[MAX_EDGE_CROSSINGS];
 	ReduceInfo_t *pBuf[2];
 	pBuf[0] = (ReduceInfo_t*)stackalloc( nEdgeCount * sizeof(ReduceInfo_t) );
 	pBuf[1] = (ReduceInfo_t*)stackalloc( nEdgeCount * sizeof(ReduceInfo_t) );
@@ -1763,16 +1892,17 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 
 	// We can skip everything up to y = -1.0f; since that's offscreen
 	float flPrevY = NextDiscontinuity();
-	flPrevY = max( -1.0f, flPrevY );
+	flPrevY = fpmax( -1.0f, flPrevY );
 
 	m_flNextDiscontinuity = FLT_MAX;
 	IntroduceNewActiveEdges( flPrevY );
 
+	int nEdgeCrossingCount = 0;
 	bool bDone = false;
 	while( !bDone )
 	{
 		// Don't immediately progress to the next discontinuity if there are edge crossings.
-		float flNextY = LocateEdgeCrossingDiscontinuity( NextDiscontinuity(), &edgeCrossingInfo );
+		float flNextY = LocateEdgeCrossingDiscontinuity( NextDiscontinuity(), flPrevY, nEdgeCrossingCount, pEdgeCrossings );
 
 #ifdef  DEBUG_OCCLUSION_SYSTEM
 		if ( s_bSpew )
@@ -1788,9 +1918,10 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 		m_nPrevReduceCount = m_nNewReduceCount;
 		m_nNewReduceCount = 0;
 
-		if (flNextY >= 1.0f)
+		// Add a small epsilon so we occlude things on the top edge at y = 1.0
+		if (flNextY >= 1.001f)
 		{
-			flNextY = 1.0f;
+			flNextY = 1.001f;
 			bDone = true;
 		}
 
@@ -1801,7 +1932,7 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 		AdvanceActiveEdgeList( flNextY );
 
 		// If we had an edge crossing, re-order the edges. Otherwise introduce new active edges
-		if ( edgeCrossingInfo.m_pFirstCrossing == NULL )
+		if ( !nEdgeCrossingCount )
 		{
 			IntroduceNewActiveEdges( flNextY );
 
@@ -1811,7 +1942,7 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 		}
 		else
 		{
-			ReorderActiveEdgeList( edgeCrossingInfo );
+			ReorderActiveEdgeList( nEdgeCrossingCount, pEdgeCrossings );
 			
 			// The next edge in y will also present a discontinuity
 			if ( m_nCurrentEdgeIndex < nEdgeCount )
@@ -1836,27 +1967,47 @@ void CEdgeList::ReduceActiveList( CWingedEdgeList &newEdgeList )
 //-----------------------------------------------------------------------------
 // Used to debug the occlusion system
 //-----------------------------------------------------------------------------
+void CEdgeList::QueueVisualization( unsigned char *pColor )
+{
+#ifndef SWDS
+	if ( !r_visocclusion.GetInt() )
+		return;
+
+	int nFirst = g_EdgeVisualization.AddMultipleToTail( m_Edges.Count() );
+	for ( int i = m_Edges.Count(); --i >= 0; )
+	{
+		EdgeVisualizationInfo_t &info = g_EdgeVisualization[nFirst + i];
+		info.m_vecPoint[0] = m_Edges[i].m_vecPosition;
+		info.m_vecPoint[1] = m_Edges[i].m_vecPositionEnd;
+		*(int*)(info.m_pColor) = *(int*)pColor;
+	}
+#endif
+}
+
+
 void CEdgeList::Visualize( unsigned char *pColor )
 {
 #ifndef SWDS
 	if ( !r_visocclusion.GetInt() )
 		return;
 
-	materialSystemInterface->MatrixMode( MATERIAL_MODEL );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	CMatRenderContextPtr pRenderContext( materials );
 
-	materialSystemInterface->MatrixMode( MATERIAL_VIEW );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	materialSystemInterface->MatrixMode( MATERIAL_PROJECTION );
-	materialSystemInterface->PushMatrix();
-	materialSystemInterface->LoadIdentity();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	materialSystemInterface->Bind( g_pMaterialWireframeVertexColorIgnoreZ );
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
 
-	IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+	pRenderContext->Bind( g_pMaterialWireframeVertexColorIgnoreZ );
+
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 	CMeshBuilder meshBuilder;
 	meshBuilder.Begin( pMesh, MATERIAL_LINES, m_Edges.Count() );
 
@@ -1879,17 +2030,16 @@ void CEdgeList::Visualize( unsigned char *pColor )
 	meshBuilder.End();
 	pMesh->Draw();
 
-	materialSystemInterface->MatrixMode( MATERIAL_MODEL );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PopMatrix();
 
-	materialSystemInterface->MatrixMode( MATERIAL_VIEW );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PopMatrix();
 
-	materialSystemInterface->MatrixMode( MATERIAL_PROJECTION );
-	materialSystemInterface->PopMatrix();
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
 #endif
 }
-
 
 
 //-----------------------------------------------------------------------------
@@ -1905,6 +2055,9 @@ public:
 	virtual void ActivateOccluder( int nOccluderIndex, bool bActive );
 	virtual void SetView( const Vector &vecCameraPos, float flFOV, const VMatrix &worldToCamera, const VMatrix &cameraToProjection, const VPlane &nearClipPlane );
 	virtual bool IsOccluded( const Vector &vecAbsMins, const Vector &vecAbsMaxs );
+	virtual void SetOcclusionParameters( float flMaxOccludeeArea, float flMinOccluderArea );
+	virtual float MinOccluderArea() const;
+	virtual void DrawDebugOverlays();
 
 private:
 	struct AxisAlignedPlane_t
@@ -1959,6 +2112,9 @@ private:
 	CWingedEdgeList m_WingedEdgeList;
 	CUtlVector< Vector > m_ClippedVerts;
 
+	float m_flMaxOccludeeArea;
+	float m_flMinOccluderArea;
+
 	// Stats
 	int m_nTests;
 	int m_nOccluded;
@@ -1985,10 +2141,27 @@ COcclusionSystem::COcclusionSystem() : m_ClippedVerts( 0, 64 )
 	m_bEdgeListDirty = false;
 	m_nTests = 0;
 	m_nOccluded = 0;
+	m_flMinOccluderArea = DEFAULT_MIN_OCCLUDER_AREA;
+	m_flMaxOccludeeArea = DEFAULT_MAX_OCCLUDEE_AREA;
 }
 
 COcclusionSystem::~COcclusionSystem()
 {
+}
+
+
+//-----------------------------------------------------------------------------
+// Occlusion parameters?
+//-----------------------------------------------------------------------------
+void COcclusionSystem::SetOcclusionParameters( float flMaxOccludeeArea, float flMinOccluderArea )
+{
+	m_flMaxOccludeeArea = (flMaxOccludeeArea ? flMaxOccludeeArea : DEFAULT_MAX_OCCLUDEE_AREA) * 0.01f;
+	m_flMinOccluderArea = (flMinOccluderArea ? flMinOccluderArea : DEFAULT_MIN_OCCLUDER_AREA);
+}
+
+float COcclusionSystem::MinOccluderArea() const
+{
+	return m_flMinOccluderArea;
 }
 
 
@@ -2180,6 +2353,7 @@ void COcclusionSystem::StitchClippedVertices( Vector *pVertices, int nCount )
 
 		if ( j < 0 )
 		{
+			MEM_ALLOC_CREDIT();
 			// No match found...
 			m_ClippedVerts.AddToTail( pVertices[i] );
 		}
@@ -2251,8 +2425,11 @@ void COcclusionSystem::AddPolygonToEdgeList( CEdgeList &edgeList, Vector **ppPol
 	{
 		// Using area times two simply because it's faster...
 		float flTriArea = TriArea2DTimesTwo( (*ppClipVertex[0]), (*ppClipVertex[k]), (*ppClipVertex[k+1]) );
-		Assert( flTriArea <= 1e-6 );
-		flScreenArea += -flTriArea;
+		Assert( flTriArea <= 1e-3 );
+		if ( flTriArea < 0 )
+		{
+			flScreenArea += -flTriArea;
+		}
 	}
 	edgeList.SetSurfaceArea( nSurfID, flScreenArea );
 
@@ -2284,32 +2461,41 @@ void COcclusionSystem::RecomputeOccluderEdgeList()
 	if ( !m_bEdgeListDirty )
 		return;
 
+	// Tracker 17772:  If building cubemaps can end up calling into here w/o cl.pAreaBits setup yet, oh well.
+	if ( !cl.m_bAreaBitsValid && CommandLine()->FindParm( "-buildcubemaps" ) )
+		return;
+	 
 	m_bEdgeListDirty = false;
 	m_EdgeList.RemoveAll();
 	m_WingedEdgeList.Clear();
 	m_ClippedVerts.RemoveAll();
 
-	mvertex_t *pVertices = host_state.worldmodel->brush.vertexes;
-	int *pIndices = host_state.worldmodel->brush.occludervertindices;
-	doccluderdata_t *pOccluders = host_state.worldmodel->brush.occluders;
+	mvertex_t *pVertices = host_state.worldbrush->vertexes;
+	int *pIndices = host_state.worldbrush->occludervertindices;
+	doccluderdata_t *pOccluders = host_state.worldbrush->occluders;
 
 	int i, j, k;
-	for ( i = host_state.worldmodel->brush.numoccluders ; --i >= 0; )
+	for ( i = host_state.worldbrush->numoccluders ; --i >= 0; )
 	{
 		if ( pOccluders[i].flags & OCCLUDER_FLAGS_INACTIVE )
+			continue;
+
+		// Skip the occluder if it's in a disconnected area
+		if ( cl.m_chAreaBits &&
+			(cl.m_chAreaBits[pOccluders[i].area >> 3] & (1 << ( pOccluders[i].area & 0x7 )) ) == 0 )
 			continue;
 
 		int nSurfID = pOccluders[i].firstpoly;
 		int nSurfCount = pOccluders[i].polycount;
 		for ( j = 0; j < nSurfCount; ++j, ++nSurfID )
 		{
-			doccluderpolydata_t *pSurf = &host_state.worldmodel->brush.occluderpolys[nSurfID];
+			doccluderpolydata_t *pSurf = &host_state.worldbrush->occluderpolys[nSurfID];
 
 			int nFirstVertexIndex = pSurf->firstvertexindex;
 			int nVertexCount = pSurf->vertexcount;
 
 			// If the surface is backfacing, blow it off...
-			const cplane_t &surfPlane = host_state.worldmodel->brush.planes[ pSurf->planenum ];
+			const cplane_t &surfPlane = host_state.worldbrush->planes[ pSurf->planenum ];
 			if ( DotProduct( surfPlane.normal, m_vecCameraPosition ) <= surfPlane.dist )
 				continue;
 
@@ -2343,8 +2529,9 @@ void COcclusionSystem::RecomputeOccluderEdgeList()
 	m_EdgeList.ReduceActiveList( m_WingedEdgeList ); 
 //	Msg("Edge count %d -> %d\n", m_EdgeList.EdgeCount(), m_WingedEdgeList.EdgeCount() );
 
+	// Draw the occluders
 	unsigned char color[4] = { 255, 255, 255, 255 };
-	m_WingedEdgeList.Visualize( color );
+	m_WingedEdgeList.QueueVisualization( color );
 }
 
 
@@ -2353,16 +2540,16 @@ void COcclusionSystem::RecomputeOccluderEdgeList()
 //-----------------------------------------------------------------------------
 void COcclusionSystem::ActivateOccluder( int nOccluderIndex, bool bActive )
 {
-	if ( ( nOccluderIndex >= host_state.worldmodel->brush.numoccluders ) || ( nOccluderIndex < 0 ) )
+	if ( ( nOccluderIndex >= host_state.worldbrush->numoccluders ) || ( nOccluderIndex < 0 ) )
 		return;
 
 	if ( bActive )
 	{
-		host_state.worldmodel->brush.occluders[nOccluderIndex].flags &= ~OCCLUDER_FLAGS_INACTIVE;
+		host_state.worldbrush->occluders[nOccluderIndex].flags &= ~OCCLUDER_FLAGS_INACTIVE;
 	}
 	else
 	{
-		host_state.worldmodel->brush.occluders[nOccluderIndex].flags |= OCCLUDER_FLAGS_INACTIVE;
+		host_state.worldbrush->occluders[nOccluderIndex].flags |= OCCLUDER_FLAGS_INACTIVE;
 	}
 
 	m_bEdgeListDirty = true;
@@ -2446,18 +2633,18 @@ struct EdgeInfo_t
 // for the first face listed and vert1 -> vert0 is clockwise for the 2nd face listed
 static EdgeInfo_t s_pEdges[12] = 
 {
-	{ 0, 1, 2, 4, 0, 0 },		// 0: Edge between -y + -z
-	{ 2, 0, 0, 4, 0, 0 },		// 1: Edge between -x + -z
-	{ 1, 3, 1, 4, 0, 0 },		// 2: Edge between +x + -z
-	{ 3, 2, 3, 4, 0, 0 },		// 3: Edge between +y + -z
-	{ 0, 4, 0, 2, 0, 0 },		// 4: Edge between -x + -y
-	{ 5, 1, 1, 2, 0, 0 },		// 5: Edge between +x + -y
-	{ 6, 2, 0, 3, 0, 0 },		// 6: Edge between -x + +y
-	{ 3, 7, 1, 3, 0, 0 },		// 7: Edge between +x + +y
-	{ 5, 4, 2, 5, 0, 0 },		// 8: Edge between -y + +z
-	{ 4, 6, 0, 5, 0, 0 },		// 9: Edge between -x + +z
-	{ 7, 5, 1, 5, 0, 0 },		// 10:Edge between +x + +z
-	{ 6, 7, 3, 5, 0, 0 },		// 11:Edge between +y + +z
+	{ { 0, 1 }, { 2, 4 }, 0, 0 },		// 0: Edge between -y + -z
+	{ { 2, 0 }, { 0, 4 }, 0, 0 },		// 1: Edge between -x + -z
+	{ { 1, 3 }, { 1, 4 }, 0, 0 },		// 2: Edge between +x + -z
+	{ { 3, 2 }, { 3, 4 }, 0, 0 },		// 3: Edge between +y + -z
+	{ { 0, 4 }, { 0, 2 }, 0, 0 },		// 4: Edge between -x + -y
+	{ { 5, 1 }, { 1, 2 }, 0, 0 },		// 5: Edge between +x + -y
+	{ { 6, 2 }, { 0, 3 }, 0, 0 },		// 6: Edge between -x + +y
+	{ { 3, 7 }, { 1, 3 }, 0, 0 },		// 7: Edge between +x + +y
+	{ { 5, 4 }, { 2, 5 }, 0, 0 },		// 8: Edge between -y + +z
+	{ { 4, 6 }, { 0, 5 }, 0, 0 },		// 9: Edge between -x + +z
+	{ { 7, 5 }, { 1, 5 }, 0, 0 },		// 10:Edge between +x + +z
+	{ { 6, 7 }, { 3, 5 }, 0, 0 },		// 11:Edge between +y + +z
 };
 
 static int s_pFaceEdges[6][4] = 
@@ -2476,42 +2663,50 @@ static int s_pFaceEdges[6][4] =
 //-----------------------------------------------------------------------------
 static CWingedEdgeList s_WingedTestEdgeList;
 
-static bool WingedEdgeLessFunc( const int& src1, const int& src2, void *pCtx )
+class WingedEdgeLessFunc
 {
-	Vector *pVertices = (Vector*)pCtx;
+public:
+	bool Less( const int& src1, const int& src2, void *pCtx )
+	{
+		Vector *pVertices = (Vector*)pCtx;
 
-	EdgeInfo_t *pEdge1 = &s_pEdges[ src1 ];
-	EdgeInfo_t *pEdge2 = &s_pEdges[ src2 ];
+		EdgeInfo_t *pEdge1 = &s_pEdges[ src1 ];
+		EdgeInfo_t *pEdge2 = &s_pEdges[ src2 ];
 
-	Vector *pV1 = &pVertices[ pEdge1->m_nVert[ pEdge1->m_nMinVert ] ];
-	Vector *pV2 = &pVertices[ pEdge2->m_nVert[ pEdge2->m_nMinVert ] ];
+		Vector *pV1 = &pVertices[ pEdge1->m_nVert[ pEdge1->m_nMinVert ] ];
+		Vector *pV2 = &pVertices[ pEdge2->m_nVert[ pEdge2->m_nMinVert ] ];
 
-	if (pV1->y < pV2->y)
-		return true;
-	if (pV1->y > pV2->y)
-		return false;
-	if (pV1->x < pV2->x)
-		return true;
-	if (pV1->x > pV2->x)
-		return false;
+		if (pV1->y < pV2->y)
+			return true;
+		if (pV1->y > pV2->y)
+			return false;
+		if (pV1->x < pV2->x)
+			return true;
+		if (pV1->x > pV2->x)
+			return false;
 
-	// This is the same as the following line:
-//	return (pEdge1->m_flDxDy <= pEdge2->m_flDxDy);
-	Vector2D dEdge1, dEdge2;
-	Vector2DSubtract( pVertices[ pEdge1->m_nVert[ 1 - pEdge1->m_nMinVert ] ].AsVector2D(), pV1->AsVector2D(), dEdge1 );
-	Vector2DSubtract( pVertices[ pEdge2->m_nVert[ 1 - pEdge2->m_nMinVert ] ].AsVector2D(), pV2->AsVector2D(), dEdge2 );
-	Assert( dEdge1.y >= 0.0f );
-	Assert( dEdge2.y >= 0.0f );
+		// This is the same as the following line:
+	//	return (pEdge1->m_flDxDy <= pEdge2->m_flDxDy);
+		Vector2D dEdge1, dEdge2;
+		Vector2DSubtract( pVertices[ pEdge1->m_nVert[ 1 - pEdge1->m_nMinVert ] ].AsVector2D(), pV1->AsVector2D(), dEdge1 );
+		Vector2DSubtract( pVertices[ pEdge2->m_nVert[ 1 - pEdge2->m_nMinVert ] ].AsVector2D(), pV2->AsVector2D(), dEdge2 );
+		Assert( dEdge1.y >= 0.0f );
+		Assert( dEdge2.y >= 0.0f );
 
-	return dEdge1.x * dEdge2.y <= dEdge1.y * dEdge2.x;
-}
+		return dEdge1.x * dEdge2.y <= dEdge1.y * dEdge2.x;
+	}
+};
 
 bool COcclusionSystem::IsOccluded( const Vector &vecAbsMins, const Vector &vecAbsMaxs )
 {
 	if ( r_occlusion.GetInt() == 0 )
 		return false;
 
-	VPROF_BUDGET( "COcclusionSystem::IsOccluded", "Occlusion" );
+	VPROF_BUDGET( "COcclusionSystem::IsOccluded", VPROF_BUDGETGROUP_OCCLUSION );
+
+	// @MULTICORE (toml 9/11/2006): need to eliminate this mutex
+	static CThreadFastMutex mutex;
+	AUTO_LOCK( mutex );
 
 	RecomputeOccluderEdgeList();
 
@@ -2538,10 +2733,12 @@ bool COcclusionSystem::IsOccluded( const Vector &vecAbsMins, const Vector &vecAb
 
 	float flScreenArea = m_flFOVFactor * flRadiusSq / (flDist * flDist);
 	float flMaxSize = r_occludeemaxarea.GetFloat() * 0.01f;
+	if ( flMaxSize == 0.0f )
+	{
+		flMaxSize = m_flMaxOccludeeArea;
+	}
 	if (flScreenArea >= flMaxSize)
 		return false;
-
-	++m_nTests;
 
 	// Clear out its state
 	s_WingedTestEdgeList.Clear();
@@ -2609,6 +2806,7 @@ bool COcclusionSystem::IsOccluded( const Vector &vecAbsMins, const Vector &vecAb
 	VectorSubtract( m_vecCameraPosition, *pCornerVert[1], vecDelta[1] );
 
 	// Determine which faces + edges are visible...
+	++m_nTests;
 	int pSurfInd[6];
 	for ( i = 0; i < 6; ++i )
 	{
@@ -2632,15 +2830,15 @@ bool COcclusionSystem::IsOccluded( const Vector &vecAbsMins, const Vector &vecAb
 
 		// Mark edges as being used...
 		int *pFaceEdges = s_pFaceEdges[i];
-		s_pEdges[ *pFaceEdges++ ].m_nTestCount = m_nTests;
-		s_pEdges[ *pFaceEdges++ ].m_nTestCount = m_nTests;
-		s_pEdges[ *pFaceEdges++ ].m_nTestCount = m_nTests;
-		s_pEdges[ *pFaceEdges ].m_nTestCount = m_nTests;
+		s_pEdges[ pFaceEdges[0] ].m_nTestCount = m_nTests;
+		s_pEdges[ pFaceEdges[1] ].m_nTestCount = m_nTests;
+		s_pEdges[ pFaceEdges[2] ].m_nTestCount = m_nTests;
+		s_pEdges[ pFaceEdges[3] ].m_nTestCount = m_nTests;
 	}
 
 	// Sort edges by minimum Y + dx/dy...
 	int pEdgeSort[12];
-	CUtlSortVector< int > edgeSort( WingedEdgeLessFunc, pEdgeSort, 12 );
+	CUtlSortVector< int, WingedEdgeLessFunc > edgeSort( pEdgeSort, 12 );
 	edgeSort.SetLessContext( pVecProjectedVertex );
 	for ( i = 0; i < 12; ++i )
 	{
@@ -2677,10 +2875,85 @@ bool COcclusionSystem::IsOccluded( const Vector &vecAbsMins, const Vector &vecAb
 	// Now let's see if this edge list is occluded or not..
 	bool bOccluded = m_WingedEdgeList.IsOccludingEdgeList( s_WingedTestEdgeList );
 	if (bOccluded)
+	{
 		++m_nOccluded;
+	}
 
-	s_WingedTestEdgeList.Visualize( s_VisualizationColor[bOccluded] );
+	s_WingedTestEdgeList.QueueVisualization( s_VisualizationColor[bOccluded] );
 
 	return bOccluded;
 }
 
+
+//-----------------------------------------------------------------------------
+// Used to debug the occlusion system
+//-----------------------------------------------------------------------------
+void VisualizeQueuedEdges( )
+{
+#ifndef SWDS
+	if ( !g_EdgeVisualization.Count() )
+		return;
+
+	CMatRenderContextPtr pRenderContext( materials );
+
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PushMatrix();
+	pRenderContext->LoadIdentity();
+
+	pRenderContext->Bind( g_pMaterialWireframeVertexColorIgnoreZ );
+
+	IMesh *pMesh = pRenderContext->GetDynamicMesh( );
+	CMeshBuilder meshBuilder;
+	meshBuilder.Begin( pMesh, MATERIAL_LINES, g_EdgeVisualization.Count() );
+
+	int i;
+	for ( i = g_EdgeVisualization.Count(); --i >= 0; )
+	{
+		EdgeVisualizationInfo_t &info = g_EdgeVisualization[i];
+
+		meshBuilder.Position3fv( info.m_vecPoint[0].Base() );
+		meshBuilder.Color4ubv( info.m_pColor );
+		meshBuilder.AdvanceVertex();
+
+		meshBuilder.Position3fv( info.m_vecPoint[1].Base() );
+#ifdef DEBUG_OCCLUSION_SYSTEM
+		meshBuilder.Color4ub( 0, 0, 255, 255 );
+#else
+		meshBuilder.Color4ubv( info.m_pColor );
+#endif
+		meshBuilder.AdvanceVertex();
+	}
+
+	meshBuilder.End();
+	pMesh->Draw();
+
+	pRenderContext->MatrixMode( MATERIAL_MODEL );
+	pRenderContext->PopMatrix();
+
+	pRenderContext->MatrixMode( MATERIAL_VIEW );
+	pRenderContext->PopMatrix();
+
+	pRenderContext->MatrixMode( MATERIAL_PROJECTION );
+	pRenderContext->PopMatrix();
+
+	g_EdgeVisualization.RemoveAll();
+#endif
+}
+
+
+//-----------------------------------------------------------------------------
+// Render debugging overlay
+//-----------------------------------------------------------------------------
+void COcclusionSystem::DrawDebugOverlays()
+{
+	// Draw the occludees
+	VisualizeQueuedEdges();
+}

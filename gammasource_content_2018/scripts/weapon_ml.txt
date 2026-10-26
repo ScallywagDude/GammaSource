@@ -1,0 +1,80 @@
+// Missile Launcher
+
+WeaponData
+{
+	"bucket_position_360"	"8"
+	"bucket_360"	"4"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"Missile Launcher"
+	"viewmodel"				"models/weapons/v_ml.mdl"
+	"playermodel"			"models/weapons/w_ml.mdl"
+	"anim_prefix"			"missile launcher"
+	"bucket"				"4"
+	"bucket_position"		"8"
+
+//	"clip_size"				"1"
+
+	"clip_size"				"-1"
+	"clip2_size"			"-1"
+	"default_clip"			"3"
+	"default_clip2"			"-1"
+
+	"primary_ammo"			"ML_Grenade"
+	"secondary_ammo"		"None"
+
+	"weight"				"2"
+	"item_flags"			"2"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"single_shot"		"Weapon_MissileLauncher.Single"
+		"single_shot_npc"	"Weapon_MissileLauncher.NPC_Single"
+		"double_shot"		"Weapon_MissileLauncher.Double"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons3"
+				"x"			"1"
+				"y"			"65"
+				"width"		"126"
+				"height"	"62"
+		}
+		"weapon_s"
+		{
+				"file"		"sprites/w_icons3b"
+				"x"			"0"
+				"y"			"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"0"
+				"y"			"0"
+				"width"		"128"
+				"height"	"30"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"48"
+				"y"			"72"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

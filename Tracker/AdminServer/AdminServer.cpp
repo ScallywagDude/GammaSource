@@ -1,40 +1,40 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "AdminServer.h"
-#include "serverpage.h"
 #include "IRunGameEngine.h"
-#include "ITrackerUser.h"
-#include "../TrackerNET/TrackerNET_Interface.h"
-#include "DialogGameInfo.h"
+#include "IGameServerData.h"
+#include "GamePanelInfo.h"
+#include "ivprofexport.h"
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISystem.h>
-#include <VGUI_IPanel.h>
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include "FileSystem.h"
-
-
+#include <vgui/ISystem.h>
+#include <vgui/IPanel.h>
+#include <vgui/IVGui.h>
+#include <vgui/ILocalize.h>
+#include <KeyValues.h>
+#include "filesystem.h"
 
 // expose the server browser interfaces
 CAdminServer g_AdminServerSingleton;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CAdminServer, IAdminServer, ADMINSERVER_INTERFACE_VERSION, g_AdminServerSingleton);
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CAdminServer, IVGuiModule, "VGuiModuleAdminServer001", g_AdminServerSingleton);
 
-IRunGameEngine *g_pRunGameEngine = NULL;
-ITrackerUser *g_pTrackerUser = NULL;
+IGameServerData *g_pGameServerData = NULL;
+IVProfExport *g_pVProfExport = NULL;
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
 CAdminServer::CAdminServer()
 {
+	// fill in the 0-based element of the manage servers list
+	OpenedManageDialog_t empty = { 0, NULL };
+	m_OpenedManageDialog.AddToTail(empty);
+	m_hParent=0;
 }
 
 //-----------------------------------------------------------------------------
@@ -45,34 +45,39 @@ CAdminServer::~CAdminServer()
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CAdminServer::CreateDialog()
-{
-	if (!m_hServerPage.Get())
-	{
-		m_hServerPage = new VInternetDlg( g_pTrackerUser->GetTrackerID());
-		m_hServerPage->Initialize();
-	}
-}
-
-//-----------------------------------------------------------------------------
 // Purpose: links to vgui and engine interfaces
 //-----------------------------------------------------------------------------
 bool CAdminServer::Initialize(CreateInterfaceFn *factorylist, int factoryCount)
 {
-	g_pRunGameEngine = NULL;
+	ConnectTier1Libraries( factorylist, factoryCount );
+	ConVar_Register();
+	ConnectTier2Libraries( factorylist, factoryCount );
+	ConnectTier3Libraries( factorylist, factoryCount );
 
+	// find our interfaces
 	for (int i = 0; i < factoryCount; i++)
 	{
-		if (!g_pRunGameEngine)
+		// if we're running locally we can get this direct interface to the game engine
+		if (!g_pGameServerData)
 		{
-			g_pRunGameEngine = (IRunGameEngine *)(factorylist[i])(RUNGAMEENGINE_INTERFACE_VERSION, NULL);
+			g_pGameServerData = (IGameServerData *)(factorylist[i])(GAMESERVERDATA_INTERFACE_VERSION, NULL);
+		}
+		if ( !g_pVProfExport )
+		{
+			g_pVProfExport = (IVProfExport*)(factorylist[i])( VPROF_EXPORT_INTERFACE_VERSION, NULL );
 		}
 	}
 
-	// load the vgui interfaces
-	return vgui::VGui_InitInterfacesList("TrackerAdminServer", factorylist, factoryCount);
+	RemoteServer().Initialize(); // now we have the game date interface, initialize the engine connection
+
+	if ( vgui::VGui_InitInterfacesList("AdminServer", factorylist, factoryCount) )
+	{
+		// load localization file
+		g_pVGuiLocalize->AddFile( "admin/admin_%language%.txt");
+		return true;
+	}
+
+	return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -80,26 +85,7 @@ bool CAdminServer::Initialize(CreateInterfaceFn *factorylist, int factoryCount)
 //-----------------------------------------------------------------------------
 bool CAdminServer::PostInitialize(CreateInterfaceFn *modules, int factoryCount)
 {
-	g_pTrackerUser = NULL;
-
-	// find the interfaces we need
-	for (int i = 0; i < factoryCount; i++)
-	{
-		if (!g_pRunGameEngine)
-		{
-			g_pRunGameEngine = (IRunGameEngine *)(modules[i])(RUNGAMEENGINE_INTERFACE_VERSION, NULL);
-		}
-
-		if (!g_pTrackerUser)
-		{
-			g_pTrackerUser = (ITrackerUser *)(modules[i])(TRACKERUSER_INTERFACE_VERSION, NULL);
-		}
-	}
-
-	CreateDialog();
-	m_hServerPage->SetVisible(false);
-
-	return (g_pRunGameEngine && g_pTrackerUser);
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -107,7 +93,7 @@ bool CAdminServer::PostInitialize(CreateInterfaceFn *modules, int factoryCount)
 //-----------------------------------------------------------------------------
 bool CAdminServer::IsValid()
 {
-	return (g_pRunGameEngine && g_pTrackerUser);
+	return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -115,16 +101,7 @@ bool CAdminServer::IsValid()
 //-----------------------------------------------------------------------------
 bool CAdminServer::Activate()
 {
-	Open();
 	return true;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CAdminServer::Open()
-{
-	m_hServerPage->Open();
 }
 
 //-----------------------------------------------------------------------------
@@ -132,7 +109,7 @@ void CAdminServer::Open()
 //-----------------------------------------------------------------------------
 vgui::VPANEL CAdminServer::GetPanel()
 {
-	return m_hServerPage.Get() ? m_hServerPage->GetVPanel() : NULL;
+	return NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -140,97 +117,81 @@ vgui::VPANEL CAdminServer::GetPanel()
 //-----------------------------------------------------------------------------
 void CAdminServer::Shutdown()
 {
-	if (m_hServerPage.Get())
+	DisconnectTier3Libraries();
+	DisconnectTier2Libraries();
+	ConVar_Unregister();
+	DisconnectTier1Libraries();
+}
+
+void CAdminServer::SetParent(vgui::VPANEL parent)
+{
+/*	if (m_hServerPage.Get())
 	{
-		vgui::ivgui()->PostMessage(m_hServerPage->GetVPanel(), new KeyValues("Close"), NULL);
-		m_hServerPage->MarkForDeletion();
+		m_hServerPage->SetParent(parent);
 	}
+	*/
+	m_hParent = parent;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Called when the user enters the game
 //-----------------------------------------------------------------------------
 void CAdminServer::Deactivate()
 {
-	if (m_hServerPage.Get())
-	{
-		vgui::ivgui()->PostMessage(m_hServerPage->GetVPanel(), new KeyValues("Close"), NULL);
-	}
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Called when the user returns from the game to the outside UI
 //-----------------------------------------------------------------------------
 void CAdminServer::Reactivate()
 {
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: opens a game info dialog to watch the specified server; associated with the friend 'userName'
+// Purpose: opens a manage server dialog for a local server
 //-----------------------------------------------------------------------------
-GameHandle_t CAdminServer::OpenGameInfoDialog(unsigned int gameIP, unsigned int gamePort, const char *userName)
+ManageServerUIHandle_t CAdminServer::OpenManageServerDialog(const char *serverName, const char *gameDir)
 {
-	// opens the game info dialog, but does not connect
-	if (m_hServerPage.Get())
-	{
-		vgui::Panel *dlg = m_hServerPage->OpenGameInfoDialog(gameIP, gamePort, userName);
+	CGamePanelInfo *tmp = new CGamePanelInfo(NULL, serverName, gameDir);
+	tmp->SetParent(m_hParent);
 
-		// return safe handle to the panel
-		return (GameHandle_t)vgui::ivgui()->PanelToHandle(dlg->GetVPanel());
-	}
+	// add a new item into the list
+	int i = m_OpenedManageDialog.AddToTail();
+	m_OpenedManageDialog[i].handle = vgui::ivgui()->PanelToHandle(tmp->GetVPanel());
+	m_OpenedManageDialog[i].manageInterface = tmp;
 
-	return (GameHandle_t)0;
+	return (ManageServerUIHandle_t)i;
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: joins a specified game - game info dialog will only be opened if the server is fully or passworded
+// Purpose: opens a manage server dialog to a remote server
 //-----------------------------------------------------------------------------
-GameHandle_t CAdminServer::JoinGame(unsigned int gameIP, unsigned int gamePort, const char *userName)
+ManageServerUIHandle_t CAdminServer::OpenManageServerDialog(unsigned int gameIP, unsigned int gamePort, const char *password)
 {
-	// open the game info dialog in connect-right-away-mode
-	if (m_hServerPage.Get())
-	{
-		vgui::Panel *dlg = m_hServerPage->JoinGame(gameIP, gamePort, userName);
-
-		// return safe handle to the panel
-		return (GameHandle_t)vgui::ivgui()->PanelToHandle(dlg->GetVPanel());
-	}
-
-	return (GameHandle_t)0;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: changes the game info dialog to watch a new server; normally used when a friend changes games
-//-----------------------------------------------------------------------------
-void CAdminServer::UpdateGameInfoDialog(GameHandle_t gameDialog, unsigned int gameIP, unsigned int gamePort)
-{
-	// updates an existing dialog with a new game (for if a friend changes games)
-	vgui::VPANEL vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
-	if (vpanel)
-	{
-		CDialogGameInfo *gameDialog = dynamic_cast<CDialogGameInfo *>(vgui::ipanel()->GetPanel(vpanel, vgui::GetControlsModuleName()));
-		if (gameDialog)
-		{
-			gameDialog->ChangeGame(gameIP, gamePort);
-		}
-	}
+	Assert(false);
+	return (ManageServerUIHandle_t)0;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: forces the game info dialog closed
 //-----------------------------------------------------------------------------
-void CAdminServer::CloseGameInfoDialog(GameHandle_t gameDialog)
+void CAdminServer::CloseManageServerDialog(ManageServerUIHandle_t gameDialog)
 {
-	// forces the dialog closed
-	vgui::VPANEL vpanel = vgui::ivgui()->HandleToPanel(gameDialog);
-	if (vpanel)
-	{
-		vgui::ivgui()->PostMessage(vpanel, new KeyValues("Close"), NULL);
-	}
+	Assert(false);
 }
 
-void CAdminServer::SetParent(vgui::VPANEL parent)
+//-----------------------------------------------------------------------------
+// Purpose: Gets a handle to the management interface
+//-----------------------------------------------------------------------------
+IManageServer *CAdminServer::GetManageServerInterface(ManageServerUIHandle_t handle)
 {
-    if (m_hServerPage.Get())
-        m_hServerPage->SetParent(parent);
+	// make sure it's safe
+	if ((int)handle < 1 || (int)handle > m_OpenedManageDialog.Count())
+		return NULL;
+
+	vgui::VPANEL panel = vgui::ivgui()->HandleToPanel(m_OpenedManageDialog[handle].handle);
+	if (!panel)
+		return NULL;
+	
+	return m_OpenedManageDialog[handle].manageInterface;
 }

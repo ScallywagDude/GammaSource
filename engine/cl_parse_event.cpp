@@ -1,40 +1,24 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "quakedef.h"
-#include "con_nprint.h"
+//=============================================================================//
+#include "client_pch.h"
 #include "dt_recv_eng.h"
-#include "cl_ents_parse.h"
 #include "client_class.h"
-#include "demo.h"
-#include "cdll_engine_int.h"
 
-static ConVar	cl_showevents		( "cl_showevents", "0", 0, "Print event firing info in the console" );
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-ClientClass* FindClientClass(ClientClass *pHead, const char *pClassName);
-
-//-----------------------------------------------------------------------------
-// Purpose: Zero out a "used" event
-// Input  : *ei - 
-//-----------------------------------------------------------------------------
-void CL_ResetEvent( CEventInfo *ei )
-{
-	ei->index = 0;
-	Q_memset( &ei->data, 0, sizeof( ei->data ) );
-	ei->fire_time = 0.0;
-	ei->flags = 0;
-	ei->bits = 0;
-}
+static ConVar cl_showevents	( "cl_showevents", "0", FCVAR_CHEAT, "Print event firing info in the console" );
 
 //-----------------------------------------------------------------------------
 // Purpose: Show descriptive info about an event in the numbered console area
 // Input  : slot - 
 //			*eventname - 
 //-----------------------------------------------------------------------------
-void CL_DescribeEvent( int slot, CEventInfo *event, const char *eventname )
+void CL_DescribeEvent( intp slot, CEventInfo *event, const char *eventname )
 {
 	int idx = (slot & 31);
 
@@ -52,7 +36,12 @@ void CL_DescribeEvent( int slot, CEventInfo *event, const char *eventname )
 	n.color[1] = 0.8;
 	n.color[2] = 1.0;
 
-	Con_NXPrintf( &n, "%02i %6.3ff %20s %03i bytes", slot, cl.gettime(), eventname, (int)( event->bits >> 3 ) );
+	Con_NXPrintf( &n, "%02i %6.3ff %20s %03i bytes", slot, cl.GetTime(), eventname, Bits2Bytes( event->bits ) );
+
+	if ( cl_showevents.GetInt() == 2 )
+	{
+		DevMsg( "%02i %6.3ff %20s %03i bytes\n", slot, cl.GetTime(), eventname, Bits2Bytes( event->bits ) );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -61,13 +50,13 @@ void CL_DescribeEvent( int slot, CEventInfo *event, const char *eventname )
 //			*pToData - 
 //			*pRecvTable - 
 //-----------------------------------------------------------------------------
-void CL_ParseEventDelta( void *RawData, void *pToData, RecvTable *pRecvTable )
+void CL_ParseEventDelta( void *RawData, void *pToData, RecvTable *pRecvTable, unsigned int uReadBufferSize )
 {
 	// Make sure we have a decoder
 	assert(pRecvTable->m_pDecoder);
 
 	// Only so much data allowed
-	bf_read fromBuf( "CL_ParseEventDelta->fromBuf", RawData, MAX_EVENT_DATA );
+	bf_read fromBuf( "CL_ParseEventDelta->fromBuf", RawData, uReadBufferSize );
 
 	// First, decode all properties as zeros since temp ents are delta'd from zeros.
 	RecvTable_DecodeZeros( pRecvTable, pToData, -1 );
@@ -85,243 +74,64 @@ void CL_ParseEventDelta( void *RawData, void *pToData, RecvTable *pRecvTable )
 //-----------------------------------------------------------------------------
 void CL_FireEvents( void )
 {
-	int				i;
-	CEventState	*es;
-	CEventInfo	*ei;
-	bool		success;
-
-	es = &cl.events;
-
-	for ( i = 0; i < MAX_EVENT_QUEUE; i++ )
+	VPROF("CL_FireEvents");
+	if ( !cl.IsActive() )
 	{
-		ei = &es->ei[ i ];
+		cl.events.RemoveAll();
+		return;
+	}
 
-		if ( ei->index == 0 )
-			continue;
+	intp i, next;
+	for ( i = cl.events.Head(); i != cl.events.InvalidIndex(); i = next )
+	{
+		next = cl.events.Next( i );
 
-		if ( cls.state == ca_disconnected )
+		CEventInfo *ei = &cl.events[ i ];
+		if ( ei->classID == 0 )
 		{
-			CL_ResetEvent( ei );
+			cl.events.Remove( i );
 			continue;
 		}
 
 		// Delayed event!
-		if ( ei->fire_time && ( ei->fire_time > cl.gettime() ) )
+		if ( ei->fire_delay && ( ei->fire_delay > cl.GetTime() ) )
 			continue;
 
-		success = false;
+		bool success = false;
 
-		// Look up the client class, etc.
-		//
-		ClientClass *pClientClass;
-		C_ServerClassInfo *pServerClass;
-		RecvTable *pRT;
-
-		// Match the server classes to the client classes.
-		pServerClass = cl.m_pServerClasses ? &cl.m_pServerClasses[ ei->index - 1 ] : NULL;
-		if ( pServerClass )
+		// Get the receive table if it exists
+		Assert( ei->pClientClass );
+				
+		// Get pointer to the event.
+		if( ei->pClientClass->m_pCreateEventFn )
 		{
-			// See if the client .dll has a handler for this class
-			pClientClass = FindClientClass( g_ClientDLL->GetAllClasses(), pServerClass->m_ClassName );
-			if ( pClientClass )
+			IClientNetworkable *pCE = ei->pClientClass->m_pCreateEventFn();
+			if(pCE)
 			{
-				// Get the receive table if it exists
-				pRT = pClientClass->m_pRecvTable;
-				if ( pRT )
-				{
-					// Get pointer to the event.
-					if(pClientClass->m_pCreateEventFn)
-					{
-						IClientNetworkable *pCE = pClientClass->m_pCreateEventFn();
-						if(pCE)
-						{
-							// Prepare to copy in the data
-							pCE->PreDataUpdate( DATA_UPDATE_CREATED );
+				// Prepare to copy in the data
+				pCE->PreDataUpdate( DATA_UPDATE_CREATED );
 
-							// Decode data into client event object
-							CL_ParseEventDelta( ei->data, pCE->GetDataTableBasePtr(), pRT );
+				// Decode data into client event object
+				unsigned int buffer_size = PAD_NUMBER( Bits2Bytes( ei->bits ), 4 );
+				CL_ParseEventDelta( ei->pData, pCE->GetDataTableBasePtr(), ei->pClientClass->m_pRecvTable, buffer_size );
 
-							// Fire the event!!!
-							pCE->PostDataUpdate( DATA_UPDATE_CREATED );
+				// Fire the event!!!
+				pCE->PostDataUpdate( DATA_UPDATE_CREATED );
 
-							// Spew to debug area if needed
-							CL_DescribeEvent( i, ei, (const char *)pServerClass->m_ClassName );
+				// Spew to debug area if needed
+				CL_DescribeEvent( i, ei, ei->pClientClass->m_pNetworkName );
 
-							success = true;
-						}
-					}
-				}
+				success = true;
 			}
 		}
 
 		if ( !success )
 		{
-			Con_DPrintf( "Failed to execute event for classId %i\n", ei->index - 1 );
+			ConDMsg( "Failed to execute event for classId %i\n", ei->classID - 1 );
 		}
 
-		// Zero out the remaining fields
-		CL_ResetEvent( ei );
+		cl.events.Remove( i );
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Find first empty event slot
-//-----------------------------------------------------------------------------
-CEventInfo *CL_FindEmptyEvent( void )
-{
-	int				i;
-	CEventState		*es;
-	CEventInfo		*ei;
 
-	es = &cl.events;
-
-	// Look for first slot where index is != 0
-	for ( i = 0; i < MAX_EVENT_QUEUE; i++ )
-	{
-		ei = &es->ei[ i ];
-		if ( ei->index != 0 )
-			continue;
-
-		return ei;
-	}
-
-	// No slots available
-	return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:  All slots are full, kill off the first one that's not reliable
-// Output : CEventInfo
-//-----------------------------------------------------------------------------
-CEventInfo *CL_FindUnreliableEvent( void )
-{
-	int i;
-	CEventState *es;
-	CEventInfo *ei;
-
-	es = &cl.events;
-	for ( i = 0; i < MAX_EVENT_QUEUE; i++ )
-	{
-		ei = &es->ei[ i ];
-		if ( ei->index != 0 )
-		{
-			// It's reliable, so skip it
-			if ( ei->flags & FEV_RELIABLE )
-			{
-				continue;
-			}
-		}
-
-		return ei;
-	}
-
-	// This should never happen
-	return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Places raw event data onto the event queue
-// Input  : flags - 
-//			index - 
-//			delay - 
-//			*pargs - 
-//-----------------------------------------------------------------------------
-void CL_QueueEvent( int flags, int index, float delay, unsigned char *pargs, int arglen )
-{
-	bool unreliable = !( flags & FEV_RELIABLE ) ? true : false;
-
-	CEventInfo *ei;
-
-	if ( unreliable )
-	{
-		// Don't actually queue unreliable events if playing a demo and skipping ahead
-		if ( demo->IsPlayingBack() && 
-			( demo->IsSkippingAhead() || demo->IsFastForwarding() ) )
-		{
-			return;
-		}
-	}
-
-	// Find a normal slot
-	ei = CL_FindEmptyEvent();
-	if ( !ei && unreliable )
-	{
-		return;
-	}
-
-	// Okay, so find any old unreliable slot
-	if ( !ei )
-	{
-		ei = CL_FindUnreliableEvent();
-		if ( !ei )
-		{
-			return;
-		}
-	}
-
-	ei->index			= index;
-	ei->fire_time		= delay ? ( cl.gettime() + delay ) : 0.0;
-	ei->flags			= flags;
-	
-	// Copy in raw event data
-	memcpy( ei->data, pargs, sizeof( ei->data ) );
-	ei->bits = arglen;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Parse a raw event from the network stream.
-//-----------------------------------------------------------------------------
-void CL_Parse_Event( void )
-{
-	int					i;
-	int					num_events;
-	int					event_index;
-	float				delay;
-	unsigned char		data[ 1024 ];
-	int					datalen;
-
-	num_events = MSG_ReadBitByte( Q_log2( MAX_EVENT_QUEUE ) );
-
-	for ( i = 0 ; i < num_events; i++ )
-	{
-		delay			= 0.0;
-
-		event_index = MSG_ReadBitLong( cl.m_nServerClassBits );
-
-		// Get event length
-		datalen = MSG_ReadBitShort( EVENT_DATA_LEN_BITS );
-		MSG_GetReadBuf()->ReadBits( data, datalen );		
-
-		if ( MSG_ReadOneBit() )
-		{
-			delay = (float)MSG_ReadBitShort( 16 ) / 100.0;
-		}
-	
-		// Place event on queue
-		CL_QueueEvent( 0, event_index, delay, data, datalen );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: Parses a reliable event from the network
-//-----------------------------------------------------------------------------
-void CL_Parse_ReliableEvent( void )
-{
-	int					event_index;
-	float				delay;
-	unsigned char		data[ 1024 ];
-	int					datalen;
-
-	delay			= 0.0;
-
-	event_index = MSG_ReadBitLong( cl.m_nServerClassBits );
-	// Get event length
-	datalen = MSG_ReadBitLong( EVENT_DATA_LEN_BITS );
-	MSG_GetReadBuf()->ReadBits( data, datalen );		
-	if ( MSG_ReadOneBit() )
-	{
-		delay = (float)MSG_ReadBitLong( 16 ) / 100.0;
-	}
-
-	CL_QueueEvent( FEV_RELIABLE, event_index, delay, data, datalen );
-}

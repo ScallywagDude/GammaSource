@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( ISYS_H )
 #define ISYS_H
 #ifdef _WIN32
@@ -12,13 +12,15 @@
 
 #include "interface.h"
 
-class ISys
+class CDedicatedAppSystemGroup;
+
+
+abstract_class ISys
 {
 public:
 	virtual				~ISys( void ) { } 
 
-	virtual bool		GameInit( CreateInterfaceFn dedicatedFactory ) = 0;
-	virtual void		GameShutdown( void ) = 0;
+	virtual bool		LoadModules( CDedicatedAppSystemGroup *pAppSystemGroup ) = 0;
 
 	virtual	void		Sleep( int msec ) = 0;
 	virtual bool		GetExecutableName( char *out ) = 0;
@@ -34,8 +36,8 @@ public:
 	virtual void		DestroyConsoleWindow( void ) = 0;
 
 	virtual void		ConsoleOutput ( char *string ) = 0;
-	virtual char		*ConsoleInput (void) = 0;
-	virtual void		Printf(char *fmt, ...) = 0;
+	virtual char		*ConsoleInput ( int index, char *buf, int buflen ) = 0;
+	virtual void		Printf( PRINTF_FORMAT_STRING const char *fmt, ...) FMTFUNCTION( 2, 3 ) = 0;
 };
 
 extern ISys *sys;

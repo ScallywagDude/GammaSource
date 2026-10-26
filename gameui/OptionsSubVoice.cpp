@@ -1,6 +1,12 @@
-#include <assert.h>
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "OptionsSubVoice.h"
-#include "CvarSlider.h"
+#include "cvarslider.h"
 #include <vgui/IVGui.h>
 #include <vgui_controls/ImagePanel.h>
 #include <vgui_controls/CheckButton.h>
@@ -8,7 +14,9 @@
 #include "EngineInterface.h"
 #include "ivoicetweak.h"
 #include "CvarToggleCheckButton.h"
-#include <KeyValues.h>
+#include "tier1/KeyValues.h"
+#include "tier1/convar.h"
+#include <steam/steam_api.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -21,9 +29,10 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 COptionsSubVoice::COptionsSubVoice(vgui::Panel *parent) : PropertyPage(parent, NULL)
 {
-//	m_pVoiceTweak = engine->pVoiceTweak;
+	m_pVoiceTweak = NULL;
+#if !defined( NO_VOICE ) //#ifndef _XBOX
 	m_pVoiceTweak = engine->GetVoiceTweakAPI();
-
+#endif
     m_pMicMeter = new ImagePanel(this, "MicMeter");
     m_pMicMeter2 = new ImagePanel(this, "MicMeter2");
 
@@ -82,7 +91,6 @@ void COptionsSubVoice::OnResetData()
 {
     if (!m_pVoiceTweak)
         return;
-//	m_pVoiceTweak->SetControlFloat(OtherSpeakerScale, engine->pfnGetCvarFloat( "voice_scale" ) );
 
 	float micVolume = m_pVoiceTweak->GetControlFloat( MicrophoneVolume );
 	m_pMicrophoneVolume->SetValue( (int)( 100.0f * micVolume ) );
@@ -211,13 +219,8 @@ void COptionsSubVoice::ResetVoiceParameters()
     m_pVoiceTweak->SetControlFloat( MicBoost, m_bMicBoostSelected ? 1.0f : 0.0f );
 
     // restore the old value
-//    engine->Cvar_SetValue( "voice_scale", m_fReceiveVolume );
-	// For SRC
-	ConVar *var = (ConVar *)cvar->FindVar( "voice_scale" );
-	if ( var )
-	{
-		var->SetValue( m_fReceiveVolume );
-	}
+	ConVarRef voice_scale( "voice_scale" );
+	voice_scale.SetValue( m_fReceiveVolume );
     
 	m_pReceiveVolume->Reset();
     // set the slider to 'new' value, but we've reset the 'start' value where it was
@@ -232,7 +235,10 @@ void COptionsSubVoice::EndTestMicrophone()
     if (!m_pVoiceTweak || !m_bVoiceOn)
         return;
 
-    m_pVoiceTweak->EndVoiceTweakMode();
+	if ( m_pVoiceTweak->IsStillTweaking() )
+	{
+		m_pVoiceTweak->EndVoiceTweakMode();
+	}
     ResetVoiceParameters();
     m_pTestMicrophoneButton->SetText("#GameUI_TestMicrophone");
     m_bVoiceOn = false;
@@ -262,6 +268,13 @@ void COptionsSubVoice::OnCommand( const char *command)
             EndTestMicrophone();
         }
     }
+	else if (!stricmp(command, "SteamVoiceSettings"))
+	{
+		if ( steamapicontext && steamapicontext->SteamFriends() )
+		{
+			steamapicontext->SteamFriends()->ActivateGameOverlay( "voicesettings" );
+		}
+	}
     else
 	{
         BaseClass::OnCommand(command);
@@ -300,29 +313,23 @@ void COptionsSubVoice::OnThink()
     BaseClass::OnThink();
     if (m_bVoiceOn)
     {
-//        int nValue = m_pVoiceTweak->GetSpeakingVolume();
-		float val = m_pVoiceTweak->GetControlFloat( MicrophoneVolume );
-		int nValue = static_cast<int>( val +0.5 );
+		if ( !m_pVoiceTweak->IsStillTweaking() )
+		{
+			DevMsg( 1, "Lost Voice Tweak channels, resetting\n" );
+			EndTestMicrophone();
+		}
+		else
+		{
+			float val = m_pVoiceTweak->GetControlFloat( SpeakingVolume );
+			int nValue = static_cast<int>( val*32768.0f + 0.5f );
 
-        int width = (BAR_WIDTH * nValue) / 32768;
-        width = ((width + (BAR_INCREMENT-1)) / BAR_INCREMENT) * BAR_INCREMENT;  // round to nearest BAR_INCREMENT
+			int width = (BAR_WIDTH * nValue) / 32768;
+			width = ((width + (BAR_INCREMENT-1)) / BAR_INCREMENT) * BAR_INCREMENT;  // round to nearest BAR_INCREMENT
 
-        int wide, tall;
-        m_pMicMeter2->GetSize(wide, tall);
-        m_pMicMeter2->SetSize(width, tall);
-        m_pMicMeter2->Repaint();
+			int wide, tall;
+			m_pMicMeter2->GetSize(wide, tall);
+			m_pMicMeter2->SetSize(width, tall);
+			m_pMicMeter2->Repaint();
+		}
     }
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: Message mapping 
-//-----------------------------------------------------------------------------
-MessageMapItem_t COptionsSubVoice::m_MessageMap[] =
-{
-	MAP_MESSAGE_INT( COptionsSubVoice, "SliderMoved", OnSliderMoved, "position" ),		// custom message
-	MAP_MESSAGE_INT( COptionsSubVoice, "CheckButtonChecked", OnCheckButtonChecked, "state" ),
-	MAP_MESSAGE( COptionsSubVoice, "PageHide", OnPageHide ),
-	MAP_MESSAGE( COptionsSubVoice, "ControlModified", OnControlModified),
-};
-
-IMPLEMENT_PANELMAP(COptionsSubVoice, BaseClass);

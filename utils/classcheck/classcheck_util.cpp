@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "stdafx.h"
 #include <io.h>
 #include <stdio.h>
@@ -43,7 +43,7 @@ void vprint( int depth, const char *fmt, ... )
 		}
 	}
 
-	::printf( string );
+	::printf( "%s", string );
 	OutputDebugString( string );
 
 	if ( fp )
@@ -191,6 +191,12 @@ skipwhite:
 		while (1)
 		{
 			Assert( len < 1024 );
+			if ( len >= 1024 )
+			{
+				com_token[ len -1 ] = 0;
+				return data;
+			}
+
 			c = *data++;
 			if ( (c=='\"' && !bEscapeSequence) || !c  && len < sizeof( com_token ) - 1 )
 			{
@@ -267,26 +273,6 @@ unsigned char *COM_LoadFile( const char *name, int *len)
 void COM_FreeFile( unsigned char *buffer )
 {
 	delete[] buffer;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *string - 
-//-----------------------------------------------------------------------------
-void UTIL_StripTrailingSlashes( char *string )
-{
-	while ( strlen( string ) >= 1 )
-	{
-		if ( string[ strlen( string ) - 1 ] == '/' ||
-			 string[ strlen( string ) - 1 ] == '\\' )
-		{
-			string[ strlen( string ) - 1 ] = 0;
-		}
-		else
-		{
-			break;
-		}
-	}
 }
 
 //-----------------------------------------------------------------------------

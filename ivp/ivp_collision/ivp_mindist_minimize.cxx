@@ -92,15 +92,15 @@ IVP_BOOL IVP_Mindist_Minimize_Solver::check_loop_hash(IVP_SYNAPSE_POLYGON_STATUS
     IVP_ASSERT( i_s0 < 4);
     IVP_ASSERT( i_s1 < 4);
 
-    int x0 = int(i_e0) | i_s0;
-    int x1 = int(i_e1) | i_s1;
+    intp x0 = intp(i_e0) | i_s0;
+    intp x1 = intp(i_e1) | i_s1;
 
     if (x0 < x1) {
 	int h = x0; x0 = x1; x1 = h;
     }
 
-    IVP_MM_Loop_Hash_Struct *s = & loop_hash[loop_hash_size-1];
-    for(int i = loop_hash_size-1; i>=0; i--){
+    IVP_MM_Loop_Hash_Struct *s = & loop_hash[loop_hash_size];
+    for(int i = loop_hash_size; i>=0; i--){
 	if ( s->a == x0 && s->b == x1){
 	    return IVP_TRUE;
 	}
@@ -127,8 +127,8 @@ void IVP_Mindist::mindist_rescue_push(){
     
     IVP_Real_Object *obj0 = get_synapse(0)->get_object();
     IVP_Real_Object *obj1 = get_synapse(1)->get_object();
-
-    obj0->get_environment()->get_anomaly_manager()->inter_penetration( this, obj0, obj1 );
+	// todo(crack); should a delta speed be calculated here?
+    obj0->get_environment()->get_anomaly_manager()->inter_penetration( this, obj0, obj1 , 0);
 }
 
 
@@ -279,12 +279,13 @@ IVP_MRC_TYPE IVP_Mindist::recalc_mindist()
 	    return res;
 	}
 	default:
-	    CORE;
+//	    CORE;
 	    break;
 	}
-	CORE;	
+//	CORE;	
     }	// while
-    CORE;
+//    CORE;
+// TODO(nillerusr): add warnings here instead of using CORE;
 }
 
 IVP_MRC_TYPE IVP_Mindist_Minimize_Solver::p_minimize_FF( const IVP_Compact_Edge *A,const IVP_Compact_Edge *B, IVP_Cache_Ledge_Point *m_cache_A, IVP_Cache_Ledge_Point *m_cache_B)
@@ -434,24 +435,24 @@ IVP_MRC_TYPE IVP_Mindist_Minimize_Solver::p_minimize_FF( const IVP_Compact_Edge 
 	      break;
 	    }
 	    default:
-		CORE;
+                printf("IVP_Mindist_Minimize_Solver::p_minimize_FF failed(%s:%d)\n", __FILE__, __LINE__);
 	  }
 	  break;
       };
       case IVP_ST_EDGE:{
-	  switch(syn1->get_status()){  
+	  switch(syn1->get_status()){
 	    case IVP_ST_EDGE:{
 		ret_val = p_minimize_KK(e0, e1, m_cache_0, m_cache_1);
 		break;
 	    }
 	  default:
-	      CORE;
+              printf("IVP_Mindist_Minimize_Solver::p_minimize_FF failed(%s:%d)\n", __FILE__, __LINE__);
 	      break;
 	  }
 	  break;
       }
       default:
-	CORE;
+          printf("IVP_Mindist_Minimize_Solver::p_minimize_FF failed(%s:%d)\n", __FILE__, __LINE__);
     }
     
     return ret_val;

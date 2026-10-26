@@ -1,51 +1,49 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: Engine specific CRC functions
 //
-// Purpose: 
-//
-// $Workfile:     $
-// $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include "checksum_engine.h"
 #include "bspfile.h"
 #include "filesystem.h"
 #include "filesystem_engine.h"
 
-/*
-====================
-COM_BlockSequenceCRCByte
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-For proxy protecting
-Turns the passed data into a 
-single byte block CRC based on current network sequence number.
-====================
-*/
-byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
+//-----------------------------------------------------------------------------
+// Purpose: For proxy protecting
+// Turns the passed data into a 
+// single byte block CRC based on current network sequence number.
+// Input  : *base - 
+//			length - 
+//			sequence - 
+// Output : byte COM_BlockSequenceCRCByte
+//-----------------------------------------------------------------------------
+byte COM_BlockSequenceCRCByte( byte *base, int length, int sequence )
 {
 	CRC32_t crc;
 	byte *p;
 	byte chkb[60 + 4];
 
 	if (sequence < 0)
+	{
 		Sys_Error("sequence < 0, in COM_BlockSequenceCRCByte\n");
+	}
 
-	p = (byte *)pulCRCTable + (sequence % (NUM_BYTES * sizeof(CRC32_t) - 4));
+	CRC32_t entry;
+	entry = CRC32_GetTableEntry( ( sequence + 1 ) % ( 256 * sizeof(CRC32_t) - 4 ) );
+	p = (byte *)&entry;
 
 	// Use up to the first 60 bytes of data and a 4 byte value from the 
 	//  CRC lookup table (divided into the sequence)
 
 	if (length > 60)
+	{
 		length = 60;
+	}
 	
 	memcpy (chkb, base, length);
 
@@ -68,7 +66,7 @@ byte COM_BlockSequenceCRCByte (byte *base, int length, int sequence)
 // YWB:  5/18
 /*
 ===================
-qboolean CRC_File(unsigned short *crcvalue, char *pszFileName)
+bool CRC_File(unsigned short *crcvalue, char *pszFileName)
 
   Computes CRC for given file.  If there is an error opening/reading the file, returns false,
   otherwise returns true and sets the crc value passed to it.  The value should be initialized
@@ -113,7 +111,7 @@ bool CRC_File(CRC32_t *crcvalue, const char *pszFileName)
 			break;
 		}
 		// If there was a disk error, indicate failure.
-		else if ( !g_pFileSystem->IsOk(fp) )
+		else if ( nBytesRead <= 0 || !g_pFileSystem->IsOk(fp) )
 		{
 			if ( fp )
 				g_pFileSystem->Close(fp);
@@ -129,7 +127,7 @@ bool CRC_File(CRC32_t *crcvalue, const char *pszFileName)
 // YWB:  5/18
 /*
 ===================
-qboolean CRC_MapFile(unsigned short *crcvalue, char *pszFileName)
+bool CRC_MapFile(unsigned short *crcvalue, char *pszFileName)
 
   Computes CRC for given map file.  If there is an error opening/reading the file, returns false,
   otherwise returns true and sets the crc value passed to it.  The value should be initialized
@@ -159,17 +157,25 @@ bool CRC_MapFile(CRC32_t *crcvalue, const char *pszFileName)
 	// Don't CRC the header.
 	if (g_pFileSystem->Read(&header, sizeof(dheader_t), fp) == 0)
 	{
-		Con_Printf("Could not read BSP header for map [%s].\n", pszFileName);
+		ConMsg("Could not read BSP header for map [%s].\n", pszFileName);
 		g_pFileSystem->Close(fp);
 		return false;
 	}
 
-	i = LittleLong (header.version);
-	if ( i != BSPVERSION )
+	i = header.version;
+	if ( i < MINBSPVERSION || i > BSPVERSION )
 	{
 		g_pFileSystem->Close(fp);
-		Con_Printf("Map [%s] has incorrect BSP version (%i should be %i).\n", pszFileName, i, BSPVERSION);
+		ConMsg("Map [%s] has incorrect BSP version (%i should be %i).\n", pszFileName, i, BSPVERSION);
 		return false;
+	}
+
+	if ( IsX360() )
+	{
+		// 360 bsp's store the pc checksum in the flags lump header
+		g_pFileSystem->Close(fp);
+		*crcvalue = header.lumps[LUMP_MAP_FLAGS].version;
+		return true;
 	}
 
 	// CRC across all lumps except for the Entities lump
@@ -213,6 +219,97 @@ bool CRC_MapFile(CRC32_t *crcvalue, const char *pszFileName)
 	return true;
 }
 
+bool MD5_MapFile(MD5Value_t *md5value, const char *pszFileName)
+{
+	FileHandle_t fp;
+	byte chunk[1024];
+	int i, l;
+	int nBytesRead;
+	dheader_t	header;
+	int nSize;
+	lump_t *curLump;
+	long startOfs;
+
+	nSize = COM_OpenFile(pszFileName, &fp);
+	if ( !fp || ( nSize == -1 ) )
+		return false;
+
+	MD5Context_t ctx;
+	V_memset( &ctx, 0, sizeof(MD5Context_t) );
+	MD5Init( &ctx );
+
+	startOfs = g_pFileSystem->Tell(fp);
+
+	// Don't MD5 the header.
+	if (g_pFileSystem->Read(&header, sizeof(dheader_t), fp) == 0)
+	{
+		ConMsg("Could not read BSP header for map [%s].\n", pszFileName);
+		g_pFileSystem->Close(fp);
+		return false;
+	}
+
+	i = header.version;
+	if ( i < MINBSPVERSION || i > BSPVERSION )
+	{
+		g_pFileSystem->Close(fp);
+		ConMsg("Map [%s] has incorrect BSP version (%i should be %i).\n", pszFileName, i, BSPVERSION);
+		return false;
+	}
+
+	if ( IsX360() )
+	{
+		// 360 bsp's store the pc checksum in the flags lump header
+		g_pFileSystem->Close(fp);
+		char versionString[65] = {0};
+		V_snprintf( versionString, ARRAYSIZE(versionString), "%d", header.lumps[LUMP_MAP_FLAGS].version );
+		V_memcpy( md5value->bits, versionString, MD5_DIGEST_LENGTH );
+		return true;
+	}
+
+	// MD5 across all lumps except for the Entities lump
+	for (l = 0; l < HEADER_LUMPS; l++)
+	{
+		if (l == LUMP_ENTITIES)
+			continue;
+
+		curLump = &header.lumps[l];
+		nSize = curLump->filelen;
+
+		g_pFileSystem->Seek( fp, startOfs + curLump->fileofs, FILESYSTEM_SEEK_HEAD );
+
+		// Now read in 1K chunks
+		while (nSize > 0)
+		{
+			if (nSize > 1024)
+				nBytesRead = g_pFileSystem->Read(chunk, 1024, fp);
+			else
+				nBytesRead = g_pFileSystem->Read(chunk, nSize, fp);
+
+			// If any data was received, CRC it.
+			if (nBytesRead > 0)
+			{
+				nSize -= nBytesRead;
+				MD5Update( &ctx, chunk, nBytesRead );
+			}
+
+			// If there was a disk error, indicate failure.
+			if ( !g_pFileSystem->IsOk(fp) )
+			{
+				if ( fp )
+					g_pFileSystem->Close(fp);
+				return false;
+			}
+		}	
+	}
+
+	if ( fp )
+		g_pFileSystem->Close(fp);
+
+	MD5Final( md5value->bits, &ctx );
+
+	return true;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : digest[16] - 
@@ -221,7 +318,7 @@ bool CRC_MapFile(CRC32_t *crcvalue, const char *pszFileName)
 //			seed[4] - 
 // Output : Returns true on success, false on failure.
 //-----------------------------------------------------------------------------
-bool MD5_Hash_File(unsigned char digest[16], char *pszFileName, bool bSeed /* = FALSE */, unsigned int seed[4] /* = NULL */)
+bool MD5_Hash_File(unsigned char digest[16], const char *pszFileName, bool bSeed /* = FALSE */, unsigned int seed[4] /* = NULL */)
 {
 	FileHandle_t fp;
 	byte chunk[1024];
@@ -283,3 +380,36 @@ bool MD5_Hash_File(unsigned char digest[16], char *pszFileName, bool bSeed /* = 
 	return TRUE;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+bool MD5_Hash_Buffer( unsigned char pDigest[16], const unsigned char *pBuffer, int nSize, bool bSeed /* = FALSE */, unsigned int seed[4] /* = NULL */ )
+{
+	MD5Context_t ctx;
+	
+	if ( !pBuffer || !nSize )
+		return false;
+
+	memset( &ctx, 0, sizeof( MD5Context_t ) );
+	MD5Init( &ctx );
+
+	if ( bSeed )
+	{
+		// Seed the hash with the seed value
+		MD5Update( &ctx, (const unsigned char *)&seed[0], 16 );
+	}
+
+	// Now read in 1024 chunks
+	const unsigned char *pChunk = pBuffer;
+	while ( nSize > 0 )
+	{
+		const int nChunkSize = MIN( 1024, nSize );
+		MD5Update( &ctx, pChunk, nChunkSize );
+		nSize -= nChunkSize;
+		pChunk += nChunkSize;	AssertValidReadPtr( pChunk );
+	}	
+
+	MD5Final( pDigest, &ctx );
+
+	return true;
+}

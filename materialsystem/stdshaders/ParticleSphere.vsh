@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "macros.vsh"
 
 $cQuarter = "c91.x";
@@ -60,7 +62,7 @@ mov oPos, $projPos
 ;------------------------------------------------------------------------------
 
 alloc $worldPos
-if( $g_fogType eq "heightfog" )
+if( $DOWATERFOG == 1 )
 {
 	; Get the worldpos z component only since that's all we need for height fog
 	dp4 $worldPos.z, $vPos, $cModel2
@@ -81,7 +83,7 @@ mov		a0.x, $vTexCoord0.z
 ;------------------------------------------------------------------------------
 
 mov		oT0, $vTexCoord0
-mov		oD1.xyz, $vColor
+mov		oT2.xyz, $vColor
 
 ; FIXME : the rest of this needs to use AllocateRegister
 
@@ -105,7 +107,7 @@ mov		r5.z, -r5.z				; This basis wants Z positive going into the screen
 								; so flip it here.
 
 								; r1 (up) = r5 x c24
-mul		r1, r5.xzyw, c90		; (This effectively does a cross product with [1,0,0,0]
+mul		r1, r5.xzyw, $SHADER_SPECIFIC_CONST_0; (This effectively does a cross product with [1,0,0,0]
 								; You wind up with [0, r5.z, -r5.y, 1]
 dp3		r2, r1, r1
 rsq		r2, r2

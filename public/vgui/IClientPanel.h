@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ICLIENTPANEL_H
 #define ICLIENTPANEL_H
@@ -61,9 +56,12 @@ public:
 
 	virtual void InternalFocusChanged(bool lost) = 0;
 	virtual bool RequestInfo(KeyValues *outputData) = 0;
-	virtual void RequestFocus(int direction = 0) = 0;
-	virtual void OnMessage(KeyValues *params, VPANEL ifromPanel) = 0;
+	virtual void RequestFocus(int direction) = 0;
+	virtual bool RequestFocusPrev(VPANEL existingPanel) = 0;
+	virtual bool RequestFocusNext(VPANEL existingPanel) = 0;
+	virtual void OnMessage(const KeyValues *params, VPANEL ifromPanel) = 0;
 	virtual VPANEL GetCurrentKeyFocus() = 0;
+	virtual int GetTabPosition() = 0;
 
 	// for debugging purposes
 	virtual const char *GetName() = 0;
@@ -71,6 +69,12 @@ public:
 
 	// get scheme handles from panels
 	virtual HScheme GetScheme() = 0;
+	// gets whether or not this panel should scale with screen resolution
+	virtual bool IsProportional() = 0;
+	// auto-deletion
+	virtual bool IsAutoDeleteSet() = 0;
+	// deletes this
+	virtual void DeletePanel() = 0;
 
 	// interfaces
 	virtual void *QueryInterface(EInterfaceID id) = 0;
@@ -80,6 +84,8 @@ public:
 
 	// returns the name of the module this panel is part of
 	virtual const char *GetModuleName() = 0;
+
+	virtual void OnTick() = 0;
 };
 
 } // namespace vgui

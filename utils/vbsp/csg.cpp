@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vbsp.h"
 
@@ -108,7 +115,7 @@ bspbrush_t *IntersectBrush (bspbrush_t *a, bspbrush_t *b)
 		in = back;
 	}
 
-	if (in == a)
+	if (in == a || !in)
 		return NULL;
 
 	in->next = NULL;
@@ -146,27 +153,6 @@ qboolean BrushesDisjoint (bspbrush_t *a, bspbrush_t *b)
 	}
 
 	return false;	// might intersect
-}
-
-/*
-===============
-IntersectionContents
-
-Returns a content word for the intersection of two brushes.
-Some combinations will generate a combination (water + clip),
-but most will be the stronger of the two contents.
-===============
-*/
-int	IntersectionContents (int c1, int c2)
-{
-	int		out;
-
-	out = c1 | c2;
-
-	if (out & CONTENTS_SOLID)
-		out = CONTENTS_SOLID;
-
-	return out;
 }
 
 
@@ -248,7 +234,7 @@ static bspbrush_t *CreateClippedBrush( mapbrush_t *mb, const Vector& clipmins, c
 	newbrush->numsides = nNumSides;
 	memcpy (newbrush->sides, mb->original_sides, nNumSides*sizeof(side_t));
 
-	for (j=0 ; j<nNumSides; j++)
+	for (int j=0 ; j<nNumSides; j++)
 	{
 		if (newbrush->sides[j].winding)
 		{
@@ -285,39 +271,63 @@ static void ComputeBoundingPlanes( const Vector& clipmins, const Vector& clipmax
 		VectorClear (normal);
 		normal[i] = 1;
 		dist = clipmaxs[i];
-		maxplanenums[i] = FindFloatPlane (normal, dist);
+		maxplanenums[i] = g_MainMap->FindFloatPlane (normal, dist);
 		dist = clipmins[i];
-		minplanenums[i] = FindFloatPlane (normal, dist);
+		minplanenums[i] = g_MainMap->FindFloatPlane (normal, dist);
 	}
 }
 
 
+//-----------------------------------------------------------------------------
 // This forces copies of texinfo data for matching sides of a brush
-void CopyMatchingTexinfos( bspbrush_t *pDest, const bspbrush_t *pSource )
+//-----------------------------------------------------------------------------
+void CopyMatchingTexinfos( side_t *pDestSides, int numDestSides, const bspbrush_t *pSource )
 {
-	for ( int i = 0; i < pDest->numsides; i++ )
+	for ( int i = 0; i < numDestSides; i++ )
 	{
-		side_t *pSide = &pDest->sides[i];
-		plane_t *pPlane = &mapplanes[pSide->planenum];
-		bool found = false;
-		for ( int j = 0; j < pSource->numsides; j++ )
-		{
-			const side_t *pSourceSide = &pSource->sides[j];
-			plane_t *pSourcePlane = &mapplanes[pSourceSide->planenum];
+		side_t *pSide = &pDestSides[i];
+		plane_t *pPlane = &g_MainMap->mapplanes[pSide->planenum];
 
-			float dot = DotProduct( pPlane->normal, pSourcePlane->normal );
-			if ( dot == 1.0 || pSide->planenum == pSourceSide->planenum )
+		// We have to use the *original sides* because MapBSPBrushList could have generated
+		// splits when cutting the original brush to the block being processed. This
+		// will generate faces that use TEXINFO_NODE, which is definitely *not* what we want.
+		// If we end up with faces using TEXINFO_NODE here, the area portal will flood into
+		// the entire water volume intersecting the areaportal.
+
+		mapbrush_t *pSourceBrush = pSource->original;
+		Assert( pSourceBrush );
+
+		const side_t *pSourceSide = pSourceBrush->original_sides;	
+		const side_t *pBestSide = NULL;
+		float flBestDot = -1.0f;
+		for ( int j = 0; j < pSourceBrush->numsides; ++j, ++pSourceSide )
+		{
+			if ( pSourceSide->texinfo == TEXINFO_NODE )
+				continue;
+
+			plane_t *pSourcePlane = &g_MainMap->mapplanes[pSourceSide->planenum];
+			float flDot = DotProduct( pPlane->normal, pSourcePlane->normal );
+			if ( flDot == 1.0f || pSide->planenum == pSourceSide->planenum )
 			{
-				found = true;
-				pSide->texinfo = pSourceSide->texinfo;
-				if ( pSide->original )
-				{
-					pSide->original->texinfo = pSide->texinfo;
-				}
+				pBestSide = pSourceSide;
 				break;
 			}
+			else if ( flDot > flBestDot )
+			{
+				pBestSide = pSourceSide;
+				flBestDot = flDot;
+			}
 		}
-		if ( !found )
+
+		if ( pBestSide )
+		{
+			pSide->texinfo = pBestSide->texinfo;
+			if ( pSide->original )
+			{
+				pSide->original->texinfo = pSide->texinfo;
+			}
+		}
+		else
 		{
 			texinfo_t *pTexInfo = &texinfo[pSide->texinfo];
 			dtexdata_t *pTexData = GetTexData( pTexInfo->texdata );
@@ -341,8 +351,13 @@ void FixupAreaportalWaterBrushes( bspbrush_t *pList )
 
 		for ( bspbrush_t *pWater = pList; pWater; pWater = pWater->next )
 		{
-			if ( !(pWater->original->contents & CONTENTS_WATER) )
+			// avoid using areaportal/water combo brushes that have already been fixed up
+			if ( pWater->original->contents & CONTENTS_AREAPORTAL )
 				continue;
+
+			if ( !(pWater->original->contents & MASK_SPLITAREAPORTAL) )
+				continue;
+
 			if ( BrushesDisjoint( pAreaportal, pWater ) )
 				continue;
 
@@ -351,10 +366,16 @@ void FixupAreaportalWaterBrushes( bspbrush_t *pList )
 				continue;
 			FreeBrush( pIntersect );
 			pAreaportal->original->contents |= pWater->original->contents;
-			CopyMatchingTexinfos( pAreaportal, pWater );
+
+			// HACKHACK: Ideally, this should have been done before the bspbrush_t was 
+			// created from the map brush.  But since it hasn't been, retexture the original map
+			// brush's sides
+			CopyMatchingTexinfos( pAreaportal->sides, pAreaportal->numsides, pWater );
+			CopyMatchingTexinfos( pAreaportal->original->original_sides, pAreaportal->original->numsides, pWater );
 		}
 	}
 }
+
 
 //-----------------------------------------------------------------------------
 // MakeBspBrushList 
@@ -369,8 +390,7 @@ bspbrush_t *MakeBspBrushList (int startbrush, int endbrush, const Vector& clipmi
 	int i;
 	for (i=startbrush ; i<endbrush ; i++)
 	{
-		mapbrush_t *mb = &mapbrushes[i];
-
+		mapbrush_t *mb = &g_MainMap->mapbrushes[i];
 		if ( detailScreen != FULL_DETAIL )
 		{
 			bool onlyDetail = (detailScreen == ONLY_DETAIL);
@@ -489,7 +509,7 @@ void WriteBrushMap (char *name, bspbrush_t *list)
 		fprintf (f, "{\n");
 		for (i=0,s=list->sides ; i<list->numsides ; i++,s++)
 		{
-			w = BaseWindingForPlane (mapplanes[s->planenum].normal, mapplanes[s->planenum].dist);
+			w = BaseWindingForPlane (g_MainMap->mapplanes[s->planenum].normal, g_MainMap->mapplanes[s->planenum].dist);
 
 			fprintf (f,"( %i %i %i ) ", (int)w->p[0][0], (int)w->p[0][1], (int)w->p[0][2]);
 			fprintf (f,"( %i %i %i ) ", (int)w->p[1][0], (int)w->p[1][1], (int)w->p[1][2]);
@@ -557,44 +577,47 @@ void WriteBrushVMF(char *name, bspbrush_t *list)
 }
 #endif
 
+void PrintBrushContentsToString( int contents, char *pOut, int nMaxChars )
+{
+	#define ADD_CONTENTS( flag ) \
+		if ( contents & flag ) \
+			Q_strncat( pOut, #flag " ", nMaxChars, COPY_ALL_CHARACTERS );
+
+	pOut[0] = 0;
+
+	ADD_CONTENTS(CONTENTS_SOLID)
+	ADD_CONTENTS(CONTENTS_WINDOW)
+	ADD_CONTENTS(CONTENTS_AUX)
+	ADD_CONTENTS(CONTENTS_GRATE)
+	ADD_CONTENTS(CONTENTS_SLIME)
+	ADD_CONTENTS(CONTENTS_WATER)
+	ADD_CONTENTS(CONTENTS_BLOCKLOS)
+	ADD_CONTENTS(CONTENTS_OPAQUE)
+	ADD_CONTENTS(CONTENTS_TESTFOGVOLUME)
+	ADD_CONTENTS(CONTENTS_MOVEABLE)
+	ADD_CONTENTS(CONTENTS_AREAPORTAL)
+	ADD_CONTENTS(CONTENTS_PLAYERCLIP)
+	ADD_CONTENTS(CONTENTS_MONSTERCLIP)
+	ADD_CONTENTS(CONTENTS_CURRENT_0)
+	ADD_CONTENTS(CONTENTS_CURRENT_90)
+	ADD_CONTENTS(CONTENTS_CURRENT_180)
+	ADD_CONTENTS(CONTENTS_CURRENT_270)
+	ADD_CONTENTS(CONTENTS_CURRENT_UP)
+	ADD_CONTENTS(CONTENTS_CURRENT_DOWN)
+	ADD_CONTENTS(CONTENTS_ORIGIN)
+	ADD_CONTENTS(CONTENTS_MONSTER)
+	ADD_CONTENTS(CONTENTS_DEBRIS)
+	ADD_CONTENTS(CONTENTS_DETAIL)
+	ADD_CONTENTS(CONTENTS_TRANSLUCENT)
+	ADD_CONTENTS(CONTENTS_LADDER)
+	ADD_CONTENTS(CONTENTS_HITBOX)
+}
+
 void PrintBrushContents( int contents )
 {
-	if( contents & CONTENTS_SOLID )
-	{
-		printf( "CONTENTS_SOLID " );
-	}
-	if( contents & CONTENTS_WINDOW )
-	{
-		printf( "CONTENTS_WINDOW " );
-	}
-	if( contents & CONTENTS_AUX )
-	{
-		printf( "CONTENTS_AUX " );
-	}
-	if( contents & CONTENTS_GRATE )
-	{
-		printf( "CONTENTS_GRATE " );
-	}
-	if( contents & CONTENTS_SLIME )
-	{
-		printf( "CONTENTS_SLIME " );
-	}
-	if( contents & CONTENTS_WATER )
-	{
-		printf( "CONTENTS_WATER " );
-	}
-	if( contents & CONTENTS_MIST )
-	{
-		printf( "CONTENTS_MIST " );
-	}
-	if( contents & CONTENTS_OPAQUE )
-	{
-		printf( "CONTENTS_OPAQUE " );
-	}
-	if( contents & CONTENTS_AREAPORTAL )
-	{
-		printf( "CONTENTS_AREAPORTAL " );
-	}
+	char str[1024];
+	PrintBrushContentsToString( contents, str, sizeof( str ) );
+	Msg( "%s", str );
 }
 
 /*
@@ -606,10 +629,10 @@ Returns true if b1 is allowed to bite b2
 */
 qboolean BrushGE (bspbrush_t *b1, bspbrush_t *b2)
 {
-	// Areaportals are allowed to bite water
+	// Areaportals are allowed to bite water + slime
 	// NOTE: This brush combo should have been fixed up
 	// in a first pass (FixupAreaportalWaterBrushes)
-	if( (b2->original->contents & CONTENTS_WATER) && 
+	if( (b2->original->contents & MASK_SPLITAREAPORTAL) && 
 		(b1->original->contents & CONTENTS_AREAPORTAL) )
 	{
 		return true;
@@ -647,8 +670,8 @@ bspbrush_t *ChopBrushes (bspbrush_t *head)
 	qprintf ("---- ChopBrushes ----\n");
 	qprintf ("original brushes: %i\n", CountBrushList (head));
 
-#if 0
-	if (startbrush == 0)
+#if DEBUG_BRUSHMODEL
+	if (entity_num == DEBUG_BRUSHMODEL)
 		WriteBrushList ("before.gl", head, false);
 #endif
 	keep = NULL;
@@ -748,8 +771,8 @@ newlist:
 	}
 
 	qprintf ("output brushes: %i\n", CountBrushList (keep));
-#if 0
-	if ( head->original->entitynum == 0 )
+#if DEBUG_BRUSHMODEL
+	if ( entity_num == DEBUG_BRUSHMODEL )
 	{
 		WriteBrushList ("after.gl", keep, false);
 		WriteBrushMap ("after.map", keep);
@@ -759,71 +782,3 @@ newlist:
 }
 
 
-/*
-=================
-InitialBrushList
-=================
-*/
-bspbrush_t *InitialBrushList (bspbrush_t *list)
-{
-	bspbrush_t *b;
-	bspbrush_t	*out, *newb;
-	int			i;
-
-	// only return brushes that have visible faces
-	out = NULL;
-	for (b=list ; b ; b=b->next)
-	{
-#if 0
-		for (i=0 ; i<b->numsides ; i++)
-			if (b->sides[i].visible)
-				break;
-		if (i == b->numsides)
-			continue;
-#endif
-		newb = CopyBrush (b);
-		newb->next = out;
-		out = newb;
-
-		// clear visible, so it must be set by MarkVisibleFaces_r
-		// to be used in the optimized list
-		for (i=0 ; i<b->numsides ; i++)
-		{
-			newb->sides[i].original = &b->sides[i];
-//			newb->sides[i].visible = true;
-			b->sides[i].visible = false;
-		}
-	}
-
-	return out;
-}
-
-/*
-=================
-OptimizedBrushList
-=================
-*/
-bspbrush_t *OptimizedBrushList (bspbrush_t *list)
-{
-	bspbrush_t *b;
-	bspbrush_t	*out, *newb;
-	int			i;
-
-	// only return brushes that have visible faces
-	out = NULL;
-	for (b=list ; b ; b=b->next)
-	{
-		for (i=0 ; i<b->numsides ; i++)
-			if (b->sides[i].visible)
-				break;
-		if (i == b->numsides)
-			continue;
-		newb = CopyBrush (b);
-		newb->next = out;
-		out = newb;
-	}
-
-//	WriteBrushList ("vis.gl", out, true);
-
-	return out;
-}

@@ -1,27 +1,22 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// Interfaces that all test cases must inherit from
-// and some macros to make it simple
-//=============================================================================
+//=============================================================================//
 	   
 #include "unitlib/unitlib.h"
 #include "tier0/dbg.h"
 #include <string.h>
+
+
 
 //-----------------------------------------------------------------------------
 //
 // Base class for test cases
 //
 //-----------------------------------------------------------------------------
-
 CTestCase::CTestCase( char const* pName, ITestSuite* pParent )
 {
 	Assert( pName );

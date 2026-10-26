@@ -1,16 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <windows.h>
 #include "HardwareMatrixState.h"
-#include <assert.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include "studio.h"
+#include "studiomdl.h"
 
 CHardwareMatrixState::CHardwareMatrixState()
 {
@@ -25,10 +26,10 @@ void CHardwareMatrixState::Init( int numHardwareMatrices )
 	m_NumMatrices = numHardwareMatrices;
 	delete [] m_matrixState;
 	m_matrixState = new MatrixState_t[m_NumMatrices];
-	assert( m_matrixState );
+	Assert( m_matrixState );
 	delete [] m_savedMatrixState;
 	m_savedMatrixState = new MatrixState_t[m_NumMatrices];
-	assert( m_savedMatrixState );
+	Assert( m_savedMatrixState );
 	m_LRUCounter = 0;
 	m_AllocatedMatrices = 0;
 
@@ -68,7 +69,7 @@ int CHardwareMatrixState::FindLocalLRUIndex( void )
 {
 	int oldestLRUCounter = INT_MAX;
 	int i;
-	int oldestID;
+	int oldestID = 0;
 
 	for( i = 0; i < m_NumMatrices; i++ )
 	{
@@ -83,7 +84,7 @@ int CHardwareMatrixState::FindLocalLRUIndex( void )
 		}
 	}
 
-	assert( oldestLRUCounter != INT_MAX );
+	Assert( oldestLRUCounter != INT_MAX );
 	return oldestID;
 }
 
@@ -182,8 +183,8 @@ int CHardwareMatrixState::GetNthBoneGlobalID( int n ) const
 			m++;
 		}
 	}
-	assert( 0 );
-	exit( -1 );
+	Assert( 0 );
+	MdlError( "GetNthBoneGlobalID() Failure\n" );
 	return 0;
 }
 
@@ -222,9 +223,10 @@ int CHardwareMatrixState::FindHardwareMatrix( int globalMatrixID )
 			return i;
 		}
 	}
-	assert( 0 );
-	printf( "barfing in FindHardwareMatrix\n" );
-	exit( -1 );
+
+	Assert( 0 );
+	MdlError( "barfing in FindHardwareMatrix\n" );
+
 	return 0;
 }
 

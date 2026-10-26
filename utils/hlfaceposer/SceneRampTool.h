@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef SCENERAMPTOOL_H
 #define SCENERAMPTOOL_H
@@ -10,9 +10,9 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "studio.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "faceposertoolwindow.h"
 
 class CChoreoEvent;
@@ -30,6 +30,14 @@ struct CExpressionSample;
 
 #define IDC_SRT_CHANGESCALE			1005
 #define IDC_SRT_RAMPHSCROLL			1006
+
+#define IDC_SRT_EDGEPROPERTIES		1007
+
+#define FP_SRT_SELECTION_TOLERANCE					30.0f
+#define FP_SRT_SELECTION_RECTANGLE_TOLERANCE		5.0f
+#define FP_SRT_ADDSAMPLE_TOLERANCE					5.0f
+
+template< class T > class CCurveEditorHelper;
 
 class SceneRampTool : public mxWindow, public IFacePoserToolWindow
 {
@@ -71,18 +79,29 @@ public:
 	void				SetScrubTargetTime( float t );
 
 	void				DrawSamplesSimple( CChoreoWidgetDrawHelper& drawHelper, CChoreoScene *scene, bool clearbackground, COLORREF sampleColor, RECT &rcSamples );
+
+	virtual void		OnModelChanged();
+
+	void				SetMousePositionForEvent( mxEvent *event );
+
+	int					NumSamples();
+	CExpressionSample	*GetSample( int idx );
+	void				PreDataChanged( char const *undodescription );
+	void				PostDataChanged( char const *redodescription );
+	CExpressionSample	*GetSampleUnderMouse( int mx, int my, float tolerance = FP_SRT_SELECTION_TOLERANCE );
+	void				GetWorkList( bool reflect, CUtlVector< SceneRampTool * >& list );
+
 private:
 
 	void				GetSampleTrayRect( RECT& rc );
 	void				DrawSamples( CChoreoWidgetDrawHelper& drawHelper, RECT &rcSamples );
 
 	void				SelectPoints( void );
-	CExpressionSample	*GetSampleUnderMouse( mxEvent *event );
 	void				DeselectAll();
 	void				SelectAll();
 	void				Delete( void );
 
-	int					CountSelectedSamples( void );
+	int					CountSelected( void );
 	void				MoveSelectedSamples( float dfdx, float dfdy );
 
 	void				StartDragging( int dragtype, int startx, int starty, HCURSOR cursor );
@@ -94,12 +113,16 @@ private:
 	void				SetClickedPos( int x, int y );
 	float				GetTimeForClickedPos( void );
 	
+	void				DrawAutoHighlight( mxEvent *event );
+
 	void				ApplyBounds( int& mx, int& my );
 	void				CalcBounds( int movetype );
 	void				OnUndo( void );
 	void				OnRedo( void );
 
 	void				OnRevert( void );
+
+	void				OnEdgeProperties();
 
 	void				DrawTimingTags( CChoreoWidgetDrawHelper& drawHelper, RECT& rc );
 	void				DrawRelativeTagsForEvent( CChoreoWidgetDrawHelper& drawHelper, RECT& rc, CChoreoEvent *event, float starttime, float endtime );
@@ -110,12 +133,11 @@ private:
 	void				MoveTimeSliderToPos( int x );
 	void				OnChangeScale();
 	int					ComputeHPixelsNeeded( void );
-	void				SetTimeZoomScale( int scale );
-	float				GetTimeZoomScale( void );
 	float				GetPixelsPerSecond( void );
 	void				InvalidateLayout( void );
 	void				RepositionHSlider( void );
 	void				GetStartAndEndTime( float& st, float& ed );
+	float				GetEventEndTime();
 	float				GetTimeValueForMouse( int mx, bool clip = false );
 	int					GetPixelForTimeValue( float time, bool *clipped = NULL );
 
@@ -156,11 +178,9 @@ private:
 	CUtlVector < CFocusRect >	m_FocusRects;
 
 	bool				m_bSuppressLayout;
-	// 100 == normal scale
-	int					m_nTimeZoom;
 	// Height/width of scroll bars
 	int					m_nScrollbarHeight;
-	int					m_nLeftOffset;
+	float				m_flLeftOffset;
 	mxScrollbar			*m_pHorzScrollBar;
 	int					m_nLastHPixelsNeeded;
 	// How many pixels per second we are showing in the UI
@@ -169,6 +189,11 @@ private:
 	bool				m_bLayoutIsValid;
 	float				m_flLastDuration;
 	float				m_flScrubberTimeOffset;
+	int					m_nUndoSetup;
+
+	CCurveEditorHelper< SceneRampTool >	*m_pHelper;
+
+	friend class		CChoreoView;
 };
 
 extern SceneRampTool	*g_pSceneRampTool;

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include <windows.h>
 #include "vis.h"
@@ -13,6 +20,8 @@
 #include "threadhelpers.h"
 #include "vstdlib/random.h"
 #include "vmpi_tools_shared.h"
+#include <conio.h>
+#include "scratchpad_helpers.h"
 
 
 #define VMPI_VVIS_PACKET_ID						1
@@ -23,7 +32,6 @@
 	#define VMPI_BASEPORTALVIS_RESULTS			7
 	#define VMPI_BASEPORTALVIS_WORKER_DONE		8
 	#define VMPI_PORTALFLOW_RESULTS				9
-	#define VMPI_MACHINE_NAME					10
 	#define VMPI_SUBPACKETID_BASEPORTALVIS_SYNC	11
 	#define VMPI_SUBPACKETID_PORTALFLOW_SYNC	12
 	#define VMPI_SUBPACKETID_MC_ADDR			13
@@ -32,12 +40,12 @@
 #define VMPI_DISTRIBUTEWORK_PACKETID			2
 
 
+extern bool fastvis;
 
 // The worker waits until these are true.
 bool g_bBasePortalVisSync = false;
 bool g_bPortalFlowSync = false;
 
-int g_nDisconnects = 0;
 CUtlVector<char> g_BasePortalVisResultsFilename;
 
 CCycleCount g_CPUTime;
@@ -73,12 +81,6 @@ bool VVIS_DispatchFn( MessageBuffer *pBuf, int iSource, int iPacketID )
 			return true;
 		}
 		
-		case VMPI_MACHINE_NAME:
-		{
-			VMPI_SetMachineName( iSource, &pBuf->data[2] );
-			return true;
-		}
-		
 		case VMPI_SUBPACKETID_BASEPORTALVIS_SYNC:
 		{
 			g_bBasePortalVisSync = true;
@@ -109,32 +111,6 @@ CDispatchReg g_DistributeWorkReg( VMPI_DISTRIBUTEWORK_PACKETID, DistributeWorkDi
 
 
 
-void HandleMPIDisconnect( int procID, const char *pReason )
-{
-	bool bOldSuppress = g_bSuppressPrintfOutput;
-	g_bSuppressPrintfOutput = true;
-
-		Warning( "\n\n--- WARNING: lost connection to '%s' (%s).\n", VMPI_GetMachineName( procID ), pReason );
-		
-		if ( g_bMPIMaster )
-		{
-			Warning( "%d workers remain.\n\n", VMPI_GetCurrentNumberOfConnections() - g_nDisconnects - 1 );
-
-			++g_nDisconnects;
-			if ( VMPI_GetCurrentNumberOfConnections() - g_nDisconnects <= 1 )
-			{
-				Error( "All machines disconnected!" );
-			}
-		}
-		else
-		{
-			Error( "Worker quitting." );
-		}
-	
-	g_bSuppressPrintfOutput = bOldSuppress;
-}
-
-
 void VMPI_DeletePortalMCSocket()
 {
 	// Stop the thread if it exists.
@@ -154,67 +130,58 @@ void VMPI_DeletePortalMCSocket()
 }
 
 
-void VVIS_SetupMPI( int argc, char **argv )
+void VVIS_SetupMPI( int &argc, char **&argv )
 {
+	if ( !VMPI_FindArg( argc, argv, "-mpi", "" ) && !VMPI_FindArg( argc, argv, VMPI_GetParamString( mpi_Worker ), "" ) )
+		return;
+
 	CmdLib_AtCleanup( VMPI_Stats_Term );
 	CmdLib_AtCleanup( VMPI_DeletePortalMCSocket );
 
-	//
-	// Preliminary check -mpi flag
-	//
-	g_bUseMPI = false;
-	int i;
-	for (i=1; i<argc; ++i) 
-	{
-		if (!stricmp(argv[i], "-mpi")) {
-			g_bUseMPI = true;
-			break;
-		}
-	}
-	
-	if ( !g_bUseMPI )
-		return;
-
 	VMPI_Stats_InstallSpewHook();
+
+	// Force local mode?
+	VMPIRunMode mode;
+	if ( VMPI_FindArg( argc, argv, VMPI_GetParamString( mpi_Local ), "" ) )
+		mode = VMPI_RUN_LOCAL;
+	else
+		mode = VMPI_RUN_NETWORKED;
 
 	//
 	//  Extract mpi specific arguments
 	//
-	Msg( "MPI - Establishing connections...\n" );
-	if ( !VMPI_Init( argc, argv, "dependency_info_vvis.txt" ) )
+	Msg( "Initializing VMPI...\n" );
+	if ( !VMPI_Init( argc, argv, "dependency_info_vvis.txt", HandleMPIDisconnect, mode ) )
 	{
 		Error( "MPI_Init failed." );
 	}
-	
-	VMPI_AddDisconnectHandler( HandleMPIDisconnect );
 
-	// Send around the machine name.
-	SendMachineName();
-
-	if ( !g_bMPI_NoStats )
-		StatsDB_InitStatsDatabase( argc, argv, "dbinfo_vvis.txt" );
+	StatsDB_InitStatsDatabase( argc, argv, "dbinfo_vvis.txt" );
 }
 
 
-void ProcessBasePortalVis( int iThread, int iPortal, MessageBuffer *pBuf )
+void ProcessBasePortalVis( int iThread, uint64 iPortal, MessageBuffer *pBuf )
 {
 	CTimeAdder adder( &g_CPUTime );
-		BasePortalVis( iThread, iPortal );
-	adder.End();
+
+	BasePortalVis( iThread, iPortal );
 
 	// Send my result to the master
-	portal_t * p = &portals[iPortal];
-	pBuf->write( p->portalfront, portalbytes );
-	pBuf->write( p->portalflood, portalbytes );
+	if ( pBuf )
+	{
+		portal_t * p = &portals[iPortal];
+		pBuf->write( p->portalfront, portalbytes );
+		pBuf->write( p->portalflood, portalbytes );
+	}
 }
 
 
-void ReceiveBasePortalVis( int iWorkUnit, MessageBuffer *pBuf, int iWorker )
+void ReceiveBasePortalVis( uint64 iWorkUnit, MessageBuffer *pBuf, int iWorker )
 {
 	portal_t * p = &portals[iWorkUnit];
 	if ( p->portalflood != 0 || p->portalfront != 0 || p->portalvis != 0) 
 	{
-		Msg("Duplicate portal %d\n", iWorkUnit);
+		Msg("Duplicate portal %llu\n", iWorkUnit);
 	}
 	
 	if ( pBuf->getLen() - pBuf->getOffset() != portalbytes*2 )
@@ -247,8 +214,11 @@ void RunMPIBasePortalVis()
 
 	Msg( "\n\nportalbytes: %d\nNum Work Units: %d\nTotal data size: %d\n", portalbytes, g_numportals*2, portalbytes*g_numportals*2 );
     Msg("%-20s ", "BasePortalVis:");
-	StartPacifier("");
+	if ( g_bMPIMaster )
+		StartPacifier("");
 
+
+	VMPI_SetCurrentStage( "RunMPIBasePortalVis" );
 
 	// Note: we're aiming for about 1500 portals in a map, so about 3000 work units.
 	g_CPUTime.Init();
@@ -259,38 +229,48 @@ void RunMPIBasePortalVis()
 		ReceiveBasePortalVis	// Master function to receive work results
 		);
 
+	if ( g_bMPIMaster )
+	{
+		EndPacifier( false );
+		Msg( " (%d)\n", (int)elapsed );
+	}
 	
 	//
 	// Distribute the results to all the workers.
 	//
 	if ( g_bMPIMaster )
 	{
-		// Store all the portal results in a temp file and multicast that to the workers.
-		CUtlVector<char> allPortalData;
-		allPortalData.SetSize( g_numportals * 2 * portalbytes * 2 );
-
-		char *pOut = allPortalData.Base();
-		for ( i=0; i < g_numportals * 2; i++) 
+		if ( !fastvis )
 		{
-			portal_t *p = &portals[i];
-			
-			memcpy( pOut, p->portalfront, portalbytes );
-			pOut += portalbytes;
-			
-			memcpy( pOut, p->portalflood, portalbytes );
-			pOut += portalbytes;
+			VMPI_SetCurrentStage( "SendPortalResults" );
+
+			// Store all the portal results in a temp file and multicast that to the workers.
+			CUtlVector<char> allPortalData;
+			allPortalData.SetSize( g_numportals * 2 * portalbytes * 2 );
+
+			char *pOut = allPortalData.Base();
+			for ( i=0; i < g_numportals * 2; i++) 
+			{
+				portal_t *p = &portals[i];
+				
+				memcpy( pOut, p->portalfront, portalbytes );
+				pOut += portalbytes;
+				
+				memcpy( pOut, p->portalflood, portalbytes );
+				pOut += portalbytes;
+			}
+
+			const char *pVirtualFilename = "--portal-results--";
+			VMPI_FileSystem_CreateVirtualFile( pVirtualFilename, allPortalData.Base(), allPortalData.Count() );
+
+			char cPacketID[2] = { VMPI_VVIS_PACKET_ID, VMPI_BASEPORTALVIS_RESULTS };
+			VMPI_Send2Chunks( cPacketID, sizeof( cPacketID ), pVirtualFilename, strlen( pVirtualFilename ) + 1, VMPI_PERSISTENT );
 		}
-		
-
-		const char *pVirtualFilename = "--portal-results--";
-		VMPI_FileSystem_CreateVirtualFile( pVirtualFilename, allPortalData.Base(), allPortalData.Count() );
-
-
-		char cPacketID[2] = { VMPI_VVIS_PACKET_ID, VMPI_BASEPORTALVIS_RESULTS };
-		VMPI_Send2Chunks( cPacketID, sizeof( cPacketID ), pVirtualFilename, strlen( pVirtualFilename ) + 1, VMPI_PERSISTENT );
 	}
 	else
 	{
+		VMPI_SetCurrentStage( "RecvPortalResults" );
+
 		// Wait until we've received the filename from the master.
 		while ( g_BasePortalVisResultsFilename.Count() == 0 )
 		{
@@ -298,7 +278,7 @@ void RunMPIBasePortalVis()
 		}
 
 		// Open 
-		FileHandle_t fp = g_pFileSystem->Open( g_BasePortalVisResultsFilename.Base(), "rb" );
+		FileHandle_t fp = g_pFileSystem->Open( g_BasePortalVisResultsFilename.Base(), "rb", VMPI_VIRTUAL_FILES_PATH_ID );
 		if ( !fp )
 			Error( "Can't open '%s' to read portal info.", g_BasePortalVisResultsFilename.Base() );
 
@@ -324,29 +304,32 @@ void RunMPIBasePortalVis()
 	
 	if ( !g_bMPIMaster )
 	{
-		Msg( "\n%% worker CPU utilization during BasePortalVis: %.1f\n", 
-			(g_CPUTime.GetSeconds() * 100.0f / elapsed) / numthreads );
+		if ( g_iVMPIVerboseLevel >= 1 )
+			Msg( "\n%% worker CPU utilization during BasePortalVis: %.1f\n", (g_CPUTime.GetSeconds() * 100.0f / elapsed) / numthreads );
 	}
 }
 
 
 
-void ProcessPortalFlow( int iThread, int iPortal, MessageBuffer *pBuf )
+void ProcessPortalFlow( int iThread, uint64 iPortal, MessageBuffer *pBuf )
 {
 	// Process Portal and distribute results
 	CTimeAdder adder( &g_CPUTime );
-		PortalFlow( iThread, iPortal );
-	adder.End();
+
+	PortalFlow( iThread, iPortal );
 
 	// Send my result to root and potentially the other slaves
 	// The slave results are read in RecursiveLeafFlow
 	//
-	portal_t * p = sorted_portals[iPortal];
-	pBuf->write( p->portalvis, portalbytes );
+	if ( pBuf )
+	{
+		portal_t * p = sorted_portals[iPortal];
+		pBuf->write( p->portalvis, portalbytes );
+	}
 }
 
 
-void ReceivePortalFlow( int iWorkUnit, MessageBuffer *pBuf, int iWorker )
+void ReceivePortalFlow( uint64 iWorkUnit, MessageBuffer *pBuf, int iWorker )
 {
 	portal_t *p = sorted_portals[iWorkUnit];
 
@@ -415,6 +398,126 @@ DWORD WINAPI PortalMCThreadFn( LPVOID p )
 }
 
 
+void MCThreadCleanupFn()
+{
+	g_MCThreadExitEvent.SetEvent();
+}
+		
+
+// --------------------------------------------------------------------------------- //
+// Cheesy hack to let them stop the job early and keep the results of what has
+// been done so far.
+// --------------------------------------------------------------------------------- //
+
+class CVisDistributeWorkCallbacks : public IWorkUnitDistributorCallbacks
+{
+public:
+	CVisDistributeWorkCallbacks()
+	{
+		m_bExitedEarly = false;
+		m_iState = STATE_NONE;
+	}
+	
+	virtual bool Update()
+	{
+		if ( kbhit() )
+		{
+			int key = toupper( getch() );
+			if ( m_iState == STATE_NONE )
+			{
+				if ( key == 'M' )
+				{
+					m_iState = STATE_AT_MENU;
+					Warning("\n\n"
+						"----------------------\n"
+						"1. Write scratchpad file.\n"
+						"2. Exit early and use fast vis for remaining portals.\n"
+						"\n"
+						"0. Exit menu.\n"
+						"----------------------\n"
+						"\n"
+						);
+				}
+			}
+			else if ( m_iState == STATE_AT_MENU )
+			{
+				if ( key == '1' )
+				{
+					Warning( 
+						"\n"
+						"\nWriting scratchpad file."
+						"\nCommand line: scratchpad3dviewer -file scratch.pad\n"
+						"\nRed portals are the portals that are fast vis'd." 
+						"\n"
+						);
+					m_iState = STATE_NONE;
+					IScratchPad3D *pPad = ScratchPad3D_Create( "scratch.pad" );
+					if ( pPad )
+					{
+						ScratchPad_DrawWorld( pPad, false );
+						
+						// Draw the portals that haven't been vis'd.
+						for ( int i=0; i < g_numportals*2; i++ )
+						{
+							portal_t *p = sorted_portals[i];
+							ScratchPad_DrawWinding( pPad, p->winding->numpoints, p->winding->points, Vector( 1, 0, 0 ), Vector( .3, .3, .3 ) );
+						}
+						
+						pPad->Release();
+					}
+				}
+				else if ( key == '2' )
+				{
+					// Exit the process early.
+					m_bExitedEarly = true;
+					return true;
+				}
+				else if ( key == '0' )
+				{
+					m_iState = STATE_NONE;
+					Warning( "\n\nExited menu.\n\n" );
+				}
+			}
+		}
+		
+		return false;
+	}
+	
+public:
+	enum
+	{
+		STATE_NONE,
+		STATE_AT_MENU
+	};
+	
+	bool m_bExitedEarly;
+	int m_iState; // STATE_ enum.
+};
+
+
+CVisDistributeWorkCallbacks g_VisDistributeWorkCallbacks;
+
+
+void CheckExitedEarly()
+{
+	if ( g_VisDistributeWorkCallbacks.m_bExitedEarly )
+	{
+		Warning( "\nExited early, using fastvis results...\n" );
+		Warning( "Exited early, using fastvis results...\n" );
+		
+		// Use the fastvis results for portals that we didn't get results for.
+		for ( int i=0; i < g_numportals*2; i++ )
+		{
+			if ( sorted_portals[i]->status != stat_done )
+			{
+				sorted_portals[i]->portalvis = sorted_portals[i]->portalflood;
+				sorted_portals[i]->status = stat_done;
+			}
+		}
+	}
+}
+
+
 //-----------------------------------------
 //
 // Run PortalFlow across all available processing nodes
@@ -422,8 +525,8 @@ DWORD WINAPI PortalMCThreadFn( LPVOID p )
 void RunMPIPortalFlow()
 {
     Msg( "%-20s ", "MPIPortalFlow:" );
-	StartPacifier("");
-
+	if ( g_bMPIMaster )
+		StartPacifier("");
 
 	// Workers wait until we get the MC socket address.
 	g_PortalMCThreadUniqueID = StatsDB_GetUniqueJobID();
@@ -441,7 +544,8 @@ void RunMPIPortalFlow()
 		g_PortalMCAddr.ip[3] = (unsigned char)RandomInt( 3, 255 );
 
 		g_pPortalMCSocket = CreateIPSocket();
-		for ( int i=0; i < 5; i++ )
+		int i=0;
+		for ( i; i < 5; i++ )
 		{
 			if ( g_pPortalMCSocket->BindToAny( randomStream.RandomInt( 20000, 30000 ) ) )
 				break;
@@ -456,6 +560,8 @@ void RunMPIPortalFlow()
 	}
 	else
 	{
+		VMPI_SetCurrentStage( "wait for MC address" );
+
 		while ( !g_bGotMCAddr )
 		{
 			VMPI_DispatchNextMessage();
@@ -473,6 +579,10 @@ void RunMPIPortalFlow()
 		// Make a thread to listen for the data on the multicast socket.
 		DWORD dwDummy = 0;
 		g_MCThreadExitEvent.Init( false, false );
+
+		// Make sure we kill the MC thread if the app exits ungracefully.
+		CmdLib_AtCleanup( MCThreadCleanupFn );
+		
 		g_hMCThread = CreateThread( 
 			NULL,
 			0,
@@ -487,6 +597,10 @@ void RunMPIPortalFlow()
 		}			
 	}
 
+	VMPI_SetCurrentStage( "RunMPIBasePortalFlow" );
+
+
+	g_pDistributeWorkCallbacks = &g_VisDistributeWorkCallbacks;
 
 	g_CPUTime.Init();
 	double elapsed = DistributeWork( 
@@ -495,21 +609,32 @@ void RunMPIPortalFlow()
 		ProcessPortalFlow,		// Worker function to process work units
 		ReceivePortalFlow		// Master function to receive work results
 		);
+		
+	g_pDistributeWorkCallbacks = NULL;
+
+	CheckExitedEarly();
 
 	// Stop the multicast stuff.
 	VMPI_DeletePortalMCSocket();
 
 	if( !g_bMPIMaster )
 	{
-		Msg( "Received %d (out of %d) portals from multicast.\n", g_nMulticastPortalsReceived, g_numportals * 2 );
-
-		Msg( "%% worker CPU utilization during PortalFlow: %.1f\n", 
-			(g_CPUTime.GetSeconds() * 100.0f / elapsed) / numthreads );
+		if ( g_iVMPIVerboseLevel >= 1 )
+		{
+			Msg( "Received %d (out of %d) portals from multicast.\n", g_nMulticastPortalsReceived, g_numportals * 2 );
+			Msg( "%.1f%% CPU utilization during PortalFlow\n", (g_CPUTime.GetSeconds() * 100.0f / elapsed) / numthreads );
+		}
 
 		Msg( "VVIS worker finished. Over and out.\n" );
+		VMPI_SetCurrentStage( "worker done" );
+
 		CmdLib_Exit( 0 );
 	}
 
-	EndPacifier( false );
+	if ( g_bMPIMaster )
+	{
+		EndPacifier( false );
+		Msg( " (%d)\n", (int)elapsed );
+	}
 }
 

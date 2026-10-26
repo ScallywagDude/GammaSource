@@ -1,15 +1,16 @@
-
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: This module implements the IVoiceServer interface.
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "quakedef.h"
 #include "server.h"
 #include "ivoiceserver.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 class CVoiceServer : public IVoiceServer
 {
@@ -21,29 +22,39 @@ public:
 		--iReceiver;
 		--iSender;
 
-		if(iReceiver < 0 || iReceiver >= svs.maxclients || iSender < 0 || iSender >= svs.maxclients)
+		if(iReceiver < 0 || iReceiver >= sv.GetClientCount() || iSender < 0 || iSender >= sv.GetClientCount() )
 			return false;
 
-		return !!svs.clients[iSender].m_VoiceStreams[iReceiver >> 5] & (1 << (iReceiver & 31));
+		return sv.GetClient(iSender)->IsHearingClient( iReceiver );
 	}
-
 	
 	virtual bool	SetClientListening(int iReceiver, int iSender, bool bListen)
 	{
-		unsigned long *pDest;
-
 		// Make into client indices..
 		--iReceiver;
 		--iSender;
 		
-		if(iReceiver < 0 || iReceiver >= svs.maxclients || iSender < 0 || iSender >= svs.maxclients)
+		if(iReceiver < 0 || iReceiver >= sv.GetClientCount() || iSender < 0 || iSender >= sv.GetClientCount() )
 			return false;
 
-		pDest = &svs.clients[iSender].m_VoiceStreams[iReceiver >> 5];
-		if(bListen)
-			*pDest |=  (1 << (iReceiver & 31));
-		else
-			*pDest &= ~(1 << (iReceiver & 31));
+		CGameClient *cl = sv.Client(iSender);
+			
+		cl->m_VoiceStreams.Set( iReceiver, bListen?1:0 );
+
+		return true;
+	}	
+	virtual bool	SetClientProximity(int iReceiver, int iSender, bool bUseProximity)
+	{
+		// Make into client indices..
+		--iReceiver;
+		--iSender;
+
+		if(iReceiver < 0 || iReceiver >= sv.GetClientCount() || iSender < 0 || iSender >= sv.GetClientCount() )
+			return false;
+
+		CGameClient *cl = sv.Client(iSender);
+
+		cl->m_VoiceProximity.Set( iReceiver, bUseProximity );
 
 		return true;
 	}	

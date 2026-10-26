@@ -1,3 +1,15 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+// SMTP RFC 821 Specifies <CR><LF> to terminate lines.
+//
+// <CR> = Carriage Return			C: \r	Dec: 13 Hex: 0x0d Oct: 0015
+// <LF> = Line Feed	( Newline )		C: \n	Dec: 10 Hex: 0x0a Oct: 0012
+//
+//=============================================================================//
 #pragma warning( disable : 4530 )
 
 #include <string>
@@ -85,7 +97,7 @@ void Error( const char *pString, ... )
 	va_list list;
 	va_start( list, pString );
 	vprintf( pString, list );
-	printf("Usage: smtpmail -to <address> -from <address> -subject \"subject text\" [-verbose] [-server server.name] <FILENAME.TXT>\n" );
+	printf("Usage: smtpmail -to <address(-es, ';' separated)> -from <address> -subject \"subject text\" [-verbose] [-server server.name] <FILENAME.TXT>\n" );
 	exit( 1 );
 }
 
@@ -95,9 +107,10 @@ void Error( const char *pString, ... )
 // Input  : socket - 
 //			*pData - 
 //-----------------------------------------------------------------------------
-void DumpSocket( HSOCKET socket, const char *pData )
+void DumpSocket( HSOCKET, const char *pData )
 {
 	printf( "%s", pData );
+	fflush( stdout );
 }
 
 
@@ -111,35 +124,41 @@ static char *months[] = { "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG"
 //			*pSubject - subject of the mail
 //			*fp - text mode file opened
 //-----------------------------------------------------------------------------
-void MailSendFile( HSOCKET socket, const char *pFrom, const char *pTo, const char *pSubject, FILE *fp )
+void MailSendFile( HSOCKET socket, const char *pFrom, const char *pTo[], const char *pSubject, FILE *fp )
 {
+	int i;
 	char buf[1024];
 
-	SocketSendString( socket, "HELO\n" );
+	SocketSendString( socket, "HELO\r\n" );
 	SocketWait( socket, "\n" );
-	sprintf( buf, "MAIL FROM: <%s>\n", pFrom );
+	sprintf( buf, "MAIL FROM: <%s>\r\n", pFrom );
 	SocketSendString( socket, buf );
 	SocketWait( socket, "\n" );
-	sprintf( buf, "RCPT TO: <%s>\n", pTo );
-	SocketSendString( socket, buf );
-	SocketWait( socket, "\n" );
-
-	SocketSendString( socket, "DATA\n" );
+	for (i = 0; pTo[i] != NULL; i++)
+	{
+		sprintf( buf, "RCPT TO: <%s>\r\n", pTo[i] );
+		SocketSendString( socket, buf );
+		SocketWait( socket, "\n" );
+	}
+	SocketSendString( socket, "DATA\r\n" );
 	SocketWait( socket, "\n" );
 
 	time_t currentTime;
 	time( &currentTime );
 	struct tm *localTime = gmtime( &currentTime );
 	
-	sprintf( buf, "DATE: %02d %s %4d %02d:%02d:%02d\n", localTime->tm_mday, months[localTime->tm_mon], localTime->tm_year+1900,
+	sprintf( buf, "DATE: %02d %s %4d %02d:%02d:%02d\r\n", localTime->tm_mday, months[localTime->tm_mon], localTime->tm_year+1900,
 			localTime->tm_hour, localTime->tm_min, localTime->tm_sec );
 
 	SocketSendString( socket, buf );
-	sprintf( buf, "FROM: %s\n", pFrom );
+	sprintf( buf, "FROM: %s\r\n", pFrom );
 	SocketSendString( socket, buf );
-	sprintf( buf, "TO: %s\n", pTo );
-	SocketSendString( socket, buf );
-	sprintf( buf, "SUBJECT: %s\n\n", pSubject );
+	for (i = 0; pTo[i] != NULL; i++)
+	{
+		sprintf( buf, "TO: %s\r\n", pTo[i] );
+		SocketSendString( socket, buf );
+	}
+	sprintf( buf, "SUBJECT: %s\r\n\r\n", pSubject );
 	SocketSendString( socket, buf );
 
 	while ( !feof( fp ) )
@@ -147,12 +166,12 @@ void MailSendFile( HSOCKET socket, const char *pFrom, const char *pTo, const cha
 		fgets( buf, 1024, fp );
 		
 		// A period on a line by itself would end the transmission
-		if ( !strcmp( buf, ".\n" ) )
+		if ( !strcmp( buf, ".\n" ) && !strcmp( buf, ".\r\n" ) )
 			continue;
 
 		SocketSendString( socket, buf );
 	}
-	SocketSendString( socket, "\n.\n" );
+	SocketSendString( socket, "\r\n.\r\n" );
 	SocketWait( socket, "\n" );
 }
 
@@ -163,13 +182,25 @@ int main( int argc, char *argv[] )
 
 	ArgsInit( argc, argv );
 
-	const char *pServerName = ArgsGet( "-server", "mail.valvesoftware.com" );
-	const char *pTo = ArgsGet( "-to", NULL );
-
-	if ( !pTo )
+	const char *pServerName = ArgsGet( "-server", "smtp1.valvesoftware.com" );
+	
+	const char *pTo[100];
+	pTo[0] = ArgsGet( "-to", NULL );
+	if ( !pTo[0] )
 	{
-		Error( "Must specify a recipient with -to <address>\n" );
+		Error( "Must specify a recipient with -to <address(es)>\n" );
 	}
+
+	// split ; separated To string into an array of strings
+	int c = 0;
+	char *where;
+	while (((where = (char *)strchr(pTo[c++],';')) != NULL) && c < 99)
+	{
+		*(where++) = '\0';
+		pTo[c] = where;
+	}
+	pTo[c] = NULL;
+
 	const char *pFrom = ArgsGet( "-from", NULL );
 	if ( !pFrom )
 	{
@@ -200,7 +231,7 @@ int main( int argc, char *argv[] )
 	{
 		SocketWait( socket, "\n" );
 		MailSendFile( socket, pFrom, pTo, pSubject, fp );
-		SocketSendString( socket, "quit\n" );
+		SocketSendString( socket, "quit\r\n" );
 		SocketWait( socket, "\n" );
 		SocketClose( socket );
 	}

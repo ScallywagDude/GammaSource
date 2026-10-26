@@ -1,35 +1,69 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "expressions.h"
-#include <mx/mx.h>
-#include "ControlPanel.h"
+//=============================================================================//
 #include "hlfaceposer.h"
+#include "expressions.h"
+#include <mxtk/mx.h>
+#include "ControlPanel.h"
 #include "StudioModel.h"
-#include "cmdlib.h"
-#include "scriplib.h"
 #include "expclass.h"
 #include "mxExpressionTab.h"
 #include "mxExpressionTray.h"
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "faceposer_models.h"
-#include "UtlDict.h"
+#include "utldict.h"
+#include "scriplib.h"
+#include "checksum_crc.h"
 
 bool Sys_Error(const char *pMsg, ...);
 extern char g_appTitle[];
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-struct CFlexControllerName
-{
-	bool dummy;
-};
+static CUtlVector< CUtlSymbol > g_GlobalFlexControllers;
+static CUtlDict< int, int >		g_GlobalFlexControllerLookup; 
 
-static CUtlDict< CFlexControllerName, int > g_GlobalFlexControllers;
+void ChecksumFlexControllers( bool bSpew, char const *name, CRC32_t &crc, const float *settings, const float *weights )
+{
+	CRC32_Init( &crc );
+
+	// Walk them alphabetically so that load order doesn't matter
+	for ( int i = g_GlobalFlexControllerLookup.First() ; 
+		i != g_GlobalFlexControllerLookup.InvalidIndex(); 
+		i = g_GlobalFlexControllerLookup.Next( i ) )
+	{
+		int controllerIndex = g_GlobalFlexControllerLookup[ i ];
+		char const *pszName = g_GlobalFlexControllerLookup.GetElementName( i );
+		
+		// Only count active controllers in checksum
+		float s = settings[ controllerIndex ];
+		float w = weights[ controllerIndex ];
+
+		if ( s == 0.0f && w == 0.0f )
+		{
+			 continue;
+		}
+
+		CRC32_ProcessBuffer( &crc, (void *)pszName, Q_strlen( pszName ) );
+		CRC32_ProcessBuffer( &crc, (void *)&s, sizeof( s ) );
+		CRC32_ProcessBuffer( &crc, (void *)&w, sizeof( w ) );
+
+		if ( bSpew )
+		{
+			Msg( "[%d] %s == %f %f\n", controllerIndex, pszName, s, w );
+		}
+	}
+
+	CRC32_Final( &crc );
+
+	if ( bSpew )
+	{
+		char hex[ 17 ];
+		Q_binarytohex( (const byte *)&crc, sizeof( crc ), hex, sizeof( hex ) );
+		Msg( "%s checksum = %sf\n", name, hex );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -38,7 +72,7 @@ static CUtlDict< CFlexControllerName, int > g_GlobalFlexControllers;
 //-----------------------------------------------------------------------------
 char const *GetGlobalFlexControllerName( int index )
 {
-	return g_GlobalFlexControllers.GetElementName( index );
+	return g_GlobalFlexControllers[ index ].String();
 }
 
 //-----------------------------------------------------------------------------
@@ -54,21 +88,19 @@ int GetGlobalFlexControllerCount( void )
 // Input  : *szName - 
 // Output : int
 //-----------------------------------------------------------------------------
-int AddGlobalFlexController( StudioModel *model, char *szName )
+int AddGlobalFlexController( StudioModel *model, const char *szName )
 {
-	int idx = g_GlobalFlexControllers.Find( szName );
-	if ( idx != g_GlobalFlexControllers.InvalidIndex() )
+	int idx = g_GlobalFlexControllerLookup.Find( szName );
+	if ( idx != g_GlobalFlexControllerLookup.InvalidIndex() )
 	{
-		return idx;
+		return g_GlobalFlexControllerLookup[ idx ];
 	}
 
-	CFlexControllerName lookup;
-	lookup.dummy = true;
-
-	idx = g_GlobalFlexControllers.Insert( szName, lookup );
-
-	//Con_Printf( "Added global flex controller %i %s from %s\n", idx, szName, model->getStudioHeader()->name );
-
+	CUtlSymbol sym;
+	sym = szName;
+	idx = g_GlobalFlexControllers.AddToTail( sym );
+	g_GlobalFlexControllerLookup.Insert( szName, idx );
+	// Con_Printf( "Added global flex controller %i %s from %s\n", idx, szName, model->GetStudioHdr()->name );
 	return idx;
 }
 
@@ -81,20 +113,22 @@ void SetupModelFlexcontrollerLinks( StudioModel *model )
 	if ( !model )
 		return;
 
-	studiohdr_t *hdr = model->getStudioHeader();
+	CStudioHdr *hdr = model->GetStudioHdr();
 	if ( !hdr )
 		return;
 
-	// Already set up!!!
-	if ( hdr->pFlexcontroller( 0 )->link != -1 )
+	if ( hdr->numflexcontrollers() <= 0 )
 		return;
 
-	int i, j;
+	// Already set up!!!
+	if ( hdr->pFlexcontroller( LocalFlexController_t(0) )->localToGlobal != -1 )
+		return;
 
-	for (i = 0; i < hdr->numflexcontrollers; i++)
+	for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 	{
-		j = AddGlobalFlexController( model, hdr->pFlexcontroller( i )->pszName() );
-		hdr->pFlexcontroller( i )->link = j;
+		int j = AddGlobalFlexController( model, hdr->pFlexcontroller( i )->pszName() );
+		hdr->pFlexcontroller( i )->localToGlobal = j;
+		model->SetFlexController( i, 0.0f );
 	}
 }
 
@@ -113,12 +147,10 @@ public:
 
 	// File I/O
 	void					LoadClass( const char *filename );
-	void					LoadOverrides( CExpClass *baseClass, char const *inpath );
 	void					CreateNewClass( const char *filename );
 	bool					CloseClass( CExpClass *cl );
 
 	CExpClass				*AddCExpClass( const char *classname, const char *filename );
-	CExpClass				*AddOverrideClass( const char *classname );
 	int						GetNumClasses( void );
 
 	CExpression				*GetCopyBuffer( void );
@@ -127,11 +159,8 @@ public:
 
 	CExpClass				*GetActiveClass( void );
 	CExpClass				*GetClass( int num );
-	CExpClass				*FindClass( const char *classname );
-	CExpClass				*FindOverrideClass( const char *classname );
-	int						ConvertOverrideClassIndex( int index );
+	CExpClass				*FindClass( const char *classname, bool bMatchBaseNameOnly );
 
-	void					NewMarkovIndices( void );
 private:
 	// Methods
 	const char				*GetClassnameFromFilename( const char *filename );
@@ -208,33 +237,12 @@ CExpClass *CExpressionManager::GetClass( int num )
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *classname - 
-// Output : CExpClass
-//-----------------------------------------------------------------------------
-CExpClass *CExpressionManager::AddOverrideClass( const char *classname )
-{
-	CExpClass *pclass = new CExpClass( classname );
-	if ( !pclass )
-		return NULL;
-	
-	m_Classes.AddToTail( pclass );
-
-	char filename[ 512 ];
-	sprintf( filename, "%s/expressions/%s/%s.txt", GetGameDirectory(), models->GetActiveModelName(), classname );
-
-	pclass->SetFileName( filename );
-
-	return pclass;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *classname - 
 //			*filename - 
 // Output : CExpClass *
 //-----------------------------------------------------------------------------
 CExpClass * CExpressionManager::AddCExpClass( const char *classname, const char *filename )
 {
-	Assert( !FindClass( classname ) );
+	Assert( !FindClass( classname, false ) );
 
 	CExpClass *pclass = new CExpClass( classname );
 	if ( !pclass )
@@ -309,16 +317,26 @@ int CExpressionManager::GetNumClasses( void )
 // Input  : *classname - 
 // Output : CExpClass
 //-----------------------------------------------------------------------------
-CExpClass *CExpressionManager::FindClass( const char *classname )
+CExpClass *CExpressionManager::FindClass( const char *classname, bool bMatchBaseNameOnly )
 {
+	char search[ 256 ];
+	if ( bMatchBaseNameOnly )
+	{
+		Q_FileBase( classname, search, sizeof( search ) );
+	}
+	else
+	{
+		Q_strncpy( search, classname, sizeof( search ) );
+	}
+
+	Q_FixSlashes( search );
+	Q_strlower( search );
+
 	for ( int i = 0; i < m_Classes.Size(); i++ )
 	{
 		CExpClass *cl = m_Classes[ i ];
 
-		if ( cl->IsOverrideClass() )
-			continue;
-
-		if ( !stricmp( classname, cl->GetName() ) )
+		if ( !Q_stricmp( search, bMatchBaseNameOnly ? cl->GetBaseName() : cl->GetName() ) )
 		{
 			return cl;
 		}
@@ -340,11 +358,22 @@ const char *CExpressionManager::GetClassnameFromFilename( const char *filename )
 
 	Assert( filename && filename[ 0 ] );
 
-	strcpy( cleanname, filename );
+	// Strip the .txt
+	Q_StripExtension( filename, cleanname, sizeof( cleanname ) );
 
-	COM_FixSlashes( cleanname );
-	ExtractFileBase( cleanname, classname, sizeof( classname ) );
-	strlwr( classname );
+	char *p = Q_stristr( cleanname, "expressions" );
+	if ( p )
+	{
+		Q_strncpy( classname, p + Q_strlen( "expressions" ) + 1, sizeof( classname ) );
+	}
+	else
+	{
+		Assert( 0 );
+		Q_strncpy( classname, cleanname, sizeof( classname ) );
+	}
+
+	Q_FixSlashes( classname );
+	Q_strlower( classname );
 	return classname;
 };
 
@@ -376,204 +405,22 @@ bool CExpressionManager::CanClose( void )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *inpath - 
-//-----------------------------------------------------------------------------
-void CExpressionManager::LoadOverrides( CExpClass *baseClass, char const *inpath )
-{
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
-	Assert( hdr );
-
-	char filename[ 512 ];
-
-	filesystem->FullPathToRelativePath( inpath, filename );
-
-	const char *classname = GetClassnameFromFilename( filename );
-
-	sprintf( filename, "expressions/%s/%s.txt", models->GetActiveModelName(), classname );
-
-	Con_Printf( "Checking for overrides in %s\n", filename );
-
-	// Already loaded, don't do anything
-	if ( FindOverrideClass( classname ) )
-		return;
-
-	// No override file
-	if ( !FPFullpathFileExists( va( "%s/%s", GetGameDirectory(), (char *)filename ) ) )
-	{
-		return;
-	}
-
-	// Import actual data
-	LoadScriptFile( va( "%s/%s", GetGameDirectory(), (char *)filename ) );
-
-	CExpClass *overrides = AddOverrideClass( classname );
-	if ( !overrides )
-		return;
-	
-	int numflexmaps = 0;
-	int flexmap[128]; // maps file local controlls into global controls
-	bool bHasWeighting = false;
-
-	while (1)
-	{
-		GetToken (true);
-		if (endofscript)
-			break;
-		if (stricmp( token, "$keys" ) == 0)
-		{
-			numflexmaps = 0;
-			while (TokenAvailable())
-			{
-				GetToken( false );
-				for (int i = 0; i < hdr->numflexcontrollers; i++)
-				{
-					if (stricmp( hdr->pFlexcontroller(i)->pszName(), token ) == 0)
-					{
-						flexmap[numflexmaps++] = i;
-						break;
-					}
-				}
-			}
-		}
-		else if ( !stricmp( token, "$group" ) )
-		{
-			char name[ 256 ];
-			char member[ 256 ];
-			int weight;
-
-			// name
-			GetToken( false );
-			strcpy( name, token );
-
-			CExpression *exp = overrides->FindExpression( name );
-
-			while ( TokenAvailable() )
-			{
-				GetToken( false );
-				strcpy( member, token );
-
-				GetToken( false );
-				weight = atoi( token );
-
-				// Add to group
-				if ( exp )
-				{
-					if ( exp->GetType() != CExpression::TYPE_MARKOV )
-					{
-						Con_Printf( "Can't add %s to %s, %s is not a markov group parent\n", member, name, name );
-					}
-					else
-					{
-						CExpression *exp2 = overrides->FindExpression( member );
-						if ( !exp2 )
-						{
-							Con_Printf( "Can't add %s to %s, no such member %s defined\n", member, name, member );
-						}
-						else
-						{
-							exp->AddToGroup( exp2, weight );
-						}
-					}
-				}
-				else
-				{
-					Con_Printf( "Can't add %s to %s, no such $group defined\n", member, name );
-				}
-			}
-		}
-		else if ( !stricmp( token, "$groupname" ) )
-		{
-			char name[ 256 ];
-			char desc[ 256 ];
-			
-			// name
-			GetToken( false );
-			strcpy( name, token );
-			// description
-			GetToken( false );
-			strcpy( desc, token );
-
-			overrides->AddGroupExpression( name, desc );
-		}
-		else if ( !stricmp( token, "$hasweighting" ) )
-		{
-			bHasWeighting = true;
-		}
-		else
-		{
-			float setting[ GLOBAL_STUDIO_FLEX_CONTROL_COUNT ];
-			float weight[ GLOBAL_STUDIO_FLEX_CONTROL_COUNT ];
-			char name[ 256 ];
-			char desc[ 256 ];
-			int index;
-
-			memset( setting, 0, sizeof( setting ) );
-			memset( weight, 0, sizeof( weight ) );
-
-			strcpy( name, token );
-
-			// phoneme index
-			GetToken( false );
-			if (token[1] == 'x')
-			{
-				sscanf( &token[2], "%x", &index );
-			}
-			else
-			{
-				index = (int)token[0];
-			}
-
-			// key values
-			for (int i = 0; i < numflexmaps; i++)
-			{
-				GetToken( false );
-				setting[flexmap[i]] = atof( token );
-				if (bHasWeighting)
-				{
-					GetToken( false );
-					weight[flexmap[i]] = atof( token );
-				}
-				else
-				{
-					weight[flexmap[i]] = 1.0;
-				}
-			}
-
-			// description
-			GetToken( false );
-			strcpy( desc, token );
-
-			CExpression *exp = overrides->AddExpression( name, desc, setting, weight, false );
-			if ( overrides->IsPhonemeClass() && exp )
-			{
-				if ( exp->index != index )
-				{
-					Con_Printf( "CExpressionManager::LoadOverrides (%s):  phoneme index for %s in .txt file is wrong (expecting %i got %i), ignoring...\n",
-						classname, name, exp->index, index );
-				}
-			}
-		}
-	}
-
-	overrides->SetDirty( false );
-
-	baseClass->SetOverrideClass( overrides );
-	overrides->SetIsOverrideClass( true );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : *filename - 
 //-----------------------------------------------------------------------------
 void CExpressionManager::LoadClass( const char *inpath )
 {
-	char filename[ 512 ];
-	filesystem->FullPathToRelativePath( inpath, filename );
+	MDLCACHE_CRITICAL_SECTION_( g_pMDLCache );
 
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	if ( inpath[ 0 ] == '/' || inpath[ 0 ] == '\\' )
+		++inpath;
+
+	char filename[ 512 ];
+	Q_strncpy( filename, inpath, sizeof( filename ) );
+
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't load expressions from %s, must load a .mdl file first!\n",
+		Con_ErrorPrintf( "Can't load expressions from %s, must load a .mdl file first!\n",
 			filename );
 		return;
 	}
@@ -583,17 +430,11 @@ void CExpressionManager::LoadClass( const char *inpath )
 	const char *classname = GetClassnameFromFilename( filename );
 	
 	// Already loaded, don't do anything
-	if ( FindClass( classname ) )
+	if ( FindClass( classname, false ) )
 		return;
-
-	if ( !FPFullpathFileExists( va( "%s/%s", GetGameDirectory(), (char *)filename ) ) )
-	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Expression file %s doesn't exist, can't load\n", filename );
-		return;
-	}
 
 	// Import actual data
-	LoadScriptFile( va( "%s/%s", GetGameDirectory(), (char *)filename ) );
+	LoadScriptFile( filename, SCRIPT_USE_RELATIVE_PATH );
 
 	CExpClass *active = AddCExpClass( classname, filename );
 	if ( !active )
@@ -602,8 +443,12 @@ void CExpressionManager::LoadClass( const char *inpath )
 	ActivateExpressionClass( active );
 
 	int numflexmaps = 0;
-	int flexmap[128]; // maps file local controlls into global controls
+	int flexmap[128]; // maps file local controls into global controls
+	LocalFlexController_t localflexmap[128]; // maps file local controls into local controls
 	bool bHasWeighting = false;
+	bool bNormalized = false;
+
+	EnableStickySnapshotMode( );
 
 	while (1)
 	{
@@ -616,81 +461,35 @@ void CExpressionManager::LoadClass( const char *inpath )
 			while (TokenAvailable())
 			{
 				flexmap[numflexmaps] = -1;
+				localflexmap[numflexmaps] = LocalFlexController_t(-1);
+
 				GetToken( false );
-				for (int i = 0; i < hdr->numflexcontrollers; i++)
+				bool bFound = false;
+				for (LocalFlexController_t i = LocalFlexController_t(0); i < hdr->numflexcontrollers(); i++)
 				{
 					if (stricmp( hdr->pFlexcontroller(i)->pszName(), token ) == 0)
 					{
-						flexmap[numflexmaps] = i;
+						localflexmap[numflexmaps] = i;
+						flexmap[numflexmaps] = AddGlobalFlexController( models->GetActiveStudioModel(),
+							hdr->pFlexcontroller(i)->pszName() );
+						bFound = true;
 						break;
 					}
+				}
+				if ( !bFound )
+				{
+					flexmap[ numflexmaps ] = AddGlobalFlexController( models->GetActiveStudioModel(), token );
 				}
 				numflexmaps++;
 			}
 		}
-		else if ( !stricmp( token, "$group" ) )
-		{
-			char name[ 256 ];
-			char member[ 256 ];
-			int weight;
-
-			// name
-			GetToken( false );
-			strcpy( name, token );
-
-			CExpression *exp = active->FindExpression( name );
-
-			while ( TokenAvailable() )
-			{
-				GetToken( false );
-				strcpy( member, token );
-
-				GetToken( false );
-				weight = atoi( token );
-
-				// Add to group
-				if ( exp )
-				{
-					if ( exp->GetType() != CExpression::TYPE_MARKOV )
-					{
-						Con_Printf( "Can't add %s to %s, %s is not a markov group parent\n", member, name, name );
-					}
-					else
-					{
-						CExpression *exp2 = active->FindExpression( member );
-						if ( !exp2 )
-						{
-							Con_Printf( "Can't add %s to %s, no such member %s defined\n", member, name, member );
-						}
-						else
-						{
-							exp->AddToGroup( exp2, weight );
-						}
-					}
-				}
-				else
-				{
-					Con_Printf( "Can't add %s to %s, no such $group defined\n", member, name );
-				}
-			}
-		}
-		else if ( !stricmp( token, "$groupname" ) )
-		{
-			char name[ 256 ];
-			char desc[ 256 ];
-			
-			// name
-			GetToken( false );
-			strcpy( name, token );
-			// description
-			GetToken( false );
-			strcpy( desc, token );
-
-			active->AddGroupExpression( name, desc );
-		}
 		else if ( !stricmp( token, "$hasweighting" ) )
 		{
 			bHasWeighting = true;
+		}
+		else if ( !stricmp( token, "$normalized" ) )
+		{
+			bNormalized = true;
 		}
 		else
 		{
@@ -732,6 +531,15 @@ void CExpressionManager::LoadClass( const char *inpath )
 					{
 						weight[flexmap[i]] = 1.0;
 					}
+
+					if ( bNormalized && localflexmap[ i ] > -1 )
+					{
+						mstudioflexcontroller_t *pFlex = hdr->pFlexcontroller( localflexmap[i] );
+						if ( pFlex->min != pFlex->max )
+						{
+							setting[flexmap[i]] = Lerp( setting[flexmap[i]], pFlex->min, pFlex->max );  
+						}
+					}
 				}
 				else
 				{
@@ -747,7 +555,7 @@ void CExpressionManager::LoadClass( const char *inpath )
 			GetToken( false );
 			strcpy( desc, token );
 
-			CExpression *exp = active->AddExpression( name, desc, setting, weight, false );
+			CExpression *exp = active->AddExpression( name, desc, setting, weight, false, false );
 			if ( active->IsPhonemeClass() && exp )
 			{
 				if ( exp->index != index )
@@ -759,16 +567,15 @@ void CExpressionManager::LoadClass( const char *inpath )
 		}
 	}
 
-	LoadOverrides( active, inpath );
-
 	active->CheckBitmapConsistency();
 
-	active->ApplyOverrides();
+	DisableStickySnapshotMode( );
 
 	PopulateClassCB( active );
 
-	active->SelectExpression( 0 );
+	active->DeselectExpression();
 
+	Assert( !active->GetDirty() );
 	active->SetDirty( false );
 }
 
@@ -778,10 +585,10 @@ void CExpressionManager::LoadClass( const char *inpath )
 //-----------------------------------------------------------------------------
 void CExpressionManager::CreateNewClass( const char *filename )
 {
-	studiohdr_t *hdr = models->GetActiveStudioModel()->getStudioHeader ();
+	CStudioHdr *hdr = models->GetActiveStudioModel()->GetStudioHdr();
 	if ( !hdr )
 	{
-		Con_ColorPrintf( ERROR_R, ERROR_G, ERROR_B, "Can't create new expression file %s, must load a .mdl file first!\n", filename );
+		Con_ErrorPrintf( "Can't create new expression file %s, must load a .mdl file first!\n", filename );
 		return;
 	}
 
@@ -789,7 +596,7 @@ void CExpressionManager::CreateNewClass( const char *filename )
 	const char *classname = GetClassnameFromFilename( filename );
 	
 	// Already loaded, don't do anything
-	if ( FindClass( classname ) )
+	if ( FindClass( classname, false ) )
 		return;
 
 	Con_Printf( "Creating %s\n", filename );
@@ -834,16 +641,10 @@ bool CExpressionManager::CloseClass( CExpClass *cl )
 		}
 	}
 
-	cl->RemoveOverrides();
-
 	// The memory can be freed here, so be more careful
 	char temp[ 256 ];
-	strcpy( temp, cl->GetName() );
+	V_strcpy_safe( temp, cl->GetName() );
 
-	if ( cl->HasOverrideClass() )
-	{
-		RemoveCExpClass( cl->GetOverrideClass() );
-	}
 	RemoveCExpClass( cl );
 
 	Con_Printf( "Closed expression class %s\n", temp );
@@ -860,7 +661,7 @@ bool CExpressionManager::CloseClass( CExpClass *cl )
 	PopulateClassCB( active );
 
 	// Select first expression
-	active->SelectExpression( 0 );
+	active->DeselectExpression();
 
 	return true;
 }
@@ -876,9 +677,7 @@ void CExpressionManager::PopulateClassCB( CExpClass *current )
 	for ( int i = 0; i < GetNumClasses(); i++ )
 	{
 		CExpClass *cl = GetClass( i );
-
-		// Don't put overrides into the tab control though
-		if ( !cl || cl->IsOverrideClass() )
+		if ( !cl )
 			continue;
 
 		g_pExpressionClass->add( cl->GetName() );
@@ -890,64 +689,4 @@ void CExpressionManager::PopulateClassCB( CExpClass *current )
 	}
 	
 	g_pExpressionClass->select( select );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CExpressionManager::NewMarkovIndices( void )
-{
-	for ( int i = 0; i < m_Classes.Size(); i++ )
-	{
-		CExpClass *p = m_Classes[ i ];
-		if ( p )
-		{
-			p->NewMarkovIndices();
-		}
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *classname - 
-// Output : CExpClass
-//-----------------------------------------------------------------------------
-CExpClass *CExpressionManager::FindOverrideClass( char const *classname )
-{
-	for ( int i = 0; i < m_Classes.Size(); i++ )
-	{
-		CExpClass *cl = m_Classes[ i ];
-		if ( !cl->IsOverrideClass() )
-			continue;
-
-		if ( !stricmp( classname, cl->GetName() ) )
-		{
-			return cl;
-		}
-	}
-
-	return NULL;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : int
-//-----------------------------------------------------------------------------
-int CExpressionManager::ConvertOverrideClassIndex( int index )
-{
-	int c = 0;
-	for ( int i = 0; i <= m_Classes.Size(); i++ )
-	{
-		CExpClass *cl = m_Classes[ i ];
-		if ( cl->IsOverrideClass() )
-			continue;
-		
-		if ( c == index )
-			return i;
-
-		c++;
-	}
-
-	return index;
 }

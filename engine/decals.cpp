@@ -1,29 +1,44 @@
-// decals.c
-// functionality common to wad and decal code in gl_draw.c and draw.c
-#include "quakedef.h"
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// Functionality common to wad and decal code in gl_draw.c and draw.c
+//
+//===========================================================================//
+#include "render_pch.h"
 #include "decal.h"
 #include "decal_private.h"
 #include "zone.h"
 #include "sys.h"
-#include "gl_texture.h"
 #include "gl_matsysiface.h"
 #include "filesystem.h"
 #include "filesystem_engine.h"
+#include "materialsystem/imaterial.h"
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include "utldict.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 struct DecalEntry
 {
-	IMaterial *material;
+#ifdef _DEBUG
+	char		*m_pDebugName;	// only used in debug builds
+#endif
+	IMaterial	*material;
 	int			index;
 };
 
 // This stores the list of all decals
-CUtlDict< DecalEntry, int >	g_DecalDictionary;
+CUtlMap< FileNameHandle_t, DecalEntry >	g_DecalDictionary( 0, 0, DefLessFunc( FileNameHandle_t ) );
 
 // This is a list of indices into the dictionary.
 // This list is indexed by network id, so it maps network ids to decal dictionary entries
-CUtlVector< int >	g_DecalLookup;
+CUtlVector< int > g_DecalLookup;
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -31,7 +46,7 @@ CUtlVector< int >	g_DecalLookup;
 //-----------------------------------------------------------------------------
 int Draw_DecalMax( void )
 {
-	return MAX_DECALS;
+	return g_nMaxDecals;
 }
 
 //-----------------------------------------------------------------------------
@@ -48,11 +63,20 @@ IMaterial *Draw_DecalMaterial( int index )
 	if ( index < 0 || index >= g_DecalLookup.Count() )
 		return NULL;
 
-	int slot = g_DecalLookup[ index ];
-	if ( slot < 0 || slot >= (int)g_DecalDictionary.Count() )
+	int slot = g_DecalLookup[index];
+	if ( slot < 0 || slot >= (int)g_DecalDictionary.MaxElement() )
 		return NULL;
 
-	return g_DecalDictionary[ slot ].material;
+	DecalEntry * entry = &g_DecalDictionary[slot];
+	
+	if ( entry )
+	{
+		return entry->material;
+	}
+	else
+	{
+		return NULL;
+	}
 }
 
 #ifndef SWDS
@@ -60,21 +84,32 @@ void Draw_DecalSetName( int decal, char *name )
 {
 	while ( decal >= g_DecalLookup.Count() )
 	{
+		MEM_ALLOC_CREDIT();
 		int idx = g_DecalLookup.AddToTail();
-		g_DecalLookup[ idx ] = 0;
+		g_DecalLookup[idx] = g_DecalDictionary.InvalidIndex();
 	}
 
-	int lookup = g_DecalDictionary.Find( name );
+	FileNameHandle_t fnHandle = g_pFileSystem->FindOrAddFileName( name );
+	int lookup = g_DecalDictionary.Find( fnHandle );
 	if ( lookup == g_DecalDictionary.InvalidIndex() )
 	{
 		DecalEntry entry;
-		entry.material = GL_LoadMaterial( name );
+#ifdef _DEBUG
+		int len = strlen(name) + 1;
+		entry.m_pDebugName = new char[len];
+		memcpy( entry.m_pDebugName, name, len );
+#endif
+		entry.material = GL_LoadMaterial( name, TEXTURE_GROUP_DECAL );
 		entry.index = decal;
 
-		lookup = g_DecalDictionary.Insert( name, entry );
+		lookup = g_DecalDictionary.Insert( fnHandle, entry );
+	}
+	else
+	{
+		g_DecalDictionary[lookup].index = decal;
 	}
 
-	g_DecalLookup[ decal ] = lookup;
+	g_DecalLookup[decal] = lookup;
 }
 
 
@@ -82,22 +117,44 @@ void Draw_DecalSetName( int decal, char *name )
 // called from cl_parse.cpp
 // find the server side decal id given it's name.
 // used for save/restore
-int Draw_DecalIndexFromName( char *name )
+int Draw_DecalIndexFromName( char *name, bool *found )
 {
-	int lookup = g_DecalDictionary.Find( name );
-	if ( lookup == g_DecalDictionary.InvalidIndex() )
-		return 0;
+	Assert( found );
 
-	return g_DecalDictionary[ lookup ].index;
+	FileNameHandle_t fnHandle = g_pFileSystem->FindOrAddFileName( name );
+	int lookup = g_DecalDictionary.Find( fnHandle );
+	if ( lookup == g_DecalDictionary.InvalidIndex() )
+	{
+		if ( found )
+		{
+			*found = false;
+		}
+		return 0;
+	}
+
+	if ( found )
+	{
+		*found = true;
+	}
+	return g_DecalDictionary[lookup].index;
 }
 #endif
+
+
+const char *Draw_DecalNameFromIndex( int index )
+{
+#if !defined(SWDS)
+	return g_DecalDictionary[index].material ? g_DecalDictionary[index].material->GetName() : "";
+#else
+	return "";
+#endif
+}
 
 // This is called to reset all loaded decals
 // called from cl_parse.cpp and host.cpp
 void Decal_Init( void )
 {
-	g_DecalDictionary.RemoveAll();
-	g_DecalLookup.RemoveAll();
+	Decal_Shutdown();
 }
 
 //-----------------------------------------------------------------------------
@@ -105,20 +162,18 @@ void Decal_Init( void )
 //-----------------------------------------------------------------------------
 void Decal_Shutdown( void )
 {
-	g_DecalLookup.Purge();
-
-	int c = g_DecalDictionary.Count();
-
-	int decal;
-	for ( decal = 0; decal < c; decal++ )
+	for ( int index = g_DecalDictionary.FirstInorder(); index != g_DecalDictionary.InvalidIndex(); index = g_DecalDictionary.NextInorder(index) )
 	{
-		IMaterial *mat = g_DecalDictionary[ decal ].material;
+		IMaterial *mat = g_DecalDictionary[index].material;
 		if ( mat )
 		{
 			GL_UnloadMaterial( mat );
 		}
+#ifdef _DEBUG
+		delete[] g_DecalDictionary[index].m_pDebugName;
+#endif
 	}
-
-	g_DecalDictionary.Purge();
+	g_DecalLookup.Purge();
+	g_DecalDictionary.RemoveAll();
 }
 

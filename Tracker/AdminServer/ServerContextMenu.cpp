@@ -1,11 +1,10 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#include <vgui/VGUI.h>
 #include "ServerContextMenu.h"
 
 #include <VGUI_Controls.h>
@@ -22,7 +21,7 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CServerContextMenu::CServerContextMenu(VInternetDlg *parent) : Menu(parent, "ServerContextMenu")
+CServerContextMenu::CServerContextMenu(CServerPage *parent) : Menu(parent, "ServerContextMenu")
 {
 	CServerContextMenu::parent=parent;
 }
@@ -39,7 +38,7 @@ CServerContextMenu::~CServerContextMenu()
 //-----------------------------------------------------------------------------
 void CServerContextMenu::ShowMenu(Panel *target, unsigned int serverID, bool showConnect, bool showRefresh, bool showAddToFavorites,bool manage)
 {
-	DeleteAllItems();
+	ClearMenu();
 
 
 	// by default show the menu

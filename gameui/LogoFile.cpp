@@ -1,9 +1,26 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+
+#if !defined( _X360 )
 #include <windows.h>
+#endif
 #include <stdio.h>
-#include "UtlBuffer.h"
+#include "tier1/utlbuffer.h"
 #include <vgui/VGUI.h>
 #include <vgui_controls/Controls.h>
-#include "FileSystem.h"
+#include "filesystem.h"
+
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 using namespace vgui;
 
@@ -63,7 +80,7 @@ must be multiples of sixteen
 */
 int GrabMip ( HANDLE hdib, unsigned char *lump_p, char *lumpname, COLORREF crf, int *width, int *height)
 {
-	int             x,y,xl,yl,xh,yh,w,h;
+	int             i,x,y,xl,yl,xh,yh,w,h;
 	unsigned char   *screen_p, *source;
 	miptex_t		*qtex;
 	int				miplevel, mipstep;
@@ -95,7 +112,7 @@ int GrabMip ( HANDLE hdib, unsigned char *lump_p, char *lumpname, COLORREF crf, 
 	qtex = (miptex_t *)lump_p;
 	qtex->width = (unsigned)(w);
 	qtex->height = (unsigned)(h);
-	strcpy (qtex->name, lumpname); 
+	Q_strncpy (qtex->name, lumpname, sizeof( qtex->name) ); 
 	
 	lump_p = (unsigned char *)&qtex->offsets[4];
 	
@@ -116,7 +133,7 @@ int GrabMip ( HANDLE hdib, unsigned char *lump_p, char *lumpname, COLORREF crf, 
 	}
 
 	// calculate gamma corrected linear palette
-	for (int i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++)
 	{
 		for (int j = 0; j < 3; j++)
 		{
@@ -182,7 +199,7 @@ void UpdateLogoWAD( void *phdib, int r, int g, int b )
 {
 	char logoname[ 32 ];
 	char *pszName;
-	sprintf( logoname, "LOGO" );
+	Q_strncpy( logoname, "LOGO", sizeof( logoname ) );
 	pszName = &logoname[ 0 ];
 
 	HANDLE hdib = (HANDLE)phdib;
@@ -194,7 +211,7 @@ void UpdateLogoWAD( void *phdib, int r, int g, int b )
 
 	unsigned char *buf = (unsigned char *)_alloca( 16384 );
 
-	CUtlBuffer buffer( 0, 16384, false );
+	CUtlBuffer buffer( 0, 16384 );
 
 	int width, height;
 	
@@ -235,8 +252,8 @@ void UpdateLogoWAD( void *phdib, int r, int g, int b )
 
 	// Fill Ino info table
 	lumpinfo_t	info;
-	memset (&info, 0, sizeof(info));
-	strcpy (&info.name[0], pszName);
+	Q_memset (&info, 0, sizeof(info));
+	Q_strncpy(info.name, pszName, sizeof( info.name ) );
 	info.filepos = (int)sizeof(wadinfo_t);
 	info.size = info.disksize = length;
 	info.type = TYP_LUMPY;
@@ -260,11 +277,11 @@ void UpdateLogoWAD( void *phdib, int r, int g, int b )
 
 	// Output to file
 	FileHandle_t file;
-	file = filesystem()->Open( "pldecal.wad", "wb" );
+	file = g_pFullFileSystem->Open( "pldecal.wad", "wb" );
 	if ( file != FILESYSTEM_INVALID_HANDLE )
 	{
-		filesystem()->Write( buffer.Base(), buffer.TellPut(), file );
-		filesystem()->Close( file );
+		g_pFullFileSystem->Write( buffer.Base(), buffer.TellPut(), file );
+		g_pFullFileSystem->Close( file );
 	}
 
 }

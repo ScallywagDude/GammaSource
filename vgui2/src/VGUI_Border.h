@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Core implementation of vgui
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VGUI_BORDER_H
 #define VGUI_BORDER_H
@@ -47,6 +42,9 @@ public:
 
 	virtual const char *GetName();
 	virtual void SetName(const char *name);
+	virtual backgroundtype_e GetBackgroundType();
+
+	virtual bool PaintFirst( void ) { return false; }
 
 protected:
 	int _inset[4];
@@ -74,6 +72,7 @@ private:
 	};
 
 	side_t _sides[4];	// left, top, right, bottom
+	backgroundtype_e m_eBackgroundType;
 
 	friend class VPanel;
 };

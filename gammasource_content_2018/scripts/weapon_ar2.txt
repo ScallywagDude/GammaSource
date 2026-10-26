@@ -1,0 +1,94 @@
+// Assault Rifle 2
+
+WeaponData
+{
+	"bucket_position_360"	"1"
+	"bucket_360"	"3"
+	// Weapon data is loaded by both the Game and Client DLLs.
+	"printname"	"AR2"
+	"viewmodel"				"models/weapons/v_ar2.mdl"
+	"playermodel"			"models/weapons/w_ar2.mdl"
+	"anim_prefix"			"ar2"
+	"bucket"			"3"
+	"bucket_position"		"1"
+
+	"clip_size"				"30"
+	"default_clip"			"30"
+
+	"primary_ammo"			"MediumRound"
+	"secondary_ammo"		"None"
+
+//	"weight"				"2"
+	"weight"				"5"
+	"item_flags"			"0"
+
+	// Sounds for the weapon. There is a max of 16 sounds per category (i.e. max 16 "single_shot" sounds)
+	SoundData
+	{
+		"empty"				"Weapon_AR2.Empty"
+		"reload"			"Weapon_AR2.Reload"
+		"single_shot"		"Weapon_AR2.Single"
+	    //Zoom in
+		"special1"			"Weapon_AR2.Special1"
+		//Zoom out
+		"special2"			"Weapon_AR2.Special2"
+		"double_shot"		"Weapon_AR2.Double"
+		// NPC SECTION
+		"single_shot_npc"	"Weapon_AR2.NPC_Single"
+		"reload_npc"		"Weapon_AR2.NPC_Reload"
+		"double_shot_npc"	"Weapon_AR2.NPC_Double"
+	}
+
+	// Weapon Sprite data is loaded by the Client DLL.
+	TextureData
+	{
+		"weapon"
+		{
+				"file"		"sprites/w_icons2"
+				"x"			"1"
+				"y"			"65"
+				"width"		"126"
+				"height"	"62"
+		}
+		"weapon_s"
+		{	
+				"file"		"sprites/w_icons2b"
+				"x"			"0"
+				"y"			"64"
+				"width"		"128"
+				"height"	"64"
+		}
+		"ammo"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"60"
+				"width"		"73"
+				"height"	"15"
+		}
+		"ammo2"
+		{
+				"file"		"sprites/a_icons1"
+				"x"			"55"
+				"y"			"110"
+				"width"		"73"
+				"height"	"20"
+		}
+		"crosshair"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+		"autoaim"
+		{
+				"file"		"sprites/crosshairs"
+				"x"			"0"
+				"y"			"48"
+				"width"		"24"
+				"height"	"24"
+		}
+	}
+}

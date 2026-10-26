@@ -1,4 +1,8 @@
 vs.1.1
+
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Constants specified by the app
 ;    c0      = (0, 1, 2, 0.5)
@@ -21,7 +25,7 @@ vs.1.1
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$worldPos );
 &AllocateRegister( \$worldNormal );
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
 
 ;------------------------------------------------------------------------------
 ; Transform the position from world to proj space
@@ -70,13 +74,13 @@ mul $projPos.xy, $projPos.w, $projPos.xy
 mad $projPos.xy, $projPos.xy, $cHalf, $cHalf
 
 ; tweak with the texcoords based on the normal and $refractionamount
-mad $projPos.xy, $projNormal.xy, -c94.xy, $projPos.xy		; FIXME
+mad $projPos.xy, $projNormal.xy, -$SHADER_SPECIFIC_CONST_4.xy, $projPos.xy		; FIXME
 
 ; invert y
 add $projPos.y, $cOne, -$projPos.y
 
 ; hack scale for nvidia (Power of two texcoords are screwed.)
-mul oT0.xy, $projPos.xy, c95.xy
+mul oT0.xy, $projPos.xy, $SHADER_SPECIFIC_CONST_5.xy
 
 &FreeRegister( \$projPos );
 &FreeRegister( \$projNormal );

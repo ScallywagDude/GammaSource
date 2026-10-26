@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{65AD6816-D84E-5B8A-A688-1287798DD302}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ServerBrowser</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_MBCS;_USRDLL;SERVERBROWSER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <AdditionalDependencies>wsock32.lib;..\..\vgui2\controls\build\Release\vgui_controls.lib;..\..\vstdlib\build\Release\vstdlib.lib;..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\modernize\tracker_vgui_compat;..\public;..\..\public;..\common;..\..\common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_MBCS;_USRDLL;SERVERBROWSER_EXPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>wsock32.lib;..\..\vgui2\controls\build\Debug\vgui_controls.lib;..\..\vstdlib\build\Debug\vstdlib.lib;..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include=".\BaseGamesPage.cpp" />
+    <ClCompile Include=".\DialogAddServer.cpp" />
+    <ClCompile Include=".\DialogGameInfo.cpp" />
+    <ClCompile Include=".\DialogServerPassword.cpp" />
+    <ClCompile Include=".\FavoriteGames.cpp" />
+    <ClCompile Include=".\FriendsGames.cpp" />
+    <ClCompile Include="..\..\common\info_key.cpp" />
+    <ClCompile Include="..\..\public\interface.cpp" />
+    <ClCompile Include=".\InternetGames.cpp" />
+    <ClCompile Include=".\LanBroadcastMsgHandler.cpp" />
+    <ClCompile Include=".\LanGames.cpp" />
+    <ClCompile Include=".\MasterMsgHandler.cpp" />
+    <ClCompile Include="..\..\public\tier0\memoverride.cpp" />
+    <ClCompile Include=".\ModList.cpp" />
+    <ClCompile Include="..\common\msgbuffer.cpp" />
+    <ClCompile Include="..\common\netapi.cpp" />
+    <ClCompile Include="..\..\common\GameUI\Random.cpp" />
+    <ClCompile Include=".\ServerBrowser.cpp" />
+    <ClCompile Include=".\ServerBrowserDialog.cpp" />
+    <ClCompile Include=".\ServerContextMenu.cpp" />
+    <ClCompile Include=".\ServerList.cpp" />
+    <ClCompile Include=".\ServerListCompare.cpp" />
+    <ClCompile Include=".\ServerMsgHandlerDetails.cpp" />
+    <ClCompile Include="..\common\Socket.cpp" />
+    <ClCompile Include=".\SpectateGames.cpp" />
+    <ClCompile Include="..\common\util.cpp" />
+    <ClCompile Include="..\..\public\utlbuffer.cpp" />
+    <ClCompile Include="..\..\public\utlsymbol.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include=".\BaseGamesPage.h" />
+    <ClInclude Include=".\DialogAddServer.h" />
+    <ClInclude Include=".\DialogGameInfo.h" />
+    <ClInclude Include=".\DialogServerPassword.h" />
+    <ClInclude Include=".\FavoriteGames.h" />
+    <ClInclude Include=".\FriendsGames.h" />
+    <ClInclude Include="..\common\IGameList.h" />
+    <ClInclude Include="..\common\inetapi.h" />
+    <ClInclude Include="..\..\common\info_key.h" />
+    <ClInclude Include="..\..\public\interface.h" />
+    <ClInclude Include=".\InternetGames.h" />
+    <ClInclude Include="..\..\common\ServerBrowser\IServerBrowser.h" />
+    <ClInclude Include="..\common\IServerRefreshResponse.h" />
+    <ClInclude Include=".\LanBroadcastMsgHandler.h" />
+    <ClInclude Include=".\LanGames.h" />
+    <ClInclude Include="..\common\MasterMsgHandler.h" />
+    <ClInclude Include=".\ModList.h" />
+    <ClInclude Include="..\common\msgbuffer.h" />
+    <ClInclude Include="..\common\server.h" />
+    <ClInclude Include=".\ServerBrowser.h" />
+    <ClInclude Include=".\ServerBrowserDialog.h" />
+    <ClInclude Include=".\ServerContextMenu.h" />
+    <ClInclude Include=".\ServerList.h" />
+    <ClInclude Include=".\ServerListCompare.h" />
+    <ClInclude Include=".\ServerMsgHandlerDetails.h" />
+    <ClInclude Include="..\common\Socket.h" />
+    <ClInclude Include=".\SpectateGames.h" />
+    <ClInclude Include="..\common\util.h" />
+    <ClInclude Include="..\..\public\UtlBuffer.h" />
+    <ClInclude Include="..\..\public\utllinkedlist.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\lib\public\vgui_controls.lib" />
+    <None Include="..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\tier0\tier0.vcxproj">
+      <Project>{6FF36EA7-9968-563F-A949-77D0A5E5E6E8}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vgui2\controls\vgui_controls.vcxproj">
+      <Project>{C18D9FE0-D13B-5B16-BF91-55558B36506F}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\vstdlib\vstdlib.vcxproj">
+      <Project>{A2B5AD75-6625-5F92-AAF0-648CB23FAF16}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

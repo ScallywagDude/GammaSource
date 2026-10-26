@@ -1,0 +1,51 @@
+[
+  {
+    "map": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\maps\\zoo_item.bsp",
+    "before": {
+      "version": 18,
+      "leaves": 539,
+      "skyflag_leaves": 0
+    },
+    "after": {
+      "version": 19,
+      "leaves": 539,
+      "skyflag_leaves": 376
+    }
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\d1_trainstation_01.bsp",
+    "before": {
+      "version": 19,
+      "leaves": 3307,
+      "skyflag_leaves": 0
+    },
+    "updated": false
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\e3_hydra.bsp",
+    "before": {
+      "version": 19,
+      "leaves": 534,
+      "skyflag_leaves": 0
+    },
+    "updated": false
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\e3_strider.bsp",
+    "before": {
+      "version": 19,
+      "leaves": 2083,
+      "skyflag_leaves": 0
+    },
+    "updated": false
+  },
+  {
+    "cache": "C:\\Users\\doge6\\Downloads\\source2018_install\\hl2\\converted\\maps\\testroom_physprop.bsp",
+    "before": {
+      "version": 19,
+      "leaves": 120,
+      "skyflag_leaves": 0
+    },
+    "updated": false
+  }
+]

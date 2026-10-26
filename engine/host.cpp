@@ -1,51 +1,63 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Revision: $
-// $NoKeywords: $
-//
-//=============================================================================
+//===========================================================================//
+
 #include "tier0/fasttimer.h"
-#include "winquake.h"
 
 #ifdef _WIN32
+#include "tier0/memdbgon.h" // needed because in release builds crtdbg.h is handled specially if USE_MEM_DEBUG is defined
+#include "tier0/memdbgoff.h"
 #include <crtdbg.h>   // For getting at current heap size
+#endif
+
+#include "tier1/fmtstr.h"
+#include "vstdlib/jobthread.h"
+
+#ifdef USE_SDL
+	#include "appframework/ilaunchermgr.h"
+	extern ILauncherMgr *g_pLauncherMgr;
 #endif
 
 #include "server.h"
 #include "host_jmp.h"
 #include "screen.h"
-#include "kbutton.h"
 #include "keys.h"
 #include "cdll_int.h"
 #include "eiface.h"
 #include "sv_main.h"
-#include "master.h"
 #include "sv_log.h"
+#include "shadowmgr.h"
 #include "zone.h"
-#include "game_interface.h"
+#include "gl_cvars.h"
 #include "sv_filter.h"
-#include "vid.h"
-#include "glquake.h"
+#include "ivideomode.h"
+#include "vprof_engine.h"
+#include "iengine.h"
+#include "tier2/tier2.h"
+#include "enginethreads.h"
+#include "steam/steam_api.h"
+#include "LoadScreenUpdate.h"
+#include "datacache/idatacache.h"
+#include "master.h"
 
-#if defined _WIN32 && !defined SWDS
+#if !defined SWDS
 #include "voice.h"
 #include "sound.h"
-#include "vgui_int.h"
 #endif
 
-#include "measure_section.h"
+#include "icvar.h"
+
 #include "sys.h"
+#include "client.h"
 #include "cl_pred.h"
 #include "console.h"
 #include "view.h"
 #include "host.h"
 #include "decal.h"
 #include "gl_matsysiface.h"
+#include "gl_shader.h"
 #include "sys_dll.h"
 #include "cmodel_engine.h"
 #ifndef SWDS
@@ -53,11 +65,12 @@
 #endif
 #include "filesystem.h"
 #include "filesystem_engine.h"
+#include "tier0/etwprof.h"
 #include "tier0/vcrmode.h"
 #include "traceinit.h"
 #include "host_saverestore.h"
 #include "l_studio.h"
-#include "demo.h"
+#include "cl_demo.h"
 #include "cdll_engine_int.h"
 #include "host_cmd.h"
 #include "host_state.h"
@@ -67,22 +80,110 @@
 #include "bitbuf_errorhandler.h"
 #include "soundflags.h"
 #include "enginestats.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "testscriptmgr.h"
 #include "tmessage.h"
-#include "cl_ents.h"
 #include "tier0/vprof.h"
-#include "vstdlib/ICommandLine.h"
+#include "tier0/icommandline.h"
 #include "materialsystem/imaterialsystemhardwareconfig.h"
-#include "glquake.h"
+#include "MapReslistGenerator.h"
+#include "DownloadListGenerator.h"
+#include "download.h"
 #include "staticpropmgr.h"
-#include "gameeventmanager.h"
+#include "GameEventManager.h"
+#include "iprediction.h"
+#include "netmessages.h"
+#include "cl_main.h"
+#include "hltvserver.h"
+#include "hltvtest.h"
+#if defined( REPLAY_ENABLED )
+#include "replayserver.h"
+#include "replay_internal.h"
+#endif
+#include "sys_mainwind.h"
+#include "host_phonehome.h"
+#ifndef SWDS
+#include "vgui_baseui_interface.h"
+#include "cl_steamauth.h"
+#endif
+#include "sv_remoteaccess.h" // NotifyDedicatedServerUI()
+#include "snd_audio_source.h"
+#include "sv_steamauth.h"
+#include "MapReslistGenerator.h"
+#include "DevShotGenerator.h"
+#include "sv_plugin.h"
+#include "toolframework/itoolframework.h"
+#include "ienginetoolinternal.h"
+#include "inputsystem/iinputsystem.h"
+#include "vgui_askconnectpanel.h"
+#include "cvar.h"
+#include "saverestoretypes.h"
+#include "filesystem/IQueuedLoader.h"
+#include "soundservice.h"
+#include "profile.h"
+#include "steam/isteamremotestorage.h"
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#include "audio_pch.h"
+#endif
+#if defined( LINUX )
+#include <locale.h>
 
+#ifdef USE_SDL
+#include "SDL.h"
+#endif
+#endif
+
+#include "ixboxsystem.h"
+extern IXboxSystem *g_pXboxSystem;
+
+extern ConVar cl_cloud_settings;
+extern ConVar cl_logofile;
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+//-----------------------------------------------------------------------------
+// Forward declarations
+//-----------------------------------------------------------------------------
+void CL_SetPagedPoolInfo();
+extern char	*CM_EntityString( void );
+extern ConVar host_map;
+extern ConVar sv_cheats;
+
+bool g_bDedicatedServerBenchmarkMode = false;
+bool g_bAllowSecureServers = true;
+bool g_bLowViolence = false;
+
+// These counters are for debugging in dumps.  If these are non-zero it may indicate some kind of 
+// heap problem caused by the setjmp/longjmp error handling
+int g_HostServerAbortCount = 0;
+int g_HostErrorCount = 0;
+int g_HostEndDemo = 0;
+
+char g_szDefaultLogoFileName[] = "materials/vgui/logos/spray.vtf";
 
 int host_frameticks = 0;
 int host_tickcount = 0;
 int host_currentframetick = 0;
-float host_remainder = 0.0f;
+
+static const char g_pModuleExtension[] = DLL_EXT_STRING;
+
+// Engine player info, no game related infos here
+BEGIN_BYTESWAP_DATADESC( player_info_s )
+	DEFINE_ARRAY( name, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
+	DEFINE_FIELD( userID, FIELD_INTEGER ),
+	DEFINE_ARRAY( guid, FIELD_CHARACTER, SIGNED_GUID_LEN + 1 ),
+	DEFINE_FIELD( friendsID, FIELD_INTEGER ),
+	DEFINE_ARRAY( friendsName, FIELD_CHARACTER, MAX_PLAYER_NAME_LENGTH ),
+	DEFINE_FIELD( fakeplayer, FIELD_BOOLEAN ),
+	DEFINE_FIELD( ishltv, FIELD_BOOLEAN ),
+#if defined( REPLAY_ENABLED )
+	DEFINE_FIELD( isreplay, FIELD_BOOLEAN ),
+#endif
+	DEFINE_ARRAY( customFiles, FIELD_INTEGER, MAX_CUSTOM_FILES ),
+	DEFINE_FIELD( filesDownloaded, FIELD_INTEGER ),
+END_BYTESWAP_DATADESC()
 
 //------------------------------------------
 enum
@@ -128,6 +229,8 @@ public:
 		ComputeFrameVariability();
 		g_EngineStats.SetFrameTime( frametime );
 		g_EngineStats.SetFPSVariability( m_flFPSVariability );
+
+		host_frametime_stddeviation = m_flFPSStdDeviationSeconds;
 	}
 
 private:
@@ -144,6 +247,7 @@ private:
 	double swaptime;
 	double frametime;
 	double m_flFPSVariability;
+	double m_flFPSStdDeviationSeconds;
 	double starttime[NUM_FRAME_SEGMENTS];
 	double deltas[NUM_FRAME_SEGMENTS];
 
@@ -158,42 +262,298 @@ static CFrameTimer g_HostTimes;
 //------------------------------------------
 
 
-double host_time = 0.0;
+float host_time = 0.0;
 
-extern ConVar	pausable;
-extern ConVar	ent_developer;
-extern ConVar	violence_hblood;
-extern ConVar	violence_ablood;
-extern ConVar	violence_hgibs;
-extern ConVar	violence_agibs;
-extern ConVar	sv_cheats;
+static ConVar	violence_hblood( "violence_hblood","1", 0, "Draw human blood" );
+static ConVar	violence_hgibs( "violence_hgibs","1", 0, "Show human gib entities" );
+static ConVar	violence_ablood( "violence_ablood","1", 0, "Draw alien blood" );
+static ConVar	violence_agibs( "violence_agibs","1", 0, "Show alien gib entities" );
+
+// Marked as FCVAR_USERINFO so that the server can cull CC messages before networking them down to us!!!
+ConVar closecaption( "closecaption", "0", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX | FCVAR_USERINFO, "Enable close captioning." );
+extern ConVar sv_unlockedchapters;
+
+void Snd_Restart_f()
+{
+#ifndef SWDS
+	extern bool snd_firsttime;
+
+	char szVoiceCodec[_MAX_PATH] = { 0 };
+	int nVoiceSampleRate = Voice_ConfiguredSampleRate();
+
+	{
+		// This is not valid after voice shuts down
+		const char *pPreviousCodec = Voice_ConfiguredCodec();
+		if ( pPreviousCodec && *pPreviousCodec )
+		{
+			V_strncpy( szVoiceCodec, pPreviousCodec, sizeof( szVoiceCodec ) );
+		}
+	}
+
+	S_Shutdown();
+	snd_firsttime = true;
+	cl.ClearSounds();
+	S_Init();
+
+	// Restart voice if it was running
+	if ( szVoiceCodec[0] )
+		Voice_Init( szVoiceCodec, nVoiceSampleRate );
+
+	// Do this or else it won't have anything in the cache.
+	if ( audiosourcecache && sv.GetMapName()[0] )
+	{
+		audiosourcecache->LevelInit( sv.GetMapName() );
+	}
+
+	// Flush soundscapes so they don't stop. We don't insert text in the buffer here because 
+	// cl_soundscape_flush is normally cheat-protected.
+	ConCommand *pCommand = (ConCommand*)dynamic_cast< const ConCommand* >( g_pCVar->FindCommand( "cl_soundscape_flush" ) );
+	if ( pCommand )
+	{
+		char const *argv[ 1 ] = { "cl_soundscape_flush" };
+
+		CCommand cmd( 1, argv );
+		pCommand->Dispatch( cmd );
+	}
+#endif
+}
+
+static ConCommand snd_restart( "snd_restart", Snd_Restart_f, "Restart sound system." );
 
 // In other C files.
 void Shader_Shutdown( void );
 void R_Shutdown( void );
 
-extern ConVar      scr_connectmsg;
-extern char cl_moviename[];
-
 bool g_bAbortServerSet = false;
 
-static ConVar	fps_max( "fps_max", "300", 0, "Frame rate limiter" );
-static ConVar	singlestep( "singlestep", "0", 0, "Run engine in single step mode ( set next to 1 to advance a frame )" );
-static ConVar	next( "next", "0", 0, "Set to 1 to advance to next frame ( when singlestep == 1 )" );
+#ifdef _WIN32
+static bool s_bInitPME = false;
+#endif
+
+CON_COMMAND( mem_dump, "Dump memory stats to text file." )
+{
+	ConMsg("Writing memory stats to file memstats.txt\n");
+
+#if defined( _MEMTEST )
+	const char *pTest = sv.GetMapName();
+	if ( !pTest || !pTest[0] )
+	{
+		// possibly at menu
+		pTest = "unknown";
+	}
+	MemAlloc_SetStatsExtraInfo( pTest,"" );
+#endif
+	MemAlloc_DumpStats();
+}
+
+CON_COMMAND( mem_compact, "" )
+{
+	MemAlloc_CompactHeap();
+}
+
+CON_COMMAND( mem_eat, "" )
+{
+	MemAlloc_Alloc( 1024* 1024 );
+}
+
+CON_COMMAND( mem_test, "" )
+{
+	MemAlloc_CrtCheckMemory();
+}
+
+static ConVar host_competitive_ever_enabled( "host_competitive_ever_enabled", "0", FCVAR_HIDDEN, "Has competitive ever been enabled this run?", true, 0, true, 1, true, 1, false, 1, NULL  );
+
+static ConVar mem_test_each_frame( "mem_test_each_frame", "0", 0, "Run heap check at end of every frame\n" );
+static ConVar mem_test_every_n_seconds( "mem_test_every_n_seconds", "0", 0, "Run heap check at a specified interval\n" );
+
+static ConVar	singlestep( "singlestep", "0", FCVAR_CHEAT, "Run engine in single step mode ( set next to 1 to advance a frame )" );
+static ConVar	cvarNext( "next", "0", FCVAR_CHEAT, "Set to 1 to advance to next frame ( when singlestep == 1 )" );
 // Print a debug message when the client or server cache is missed
 ConVar host_showcachemiss( "host_showcachemiss", "0", 0, "Print a debug message when the client or server cache is missed." );
 static ConVar mem_dumpstats( "mem_dumpstats", "0", 0, "Dump current and max heap usage info to console at end of frame ( set to 2 for continuous output )\n" );
+static ConVar host_ShowIPCCallCount( "host_ShowIPCCallCount", "0", 0, "Print # of IPC calls this number of times per second. If set to -1, the # of IPC calls is shown every frame." );
 
-extern qboolean gfBackground;
+#if defined( RAD_TELEMETRY_ENABLED )
+static void OnChangeTelemetryPause ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	tmPause( TELEMETRY_LEVEL0, 1 );
+}
 
-extern	int giActive;
-extern qboolean	g_bInEditMode;
+static void OnChangeTelemetryResume ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	tmPause( TELEMETRY_LEVEL0, 0 );
+}
+
+static void OnChangeTelemetryLevel ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	char* pIEnd;
+	const char *pLevel = (( ConVar* )var)->GetString();
+
+	TelemetrySetLevel( strtoul( pLevel, &pIEnd, 0 ) );
+}
+
+static void OnChangeTelemetryFrameCount ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	char* pIEnd;
+	const char *pFrameCount = (( ConVar* )var)->GetString();
+
+	g_Telemetry.FrameCount = strtoul( pFrameCount, &pIEnd, 0 );
+	Msg( " TELEMETRY: Setting Telemetry FrameCount: '%d'\n", g_Telemetry.FrameCount );
+}
+
+static void OnChangeTelemetryServer ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	const char *pServerAddress = (( ConVar* )var)->GetString();
+
+	Q_strncpy( g_Telemetry.ServerAddress, pServerAddress, ARRAYSIZE( g_Telemetry.ServerAddress ) );
+	Msg( " TELEMETRY: Setting Telemetry server: '%s'\n", pServerAddress );
+}
+
+static void OnChangeTelemetryDemoStart ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	char* pIEnd;
+	const char *pVal = (( ConVar* )var)->GetString();
+
+	g_Telemetry.DemoTickStart = strtoul( pVal, &pIEnd, 0 );
+	if( g_Telemetry.DemoTickStart > 2000 )
+	{
+		char cmd[ 256 ]; 
+
+		// If we're far away from the start of the demo file, then jump to ~1000 ticks before.
+		Q_snprintf( cmd, sizeof( cmd ), "demo_gototick %d", g_Telemetry.DemoTickStart - 1000 ); 
+		Cbuf_AddText( cmd ); 
+	}
+	Msg( " TELEMETRY: Setting Telemetry DemoTickStart: '%d'\n", g_Telemetry.DemoTickStart );
+}
+
+static void OnChangeTelemetryDemoEnd ( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	char* pIEnd;
+	const char *pVal = (( ConVar* )var)->GetString();
+
+	g_Telemetry.DemoTickEnd = strtoul( pVal, &pIEnd, 0 );
+	Msg( " TELEMETRY: Setting Telemetry DemoTickEnd: '%d'\n", g_Telemetry.DemoTickEnd );
+}
+
+ConVar telemetry_pause( "telemetry_pause", "0", 0, "Pause Telemetry", OnChangeTelemetryPause );
+ConVar telemetry_resume( "telemetry_resume", "0", 0, "Resume Telemetry", OnChangeTelemetryResume );
+ConVar telemetry_framecount( "telemetry_framecount", "0", 0, "Set Telemetry count of frames to capture", OnChangeTelemetryFrameCount );
+ConVar telemetry_level( "telemetry_level", "0", 0, "Set Telemetry profile level: 0 being off.", OnChangeTelemetryLevel );
+ConVar telemetry_server( "telemetry_server", "localhost", 0, "Set Telemetry server", OnChangeTelemetryServer );
+ConVar telemetry_demostart( "telemetry_demostart", "0", 0, "When playing demo, start telemetry on tick #", OnChangeTelemetryDemoStart );
+ConVar telemetry_demoend( "telemetry_demoend", "0", 0, "When playing demo, stop telemetry on tick #", OnChangeTelemetryDemoEnd );
+#endif
+
+extern bool gfBackground;
 
 static bool host_checkheap = false;
 
 CCommonHostState host_state;
+
+
+//-----------------------------------------------------------------------------
+
+enum HostThreadMode
+{
+	HTM_DISABLED,
+	HTM_DEFAULT,
+	HTM_FORCED,
+};
+
+ConVar host_thread_mode( "host_thread_mode", ( IsX360() ) ? "1" : "0", 0, "Run the host in threaded mode, (0 == off, 1 == if multicore, 2 == force)" );
+extern ConVar threadpool_affinity;
+void OnChangeThreadAffinity( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	if ( g_pThreadPool->NumThreads() )
+	{
+		g_pThreadPool->Distribute( threadpool_affinity.GetBool() );
+	}
+}
+
+ConVar threadpool_affinity( "threadpool_affinity", "1", 0, "Enable setting affinity", 0, 0, 0, 0, &OnChangeThreadAffinity );
+
+#if 0
+extern ConVar threadpool_reserve;
+CThreadEvent g_ReleaseThreadReservation( true );
+CInterlockedInt g_NumReservedThreads;
+
+void ThreadPoolReserverFunction()
+{
+	g_ReleaseThreadReservation.Wait();
+	--g_NumReservedThreads;
+}
+
+void ReserveThreads( int nToReserve )
+{
+	nToReserve = clamp( nToReserve, 0, g_pThreadPool->NumThreads() );
+	g_ReleaseThreadReservation.Set();
+
+	while ( g_NumReservedThreads != 0 )
+	{
+		ThreadSleep( 0 );
+	}
+
+	g_ReleaseThreadReservation.Reset();
+
+	while ( nToReserve-- )
+	{
+		g_NumReservedThreads++;
+		g_pThreadPool->QueueCall( &ThreadPoolReserverFunction )->Release();
+	}
+
+	Msg( "%d threads being reserved\n", (int)g_NumReservedThreads );
+}
+
+void OnChangeThreadReserve( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	ReserveThreads( threadpool_reserve.GetInt() );
+}
+
+ConVar threadpool_reserve( "threadpool_reserve", "0", 0, "Consume the specified number of threads in the thread pool", 0, 0, 0, 0, &OnChangeThreadReserve );
+
+CON_COMMAND( threadpool_cycle_reserve, "Cycles threadpool reservation by powers of 2" )
+{
+	int nCores = g_pThreadPool->NumThreads() + 1;
+	int nAvailableCores = nCores - g_NumReservedThreads;
+	Assert( nAvailableCores );
+	int ratio = nCores / nAvailableCores;
+	ratio *= 2;
+	if ( ratio > nCores )
+	{
+		ReserveThreads( 0 );
+	}
+	else
+	{
+		ReserveThreads( nCores - nCores / ratio );
+	}
+}
+
+CON_COMMAND( thread_test_tslist, "" )
+{
+	int nTests = ( args.ArgC() == 1 ) ? 10000 : atoi( args.Arg( 1 ) );
+	RunTSListTests( nTests );
+}
+
+CON_COMMAND( thread_test_tsqueue, "" )
+{
+	int nTests = ( args.ArgC() == 1 ) ? 10000 : atoi( args.Arg( 1 ) );
+	RunTSQueueTests( nTests );
+}
+
+CON_COMMAND( threadpool_run_tests, "" )
+{
+	int nTests = ( args.ArgC() == 1 ) ? 1 : atoi( args.Arg( 1 ) );
+	for ( int i = 0; i < nTests; i++ )
+	{
+		RunThreadPoolTests();
+	}
+}
+#endif
+
+//-----------------------------------------------------------------------------
+
 /*
-A server can allways be started, even if the system started out as a client
+A server can always be started, even if the system started out as a client
 to a remote system.
 
 A client can NOT be started if the system started as a dedicated server.
@@ -202,21 +562,25 @@ Memory is cleared / released when a server or client begins, not when they end.
 
 
 // Ear position + orientation
-Vector h_origin( 0, 0, 0 );
-Vector h_forward( 1, 0, 0 ), h_right( 0, 1, 0 ), h_up( 0, 0, 1 );
+static AudioState_t s_AudioState;
 
 engineparms_t host_parms;
 
-qboolean	host_initialized = false;		// true if into command execution
+bool		host_initialized = false;		// true if into command execution
 
-double		host_frametime;
-double		realtime;				// without any filtering or bounding
-static double	oldrealtime;			// last frame run
+float		host_frametime = 0.0f;
+float		host_frametime_unbounded = 0.0f;
+float		host_frametime_stddeviation = 0.0f;
+double		realtime = 0;			// without any filtering or bounding
+double		host_idealtime = 0;		// "ideal" server time assuming perfect tick rate
+float		host_nexttick = 0;		// next server tick in this many ms
+float		host_jitterhistory[128] = { 0 };
+unsigned int host_jitterhistorypos = 0;
 
 int			host_framecount;
 static int	host_hunklevel;
 
-client_t	*host_client;			// current client
+CGameClient	*host_client;			// current client
 
 jmp_buf 	host_abortserver;
 jmp_buf     host_enddemo;
@@ -224,28 +588,256 @@ jmp_buf     host_enddemo;
 static ConVar	host_profile( "host_profile","0" );
 
 ConVar	host_limitlocal( "host_limitlocal", "0", 0, "Apply cl_cmdrate and cl_updaterate to loopback connection" );
-ConVar	host_framerate( "host_framerate","0" );	// set to lock per-frame time elapse
-ConVar	host_timescale( "host_timescale","1.0" );	// set for slow motion
-ConVar	host_speeds( "host_speeds","0" );		// set for running times
-ConVar  mp_logfile( "mp_logfile", "1", FCVAR_SERVER );  // Log multiplayer frags to server logfile
-ConVar  mp_logecho( "mp_logecho", "1", FCVAR_SERVER );  // Log multiplayer frags to console
-#ifdef _DEBUG
-ConVar	developer( "developer","1" );   // Dev by default is off except in debug builds
-#else
-ConVar  developer( "developer", "0" );
-#endif
-ConVar	ent_developer( "ent_developer", "0" );
-ConVar	skill( "skill","1", FCVAR_ARCHIVE );			// 1 - 3
-ConVar	deathmatch( "deathmatch","0", FCVAR_SERVER );	// 0, 1, or 2
-ConVar	coop( "coop","0", FCVAR_SERVER );			// 0 or 1
-ConVar	pausable( "pausable","1", FCVAR_SERVER );
-ConVar	r_ForceRestore( "r_ForceRestore", "0" );
+ConVar	host_framerate( "host_framerate","0", 0, "Set to lock per-frame time elapse." );
+ConVar	host_timescale( "host_timescale","1.0", FCVAR_REPLICATED, "Prescale the clock by this amount." );
+ConVar	host_speeds( "host_speeds","0", 0, "Show general system running times." );		// set for running times
 
+ConVar	host_flush_threshold( "host_flush_threshold", "20", 0, "Memory threshold below which the host should flush caches between server instances" );
 
-// For measure_section.cpp.
-double GetRealTime()
+void HostTimerSpinMsChangedCallback( IConVar *var, const char *pOldString, float flOldValue );
+ConVar host_timer_spin_ms( "host_timer_spin_ms", "0", FCVAR_NONE, "Use CPU busy-loop for improved timer precision (dedicated only)", HostTimerSpinMsChangedCallback );
+
+void HostTimerSpinMsChangedCallback( IConVar *var, const char *pOldString, float flOldValue )
 {
-	return realtime;
+	const char *pForcedValue = CommandLine()->ParmValue( "+host_timer_spin_ms" );
+	if ( pForcedValue != NULL )
+	{
+		if ( V_strcmp( host_timer_spin_ms.GetString(), pForcedValue ) )
+		{
+			Msg( "Value for host_timer_spin_ms is locked to %s by command line parameter.\n", pForcedValue );
+			host_timer_spin_ms.SetValue( pForcedValue );
+		}
+	}
+}
+
+CON_COMMAND( host_timer_report, "Spew CPU timer jitter for the last 128 frames in microseconds (dedicated only)" )
+{
+	if ( sv.IsDedicated() )
+	{
+		for (int i = 1; i <= ARRAYSIZE( host_jitterhistory ); ++i)
+		{
+			unsigned int slot = ( i + host_jitterhistorypos ) % ARRAYSIZE( host_jitterhistory );
+			Msg( "%1.3fms\n", host_jitterhistory[ slot ] * 1000 );
+		}
+	}
+}
+
+#ifdef REL_TO_STAGING_MERGE_TODO							 
+// Do this when merging the game DLLs so FCVAR_CHEAT can be set on them at the same time.
+ConVar  developer( "developer", "0", FCVAR_CHEAT, "Set developer message level");
+#else
+ConVar  developer( "developer", "0", 0, "Set developer message level");
+#endif
+
+ConVar	skill( "skill","1", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX, "Game skill level (1-3).", true, 1, true, 3 );			// 1 - 3
+ConVar	deathmatch( "deathmatch","0", FCVAR_NOTIFY | FCVAR_INTERNAL_USE, "Running a deathmatch server." );	// 0, 1, or 2
+ConVar	coop( "coop","0", FCVAR_NOTIFY, "Cooperative play." );			// 0 or 1
+
+#ifdef _DEBUG
+ConVar	r_ForceRestore( "r_ForceRestore", "0", 0 );
+#endif // _DEBUG
+
+ConVar vcr_verbose( "vcr_verbose", "0", 0, "Write extra information into .vcr file." );
+
+#ifndef SWDS
+void CL_CheckToDisplayStartupMenus(); // in cl_main.cpp
+#endif
+
+
+bool GetFileFromRemoteStorage( ISteamRemoteStorage *pRemoteStorage, const char *pszRemoteFileName, const char *pszLocalFileName )
+{
+	bool bSuccess = false;
+
+	// check if file exists in Steam Cloud first
+	int32 nFileSize = pRemoteStorage->GetFileSize( pszRemoteFileName );
+
+	if ( nFileSize > 0 )
+	{
+		CUtlMemory<char> buf( 0, nFileSize );
+		if ( pRemoteStorage->FileRead( pszRemoteFileName, buf.Base(), nFileSize ) == nFileSize )
+		{
+
+			char filepath[ 512 ];
+			Q_strncpy( filepath, pszLocalFileName, sizeof( filepath ) );
+			Q_StripFilename( filepath );
+			g_pFullFileSystem->CreateDirHierarchy( filepath, "MOD" );
+
+			FileHandle_t hFile = g_pFileSystem->Open( pszLocalFileName, "wb", "MOD" );
+			if( hFile )
+			{
+
+				bSuccess = g_pFileSystem->Write( buf.Base(), nFileSize, hFile ) == nFileSize;
+				g_pFileSystem->Close( hFile );
+
+				if ( bSuccess )
+				{
+					DevMsg( "[Cloud]: SUCCEESS retrieved %s from remote storage into %s\n", pszRemoteFileName, pszLocalFileName );
+				}
+				else
+				{
+					DevMsg( "[Cloud]: FAILED retrieved %s from remote storage into %s\n", pszRemoteFileName, pszLocalFileName );
+				}
+			}
+		}
+	}
+
+	return bSuccess;
+}
+
+
+void CCommonHostState::SetWorldModel( model_t *pModel )
+{
+	worldmodel = pModel;
+	if ( pModel )
+	{
+		worldbrush = pModel->brush.pShared;
+	}
+	else
+	{
+		worldbrush = NULL;
+	}
+}
+
+void Host_DefaultMapFileName( const char *pFullMapName, /* out */ char *pDiskName, unsigned int nDiskNameSize )
+{
+	if ( IsPC() || !IsX360() )
+	{
+		// pc names are as is
+		Q_snprintf( pDiskName, nDiskNameSize, "maps/%s.bsp", pFullMapName );
+	}
+	else if ( IsX360() )
+	{
+		Q_snprintf( pDiskName, nDiskNameSize, "maps/%s.360.bsp", pFullMapName );
+	}
+}
+
+void Host_SetAudioState( const AudioState_t &audioState )
+{
+	memcpy( &s_AudioState, &audioState, sizeof(AudioState_t) );
+}
+
+bool Host_IsSinglePlayerGame( void )
+{
+	if ( sv.IsActive() )
+	{
+		return !sv.IsMultiplayer();
+	}
+	else
+	{
+		return cl.m_nMaxClients == 1;
+	}
+}
+
+void CheckForFlushMemory( const char *pCurrentMapName, const char *pDestMapName )
+{
+	if ( host_flush_threshold.GetInt() == 0 )
+		return;
+
+#if defined(_X360)
+	// There are three cases in which we flush memory
+	//   Case 1: changing from one map to another
+	//          -> flush temp data caches
+	//   Case 2: loading any map (inc. A to A) and free memory is below host_flush_threshold MB
+	//          -> flush everything
+	//   Case 3: loading a 'blacklisted' map (the known biggest memory users, or where texture sets change)
+	//          -> flush everything
+	static const char *mapBlackList[] = 
+	{
+		// --hl2--
+		"d1_canals_01",
+		"d1_canals_05",
+		"d1_eli_01",
+		"d1_town_01",
+		"d2_coast_01",
+		"d2_prison_01",
+		"d3_c17_01",
+		"d3_c17_05",
+		"d3_c17_09",
+		"d3_citadel_01",
+		"d3_breen_01",
+		// --ep1--
+		"ep1_c17_02",
+		"ep1_c17_02b",
+		"ep1_c17_05",
+		"ep1_c17_06",
+		// --ep2--
+		"ep2_outland_06a",
+		"ep2_outland_09",
+		"ep2_outland_11",
+		"ep2_outland_12",
+		"ep2_outland_12a",
+		// --tf--
+		"tc_hydro"
+	};
+
+	char szCurrentMapName[MAX_PATH];
+	char szDestMapName[MAX_PATH];
+	if ( pCurrentMapName )
+	{
+		V_FileBase( pCurrentMapName, szCurrentMapName, sizeof( szCurrentMapName ) );
+	}
+	else
+	{
+		szCurrentMapName[0] = '\0';
+	}
+	pCurrentMapName = szCurrentMapName;
+
+	if ( pDestMapName )
+	{
+		V_FileBase( pDestMapName, szDestMapName, sizeof( szDestMapName ) );
+	}
+	else
+	{
+		szDestMapName[0] = '\0';
+	}
+	pDestMapName = szDestMapName;
+
+	bool bIsMapChanging = pCurrentMapName[0] && V_stricmp( pCurrentMapName, pDestMapName );
+
+	bool bIsDestMapBlacklisted = false;
+	for ( int i = 0; i < ARRAYSIZE( mapBlackList ); i++ )
+	{
+		if ( pDestMapName && !V_stricmp( pDestMapName, mapBlackList[i] ) )
+		{
+			bIsDestMapBlacklisted = true;
+		}
+	}
+
+	DevMsg( "---CURRENT(%s), NEXT(%s)\n", (pCurrentMapName[0] ? pCurrentMapName : "----"), (pDestMapName[0] ? pDestMapName : "----") );
+	if ( bIsMapChanging )
+	{
+		DevMsg( "---CHANGING MAPS!\n" );
+	}
+	if ( bIsDestMapBlacklisted )
+	{
+		DevMsg( "---BLACKLISTED!\n" );
+	}
+
+	MEMORYSTATUS stat;
+	GlobalMemoryStatus( &stat );
+	if ( ( stat.dwAvailPhys < host_flush_threshold.GetInt() * 1024 * 1024 ) ||
+		 ( bIsDestMapBlacklisted && bIsMapChanging ) )
+	{
+		// Flush everything; ALL data is reloaded from scratch
+		SV_FlushMemoryOnNextServer();
+		g_pDataCache->Flush();
+		DevWarning( "---FULL FLUSH\n" );
+	}
+	else if ( bIsMapChanging )
+	{
+		// Flush temporary data (async anim, non-locked async audio)
+		g_pMDLCache->Flush( MDLCACHE_FLUSH_ANIMBLOCK );
+		wavedatacache->Flush();
+		DevWarning( "---PARTIAL FLUSH\n" );
+	}
+	DevMsg( "---- --- ----\n" );
+#endif
+}
+
+void Host_AbortServer()
+{
+	g_HostServerAbortCount++;
+	longjmp( host_abortserver, 1 );
 }
 
 /*
@@ -253,38 +845,40 @@ double GetRealTime()
 Host_EndGame
 ================
 */
-void Host_EndGame (char *message, ...)
+void Host_EndGame (bool bShowMainMenu, const char *message, ...)
 {
 	int oldn;
 	va_list		argptr;
 	char		string[1024];
-	
+
 	va_start (argptr,message);
 	Q_vsnprintf (string,sizeof(string),message,argptr);
 	va_end (argptr);
-	Con_Printf ("Host_EndGame: %s\n",string);
+	ConMsg ("Host_EndGame: %s\n",string);
 
 #ifndef SWDS
 	scr_disabled_for_loading = true;
 #endif
 
-	oldn = cls.demonum;
-	
-	Host_Disconnect();
+	oldn = cl.demonum;
+	cl.demonum = -1;
 
-	cls.demonum = oldn;
+	Host_Disconnect(bShowMainMenu);
 
-	if (cls.state == ca_dedicated)
-		Sys_Error ("Host_EndGame: %s\n",string);	// dedicated servers exit
-	
-	if (cls.demonum != -1)
+	cl.demonum = oldn;
+
+	if ( sv.IsDedicated() )
 	{
-		oldn = cls.demonum;
-		
-		cls.demonum = oldn;
+		Sys_Error ("Host_EndGame: %s\n",string);	// dedicated servers exit
+		return;
+	}
+
+	if (cl.demonum != -1)
+	{
 #ifndef SWDS
 		CL_NextDemo ();
 #endif		
+		g_HostEndDemo++;
 		longjmp (host_enddemo, 1);
 	}
 	else
@@ -292,16 +886,12 @@ void Host_EndGame (char *message, ...)
 
 #ifndef SWDS
 		scr_disabled_for_loading = false;
-
-		Cbuf_AddText("cd stop\n");
-		Cbuf_Execute();
 #endif
 		if ( g_bAbortServerSet )
 		{
-			longjmp (host_abortserver, 1);
+			Host_AbortServer();
 		}
 	}
-
 }
 
 /*
@@ -311,11 +901,15 @@ Host_Error
 This shuts down both the client and server
 ================
 */
-void Host_Error (char *error, ...)
+void Host_Error (const char *error, ...)
 {
 	va_list		argptr;
 	char		string[1024];
-	static	qboolean inerror = false;
+	static	bool inerror = false;
+
+	DebuggerBreakIfDebugging_StagingOnly();
+
+	g_HostErrorCount++;
 
 	if (inerror)
 	{
@@ -324,38 +918,188 @@ void Host_Error (char *error, ...)
 	inerror = true;
 
 #ifndef SWDS
-	CL_WriteMessageHistory();
+	//	CL_WriteMessageHistory();	TODO must be done by network layer
 #endif
 
 	va_start (argptr,error);
 	Q_vsnprintf(string,sizeof(string),error,argptr);
 	va_end (argptr);
 
-	if ( cls.state == ca_dedicated )
+	if ( sv.IsDedicated() )
 	{
 		// dedicated servers just exit
-		Sys_Error( "Host_Error: %s\n", string );	
+		Sys_Error( "Host_Error: %s\n", string );
+		return;
 	}
 
 #ifndef SWDS
 	// Reenable screen updates
 	SCR_EndLoadingPlaque ();		
 #endif
-	Con_Printf( "\nHost_Error: %s\n\n", string );
-	
-	Host_Disconnect();
-	
-	cls.demonum = -1;
+	ConMsg( "\nHost_Error: %s\n\n", string );
+
+	Host_Disconnect( true, string );
+
+	cl.demonum = -1;
 
 	inerror = false;
 
 	if ( g_bAbortServerSet )
 	{
-		longjmp (host_abortserver, 1);
+		Host_AbortServer();
 	}
 }
 
 #ifndef SWDS
+
+ButtonCode_t nInvalidKeyBindings[] =
+{
+	KEY_PAD_0,
+	KEY_PAD_1,
+	KEY_PAD_2,
+	KEY_PAD_3,
+	KEY_PAD_4,
+	KEY_PAD_5,
+	KEY_PAD_6,
+	KEY_PAD_7,
+	KEY_PAD_8,
+	KEY_PAD_9,
+	KEY_PAD_DIVIDE,
+	KEY_PAD_MULTIPLY,
+	KEY_PAD_MINUS,
+	KEY_PAD_PLUS,
+	KEY_PAD_ENTER,
+	KEY_PAD_DECIMAL,
+	KEY_ESCAPE,
+	KEY_SCROLLLOCK,
+	KEY_INSERT,
+	KEY_DELETE,
+	KEY_HOME,
+	KEY_END,
+	KEY_PAGEUP,
+	KEY_PAGEDOWN,
+	KEY_BREAK,
+	KEY_LSHIFT,
+	KEY_RSHIFT,
+	KEY_LALT,
+	KEY_RALT,
+	KEY_LCONTROL,
+	KEY_RCONTROL,
+	KEY_LWIN,
+	KEY_RWIN,
+	KEY_APP,
+	KEY_UP,
+	KEY_LEFT,
+	KEY_DOWN,
+	KEY_RIGHT,
+	KEY_CAPSLOCKTOGGLE,
+	KEY_NUMLOCKTOGGLE,
+	KEY_SCROLLLOCKTOGGLE,
+	KEY_BACKQUOTE,
+};
+
+//******************************************
+// SetupNewBindings
+//
+// In the rare case that we ship an update
+// where we need a key to be bound to a given
+// con-command, this function do its best to
+// bind those keys, based on a file called
+// newbindings.txt.
+//******************************************
+void SetupNewBindings()
+{
+	char szBindCmd[ 256 ];
+
+	// Load the file
+	const char *pFilename = "scripts\\newbindings.txt";
+	KeyValues *pNewBindingsData = new KeyValues( pFilename );
+	if ( !pNewBindingsData->LoadFromFile( g_pFileSystem, pFilename ) )
+	{
+		pNewBindingsData->deleteThis();
+		return;
+	}
+
+	FOR_EACH_TRUE_SUBKEY( pNewBindingsData, pSubKey )
+	{
+		// Get the binding
+		const char *pBinding = pSubKey->GetName();
+		if ( !pBinding )
+			continue;
+
+		// Get the ideal key
+		const char *pIdealKey = pSubKey->GetString( "ideal_key", NULL );
+		if ( !pIdealKey )
+			continue;
+
+		// Force the key binding if the ideal key is bound to an irrelevant command, which is the
+		// case for CS:S, which binds F6 to "quick save," which has no used in the game at all.
+		const char *pOverrideIfCmd = pSubKey->GetString( "override_if", NULL );
+		if ( pOverrideIfCmd )
+		{
+			const char *pCurrentBindingForKey = ::Key_BindingForKey( g_pInputSystem->StringToButtonCode( pIdealKey ) );
+			if ( !pCurrentBindingForKey  || !V_stricmp( pOverrideIfCmd, pCurrentBindingForKey ) )
+			{
+				V_snprintf( szBindCmd, sizeof( szBindCmd ), "bind \"%s\" \"%s\"", pIdealKey, pBinding );
+				Cbuf_AddText( szBindCmd );
+				continue;
+			}
+		}
+
+		// Already have a key for this command?
+		if ( ::Key_NameForBinding( pBinding ) )
+			continue;
+
+		// No binding.  Is the ideal key available?
+		ButtonCode_t bcIdealKey = g_pInputSystem->StringToButtonCode( pIdealKey );
+		const char *pCurrentBindingForIdealKey = ::Key_BindingForKey( bcIdealKey );
+		if ( !pCurrentBindingForIdealKey )
+		{
+			// Yes - bind to the ideal key.
+			V_snprintf( szBindCmd, sizeof( szBindCmd ), "bind \"%s\" \"%s\"", pIdealKey, pBinding );
+			Cbuf_AddText( szBindCmd );
+			continue;
+		}
+
+		// Ideal key already bound - find another key at random and bind it
+		bool bFound = false;
+		int nNumAttempts = 1;
+		for ( int nCurButton = (int)KEY_0; nCurButton <= (int)KEY_LAST; ++nCurButton, ++nNumAttempts )
+		{
+			// Don't consider numpad, windows keys, etc
+			bool bFoundInvalidKey = false;
+			for ( int iKeyIndex = 0; iKeyIndex < sizeof( nInvalidKeyBindings )/sizeof( nInvalidKeyBindings[0] ); iKeyIndex++ )
+			{
+				if ( nCurButton == (int)nInvalidKeyBindings[iKeyIndex] )
+				{
+					bFoundInvalidKey = true;
+					break;
+				}
+			}
+
+			if ( bFoundInvalidKey )
+				continue;
+
+			// Key available?
+			ButtonCode_t bcCurButton = (ButtonCode_t)nCurButton;
+			if ( !::Key_BindingForKey( bcCurButton ) )
+			{
+				// Yes - use it.
+				V_snprintf( szBindCmd, sizeof( szBindCmd ), "bind \"%s\" \"%s\"", g_pInputSystem->ButtonCodeToString( bcCurButton ), pBinding );
+				Cbuf_AddText( szBindCmd );
+				bFound = true;
+				break;
+			}
+		}
+
+		// We tried really hard - did we fail?
+		if ( !bFound )
+		{
+			Warning( "Unable to bind a key for command \"%s\" after %i attempt(s).\n", pBinding, nNumAttempts );
+		}
+	}
+}
+
 //******************************************
 // UseDefuaultBinding
 //
@@ -371,61 +1115,82 @@ void UseDefaultBindings( void )
 	char szKeyName[ 256 ];
 
 	// read kb_def file to get default key binds
-	sprintf( szFileName, "%skb_def.lst", SCRIPT_DIR );
+	Q_snprintf( szFileName, sizeof( szFileName ), "%skb_def.lst", SCRIPT_DIR );
 	f = g_pFileSystem->Open( szFileName, "r");
 	if ( !f )
 	{
-		Con_Printf( "Couldn't open kb_def.lst\n" );
+		ConMsg( "Couldn't open kb_def.lst\n" );
 		return;
 	}
 
 	// read file into memory
 	int size = g_pFileSystem->Size(f);
-	char *buf = new char[ size ];
-	g_pFileSystem->Read( buf, size, f );
+	char *startbuf = new char[ size ];
+	g_pFileSystem->Read( startbuf, size, f );
 	g_pFileSystem->Close( f );
 
+	const char *buf = startbuf;
 	while ( 1 )
 	{
-		buf = COM_ParseFile( buf, token );
+		buf = COM_ParseFile( buf, token, sizeof( token ) );
 		if ( strlen( token ) <= 0 )
 			break;
-		strcpy ( szKeyName, token );
+		Q_strncpy ( szKeyName, token, sizeof( szKeyName ) );
 
-		buf = COM_ParseFile( buf, token );
+		buf = COM_ParseFile( buf, token, sizeof( token ) );
 		if ( strlen( token ) <= 0 )  // Error
 			break;
-			
-		// finally, bind key
-		Key_SetBinding ( Key_StringToKeynum( szKeyName ), token );
-	}
-	delete buf;		// cleanup on the way out
-}
 
+		// finally, bind key
+		Key_SetBinding ( g_pInputSystem->StringToButtonCode( szKeyName ), token );
+	}
+	delete [] startbuf;		// cleanup on the way out
+}
 
 static bool g_bConfigCfgExecuted = false;
 
-void Host_ReadConfiguration( void )
+//-----------------------------------------------------------------------------
+// Purpose: Write out our 360 exclusive settings to internal storage
+//-----------------------------------------------------------------------------
+void Host_WriteConfiguration_360( void )
 {
-	if ( cls.state == ca_dedicated )
+#ifdef _X360
+	if ( XBX_GetStorageDeviceId() == XBX_INVALID_STORAGE_ID || XBX_GetStorageDeviceId() == XBX_STORAGE_DECLINED )
 		return;
 
-	// Rebind keys and set cvars
-	Cbuf_AddText( "exec config.cfg mod\n" );
-	Cbuf_Execute();
+	// Construct the name for our config settings for this mod
+	char strFilename[MAX_PATH];
+	Q_snprintf( strFilename, sizeof(strFilename), "cfg:/%s_config.cfg", GetCurrentMod() );
 
-	// check to see if we actually set any keys, if not, load defaults from kb_def.lst
-	// so we at least have basics setup.
-	int nNumBinds = Key_CountBindings();
-	if ( nNumBinds == 0 )
+	// Always throw away all keys that are left over.
+	CUtlBuffer	configBuff( 0, 0, CUtlBuffer::TEXT_BUFFER);
+	configBuff.Printf( "unbindall\n" );
+
+	Key_WriteBindings( configBuff );
+	cv->WriteVariables( configBuff );
+
+	ConVarRef mat_monitorgamma( "mat_monitorgamma" );
+	ConVarRef mat_monitorgamma_tv_enabled( "mat_monitorgamma_tv_enabled" );
+
+	char strVideoFilename[MAX_PATH];
+	CUtlBuffer videoBuff( 0, 0, CUtlBuffer::TEXT_BUFFER);
+	Q_snprintf( strVideoFilename, sizeof(strVideoFilename), "cfg:/video_config.cfg" );
+	videoBuff.Printf( "mat_monitorgamma %f\n", mat_monitorgamma.GetFloat() );
+	videoBuff.Printf( "mat_monitorgamma_tv_enabled %d\n", mat_monitorgamma_tv_enabled.GetBool() );
+
+	// Anything to write?
+	if ( configBuff.TellMaxPut() )
 	{
-		UseDefaultBindings();
+		g_pFileSystem->WriteFile( strFilename, NULL, configBuff );
 	}
 
-	Key_SetBinding ( K_ESCAPE, "cancelselect" );
-	// Make sure console key is always bound
-	Key_SetBinding( '`', "toggleconsole" );
-	g_bConfigCfgExecuted = true;
+	if ( videoBuff.TellMaxPut() )
+	{
+		g_pFileSystem->WriteFile( strVideoFilename, NULL, videoBuff );
+	}
+
+	g_pXboxSystem->FinishContainerWrites();
+#endif // #ifdef _X360
 }
 
 /*
@@ -435,82 +1200,515 @@ Host_WriteConfiguration
 Writes key bindings and archived cvars to config.cfg
 ===============
 */
-void Host_WriteConfiguration( char const *filename )
+
+void Host_WriteConfiguration( const char *filename, bool bAllVars )
 {
-	Assert( filename && filename [ 0 ] );
+	const bool cbIsUserRequested = ( filename != NULL );
 
-	FileHandle_t f;
-	kbutton_t *ml, *jl;
-	
+	if ( !filename )
+		filename = "config.cfg";
+
 	if ( !g_bConfigCfgExecuted )
-	{
 		return;
-	}
-
+	
 	if ( !host_initialized )
+		return;
+
+	// Don't write config when in default--most of the values are defaults which is not what the player wants.
+	// If bAllVars is set, go ahead and write out the file anyways, since it was requested explicitly.
+	if ( !cbIsUserRequested && ( CommandLine()->CheckParm( "-default" ) || host_competitive_ever_enabled.GetBool() ) )
+		return;
+	
+	// Write to internal storage on the 360
+	if ( IsX360() )
 	{
+		Host_WriteConfiguration_360();
 		return;
 	}
 
 	// If in map editing mode don't save configuration
 	if (g_bInEditMode)
 	{
-		Con_Printf( "skipping %s output when in map edit mode\n", filename );
+		ConMsg( "skipping %s output when in map edit mode\n", filename );
 		return;
 	}
 
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
-	if (  cls.state != ca_dedicated )
+	if ( sv.IsDedicated() )
+		return;
+
+	if ( IsPC() && Key_CountBindings() <= 1 )
 	{
-		if ( Key_CountBindings() <= 1 )
-		{
-			Con_Printf( "skipping %s output, no keys bound\n", filename );
-			return;
-		}
-
-		// Generate a new .cfg file.
-		f = g_pFileSystem->Open( filename, "w");
-		if (!f)
-		{
-			Con_Printf( "Couldn't write %s\n", filename );
-			return;
-		}
-		
-		// Always throw away all keys that are left over.
-		g_pFileSystem->FPrintf( f, "unbindall\n" );
-
-		Key_WriteBindings (f);
-		cv->WriteVariables (f);
-		Info_WriteVars( cls.userinfo, f );
-
-		ml = g_ClientDLL->IN_FindKey( "in_mlook" );
-		jl = g_ClientDLL->IN_FindKey( "in_jlook" );
-
-		if ( ml && ( ml->state & 1 ) ) 
-			g_pFileSystem->FPrintf( f, "+mlook\n" );
-
-		if ( jl && ( jl->state & 1 ) )
-			g_pFileSystem->FPrintf( f, "+jlook\n" );
-
-		g_pFileSystem->Close (f);
-
-		Con_Printf( "Wrote %s\n", filename );
-	}
-}
-
-
-void Host_WriteConfig_f( void )
-{
-	if ( Cmd_Argc() > 2 )
-	{
-		Con_Printf( "Usage:  writeconfig <filename.cfg>\n" );
+		ConMsg( "skipping %s output, no keys bound\n", filename );
 		return;
 	}
 
-	if ( Cmd_Argc() == 2 )
+	// force any queued convar changes to flush before reading/writing them
+	UpdateMaterialSystemConfig();
+
+	// Generate a new .cfg file.
+	char		szFileName[MAX_PATH];
+	CUtlBuffer	configBuff( 0, 0, CUtlBuffer::TEXT_BUFFER);
+
+	Q_snprintf( szFileName, sizeof(szFileName), "cfg/%s", filename );
+	g_pFileSystem->CreateDirHierarchy( "cfg", "MOD" );
+	if ( g_pFileSystem->FileExists( szFileName, "MOD" ) && !g_pFileSystem->IsFileWritable( szFileName, "MOD" ) )
 	{
-		char const *filename = Cmd_Argv( 1 );
+		ConMsg( "Config file %s is read-only!!\n", szFileName );
+		return;
+	}
+	
+	// Always throw away all keys that are left over.
+	configBuff.Printf( "unbindall\n" );
+
+	Key_WriteBindings( configBuff );
+	cv->WriteVariables( configBuff, bAllVars );
+
+#if !defined( SWDS )
+		bool down;
+		if ( g_ClientDLL->IN_IsKeyDown( "in_jlook", down ) && down )
+		{
+			configBuff.Printf( "+jlook\n" );
+		}
+#endif // SWDS
+
+	if ( !configBuff.TellMaxPut() )
+	{
+		// nothing to write
+		return;
+	}
+
+#if defined(NO_STEAM)
+		AssertMsg( false, "SteamCloud not available on Xbox 360. Badger Martin to fix this." );
+#else
+		ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
+			SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
+
+		if ( pRemoteStorage )
+		{
+			int32 availableBytes, totalBytes = 0;
+			if ( pRemoteStorage->GetQuota( &totalBytes, &availableBytes ) )
+			{
+				if ( totalBytes > 0 )
+				{
+					if ( cl_cloud_settings.GetInt() == STEAMREMOTESTORAGE_CLOUD_ON )
+					{
+						// TODO put MOD dir in pathname
+						if ( pRemoteStorage->FileWrite( szFileName, configBuff.Base(), configBuff.TellMaxPut() ) )
+						{
+							DevMsg( "[Cloud]: SUCCEESS saving %s in remote storage\n", szFileName );
+						}
+						else
+						{
+							// probably a quota issue. TODO what to do ?
+							DevMsg( "[Cloud]: FAILED saving %s in remote storage\n", szFileName );
+						}
+
+						// write the current logo file
+						char szLogoFileName[MAX_PATH]; 
+						Q_strncpy( szLogoFileName, cl_logofile.GetString(), sizeof(szLogoFileName) ); // .vtf file
+
+						if ( g_pFileSystem->FileExists( szLogoFileName, "MOD" ) )
+						{
+							// store logo .VTF file
+							FileHandle_t hFile = g_pFileSystem->Open( szLogoFileName, "rb", "MOD" );
+							if ( FILESYSTEM_INVALID_HANDLE != hFile )
+							{
+								unsigned int unSize = g_pFileSystem->Size( hFile );
+
+								byte *pBuffer = (byte*) malloc( unSize );
+								if ( g_pFileSystem->Read( pBuffer, unSize, hFile ) == unSize )
+								{
+									Q_SetExtension( g_szDefaultLogoFileName, ".vtf", sizeof(g_szDefaultLogoFileName) );
+									if ( pRemoteStorage->FileWrite( g_szDefaultLogoFileName, pBuffer, unSize ) )
+									{
+										DevMsg( "[Cloud]: SUCCEESS saving %s in remote storage\n", g_szDefaultLogoFileName );
+									}
+									else
+									{
+										DevMsg( "[Cloud]: FAILED saving %s in remote storage\n", g_szDefaultLogoFileName );
+									}
+								}
+								free( pBuffer );
+								g_pFileSystem->Close( hFile );
+							}
+
+							// store logo .VMT file
+							Q_SetExtension( szLogoFileName, ".vmt", sizeof(szLogoFileName) );
+							hFile = g_pFileSystem->Open( szLogoFileName, "rb", "MOD" );
+							if ( FILESYSTEM_INVALID_HANDLE != hFile )
+							{
+								unsigned int unSize = g_pFileSystem->Size( hFile );
+
+								byte *pBuffer = (byte*) malloc( unSize );
+								if ( g_pFileSystem->Read( pBuffer, unSize, hFile ) == unSize )
+								{
+									Q_SetExtension( g_szDefaultLogoFileName, ".vmt", sizeof(g_szDefaultLogoFileName) );
+									if ( pRemoteStorage->FileWrite( g_szDefaultLogoFileName, pBuffer, unSize ) )
+									{
+										DevMsg( "[Cloud]: SUCCEESS saving %s in remote storage\n", g_szDefaultLogoFileName );
+									}
+									else
+									{
+										DevMsg( "[Cloud]: FAILED saving %s in remote storage\n", g_szDefaultLogoFileName );
+									}
+								}
+								free( pBuffer );
+								g_pFileSystem->Close( hFile );
+							}
+						}
+					}
+				}
+			}
+
+			// even if SteamCloud worked we still safe the same file locally
+		}
+#endif
+
+
+	// make a persistent copy that async will use and free
+	char *tempBlock = new char[configBuff.TellMaxPut()];
+	Q_memcpy( tempBlock, configBuff.Base(), configBuff.TellMaxPut() );
+
+	// async write the buffer, and then free it
+	g_pFileSystem->AsyncWrite( szFileName, tempBlock, configBuff.TellMaxPut(), true );
+
+	ConMsg( "Host_WriteConfiguration: Wrote %s\n", szFileName );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Retrieve and set any defaults from the user's gamer profile
+//-----------------------------------------------------------------------------
+bool XBX_SetProfileDefaultSettings( void )
+{
+	// These defined values can't play nicely with the PC, so we need to ignore them for that build target
+#ifdef _X360
+	// These will act as indices into the array that is returned by the API
+	enum
+	{
+		XPS_GAMER_DIFFICULTY,
+		XPS_GAMER_ACTION_MOVEMENT_CONTROL,
+		XPS_GAMER_YAXIS_INVERSION,
+		XPS_OPTION_CONTROLLER_VIBRATION,
+		NUM_PROFILE_SETTINGS
+	};
+
+	// These are the values we're interested in having returned (must match the indices above)
+	const DWORD dwSettingIds[ NUM_PROFILE_SETTINGS ] =
+	{
+		XPROFILE_GAMER_DIFFICULTY,
+		XPROFILE_GAMER_ACTION_MOVEMENT_CONTROL,
+		XPROFILE_GAMER_YAXIS_INVERSION,
+		XPROFILE_OPTION_CONTROLLER_VIBRATION
+	};
+
+	// Must have a valid primary user by this point
+	int nPrimaryID = XBX_GetPrimaryUserId();
+
+	// First, we call with a NULL pointer and zero size to retrieve the buffer size we'll get back
+	DWORD dwResultSize = 0;	// Must be zero to get the correct size back
+	XUSER_READ_PROFILE_SETTING_RESULT *pResults = NULL;
+	DWORD dwError = XUserReadProfileSettings(	0,			// Family ID (current title)
+												nPrimaryID,	// User ID
+												NUM_PROFILE_SETTINGS,
+												dwSettingIds,
+												&dwResultSize,
+												pResults,
+												NULL );
+
+	// We need this to inform us that it's given us a size back for the buffer
+	if ( dwError != ERROR_INSUFFICIENT_BUFFER )
+		return false;
+
+	// Now we allocate that buffer and supply it to the call
+	BYTE *pData = (BYTE *) stackalloc( dwResultSize );
+	ZeroMemory( pData, dwResultSize );
+
+	pResults = (XUSER_READ_PROFILE_SETTING_RESULT *) pData;
+
+	dwError = XUserReadProfileSettings(	0,			// Family ID (current title)
+										nPrimaryID,	// User ID
+										NUM_PROFILE_SETTINGS,
+										dwSettingIds,
+										&dwResultSize,
+										pResults,
+										NULL );	// Not overlapped, must be synchronous
+
+	// We now have a raw buffer of results
+	if ( dwError != ERROR_SUCCESS )
+		return false;
+
+	//
+	// Skill
+	//
+
+	XUSER_PROFILE_SETTING *pSetting = pResults->pSettings + XPS_GAMER_DIFFICULTY;
+	Assert( pSetting->data.type == XUSER_DATA_TYPE_INT32 );
+	
+	int nSkillSetting = pSetting->data.nData;
+	int nResultSkill = 0;
+	switch( nSkillSetting )
+	{
+	case XPROFILE_GAMER_DIFFICULTY_NORMAL:
+		nResultSkill = 2;
+		break;
+	
+	case XPROFILE_GAMER_DIFFICULTY_HARD:
+		nResultSkill = 3;
+		break;
+	
+	case XPROFILE_GAMER_DIFFICULTY_EASY:
+	default:
+		nResultSkill = 1;
+		break;
+	}
+
+	// If the mod has no difficulty setting, only easy is allowed
+	KeyValues *modinfo = new KeyValues("ModInfo");
+	if ( modinfo->LoadFromFile( g_pFileSystem, "gameinfo.txt" ) )
+	{
+		if ( stricmp(modinfo->GetString("nodifficulty", "0"), "1") == 0 )
+			nResultSkill = 1;
+	}
+	modinfo->deleteThis();
+
+	char szScratch[MAX_PATH];
+	Q_snprintf( szScratch, sizeof(szScratch), "skill %d", nResultSkill );
+	Cbuf_AddText( szScratch );
+
+	// 
+	// Movement control
+	//
+
+	pSetting = pResults->pSettings + XPS_GAMER_ACTION_MOVEMENT_CONTROL;
+	Assert( pSetting->data.type == XUSER_DATA_TYPE_INT32 );
+	Q_snprintf( szScratch, sizeof(szScratch), "joy_movement_stick %d", ( pSetting->data.nData == XPROFILE_ACTION_MOVEMENT_CONTROL_L_THUMBSTICK ) ? 0 : 1 );
+	Cbuf_AddText( szScratch );
+	Q_snprintf( szScratch, sizeof(szScratch), "joy_movement_stick_default %d", ( pSetting->data.nData == XPROFILE_ACTION_MOVEMENT_CONTROL_L_THUMBSTICK ) ? 0 : 1 );
+	Cbuf_AddText( szScratch );
+	Cbuf_AddText( "joyadvancedupdate" );
+
+	// 
+	// Y-Inversion
+	//
+
+	pSetting = pResults->pSettings + XPS_GAMER_YAXIS_INVERSION;
+	Assert( pSetting->data.type == XUSER_DATA_TYPE_INT32 );
+	Q_snprintf( szScratch, sizeof(szScratch), "joy_inverty %d", pSetting->data.nData );
+	Cbuf_AddText( szScratch );
+	Q_snprintf( szScratch, sizeof(szScratch), "joy_inverty_default %d", pSetting->data.nData );
+	Cbuf_AddText( szScratch );
+	
+	//
+	// Vibration control
+	//
+
+	pSetting = pResults->pSettings + XPS_OPTION_CONTROLLER_VIBRATION;
+	Assert( pSetting->data.type == XUSER_DATA_TYPE_INT32 );
+	Q_snprintf( szScratch, sizeof(szScratch), "cl_rumblescale %d", ( pSetting->data.nData != 0 ) ? 1 : 0 );
+	Cbuf_AddText( szScratch );
+
+	// Execute all commands we've queued up
+	Cbuf_Execute();
+#endif // _X360
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Read our configuration from the 360, filling in defaults on our first run
+//-----------------------------------------------------------------------------
+void Host_ReadConfiguration_360( void )
+{
+#ifdef _X360
+	
+	// Exec our defaults on the first pass
+	if ( g_bConfigCfgExecuted == false )
+	{
+		// First, we exec our default configuration for the 360
+		Cbuf_AddText( "exec config.360.cfg game\n" );
+		Cbuf_Execute();
+	}
+
+	// Can't do any more in this function if we don't have a valid user id
+	if ( XBX_GetPrimaryUserId() == INVALID_USER_ID )
+		return;
+
+	// Build the config name we're looking for
+	char strFileName[MAX_PATH];
+	Q_snprintf( strFileName, sizeof(strFileName), "cfg:/%s_config.cfg", GetCurrentMod() );
+
+	bool bStorageDeviceValid = ( XBX_GetStorageDeviceId() != XBX_INVALID_STORAGE_ID && XBX_GetStorageDeviceId() != XBX_STORAGE_DECLINED );
+	bool bSaveConfig = false;
+
+	// Call through normal API function once the content container is opened
+	if ( CommandLine()->CheckParm( "-forcexboxreconfig" ) || bStorageDeviceValid == false || g_pFileSystem->FileExists( strFileName ) == false )
+	{
+		// If we've already done this in this session, never do it again (we don't want to stomp their settings under any circumstances)
+		if ( g_bConfigCfgExecuted == false )
+		{
+			// Get and set all our default setting we care about from the Xbox
+			XBX_SetProfileDefaultSettings();
+		}
+		
+		// Save out what we have
+		bSaveConfig = true;
+	}
+	else
+	{
+		// Otherwise, exec the user settings stored on the 360
+		char szCommand[MAX_PATH];
+		Q_snprintf( szCommand, sizeof( szCommand ), "exec %s_config.cfg x360\n", GetCurrentMod() );
+		Cbuf_AddText( szCommand );
+		
+		// Exec the video config as well
+		Q_snprintf( szCommand, sizeof( szCommand ), "exec video_config.cfg x360\n", GetCurrentMod() );
+		Cbuf_AddText( szCommand );
+		Cbuf_Execute();
+	}
+
+	// Mark that we've loaded a config and can now save it
+	g_bConfigCfgExecuted = true;
+
+	if ( bSaveConfig )
+	{
+		// An ugly hack, but we can probably save this safely
+		bool saveinit = host_initialized;
+		host_initialized = true;
+		Host_WriteConfiguration_360();
+		host_initialized = saveinit;
+	}
+#endif // _X360
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : false - 
+//-----------------------------------------------------------------------------
+void Host_ReadConfiguration()
+{
+	if ( sv.IsDedicated() )
+		return;
+
+	// Rebind keys and set cvars
+	if ( !g_pFileSystem )
+	{
+		Sys_Error( "Host_ReadConfiguration:  g_pFileSystem == NULL\n" );
+	}
+
+	// Handle the 360 case
+	if ( IsX360() )
+	{
+		Host_ReadConfiguration_360();
+		return;
+	}
+
+	bool saveconfig = false;
+
+	ISteamRemoteStorage *pRemoteStorage = SteamClient()?(ISteamRemoteStorage *)SteamClient()->GetISteamGenericInterface(
+		SteamAPI_GetHSteamUser(), SteamAPI_GetHSteamPipe(), STEAMREMOTESTORAGE_INTERFACE_VERSION ):NULL;
+	
+	if ( pRemoteStorage )
+	{
+		// if cloud settings is default but remote storage does not exist yet, set it to sync all because this is the first
+		// computer the game is run on--default to copying everything to the cloud
+		if ( !pRemoteStorage->FileExists( "cfg/config.cfg" ) )
+		{
+			DevMsg( "[Cloud]: Default setting with remote data non-existent, sync all\n" );
+			cl_cloud_settings.SetValue( STEAMREMOTESTORAGE_CLOUD_ON );
+		}
+
+		if ( cl_cloud_settings.GetInt() == STEAMREMOTESTORAGE_CLOUD_ON )
+		{
+			// config files are run through the exec command which got pretty complicated with all the splitscreen
+			// stuff. Steam UFS doens't support split screen well (2 users ?)
+			GetFileFromRemoteStorage( pRemoteStorage, "cfg/config.cfg", "cfg/config.cfg" );
+		}
+	}
+
+	if ( g_pFileSystem->FileExists( "//mod/cfg/config.cfg" ) )
+	{
+		Cbuf_AddText( "exec config.cfg\n" );
+	}
+	else
+	{
+		Cbuf_AddText( "exec config_default.cfg\n" );
+		saveconfig = true;
+	}
+
+	Cbuf_Execute();
+
+	if ( pRemoteStorage )
+	{
+		if ( cl_cloud_settings.GetInt() == STEAMREMOTESTORAGE_CLOUD_ON )
+		{
+			// get logo .VTF file
+			Q_SetExtension( g_szDefaultLogoFileName, ".vtf", sizeof(g_szDefaultLogoFileName) );
+			GetFileFromRemoteStorage( pRemoteStorage, g_szDefaultLogoFileName, g_szDefaultLogoFileName );
+
+			cl_logofile.SetValue( g_szDefaultLogoFileName );
+
+			// get logo .VMT file
+			Q_SetExtension( g_szDefaultLogoFileName, ".vmt", sizeof(g_szDefaultLogoFileName) );
+			GetFileFromRemoteStorage( pRemoteStorage, g_szDefaultLogoFileName, g_szDefaultLogoFileName );
+		}
+	}
+
+	// check to see if we actually set any keys, if not, load defaults from kb_def.lst
+	// so we at least have basics setup.
+	int nNumBinds = Key_CountBindings();
+	if ( nNumBinds == 0 )
+	{
+		UseDefaultBindings();
+	}
+	else
+	{
+		// Setup new bindings - if we ship an update that requires that every user has a key bound for
+		// X concommand, SetupNewBindings() will do its best to ensure that a key is bound.  We assume
+		// that kb_def.lst includes any bindings that SetupNewBindings() might include in the case
+		// that nNumBinds == 0 above.
+		SetupNewBindings();
+	}
+
+	Key_SetBinding( KEY_ESCAPE, "cancelselect" );
+
+	// Make sure that something is always bound to console
+	if (NULL == Key_NameForBinding("toggleconsole"))
+	{
+		// If nothing is bound to it then bind it to '
+		Key_SetBinding( KEY_BACKQUOTE, "toggleconsole" );
+	}
+
+	SetupDefaultAskConnectAcceptKey();
+
+	g_bConfigCfgExecuted = true;
+
+	if ( saveconfig )
+	{
+		// An ugly hack, but we can probably save this safely
+		bool saveinit = host_initialized;
+		host_initialized = true;
+		Host_WriteConfiguration();
+		host_initialized = saveinit;
+	}
+}
+
+CON_COMMAND( host_writeconfig, "Store current settings to config.cfg (or specified .cfg file)." )
+{
+	if ( args.ArgC() > 3 )
+	{
+		ConMsg( "Usage:  writeconfig <filename.cfg> [full]\n" );
+		ConMsg( "<filename.cfg> is required, optionally specify \"full\" to write out all archived convars.\n" );
+		ConMsg( "By default, only non-default values are written out.\n" );
+		return;
+	}
+
+	if ( args.ArgC() >= 2 )
+	{
+		bool bWriteAll = ( args.ArgC() == 3 && V_stricmp( args[ 2 ], "full" ) == 0 );
+
+		char const *filename = args[ 1 ];
 		if ( !filename || !filename[ 0 ] )
 		{
 			return;
@@ -518,29 +1716,91 @@ void Host_WriteConfig_f( void )
 
 		char outfile[ MAX_QPATH ];
 		// Strip path and extension from filename
-		COM_FileBase( filename, outfile );
-		Host_WriteConfiguration( va( "cfg/%s.cfg", outfile ) );
+		Q_FileBase( filename, outfile, sizeof( outfile ) );
+		Host_WriteConfiguration( va( "%s.cfg", outfile ), bWriteAll );
+		if  ( !bWriteAll )
+			ConMsg( "Wrote partial config file \"%s\" out, to write full file use host_writeconfig \"%s\" full\n", outfile, outfile );
 	}
 	else
 	{
-		Host_WriteConfiguration( "cfg/config.cfg" );
+		Host_WriteConfiguration( NULL, true );
 	}
 }
 
-
-static ConCommand host_writeconfig( "host_writeconfig", Host_WriteConfig_f, "Store current settings to config.cfg (or specified .cfg file)." );
 #endif
+
+//-----------------------------------------------------------------------------
+// Purpose: Does a quick parse of the config.cfg to read cvars that
+//			need to be read before any games systems are initialized
+//			assumes only cvars and filesystem are initialized
+//-----------------------------------------------------------------------------
+void Host_ReadPreStartupConfiguration()
+{
+	FileHandle_t f = NULL;
+	if ( IsX360() )
+	{
+		// 360 config is less restrictive and can be anywhere in the game path
+		f = g_pFileSystem->Open( "//game/cfg/config.360.cfg", "rt" );
+	}
+	else
+	{
+		f = g_pFileSystem->Open( "//mod/cfg/config.cfg", "rt" );
+	}
+
+	if ( !f )
+		return;
+
+	// read file into memory
+	int size = g_pFileSystem->Size(f);
+	char *configBuffer = new char[ size + 1 ];
+	g_pFileSystem->Read( configBuffer, size, f );
+	configBuffer[size] = 0;
+	g_pFileSystem->Close( f );
+
+	// parse out file
+	static const char *s_PreStartupConfigConVars[] =
+	{
+		"sv_unlockedchapters",		// needed to display the startup graphic while loading
+		"snd_legacy_surround",		// needed to init the sound system
+		"gameui_xbox",				// needed to initialize the correct UI
+		"vid_borderless",			// needed before the native game window is created
+		"save_in_memory"			// needed to preread data from the correct location in UI
+	};
+
+	// loop through looking for all the cvars to apply
+	for (int i = 0; i < ARRAYSIZE(s_PreStartupConfigConVars); i++)
+	{
+		const char *search = Q_stristr(configBuffer, s_PreStartupConfigConVars[i]);
+		if (search)
+		{
+			// read over the token
+			search = COM_Parse(search);
+
+			// read the value
+			COM_Parse(search);
+
+			// apply the value
+			ConVar *var = (ConVar *)g_pCVar->FindVar( s_PreStartupConfigConVars[i] );
+			if ( var )
+			{
+				var->SetValue( com_token );
+			}
+		}
+	}
+
+	// free
+	delete [] configBuffer;
+}
 
 void Host_RecomputeSpeed_f( void )
 {
-	Con_Printf( "Recomputing clock speed...\n" );
+	ConMsg( "Recomputing clock speed...\n" );
 
 	CClockSpeedInit::Init();
-	Con_Printf( "Clock speed: %.0f Mhz\n", CFastTimer::GetClockSpeed() / 1000000.0 );
+	ConMsg( "Clock speed: %.0f Mhz\n", CFastTimer::GetClockSpeed() / 1000000.0 );
 }
 
-static ConCommand recompute_speed( "recompute_speed", Host_RecomputeSpeed_f, "Recomputes clock speed (for debugging purposes)." );
-
+static ConCommand recompute_speed( "recompute_speed", Host_RecomputeSpeed_f, "Recomputes clock speed (for debugging purposes).", FCVAR_CHEAT );
 
 void DTI_Flush_f()
 {
@@ -549,22 +1809,6 @@ void DTI_Flush_f()
 }
 
 static ConCommand dti_flush( "dti_flush", DTI_Flush_f, "Write out the datatable instrumentation files (you must run with -dti for this to work)." );
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : CRC32_t
-//-----------------------------------------------------------------------------
-CRC32_t Host_GetServerSendtableCRC()
-{
-	if ( !svs.dll_initialized )
-	{
-		Assert( 0 );
-		return (CRC32_t)0;
-	}
-
-	return svs.sendtable_crc;
-}
-
 
 /*
 ==================
@@ -575,93 +1819,65 @@ This only happens at the end of a game, not between levels
 */
 void Host_ShutdownServer( void )
 {
-	if ( !sv.active )
+	if ( !sv.IsActive() )
 		return;
 
-	//  Tell master we are shutting down
 	master->ShutdownConnection();
 
-	sv.active = false;
+	Host_AllowQueuedMaterialSystem( false );
+	// clear structures
+#if !defined( SWDS )
+	g_pShadowMgr->LevelShutdown();
+#endif
+	StaticPropMgr()->LevelShutdown();
 
-	int i;
-	// Only drop clients if we have not cleared out entity data prior to this.
-	for ( i=0, host_client = svs.clients ; i<svs.maxclients ; i++, host_client++)
+	Host_FreeStateAndWorld( true );
+	sv.Shutdown();// sv.Shutdown() references some heap memory, so run it before Host_FreeToLowMark()
+	Host_FreeToLowMark( true ); 
+
+	IGameEvent *event = g_GameEventManager.CreateEvent( "server_shutdown" );
+
+	if ( event )
 	{
-		if ( ( host_client->active || host_client->connected ) && !host_client->fakeclient )
-		{
-			SV_DropClient(host_client, false, "server shutting down" );
-		}
+		event->SetString( "reason", "restart" );
+		g_GameEventManager.FireEvent( event );
 	}
 
-	// Let drop messages go out
-#ifdef _WIN32
-	Sleep( 100 );
-#elif _LINUX
-	usleep( 100 );
-#endif
-
-	//
-	// clear structures
-	//
-
-	SV_ClearMemory();
-
-	SV_MapOverClients(SV_ClearClientStructure);
-
-	g_pGameEventManager->FireEvent( new KeyValues( "server_shutdown", "reason", "restart" ), NULL );
-
-	// Log_Printf( "Server shutdown.\n" );
-
 	g_Log.Close();
-
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : time - 
-// Output : qboolean
+// Output : bool
 //-----------------------------------------------------------------------------
-qboolean Host_FilterTime( float time )
+void Host_AccumulateTime( float dt )
 {
 	// Accumulate some time
-	realtime += time;
+	realtime += dt;
 
-	// Dedicated's tic_rate regulates server frame rate.  Don't apply fps filter here.
-	float fps = fps_max.GetFloat();
-	if ( fps != 0 )
-	{
-		// Limit fps to withing tolerable range
-		fps = max( MIN_FPS, fps );
-		fps = min( MAX_FPS, fps );
-
-		float minframetime = 1.0 / fps;
-
-		if (
-#ifndef SWDS
-		    !demo->IsPlayingBack_TimeDemo() && 
+	bool bUseNormalTickTime = true;
+#if !defined(SWDS)
+	if ( demoplayer->IsPlayingTimeDemo() )
+		bUseNormalTickTime = false;
 #endif
-			( realtime - oldrealtime ) < minframetime )
-		{
-			// framerate is too high
-			return false;		
-		}
-	}
+	if ( g_bDedicatedServerBenchmarkMode )
+		bUseNormalTickTime = false;
 
-	if ( !demo->IsPlayingBack_TimeDemo() )
+	if ( bUseNormalTickTime )
 	{
-		host_frametime	= realtime - oldrealtime;
+		host_frametime	= dt;
 	}
 	else
 	{
-		// Used to help increase reproducability of timedemos
-		host_frametime	= 0.015f;
+		// Used to help increase reproducibility of timedemos
+		host_frametime	= host_state.interval_per_tick;
 	}
 
-	oldrealtime		= realtime;
-
+#if 1
 	if ( host_framerate.GetFloat() > 0 
-#if !defined( _DEBUG )
-		&& ( IsSinglePlayerGame() || Demo_IsPlayingBack() ) 
+#if !defined(SWDS)
+		&& ( CanCheat() || demoplayer->IsPlayingBack() ) 
 #endif
 		)
 	{
@@ -671,37 +1887,75 @@ qboolean Host_FilterTime( float time )
 			fps = 1.0f/fps;
 		}
 		host_frametime = fps;
+
+#if !defined(SWDS) && defined( REPLAY_ENABLED )
+		extern IDemoPlayer *g_pReplayDemoPlayer;
+		if ( demoplayer->IsPlayingBack() && demoplayer == g_pReplayDemoPlayer )
+		{
+			// adjust time scale if playing back demo
+			host_frametime *= demoplayer->GetPlaybackTimeScale();
+		}
+#endif
+
+		host_frametime_unbounded = host_frametime;
 	}
 	else if (host_timescale.GetFloat() > 0 
-#if !defined( _DEBUG )
-		&& ( IsSinglePlayerGame() || Demo_IsPlayingBack() ) 
+#if !defined(SWDS)
+		&& ( CanCheat() || demoplayer->IsPlayingBack() ) 
 #endif
 		)
 	{
-		float demoscale = 1.0f;
-#ifndef SWDS
-		if ( Demo_IsPlayingBack() && demo->GetPlaybackTimeScale() != 1.0f )
+		float fullscale = host_timescale.GetFloat();
+
+#if !defined(SWDS)
+		if ( demoplayer->IsPlayingBack() )
 		{
-			demoscale = demo->GetPlaybackTimeScale();
+			// adjust time scale if playing back demo
+			fullscale *= demoplayer->GetPlaybackTimeScale();
 		}
 #endif
-		float fullscale = host_timescale.GetFloat() * demoscale;
 
 		host_frametime *= fullscale;
-		host_frametime = min( host_frametime, MAX_FRAMETIME * fullscale);
+
+		host_frametime_unbounded = host_frametime;
+
+#ifndef NO_TOOLFRAMEWORK
+		if ( CommandLine()->CheckParm( "-tools" ) == NULL )
+		{
+#endif
+			host_frametime = min( (double)host_frametime, MAX_FRAMETIME * fullscale);
+#ifndef NO_TOOLFRAMEWORK
+		}
+#endif
 	}
 	else
+#ifndef NO_TOOLFRAMEWORK
+		if ( CommandLine()->CheckParm( "-tools" ) != NULL )
+		{
+			host_frametime_unbounded = host_frametime;
+		}
+		else
+#endif // !NO_TOOLFRAMEWORK
 	{	// don't allow really long or short frames
-		host_frametime = min( host_frametime, MAX_FRAMETIME );
-		host_frametime = max( host_frametime, MIN_FRAMETIME );
+		host_frametime_unbounded = host_frametime;
+		host_frametime = min( (double)host_frametime, MAX_FRAMETIME );
+		host_frametime = max( (double)host_frametime, MIN_FRAMETIME );
 	}
-	
-	return true;
+#endif
+
+	// Adjust the client clock very slightly to keep it in line with the server clock.
+	float adj = cl.GetClockDriftMgr().AdjustFrameTime( host_frametime ) - host_frametime;
+	host_frametime += adj;
+	host_frametime_unbounded += adj;
+
+	if ( g_pSoundServices )									// not present on linux server
+		g_pSoundServices->SetSoundFrametime(dt, host_frametime);
+
 }
 
 #define FPS_AVG_FRAC 0.9f
 
-static float g_fFramesPerSecond = 0.0f;
+float g_fFramesPerSecond = 0.0f;
 
 /*
 ==================
@@ -721,111 +1975,257 @@ void Host_PostFrameRate( float frameTime )
 Host_GetHostInfo
 ==================
 */
-void Host_GetHostInfo(float *fps, int *nActive, int *nMaxPlayers, char *pszMap)
+void Host_GetHostInfo(float *fps, int *nActive, int *nMaxPlayers, char *pszMap, int maxlen )
 {
-	int clients = 0;
+	// Count clients, report 
+	int clients = sv.GetNumClients();
 
 	*fps = g_fFramesPerSecond;
-
-	// Count clients, report 
-	SV_CountPlayers( &clients );
-
 	*nActive = clients;
+
 	if (pszMap)
 	{
-		if (sv.name && sv.name[0])
-			strcpy(pszMap, sv.name);
+		if (sv.m_szMapname && sv.m_szMapname[0])
+			Q_strncpy(pszMap, sv.m_szMapname, maxlen );
 		else
 			pszMap[0] = '\0';
 	}
 
-	*nMaxPlayers = svs.maxclients;
+	*nMaxPlayers = sv.GetMaxClients();
+}
+
+static bool AppearsNumeric( char const *in )
+{
+	char const *p = in;
+	int special[ 3 ];
+	Q_memset( special, 0, sizeof( special ) );
+
+	for ( ; *p; p++ )
+	{
+		if ( *p == '-' )
+		{
+			special[0]++;
+			continue;
+		}
+
+		if ( *p == '+' )
+		{
+			special[1]++;
+			continue;
+		}
+
+		if ( *p >= '0' && *p <= '9' )
+		{
+			continue;
+		}
+
+		if ( *p == '.' )
+		{
+			special[2]++;
+			continue;
+		}
+
+		return false;
+	}
+
+	// Can't have multiple +, -, or decimals
+	for ( int i = 0; i < 3; i++ )
+	{
+		if ( special[ i ] > 1 )
+			return false;
+	}
+
+	// can't be + and - at same time
+	if ( special[ 0 ] && special[ 1 ] )
+		return false;
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: If the value is numeric, remove unnecessary trailing zeros
+// Input  : *invalue - 
+// Output : char const
+//-----------------------------------------------------------------------------
+char const * Host_CleanupConVarStringValue( char const *invalue )
+{
+	static char clean[ 256 ];
+
+	Q_snprintf( clean, sizeof( clean ), "%s", invalue );
+
+	// Don't mess with empty string
+	// Otherwise, if it appears numeric and has a decimal, try to strip all zeroes after decimal
+	if ( Q_strlen( clean ) >= 1 && AppearsNumeric( clean ) && Q_strstr( clean, "." ) )
+	{
+		char *end = clean + strlen( clean ) - 1;
+		while ( *end && end >= clean )
+		{
+			// Removing trailing zeros
+			if ( *end != '0' )
+			{
+				// Remove decimal, zoo
+				if ( *end == '.' )
+				{
+					if ( end == clean )
+					{
+						*end = '0';
+					}
+					else
+					{
+						*end = 0;
+					}
+				}
+				break;
+			}
+
+			*end-- = 0;
+		}
+	}
+
+	return clean;
+}
+
+int Host_CountVariablesWithFlags( int flags, bool nonDefault )
+{
+	int i = 0;
+	const ConCommandBase *var;
+
+	for ( var = g_pCVar->GetCommands() ; var ; var=var->GetNext() )
+	{
+		if ( var->IsCommand() )
+			continue;
+
+		const ConVar *pCvar = ( const ConVar * )var;
+
+		if ( !pCvar->IsFlagSet( flags ) )
+			continue;
+
+		// It's == to the default value, don't count
+		if ( nonDefault && !Q_strcasecmp( pCvar->GetDefault(), pCvar->GetString() ) )
+			continue;
+
+		i++;
+	}
+
+	return i;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
+// Input  : msg - 
 //-----------------------------------------------------------------------------
-void SV_ParseRcom( void )
+void Host_BuildConVarUpdateMessage( NET_SetConVar *cvarMsg, int flags, bool nonDefault )
 {
-	char	*s;
-	char	*c;
+	int count = Host_CountVariablesWithFlags( flags, nonDefault );
 
-	MSG_BeginReading ();
-	MSG_ReadLong ();		// skip the -1 marker
-
-	s = MSG_ReadStringLine ();
-	Cmd_TokenizeString (s);
-	c = Cmd_Argv(0);
-	if ( !Q_strcmp(c, "rcon" ) )
-	{
-		SV_Rcom (&net_from);
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose:  An inactive dedicated server can still receive rcons
-//-----------------------------------------------------------------------------
-void SV_CheckRcom( void )
-{
-	VPROF( "SV_CheckRcom" );
-
-	if ( sv.active || 
-		( cls.state != ca_dedicated ) || 
-		giActive == DLL_CLOSE || 
-		!host_initialized )
+	// Nothing to send
+	if ( count <= 0 )
 		return;
 
-	while ( NET_GetPacket( NS_SERVER ) )
+	// Too many to send, error out and have mod author get a clue.
+	if ( count > 255 )
 	{
-		if ( Filter_ShouldDiscard( &net_from ) )
-		{
-			Filter_SendBan( &net_from );	// tell them we aren't listening...
-			continue;
-		}
-
-		// check for connectionless packet (0xffffffff) first
-		if (*(int *)net_message.data == -1)
-		{
-			SV_ParseRcom();
-			continue;
-		}
+		Sys_Error( "Engine only supports 255 ConVars marked %i\n", flags );
+		return;
 	}
+
+	const ConCommandBase *var;
+
+	for ( var = g_pCVar->GetCommands() ; var ; var=var->GetNext() )
+	{
+		if ( var->IsCommand() )
+			continue;
+
+		const ConVar *pCvar = ( const ConVar * )var;
+
+		if ( !pCvar->IsFlagSet( flags ) )
+			continue;
+
+		// It's == to the default value, don't count
+		if ( nonDefault && !Q_strcasecmp( pCvar->GetDefault(), pCvar->GetString() ) )
+			continue;
+
+		NET_SetConVar::cvar_t acvar;
+
+		Q_strncpy( acvar.name, pCvar->GetName(), MAX_OSPATH );
+		Q_strncpy( acvar.value, Host_CleanupConVarStringValue( pCvar->GetString() ), MAX_OSPATH );
+
+		cvarMsg->m_ConVars.AddToTail( acvar );
+	}
+
+	// Make sure this count matches original one!!!
+	Assert( cvarMsg->m_ConVars.Count() == count );
 }
 
-
-#if defined _WIN32 && !defined SWDS
+#if !defined( SWDS )
 // FIXME: move me somewhere more appropriate
 void CL_SendVoicePacket(bool bFinal)
 {
-	if ( cls.state != ca_active || !Voice_IsRecording() )
+#if !defined( NO_VOICE )
+	if ( !Voice_IsRecording() )
 		return;
+
+	CLC_VoiceData voiceMsg;
 
 	// Get whatever compressed data there is and and send it.
 	char uchVoiceData[2048];
-	int nDataLength = Voice_GetCompressedData(uchVoiceData, sizeof(uchVoiceData), bFinal);
-	if(!nDataLength)
+
+	voiceMsg.m_DataOut.StartWriting( uchVoiceData, sizeof(uchVoiceData) );	
+
+	voiceMsg.m_nLength = Voice_GetCompressedData( uchVoiceData, sizeof(uchVoiceData), bFinal ) * 8;
+
+	if( !voiceMsg.m_nLength )
 		return;
 
-	bf_write &msg = cls.datagram;
-	if(msg.GetNumBytesLeft() <= (16 + nDataLength))
-		return;
+	voiceMsg.m_DataOut.SeekToBit( voiceMsg.m_nLength );	 // set correct writing position
 
-	msg.WriteByte(clc_voicedata);
-	msg.WriteShort(nDataLength);
-
-	for(int i = 0; i < nDataLength; i++)
+	if ( cl.IsActive() )
 	{
-		msg.WriteByte( (unsigned char)uchVoiceData[i] );
+		cl.m_NetChannel->SendNetMsg( voiceMsg );
+	}
+#endif
+}
+
+#if defined ( _X360 )
+
+
+void CL_ProcessXboxVoiceData()
+{
+	if ( Audio_GetXVoice() == NULL )
+		return;
+
+	if ( Audio_GetXVoice()->VoiceUpdateData() == true )
+	{
+		if ( cl.IsActive() )
+		{
+			Audio_GetXVoice()->VoiceSendData( cl.m_NetChannel );
+		}
 	}
 }
 
+#endif
 
 void CL_ProcessVoiceData()
 {
+	VPROF_BUDGET( "CL_ProcessVoiceData", VPROF_BUDGETGROUP_OTHER_NETWORKING );
+
+#if !defined( NO_VOICE )
 	Voice_Idle(host_frametime);
 	CL_SendVoicePacket(false);
+#endif
+
+#if defined ( _X360 )
+
+	CL_ProcessXboxVoiceData();
+#endif
+
 }
 #endif
+
+
+
+
+
 
 /*
 =====================
@@ -836,24 +2236,18 @@ Refresh the screen
 */
 void Host_UpdateScreen( void )
 {
-	if ( cls.state == ca_dedicated )
-		return;
+#ifndef SWDS 
 
-#if defined _WIN32 && !defined SWDS
+#ifdef _DEBUG
 	if( r_ForceRestore.GetInt() )
 	{
 		ForceMatSysRestore();
 		r_ForceRestore.SetValue(0);
 	}
+#endif // _DEBUG
 
 	// Refresh the screen
 	SCR_UpdateScreen ();
-
-	// If recording movie and the console is totally up, then write out this frame to movie file.
-	if ( cl_moviename[0] && !VGui_IsConsoleVisible() )
-	{
-		VID_WriteMovieFrame();
-	}
 #endif
 }
 
@@ -866,18 +2260,15 @@ Update sound subsystem and cd audio
 */
 void Host_UpdateSounds( void )
 {
-	if ( cls.state == ca_dedicated )
-		return;
-
-#if defined _WIN32 && !defined SWDS
+#if !defined( SWDS )
 	// update audio
-	if (cls.state == ca_active)
+	if ( cl.IsActive() )
 	{
-		S_Update (h_origin, h_forward, h_right, h_up);	
+		S_Update( &s_AudioState );	
 	}
 	else
 	{
-		S_Update (vec3_origin, vec3_origin, vec3_origin, vec3_origin);
+		S_Update( NULL );
 	}
 #endif
 }
@@ -901,7 +2292,7 @@ void CFrameTimer::MarkFrame()
 	double frameTime;
 	double fps;
 
-	// Con_DPrintf("%f %f %f\n", time1, time2, time3 );
+	// ConDMsg("%f %f %f\n", time1, time2, time3 );
 
 	float fs_input = (deltas[FRAME_SEGMENT_INPUT])*1000.0;
 	float fs_client = (deltas[FRAME_SEGMENT_CLIENT])*1000.0;
@@ -936,23 +2327,23 @@ void CFrameTimer::MarkFrame()
 		// count used entities
 		for (i=0 ; i<sv.num_edicts ; i++)
 		{
-			if (!sv.edicts[i].free)
+			if (!sv.edicts[i].IsFree())
 				ent_count++;
 		}
 
 		char sz[ 256 ];
 		Q_snprintf( sz, sizeof( sz ),
-			"%3i fps -- inp(%3.1f) sv(%3.1f) cl(%3.1f) render(%3.1f) snd(%3.1f) cl_dll(%3.1f) exec(%3.1f) ents(%d) ticks(%d)",
-				(int)fps, 
-				fs_input, 
-				fs_server, 
-				fs_client, 
-				fs_render, 
-				fs_sound, 
-				fs_cldll, 
-				fs_exec, 
-				ent_count, 
-				ticks );
+			"%3i fps -- inp(%.2f) sv(%.2f) cl(%.2f) render(%.2f) snd(%.2f) cl_dll(%.2f) exec(%.2f) ents(%d) ticks(%d)",
+			(int)fps, 
+			fs_input, 
+			fs_server, 
+			fs_client, 
+			fs_render, 
+			fs_sound, 
+			fs_cldll, 
+			fs_exec, 
+			ent_count, 
+			ticks );
 
 #ifndef SWDS
 		if ( host_speeds.GetInt() >= 2 )
@@ -960,10 +2351,10 @@ void CFrameTimer::MarkFrame()
 			Con_NPrintf ( 0, sz );
 		}
 		else
-#endif
 		{
-			Con_DPrintf ( "%s\n", sz );
+			ConDMsg ( "%s\n", sz );
 		}
+#endif
 	}
 
 }
@@ -999,6 +2390,7 @@ void CFrameTimer::ComputeFrameVariability()
 	if ( nMaxSamples == 0 )
 	{
 		m_flFPSVariability = 0.0f;
+		m_flFPSStdDeviationSeconds = 0.0f;
 		return;
 	}
 
@@ -1028,20 +2420,58 @@ void CFrameTimer::ComputeFrameVariability()
 	}
 
 	float flCurrentFPS = 0.0f;
- 	if ( frametime != 0.0f )
+	if ( frametime != 0.0f )
 	{
 		flCurrentFPS = 1.0f / frametime;
 	}
 
 	// Now subtract out the current fps to get variability in FPS
 	m_flFPSVariability = fabs( flCurrentFPS - flAveFPS );
-}
 
+	// Now compute variance/stddeviation
+	double sum = 0.0f;
+	int count =0;
+	for ( int j = 0; j < FRAME_HISTORY_COUNT; ++j )
+	{
+		if ( m_pFrameTimeHistory[ j ] == 0.0f )
+			continue;
+
+		double ft = min( (double)m_pFrameTimeHistory[ j ], 0.25 );
+
+		sum += ft;
+		++count;
+
+	}
+
+	if ( count <= 1 )
+	{
+		return;
+	}
+
+	double avg = sum / (double)count;
+	double devSquared = 0.0f;
+	for ( int j = 0; j < FRAME_HISTORY_COUNT; ++j )
+	{
+		if ( m_pFrameTimeHistory[ j ] == 0.0f )
+			continue;
+
+		double ft = min( (double)m_pFrameTimeHistory[ j ], 0.25 );
+
+		double dt = ft - avg;
+
+		devSquared += ( dt * dt );
+	}
+
+	double variance = devSquared / (double)( count - 1 );
+	m_flFPSStdDeviationSeconds = sqrt( variance );
+}
 
 void Host_Speeds()
 {
 	g_HostTimes.MarkFrame();
-	demo->MarkFrame( g_HostTimes.times[3], g_HostTimes.m_flFPSVariability );
+#if !defined(SWDS)
+	ToClientDemoPlayer( demoplayer )->MarkFrame( g_HostTimes.m_flFPSVariability );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1060,14 +2490,14 @@ bool Host_ShouldRun( void )
 	}
 
 	// Did user set "next" to 1?
-	if ( next.GetInt() )
+	if ( cvarNext.GetInt() )
 	{
 		// Did we finally finish this frame ( Host_ShouldRun is called in 3 spots to pause
 		//  three different things ).
 		if ( current_tick != (host_tickcount-1) )
 		{
 			// Okay, time to reset to halt execution again
-			next.SetValue( 0 );
+			cvarNext.SetValue( 0 );
 			return false;
 		}
 
@@ -1083,19 +2513,74 @@ bool Host_ShouldRun( void )
 	}
 }
 
+static ConVar mem_periodicdumps( "mem_periodicdumps", "0", 0, "Write periodic memstats dumps every n seconds." );
+static double g_flLastPeriodicMemDump = -1.0f;
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Host_DumpMemoryStats( void )
+static float g_TimeLastMemTest;
+void Host_CheckDumpMemoryStats( void )
 {
-#ifdef _WIN32
+	if ( mem_test_each_frame.GetBool() )
+	{
+		if ( !MemAlloc_CrtCheckMemory() )
+		{
+			DebuggerBreakIfDebugging();
+			Error( "Heap is corrupt\n" );
+		}
+	}
+	else if ( mem_test_every_n_seconds.GetInt() > 0 )
+	{
+		float now = Plat_FloatTime();
+		if ( now - g_TimeLastMemTest > mem_test_every_n_seconds.GetInt() )
+		{
+			g_TimeLastMemTest = now;
+			if ( !MemAlloc_CrtCheckMemory() )
+			{
+				DebuggerBreakIfDebugging();
+				Error( "Heap is corrupt\n" );
+			}
+		}
+	}
+
+	if ( mem_periodicdumps.GetFloat() > 0.0f )
+	{
+		double curtime = Plat_FloatTime();
+		if ( curtime - g_flLastPeriodicMemDump > mem_periodicdumps.GetFloat() )
+		{
+			const char *pTest = sv.GetMapName();
+			if ( !pTest || !pTest[0] )
+			{
+				// possibly at menu
+				pTest = "nomap";
+			}
+
+			char mapname[ 256 ];
+			Q_FileBase( pTest, mapname, sizeof( mapname ) );
+#if defined( _MEMTEST )
+			MemAlloc_SetStatsExtraInfo( pTest, "" );
+#endif
+			MemAlloc_DumpStatsFileBase( mapname );
+			g_flLastPeriodicMemDump = curtime;
+		}
+	}
+
+
+#if defined(_WIN32)
+	if ( mem_dumpstats.GetInt() <= 0 )
+		return;
+
+	if ( mem_dumpstats.GetInt() == 1 )
+		mem_dumpstats.SetValue( 0 ); // reset cvar, dump stats only once
+
 	_CrtMemState state;
-	memset( &state, 0, sizeof( state ) );
+	Q_memset( &state, 0, sizeof( state ) );
 	_CrtMemCheckpoint( &state );
 
 	unsigned int size = 0;
 
-    for ( int use = 0; use < _MAX_BLOCKS; use++)
+	for ( int use = 0; use < _MAX_BLOCKS; use++)
 	{
 		size += state.lSizes[ use ];
 	}
@@ -1104,25 +2589,9 @@ void Host_DumpMemoryStats( void )
 	Msg( "\tHigh water %s\n", Q_pretifymem( state.lHighWaterCount,4 ) );
 	Msg( "\tCurrent mem %s\n", Q_pretifymem( size,4 ) );
 	Msg("------------------------------------\n");
-	int hunk = MEM_Summary_Console();
+	int hunk = Hunk_MallocSize();
 	Msg("\tAllocated outside hunk:  %s\n", Q_pretifymem( size - hunk ) );
 #endif
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void Host_CheckDumpMemoryStats( void )
-{
-	if ( mem_dumpstats.GetInt() <= 0 )
-		return;
-
-	Host_DumpMemoryStats();
-
-	if ( mem_dumpstats.GetInt() <= 1 )
-	{
-		mem_dumpstats.SetValue( 0 );
-	}
 }
 
 //-----------------------------------------------------------------------------
@@ -1134,14 +2603,14 @@ void _Host_SetGlobalTime()
 	g_ServerGlobalVariables.realtime			= realtime;
 	g_ServerGlobalVariables.framecount			= host_framecount;
 	g_ServerGlobalVariables.absoluteframetime	= host_frametime;
-	g_ServerGlobalVariables.tick_interval		= TICK_RATE;
-
+	g_ServerGlobalVariables.interval_per_tick	= host_state.interval_per_tick;
+	g_ServerGlobalVariables.serverCount			= Host_GetServerCount();
 #ifndef SWDS
 	// Client
 	g_ClientGlobalVariables.realtime			= realtime;
 	g_ClientGlobalVariables.framecount			= host_framecount;
 	g_ClientGlobalVariables.absoluteframetime	= host_frametime;
-	g_ClientGlobalVariables.tick_interval		= TICK_RATE;
+	g_ClientGlobalVariables.interval_per_tick	= host_state.interval_per_tick;
 #endif
 }
 
@@ -1153,17 +2622,16 @@ Runs all active servers
 ==================
 */
 
-void _Host_RunFrame_Input( float accumulated_extra_samples )
+void _Host_RunFrame_Input( float accumulated_extra_samples, bool bFinalTick )
 {
-	VPROF( "_Host_RunFrame_Input" );
-
+	VPROF_BUDGET( "_Host_RunFrame_Input", _T("Input") );
 
 	// Run a test script?
 	static bool bFirstFrame = true;
 	if ( bFirstFrame )
 	{
 		bFirstFrame = false;
-		const char *pScriptFilename = CommandLine()->ParmValue( "-TestScript" );
+		const char *pScriptFilename = CommandLine()->ParmValue( "-testscript" );
 		if ( pScriptFilename )
 		{
 			if ( !GetTestScriptMgr()->StartTestScript( pScriptFilename ) )
@@ -1179,161 +2647,270 @@ void _Host_RunFrame_Input( float accumulated_extra_samples )
 	// Client can process input
 	ClientDLL_ProcessInput( );
 
-	// Send any current movement commands to server and flush reliable buffer even if not moving yet.
-	CL_Move ( accumulated_extra_samples );
-
-	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_INPUT );
-
 	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
 
 	// process console commands
 	Cbuf_Execute ();
 
 	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
+
+	// Send any current movement commands to server and flush reliable buffer even if not moving yet.
+	CL_Move( accumulated_extra_samples, bFinalTick );
+
 #endif
+
+	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_INPUT );
 }
 
 void _Host_RunFrame_Server( bool finaltick )
 {
-	bool send_client_updates = finaltick;
-
 	VPROF_BUDGET( "_Host_RunFrame_Server", VPROF_BUDGETGROUP_GAME );
+	VPROF_INCREMENT_COUNTER( "ticks", 1 );
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-	// Run the Server frame ( read, run phsyiscs, respond )
+	// Run the Server frame ( read, run physics, respond )
 	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_SERVER );
-	SV_Frame ( send_client_updates );
+	SV_Frame ( finaltick );
 	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_SERVER );
 
 	// Look for connectionless rcon packets on dedicated servers
-	SV_CheckRcom();
-
-	SV_CheckTimeouts();
-	
+	// SV_CheckRcom(); TODO 
 }
+
+void _Host_RunFrame_Server_Async( int numticks )
+{
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s %d", __FUNCTION__, numticks );
+
+	for ( int tick = 0; tick < numticks; tick++ )
+	{ 
+		g_ServerGlobalVariables.tickcount = sv.m_nTickCount;
+		g_ServerGlobalVariables.simTicksThisFrame = numticks - tick;
+		bool bFinalTick = ( tick == (numticks - 1) );
+		_Host_RunFrame_Server( bFinalTick );
+	}
+}
+
 
 void _Host_RunFrame_Client( bool framefinished )
 {
 #ifndef SWDS
 	VPROF( "_Host_RunFrame_Client" );
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s %d", __FUNCTION__, framefinished );
 
 	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CLIENT );
 
 	// Get any current state update from server, etc.
-	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_START );
 	CL_ReadPackets( framefinished );
-	ClientDLL_FrameStageNotify( FRAME_NET_UPDATE_END );
 
-#if defined VOICE_OVER_IP && defined _WIN32
+#if defined( VOICE_OVER_IP )
 	// Send any enqueued voice data to the server
 	CL_ProcessVoiceData();
 #endif // VOICE_OVER_IP
 
+	cl.CheckUpdatingSteamResources();
+	cl.CheckFileCRCsWithServer();
+
 	// Resend connection request if needed.
-	CL_CheckForResend ();
+	cl.RunFrame();
+
+	if ( CL_IsHL2Demo() || CL_IsPortalDemo() ) // don't need sv.IsDedicated() because ded servers don't run this
+	{
+		void CL_DemoCheckGameUIRevealTime();
+		CL_DemoCheckGameUIRevealTime();
+	}
+
+	Steam3Client().RunFrame();
 
 	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CLIENT );
+
+	// This takes 1 usec, so it's pretty cheap...
+	CL_SetPagedPoolInfo();
 #endif
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Used to set limits on certain convars in multiplayer/sv_cheats mode.
+// Returns true if it was called recursively and it early-outed.
+//-----------------------------------------------------------------------------
+bool CheckVarRange_Generic( ConVar *pVar, int minVal, int maxVal )
+{
+	if ( !CanCheat() && !Host_IsSinglePlayerGame() )
+	{
+		int clampedValue = clamp( pVar->GetInt(), minVal, maxVal );
+		if ( clampedValue != pVar->GetInt() )
+		{
+			Warning( "sv_cheats=0 prevented changing %s outside of the range [%d,%d] (was %d).\n", pVar->GetName(), minVal, maxVal, pVar->GetInt() );
+			pVar->SetValue( clampedValue );
+		}
+	}
+
+	return false;
+}
+
+
+void CheckSpecialCheatVars()
+{
+	static ConVar *mat_picmip = NULL;
+	if ( !mat_picmip )
+		mat_picmip = g_pCVar->FindVar( "mat_picmip" );
+
+	CheckVarRange_r_rootlod();
+	CheckVarRange_r_lod();
+	HandleServerAllowColorCorrection();
+}
+
 
 void _Host_RunFrame_Render()
 {
 #ifndef SWDS
 	VPROF( "_Host_RunFrame_Render" );
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "_Host_RunFrame_Render" );
 
-	int nNoRendering = 0;
-	if ( demo->IsTakingSnapshot() )
+	CheckSpecialCheatVars();
+
+	int nOrgNoRendering = mat_norendering.GetInt();
+
+	if ( cl_takesnapshot )
 	{
-		// If we started in no-rendering mode, get us out!
-		nNoRendering = mat_norendering.GetInt();
+		// turn off no-rendering mode, if taking screenshot
 		mat_norendering.SetValue( 0 );
-
-		// FIXME!!  Cbuf_AddText doesn't accept a const char *?!?!!
-		const char *pSnapshotFilename = demo->GetSnapshotFilename();
-		char *pBuf = ( char * )_alloca( strlen( "snapshot"  ) + strlen( pSnapshotFilename ) + 2 );
-		Q_strcpy( pBuf, "snapshot " );
-		Q_strcat( pBuf, pSnapshotFilename );
-		Q_strcat( pBuf, "\n" );
-		Cbuf_AddText( pBuf );
-		Cbuf_Execute();
 	}
-
-	// Used for netgaph.
-//	CL_UpdateFrameLerp();
 
 	// update video if not running in background
 	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_RENDER );
 
+	CL_LatchInterpolationAmount();
+
 	{
 		VPROF( "_Host_RunFrame_Render - UpdateScreen" );
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "_Host_RunFrame_Render - UpdateScreen" );
 		Host_UpdateScreen();
 	}
-	g_HostTimes.MarkSwapTime( );
 	{
 		VPROF( "_Host_RunFrame_Render - CL_DecayLights" );
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "_Host_RunFrame_Render - CL_DecayLights" );
 		CL_DecayLights ();
 	}
 
 	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_RENDER );
 
+	saverestore->OnFrameRendered();
 
-	// This is undoing the set in the check above
-	if ( demo->IsTakingSnapshot() )
+#ifdef USE_SDL
+	if ( g_pLauncherMgr )
 	{
-		// If we ran this from the command-line, quit after taking the snapshot.
-		if( CommandLine()->FindParm( "-benchframe" ) )
-		{
-			Cbuf_AddText( "quit\n" );
-			Cbuf_Execute();
-		}
-		mat_norendering.SetValue( nNoRendering );
+		g_pLauncherMgr->OnFrameRendered();
 	}
+#endif
+
+	mat_norendering.SetValue( nOrgNoRendering );
 #endif
 }
 
-void CL_ApplyAddAngle()
+void CL_FindInterpolatedAddAngle( float t, float& frac, AddAngle **prev, AddAngle **next )
 {
-	float frametime = cl.getframetime();
+	int c = cl.addangle.Count();
 
-	float amove = 0.0f;
+	*prev = NULL;
+	*next = NULL;
+
+	AddAngle *pentry = NULL;
+	for ( int i = 0; i < c; i++ )
+	{
+		AddAngle *entry = &cl.addangle[ i ];
+
+		*next = entry;
+
+		// Time is earlier
+		if ( t < entry->starttime )
+		{
+			if ( i == 0 )
+			{
+				*prev = *next;
+				frac = 0.0f;
+				return;
+			}
+
+			// Avoid div by zero
+			if ( entry->starttime == pentry->starttime )
+			{
+				frac = 0.0f;
+				return;
+			}
+
+			// Time spans the two entries
+			frac = ( t - pentry->starttime ) / ( entry->starttime - pentry->starttime );
+			frac = clamp( frac, 0.0f, 1.0f );
+			return;
+		}
+
+		*prev = *next;
+		pentry = entry;
+	}
+}
+
+void CL_DiscardOldAddAngleEntries( float t )
+{
+	float killtime = t - host_state.interval_per_tick - 0.1f;
 
 	for ( int i = 0; i < cl.addangle.Count(); i++ )
 	{
-		AddAngle *add = &cl.addangle[ i ];
-		
-		float remainder = fabs( add->yawdelta - add->accum );
-		if ( remainder <= 0.0001f )
+		AddAngle *p = &cl.addangle[ i ];
+		if ( p->starttime <= killtime )
 		{
 			cl.addangle.Remove( i );
 			--i;
-			continue;
 		}
-
-		// Apply some of the delta
-		float f = frametime / TICK_RATE;
-		f = clamp( f, 0.0f, 1.0f );
-
-		float amount_to_add = f * add->yawdelta;
-
-		if ( add->yawdelta > 0.0f )
-		{
-			amount_to_add = min( amount_to_add, remainder );
-		}
-		else
-		{
-			amount_to_add = max( amount_to_add, -remainder );
-		}
-
-		add->accum += amount_to_add;
-		
-		amove += amount_to_add;
 	}
 
-	cl.viewangles[ 1 ] += amove;
+	// It's safe to reset the master counter once all the entries decay
+	if ( cl.addangle.Count() == 0 )
+	{
+		cl.prevaddangletotal = cl.addangletotal = 0.0f;
+	}
 }
+
+#ifndef SWDS
+void CL_ApplyAddAngle()
+{
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
+
+	float curtime = cl.GetTime() - host_state.interval_per_tick;
+
+	AddAngle *prev = NULL, *next = NULL;
+	float frac = 0.0f;
+
+	float addangletotal = 0.0f;
+
+	CL_FindInterpolatedAddAngle( curtime, frac, &prev, &next );
+
+	if ( prev && next )
+	{
+		addangletotal = prev->total + frac * ( next->total - prev->total );
+	}
+	else
+	{ 
+		addangletotal = cl.prevaddangletotal;
+	}
+
+	float amove = addangletotal - cl.prevaddangletotal;
+
+	// Update view angles
+	cl.viewangles[ 1 ] += amove;
+	// Update client .dll view of angles
+	g_pClientSidePrediction->SetLocalViewAngles( cl.viewangles );
+
+	// Remember last total
+	cl.prevaddangletotal = addangletotal;
+
+	CL_DiscardOldAddAngleEntries( curtime );
+}
+#endif
 
 void _Host_RunFrame_Sound()
 {
 #ifndef SWDS
+
 	VPROF_BUDGET( "_Host_RunFrame_Sound", VPROF_BUDGETGROUP_OTHER_SOUND );
 
 	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_SOUND );
@@ -1344,398 +2921,861 @@ void _Host_RunFrame_Sound()
 #endif
 }
 
-void _Host_RunFrame (float time)
+float Host_GetSoundDuration( const char *pSample )
 {
-	if ( host_checkheap )
-	{
-#ifdef _WIN32
-		if ( _heapchk() != _HEAPOK )
-		{
-			Sys_Error( "_Host_RunFrame (top):  _heapchk() != _HEAPOK\n" );
-		}
-#endif
-	}
-
-	// Reset profiling stuff
-	ResetTimeMeasurements();
-
-	if ( setjmp ( host_enddemo ) )
-		return;			// demo finished.
-
-	// decide the simulation time
-	if ( !Host_FilterTime ( time ) )
-		return;			
-
-	_Host_SetGlobalTime();
-
-	// FIXME:  Could track remainder as fractional ticks instead of msec
-	float prevremainder = host_remainder;
-	float time_since_last_tick = host_remainder;
 #ifndef SWDS
-	if ( !demo->IsPlaybackPaused() )
+	if (!sv.IsDedicated())
 	{
-		time_since_last_tick += host_frametime;
+		extern float SV_GetSoundDuration(const char *pSample);
+		extern float AudioSource_GetSoundDuration(CSfxTable *pSfx);
+		int index = cl.LookupSoundIndex(pSample);
+		if (index >= 0)
+			return AudioSource_GetSoundDuration(cl.GetSound(index));
+		return SV_GetSoundDuration(pSample);
 	}
 #endif
-	float extramousetime = 0.0f;
-
-	int numticks = 0;
-	if ( time_since_last_tick >= TICK_RATE )
-	{
-		numticks = (int)( (time_since_last_tick / TICK_RATE ) );
-		host_remainder = time_since_last_tick - numticks * TICK_RATE;
-		extramousetime = 0;
-	}
-	else
-	{
-		host_remainder = time_since_last_tick;
-		extramousetime = host_frametime;
-	}
-
-	{
-	// Profile scope, protect from setjmp() problems
-	VPROF( "_Host_RunFrame" );
-
-	g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
-
-	// process console commands
-	Cbuf_Execute ();
-
-	g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
-
-	// Msg( "Running %i ticks (%f remainder) for frametime %f total %f tick %f delta %f\n", numticks, remainder, host_frametime, host_time );
-	g_ServerGlobalVariables.interpolation_amount = 0.0f;
-#ifndef SWDS
-	g_ClientGlobalVariables.interpolation_amount = 0.0f;
-	
-	cl.tickremainder = 0.0f;
-	cl.insimulation = true;
-#endif
-
-	host_frameticks = numticks;
-	host_currentframetick = 0;
-
-	for ( int tick = 0; tick < numticks; tick++ )
-	{ 
-		// NOTE:  Do we want do this at start or end of this loop?
-		++host_tickcount;
-		++host_currentframetick;
-
-		g_ServerGlobalVariables.tickcount = sv.tickcount;
-#ifndef SWDS
-		g_ClientGlobalVariables.tickcount = cl.tickcount;
-
-		// Make sure state is correct
-		CL_CheckClientState();
-#endif
-
-		//-------------------
-		// input processing
-		//-------------------
-		_Host_RunFrame_Input( prevremainder );
-		prevremainder = 0;
-
-		//-------------------
-		//
-		// server operations
-		//
-		//-------------------
-		// Only send updates to clients on final tick so we don't reencode network data multiple times per frame unnecessarily
-		bool finaltick = ( tick == numticks - 1 ) ? true : false;
-		_Host_RunFrame_Server( finaltick );
-
-		//-------------------
-		//
-		// client operations
-		//
-		//-------------------
-#ifndef SWDS
-		_Host_RunFrame_Client( finaltick );
-#endif
-	}
-
-	// This is a hack to let timedemo pull messages from the queue faster than every 15 msec
-	if ( numticks == 0 && 
-		Demo_IsPlayingBack_TimeDemo() )
-	{
-		_Host_RunFrame_Client( true );
-	}
-
-#ifndef SWDS
-	// This causes cl.gettime() to return the true clock being used for rendering (tickcount * rate + remainder)
-	cl.tickremainder	= host_remainder;
-	cl.insimulation		= false;
-
-	if ( cl.getframetime() == 0.0f )
-	{
-		cl.tickremainder = 0.0f;
-	}
-	// Now allow for interpolation on client
-	g_ClientGlobalVariables.interpolation_amount = ( host_remainder / TICK_RATE );
-
-	// Compute absolute/render time stamp
-	g_ClientGlobalVariables.curtime = cl.gettime();
-	g_ClientGlobalVariables.frametime = cl.getframetime();
-
-	//-------------------
-	// Run prediction if it hasn't been run yet
-	//-------------------
-	// If we haven't predicted/simulated the player (multiplayer with prediction enabled and
-	//  not a listen server with zero frame lag, then go ahead and predict now
-	if ( !CL_HasRunPredictionThisFrame() )
-	{
-		CL_RunPrediction( PREDICTION_NORMAL );
-	}
-	
-	CL_ApplyAddAngle();
-
-	// Make sure mouse is not lagged regardless
-	if ( extramousetime > 0.0f )
-	{
-		CL_ExtraMouseUpdate( extramousetime );
-	}
-#endif
-
-	//-------------------
-	// rendering
-	//-------------------
-	_Host_RunFrame_Render();
-	
-	//-------------------
-	// sound
-	//-------------------
-	_Host_RunFrame_Sound();
-
-	
-	//-------------------
-	// simulation
-	//-------------------
-#ifndef SWDS
-	{
-		VPROF( "_Host_RunFrame - ClientDLL_Update" );
-		// Client-side simulation
-		g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CLDLL );
-
-		ClientDLL_Update();
-
-		g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CLDLL );
-
-	}
-#endif
-
-	//-------------------
-	// time
-	//-------------------
-	
-	Host_Speeds();
-
-	Host_UpdateMapList();
-
-	host_framecount++;
-#ifndef SWDS
-	if ( !demo->IsPlaybackPaused() )
-#endif
-	{
-		host_time += host_frametime;
-	}
-
-	Host_PostFrameRate( host_frametime );
-
-	if ( host_checkheap )
-	{
-#ifdef _WIN32
-		if ( _heapchk() != _HEAPOK )
-		{
-			Sys_Error( "_Host_RunFrame (bottom):  _heapchk() != _HEAPOK\n" );
-		}
-#endif
-	}
-
-	Host_CheckDumpMemoryStats();
-
-	GetTestScriptMgr()->CheckPoint( "frame_end" );
-	
-	} // Profile scope, protect from setjmp() problems
+	return 0.0f;
 }
 
+CON_COMMAND( host_runofftime, "Run off some time without rendering/updating sounds\n" )
+{
+	if ( args.ArgC() != 2 )
+	{
+		ConMsg( "Usage:  host_runofftime <seconds>\n" );
+		return;
+	}
+
+	if ( !sv.IsActive() )
+	{
+		ConMsg( "host_ruofftime:  must be running a server\n" );
+		return;
+	}
+
+	if ( sv.IsMultiplayer() )
+	{
+		ConMsg( "host_ruofftime:  only valid in single player\n" );
+		return;
+	}
+
+	float advanceTime = atof( args[1] );
+	if ( advanceTime <= 0.0f )
+		return;
+
+	// 15 minutes is a _long_ time!!!
+	if ( advanceTime > 15.0f * 60.0f )
+	{
+		ConMsg( "host_runofftime would run off %.2f minutes!!! ignoring\n",
+			advanceTime / 60.0f );
+		return;
+	}
+
+	ConMsg( "Skipping ahead for %f seconds\n", advanceTime );
+
+	SCR_UpdateScreen();
+	SCR_UpdateScreen ();
+}
+
+#if !defined( _X360 )
+S_API int SteamGameServer_GetIPCCallCount();
+#else
+S_API int SteamGameServer_GetIPCCallCount() { return 0; }
+#endif
+void Host_ShowIPCCallCount()
+{
+	// If set to 0 then get out.
+	if ( host_ShowIPCCallCount.GetInt() == 0 )
+		return;
+	
+	static float s_flLastTime = 0;
+	static int s_nLastTick = host_tickcount;
+	static int s_nLastFrame = host_framecount;
+	
+	// Figure out how often they want to update.
+	double flInterval = 0;
+	if ( host_ShowIPCCallCount.GetFloat() > 0 )
+	{
+		flInterval = 1.0f / host_ShowIPCCallCount.GetFloat();
+	}
+	
+	// This is called every frame so increment the frame counter.
+	double flCurTime = Plat_FloatTime();
+	if ( flCurTime - s_flLastTime >= flInterval )
+	{
+		uint32 callCount;
+		ISteamClient *pSteamClient = SteamClient();
+		if ( pSteamClient )
+		{
+			callCount = pSteamClient->GetIPCCallCount();
+		}
+		else
+		{
+			// Ok, we're a dedicated server and we need to use this to get it.
+			callCount = (uint32)SteamGameServer_GetIPCCallCount();
+		}
+
+		// Avoid a divide by zero.
+		int frameCount = host_framecount - s_nLastFrame;
+		int tickCount = host_tickcount - s_nLastTick;
+		if ( frameCount == 0 || tickCount == 0 )
+			return;
+			
+		Msg( "host_ShowIPCCallCount: %d IPC calls in the past [%d frames, %d ticks]  Avg: [%.2f/frame, %.2f/tick]\n", 
+			callCount, frameCount, tickCount, (float)callCount / frameCount, (float)callCount / tickCount );
+			
+		s_flLastTime = flCurTime;
+		s_nLastTick = host_tickcount;
+		s_nLastFrame = host_framecount;
+	}
+}
+
+void Host_SetClientInSimulation( bool bInSimulation )
+{
+#ifndef SWDS
+	// Tracker 77931:  If the game is paused, then lock the client clock at the previous tick boundary 
+	//  (otherwise we'll keep interpolating through the "remainder" time causing the paused characters
+	//  to twitch like they have the shakes)
+	// TODO:  Since this rounds down on the frame we paused, we could see a slight backsliding.  We could remember the last "remainder" before pause and re-use it and 
+	//  set insimulation == false to be mroe exact.  We'd still have to deal with the timing difference between
+	//  when pause/unpause happens on the server versus the client
+	cl.insimulation = bInSimulation || cl.IsPaused();
+
+	// Compute absolute/render time stamp
+	g_ClientGlobalVariables.curtime = cl.GetTime();
+	g_ClientGlobalVariables.frametime = cl.GetFrameTime();
+#endif
+}
+
+static ConVar host_Sleep( "host_sleep", "0", FCVAR_CHEAT, "Force the host to sleep a certain number of milliseconds each frame." );
+extern ConVar sv_alternateticks;
+#define LOG_FRAME_OUTPUT 0
+
+void _Host_RunFrame (float time)
+{
+	MDLCACHE_COARSE_LOCK_(g_pMDLCache);
+	static double host_remainder = 0.0f;
+	double prevremainder;
+	bool shouldrender;
+
+#if defined( RAD_TELEMETRY_ENABLED )
+	if( g_Telemetry.DemoTickEnd == ( uint32 )-1 )
+	{
+		Cbuf_AddText( "quit\n" );
+	}
+#endif
+
+	int numticks;
+	{
+		// Profile scope specific to the top of this function, protect from setjmp() problems
+		VPROF( "_Host_RunFrame_Upto_MarkFrame" );
+
+		if ( host_checkheap )
+		{
+#if defined(_WIN32)
+			if ( _heapchk() != _HEAPOK )
+			{
+				Sys_Error( "_Host_RunFrame (top):  _heapchk() != _HEAPOK\n" );
+			}
+#endif
+		}
+
+		// When playing back a VCR file, don't do host_sleep. That way, if it was recorded with
+		// host_sleep on, it'll play back way Faster.
+		if ( host_Sleep.GetInt() && VCRGetMode() != VCR_Playback )
+		{
+			Sys_Sleep( host_Sleep.GetInt() );
+		}
+
+		// Slow down the playback?	
+		if ( g_iVCRPlaybackSleepInterval )
+		{
+			Sys_Sleep( g_iVCRPlaybackSleepInterval );
+		}
+
+		MapReslistGenerator().RunFrame();
+
+		static int lastrunoffsecond = -1;
+
+		if ( setjmp ( host_enddemo ) )
+			return;			// demo finished.
+
+		// decide the simulation time
+		Host_AccumulateTime ( time );
+		_Host_SetGlobalTime();
+
+		shouldrender = !sv.IsDedicated();
+
+		// FIXME:  Could track remainder as fractional ticks instead of msec
+		prevremainder = host_remainder;
+		if ( prevremainder < 0 )
+			prevremainder = 0;
+
+	#if !defined(SWDS)
+		if ( !demoplayer->IsPlaybackPaused() )
+	#endif
+		{
+			host_remainder += host_frametime;
+		}
+
+		numticks = 0;	// how many ticks we will simulate this frame
+		if ( host_remainder >= host_state.interval_per_tick )
+		{
+			numticks = (int)( floor( host_remainder / host_state.interval_per_tick ) );
+
+			// round to nearest even ending tick in alternate ticks mode so the last
+			// tick is always simulated prior to updating the network data
+			// NOTE: alternate ticks only applies in SP!!!
+			if ( Host_IsSinglePlayerGame() &&
+				sv_alternateticks.GetBool() )
+			{
+				int startTick = g_ServerGlobalVariables.tickcount;
+				int endTick = startTick + numticks;
+				endTick = AlignValue( endTick, 2 );
+				numticks = endTick - startTick;
+			}
+
+			host_remainder -= numticks * host_state.interval_per_tick;
+		}
+
+		host_nexttick = host_state.interval_per_tick - host_remainder;
+
+		g_pMDLCache->MarkFrame();
+	}
+
+	{
+		// Profile scope, protect from setjmp() problems
+		VPROF( "_Host_RunFrame" );
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "_Host_RunFrame" );
+
+		g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
+
+		// process console commands
+		Cbuf_Execute ();
+
+		// initialize networking for dedicated server after commandline & autoexec.cfg have been parsed
+		if ( NET_IsDedicated() && !NET_IsMultiplayer() )
+			NET_SetMutiplayer( true );
+
+		g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CMD_EXECUTE );
+
+		// Msg( "Running %i ticks (%f remainder) for frametime %f total %f tick %f delta %f\n", numticks, remainder, host_frametime, host_time );
+		g_ServerGlobalVariables.interpolation_amount = 0.0f;
+#ifndef SWDS
+		g_ClientGlobalVariables.interpolation_amount = 0.0f;
+
+		cl.insimulation = true;
+#endif
+
+		host_frameticks = numticks;
+		host_currentframetick = 0;
+
+#if !defined( SWDS )
+		// This is to make the tool do both sim + rendering on the initial frame
+		// cl.IsActive changes in the loop below, as does scr_nextdrawtick
+		// We're just caching off the state here so that we have a consistent return value
+		// for enginetool->IsInGame the entire frame
+		g_pEngineToolInternal->SetIsInGame( cl.IsActive() && ( scr_nextdrawtick == 0 ) );
+#endif
+		CJob *pGameJob = NULL;
+
+// threaded path only supported in listen server
+#ifndef SWDS
+		if ( !IsEngineThreaded() )
+#endif
+		{
+#ifndef SWDS
+			if ( g_ClientDLL )
+			{
+				g_ClientDLL->IN_SetSampleTime(host_frametime);
+			}
+			g_ClientGlobalVariables.simTicksThisFrame = 1;
+#endif
+			cl.m_tickRemainder = host_remainder;
+			g_ServerGlobalVariables.simTicksThisFrame = 1;
+			cl.SetFrameTime( host_frametime );
+			for ( int tick = 0; tick < numticks; tick++ )
+			{ 
+				// Emit an ETW event every simulation frame.
+				ETWSimFrameMark( sv.IsDedicated() );
+
+				double now = Plat_FloatTime();
+				float jitter = now - host_idealtime;
+
+				// Track jitter (delta between ideal time and actual tick execution time)
+				host_jitterhistory[ host_jitterhistorypos ] = jitter;
+				host_jitterhistorypos = ( host_jitterhistorypos + 1 ) % ARRAYSIZE(host_jitterhistory);
+
+				// Very slowly decay "ideal" towards current wall clock unless delta is large
+				if ( fabs( jitter ) > 1.0f )
+				{
+					host_idealtime = now;
+				}
+				else
+				{
+					host_idealtime = 0.99 * host_idealtime + 0.01 * now;
+				}
+
+				// process any asynchronous network traffic (TCP), set net_time
+				NET_RunFrame( now );
+
+				// Only send updates on final tick so we don't re-encode network data multiple times per frame unnecessarily
+				bool bFinalTick = ( tick == (numticks - 1) );
+
+				// initialize networking for dedicated server after commandline & autoexec.cfg have been parsed
+				if ( NET_IsDedicated() && !NET_IsMultiplayer() )
+					NET_SetMutiplayer( true );
+
+				g_ServerGlobalVariables.tickcount = sv.m_nTickCount;
+				// NOTE:  Do we want do this at start or end of this loop?
+				++host_tickcount;
+				++host_currentframetick;
+#ifndef SWDS
+				g_ClientGlobalVariables.tickcount = cl.GetClientTickCount();
+
+				// Make sure state is correct
+				CL_CheckClientState();
+#endif
+				//-------------------
+				// input processing
+				//-------------------
+				_Host_RunFrame_Input( prevremainder, bFinalTick );
+				prevremainder = 0;
+				//-------------------
+				//
+				// server operations
+				//
+				//-------------------
+
+				_Host_RunFrame_Server( bFinalTick );
+
+				// Additional networking ops for SPLITPACKET stuff (99.9% of the time this will be an empty list of work)
+				NET_SendQueuedPackets();
+				//-------------------
+				//
+				// client operations
+				//
+				//-------------------
+#ifndef SWDS
+				if ( !sv.IsDedicated() )
+				{
+					_Host_RunFrame_Client( bFinalTick );
+				}
+
+				toolframework->Think( bFinalTick );
+#endif
+
+				host_idealtime += host_state.interval_per_tick;
+			}
+			
+			// run HLTV if active
+			if ( hltv )
+			{
+				tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "hltv->RunFrame()" );
+				hltv->RunFrame();
+			}
+
+			if ( hltvtest )
+			{
+				tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "hltvtest->RunFrame()" );
+				hltvtest->RunFrame();
+			}
+
+#if defined( REPLAY_ENABLED )
+			// run replay if active
+			if ( replay )
+			{
+				replay->RunFrame();
+			}
+
+			// Update server-side replay history manager
+			if ( sv.IsDedicated() && g_pServerReplayContext && g_pServerReplayContext->IsInitialized() )
+			{
+				g_pServerReplayContext->Think();
+			}
+#endif
+
+#ifndef SWDS
+			// This is a hack to let timedemo pull messages from the queue faster than every 15 msec
+			// Also when demoplayer is skipping packets to a certain tick we should process the queue
+			// as quickly as we can.
+			if ( numticks == 0 && ( demoplayer->IsPlayingTimeDemo() || demoplayer->IsSkipping() ) )
+			{
+				_Host_RunFrame_Client( true );
+			}
+
+			if ( !sv.IsDedicated() )
+			{
+				tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "Host_SetClientInSimulation" );
+
+				// This causes cl.gettime() to return the true clock being used for rendering (tickcount * rate + remainder)
+				Host_SetClientInSimulation( false );
+				// Now allow for interpolation on client
+				g_ClientGlobalVariables.interpolation_amount = ( cl.m_tickRemainder / host_state.interval_per_tick );
+
+#if defined( REPLAY_ENABLED )
+				// Update client-side replay history manager - called here since interpolation_amount is set
+				if ( g_pClientReplayContext && g_pClientReplayContext->IsInitialized() )
+				{
+					g_pClientReplayContext->Think();
+				}
+#endif
+
+				//-------------------
+				// Run prediction if it hasn't been run yet
+				//-------------------
+				// If we haven't predicted/simulated the player (multiplayer with prediction enabled and
+				//  not a listen server with zero frame lag, then go ahead and predict now
+				CL_RunPrediction( PREDICTION_NORMAL );
+
+				CL_ApplyAddAngle();
+
+				// The mouse is always simulated for the current frame's time
+				// This makes updates smooth in every case
+				// continuous controllers affecting the view are also simulated this way
+				// but they have a cap applied by IN_SetSampleTime() so they are not also
+				// simulated during input gathering
+				CL_ExtraMouseUpdate( g_ClientGlobalVariables.frametime );
+			}
+#endif
+#if defined( REPLAY_ENABLED )
+			// Let the replay system think
+			if ( g_pReplay )
+			{
+				g_pReplay->Think();
+			}
+#endif
+#if LOG_FRAME_OUTPUT
+			if ( !cl.IsPaused() || !sv.IsPaused() )
+			{
+				Msg("=============SIM: CLIENT %5d + %d, SERVER %5d + %d\t REM: %.2f\n", cl.GetClientTickCount(), numticks, sv.m_nTickCount, numticks, host_remainder*1000.0f );
+			}
+#endif
+		}
+#ifndef SWDS
+		else
+		{
+			static int numticks_last_frame = 0;
+			static float host_remainder_last_frame = 0, prev_remainder_last_frame = 0, last_frame_time = 0;
+
+			int clientticks;
+			int serverticks;
+
+			clientticks = numticks_last_frame;
+			cl.m_tickRemainder = host_remainder_last_frame;
+			cl.SetFrameTime( last_frame_time );
+			if ( g_ClientDLL )
+			{
+				g_ClientDLL->IN_SetSampleTime(last_frame_time);
+			}
+
+			last_frame_time = host_frametime;
+
+			serverticks = numticks;
+			g_ClientGlobalVariables.simTicksThisFrame = clientticks;
+			g_ServerGlobalVariables.simTicksThisFrame = serverticks;
+			g_ServerGlobalVariables.tickcount = sv.m_nTickCount;
+
+			// THREADED: Run Client
+			// -------------------
+			for ( int tick = 0; tick < clientticks; tick++ )
+			{ 
+				// process any asynchronous network traffic (TCP), set net_time
+				NET_RunFrame(  Plat_FloatTime() );
+
+				// Only send updates on final tick so we don't re-encode network data multiple times per frame unnecessarily
+				bool bFinalTick = ( tick == (clientticks - 1) );
+
+				// initialize networking for dedicated server after commandline & autoexec.cfg have been parsed
+				if ( NET_IsDedicated() && !NET_IsMultiplayer() )
+					NET_SetMutiplayer( true );
+				g_ClientGlobalVariables.tickcount = cl.GetClientTickCount();
+
+				// Make sure state is correct
+				CL_CheckClientState();
+				// Additional networking ops for SPLITPACKET stuff (99.9% of the time this will be an empty list of work)
+				NET_SendQueuedPackets();
+				//-------------------
+				//
+				// client operations
+				//
+				//-------------------
+				if ( !sv.IsDedicated() )
+				{
+					_Host_RunFrame_Client( bFinalTick );
+				}
+				toolframework->Think( bFinalTick );
+			}
+			// This is a hack to let timedemo pull messages from the queue faster than every 15 msec
+			// Also when demoplayer is skipping packets to a certain tick we should process the queue
+			// as quickly as we can.
+			if ( clientticks == 0 && ( demoplayer->IsPlayingTimeDemo() || demoplayer->IsSkipping() ) )
+			{
+				_Host_RunFrame_Client( true );
+			}
+
+			// This causes cl.gettime() to return the true clock being used for rendering (tickcount * rate + remainder)
+			Host_SetClientInSimulation( false );
+			// Now allow for interpolation on client
+			g_ClientGlobalVariables.interpolation_amount = ( cl.m_tickRemainder / host_state.interval_per_tick );
+
+			//-------------------
+			// Run prediction if it hasn't been run yet
+			//-------------------
+			// If we haven't predicted/simulated the player (multiplayer with prediction enabled and
+			//  not a listen server with zero frame lag, then go ahead and predict now
+			CL_RunPrediction( PREDICTION_NORMAL );
+
+			CL_ApplyAddAngle();
+
+			Host_SetClientInSimulation( true );
+
+			// THREADED: Run Input
+			// -------------------
+			int saveTick = g_ClientGlobalVariables.tickcount;
+
+			for ( int tick = 0; tick < serverticks; tick++ )
+			{
+				// NOTE:  Do we want do this at start or end of this loop?
+				++host_tickcount;
+				++host_currentframetick;
+				g_ClientGlobalVariables.tickcount = host_tickcount;
+				bool bFinalTick = tick==(serverticks-1) ? true : false;
+				_Host_RunFrame_Input( prevremainder, bFinalTick );
+				prevremainder = 0;
+				// process any asynchronous network traffic (TCP), set net_time
+				NET_RunFrame(  Plat_FloatTime() );
+			}
+
+			Host_SetClientInSimulation( false );
+
+			// The mouse is always simulated for the current frame's time
+			// This makes updates smooth in every case
+			// continuous controllers affecting the view are also simulated this way
+			// but they have a cap applied by IN_SetSampleTime() so they are not also
+			// simulated during input gathering
+			CL_ExtraMouseUpdate( g_ClientGlobalVariables.frametime );
+
+			g_ClientGlobalVariables.tickcount = saveTick;
+			numticks_last_frame = numticks;
+			host_remainder_last_frame = host_remainder;
+
+			// THREADED: Run Server
+			// -------------------
+			// set net_time once before running the server
+			NET_SetTime( Plat_FloatTime() );
+			pGameJob = new CFunctorJob( CreateFunctor( _Host_RunFrame_Server_Async, serverticks ) );
+			if ( IsX360() )
+			{
+				pGameJob->SetServiceThread( g_nServerThread );
+			}
+			g_pThreadPool->AddJob( pGameJob );
+#if LOG_FRAME_OUTPUT
+			if ( !cl.IsPaused() || !sv.IsPaused() )
+			{
+				Msg("=============SIM: CLIENT %5d + %d, SERVER %5d + %d\t REM: %.2f\n", cl.GetClientTickCount(), clientticks, sv.m_nTickCount, serverticks, host_remainder*1000.0f );
+			}
+#endif
+		}
+#endif	// SWDS
+
+		g_Log.RunFrame();
+
+		if ( shouldrender )
+		{
+#if LOG_FRAME_OUTPUT
+			if ( !cl.IsPaused() || !sv.IsPaused() )
+			{
+				static float lastFrameTime = 0;
+				float frametime = g_ClientGlobalVariables.curtime - lastFrameTime;
+				Msg("RENDER AT: %6.4f: %.2fms [%.2fms implicit] frametime\n", 
+					g_ClientGlobalVariables.curtime, g_ClientGlobalVariables.frametime*1000.0f, frametime * 1000.0f);
+				lastFrameTime = g_ClientGlobalVariables.curtime;
+			}
+#endif
+			//-------------------
+			// rendering
+			//-------------------
+			_Host_RunFrame_Render();
+
+			//-------------------
+			// sound
+			//-------------------
+			_Host_RunFrame_Sound();
+
+#ifndef DEDICATED
+			if ( g_bVCRSingleStep )
+			{
+				VCR_EnterPausedState();
+			}
+#endif
+		}
+		else
+		{
+			tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "modelloader->UpdateDynamicModels" );
+			VPROF( "UpdateDynamicModels" );
+			CMDLCacheCriticalSection critsec( g_pMDLCache );
+			modelloader->UpdateDynamicModels();
+		}
+
+		//-------------------
+		// simulation
+		//-------------------
+		g_HostTimes.MarkSwapTime( );
+#ifndef SWDS
+		if ( !sv.IsDedicated() )
+		{
+			VPROF( "_Host_RunFrame - ClientDLL_Update" );
+			tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "_Host_RunFrame - ClientDLL_Update" );
+
+			// Client-side simulation
+			g_HostTimes.StartFrameSegment( FRAME_SEGMENT_CLDLL );
+
+			ClientDLL_Update();
+
+			g_HostTimes.EndFrameSegment( FRAME_SEGMENT_CLDLL );
+		}
+#endif
+		if ( pGameJob )
+		{
+			{
+				VPROF_BUDGET( "WaitForAsyncServer", "AsyncServer" );
+				if ( Host_IsSinglePlayerGame() )
+				{
+					// This should change to a YieldWait if the server starts wanting to parallel process. If
+					// so, will need some route for the server to queue up work it wants to execute outside
+					// its frame, otherwise some of it would be performed during the yield. Right now
+					// need to wait for server so we don't stall on queued AI operations (toml 7/3/2007)
+					pGameJob->ExecuteAndRelease();
+				}
+				else
+				{
+					pGameJob->WaitForFinishAndRelease();
+				}
+			}
+			SV_FrameExecuteThreadDeferred();
+		}
+
+		//-------------------
+		// time
+		//-------------------
+
+		Host_Speeds();
+
+		Host_UpdateMapList();
+
+		host_framecount++;
+#if !defined(SWDS)
+		if ( !demoplayer->IsPlaybackPaused() )
+#endif
+		{
+			host_time = host_tickcount * host_state.interval_per_tick + cl.m_tickRemainder;
+		}
+
+		Host_PostFrameRate( host_frametime );
+
+		if ( host_checkheap )
+		{
+#ifdef _WIN32
+			if ( _heapchk() != _HEAPOK )
+			{
+				Sys_Error( "_Host_RunFrame (bottom):  _heapchk() != _HEAPOK\n" );
+			}
+#endif
+		}
+
+		Host_CheckDumpMemoryStats();
+
+		GetTestScriptMgr()->CheckPoint( "frame_end" );
+	} // Profile scope, protect from setjmp() problems
+
+	Host_ShowIPCCallCount();
+}
 /*
 ==============================
 Host_Frame
 
 ==============================
 */
-int Host_RunFrame( float time, int iState )
+void Host_RunFrame( float time )
 {
-	double	time1, time2;
+	static  double	timetotal = 0;
+	static  int		timecount = 0;
+	static	double  timestart = 0;
 
-	if ( setjmp (host_abortserver) )
+#ifndef SWDS
+	if ( !scr_drawloading && sv.IsActive() && cl.IsActive() && !sv.m_bLoadgame)
 	{
-		return giActive;			// something bad happened, or the server disconnected
+		switch ( host_thread_mode.GetInt() )
+		{
+		case HTM_DISABLED:	g_bThreadedEngine = false;									break;
+		case HTM_DEFAULT:	g_bThreadedEngine = ( g_pThreadPool->NumThreads() > 0 );	break;
+		case HTM_FORCED:	g_bThreadedEngine = true;									break;
+		}
 	}
-	g_bAbortServerSet = true;
-
-	giActive = iState;
-
-	if ( host_profile.GetInt() )
+	else
+#endif
 	{
-		time1 = Sys_FloatTime();
+		g_bThreadedEngine = false;
 	}
+
+	if ( !host_profile.GetBool() )
+	{
+		_Host_RunFrame( time );
+		return;
+	}
+
+	double	time1 = Sys_FloatTime();
 
 	_Host_RunFrame( time );
 
-	if ( host_profile.GetInt() )
-	{
-		time2 = Sys_FloatTime();
-	}
+	double	time2 = Sys_FloatTime();
 
-	if ( host_profile.GetInt() )
-	{
-		static double	timetotal;
-		static int		timecount;
-		int		i, c, m;
+	timetotal += time2 - time1; // time in seconds
+	timecount++;
 
-		timetotal += time2 - time1;
-		timecount++;
-		
-		if (timecount < 1000)
-			return giActive;
+	if (timecount < 1000)
+		return;
 
-		m = timetotal*1000/timecount;
-		timecount = 0;
-		timetotal = 0;
-		c = 0;
-		for (i=0 ; i<svs.maxclients ; i++)
-		{
-			if (svs.clients[i].active)
-				c++;
-		}
-		Con_Printf ("host_profile: %2i clients %2i msec\n",  c,  m);
-	}
+	float fps = 1000/(time2 - timestart);
 
-	return giActive;
+	ConMsg ("host_profile : %i clients, %.1f msec, %.1f fps\n",  
+		sv.GetNumClients(),  timetotal, fps );
+
+	timecount = 0;
+	timetotal = 0;
+	timestart = time2;
 }
 
 
-//============================================================================
-
-
-/*extern FileHandle_t vcrFile;
-#define	VCR_SIGNATURE	0x56435231
-// "VCR1"
-
-void Host_InitVCR (engineparms_t *parms)
+//-----------------------------------------------------------------------------
+// A more secure means of enforcing low violence.
+//-----------------------------------------------------------------------------
+bool IsLowViolence_Secure()
 {
-	int		i, len, n;
-	char	*p;
-	
-	if (COM_CheckParm("-playback"))
+#ifndef DEDICATED
+	if ( !IsX360() && Steam3Client().SteamApps() )
 	{
-		if (com_argc != 2)
-			Sys_Error("No other parameters allowed with -playback\n");
-
-		vcrFile = g_pFileSystem->OpenRead( "halflife.vcr", "rb" );
-		if (vcrFile == -1)
-			Sys_Error("playback file not found\n");
-
-		g_pFileSystem->Read( &i, sizeof(int), vcrFile );
-		if (i != VCR_SIGNATURE)
-			Sys_Error("Invalid signature in vcr file\n");
-
-		g_pFileSystem->Read( &com_argc, sizeof(int), vcrFile );
-		com_argv = (char **)malloc(com_argc * sizeof(char *));
-		com_argv[0] = parms->argv[0];
-		for (i = 0; i < com_argc; i++)
-		{
-			g_pFileSystem->Read ( &len, sizeof(int), vcrFile );
-			p = (char *)malloc(len);
-			g_pFileSystem->Read ( p, len, vcrFile );
-			com_argv[i+1] = p;
-		}
-		com_argc++; // add one for arg[0]
-		parms->argc = com_argc;
-		parms->argv = com_argv;
+		// let Steam determine current violence settings 		
+		return Steam3Client().SteamApps()->BIsLowViolence();
 	}
-
-	if ( (n = COM_CheckParm("-record")) != 0)
+	else if ( IsX360() )
 	{
-		vcrFile = g_pFileSystem->Open( "halflife.vcr", "wb" );
-
-		i = VCR_SIGNATURE;
-		g_pFileSystem->Write(&i, sizeof(int), vcrFile);
-		i = com_argc - 1;
-		g_pFileSystem->Write(&i, sizeof(int), vcrFile);
-		for (i = 1; i < com_argc; i++)
+		// Low violence for the 360 is enabled by the presence of a file.
+		if ( g_pFileSystem->FileExists( "cfg/violence.cfg" ) )
 		{
-			if (i == n)
-			{
-				len = 10;
-				g_pFileSystem->Write(&len, sizeof(int), vcrFile);
-				g_pFileSystem->Write("-playback", len,vcrFile);
-				continue;
-			}
-			len = Q_strlen(com_argv[i]) + 1;
-			g_pFileSystem->Write(&len, sizeof(int), vcrFile);
-			g_pFileSystem->Write(com_argv[i], len, vcrFile);
+			return true;
 		}
+		
+		return false;
 	}
-	
+#endif
+		
+	return false;
 }
-*/
+
 
 //-----------------------------------------------------------------------------
-// Purpose: If "User Token 2" exists in HKEY_CURRENT_USER/Software/Valve/Half-Lfe/Settings
-//   then we "disable" gore.  Obviously not very "secure"
+// If "User Token 2" exists in HKEY_CURRENT_USER/Software/Valve/Half-Life/Settings
+// then we disable gore. Obviously not very secure.
 //-----------------------------------------------------------------------------
-void Host_CheckGore( void )
+bool IsLowViolence_Registry()
 {
 	char szSubKey[128];
 	int nBufferLen;
 	char szBuffer[128];
-	qboolean bReducedGore = false;
-	
+	bool bReducedGore = false;
+
 	memset( szBuffer, 0, 128 );
 
-#if defined(_WIN32)
-	Q_snprintf(szSubKey, sizeof( szSubKey ), "Software\\Valve\\%s\\Settings", gpszAppName );
+	char const *appname = "Source";
+	Q_snprintf(szSubKey, sizeof( szSubKey ), "Software\\Valve\\%s\\Settings", appname );
 
 	nBufferLen = 127;
-	strcpy( szBuffer, "" );
+	Q_strncpy( szBuffer, "", sizeof( szBuffer ) );
 
 	Sys_GetRegKeyValue( szSubKey, "User Token 2", szBuffer,	nBufferLen, szBuffer );
 
 	// Gore reduction active?
-	bReducedGore = ( strlen( szBuffer ) > 0 ) ? true : false;
+	bReducedGore = ( Q_strlen( szBuffer ) > 0 ) ? true : false;
 	if ( !bReducedGore )
 	{
 		Sys_GetRegKeyValue( szSubKey, "User Token 3", szBuffer, nBufferLen, szBuffer );
 
-		bReducedGore = ( strlen( szBuffer ) > 0 ) ? true : false;
+		bReducedGore = ( Q_strlen( szBuffer ) > 0 ) ? true : false;
 	}
-#endif
-	// Gore reduction active
-	if ( bReducedGore )
+
+	char gamedir[MAX_OSPATH];
+	Q_FileBase( com_gamedir, gamedir, sizeof( gamedir ) );
+
+	// also check mod specific directories for LV changes
+	Q_snprintf(szSubKey, sizeof( szSubKey ), "Software\\Valve\\%s\\%s\\Settings", appname, gamedir );
+
+	nBufferLen = 127;
+	Q_strncpy( szBuffer, "", sizeof( szBuffer ) );
+
+	Sys_GetRegKeyValue( szSubKey, "User Token 2", szBuffer,	nBufferLen, szBuffer );
+	if ( Q_strlen( szBuffer ) > 0 )
 	{
-		violence_hblood.SetValue( 0 );
-		violence_hgibs.SetValue( 0 );
-		violence_ablood.SetValue( 0 );
-		violence_agibs.SetValue( 0 );
+		bReducedGore = true;
+	}
+
+	Sys_GetRegKeyValue( szSubKey, "User Token 3", szBuffer,	nBufferLen, szBuffer );
+	if ( Q_strlen( szBuffer ) > 0 )
+	{
+		bReducedGore = true;
+	}
+	
+	return bReducedGore;
+}
+
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void Host_CheckGore( void )
+{
+	bool bLowViolenceRegistry = false;
+	bool bLowViolenceSecure = false;
+
+	//
+	// First check the old method of enabling low violence via the registry.
+	//
+#ifdef WIN32
+	bLowViolenceRegistry = IsLowViolence_Registry();
+#endif
+	//
+	// Next check the new method of enabling low violence based on country of purchase
+	// and other means that are inaccessible by the user.
+	//
+	if ( GetCurrentMod() && Q_stricmp( GetCurrentMod(), "cstrike" ) != 0 )
+		bLowViolenceSecure = IsLowViolence_Secure();
+
+	//
+	// If either method says "yes" to low violence, we're in low violence mode.
+	//
+	if ( bLowViolenceRegistry || bLowViolenceSecure )
+	{
+		g_bLowViolence = true;
+		
+		if ( bLowViolenceRegistry )
+		{
+			violence_hblood.SetValue( 0 );
+			violence_hgibs.SetValue( 0 );
+			violence_ablood.SetValue( 0 );
+			violence_agibs.SetValue( 0 );
+		}
 	}
 	else
 	{
-		violence_hblood.SetValue( 1 );
-		violence_hgibs.SetValue( 1 );
-		violence_ablood.SetValue( 1 );
-		violence_agibs.SetValue( 1 );
+		g_bLowViolence = false;
 	}
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-
 void Host_InitProcessor( void )
 {
-	const CPUInformation& pi = GetCPUInformation();
+	const CPUInformation& pi = *GetCPUInformation();
 
 	// Compute Frequency in Mhz: 
 	char* szFrequencyDenomination = "Mhz";
@@ -1749,36 +3789,36 @@ void Host_InitProcessor( void )
 	}
 
 	char szFeatureString[256];
-	Q_strcpy( szFeatureString, pi.m_szProcessorID );
-	Q_strcat( szFeatureString, " " );
-	
+	Q_strncpy( szFeatureString, pi.m_szProcessorID, sizeof( szFeatureString ) );
+	Q_strncat( szFeatureString, " ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+
 	if( pi.m_bSSE )
 	{
-		if( MathLib_SSEEnabled() ) Q_strcat(szFeatureString, "SSE " );
-		else					   Q_strcat(szFeatureString, "(SSE) " );
+		if( MathLib_SSEEnabled() ) Q_strncat(szFeatureString, "SSE ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+		else					   Q_strncat(szFeatureString, "(SSE) ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
 	}
-	
+
 	if( pi.m_bSSE2 )
 	{
-		if( MathLib_SSE2Enabled() ) Q_strcat(szFeatureString, "SSE2 " );
-		else					   Q_strcat(szFeatureString, "(SSE2) " );
+		if( MathLib_SSE2Enabled() ) Q_strncat(szFeatureString, "SSE2 ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+		else					   Q_strncat(szFeatureString, "(SSE2) ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
 	}
-	
+
 	if( pi.m_bMMX )
 	{
-		if( MathLib_MMXEnabled() ) Q_strcat(szFeatureString, "MMX " );
-		else					   Q_strcat(szFeatureString, "(MMX) " );
+		if( MathLib_MMXEnabled() ) Q_strncat(szFeatureString, "MMX ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+		else					   Q_strncat(szFeatureString, "(MMX) ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
 	}
 
 	if( pi.m_b3DNow )
 	{
-		if( MathLib_3DNowEnabled() ) Q_strcat(szFeatureString, "3DNow " );
-		else					   Q_strcat(szFeatureString, "(3DNow) " );
+		if( MathLib_3DNowEnabled() ) Q_strncat(szFeatureString, "3DNow ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+		else					   Q_strncat(szFeatureString, "(3DNow) ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
 	}
 
-	if( pi.m_bRDTSC )	Q_strcat(szFeatureString, "RDTSC " );
-	if( pi.m_bCMOV )	Q_strcat(szFeatureString, "CMOV " );
-	if( pi.m_bFCMOV )	Q_strcat(szFeatureString, "FCMOV " );
+	if( pi.m_bRDTSC )	Q_strncat(szFeatureString, "RDTSC ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+	if( pi.m_bCMOV )	Q_strncat(szFeatureString, "CMOV ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
+	if( pi.m_bFCMOV )	Q_strncat(szFeatureString, "FCMOV ", sizeof( szFeatureString ), COPY_ALL_CHARACTERS );
 
 	// Remove the trailing space.  There will always be one.
 	szFeatureString[Q_strlen(szFeatureString)-1] = '\0';
@@ -1786,20 +3826,21 @@ void Host_InitProcessor( void )
 	// Dump CPU information:
 	if( pi.m_nLogicalProcessors == 1 )
 	{
-		Con_DPrintf( "1 CPU, Frequency: %.01f %s,  Features: %s\n", 
+		ConDMsg( "1 CPU, Frequency: %.01f %s,  Features: %s\n", 
 			fFrequency,
 			szFrequencyDenomination,
 			szFeatureString
 			);
-	} else
+	} 
+	else
 	{
 		char buffer[256] = "";
 		if( pi.m_nPhysicalProcessors != pi.m_nLogicalProcessors )
 		{
-			sprintf(buffer, " (%i physical)", (int) pi.m_nPhysicalProcessors );
+			Q_snprintf(buffer, sizeof( buffer ), " (%i physical)", (int) pi.m_nPhysicalProcessors );
 		}
 
-		Con_DPrintf( "%i CPUs%s, Frequency: %.01f %s,  Features: %s\n", 
+		ConDMsg( "%i CPUs%s, Frequency: %.01f %s,  Features: %s\n", 
 			(int)pi.m_nLogicalProcessors,
 			buffer,
 			fFrequency,
@@ -1807,35 +3848,291 @@ void Host_InitProcessor( void )
 			szFeatureString
 			);
 	}
+
+#if defined( _WIN32 )
+	if ( s_bInitPME )
+	{
+		// Initialize the performance monitoring events code.
+		InitPME();
+	}
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Specifically used by the model loading code to mark models
+// touched by the current map
+//-----------------------------------------------------------------------------
+int Host_GetServerCount( void )
+{
+	if (cl.m_nSignonState >= SIGNONSTATE_NEW)
+	{
+		// the server count cannot be relied on until the server info message
+		// the new state guarantees its validity
+		return cl.m_nServerCount;
+	}
+	else if (sv.m_State >= ss_loading)
+	{
+		return sv.GetSpawnCount();
+	}
+
+	// this is unfortunate, and happens, but the caller is too early in the protocol or a demo
+	// cannot identify the correct server count
+	// return the same count that demo will use
+	return gHostSpawnCount;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Host_Init( void )
+void Host_PostInit()
+{
+	if ( serverGameDLL )
+	{
+		serverGameDLL->PostInit();
+	}
+
+#if !defined( SWDS )
+	if ( g_ClientDLL )
+	{
+		g_ClientDLL->PostInit();
+	}
+
+	toolframework->PostInit();
+
+	if ( !sv.IsDedicated() )
+	{
+		// vgui needs other systems to finalize
+		EngineVGui()->PostInit();
+	}
+
+#if defined( LINUX ) && !defined ANDROID
+	const char en_US[] = "en_US.UTF-8";
+	const char *CurrentLocale = setlocale( LC_ALL, NULL );
+	if ( !CurrentLocale )
+		CurrentLocale = "c";
+	if ( Q_stricmp( CurrentLocale, en_US ) )
+	{
+		char MessageText[ 512 ];
+
+		V_sprintf_safe( MessageText, "SetLocale('%s') failed. Using '%s'.\n"
+									 "You may have limited glyph support.\n"
+									 "Please install '%s' locale.",
+						en_US, CurrentLocale, en_US );
+		SDL_ShowSimpleMessageBox( 0, "Warning", MessageText, GetAssertDialogParent() );
+	}
+#endif // LINUX
+
+#endif
+}
+
+void HLTV_Init()
+{
+	Assert ( hltv == NULL );
+	Assert ( hltvtest == NULL );
+}
+
+void HLTV_Shutdown()
+{
+	if ( hltv )
+	{
+		hltv->Shutdown();
+		delete hltv;
+		hltv = NULL;
+	}
+
+	if ( hltvtest )
+	{
+		delete hltvtest;
+		hltvtest = NULL;
+	}
+}
+
+// Check with steam to see if the requested file (requires full path) is a valid, signed binary
+bool DLL_LOCAL Host_IsValidSignature( const char *pFilename, bool bAllowUnknown )
+{
+#if defined( SWDS ) || defined(_X360)
+	return true;
+#else
+	if ( sv.IsDedicated() || IsOSX() || IsLinux() || IsBSD() )
+	{
+		// dedicated servers and Mac and Linux  binaries don't check signatures
+		return true;
+	}
+	else
+	{
+		if ( Steam3Client().SteamUtils() )
+		{
+			SteamAPICall_t hAPICall = Steam3Client().SteamUtils()->CheckFileSignature( pFilename );
+			bool bAPICallFailed = true;
+			while ( !Steam3Client().SteamUtils()->IsAPICallCompleted(hAPICall, &bAPICallFailed) )
+			{
+				SteamAPI_RunCallbacks();
+				ThreadSleep( 1 );
+			}
+
+			if( bAPICallFailed )
+			{
+				Warning( "CheckFileSignature API call on %s failed", pFilename );
+			}
+			else
+			{
+				CheckFileSignature_t result;
+				Steam3Client().SteamUtils()->GetAPICallResult( hAPICall, &result, sizeof(result), result.k_iCallback, &bAPICallFailed );
+				if( bAPICallFailed )
+				{
+					Warning( "CheckFileSignature API call on %s failed\n", pFilename );
+				}
+				else
+				{
+					if( result.m_eCheckFileSignature == k_ECheckFileSignatureValidSignature || result.m_eCheckFileSignature == k_ECheckFileSignatureNoSignaturesFoundForThisApp )
+						return true;
+					if ( bAllowUnknown && result.m_eCheckFileSignature == k_ECheckFileSignatureNoSignaturesFoundForThisFile )
+						return true;
+					Warning( "No valid signature found for %s\n", pFilename );
+				}
+			}
+		}
+	}
+
+	return false;
+#endif // SWDS
+}
+
+
+// Ask steam if it is ok to load this DLL.  Unsigned DLLs should not be loaded unless
+// the client is running -insecure (testing a plugin for example)
+// This keeps legitimate users with modified binaries from getting VAC banned because of them
+bool DLL_LOCAL Host_AllowLoadModule( const char *pFilename, const char *pPathID, bool bAllowUnknown, bool bIsServerOnly /* = false */ )
+{
+#if defined( SWDS ) || defined ( OSX ) || defined( LINUX )
+	// dedicated servers and Mac and Linux binaries don't check signatures
+	return true;
+#else
+
+	if ( sv.IsDedicated() || bIsServerOnly )
+	{
+		// dedicated servers and Mac binaries don't check signatures
+		return true;
+	}
+	else
+	{
+		// check signature
+		bool bSignatureIsValid = false;
+
+		// Do we need to do the signature checking? If secure servers are disabled, just skip it.
+		if ( Host_IsSecureServerAllowed() )
+		{
+			if ( Steam3Client().SteamUtils() )
+			{
+				char szDllname[512];
+
+				V_strncpy( szDllname, pFilename, sizeof(szDllname) );
+				V_SetExtension( szDllname, g_pModuleExtension, sizeof(szDllname) );
+				if ( pPathID )
+				{
+					char szFullPath[ 512 ];
+					const char *pFullPath = g_pFileSystem->RelativePathToFullPath( szDllname, pPathID, szFullPath, sizeof(szFullPath) );
+					if ( !pFullPath )
+					{
+						Warning("Can't find %s on disk\n", szDllname );
+						bSignatureIsValid = false;
+					}
+					else
+					{
+						bSignatureIsValid = Host_IsValidSignature( pFullPath, bAllowUnknown );
+					}
+				}
+				else
+				{
+					bSignatureIsValid = Host_IsValidSignature( szDllname, bAllowUnknown );
+				}
+			}
+			else
+			{
+				Warning("Steam is not active, running in -insecure mode.\n");
+				Host_DisallowSecureServers();
+			}
+		}
+		else
+		{
+			Warning("Loading unsigned module %s\nAccess to secure servers is disabled.\n", pFilename );
+			return true;
+		}
+
+		return bSignatureIsValid;
+	}
+#endif // SWDS
+}
+
+bool DLL_LOCAL Host_IsSecureServerAllowed()
+{
+	if ( CommandLine()->FindParm( "-insecure" ) || CommandLine()->FindParm( "-textmode" ) )
+		g_bAllowSecureServers = false;
+
+	return g_bAllowSecureServers;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void Host_Init( bool bDedicated )
 {
 	realtime = 0;
-	cls.state = ( isDedicated ) ? ca_dedicated : ca_disconnected;
+	host_idealtime = 0;
+
+#if defined(_WIN32)
+	if ( CommandLine()->FindParm( "-pme" ) )
+	{
+		s_bInitPME = true;
+	}
+#endif
+
+	if ( Host_IsSecureServerAllowed() )
+	{
+		// double check the engine's signature in case it was hooked/modified
+		if ( !Host_AllowLoadModule( "engine" DLL_EXT_STRING, "EXECUTABLE_PATH", false, bDedicated ) )
+		{
+			// not supposed to load this but we will anyway
+			Host_DisallowSecureServers();
+		}
+	}
+
+	ThreadPoolStartParams_t startParams;
+	if ( IsX360() )
+	{
+		// 360 overrides defaults, 2 computation threads distributed to core 1 and 2
+		startParams.nThreads = 2;
+		startParams.nStackSize = 256*1024;
+		startParams.fDistribute = TRS_TRUE;
+		startParams.bUseAffinityTable = true;
+		startParams.iAffinityTable[0] = XBOX_PROCESSOR_2;
+		startParams.iAffinityTable[1] = XBOX_PROCESSOR_4;
+		ThreadSetAffinity( NULL, 1 );
+	}
+	if ( g_pThreadPool )
+		g_pThreadPool->Start( startParams, "CmpJob" );
+
+	// From const.h, the loaded game .dll will give us the correct value which is transmitted to the client
+	host_state.interval_per_tick = DEFAULT_TICK_INTERVAL;
 
 	InstallBitBufErrorHandler();
 
 	TRACEINIT( Memory_Init(), Memory_Shutdown() );
 
 	TRACEINIT( Con_Init(), Con_Shutdown() );
-	
+
 	TRACEINIT( Cbuf_Init(), Cbuf_Shutdown() );
 
 	TRACEINIT( Cmd_Init(), Cmd_Shutdown() );	
 
-	TRACEINIT( cv->Init(), cv->Shutdown() ); // So we can list cvars with "cvarlst"
+	TRACEINIT( g_pCVar->Init(), g_pCVar->Shutdown() ); // So we can list cvars with "cvarlst"
 
 #ifndef SWDS
 	TRACEINIT( V_Init(), V_Shutdown() );
 #endif
 
-	//TRACEINIT( Host_InitVCR(), Host_ShutdownVCR() );
-
 	TRACEINIT( COM_Init(), COM_Shutdown() );
+
 
 #ifndef SWDS
 	TRACEINIT( saverestore->Init(), saverestore->Shutdown() );
@@ -1847,27 +4144,55 @@ void Host_Init( void )
 	TRACEINIT( Key_Init(), Key_Shutdown() );
 #endif
 
-	TRACEINIT( NET_Init(), NET_Shutdown() );     
-	
-	// Sequenced message stream layer.
-	TRACEINIT( Netchan_Init(), Netchan_Shutdown() );  
+	// Check for special -dev flag
+	if ( CommandLine()->FindParm( "-dev" ) || ( CommandLine()->FindParm( "-allowdebug" ) && !CommandLine()->FindParm( "-nodev" ) ) )
+	{
+		sv_cheats.SetValue( 1 );
+		developer.SetValue( 1 );
+	}
+#ifdef _DEBUG
+	developer.SetValue( 1 );
+#endif
 
-	TRACEINIT( SV_Init(), SV_Shutdown() );
+	// Should have read info from steam.inf by now.
+	Assert( GetSteamInfIDVersionInfo().AppID != k_uAppIdInvalid );
 
-	// Allow master server interface to register its commands
-	TRACEINIT( master->Init(), master->Shutdown() );
-	
-	TRACEINIT( g_pGameEventManager->Init(), g_pGameEventManager->Shutdown() );
+	if ( CommandLine()->FindParm( "-nocrashdialog" ) )
+	{
+		// stop the various windows error message boxes from showing up (used by the auto-builder so it doesn't block on error) 
+		Sys_NoCrashDialog();
+	}
+
+	TRACEINIT( NET_Init( bDedicated ), NET_Shutdown() );     
+
+	TRACEINIT( g_GameEventManager.Init(), g_GameEventManager.Shutdown() );
+
+	TRACEINIT( sv.Init( bDedicated ), sv.Shutdown() );
+
+#if defined( REPLAY_ENABLED )
+	if ( Replay_IsSupportedModAndPlatform() )
+	{
+		TRACEINIT( ReplaySystem_Init( bDedicated ), ReplaySystem_Shutdown() );
+	}
+#endif
+
+	if ( !CommandLine()->FindParm( "-nogamedll" ) )
+	{
+		SV_InitGameDLL();
+	}
 
 	TRACEINIT( g_Log.Init(), g_Log.Shutdown() );
-	
-	Con_DPrintf( "Heap:  %5.2f Mb\n", host_parms.memsize/ (1024*1024.0) );
-	
-#if defined _WIN32 && !defined SWDS
-	if ( cls.state != ca_dedicated )
-	{
-		TRACEINIT( VID_Init(), VID_Shutdown() );
 
+	TRACEINIT( HLTV_Init(), HLTV_Shutdown() );
+
+	ConDMsg( "Heap: %5.2f Mb\n", host_parms.memsize/(1024.0f*1024.0f) );
+
+#if !defined( SWDS )
+	if ( !bDedicated )
+	{
+		TRACEINIT( CL_Init(), CL_Shutdown() );
+
+		// NOTE: This depends on the mod search path being set up
 		TRACEINIT( InitMaterialSystem(), ShutdownMaterialSystem() );
 
 		TRACEINIT( modelloader->Init(), modelloader->Shutdown() );
@@ -1877,15 +4202,11 @@ void Host_Init( void )
 		TRACEINIT( InitStudioRender(), ShutdownStudioRender() );
 
 		//startup vgui
-		TRACEINIT( VGui_Startup(), VGui_Shutdown() );
-
-		TRACEINIT( S_Init(), S_Shutdown() );
+		TRACEINIT( EngineVGui()->Init(), EngineVGui()->Shutdown() );
 
 		TRACEINIT( TextMessageInit(), TextMessageShutdown() );
 
 		TRACEINIT( ClientDLL_Init(), ClientDLL_Shutdown() );
-
-		TRACEINIT( Draw_Init(), Draw_Shutdown() );
 
 		TRACEINIT( SCR_Init(), SCR_Shutdown() );
 
@@ -1893,7 +4214,8 @@ void Host_Init( void )
 
 		TRACEINIT( Decal_Init(), Decal_Shutdown() );
 
-		TRACEINIT( CL_Init(), CL_Shutdown() );
+		// hookup interfaces
+		EngineVGui()->Connect();
 	}
 	else
 #endif
@@ -1907,40 +4229,59 @@ void Host_Init( void )
 		TRACEINIT( InitStudioRender(), ShutdownStudioRender() );
 
 		TRACEINIT( Decal_Init(), Decal_Shutdown() );
+
+		cl.m_nSignonState = SIGNONSTATE_NONE; // disable client
 	}
 
 #ifndef SWDS
-	// Don't trace into this
 	Host_ReadConfiguration();
+	TRACEINIT( S_Init(), S_Shutdown() );
 #endif
 
 	// Execute valve.rc
-	Cbuf_InsertText( "exec valve.rc\n" );
+	Cbuf_AddText( "exec valve.rc\n" );
 
-	// Mark DLL as active
-	giActive = DLL_ACTIVE;
-
-#ifndef SWDS
-	// Enable rendering
-	scr_skipupdate = false;
+#if defined( REPLAY_ENABLED )
+	// Execute replay.cfg if this is TF and they want to use the replay system
+	if ( Replay_IsSupportedModAndPlatform() && CommandLine()->CheckParm( "-replay" ) )
+	{
+		const char *pConfigName = CommandLine()->ParmValue( "-replay", "replay.cfg" );
+		Cbuf_AddText( va( "exec %s\n", pConfigName ) );
+	}
 #endif
 
-	// Check for special -dev flag
-	if ( CommandLine()->FindParm("-dev") )
+	// Execute mod-specfic settings, without falling back based on search path.
+	// This lets us set overrides for games while letting mods of those games
+	// use the default settings.
+	if ( g_pFileSystem->FileExists( "//mod/cfg/modsettings.cfg" ) )
 	{
-		sv_cheats.SetValue( 1 );
-		developer.SetValue( 1 );
+		Cbuf_AddText( "exec modsettings.cfg mod\n" );
 	}
+
+	// Mark DLL as active
+	//	eng->SetNextState( InEditMode() ? IEngine::DLL_PAUSED : IEngine::DLL_ACTIVE );
 
 	// Deal with Gore Settings
 	Host_CheckGore();
+
+	TelemetryTick();
 
 	// Initialize processor subsystem, and print relevant information:
 	Host_InitProcessor();
 
 	// Mark hunklevel at end of startup
 	Hunk_AllocName( 0, "-HOST_HUNKLEVEL-" );
-	host_hunklevel = Hunk_LowMark ();
+	host_hunklevel = Hunk_LowMark();
+
+#ifdef SOURCE_MT
+	if ( CommandLine()->FindParm( "-swapcores" ) )
+	{
+		g_nMaterialSystemThread = 1;
+		g_nServerThread = 0;
+	}
+#endif
+
+	Host_AllowQueuedMaterialSystem( false );
 
 	// Finished initializing
 	host_initialized = true;
@@ -1949,7 +4290,7 @@ void Host_Init( void )
 
 	if ( host_checkheap )
 	{
-#ifdef _WIN32
+#if defined( _WIN32 )
 		if ( _heapchk() != _HEAPOK )
 		{
 			Sys_Error( "Host_Init:  _heapchk() != _HEAPOK\n" );
@@ -1960,131 +4301,333 @@ void Host_Init( void )
 	// go directly to run state with no active game
 	HostState_Init();
 
-	// Initialize datatable instrumentation.
-	if( CommandLine()->FindParm("-dti" ) )
+	// check for reslist generation
+	if ( CommandLine()->FindParm( "-makereslists" ) )
 	{
-		char *pDataTraceFilename = 0;
-		if ( CommandLine()->FindParm( "-dti_datatrace" ) )
-		{
-			pDataTraceFilename = "dti.datatrace";
-		}
+		MapReslistGenerator().StartReslistGeneration();
+	}
 
-		DTI_Init( "dti_client.txt" );
-		ServerDTI_Init( "dti_server.txt" );
+	// check for devshot generation
+	if ( CommandLine()->FindParm( "-makedevshots" ) )
+	{
+		DevShotGenerator().StartDevShotGeneration();
+	}
+
+	// if running outside of steam and NOT a dedicated server then phone home (or if "-phonehome" is passed on the command line)
+	if ( !sv.IsDedicated() || CommandLine()->FindParm( "-phonehome" ) )
+	{
+		// In debug, only run this check if -phonehome is on the command line (so a debug build will "just work").
+		if ( IsDebug() && CommandLine()->FindParm( "-phonehome" ) )
+		{
+			phonehome->Init();
+			phonehome->Message( IPhoneHome::PHONE_MSG_ENGINESTART, NULL );
+		}
+	}
+
+#ifndef SWDS
+	// Rebuild audio caches
+	if ( !sv.IsDedicated() && S_IsInitted() )
+	{
+		if ( !MapReslistGenerator().IsEnabled() )
+		{
+			// only build caches if we aren't' generating reslists (you need reslists to make the caches)
+			extern void CheckCacheBuild();
+			CheckCacheBuild();
+		}
+	}
+#endif
+
+	Host_PostInit();
+	EndLoadingUpdates( );
+	CMatRenderContextPtr pRenderContext( g_pMaterialSystem );
+	pRenderContext->SetNonInteractiveTempFullscreenBuffer( NULL, MATERIAL_NON_INTERACTIVE_MODE_STARTUP );
+	pRenderContext->SetNonInteractivePacifierTexture( NULL, 0, 0, 0 );
+}
+
+//-----------------------------------------------------------------------------
+// Adds hints to the loader to keep resources that are in the transition volume,
+// as they may not be part of the next map's reslist.
+//-----------------------------------------------------------------------------
+void AddTransitionResources( CSaveRestoreData *pSaveData, const char *pLevelName, const char *pLandmarkName )
+{
+	if ( !IsX360() || ( g_pFileSystem->GetDVDMode() != DVDMODE_STRICT ) )
+	{
+		return;
+	}
+
+	// get the bit marked for the next level
+	int transitionMask = 0;
+	for ( int i = 0; i < pSaveData->levelInfo.connectionCount; i++ )
+	{
+		if ( !Q_stricmp( pLevelName, pSaveData->levelInfo.levelList[i].mapName ) && !Q_stricmp( pLandmarkName, pSaveData->levelInfo.levelList[i].landmarkName ) )
+		{
+			transitionMask = 1<<i;
+			break;
+		}
+	}
+	
+	if ( !transitionMask )
+	{
+		// nothing to do
+		return;
+	}
+
+	const char *pModelName;
+	bool bHasHumans = false;
+	for ( int i = 0; i < pSaveData->NumEntities(); i++ )
+	{
+		if ( pSaveData->GetEntityInfo(i)->flags & transitionMask )
+		{
+			// this entity will cross the transition and needs to be preserved
+			// add to the next map's resource list which effectively keeps it from being purged
+			// only care about the actual mdl and not any of its dependants
+			pModelName = pSaveData->GetEntityInfo(i)->modelname.ToCStr();
+			g_pQueuedLoader->AddMapResource( pModelName );
+
+			// humans require a post pass
+			if ( !bHasHumans && V_stristr( pModelName, "models/humans" ) )
+			{
+				bHasHumans = true;
+			}
+		}
+	}
+
+	if ( bHasHumans )
+	{
+		// the presence of any human entity in the transition needs to ensure all the human mdls stay
+		int count = modelloader->GetCount();
+		for ( int i = 0; i < count; i++ )
+		{
+			pModelName = modelloader->GetName( modelloader->GetModelForIndex( i ) );
+			if ( V_stristr( pModelName, "models/humans" ) )
+			{
+				g_pQueuedLoader->AddMapResource( pModelName );
+			}
+		}
 	}
 }
 
-void Host_Changelevel( bool loadfromsavedgame, const char *mapname, const char *start )
+bool Host_Changelevel( bool loadfromsavedgame, const char *mapname, const char *start )
 {
-	char			level[MAX_QPATH];
 	char			_startspot[MAX_QPATH];
 	char			*startspot;
-	char			oldlevel[MAX_QPATH];
-#ifndef SWDS
+	char			oldlevel[MAX_PATH];
+#if !defined(SWDS)
 	CSaveRestoreData *pSaveData = NULL;
 #endif
+	bool bTransitionBySave = false;
 
-	if ( !sv.active )
+	if ( !sv.IsActive() )
 	{
-		Con_Printf ("Only the server may changelevel\n");
-		return;
+		ConMsg("Only the server may changelevel\n");
+		return false;
 	}
 
+#ifndef SWDS
 	// FIXME:  Even needed?
-	if ( Demo_IsPlayingBack() )
+	if ( demoplayer->IsPlayingBack() )
 	{
-		Con_Printf ("Changelevel invalid during demo playback\n");
-		return;
+		ConMsg("Changelevel invalid during demo playback\n");
+		SCR_EndLoadingPlaque();
+		return false;
 	}
+
+#endif
+
 #ifndef SWDS
 	SCR_BeginLoadingPlaque();
-#endif
-#if defined _WIN32 && !defined SWDS
+
 	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
+	S_StopAllSounds(true);
 #endif
 
-	strcpy( level, mapname );
+	// Prepare new level
+	sv.InactivateClients();
+
+	// The qualified name of the map, excluding path/extension
+	char szMapName[MAX_PATH] = { 0 };
+	// The file to load the map from.
+	char szMapFile[MAX_PATH] = { 0 };
+	Q_strncpy( szMapName, mapname, sizeof( szMapName ) );
+	Host_DefaultMapFileName( szMapName, szMapFile, sizeof( szMapFile ) );
+
+	// Ask serverDLL to prepare this load
+	if ( g_iServerGameDLLVersion >= 10 )
+	{
+		serverGameDLL->PrepareLevelResources( szMapName, sizeof( szMapName ), szMapFile, sizeof( szMapFile ) );
+	}
+
+	if ( !modelloader->Map_IsValid( szMapFile ) )
+	{
+#ifndef SWDS
+		SCR_EndLoadingPlaque();
+#endif
+		// We have already inactivated clients at this point due to PrepareLevelResources being blocking, false alarm,
+		// tell them to reconnect (which doesn't mean full reconnect, just start rejoining the map)
+		//
+		// In the likely case that the game DLL tries another map this is harmless, they'll wait on the game server in
+		// the connect process if its in another level change by time they get there.
+		sv.ReconnectClients();
+		return false;
+	}
+
+	// If changing from the same map to the same map, optimize by not closing and reopening
+	// the packfile which is embedded in the .bsp; we do this by incrementing the packfile's
+	// refcount via BeginMapAccess()/EndMapAccess() through the base filesystem API.
+	struct LocalMapAccessScope
+	{
+		LocalMapAccessScope() : bEnabled( false ) { }
+		~LocalMapAccessScope() { if ( bEnabled ) g_pFileSystem->EndMapAccess(); }
+		bool bEnabled;
+	};
+
+	LocalMapAccessScope mapscope;
+	if ( V_strcmp( sv.GetMapName(), szMapName ) == 0 )
+	{
+		g_pFileSystem->BeginMapAccess();
+		mapscope.bEnabled = true;
+	}
+
+	g_pFileSystem->AsyncFinishAll();
+
 	if ( !start )
 		startspot = NULL;
 	else
 	{
-		strcpy (_startspot, start );
+		Q_strncpy (_startspot, start, sizeof( _startspot ) );
 		startspot = _startspot;
 	}
 
-	strcpy( oldlevel, sv.name );
+	Warning( "---- Host_Changelevel ----\n" );
+	CheckForFlushMemory( sv.GetMapName(), szMapName );
 
-#ifndef SWDS
-	if ( loadfromsavedgame )
+#if !defined( SWDS )
+	// Always save as an xsave if we're on the X360
+	saverestore->SetIsXSave( IsX360() );
+
+	// Add on time passed since the last time we kept track till this transition
+	int iAdditionalSeconds = g_ServerGlobalVariables.curtime - saverestore->GetMostRecentElapsedTimeSet();
+	int iElapsedSeconds = saverestore->GetMostRecentElapsedSeconds() + iAdditionalSeconds;
+	int iElapsedMinutes = saverestore->GetMostRecentElapsedMinutes() + ( iElapsedSeconds / 60 );
+	saverestore->SetMostRecentElapsedMinutes( iElapsedMinutes );
+	saverestore->SetMostRecentElapsedSeconds( ( iElapsedSeconds % 60 ) );
+
+	if ( bTransitionBySave )
 	{
-		// save the current level's state
-		pSaveData = saverestore->SaveGameState();
+		char comment[80];
+		// Pass in the total elapsed time so it gets added to the elapsed time for this map.
+		serverGameDLL->GetSaveComment( 
+			comment, 
+			sizeof( comment ),
+			saverestore->GetMostRecentElapsedMinutes(),
+			saverestore->GetMostRecentElapsedSeconds() );
+
+		if ( !saverestore->SaveGameSlot( "_transition", comment, false, true, szMapName, startspot ) )
+		{
+			Warning( "Failed to save data for transition\n" );
+			SCR_EndLoadingPlaque();
+			return false;
+		}
+
+		// Not going to load a save after the transition, so add this map's elapsed time to the total elapsed time
+		int totalSeconds = g_ServerGlobalVariables.curtime + saverestore->GetMostRecentElapsedSeconds();
+		saverestore->SetMostRecentElapsedMinutes( (int)( totalSeconds / 60.0f ) + saverestore->GetMostRecentElapsedMinutes() );
+		saverestore->SetMostRecentElapsedSeconds( (int)fmod( totalSeconds, 60.0f ) );
 	}
 #endif
-	serverGameDLL->LevelShutdown();
 
-	SV_InactivateClients();
-	if ( !SV_SpawnServer( level, startspot ) )
+	Q_strncpy( oldlevel, sv.GetMapName(), sizeof( oldlevel ) );
+
+#if !defined(SWDS)
+	if ( loadfromsavedgame )
 	{
-		return;
+		if ( !bTransitionBySave )
+		{
+			// save the current level's state
+			saverestore->SaveGameState( true, &pSaveData );
+
+			if ( !pSaveData )
+			{
+				Warning( "Failed to save data for transition\n" );
+				SCR_EndLoadingPlaque();
+				return false;
+			}
+		}
+
+		// ensure resources in the transition volume stay
+		AddTransitionResources( pSaveData, szMapName, startspot );
 	}
-	
+#endif
+	g_pServerPluginHandler->LevelShutdown();
+
+#if !defined(SWDS)
+	audiosourcecache->LevelShutdown();
+#endif
+
+#if !defined(SWDS)
+	saverestore->FinishAsyncSave();
+#endif
+
+	if ( sv.RestartOnLevelChange() )
+	{
+		Cbuf_Clear();
+		Cbuf_AddText( "quit\n" );
+		return false;
+	}
+
+	DownloadListGenerator().OnLevelLoadStart( szMapName );
+
+	if ( !sv.SpawnServer( szMapName, szMapFile, startspot ) )
+	{
+#ifndef SWDS
+		SCR_EndLoadingPlaque();
+#endif
+		return false;
+	}
+
 #ifndef SWDS
 	if ( loadfromsavedgame )
 	{
-		// Finish saving gamestate
-		saverestore->Finish( pSaveData );
+		if ( !bTransitionBySave )
+		{
+			// Finish saving gamestate
+			saverestore->Finish( pSaveData );
+		}
 
-		g_ServerGlobalVariables.curtime = sv.gettime();
-		serverGameDLL->LevelInit( level, CM_EntityString(), oldlevel, startspot, true );
-		sv.paused = true;		// pause until all clients connect
-		sv.loadgame = true;
+		g_ServerGlobalVariables.curtime = sv.GetTime();
+
+		audiosourcecache->LevelInit( szMapName );
+		g_pServerPluginHandler->LevelInit( szMapName, CM_EntityString(), oldlevel, startspot, true, false );
+
+		sv.SetPaused( true ); // pause until client connects
+		sv.m_bLoadgame = true;
 	}
 	else
 #endif
 	{
-		g_ServerGlobalVariables.curtime = sv.gettime();
-		serverGameDLL->LevelInit( level, CM_EntityString(), NULL, NULL, false );
+		g_ServerGlobalVariables.curtime = sv.GetTime();
+#if !defined(SWDS)
+		audiosourcecache->LevelInit( szMapName );
+#endif
+		g_pServerPluginHandler->LevelInit( szMapName, CM_EntityString(), NULL, NULL, false, false );
 	}
 
 	SV_ActivateServer();
-}
 
-static void    StripExtension (char *path)
-{
-	int             length;
+#if !defined(SWDS)
+	// Offset stored elapsed time by the current elapsed time for this new map
+	int maptime = sv.GetTime();
+	int minutes = (int)( maptime / 60.0f );
+	int seconds = (int)fmod( maptime, 60.0f );
+	saverestore->SetMostRecentElapsedMinutes( saverestore->GetMostRecentElapsedMinutes() - minutes );
+	saverestore->SetMostRecentElapsedSeconds( saverestore->GetMostRecentElapsedSeconds() - seconds );
+#endif
 
-	COM_FixSlashes( path );
+	NotifyDedicatedServerUI("UpdateMap");
 
-	length = strlen(path)-1;
-	while (length > 0 && path[length] != '.')
-	{
-		length--;
-		if (path[length] == '/')
-			return;		// no extension
-	}
-	if (length)
-		path[length] = 0;
-}
+	DownloadListGenerator().OnLevelLoadEnd();
 
-
-// There's a version of this in bsplib.cpp!!!  Make sure that they match.
-void GetPlatformMapPath( const char *pMapPath, char *pPlatformMapPath, int maxLength )
-{
-	Q_strncpy( pPlatformMapPath, pMapPath, maxLength );
-
-	// It's OK for this to be NULL on the dedicated server.
-	if( g_pMaterialSystemHardwareConfig )
-	{
-		int dxlevel = g_pMaterialSystemHardwareConfig->GetDXSupportLevel();
-		StripExtension( pPlatformMapPath );
-		if( dxlevel <= 60 )
-		{
-			Q_strncat( pPlatformMapPath, "_dx60", maxLength );
-		}
-		Q_strncat( pPlatformMapPath, ".bsp", maxLength );
-	}
+	return true;
 }
 
 /*
@@ -2094,63 +4637,193 @@ SERVER TRANSITIONS
 
 ===============================================================================
 */
-bool Host_NewGame( char *mapName, bool loadGame )
+bool Host_NewGame( char *mapName, bool loadGame, bool bBackgroundLevel, const char *pszOldMap, const char *pszLandmark, bool bOldSave )
 {
-	extern char	*CM_EntityString( void );
-	extern ConVar host_map;
+	VPROF( "Host_NewGame" );
+	COM_TimestampedLog( "Host_NewGame" );
 
-	char dxMapName[MAX_PATH];
-	GetPlatformMapPath( mapName, dxMapName, MAX_PATH );
-	host_map.SetValue( dxMapName );
+	char previousMapName[MAX_PATH] = { 0 };
+	Q_strncpy( previousMapName, host_map.GetString(), sizeof( previousMapName ) );
 
 #ifndef SWDS
-	CL_Disconnect();
-
-	SCR_BeginLoadingPlaque ();
-	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
+	SCR_BeginLoadingPlaque();
 #endif
+
+	// The qualified name of the map, excluding path/extension
+	char szMapName[MAX_PATH] = { 0 };
+	// The file to load the map from.
+	char szMapFile[MAX_PATH] = { 0 };
+	Q_strncpy( szMapName, mapName, sizeof( szMapName ) );
+	Host_DefaultMapFileName( szMapName, szMapFile, sizeof( szMapFile ) );
+
+	// Steam may not have been started yet, ensure it is available to the game DLL before we ask it to prepare level
+	// resources
+	SV_InitGameServerSteam();
+
+	// Ask serverDLL to prepare this load
+	if ( g_iServerGameDLLVersion >= 10 )
+	{
+		serverGameDLL->PrepareLevelResources( szMapName, sizeof( szMapName ), szMapFile, sizeof( szMapFile ) );
+	}
+
+	if ( !modelloader->Map_IsValid( szMapFile ) )
+	{
+#ifndef SWDS
+		SCR_EndLoadingPlaque();
+#endif
+		return false;
+	}
+
+	DevMsg( "---- Host_NewGame ----\n" );
+	host_map.SetValue( szMapName );
+
+	CheckForFlushMemory( previousMapName, szMapName );
+
+	if (MapReslistGenerator().IsEnabled())
+	{
+		// uncache all the materials, so their files get referenced again for the reslists
+		// undone for now, since we're just trying to get a global reslist, not per-map accurate
+		//		materials->UncacheAllMaterials();
+		MapReslistGenerator().OnLevelLoadStart(szMapName);
+		// cache 'em back in!
+		//		materials->CacheUsedMaterials();
+	}
+	DownloadListGenerator().OnLevelLoadStart(szMapName);
 
 	if ( !loadGame )
 	{
+		VPROF( "Host_NewGame_HostState_RunGameInit" );
 		HostState_RunGameInit();
 	}
 
-	if ( !SV_SpawnServer ( mapName, NULL ) )
-		return false;
+	// init network mode
+	VPROF_SCOPE_BEGIN( "Host_NewGame_SpawnServer" );
 
-	// make sure the time is set
-	g_ServerGlobalVariables.curtime = sv.gettime();
+	NET_SetMutiplayer( sv.IsMultiplayer() );
 
-	serverGameDLL->LevelInit( mapName, CM_EntityString(), NULL, NULL, loadGame );
+	NET_ListenSocket( sv.m_Socket, true );	// activated server TCP socket
 
-	if ( loadGame )
+	// let's not have any servers with no name
+	if ( host_name.GetString()[0] == 0 )
 	{
-		sv.paused = true;		// pause until all clients connect
-		sv.loadgame = true;
-		g_ServerGlobalVariables.curtime = sv.gettime();
+		host_name.SetValue( serverGameDLL->GetGameDescription() );
 	}
 
-	SV_ActivateServer();
+	if ( !sv.SpawnServer ( szMapName, szMapFile, NULL ) )
+	{
+		return false;
+	}
 
-	if ( !sv.active )
+	sv.m_bIsLevelMainMenuBackground = bBackgroundLevel;
+
+	VPROF_SCOPE_END();
+
+	// make sure the time is set
+	g_ServerGlobalVariables.curtime = sv.GetTime();
+
+	COM_TimestampedLog( "serverGameDLL->LevelInit" );
+
+#ifndef SWDS
+	EngineVGui()->UpdateProgressBar(PROGRESS_LEVELINIT);
+
+	audiosourcecache->LevelInit( szMapName );
+#endif
+
+	g_pServerPluginHandler->LevelInit( szMapName, CM_EntityString(), pszOldMap, pszLandmark, loadGame && !bOldSave, bBackgroundLevel );
+
+	if ( loadGame && !bOldSave )
+	{
+		sv.SetPaused( true );		// pause until all clients connect
+		sv.m_bLoadgame = true;
+		g_ServerGlobalVariables.curtime = sv.GetTime();
+	}
+
+	if( !SV_ActivateServer() )
 	{
 		return false;
 	}
 
 	// Connect the local client when a "map" command is issued.
-	if (cls.state != ca_dedicated)
+	if ( !sv.IsDedicated() )
 	{
-		Cmd_ExecuteString ("connect local", src_command);
-	}
+		COM_TimestampedLog( "Stuff 'connect localhost' to console" );
 
-	// Dedicated server triggers map load here.
-	if ( isDedicated )
+		char str[512];
+		Q_snprintf( str, sizeof( str ), "connect localhost:%d listenserver", sv.GetUDPPort() );
+		Cbuf_AddText( str );
+	}
+	else
 	{
+		// Dedicated server triggers map load here.
 		GetTestScriptMgr()->CheckPoint( "FinishedMapLoad" );
 	}
 
+#ifndef SWDS
+	if ( !loadGame || bOldSave )
+	{
+		// clear the most recent remember save, so the level will just restart if the player dies
+		saverestore->ForgetRecentSave();
+	}
+
+	saverestore->SetMostRecentElapsedMinutes( 0 );
+	saverestore->SetMostRecentElapsedSeconds( 0 );
+#endif
+
+	if (MapReslistGenerator().IsEnabled())
+	{
+		MapReslistGenerator().OnLevelLoadEnd();
+	}
+	DownloadListGenerator().OnLevelLoadEnd();
 	return true;
+}
+
+void Host_FreeStateAndWorld( bool server )
+{
+	bool bNeedsPurge = false;
+
+	Assert( host_initialized );
+	Assert( host_hunklevel );
+
+	// If called by the client and we are running a listen server, just ignore
+	if ( !server && sv.IsActive() )
+		return;
+
+	// HACKHACK: You can't clear the hunk unless the client data is free
+	// since this gets called by the server, it's necessary to wipe the client
+	// in case we are on a listen server
+#ifndef SWDS
+	if ( server && !sv.IsDedicated() )
+	{
+		CL_ClearState();
+	}
+#endif
+
+	// The world model relies on the low hunk, so we need to force it to unload
+	if ( host_state.worldmodel )
+	{
+		modelloader->UnreferenceModel( host_state.worldmodel, IModelLoader::FMODELLOADER_SERVER );
+		modelloader->UnreferenceModel( host_state.worldmodel, IModelLoader::FMODELLOADER_CLIENT );
+		host_state.SetWorldModel( NULL );
+		bNeedsPurge = server && true;
+	}
+
+	// Unload and reset dynamic models
+	if ( server )
+	{
+		extern IVModelInfo* modelinfo;
+		modelinfo->OnLevelChange();
+	}
+#ifndef SWDS
+	else
+	{
+		extern IVModelInfoClient* modelinfoclient;
+		modelinfoclient->OnLevelChange();
+	}
+#endif
+
+	modelloader->UnloadUnreferencedModels();
+
+	g_TimeLastMemTest = 0;
 }
 
 
@@ -2159,28 +4832,14 @@ bool Host_NewGame( char *mapName, bool loadGame )
 //-----------------------------------------------------------------------------
 void Host_FreeToLowMark( bool server )
 {
-	assert( host_initialized );
-	assert( host_hunklevel );
+	Assert( host_initialized );
+	Assert( host_hunklevel );
 
 	// If called by the client and we are running a listen server, just ignore
-	if ( !server && sv.active )
+	if ( !server && sv.IsActive() )
 		return;
 
-	// HACKHACK: You can't clear the hunk unless the client data is free
-	// since this gets called by the server, it's necessary to wipe the client
-	// in case we are on a listen server
-#ifndef SWDS
-	if ( server )
-	{
-		CL_ClearState();
-	}
-#endif
-
-	// The world model relies on the hunk
-	modelloader->ReleaseAllModels( IModelLoader::FMODELLOADER_SERVER );
-	modelloader->ReleaseAllModels( IModelLoader::FMODELLOADER_CLIENT );
-
-	modelloader->UnloadUnreferencedModels();
+	CM_FreeMap();
 
 	if ( host_hunklevel )
 	{
@@ -2193,6 +4852,10 @@ void Host_FreeToLowMark( bool server )
 //-----------------------------------------------------------------------------
 void Host_Shutdown(void)
 {
+#ifndef ANDROID
+	extern void ShutdownMixerControls();
+#endif
+
 	if ( host_checkheap )
 	{
 #ifdef _WIN32
@@ -2207,55 +4870,56 @@ void Host_Shutdown(void)
 	static bool shutting_down = false;
 	if ( shutting_down )
 	{
-		Sys_Printf( "Recursive shutdown!!!\n" );
+		Msg( "Recursive shutdown!!!\n" );
 		return;
 	}
 	shutting_down = true;
 
+	phonehome->Message( IPhoneHome::PHONE_MSG_ENGINEEND, NULL );
+	phonehome->Shutdown();
+
 #ifndef SWDS
 	// Store active configuration settings
-	Host_WriteConfiguration( "cfg/config.cfg" ); 
+	Host_WriteConfiguration(); 
 #endif
 
 	// Disconnect from server
-	Host_Disconnect();
+	Host_Disconnect(true);
 
 #ifndef SWDS
-	// keep Con_Printf from trying to update the screen
+	// keep ConMsg from trying to update the screen
 	scr_disabled_for_loading = true;
 #endif
 
-#if defined VOICE_OVER_IP && !defined SWDS
+#if defined VOICE_OVER_IP && !defined SWDS && !defined( NO_VOICE ) //!defined(_XBOX)
 	Voice_Deinit();
 #endif // VOICE_OVER_IP
-	
-	SV_ShutdownGameDLL();
 
 	// TODO, Trace this
 	CM_FreeMap();
 
 	host_initialized = false;
 
-#if defined _WIN32 && !defined SWDS
-	if ( cls.state != ca_dedicated )
-	{
-		TRACESHUTDOWN( CL_Shutdown() );
+#if defined(VPROF_ENABLED)
+	VProfRecord_Shutdown();
+#endif
 
+#if !defined SWDS
+	if ( !sv.IsDedicated() )
+	{
 		TRACESHUTDOWN( Decal_Shutdown() );
 
 		TRACESHUTDOWN( R_Shutdown() );
 
 		TRACESHUTDOWN( SCR_Shutdown() );
 
-		TRACESHUTDOWN( Draw_Shutdown() );
+		TRACESHUTDOWN( S_Shutdown() );
 
 		TRACESHUTDOWN( ClientDLL_Shutdown() );
 
 		TRACESHUTDOWN( TextMessageShutdown() );
 
-		TRACESHUTDOWN( S_Shutdown() );
-
-		TRACESHUTDOWN( VGui_Shutdown() );
+		TRACESHUTDOWN( EngineVGui()->Shutdown() );
 
 		TRACESHUTDOWN( StaticPropMgr()->Shutdown() );
 
@@ -2264,39 +4928,47 @@ void Host_Shutdown(void)
 		TRACESHUTDOWN( modelloader->Shutdown() );
 
 		TRACESHUTDOWN( ShutdownStudioRender() );
-		
+
 		TRACESHUTDOWN( ShutdownMaterialSystem() );
 
-		TRACESHUTDOWN( VID_Shutdown() );
+		TRACESHUTDOWN( CL_Shutdown() );
 	}
 	else
 #endif
 	{
 		TRACESHUTDOWN( Decal_Shutdown() );
 
+		TRACESHUTDOWN( modelloader->Shutdown() );
+
 		TRACESHUTDOWN( ShutdownStudioRender() );
 
 		TRACESHUTDOWN( StaticPropMgr()->Shutdown() );
 
-		TRACESHUTDOWN( modelloader->Shutdown() );
-
 		TRACESHUTDOWN( ShutdownMaterialSystem() );
 	}
 
+#if defined( REPLAY_ENABLED )
+	if ( Replay_IsSupportedModAndPlatform() )
+	{
+		TRACESHUTDOWN( ReplaySystem_Shutdown() );
+	}
+#endif
+
+	TRACESHUTDOWN( HLTV_Shutdown() );
+
 	TRACESHUTDOWN( g_Log.Shutdown() );
 
-	TRACESHUTDOWN( g_pGameEventManager->Shutdown() );
+	TRACESHUTDOWN( g_GameEventManager.Shutdown() );
 
-	TRACESHUTDOWN( master->Shutdown() );
-
-	TRACESHUTDOWN( SV_Shutdown() );
-
-	TRACESHUTDOWN( Netchan_Shutdown() );
+	TRACESHUTDOWN( sv.Shutdown() );
 
 	TRACESHUTDOWN( NET_Shutdown() );
 
 #ifndef SWDS
 	TRACESHUTDOWN( Key_Shutdown() );
+#if !defined _X360 && !defined ANDROID
+	TRACESHUTDOWN( ShutdownMixerControls() );
+#endif
 #endif
 
 	TRACESHUTDOWN( Filter_Shutdown() );
@@ -2312,7 +4984,7 @@ void Host_Shutdown(void)
 	TRACESHUTDOWN( V_Shutdown() );
 #endif
 
-	TRACESHUTDOWN( cv->Shutdown() );
+	TRACESHUTDOWN( g_pCVar->Shutdown() );
 
 	TRACESHUTDOWN( Cmd_Shutdown() );
 
@@ -2322,8 +4994,18 @@ void Host_Shutdown(void)
 
 	TRACESHUTDOWN( Memory_Shutdown() );
 
+	if ( g_pThreadPool )
+		g_pThreadPool->Stop();
+
 	DTI_Term();
 	ServerDTI_Term();
+
+#if defined(_WIN32)
+	if ( s_bInitPME )
+	{
+		ShutdownPME();
+	}
+#endif
 
 	if ( host_checkheap )
 	{
@@ -2334,4 +5016,17 @@ void Host_Shutdown(void)
 		}
 #endif
 	}
+}
+
+//-----------------------------------------------------------------------------
+// Centralize access to enabling QMS.
+//-----------------------------------------------------------------------------
+bool Host_AllowQueuedMaterialSystem( bool bAllow )
+{
+#if !defined DEDICATED
+	// g_bAllowThreadedSound = bAllow;
+	// NOTE: Moved this to materialsystem for integrating with other mqm changes
+	return g_pMaterialSystem->AllowThreading( bAllow, g_nMaterialSystemThread );
+#endif
+	return false;
 }

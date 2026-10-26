@@ -1,14 +1,9 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ISYSTEM_H
 #define ISYSTEM_H
@@ -17,9 +12,9 @@
 #pragma once
 #endif
 
-#include "interface.h"
+#include "tier1/interface.h"
 #include <vgui/VGUI.h>
-#include <vgui/keycode.h>
+#include <vgui/KeyCode.h>
 
 #ifdef PlaySound
 #undef PlaySound
@@ -36,10 +31,11 @@ namespace vgui
 class ISystem : public IBaseInterface
 {
 public:
+	// call when done with ISystem to clean up any memory allocation
+	virtual void Shutdown() = 0;
+
 	// called every frame
 	virtual void RunFrame() = 0;
-
-	virtual void	Shutdown() = 0;
 
 	// use this with the "open" command to launch web browsers/explorer windows, eg. ShellExecute("open", "www.valvesoftware.com")
 	virtual void ShellExecute(const char *command, const char *file) = 0;
@@ -94,11 +90,45 @@ public:
 
 	// Convert a windows virtual key code to a VGUI key code.
 	virtual KeyCode KeyCode_VirtualKeyToVGUI( int keyCode ) = 0;
+
+	// returns the current local time and date
+	// fills in every field that a pointer is given to it for
+	virtual bool GetCurrentTimeAndDate(int *year, int *month, int *dayOfWeek, int *day, int *hour, int *minute, int *second) = 0;
+
+	// returns the amount of available disk space, in bytes, on the drive
+	// path can be any path, drive letter is stripped out
+	virtual double GetFreeDiskSpace(const char *path) = 0;
+
+	// shortcut (.lnk) modification functions
+	virtual bool CreateShortcut(const char *linkFileName, const char *targetPath, const char *arguments, const char *workingDirectory, const char *iconFile) = 0;
+	virtual bool GetShortcutTarget(const char *linkFileName, char *targetPath, char *arguments, int destBufferSizes) = 0;
+	virtual bool ModifyShortcutTarget(const char *linkFileName, const char *targetPath, const char *arguments, const char *workingDirectory) = 0;
+
+	// gets the string following a command line param
+	//!! move this function up on changing interface version number
+	virtual bool GetCommandLineParamValue(const char *paramName, char *value, int valueBufferSize) = 0;
+
+	// recursively deletes a registry key and all it's subkeys
+	//!! move this function next to other registry function on changing interface version number
+	virtual bool DeleteRegistryKey(const char *keyName) = 0;
+
+	virtual const char *GetDesktopFolderPath() = 0;
+
+	// use this with the "open" command to launch web browsers/explorer windows, eg. ShellExecute("open", "www.valvesoftware.com")
+	virtual void ShellExecuteEx( const char *command, const char *file, const char *pParams ) = 0;
+
+	// Copy a portion of the application client area to the clipboard
+	//  (x1,y1) specifies the top-left corner of the client rect to copy
+	//  (x2,y2) specifies the bottom-right corner of the client rect to copy
+	// Requires: x2 > x1 && y2 > y1
+	// Dimensions of the copied rectangle are (x2 - x1) x (y2 - y1)
+	// Pixel at (x1,y1) is copied, pixels at column x2 and row y2 are *not* copied
+	virtual void SetClipboardImage( void *pWnd, int x1, int y1, int x2, int y2 ) = 0;
 };
 
 }
 
-#define VGUI_SYSTEM_INTERFACE_VERSION "VGUI_System009"
+#define VGUI_SYSTEM_INTERFACE_VERSION "VGUI_System010"
 
 
 #endif // ISYSTEM_H

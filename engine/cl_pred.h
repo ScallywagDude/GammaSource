@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // cl_pred.h
 #ifndef CL_PRED_H
 #define CL_PRED_H
@@ -12,7 +19,5 @@ typedef enum
 } PREDICTION_REASON;
 
 void CL_RunPrediction( PREDICTION_REASON reason );
-bool CL_HasRunPredictionThisFrame( void );
-void CL_Predict( int world_start_state, bool validframe, int start_command, int stop_command );
 
 #endif // CL_PRED_H

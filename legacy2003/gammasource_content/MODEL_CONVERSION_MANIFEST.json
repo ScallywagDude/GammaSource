@@ -1,0 +1,98 @@
+[
+  {
+    "source": "hl2_2000/models/weapons/v_crowbar.mdl",
+    "path": "models/weapons/v_crowbar.mdl",
+    "source_sha256": "44fde859b2c139926ceffe593f092f90b4bd4b4a9f1a6d378c62835792cfc0bd",
+    "converted_sha256": "28bedcdbcbd5ca60ff86c7428b96cf807f900b957a7cce49c2bbcc0716659842",
+    "original_version": 37,
+    "converted_version": 36,
+    "vtx_dx80_validated": {
+      "bodyparts": 2,
+      "models": 2,
+      "meshes": 11,
+      "strip_groups": 11,
+      "vertices": 1064,
+      "strips": 11,
+      "indices": 4194
+    },
+    "sequences": 7,
+    "additional_sidecars": [
+      {
+        "suffix": ".dx7_2bone.vtx",
+        "metrics": {
+          "bodyparts": 2,
+          "models": 2,
+          "meshes": 11,
+          "strip_groups": 14,
+          "vertices": 1204,
+          "strips": 44,
+          "indices": 4194
+        }
+      }
+    ]
+  },
+  {
+    "source": "hl2_2000/models/weapons/v_Pistol.mdl",
+    "path": "models/weapons/v_pistol.mdl",
+    "source_sha256": "e1092b2a8dd9a509a1df4c9ff7def242fc48b49b75ca241576f6f2bce7430692",
+    "converted_sha256": "fc21dc6b9d4fd6b6dd8459825859d95d69c8c04e6930b45b8ebfb2d5bb32e8fa",
+    "original_version": 37,
+    "converted_version": 36,
+    "vtx_dx80_validated": {
+      "bodyparts": 3,
+      "models": 3,
+      "meshes": 18,
+      "strip_groups": 18,
+      "vertices": 2251,
+      "strips": 18,
+      "indices": 7050
+    },
+    "sequences": 6,
+    "additional_sidecars": [
+      {
+        "suffix": ".dx7_2bone.vtx",
+        "metrics": {
+          "bodyparts": 3,
+          "models": 3,
+          "meshes": 18,
+          "strip_groups": 24,
+          "vertices": 2572,
+          "strips": 88,
+          "indices": 7050
+        }
+      }
+    ]
+  },
+  {
+    "source": "hl2_2000/models/weapons/v_smg1.mdl",
+    "path": "models/weapons/v_smg1.mdl",
+    "source_sha256": "f12e3f8de6ceceef95d96137cd0ea03fe35fef9acd1bc9f684a0721da942b0c4",
+    "converted_sha256": "b11935419f4b97a646f519265e65f05dbe91f1b96822572b1770517d33710ad6",
+    "original_version": 37,
+    "converted_version": 36,
+    "vtx_dx80_validated": {
+      "bodyparts": 3,
+      "models": 3,
+      "meshes": 23,
+      "strip_groups": 23,
+      "vertices": 3467,
+      "strips": 23,
+      "indices": 12645
+    },
+    "sequences": 6,
+    "additional_sidecars": [
+      {
+        "suffix": ".dx7_2bone.vtx",
+        "metrics": {
+          "bodyparts": 3,
+          "models": 3,
+          "meshes": 23,
+          "strip_groups": 30,
+          "vertices": 3681,
+          "strips": 69,
+          "indices": 12645
+        }
+      }
+    ]
+  }
+]

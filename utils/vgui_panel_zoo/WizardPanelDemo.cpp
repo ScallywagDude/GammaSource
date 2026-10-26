@@ -1,24 +1,22 @@
-//=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
-//=============================================================================
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+//#include <vgui_controls/Controls.h>
 
-#include <VGUI_WizardPanel.h>
-#include <VGUI_WizardSubPanel.h>
-#include <VGUI_PHandle.h>
+#include <vgui_controls/WizardPanel.h>
+#include <vgui_controls/WizardSubPanel.h>
+#include <vgui_controls/PHandle.h>
 
-#include <VGUI_RadioButton.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_ISurface.h>
+#include <vgui_controls/RadioButton.h>
+#include <vgui_controls/TextEntry.h>
+#include <vgui/ISurface.h>
 
 using namespace vgui;
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,35 +11,27 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
-
-class KeyValues;
-
-namespace vgui
-{
-class Button;
-class ToggleButton;
-class RadioButton;
-class Label;
-class TextEntry;
-class CheckButton;
-}
+#include <vgui_controls/Frame.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
 //-----------------------------------------------------------------------------
 class CConfigPanel : public vgui::Frame
 {
+	DECLARE_CLASS_SIMPLE( CConfigPanel, vgui::Frame ); 
 public:
-	CConfigPanel(bool autorefresh,bool savercon,int refreshtime,bool graphs, int graphsrefreshtime,bool getlogs);
+	CConfigPanel(vgui::Panel *parent, bool autorefresh,bool savercon,int refreshtime,bool graphs, int graphsrefreshtime,bool getlogs);
 	~CConfigPanel();
 
 	void Run();
 	
 protected:
 	// message handlers
-	void OnButtonToggled(vgui::Panel *toggleButton);
-
+	MESSAGE_FUNC_PTR( OnButtonToggled, "ButtonToggled", panel );
+	MESSAGE_FUNC_PTR( OnRadioButtonChecked, "RadioButtonChecked", panel )
+	{
+		OnButtonToggled( panel );
+	}
 
 	// vgui overrides
 	virtual void OnClose();
@@ -57,11 +49,6 @@ private:
 	vgui::CheckButton *m_pGraphsButton;
 	vgui::TextEntry *m_pGraphsRefreshTimeTextEntry;
 	vgui::CheckButton *m_pLogsButton;
-
-
-	DECLARE_PANELMAP();
-
-	typedef vgui::Frame BaseClass;
 };
 
 #endif // CONFIGPANEL_H

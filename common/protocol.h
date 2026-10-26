@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // protocol.h -- communications protocols
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
@@ -5,14 +12,6 @@
 #ifdef _WIN32
 #pragma once
 #endif
-
-#ifndef LAUNCHERONLY
-#ifndef NET_H
-#include "net.h"
-#endif
-#endif
-
-#include "packed_entity.h"
 
 // Used to classify entity update types in DeltaPacketEntities.
 enum UpdateType
@@ -22,7 +21,10 @@ enum UpdateType
 	LeavePVS,		// Entity left pvs
 
 	DeltaEnt,		// There is a delta for this entity.
-	PreserveEnt		// Entity stays alive but no delta ( could be LOD, or just unchanged )
+	PreserveEnt,	// Entity stays alive but no delta ( could be LOD, or just unchanged )
+	
+	Finished,		// finished parsing entities successfully
+	Failed,			// parsing error occured while reading entities
 };
 
 // Flags for delta encoding header
@@ -32,136 +34,156 @@ enum
 	FHDR_LEAVEPVS		= 0x0001,
 	FHDR_DELETE			= 0x0002,
 	FHDR_ENTERPVS		= 0x0004,
-	FHDR_FORCERECREATE	= 0x0008
 };
 
 
 
-#define INSTANCE_BASELINE_TABLENAME	"InstanceBaseline"
+#define INSTANCE_BASELINE_TABLENAME	"instancebaseline"
+#define LIGHT_STYLES_TABLENAME		"lightstyles"
+#define USER_INFO_TABLENAME			"userinfo"
+#define SERVER_STARTUP_DATA_TABLENAME	"server_query_info"	// the name is a remnant...
 
 
-#define CURRENT_PROTOCOL    1
+//#define CURRENT_PROTOCOL    1
 
 
 #define DELTA_OFFSET_BITS 5
 #define DELTA_OFFSET_MAX ( ( 1 << DELTA_OFFSET_BITS ) - 1 )
 
+#define DELTASIZE_BITS		20	// must be: 2^DELTASIZE_BITS > (NET_MAX_PAYLOAD * 8)
 
-#define DELTASIZE_BITS		21
-
-
-#define DELTAFRAME_NUMBITS	12
-#define DELTAFRAME_MASK		((1 << DELTAFRAME_NUMBITS)-1)
+// Largest # of commands to send in a packet
+#define NUM_NEW_COMMAND_BITS		4
+#define MAX_NEW_COMMANDS			((1 << NUM_NEW_COMMAND_BITS)-1)
 
 // Max number of history commands to send ( 2 by default ) in case of dropped packets
 #define NUM_BACKUP_COMMAND_BITS		3
-#define MAX_BACKUP_COMMANDS			(1 << NUM_BACKUP_COMMAND_BITS)
+#define MAX_BACKUP_COMMANDS			((1 << NUM_BACKUP_COMMAND_BITS)-1)
 
-//
-#define	PORT_MASTER	27010       // Default master port
-#define PORT_MODMASTER 27011    // Default mod-master port
-#define PORT_CLIENT "27005"     // Must use atoi to convert to integer
-#define PORT_SERVER "27015"     //  "
-
-// This is used, unless overridden in the registry
-#define VALVE_MASTER_ADDRESS "half-life.east.won.net:27010"
 
 #define PROTOCOL_AUTHCERTIFICATE 0x01   // Connection from client is using a WON authenticated certificate
-#define PROTOCOL_HASHEDCDKEY     0x02    // Connection from client is using hashed CD key because WON comm. channel was unreachable
-#define PROTOCOL_LASTVALID       0x02    // Last valid protocol
+#define PROTOCOL_HASHEDCDKEY     0x02	// Connection from client is using hashed CD key because WON comm. channel was unreachable
+#define PROTOCOL_STEAM			 0x03	// Steam certificates
+#define PROTOCOL_LASTVALID       0x03    // Last valid protocol
 
-#define SIGNED_GUID_LEN 32 // Hashed CD Key (32 hex alphabetic chars + 0 terminator )
+#define CONNECTIONLESS_HEADER			0xFFFFFFFF	// all OOB packet start with this sequence
+#define STEAM_KEYSIZE				2048  // max size needed to contain a steam authentication key (both server and client)
+
+// each channel packet has 1 byte of FLAG bits
+#define PACKET_FLAG_RELIABLE			(1<<0)	// packet contains subchannel stream data
+#define PACKET_FLAG_COMPRESSED			(1<<1)	// packet is compressed
+#define PACKET_FLAG_ENCRYPTED			(1<<2)  // packet is encrypted
+#define PACKET_FLAG_SPLIT				(1<<3)  // packet is split
+#define PACKET_FLAG_CHOKED				(1<<4)  // packet was choked by sender
+#define PACKET_FLAG_CHALLENGE			(1<<5)  // packet contains challenge number, use to prevent packet injection
+
+// NOTE:  Bits 5, 6, and 7 are used to specify the # of padding bits at the end of the packet!!!
+#define ENCODE_PAD_BITS( x ) ( ( x << 5 ) & 0xff )
+#define DECODE_PAD_BITS( x ) ( ( x >> 5 ) & 0xff )
+
+// shared commands used by all streams, handled by stream layer, TODO
+
+#define	net_NOP 		0			// nop command used for padding
+#define net_Disconnect	1			// disconnect, last message in connection
+#define net_File		2			// file transmission message request/deny
+
+#define net_Tick		3			// send last world tick
+#define net_StringCmd	4			// a string command
+#define net_SetConVar	5			// sends one/multiple convar settings
+#define	net_SignonState	6			// signals current signon state
 
 //
 // server to client
 //
-#define	svc_bad				0
-#define	svc_nop				1
-#define	svc_disconnect		2
-#define	svc_event			3	// 
-// #define	svc_version			4	// [long] server version
-#define	svc_setview			5	// [short] entity number
-#define	svc_sound			6	// <see code>
-#define	svc_time			7	// [float] server time
-#define	svc_print			8	// [string] null terminated string
-#define	svc_stufftext		9	// [string] stuffed into client's console buffer
-								// the string should be \n terminated
-#define	svc_setangle		10	// [angle3] set the view angle to this absolute value
-#define	svc_serverinfo		11	// [long] version
-						// [string] signon string
-						// [string]..[0]model cache
-						// [string]...[0]sounds cache
-#define	svc_lightstyle		12	// [byte] [string]
-#define	svc_updateuserinfo	13		// [byte] slot [long] uid [string] userinfo
-#define	svc_event_reliable	14
-#define	svc_clientdata		15	// <shortbits + data>
-#define	svc_stopsound		16	// <see code>
-#define	svc_createstringtables	17	// custom
-#define	svc_updatestringtable	18	// custom
+
+#define	svc_Print			7		// print text to console
+#define	svc_ServerInfo		8		// first message from server about game, map etc
+#define svc_SendTable		9		// sends a sendtable description for a game class
+#define svc_ClassInfo		10		// Info about classes (first byte is a CLASSINFO_ define).							
+#define	svc_SetPause		11		// tells client if server paused or unpaused
+
+
+#define	svc_CreateStringTable	12	// inits shared string tables
+#define	svc_UpdateStringTable	13	// updates a string table
+
+#define svc_VoiceInit		14		// inits used voice codecs & quality
+#define svc_VoiceData		15		// Voicestream data from the server
+
+// #define svc_HLTV			16		// HLTV control messages
+
+#define	svc_Sounds			17		// starts playing sound
+
+#define	svc_SetView			18		// sets entity as point of view
+#define	svc_FixAngle		19		// sets/corrects players viewangle
+#define	svc_CrosshairAngle	20		// adjusts crosshair in auto aim mode to lock on traget
+
+#define	svc_BSPDecal		21		// add a static decal to the worl BSP
+// NOTE: This is now unused!
+//#define	svc_TerrainMod		22		// modification to the terrain/displacement
+
 // Message from server side to client side entity
-#define svc_entitymessage	19
-#define	svc_spawnbaseline	20
-#define	svc_bspdecal		21
-#define	svc_setpause		22	// [byte] on / off
-#define	svc_signonnum		23	// [byte]  used for the signon sequence
-#define	svc_centerprint		24	// [string] to put in center of the screen
-#define	svc_spawnstaticsound	25	// [coord3] [byte] samp [byte] vol [byte] aten
-#define	svc_gameevent		26		// [keyValues] used by global game event system
-#define	svc_finale			27		// [string] music [string] text
-#define	svc_cdtrack			28		// [byte] track [byte] looptrack
-#define svc_restore			29
-#define svc_cutscene		30
-// #define svc_decalname		31		// [byte] index [string] name
-#define	svc_roomtype		32		// [byte] roomtype (dsp effect)
-#define	svc_addangle		33		// [angle3] set the view angle to this absolute value
-#define svc_usermessage		34		
-#define	svc_packetentities	35		    // [...]  Non-delta compressed entities
-#define	svc_deltapacketentities	36		// [...]  Delta compressed entities
-#define	svc_choke   		37		// # of packets held back on channel because too much data was flowing.
-#define svc_setconvar		38      // #count + var/value string pairs.  For replicating FCVAR_REPLICATED convar values
-#define svc_sendlogo		39      // Server wants client to upload a logo file
-#define	svc_crosshairangle	40		// [char] pitch * 5 [char] yaw * 5
-#define svc_soundfade       41      // char percent, char holdtime, char fadeouttime, char fadeintime
-#define svc_skippedupdate   42      // Client sent usercmds faster than server frame rate, don't show a false dropped packet.
-#define svc_voicedata		43		// Voicestream data from the server
-#define svc_sendtable		44		// A SendTable.
-#define svc_classinfo		45		// Info about classes (first byte is a CLASSINFO_ define).
-#define svc_debugentityoverlay	46		// A debug text overlay to be displayed
-#define svc_debugboxoverlay		47		// A debug box overlay to be displayed
-#define svc_debuglineoverlay	48		// A debug box overlay to be displayed
-#define svc_debugtextoverlay	49		// A debug box overlay to be displayed
-#define svc_debuggridoverlay	50		// A grid overlay to be displayed
-#define svc_voiceinit			51		// Initialize voice stuff.
-#define svc_debugscreentext		52		// Debug screen test to be displayed
-#define svc_debugtriangleoverlay	53	// A debug triangle to be displayed
-#define SVC_LASTMSG				53
+#define svc_UserMessage		23	// a game specific message 
+#define svc_EntityMessage	24	// a message for an entity
+#define	svc_GameEvent		25	// global game event fired
 
+#define	svc_PacketEntities	26  // non-delta compressed entities
 
-// For svc_classinfo
-#define CLASSINFO_NUMCLASSES	0	// # of classes
-#define CLASSINFO_CLASSDATA		1	// data about a class
-#define CLASSINFO_ENDCLASSES	2	// signals end of classes (ie: the client can precompute its decoders now)
+#define	svc_TempEntities	27	// non-reliable event object
 
-#define CLASSINFO_CREATEFROMSENDTABLES 3 // Signals that we should read send table and class infos directly from game .dll on client
+#define svc_Prefetch		28	// only sound indices for now
+
+#define svc_Menu			29	// display a menu from a plugin
+
+#define svc_GameEventList	30	// list of known games events and fields
+
+#define svc_GetCvarValue	31	// Server wants to know the value of a cvar on the client
+
+#define svc_CmdKeyValues	32	// Server submits KeyValues command for the client
+#define svc_SetPauseTimed	33	// Timed pause - to avoid breaking demos
+
+#define SVC_LASTMSG			33	// last known server messages
 
 //
 // client to server
 //
-#define	clc_bad			0
-#define	clc_nop 		1
-#define	clc_sendlogo	2		// Client is requesting logo download
-#define	clc_move		3		// [CUserCmd]
-#define	clc_stringcmd	4		// [string] message
-#define clc_delta       5       // [byte] request for delta compressed entity packet, 
-								//  delta is from last incoming sequence [byte].
-#define clc_voicedata   6       // Voicestream data from a client
 
-extern int SV_UPDATE_BACKUP;	// Copies of entity_state_t to keep buffered
-extern int SV_UPDATE_MASK;	// must be power of two.  Increasing this number costs a lot of RAM.
-extern int CL_UPDATE_BACKUP;
-extern int CL_UPDATE_MASK;
+#define clc_ClientInfo			8		// client info (table CRC etc)
+#define	clc_Move				9		// [CUserCmd]
+#define clc_VoiceData			10      // Voicestream data from a client
+#define clc_BaselineAck			11		// client acknowledges a new baseline seqnr
+#define clc_ListenEvents		12		// client acknowledges a new baseline seqnr
+#define clc_RespondCvarValue	13		// client is responding to a svc_GetCvarValue message.
+#define clc_FileCRCCheck		14		// client is sending a file's CRC to the server to be verified.
+#define clc_SaveReplay			15		// client is sending a save replay request to the server.
+#define clc_CmdKeyValues		16
+#define clc_FileMD5Check		17		// client is sending a file's MD5 to the server to be verified.
+
+#define CLC_LASTMSG			17		//	last known client message
 
 #define RES_FATALIFMISSING	(1<<0)   // Disconnect if we can't get this file.
 #define RES_PRELOAD			(1<<1)  // Load on client rather than just reserving name
+
+#define SIGNONSTATE_NONE		0	// no state yet, about to connect
+#define SIGNONSTATE_CHALLENGE	1	// client challenging server, all OOB packets
+#define SIGNONSTATE_CONNECTED	2	// client is connected to server, netchans ready
+#define SIGNONSTATE_NEW			3	// just got serverinfo and string tables
+#define SIGNONSTATE_PRESPAWN	4	// received signon buffers
+#define SIGNONSTATE_SPAWN		5	// ready to receive entity packets
+#define SIGNONSTATE_FULL		6	// we are fully connected, first non-delta packet received
+#define SIGNONSTATE_CHANGELEVEL	7	// server is changing level, please wait
+
+//
+// matchmaking
+//
+
+#define mm_Heartbeat		16		// send a mm_Heartbeat
+#define mm_ClientInfo		17		// information about a player
+#define mm_JoinResponse		18		// response to a matchmaking join request
+#define mm_RegisterResponse	19		// response to a matchmaking join request
+#define mm_Migrate			20		// tell a client to migrate
+#define mm_Mutelist			21		// send mutelist info to other clients
+#define mm_Checkpoint		22		// game state checkpoints (start, connect, etc)
+
+#define MM_LASTMSG			22		// last known matchmaking message
 
 #endif // PROTOCOL_H

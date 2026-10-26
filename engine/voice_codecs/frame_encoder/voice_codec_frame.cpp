@@ -1,5 +1,12 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
-#include "audio/public/ivoicecodec.h"
+#include "ivoicecodec.h"
 #include <string.h>
 #include "tier0/dbg.h"
 #include "iframeencoder.h"
@@ -36,9 +43,9 @@ public:
 			m_pFrameEncoder->Release();
 	}
 	
-	virtual bool	Init()
+	virtual bool	Init( int quality )
 	{
-		if(m_pFrameEncoder && m_pFrameEncoder->Init(m_nRawBytes, m_nEncodedBytes))
+		if(m_pFrameEncoder && m_pFrameEncoder->Init(quality, m_nRawBytes, m_nEncodedBytes))
 		{
 			m_nRawSamples = m_nRawBytes >> 1;
 			Assert(m_nRawBytes <= MAX_FRAMEBUFFER_SAMPLES && m_nEncodedBytes <= MAX_FRAMEBUFFER_SAMPLES);
@@ -112,7 +119,7 @@ public:
 		int curCompressedByte = 0;
 		while((compressedBytes - curCompressedByte)  >= m_nEncodedBytes && (maxUncompressedBytes - nDecompressedBytes) >= m_nRawBytes)
 		{
-			m_pFrameEncoder->DecodeFrame(&pCompressed[curCompressedByte], &pUncompressed[nDecompressedBytes]);
+			m_pFrameEncoder->DecodeFrame( pCompressed ? &pCompressed[curCompressedByte] : NULL, &pUncompressed[nDecompressedBytes]);
 			curCompressedByte += m_nEncodedBytes;
 			nDecompressedBytes += m_nRawBytes;
 		}

@@ -1,6 +1,39 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdio.h>
 #include "convert.h"
 #include "ivp_cache_object.hxx"
+#include "coordsize.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+#if 1
+// game is in inches
+vphysics_units_t g_PhysicsUnits = 
+{ 
+	METERS_PER_INCH, //float		unitScaleMeters;			// factor that converts game units to meters
+	1.0f / METERS_PER_INCH, //float		unitScaleMetersInv;		// factor that converts meters to game units
+	0.25f,			// float		globalCollisionTolerance;	// global collision tolerance in game units
+	DIST_EPSILON,	// float		collisionSweepEpsilon;		// collision sweep tests clip at this, must be the same as engine's DIST_EPSILON
+	1.0f/256.0f,	// float		collisionSweepIncrementalEpsilon;	// near-zero test for incremental steps in collision sweep tests
+};
+#else
+// game is in meters
+vphysics_units_t g_PhysicsUnits = 
+{ 
+	1.0f,			//float		unitScaleMeters;			// factor that converts game units to meters
+	1.0f,			//float		unitScaleMetersInv;			// factor that converts meters to game units
+	0.01f,			// float		globalCollisionTolerance;	// global collision tolerance in game units
+	0.01f,			// float		collisionSweepEpsilon;		// collision sweep tests clip at this, must be the same as engine's DIST_EPSILON
+	1e-4f,			// float		collisionSweepIncrementalEpsilon;	// near-zero test for incremental steps in collision sweep tests
+};
+#endif
 
 //-----------------------------------------------------------------------------
 // HL to IVP conversions
@@ -317,3 +350,16 @@ void TransformLocalToIVP( const IVP_U_Float_Point &pointIn, IVP_U_Float_Point &p
 	TransformLocalToIVP( pointIn, tmpOut, pObject, translate );
 	pointOut.set( &tmpOut );
 }
+
+static char axisMap[] = {0,2,1,3};
+
+int ConvertCoordinateAxisToIVP( int axisIndex )
+{
+	return axisIndex < 4 ? axisMap[axisIndex] : 0;
+}
+
+int ConvertCoordinateAxisToHL( int axisIndex )
+{
+	return axisIndex < 4 ? axisMap[axisIndex] : 0;
+}
+

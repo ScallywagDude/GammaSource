@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( CODEPROCESSOR_H )
 #define CODEPROCESSOR_H
 #ifdef _WIN32
@@ -13,7 +13,7 @@
 #include "class.h"
 #include "icodeprocessor.h"
 
-#include "UtlDict.h"
+#include "utldict.h"
 
 class CCodeProcessor : public ICodeProcessor
 {
@@ -49,12 +49,16 @@ public:
 	void		SetLogFile( bool log );
 	bool		GetLogFile( void ) const;
 
+	void		SetCheckHungarian( bool check );
+	bool		GetCheckHungarian() const;
+
 	CClass		*FindClass( const char *name ) const;
 	
 	void		ResolveBaseClasses( const char *baseentityclass );
 	void		Clear( void );
 	void		PrintClassList( void ) const;
 	void		PrintMissingTDFields( void ) const;
+	void		ReportHungarianNotationErrors();
 	
 	int			Count( void ) const;
 	
@@ -103,6 +107,7 @@ private:
 	bool		m_bCreateMissingTDs;
 	bool		m_bCreateMissingPredTDs;
 	bool		m_bLogToFile;
+	bool		m_bCheckHungarian;
 
 	int			m_nFilesProcessed;
 	int			m_nHeadersProcessed;

@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IVGUIMODULE_H
 #define IVGUIMODULE_H
@@ -17,7 +17,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: Standard interface to loading vgui modules
 //-----------------------------------------------------------------------------
-class IVGuiModule : public IBaseInterface
+abstract_class IVGuiModule : public IBaseInterface
 {
 public:
 	// called first to setup the module with the vgui

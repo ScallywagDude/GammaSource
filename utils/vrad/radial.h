@@ -1,9 +1,4 @@
-//=========== (C) Copyright 2000 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,13 +9,14 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef RADIAL_H
 #define RADIAL_H
 #pragma once
 
-#include "bumpvects.h"
+#include "mathlib/bumpvects.h"
+#include "mathlib/ssemath.h"
 #include "lightmap.h"
 
 #define RADIALDIST2	2 // (1.25*1.25+1.25*1.25)
@@ -44,12 +40,15 @@ typedef struct radial_s
 	lightinfo_t l;
 	int w, h;
 	float weight[SINGLEMAP];
-	Vector light[NUM_BUMP_VECTS + 1][SINGLEMAP];
+	LightingValue_t light[NUM_BUMP_VECTS + 1][SINGLEMAP];
 } radial_t;
 
 
 void WorldToLuxelSpace( lightinfo_t const *l, Vector const &world, Vector2D &coord );
 void LuxelSpaceToWorld( lightinfo_t const *l, float s, float t, Vector &world );
+
+void WorldToLuxelSpace( lightinfo_t const *l, FourVectors const &world, FourVectors &coord );
+void LuxelSpaceToWorld( lightinfo_t const *l, fltx4 s, fltx4 t, FourVectors &world );
 
 void AddDirectToRadial( radial_t *rad, 
 				  Vector const &pnt, 
@@ -73,7 +72,5 @@ radial_t *BuildPatchRadial( int facenum );
 
 // utilities
 bool FloatLess( float const& src1, float const& src2 );
-int CalcExponent( float in );
-void Vec3toColorRGBExp32( Vector& v, colorRGBExp32 *c );
 
 #endif

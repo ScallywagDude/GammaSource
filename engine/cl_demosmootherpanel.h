@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOSMOOTHERPANEL_H
 #define CL_DEMOSMOOTHERPANEL_H
@@ -27,7 +27,8 @@ class ListPanel;
 class IScheme;
 };
 
-#include "cl_demosmoothing.h"
+#include "demofile/demoformat.h"
+#include "demofile.h"
 
 struct demodirectory_t;
 class CSmoothingTypeButton;
@@ -40,7 +41,7 @@ typedef float (*EASEFUNC)( float t );
 //-----------------------------------------------------------------------------
 class CDemoSmootherPanel : public vgui::Frame
 {
-	typedef vgui::Frame BaseClass;
+	DECLARE_CLASS_SIMPLE( CDemoSmootherPanel, vgui::Frame );
 
 public:
 	CDemoSmootherPanel( vgui::Panel *parent );
@@ -55,7 +56,7 @@ public:
 
 	void		OnRefresh();
 
-	virtual bool		OverrideView( democmdinfo_t& info, int frame, float elapsed );
+	virtual bool		OverrideView( democmdinfo_t& info, int tick );
 
 	virtual void	ApplySchemeSettings( vgui::IScheme *pScheme );
 
@@ -70,13 +71,12 @@ protected:
 
 	demosmoothing_t *GetCurrent( void );
 
-	void		HandleInput( bool active );
-
 	void		DrawSmoothingSample( bool original, bool processed, int samplenumber, demosmoothing_t *sample, demosmoothing_t *next );
 	void		DrawTargetSpline( void );
 	void		DrawKeySpline( void );
-	float		GetTimeForFrame( int frame );
-	bool		GetInterpolatedViewPoint( void );
+	int			GetTickForFrame( int frame );
+	int			GetFrameForTick( int tick );
+	bool		GetInterpolatedViewPoint( Vector& origin, QAngle& angles );
 	bool		GetInterpolatedOriginAndAngles( bool readonly, Vector& origin, QAngle& angles );
 
 	void		DrawLegend( int startframe, int endframe );
@@ -118,6 +118,7 @@ protected:
 	void		OnSplineSampleOrigin( void );
 	void		OnSplineSampleAngles( void );
 	void		OnLookAtPoints( bool spline );
+	void		OnSetKeys(float interval);
 
 	void		OnOriginEaseCurve( EASEFUNC easefunc );
 
@@ -125,16 +126,16 @@ protected:
 
 	void		AddSamplePoints( bool usetarget, bool includeboundaries, CUtlVector< demosmoothing_t * >& points, int start, int end );
 	demosmoothing_t *GetBoundedSample(  CUtlVector< demosmoothing_t * >& points, int sample );
-	void		FindSpanningPoints( float t, CUtlVector< demosmoothing_t * >& points, int& prev, int& next );
+	void		FindSpanningPoints( int tick, CUtlVector< demosmoothing_t * >& points, int& prev, int& next );
 
 	// Undo/Redo
 	void				Undo( void );
 	void				Redo( void );
 
 	// Do push before changes
-	void				PushUndo( char *description );
+	void				PushUndo( const char *description );
 	// Do this push after changes, must match pushundo 1for1
-	void				PushRedo( char *description );
+	void				PushRedo( const char *description );
 
 	void				WipeUndo( void );
 	void				WipeRedo( void );
@@ -144,6 +145,11 @@ protected:
 
 	bool				CanUndo( void );
 	bool				CanRedo( void );
+
+	void				ParseSmoothingInfo( CDemoFile &demoFile, CSmoothingContext& smoothing );
+	void				LoadSmoothingInfo( const char *filename, CSmoothingContext& smoothing );
+	void				ClearSmoothingInfo( CSmoothingContext& smoothing );
+	void				SaveSmoothingInfo( char const *filename, CSmoothingContext& smoothing );
 
 	CSmoothingTypeButton	*m_pType;
 
@@ -179,8 +185,6 @@ protected:
 	vgui::Button		*m_pToggleLookTarget;
 	vgui::Button		*m_pRevertPoint;
 
-	vgui::Button		*m_pDriveCamera;
-	vgui::Button		*m_pDriveCameraSlow;
 	vgui::Button		*m_pMoveCameraToPoint;
 
 	vgui::Button		*m_pUndo;
@@ -196,19 +200,17 @@ protected:
 
 	vgui::Button		*m_pProcessKey;
 
-	vgui::CheckButton	*m_pLockCamera;
-
 	vgui::TextEntry		*m_pGotoFrame;
 	vgui::Button		*m_pGoto;
 
 	bool				m_bHasSelection;
 	int					m_nSelection[2];
-	float				m_flSelectionTimeSpan;
+	int					m_iSelectionTicksSpan;
 
 	bool				m_bPreviewing;
 	bool				m_bPreviewOriginal;
-	float				m_flPreviewStartTime;
-	float				m_flPreviewCurrentTime;
+	int					m_iPreviewStartTick;
+	float				m_fPreviewCurrentTime;
 	int					m_nPreviewLastFrame;
 	bool				m_bPreviewPaused;
 
@@ -217,8 +219,6 @@ protected:
 	bool				m_bInputActive;
 	int					m_nOldCursor[2];
 
-	Vector				m_ViewOrigin;
-	QAngle				m_ViewAngles;
 
 	struct DemoSmoothUndo
 	{

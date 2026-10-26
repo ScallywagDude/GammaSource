@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 /*
 
   glapp.c - Simple OpenGL shell
@@ -22,11 +29,16 @@
 #include <mmsystem.h>
 #include "matsysapp.h"
 #include "cmdlib.h"
-#include "imaterialproxyfactory.h"
+#include "mathlib/mathlib.h"
+#include "materialsystem/imaterialproxyfactory.h"
 #include "filesystem.h"
-#include "imaterialproxy.h"
-#include "MaterialSystem_Config.h"
-#include "vstdlib/icommandline.h"
+#include "materialsystem/imaterialproxy.h"
+#include "materialsystem/MaterialSystem_Config.h"
+#include "tier0/icommandline.h"
+#include "filesystem_tools.h"
+#include "materialsystem/imesh.h"
+#include "vstdlib/cvar.h"
+
 
 static int g_nCapture = 0;
 
@@ -220,29 +232,33 @@ static void MaterialSystem_Warning( char *fmt, ... )
 }
 
 
-void InitMaterialSystemConfig(MaterialSystem_Config_t *pConfig, const char *matPath)
+void InitMaterialSystemConfig(MaterialSystem_Config_t *pConfig)
 {
 	memset( pConfig, 0, sizeof(*pConfig) );
-	pConfig->screenGamma = 2.2f;
-	pConfig->texGamma = 2.2;
-	pConfig->overbright = 2;
+//	pConfig->screenGamma = 2.2f;
+//	pConfig->texGamma = 2.2;
+//	pConfig->overbright = 2;
 	pConfig->bAllowCheats = false;
-	pConfig->bLinearFrameBuffer = false;
-	pConfig->polyOffset = 4;
+//	pConfig->bLinearFrameBuffer = false;
 	pConfig->skipMipLevels = 0;
-	pConfig->lightScale = 1.0f;
+//	pConfig->lightScale = 1.0f;
 	pConfig->bFilterLightmaps = true;
 	pConfig->bFilterTextures = true;
 	pConfig->bMipMapTextures = true;
-	pConfig->bShowMipLevels = false;
+	pConfig->nShowMipLevels = 0;
 	pConfig->bReverseDepth = false;
-	pConfig->bCompressedTextures = false;
-	pConfig->bBumpmap = false;
-	pConfig->bLightingOnly = false;
-	pConfig->errorFunc = MaterialSystem_Error;
-	pConfig->warningFunc = MaterialSystem_Warning;
-	pConfig->bUseGraphics = true;
+	pConfig->bCompressedTextures = true;
+//	pConfig->bBumpmap = true;
+	pConfig->bShowSpecular = true;
+	pConfig->bShowDiffuse = true;
+//	pConfig->maxFrameLatency = 1;
+	pConfig->bDrawFlat = false;
+//	pConfig->bLightingOnly = false;
+	pConfig->bSoftwareLighting = false;
 	pConfig->bEditMode = false;	// No, we're not in WorldCraft.
+//	pConfig->m_bForceTrilinear = false;
+	pConfig->m_nForceAnisotropicLevel = 0;
+//	pConfig->m_bForceBilinear = false;
 }
 
 
@@ -283,12 +299,6 @@ void MaterialSystemApp::Term()
 {
    int i;
 
-	if( m_pFileSystemDLL )
-	{
-		Sys_UnloadModule( m_pFileSystemDLL );
-		m_pFileSystemDLL = NULL;
-	}
-   
    // Free the command line holder memory
    if (m_argc > 0)
    {
@@ -324,7 +334,6 @@ void MaterialSystemApp::Term()
 
 void MaterialSystemApp::Clear()
 {
-	m_pFileSystemDLL = NULL;
 	m_pMaterialSystem = NULL;
 	m_hMaterialSystemInst = 0;
 	m_hInstance = 0;
@@ -356,8 +365,8 @@ int MaterialSystemApp::WinMain(void *hInstance, void *hPrevInstance, char *szCmd
 {
 	MSG         msg;
     HDC         hdc;
-	
-	CommandLine()->CreateCmdLine( szCmdLine );
+	memset(&msg,0,sizeof(msg));
+	CommandLine()->CreateCmdLine( Plat_GetCommandLine() );
 
     // Not changable by user
     m_hInstance    = hInstance;
@@ -569,7 +578,6 @@ bool MaterialSystemApp::InitMaterialSystem()
 		return FALSE;
 	}
 	
-
 	// Load the material system DLL and get its interface.
 	char *pDLLName = "MaterialSystem.dll";
 	m_hMaterialSystemInst = LoadLibrary( pDLLName );
@@ -592,29 +600,21 @@ bool MaterialSystemApp::InitMaterialSystem()
 		return Sys_Error( "Could not find factory interface in library MaterialSystem.dll" );
 	}
 
-	// Figure out the material path.
-	char fullPath[1024];
-
-	const char *pPath = FindParameterArg("-game");
-	char modDir[512];
+	const char *pPath = CommandLine()->ParmValue("-game");
 	if(!pPath)
 	{
 		// If they didn't specify -game on the command line, use VPROJECT.
-		SetQdirFromPath(".");
-		pPath = basegamedir;
-		strcpy( modDir, gamedir );
+		CmdLib_InitFileSystem( "." );
+		pPath = ".";
 	}
 	else
 	{
-		modDir[0] = 0;
+		CmdLib_InitFileSystem( pPath );
 	}
+	// BUGBUG: Can't figure out why this is broken.  EXECUTABLE_PATH should already be there
+	// but it isn't so the shader system is computing texture memory on each run...
+	g_pFullFileSystem->AddSearchPath( "U:\\main\\game\\bin", "EXECUTABLE_PATH", PATH_ADD_TO_TAIL );
 
-	sprintf(fullPath, "%smaterials", pPath);
-
-	char workingDir[512];
-	GetCurrentDirectory( sizeof(workingDir), workingDir );
-
-		
 	const char *pShaderDLL = FindParameterArg("-shaderdll");
 	char defaultShaderDLL[256];
 	if(!pShaderDLL)
@@ -623,38 +623,18 @@ bool MaterialSystemApp::InitMaterialSystem()
 		pShaderDLL = defaultShaderDLL;
 	}
 
-	m_pFileSystemDLL = Sys_LoadModule( "filesystem_stdio.dll" );
-	if( !m_pFileSystemDLL )
-	{
-		return Sys_Error( "Can't load file system DLL (filesystem_stdio.dll)" );
-	}
-
-	if ( !strlen( modDir ) )
-	{
-		sprintf( modDir, "%s\\%s", workingDir, pPath );
-	}
-
-	IFileSystem *pFileSystem = ( IFileSystem * )Sys_GetFactory(m_pFileSystemDLL)( FILESYSTEM_INTERFACE_VERSION, NULL );
-
-	if ( pFileSystem->Init() != INIT_OK )
-		return false;
-
-	pFileSystem->AddSearchPath( modDir, "PLATFORM" );
-
-	if(!m_pMaterialSystem->Init(pShaderDLL, &g_MatSysAppMaterialProxyFactory, Sys_GetFactory(m_pFileSystemDLL)))
+	if(!m_pMaterialSystem->Init(pShaderDLL, &g_MatSysAppMaterialProxyFactory, CmdLib_GetFileSystemFactory()))
 		return Sys_Error("IMaterialSystem::Init failed");
 
-	MaterialVideoMode_t mode;
-	memset(&mode, 0, sizeof(mode));
+	MaterialSystem_Config_t config;
+	InitMaterialSystemConfig(&config);
+	config.SetFlag( MATSYS_VIDCFG_FLAGS_WINDOWED, true ); 
+	config.SetFlag( MATSYS_VIDCFG_FLAGS_RESIZING, true ); 
 
-	if(!m_pMaterialSystem->SetMode(m_hWnd, 0, mode, MATERIAL_VIDEO_MODE_WINDOWED))
+	if(!m_pMaterialSystem->SetMode(m_hWnd, config))
 		return Sys_Error("IMaterialSystem::SetMode failed");
 
-	MaterialSystem_Config_t config;
-	InitMaterialSystemConfig(&config, fullPath);
-	if(!m_pMaterialSystem->ConfigInit(&config))
-		return Sys_Error("IMaterialSystem::ConfigInit failed. Make sure VPROJECT is set or use -game on the command line.");
-	
+	m_pMaterialSystem->OverrideConfig(config, false);
 	GetClientRect((HWND)m_hWnd, &rect);
 	m_glnWidth= rect.right;
 	m_glnHeight = rect.bottom;
@@ -807,17 +787,26 @@ void MaterialSystemApp::RenderScene()
 		deltax = deltay = 0;
 	}
 
-	m_pMaterialSystem->ClearBuffers(true, true);
-	m_pMaterialSystem->MatrixMode(MATERIAL_PROJECTION);
-	m_pMaterialSystem->LoadIdentity();
-	m_pMaterialSystem->PerspectiveX(m_fov, m_gldAspect, m_NearClip, m_FarClip);
+	CMatRenderContextPtr pRenderContext(m_pMaterialSystem);
+	m_pMaterialSystem->BeginFrame(deltaTime);
 
-	m_pMaterialSystem->MatrixMode(MATERIAL_VIEW);
-	m_pMaterialSystem->LoadIdentity();
+	pRenderContext->ClearBuffers(true, true);
+	pRenderContext->Viewport( 0, 0, m_width, m_height );
+	pRenderContext->MatrixMode(MATERIAL_PROJECTION);
+	pRenderContext->LoadIdentity();
+	pRenderContext->PerspectiveX(m_fov, m_gldAspect, m_NearClip, m_FarClip);
+
+	pRenderContext->MatrixMode(MATERIAL_VIEW);
+	pRenderContext->LoadIdentity();
+
+	pRenderContext->MatrixMode(MATERIAL_MODEL);
+	pRenderContext->LoadIdentity();
 
 	AppRender( frametime, deltax, deltay );
 
     m_pMaterialSystem->SwapBuffers();
+
+	m_pMaterialSystem->EndFrame();
 }
 
 
@@ -960,6 +949,12 @@ void MaterialSystemApp::MakeWindowTopmost()
 void MaterialSystemApp::AppShutdown()
 {
 	SendMessage( (HWND)m_hWnd, WM_CLOSE, 0, 0 );
+}
+
+
+void MaterialSystemApp::QuitNextFrame()
+{
+	PostMessage( (HWND)m_hWnd, WM_CLOSE, 0, 0 );
 }
 
 

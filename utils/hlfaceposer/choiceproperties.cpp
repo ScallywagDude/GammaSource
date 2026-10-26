@@ -1,13 +1,13 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "resource.h"
 #include "ChoiceProperties.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "mdlviewer.h"
 
 static CChoiceParams g_Params;

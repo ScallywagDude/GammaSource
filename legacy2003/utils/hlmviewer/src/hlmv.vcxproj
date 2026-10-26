@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>18.0</VCProjectVersion>
+    <ProjectGuid>{8AA1D4CD-B636-5850-A3A9-648AD17854AF}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>hlmv</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v145</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>hlmv</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\statemachine;..\..\mxtk\include;..\..\common;..\..\..\Public;..\..\..\Game_Shared;..\..\..\game_shared\tf2;\mxtk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_WINDOWS;PROTECTED_THINGS_DISABLE;NDEBUG;_WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;..\..\mxtk\msvc\build\$(Configuration)\mxtk.lib;..\..\..\lib\common\s3tc.lib;..\..\..\vstdlib\build\Release\vstdlib.lib;..\..\..\tier0\build\Release\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(ProjectDir)build\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)build\obj\$(MSBuildProjectName)\$(Configuration)\</IntDir>
+    <TargetName>hlmv</TargetName>
+    <TargetExt>.exe</TargetExt>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\..\statemachine;..\..\mxtk\include;..\..\common;..\..\..\Public;..\..\..\Game_Shared;..\..\..\game_shared\tf2;\mxtk\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>VECTOR;WIN32;_WINDOWS;PROTECTED_THINGS_DISABLE;_DEBUG;_WIN32;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ConformanceMode>false</ConformanceMode>
+      <ForceConformanceInForLoopScope>false</ForceConformanceInForLoopScope>
+      <SDLCheck>false</SDLCheck>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>user32.lib;shell32.lib;gdi32.lib;advapi32.lib;comctl32.lib;winmm.lib;comdlg32.lib;..\..\mxtk\msvc\build\$(Configuration)\mxtk.lib;..\..\..\lib\common\s3tc.lib;..\..\..\vstdlib\build\Debug\vstdlib.lib;..\..\..\tier0\build\Debug\tier0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>LIBC.lib;LIBCD.lib;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+      <AdditionalLibraryDirectories>..\..\..\lib\common;..\..\..\lib\public;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\attachments_window.cpp" />
+    <ClCompile Include="..\..\..\game_shared\bone_setup.cpp" />
+    <ClCompile Include="..\..\..\public\characterset.cpp" />
+    <ClCompile Include="..\..\common\cmdlib.cpp" />
+    <ClCompile Include="..\..\..\Public\CollisionUtils.cpp" />
+    <ClCompile Include="..\src\ControlPanel.cpp" />
+    <ClCompile Include="..\src\FileAssociation.cpp" />
+    <ClCompile Include="..\..\..\public\filesystem_helpers.cpp" />
+    <ClCompile Include="..\..\..\Public\FileSystem_Tools.cpp" />
+    <ClCompile Include="..\..\..\Public\ImageLoader.cpp" />
+    <ClCompile Include="..\..\..\Public\interface.cpp" />
+    <ClCompile Include="..\..\..\Public\Mathlib.cpp" />
+    <ClCompile Include="..\src\matsyswin.cpp" />
+    <ClCompile Include="..\src\mdlviewer.cpp" />
+    <ClCompile Include="..\src\mxLineEdit2.cpp" />
+    <ClCompile Include="..\src\pakviewer.cpp" />
+    <ClCompile Include="..\..\..\Public\physdll.cpp" />
+    <ClCompile Include="..\src\physmesh.cpp" />
+    <ClCompile Include="..\src\studio_flex.cpp" />
+    <ClCompile Include="..\src\studio_render.cpp" />
+    <ClCompile Include="..\src\studio_utils.cpp" />
+    <ClCompile Include="..\src\sys_win.cpp" />
+    <ClCompile Include="..\..\..\Public\UtlBuffer.cpp" />
+    <ClCompile Include="..\..\..\Public\utlsymbol.cpp" />
+    <ClCompile Include="..\src\ViewerSettings.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Public\amd3dx.h" />
+    <ClInclude Include="..\src\attachments_window.h" />
+    <ClInclude Include="..\..\..\public\basehandle.h" />
+    <ClInclude Include="..\..\..\Public\basetypes.h" />
+    <ClInclude Include="..\..\..\game_shared\bone_setup.h" />
+    <ClInclude Include="..\..\..\Public\bspflags.h" />
+    <ClInclude Include="..\..\..\public\characterset.h" />
+    <ClInclude Include="..\..\common\cmdlib.h" />
+    <ClInclude Include="..\..\..\Public\cmodel.h" />
+    <ClInclude Include="..\..\..\Public\CollisionUtils.h" />
+    <ClInclude Include="..\..\..\Public\commonmacros.h" />
+    <ClInclude Include="..\..\..\public\const.h" />
+    <ClInclude Include="..\..\..\public\vphysics\constraints.h" />
+    <ClInclude Include="..\src\ControlPanel.h" />
+    <ClInclude Include="..\..\..\public\tier0\dbg.h" />
+    <ClInclude Include="..\..\..\public\tier0\fasttimer.h" />
+    <ClInclude Include="..\src\FileAssociation.h" />
+    <ClInclude Include="..\..\..\Public\FileSystem.h" />
+    <ClInclude Include="..\..\..\public\filesystem_helpers.h" />
+    <ClInclude Include="..\..\..\Public\FileSystem_Tools.h" />
+    <ClInclude Include="..\..\..\public\gametrace.h" />
+    <ClInclude Include="..\..\..\public\appframework\IAppSystem.h" />
+    <ClInclude Include="..\..\..\public\vstdlib\ICommandLine.h" />
+    <ClInclude Include="..\..\..\public\ihandleentity.h" />
+    <ClInclude Include="..\..\..\Public\ImageLoader.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imaterial.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imaterialproxyfactory.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imaterialsystem.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imaterialsystemhardwareconfig.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imaterialvar.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\imesh.h" />
+    <ClInclude Include="..\..\..\Public\interface.h" />
+    <ClInclude Include="..\..\..\Public\IStudioRender.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\itexture.h" />
+    <ClInclude Include="..\..\..\public\materialsystem\materialsystem_config.h" />
+    <ClInclude Include="..\..\..\Public\MATHLIB.H" />
+    <ClInclude Include="..\src\matsyswin.h" />
+    <ClInclude Include="..\src\mdlviewer.h" />
+    <ClInclude Include="..\..\..\public\tier0\memdbgoff.h" />
+    <ClInclude Include="..\..\..\public\tier0\memdbgon.h" />
+    <ClInclude Include="..\..\..\public\mempool.h" />
+    <ClInclude Include="..\..\..\Public\mouthinfo.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mx.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxBmp.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxButton.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxCheckBox.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxChoice.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxChooseColor.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxEvent.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxFileDialog.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxGlWindow.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxGroupBox.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxImage.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxInit.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxLabel.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxLineEdit.h" />
+    <ClInclude Include="..\src\mxLineEdit2.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxLinkedList.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxListBox.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxMatSysWindow.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxMenu.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxMenuBar.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxMessageBox.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxpath.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxPcx.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxPopupMenu.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxProgressBar.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxRadioButton.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxScrollbar.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxSlider.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxstring.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxTab.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxTga.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxToggleButton.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxToolTip.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxTreeView.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxWidget.h" />
+    <ClInclude Include="..\..\mxtk\include\mx\mxWindow.h" />
+    <ClInclude Include="..\src\pakviewer.h" />
+    <ClInclude Include="..\..\..\Public\phyfile.h" />
+    <ClInclude Include="..\..\..\Public\physdll.h" />
+    <ClInclude Include="..\src\physmesh.h" />
+    <ClInclude Include="..\..\..\public\tier0\platform.h" />
+    <ClInclude Include="..\..\..\public\protected_things.h" />
+    <ClInclude Include="..\..\..\public\vstdlib\random.h" />
+    <ClInclude Include="..\..\..\Public\s3_intrf.h" />
+    <ClInclude Include="..\..\..\Public\string_t.h" />
+    <ClInclude Include="..\..\..\public\vstdlib\strtools.h" />
+    <ClInclude Include="..\..\..\Public\studio.h" />
+    <ClInclude Include="..\src\studio_render.h" />
+    <ClInclude Include="..\src\StudioModel.h" />
+    <ClInclude Include="..\src\sys.h" />
+    <ClInclude Include="..\..\..\game_shared\tf_shareddefs.h" />
+    <ClInclude Include="..\..\..\Public\TGALoader.h" />
+    <ClInclude Include="..\..\..\Public\UtlBuffer.h" />
+    <ClInclude Include="..\..\..\Public\utllinkedlist.h" />
+    <ClInclude Include="..\..\..\Public\UtlMemory.h" />
+    <ClInclude Include="..\..\..\Public\utlrbtree.h" />
+    <ClInclude Include="..\..\..\Public\utlsymbol.h" />
+    <ClInclude Include="..\..\..\Public\UtlVector.h" />
+    <ClInclude Include="..\..\..\Public\vcollide.h" />
+    <ClInclude Include="..\..\..\Public\vcollide_parse.h" />
+    <ClInclude Include="..\..\..\Public\vector.h" />
+    <ClInclude Include="..\..\..\Public\vector2d.h" />
+    <ClInclude Include="..\..\..\Public\vector4d.h" />
+    <ClInclude Include="..\src\ViewerSettings.h" />
+    <ClInclude Include="..\..\..\Public\vphysics_interface.h" />
+    <ClInclude Include="..\..\..\public\tier0\vprof.h" />
+    <ClInclude Include="..\..\..\public\vstdlib\vstdlib.h" />
+    <ClInclude Include="..\src\resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\src\hlmviewer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\src\icon1.ico" />
+    <None Include="..\..\..\lib\common\mxtk.lib" />
+    <None Include="..\..\..\lib\common\s3tc.lib" />
+    <None Include="..\..\..\lib\public\vstdlib.lib" />
+    <None Include="..\..\..\lib\public\tier0.lib" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+  <ItemGroup>
+    <ProjectReference Include="..\..\mxtk\msvc\mxtoolkitwin32.vcxproj">
+      <Project>{5DADAE52-7DE3-5D25-8339-D9D11FB1C67F}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\tier0\tier0.vcxproj">
+      <Project>{6FF36EA7-9968-563F-A949-77D0A5E5E6E8}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\vstdlib\vstdlib.vcxproj">
+      <Project>{A2B5AD75-6625-5F92-AAF0-648CB23FAF16}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+      <LinkLibraryDependencies>false</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

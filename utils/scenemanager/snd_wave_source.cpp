@@ -1,21 +1,21 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <windows.h>
-#include "riff.h"
+#include "tier2/riff.h"
 #include "snd_wave_source.h"
 #include "snd_wave_mixer_private.h"
 #include "snd_audio_source.h"
 #include <mmsystem.h>		// wave format
 #include <mmreg.h>			// adpcm format
-#include "FileSystem.h"
+#include "filesystem.h"
 #include "utlbuffer.h"
 
 //-----------------------------------------------------------------------------
@@ -210,7 +210,7 @@ void CAudioSourceWave::ConvertSamples( char *pData, int sampleCount )
 //-----------------------------------------------------------------------------
 void CAudioSourceWave::ParseSentence( IterateRIFF &walk )
 {
-	CUtlBuffer buf( 0, 0, true );
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
 
 	buf.EnsureCapacity( walk.ChunkSize() );
 	walk.ChunkRead( buf.Base() );

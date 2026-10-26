@@ -1,5 +1,8 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 ;------------------------------------------------------------------------------
 ; Constants specified by the app
 ;    c0      = (0, 1, 2, 0.5)
@@ -9,9 +12,8 @@ vs.1.1
 ;    c8-c11  = ViewProj matrix (transpose)
 ;    c12-c15 = model->view matrix (transpose)
 ;	 c16	 = [fogStart, fogEnd, fogRange, 1.0/fogRange]
-;	 c20	 = Modulation color 
-;	 c90-c91 = Base texture transform
-;    c92-c93 = Mask texture transform
+;	 $SHADER_SPECIFIC_CONST_0-$SHADER_SPECIFIC_CONST_1 = Base texture transform
+;    $SHADER_SPECIFIC_CONST_2-$SHADER_SPECIFIC_CONST_3 = Mask texture transform
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
@@ -21,7 +23,7 @@ vs.1.1
 ;------------------------------------------------------------------------------
 
 &AllocateRegister( \$worldPos );
-&SkinPosition( $g_numBones, $worldPos );
+&SkinPosition( $worldPos );
 
 ; Transform the position from world to view space
 dp4 oPos.x, $worldPos, $cViewProj0

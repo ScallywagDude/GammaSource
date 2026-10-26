@@ -1,4 +1,5 @@
-; "REFRACTTINTTEXTURE" "0..1"
+; STATIC: "REFRACTTINTTEXTURE" "0..1"
+; STATIC: "NORMALMAPALPHA" "0..1"
 
 ps.1.1
 
@@ -12,15 +13,24 @@ ps.1.1
 tex t0				; sample dudv map
 texbem t1, t0		; refraction
 
-#if REFRACTTINTTEXTURE == 1
+#if REFRACTTINTTEXTURE
 tex t2
 #endif
 
-#if REFRACTTINTTEXTURE == 1
+#if NORMALMAPALPHA
+tex t3
+#endif
+
+; refracttint
+#if REFRACTTINTTEXTURE
 mul_x2 r0, t1, t2
 #else
 mov r0, t1
 #endif
 
-; refracttint
-mul r0, r0, c0
+#if NORMALMAPALPHA
+mul r0.rgb, r0, c0 +
+mov r0.a, t3.a
+#else
+mul r0.rgb, r0, c0
+#endif

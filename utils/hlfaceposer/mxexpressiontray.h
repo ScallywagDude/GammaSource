@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( MXEXPRESSIONTRAY_H )
 #define MXEXPRESSIONTRAY_H
 #ifdef _WIN32
@@ -15,14 +15,7 @@
 #define IDC_CONTEXT_EDITEXP			1003
 #define IDC_CONTEXT_SAVEEXP			1004
 #define IDC_CONTEXT_DELETEXP		1005
-#define IDC_CONTEXT_CREATEGROUP		1006
-#define IDC_CONTEXT_ADDTOGROUP		1007
-#define IDC_CONTEXT_REMOVEFROMGROUP	1008
-#define IDC_CONTEXT_CHANGEWEIGHT	1009
-#define IDC_SHOW_OVERRIDES			1010
-#define IDC_CONTEXT_SAVEEXP_OVERRIDE 1011
 #define IDC_CONTEXT_REVERT			1012
-#define IDC_CONTEXT_DELETEXP_OVERRIDE 1013
 #define IDC_AB						1014
 #define IDC_THUMBNAIL_INCREASE		1015
 #define IDC_THUMBNAIL_DECREASE		1016
@@ -36,12 +29,12 @@ class mxScrollbar;
 class mxCheckBox;
 class CChoreoView;
 class CExpression;
-class CMarkovGroup;
 class CExpClass;
 class mxButton;
 class CChoreoWidgetDrawHelper;
 
 #include "faceposertoolwindow.h"
+#include "mxbitmaptools.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -66,17 +59,11 @@ public:
 	void				Select( int exp, bool deselect = true );
 	void				Deselect( void );
 	int					CountSelected( void );
-	void				CreateContextGroup( void );
-	void				AddToGroup( void );
-	void				RemoveFromGroup( void );
-	void				ChangeWeight( void );
 
 	void				SetCellSize( int cellsize );
 
-	bool				GetOverridesShowing( void );
-	void				SetOverridesShowing( bool state );
-		
 	void				ReloadBitmaps( void );
+	virtual void		OnModelChanged();
 
 private: // Data structures
 
@@ -90,7 +77,7 @@ private: // Data structures
 		bool						m_bActive;
 		RECT						m_rc;
 		char						m_szToolTip[ 128 ];
-		struct mxbitmapdata_s		*m_pImage;
+		mxbitmapdata_t				*m_pImage;
 
 		ETMEMBERFUNC				m_fnCallback;
 	};
@@ -112,7 +99,6 @@ private: // Methods
 	void				DrawDirtyFlag( CChoreoWidgetDrawHelper& helper, CExpression *current, int rcx, int rcy, int rcw, int rch );
 	void				DrawExpressionFocusRect( CChoreoWidgetDrawHelper& helper, int x, int y, int w, int h, COLORREF clr );
 	void				DrawExpressionDescription( CChoreoWidgetDrawHelper& helper, int x, int y, int w, int h, const char *expressionname, const char *description );
-	void				DrawMarkovGroup( CExpression *exp, int membernum, CMarkovGroup *member, CChoreoWidgetDrawHelper& helper, int x, int y, int w, int h );
 
 	void				CreateButtons( void );
 	void				DeleteAllButtons( void );
@@ -129,8 +115,6 @@ private: // Methods
 	void				DrawFocusRect( void );
 
 private: // Data
-
-	mxCheckBox			*m_pShowOverrides;
 
 	mxETButton			*m_pButtons;
 

@@ -1,89 +1,26 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include <string.h>
 #include <assert.h>
 #include "packed_entity.h"
 #include "basetypes.h"
 #include "changeframelist.h"
 #include "dt_send.h"
+#include "dt_send_eng.h"
+#include "server_class.h"
 
-
-// -------------------------------------------------------------------------------------------------- //
-// PackedDataAllocator.
-// -------------------------------------------------------------------------------------------------- //
-
-PackedDataAllocator::PackedDataAllocator() : m_64BytePool( 64, 256, CMemoryPool::GROW_SLOW ),
-	m_128BytePool( 128, 128, CMemoryPool::GROW_SLOW ), m_1024BytePool( 1024, 4, CMemoryPool::GROW_SLOW )
-
-{
-	m_nBytesAllocated = 0;
-	m_nBlocksAllocated = 0;
-}
-
-
-bool PackedDataAllocator::Alloc(unsigned long size, DataHandle &theHandle)
-{
-	Free(theHandle);
-
-	int totalSize = sizeof(DataBlock) + size - 1;
-	if (totalSize <= 64)
-	{
-		theHandle.m_pBlock = (DataBlock*)m_64BytePool.Alloc();
-	}
-	else if (totalSize <= 128)
-	{
-		theHandle.m_pBlock = (DataBlock*)m_128BytePool.Alloc();
-	}
-	else  if (totalSize <= 1024)
-	{
-		theHandle.m_pBlock = (DataBlock*)m_1024BytePool.Alloc();
-	}
-	else
-	{
-		theHandle.m_pBlock = (DataBlock*)malloc(totalSize);
-	}
-
-	if(theHandle.m_pBlock)
-	{
-		theHandle.m_pBlock->m_nReferences = 1;
-		theHandle.m_pBlock->m_Size = totalSize;
-		theHandle.m_pAllocator = this;
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-}
-
-void PackedDataAllocator::Free(DataHandle &theHandle)
-{
-	if(theHandle.m_pBlock)
-	{
-		theHandle.m_pBlock->m_nReferences--;
-		if(theHandle.m_pBlock->m_nReferences == 0)
-		{
-			if (theHandle.m_pBlock->m_Size <= 64)
-			{
-				m_64BytePool.Free( theHandle.m_pBlock );
-			}
-			else if (theHandle.m_pBlock->m_Size <= 128)
-			{
-				m_128BytePool.Free( theHandle.m_pBlock );
-			}
-			else if (theHandle.m_pBlock->m_Size <= 1024)
-			{
-				m_1024BytePool.Free( theHandle.m_pBlock );
-			}
-			else
-			{
-				free(theHandle.m_pBlock);
-			}
-		}
-		
-		theHandle.m_pBlock = NULL;
-		theHandle.m_pAllocator = NULL;
-	}
-}
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 
 // -------------------------------------------------------------------------------------------------- //
@@ -92,44 +29,57 @@ void PackedDataAllocator::Free(DataHandle &theHandle)
 
 PackedEntity::PackedEntity()
 {
-	m_pChangeFrameList = 0;
+	m_pData = NULL;
+	m_pChangeFrameList = NULL;
+	m_nSnapshotCreationTick = 0;
+	m_nShouldCheckCreationTick = 0;
 }
-
 
 PackedEntity::~PackedEntity()
 {
+	FreeData();
+
 	if ( m_pChangeFrameList )
+	{
 		m_pChangeFrameList->Release();
+		m_pChangeFrameList = NULL;
+	}
 }
 
 
-bool PackedEntity::AllocAndCopyPadded( const void *pData, unsigned long size, PackedDataAllocator *pAllocator )
+bool PackedEntity::AllocAndCopyPadded( const void *pData, unsigned long size )
 {
-	m_Data.Free();
+	FreeData();
 	
 	unsigned long nBytes = PAD_NUMBER( size, 4 );
-	if ( pAllocator->Alloc( nBytes, m_Data ) )
-	{
-		void *pDest = m_Data.Lock();
-		if ( pDest )
-		{
-			memcpy( pDest, pData, size );
-			m_Data.Unlock();
-			SetNumBits( nBytes * 8 );
-			return true;
-		}
-	}
 
-	return false;
+	// allocate the memory
+	m_pData = malloc( nBytes );
+
+	if ( !m_pData )
+	{
+		Assert( m_pData );
+		return false;
+	}
+	
+	Q_memcpy( m_pData, pData, size );
+	SetNumBits( nBytes * 8 );
+	
+	return true;
 }
 
 
 int PackedEntity::GetPropsChangedAfterTick( int iTick, int *iOutProps, int nMaxOutProps )
 {
 	if ( m_pChangeFrameList )
+	{
 		return m_pChangeFrameList->GetPropsChangedAfterTick( iTick, iOutProps, nMaxOutProps );
+	}
 	else
+	{
+		// signal that we don't have a changelist
 		return -1;
+	}
 }
 
 
@@ -159,64 +109,13 @@ bool PackedEntity::CompareRecipients( const CUtlMemory<CSendProxyRecipients> &re
 	return memcmp( recipients.Base(), m_Recipients.Base(), sizeof( CSendProxyRecipients ) * m_Recipients.Count() ) == 0;
 }	
 
-
-// -------------------------------------------------------------------------------------------------- //
-// DataHandle.
-// -------------------------------------------------------------------------------------------------- //
-
-DataHandle::DataHandle()
+void PackedEntity::SetServerAndClientClass( ServerClass *pServerClass, ClientClass *pClientClass )
 {
-	m_pBlock = NULL; 
-	m_pAllocator = NULL;
-}
-
-
-DataHandle::~DataHandle()
-{
-	m_pAllocator->Free(*this);
-}
-
-
-void* DataHandle::Lock()
-{
-	if(m_pBlock)
+	m_pServerClass = pServerClass;
+	m_pClientClass = pClientClass;
+	if ( pServerClass )
 	{
-		// Check for corruption.
-		return m_pBlock->m_Data;
+		Assert( pServerClass->m_pTable );
+		SetShouldCheckCreationTick( pServerClass->m_pTable->HasPropsEncodedAgainstTickCount() );
 	}
-	else
-	{
-		return NULL;
-	}
-}
-
-
-void DataHandle::Unlock()
-{
-}
-
-
-void DataHandle::Free()
-{
-	m_pAllocator->Free( *this );
-}
-
-
-DataHandle& DataHandle::operator=(const DataHandle &other)
-{
-	DataBlock *pBlock;
-
-
-	assert(this != &other);
-
-	// (Increment references first just in case, for some reason it calls = on ourself).
-	pBlock = other.m_pBlock;
-	if(pBlock)
-		pBlock->m_nReferences++;
-
-	m_pAllocator->Free(*this);
-	m_pBlock = pBlock;
-
-	m_pAllocator = other.m_pAllocator;
-	return *this;
 }

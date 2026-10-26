@@ -1,12 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "decal_clip.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // --------------------------------------------------------------------------- //
 // Template classes for the clipper.
@@ -14,29 +16,29 @@
 class CPlane_Top
 {
 public:
-	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_tCoords.y < 1;}
-	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return (1 - one->m_tCoords.y) / (two->m_tCoords.y - one->m_tCoords.y);}
+	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_ctCoords.y < 1;}
+	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return (1 - one->m_ctCoords.y) / (two->m_ctCoords.y - one->m_ctCoords.y);}
 };
 
 class CPlane_Left
 {
 public:
-	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_tCoords.x > 0;}
-	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return one->m_tCoords.x / (one->m_tCoords.x - two->m_tCoords.x);}
+	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_ctCoords.x > 0;}
+	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return one->m_ctCoords.x / (one->m_ctCoords.x - two->m_ctCoords.x);}
 };
 
 class CPlane_Right
 {
 public:
-	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_tCoords.x < 1;}
-	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return (1 - one->m_tCoords.x) / (two->m_tCoords.x - one->m_tCoords.x);}
+	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_ctCoords.x < 1;}
+	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return (1 - one->m_ctCoords.x) / (two->m_ctCoords.x - one->m_ctCoords.x);}
 };
 
 class CPlane_Bottom
 {
 public:
-	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_tCoords.y > 0;}
-	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return one->m_tCoords.y / (one->m_tCoords.y - two->m_tCoords.y);}
+	static inline bool Inside( CDecalVert *pVert )					{return pVert->m_ctCoords.y > 0;}
+	static inline float Clip( CDecalVert *one, CDecalVert *two )	{return one->m_ctCoords.y / (one->m_ctCoords.y - two->m_ctCoords.y);}
 };
 
 
@@ -44,8 +46,8 @@ public:
 // --------------------------------------------------------------------------- //
 // Globals.
 // --------------------------------------------------------------------------- //
-static CDecalVert g_DecalClipVerts[MAX_DECALCLIPVERT];
-static CDecalVert g_DecalClipVerts2[MAX_DECALCLIPVERT];
+CDecalVert ALIGN16 g_DecalClipVerts[MAX_DECALCLIPVERT] ALIGN16_POST;
+static CDecalVert ALIGN16 g_DecalClipVerts2[MAX_DECALCLIPVERT] ALIGN16_POST;
 
 
 
@@ -56,29 +58,30 @@ static inline void Intersect( Clipper &clip, CDecalVert *one, CDecalVert *two, C
 	float t = Clipper::Clip( one, two );
 	
 	VectorLerp( one->m_vPos, two->m_vPos, t, out->m_vPos );
-	Vector2DLerp( one->m_LMCoords, two->m_LMCoords, t, out->m_LMCoords );
-	Vector2DLerp( one->m_tCoords, two->m_tCoords, t, out->m_tCoords );
+	Vector2DLerp( one->m_cLMCoords, two->m_cLMCoords, t, out->m_cLMCoords );
+	Vector2DLerp( one->m_ctCoords, two->m_ctCoords, t, out->m_ctCoords );
 }
 
 
 template< class Clipper >
-static inline int SHClip( CDecalVert *g_DecalClipVerts, int vertCount, CDecalVert *out, Clipper &clip )
+static inline int SHClip( CDecalVert *pDecalClipVerts, int vertCount, CDecalVert *out, Clipper &clip )
 {
 	int j, outCount;
 	CDecalVert *s, *p;
 
+	Assert( vertCount <= MAX_DECALCLIPVERT );
 
 	outCount = 0;
 
-	s = &g_DecalClipVerts[ vertCount-1 ];
+	s = &pDecalClipVerts[ vertCount-1 ];
 	for ( j = 0; j < vertCount; j++ ) 
 	{
-		p = &g_DecalClipVerts[ j ];
+		p = &pDecalClipVerts[ j ];
 		if ( Clipper::Inside( p ) ) 
 		{
 			if ( Clipper::Inside( s ) ) 
 			{
-				memcpy( out, p, sizeof(*out) );
+				*out = *p;
 				outCount++;
 				out++;
 			}
@@ -88,7 +91,7 @@ static inline int SHClip( CDecalVert *g_DecalClipVerts, int vertCount, CDecalVer
 				out++;
 				outCount++;
 
-				memcpy( out, p, sizeof(*out) );
+				*out = *p;
 				outCount++;
 				out++;
 			}
@@ -108,13 +111,9 @@ static inline int SHClip( CDecalVert *g_DecalClipVerts, int vertCount, CDecalVer
 	return outCount;
 }
 
+const float DECAL_CLIP_EPSILON = 0.01f;
 
-CDecalVert* R_DoDecalSHClip( 
-	CDecalVert *pInVerts, 
-	CDecalVert *pOutVerts, 
-	decal_t *pDecal, 
-	int nStartVerts, 
-	int *pVertCount )
+CDecalVert* R_DoDecalSHClip( CDecalVert *pInVerts, CDecalVert *pOutVerts, decal_t *pDecal, int nStartVerts, const Vector &vecNormal )
 {
 	if ( pOutVerts == NULL )
 		pOutVerts = &g_DecalClipVerts[0];
@@ -130,59 +129,54 @@ CDecalVert* R_DoDecalSHClip(
 	outCount = SHClip( &g_DecalClipVerts[0], outCount, &g_DecalClipVerts2[0], right );
 	outCount = SHClip( &g_DecalClipVerts2[0], outCount, pOutVerts, bottom );
 
-	if ( outCount ) 
+	pDecal->clippedVertCount = outCount;
+
+	if ( !outCount )
+		return NULL;
+
+	// FIXME: This is a brutally hack workaround for the fact that we get massive decal flicker
+	// when looking at a decal at a glancing angle while standing right next to it.
+
+	for ( int i = 0; i < outCount; ++i )
 	{
-		if ( pDecal->flags & FDECAL_CLIPTEST )
+		VectorMA( pOutVerts[i].m_vPos, OVERLAY_AVOID_FLICKER_NORMAL_OFFSET, vecNormal, pOutVerts[i].m_vPos );
+	}
+	if ( outCount && pDecal->material->InMaterialPage() )
+	{
+		float offset[2], scale[2];
+		pDecal->material->GetMaterialOffset( offset );
+		pDecal->material->GetMaterialScale( scale );
+		for ( int i = 0; i < outCount; ++i )
 		{
-			pDecal->flags &= ~FDECAL_CLIPTEST;	// We're doing the test
-			
-			// If there are exactly 4 verts and they are all 0,1 tex coords, then we've got an unclipped decal
-			// A more precise test would be to calculate the texture area and make sure it's one, but this
-			// should work as well.
-			if ( outCount == 4 )
-			{
-				int clipped = 0;
-
-				CDecalVert *v = pOutVerts;
-				for ( int j = 0; j < outCount && !clipped; j++, v++ )
-				{
-					float s, t;
-					s = v->m_tCoords.x;
-					t = v->m_tCoords.y;
-					
-					if ( (s != 0.0 && s != 1.0) || (t != 0.0 && t != 1.0) )
-						clipped = 1;
-				}
-
-				// We didn't need to clip this decal, it's a quad covering the full texture space, optimize
-				// subsequent frames.
-				if ( !clipped )
-					pDecal->flags |= FDECAL_NOCLIP;
-			}
+			pOutVerts[i].m_ctCoords.x = offset[0] + (pOutVerts[i].m_ctCoords.x * scale[0]);
+			pOutVerts[i].m_ctCoords.y = offset[1] + (pOutVerts[i].m_ctCoords.y * scale[1]);
 		}
 	}
-	
-	*pVertCount = outCount;
+
 	return pOutVerts;
 }
 
 // Build the initial list of vertices from the surface verts into the global array, 'verts'.
 void R_SetupDecalVertsForMSurface( 
-	decal_t *pDecal, 
-	int surfID, 
-	Vector textureSpaceBasis[3],
-	CDecalVert *pVerts )
+	decal_t * RESTRICT pDecal, 
+	SurfaceHandle_t surfID, 
+	Vector * RESTRICT pTextureSpaceBasis,
+	CDecalVert * RESTRICT pVerts )
 {
-	for ( int j = 0; j < MSurf_VertCount( surfID ); j++ )
+	unsigned short * RESTRICT pIndices = &host_state.worldbrush->vertindices[MSurf_FirstVertIndex( surfID )];
+	int count = MSurf_VertCount( surfID );
+	float uOffset = 0.5f - pDecal->dx;
+	float vOffset = 0.5f - pDecal->dy;
+
+	for ( int j = 0; j < count; j++ )
 	{
-		int vertIndex = host_state.worldmodel->brush.vertindices[MSurf_FirstVertIndex( surfID )+j];
-		Vector& v = host_state.worldmodel->brush.vertexes[vertIndex].position;
+		int vertIndex = pIndices[j];
 		
-		pVerts[j].m_vPos = v; // Copy model space coordinates
+		pVerts[j].m_vPos = host_state.worldbrush->vertexes[vertIndex].position; // Copy model space coordinates
 		// garymcthack - what about m_ParentTexCoords?
-		pVerts[j].m_tCoords.x = DotProduct( pVerts[j].m_vPos, textureSpaceBasis[0] ) - pDecal->dx + .5f;
-		pVerts[j].m_tCoords.y = DotProduct( pVerts[j].m_vPos, textureSpaceBasis[1] ) - pDecal->dy + .5f;
-		pVerts[j].m_LMCoords.Init();
+		pVerts[j].m_ctCoords.x = DotProduct( pVerts[j].m_vPos, pTextureSpaceBasis[0] ) + uOffset;
+		pVerts[j].m_ctCoords.y = DotProduct( pVerts[j].m_vPos, pTextureSpaceBasis[1] ) + vOffset;
+		pVerts[j].m_cLMCoords.Init();
 	}
 }
 
@@ -196,6 +190,7 @@ void R_SetupDecalVertsForMSurface(
 void R_DecalComputeBasis( Vector const& surfaceNormal, Vector const* pSAxis, 
 								 Vector* textureSpaceBasis )
 {
+	/*
 	// s, t, textureSpaceNormal (T cross S = textureSpaceNormal(N))
 	//   N     
 	//   \   
@@ -208,6 +203,7 @@ void R_DecalComputeBasis( Vector const& surfaceNormal, Vector const* pSAxis,
 	// S = textureSpaceBasis[0]
 	// T = textureSpaceBasis[1]
 	// N = textureSpaceBasis[2]
+	*/
 
 	// Get the surface normal.
 	VectorCopy( surfaceNormal, textureSpaceBasis[2] );
@@ -262,39 +258,45 @@ void R_DecalComputeBasis( Vector const& surfaceNormal, Vector const* pSAxis,
 	VectorNormalizeFast( textureSpaceBasis[1] );
 }
 
+#define MAX_PLAYERSPRAY_SIZE		64
 
-void R_SetupDecalTextureSpaceBasis(
-	decal_t *pDecal,
-	Vector &vSurfNormal,
-	IMaterial *pMaterial,
-	Vector textureSpaceBasis[3],
-	float decalWorldScale[2] )
+void R_SetupDecalTextureSpaceBasis( decal_t *pDecal, Vector &vSurfNormal, IMaterial *pMaterial, Vector textureSpaceBasis[3], float decalWorldScale[2] )
 {
 	// Compute the non-scaled decal basis
-	R_DecalComputeBasis( vSurfNormal,
-		(pDecal->flags & FDECAL_USESAXIS) ? &pDecal->saxis : 0,
-		textureSpaceBasis );
+	R_DecalComputeBasis( vSurfNormal, (pDecal->flags & FDECAL_USESAXIS) ? &pDecal->saxis : 0, textureSpaceBasis );
 
 	// world width of decal = ptexture->width / pDecal->scale
 	// world height of decal = ptexture->height / pDecal->scale
 	// scale is inverse, scales world space to decal u/v space [0,1]
 	// OPTIMIZE: Get rid of these divides
-	decalWorldScale[0] = pDecal->scale / pMaterial->GetMappingWidth();
-	decalWorldScale[1] = pDecal->scale / pMaterial->GetMappingHeight();
-	
+	if ( pDecal->flags & FDECAL_PLAYERSPRAY )
+	{
+		int nWidthScale = pMaterial->GetMappingWidth() / MAX_PLAYERSPRAY_SIZE;
+		int nHeightScale = pMaterial->GetMappingHeight() / MAX_PLAYERSPRAY_SIZE;
+		float flScale = static_cast<float>( max( nWidthScale, nHeightScale ) );
+
+		decalWorldScale[0] = pDecal->scale / pMaterial->GetMappingWidth();
+		decalWorldScale[1] = pDecal->scale / pMaterial->GetMappingHeight();
+
+		if ( flScale > 1.0f )
+		{
+			decalWorldScale[0] *= flScale;
+			decalWorldScale[1] *= flScale;
+		}
+	}
+	else
+	{
+		decalWorldScale[0] = pDecal->scale / pMaterial->GetMappingWidth();
+		decalWorldScale[1] = pDecal->scale / pMaterial->GetMappingHeight();
+	}
+
 	VectorScale( textureSpaceBasis[0], decalWorldScale[0], textureSpaceBasis[0] );
 	VectorScale( textureSpaceBasis[1], decalWorldScale[1], textureSpaceBasis[1] );
 }
 
 
 // Figure out where the decal maps onto the surface.
-void R_SetupDecalClip( 
-	CDecalVert* &pOutVerts,
-	decal_t *pDecal,
-	Vector &vSurfNormal,
-	IMaterial *pMaterial,
-	Vector textureSpaceBasis[3],
-	float decalWorldScale[2] )
+void R_SetupDecalClip( CDecalVert* &pOutVerts, decal_t *pDecal, Vector &vSurfNormal, IMaterial *pMaterial, Vector textureSpaceBasis[3], float decalWorldScale[2] )
 {
 //	if ( pOutVerts == NULL )
 //		pOutVerts = &g_DecalClipVerts[0];
@@ -312,26 +314,16 @@ void R_SetupDecalClip(
 //-----------------------------------------------------------------------------
 // Generate clipped vertex list for decal pdecal projected onto polygon psurf
 //-----------------------------------------------------------------------------
-CDecalVert* R_DecalVertsClip( 
-	CDecalVert *pOutVerts, 
-	decal_t *pDecal, 
-	int surfID, 
-	IMaterial *pMaterial, 
-	int *pVertCount )
+CDecalVert* R_DecalVertsClip( CDecalVert *pOutVerts, decal_t *pDecal, SurfaceHandle_t surfID, IMaterial *pMaterial )
 {
 	float decalWorldScale[2];
 	Vector textureSpaceBasis[3]; 
 
 	// Figure out where the decal maps onto the surface.
-	R_SetupDecalClip( 
-		pOutVerts,
-		pDecal,
-		MSurf_Plane( surfID ).normal,
-		pMaterial,
-		textureSpaceBasis, decalWorldScale );
+	R_SetupDecalClip( pOutVerts, pDecal, MSurf_Plane( surfID ).normal, pMaterial, textureSpaceBasis, decalWorldScale );
 
 	// Build the initial list of vertices from the surface verts.
 	R_SetupDecalVertsForMSurface( pDecal, surfID, textureSpaceBasis, g_DecalClipVerts );
 
-	return R_DoDecalSHClip( g_DecalClipVerts, pOutVerts, pDecal, MSurf_VertCount( surfID ), pVertCount );
+	return R_DoDecalSHClip( g_DecalClipVerts, pOutVerts, pDecal, MSurf_VertCount( surfID ), MSurf_Plane( surfID ).normal );
 }

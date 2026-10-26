@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,99 +11,68 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_PropertyPage.h>
+#include <KeyValues.h>
+
+#include <vgui_controls/Frame.h>
+#include <vgui_controls/PHandle.h>
+#include <vgui_controls/ListPanel.h>
+#include <vgui_controls/PropertyPage.h>
+#include "utlvector.h"
 
 #include "BanContextMenu.h"
-
-class KeyValues;
-
-namespace vgui
-{
-class Button;
-class ToggleButton;
-class RadioButton;
-class Label;
-class TextEntry;
-class ListPanel;
-class MessageBox;
-class ComboBox;
-class Panel;
-class PropertySheet;
-};
-
+#include "RemoteServer.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
 //-----------------------------------------------------------------------------
-class CBanPanel: public vgui::PropertyPage
+class CBanPanel : public vgui::PropertyPage, public IServerDataResponse
 {
+	DECLARE_CLASS_SIMPLE( CBanPanel, vgui::PropertyPage );
 public:
 	CBanPanel(vgui::Panel *parent, const char *name);
 	~CBanPanel();
 
+	virtual void OnResetData();
 
-	// ListPanel function passthroughs
-	virtual void AddColumnHeader(int index, const char *columnName, const char *columnText, 
-			int width, bool isTextImage = true, bool sliderResizable = RESIZABLE, bool windowResizable = NOT_RESIZABLE);
-	virtual void SetSortFunc(int column, vgui::SortFunc *func);
-	virtual void SetSortColumn(int column); 
-		// returns the count of selected rows
-	virtual int GetSelectedItemsCount();
-	// returns the selected row by selection index, valid in range [0, GetNumSelectedRows)
-	virtual int GetSelectedItem(int selectionIndex);
-	virtual void DeleteAllItems(); // clears and deletes all the memory used by the data items
-
-	virtual int AddItem(KeyValues *data, unsigned int userData = 0 ); // Takes a copy of the data for use in the table. Returns the index the item is at.
-	virtual void SortList( void );
-	virtual vgui::ListPanelItem *GetItemData( int itemIndex );
-	virtual KeyValues *GetItem(int itemIndex); // returns pointer to data the row holds
-
-
-	//property page handlers
+protected:
+	// property page handlers
 	virtual void OnPageShow();
-	virtual void OnPageHide();
 
+	virtual void OnThink();
 
-	// vgui overrides
-	virtual void PerformLayout();
-	virtual void OnCommand(const char *command);
+	// server response on user data
+	virtual void OnServerDataResponse(const char *value, const char *response);
+	virtual void OnKeyCodeTyped(vgui::KeyCode code);
 
 private:
+	MESSAGE_FUNC( AddBan, "addban" );
+	MESSAGE_FUNC( RemoveBan, "removeban" );
+	MESSAGE_FUNC( ChangeBan, "changeban" );
+
+	MESSAGE_FUNC_CHARPTR( RemoveBanByID, "removebanbyid", id );
+	MESSAGE_FUNC_CHARPTR_CHARPTR( ChangeBanTimeByID, "AddBanValue", id, time );
+	MESSAGE_FUNC_PARAMS( OnCvarChangeValue, "CvarChangeValue", kv );
+
+	// returns true if the id string is an IP address, false if it's a WON or STEAM ID
+	bool IsIPAddress(const char *id);
 
 	// msg handlers
-	void OnOpenContextMenu(int row);
+	MESSAGE_FUNC_INT( OnOpenContextMenu, "OpenContextMenu", itemID );
 	void OnEffectPlayer(KeyValues *data);
+	MESSAGE_FUNC( OnItemSelected, "ItemSelected" );
 
-	// an inner class
-	class BanListPanel: public vgui::ListPanel
-	{
-	public:
-		BanListPanel(vgui::Panel *parent, const char *panelName): vgui::ListPanel(parent,panelName) { m_pParent=parent;};
-		
-		virtual void	OnMouseDoublePressed( vgui::MouseCode code );
-	private:
-		vgui::Panel *m_pParent;
+	MESSAGE_FUNC( ImportBanList, "importban" );
+	MESSAGE_FUNC_CHARPTR( OnFileSelected, "FileSelected", fullpath );
 
-	};
-
-
-	void OnTextChanged(vgui::Panel *panel, const char *text);
-
-	BanListPanel *m_pBanListPanel;
+	vgui::ListPanel *m_pBanListPanel;
 	vgui::Button *m_pAddButton;
 	vgui::Button *m_pRemoveButton;
 	vgui::Button *m_pChangeButton;
+	vgui::Button *m_pImportButton;
 
 	CBanContextMenu *m_pBanContextMenu;
-
-	vgui::Panel *m_pParent;
-		
-	DECLARE_PANELMAP();
-	typedef vgui::PropertyPage BaseClass;
+	float m_flUpdateTime;
+	bool m_bPageViewed;
 };
 
 #endif // BANPANEL_H

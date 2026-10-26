@@ -1,18 +1,21 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
 ; Vertex blending
 ;------------------------------------------------------------------------------
 
-$cView0 = "c90";
-$cView1 = "c91";
-$cView2 = "c92";
+$cView0 = $SHADER_SPECIFIC_CONST_0;
+$cView1 = $SHADER_SPECIFIC_CONST_1;
+$cView2 = $SHADER_SPECIFIC_CONST_2;
 
 &AllocateRegister( \$worldPos );
 &AllocateRegister( \$worldNormal );
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
 
 ;------------------------------------------------------------------------------
 ; Transform the position from world to view space
@@ -65,7 +68,7 @@ mov $vertToEye.xyz, -$viewPos
 &Normalize( $vertToEye );
 
 dp3 $viewNormal.x, $vertToEye, $viewNormal
-add $viewNormal.x, $viewNormal.x, c95 ; FIXME
+add $viewNormal.x, $viewNormal.x, $SHADER_SPECIFIC_CONST_5 ; FIXME
 
 &FreeRegister( \$vertToEye );
 

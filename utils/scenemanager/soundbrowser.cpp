@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "cbase.h"
 #include "workspacebrowser.h"
@@ -17,7 +17,7 @@
 
 #include "workspacemanager.h"
 #include "soundbrowser.h"
-#include "soundemittersystembase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "iscenemanagersound.h"
 #include "snd_wave_source.h"
 #include "cmdlib.h"
@@ -28,6 +28,7 @@
 #include "wavefile.h"
 #include "inputproperties.h"
 #include "drawhelper.h"
+#include "utlbuffer.h"
 
 #define ENTRY_ALLSOUNDS			"AllSounds"
 #define ENTRY_ALL_INDEX			0
@@ -46,6 +47,7 @@ enum
 	IDC_SB_SHOWINWAVEBROWSER,
 	IDC_SB_ADDSOUND,
 	IDC_SB_REMOVESOUND,
+	IDC_SB_GETSENTENCE,
 };
 
 enum
@@ -59,6 +61,7 @@ enum
 	COL_SOUNDLEVEL,
 	COL_PITCH,
 	COL_SCRIPT,
+	COL_CC,
 };
 
 class CSoundList : public mxListView
@@ -86,6 +89,7 @@ public:
 		insertTextColumn( COL_SOUNDLEVEL, 120, "Soundlevel" );
 		insertTextColumn( COL_PITCH, 100, "Pitch" );
 		insertTextColumn( COL_SCRIPT, 150, "Script File" );
+		insertTextColumn( COL_CC, 300, "CC Text" );
 	}
 };
 
@@ -132,11 +136,11 @@ public:
 			if ( !script )
 				continue;
 
-			int scriptindex = soundemitter->FindSoundScript( va( "scripts/%s.txt", script ) );
+			int scriptindex = g_pSoundEmitterSystem->FindSoundScript( va( "scripts/%s.txt", script ) );
 			if ( scriptindex < 0 )
 				continue;
 
-			if ( soundemitter->IsSoundScriptDirty( scriptindex ) )
+			if ( g_pSoundEmitterSystem->IsSoundScriptDirty( scriptindex ) )
 			{
 				setPrefix( i, "* " );
 			}
@@ -409,6 +413,11 @@ int CSoundBrowser::handleEvent( mxEvent *event )
 					OnPlay();
 				}
 				break;
+			case IDC_SB_GETSENTENCE:
+				{
+					OnGetSentence();
+				}
+				break;
 			case IDC_SB_SOUNDPROPERTIES:
 				{
 					OnSoundProperties();
@@ -467,18 +476,18 @@ void CSoundBrowser::LoadAllSounds()
 {
 	RemoveAllSounds();
 
-	int c = soundemitter->GetSoundCount();
+	// int c = g_pSoundEmitterSystem->GetSoundCount();
 	int added = 0;
 
 	int i;
-	for ( i = soundemitter->First(); i != soundemitter->InvalidIndex(); i = soundemitter->Next( i ) )
+	for ( i = g_pSoundEmitterSystem->First(); i != g_pSoundEmitterSystem->InvalidIndex(); i = g_pSoundEmitterSystem->Next( i ) )
 	{
-		char const *name = soundemitter->GetSoundName( i );
+		char const *name = g_pSoundEmitterSystem->GetSoundName( i );
 		CSoundEntry *se = new CSoundEntry( NULL, name );
 		m_AllSounds.AddToTail( se );
 
 		char filebase [ 512 ];
-		ExtractFileBase( soundemitter->GetSourceFileForSound( i ), filebase, sizeof( filebase ) );
+		Q_FileBase( g_pSoundEmitterSystem->GetSourceFileForSound( i ), filebase, sizeof( filebase ) );
 
 		// Add script file symbol
 		CUtlSymbol script_sym = m_ScriptTable.AddString( filebase );
@@ -545,11 +554,11 @@ void CSoundBrowser::PopulateTree( bool voiceonly, char const *scriptonly )
 		CSoundEntry *se = m_AllSounds[ i ];
 		char const *name = se->GetName();
 
-		CSoundEmitterSystemBase::CSoundParametersInternal *params = se->GetSoundParameters();
+		CSoundParametersInternal *params = se->GetSoundParameters();
 		if ( !params )
 			continue;
 
-		if ( voiceonly && params->channel != CHAN_VOICE )
+		if ( voiceonly && params->GetChannel() != CHAN_VOICE )
 			continue;
 
 		if ( scriptonly )
@@ -613,7 +622,7 @@ void CSoundBrowser::PopulateTree( bool voiceonly, char const *scriptonly )
 	{
 		CSoundEntry *se = m_Sorted[ i ];
 		char const *name = se->GetName();
-		CSoundEmitterSystemBase::CSoundParametersInternal *params = se->GetSoundParameters();
+		CSoundParametersInternal *params = se->GetSoundParameters();
 		if ( !params )
 			continue;
 
@@ -623,26 +632,30 @@ void CSoundBrowser::PopulateTree( bool voiceonly, char const *scriptonly )
 
 		m_pListView->setImage( slot, COL_SOUND, se->GetIconIndex() );
 
-		int waveCount = params->soundnames.Count();
+		int waveCount = params->NumSoundNames();
 
 		if ( waveCount >= 1 )
 		{
 			m_pListView->setLabel( slot, COL_COUNT, waveCount > 1 ? va( "%i", waveCount ) : "" );
-			m_pListView->setLabel( slot, COL_WAV, soundemitter->GetWaveName( params->soundnames[ 0 ] ) );
+			m_pListView->setLabel( slot, COL_WAV, g_pSoundEmitterSystem->GetWaveName( params->GetSoundNames()[ 0 ].symbol ) );
 		}
 
 		m_pListView->setLabel( slot, COL_SENTENCE, se->GetSentenceText( 0 ) );
 
-		m_pListView->setLabel( slot, COL_CHANNEL, params->m_szChannel );
-		m_pListView->setLabel( slot, COL_VOLUME, params->m_szVolume );
-		m_pListView->setLabel( slot, COL_SOUNDLEVEL, params->m_szSoundLevel );
-		m_pListView->setLabel( slot, COL_PITCH, params->m_szPitch );
+		m_pListView->setLabel( slot, COL_CHANNEL, params->ChannelToString() );
+		m_pListView->setLabel( slot, COL_VOLUME, params->VolumeToString() );
+		m_pListView->setLabel( slot, COL_SOUNDLEVEL, params->SoundLevelToString() );
+		m_pListView->setLabel( slot, COL_PITCH, params->PitchToString() );
+
+		wchar_t buf[ 1024 ];
+		se->GetCCText( buf, 1024 );
+		m_pListView->setLabel( slot, COL_CC, buf );
 
 		char filebase [ 512 ];
 		
-		int soundIndex = soundemitter->GetSoundIndex( name );
+		int soundIndex = g_pSoundEmitterSystem->GetSoundIndex( name );
 
-		ExtractFileBase( soundemitter->GetSourceFileForSound( soundIndex ), filebase, sizeof( filebase ) );
+		Q_FileBase( g_pSoundEmitterSystem->GetSourceFileForSound( soundIndex ), filebase, sizeof( filebase ) );
 
 		m_pListView->setLabel( slot, COL_SCRIPT, filebase );
 
@@ -716,6 +729,8 @@ void CSoundBrowser::ShowContextMenu( void )
 		pop->addSeparator();
 	}
 
+	pop->add( "Refresh sentence data", IDC_SB_GETSENTENCE );
+
 	pop->add( "Add sound entry...", IDC_SB_ADDSOUND );
 	if ( m_CurrentSelection.Count() >= 1 )
 	{
@@ -759,8 +774,9 @@ void CSoundBrowser::JumpToItem( CSoundEntry *se )
 		PopulateTree( voiceonly, script );
 	}
 
+	int idx = 0;
 	int c = m_pListView->getItemCount();
-	for ( int idx = 0; idx < c; idx++ )
+	for ( ; idx < c; idx++ )
 	{
 		CSoundEntry *item = (CSoundEntry *)m_pListView->getUserData( idx, 0 );
 		if ( !Q_stricmp( item->GetName(), se->GetName() ) )
@@ -861,19 +877,19 @@ void CSoundBrowser::OnAddSound()
 		CSoundEntry *newItem = params.items[ 0 ];
 		m_AllSounds.AddToTail( newItem );
 
-		int slot = soundemitter->GetSoundIndex( newItem->GetName() );
-		if ( soundemitter->IsValidIndex( slot ) )
+		int slot = g_pSoundEmitterSystem->GetSoundIndex( newItem->GetName() );
+		if ( g_pSoundEmitterSystem->IsValidIndex( slot ) )
 		{
-			CSoundEmitterSystemBase::CSoundParametersInternal *p = soundemitter->InternalGetParametersForSound( slot );
+			CSoundParametersInternal *p = g_pSoundEmitterSystem->InternalGetParametersForSound( slot );
 			if ( p )
 			{
 				CWaveBrowser *wb = GetWorkspaceManager()->GetWaveBrowser();
 				Assert( wb );
 
-				int waveCount = p->soundnames.Count();
+				int waveCount = p->NumSoundNames();
 				for ( int wave = 0; wave < waveCount; wave++ )
 				{
-					char const *wavname = soundemitter->GetWaveName( p->soundnames[ wave ] );
+					char const *wavname = g_pSoundEmitterSystem->GetWaveName( p->GetSoundNames()[ wave ].symbol );
 					if ( wavname )
 					{
 						CWaveFile *wavefile = wb->FindEntry( wavname, true );
@@ -908,9 +924,39 @@ void CSoundBrowser::OnRemoveSound()
 
 		// FIXME: See if still referenced by a vcd?
 
-		soundemitter->RemoveSound( se->GetName() );
+		g_pSoundEmitterSystem->RemoveSound( se->GetName() );
 		m_AllSounds.FindAndRemove( se );
 		delete se;
+	}
+
+	// Repopulate things
+	GetWorkspaceManager()->RefreshBrowsers();
+}
+
+void CSoundBrowser::OnGetSentence()
+{
+	BuildSelectionList( m_CurrentSelection );
+	if ( m_CurrentSelection.Count() < 1 )
+	{
+		Con_Printf( "No selection\n" );
+		return;
+	}
+
+	int c = m_CurrentSelection.Count();
+	for ( int i = c - 1; i >= 0 ; i-- )
+	{
+		CSoundEntry *se = m_CurrentSelection[ i ];
+		Assert( se );
+
+		int c = se->GetWaveCount();
+		for ( int i = 0; i < c; ++i )
+		{
+			CWaveFile *wav = se->GetWave( i );
+			if ( !wav->HasLoadedSentenceInfo() )
+			{
+				wav->EnsureSentence();
+			}
+		}
 	}
 
 	// Repopulate things

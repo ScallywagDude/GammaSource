@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Opt in ONLY for legacy Win32 archives whose object files lack SAFESEH tables. -->
+  <!-- /SAFESEH:NO reduces exploit mitigation; use source rebuilds with /safeseh when possible. -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32' and '$(HL2ModernLegacyUnsafeSEH)'=='true'">
+    <Link>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- These projects link prebuilt 2003 archives with no SAFESEH tables (LNK2026/LNK1281):
+       shaderdx8 (dx9sdk d3dx9.lib), vphysics (Havok/IVP libs), miles (mss32.lib), vbsp/vtex (vtf S3 codec objects),
+       vvis (vmpi objects), phonemeextractor IMS (talkback_rd.lib), bugreporter (trktooln.lib).
+       Only these get /SAFESEH:NO; every other module keeps SAFESEH. -->
+  <PropertyGroup>
+    <HL2LegacySehProjects>;shaderdx8;vphysics;miles;vbsp;vtex;vvis;phonemeextractor;bugreporter;</HL2LegacySehProjects>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32' and $(HL2LegacySehProjects.Contains(';$(MSBuildProjectName);'))">
+    <Link>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+  </ItemDefinitionGroup>
+  <!-- Build-order references to tier0/vstdlib/etc. only define Debug and Release. Variant configurations
+       (Release HL2, Release STEAM, Release DX9, Release ps20, ...) would otherwise forward their own name
+       and fail with MSB8013, so map them to the base configuration whose libraries they link. -->
+  <ItemDefinitionGroup Condition="'$(Platform)'=='Win32' and '$(Configuration)'!='Debug' and '$(Configuration)'!='Release'">
+    <ProjectReference>
+      <SetConfiguration Condition="$([System.String]::Copy('$(Configuration)').ToLowerInvariant().Contains('debug'))">Configuration=Debug</SetConfiguration>
+      <SetConfiguration Condition="!$([System.String]::Copy('$(Configuration)').ToLowerInvariant().Contains('debug'))">Configuration=Release</SetConfiguration>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <!-- Client configurations link game_controls explicitly; build the matching archive first. -->
+  <Target Name="BuildClientGameControls" BeforeTargets="Link"
+          Condition="'$(Platform)'=='Win32' and '$(MSBuildProjectFullPath)'=='$(MSBuildThisFileDirectory)cl_dll\client.vcxproj'">
+    <PropertyGroup>
+      <HL2GameControlsConfiguration Condition="$([System.String]::Copy('$(Configuration)').StartsWith('Debug'))">Debug</HL2GameControlsConfiguration>
+      <HL2GameControlsConfiguration Condition="$([System.String]::Copy('$(Configuration)').StartsWith('Release'))">Release</HL2GameControlsConfiguration>
+    </PropertyGroup>
+    <Error Condition="'$(HL2GameControlsConfiguration)'==''" Text="No game_controls configuration mapping for client $(Configuration)." />
+    <MSBuild Projects="$(MSBuildThisFileDirectory)vgui2\game_controls\game_controls.vcxproj"
+             Targets="Build" BuildInParallel="false"
+             Properties="Configuration=$(HL2GameControlsConfiguration);Platform=Win32;VCToolsVersion=$(VCToolsVersion)" />
+  </Target>
+</Project>

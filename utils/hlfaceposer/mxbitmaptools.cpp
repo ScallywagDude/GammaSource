@@ -1,15 +1,18 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "mxbitmaptools.h"
-#include <mx/mx.h>
+#include <mxtk/mx.h>
+#include "hlfaceposer.h"
+#include "filesystem.h"
 
-bool LoadBitmapFromFile( const char *filename, mxbitmapdata_t& bitmap )
+bool LoadBitmapFromFile( const char *relative, mxbitmapdata_t& bitmap )
 {
+
 	bitmap.valid = false;
 	bitmap.image = NULL;
 	bitmap.width = -1;
@@ -38,9 +41,21 @@ bool LoadBitmapFromFile( const char *filename, mxbitmapdata_t& bitmap )
 		HDC memdc = CreateCompatibleDC( dc );
 		if ( memdc )
 		{
+			char filename[ 512 ];
+			filesystem->RelativePathToFullPath( relative, "MOD", filename, sizeof( filename ) );
+
 			bmNewImage = (HBITMAP)LoadImage( 
 				(HINSTANCE) GetModuleHandle(0), filename,
 				IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE );
+
+			if ( !bmNewImage )
+			{
+				filesystem->RelativePathToFullPath( relative, "GAME", filename, sizeof( filename ) );
+
+				bmNewImage = (HBITMAP)LoadImage( 
+					(HINSTANCE) GetModuleHandle(0), filename,
+					IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_DEFAULTSIZE );
+			}
 			
 			if ( bmNewImage )
 			{

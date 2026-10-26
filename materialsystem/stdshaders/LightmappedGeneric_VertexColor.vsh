@@ -1,5 +1,7 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+
 #include "LightmappedGeneric_inc.vsh"
 
 $detail = 0;

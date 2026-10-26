@@ -1,14 +1,20 @@
-#include <stdio.h>
-#include <string.h>
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
+#include "cbase.h"
 
 #include "vcollide_parse_private.h"
-#include "physics_material.h"
 
-#include "vstdlib/strtools.h" 
+#include "tier1/strtools.h" 
 #include "vphysics/constraints.h"
 #include "vphysics/vehicles.h"
 #include "filesystem_helpers.h"
-
+#include "bspfile.h"
+#include "utlbuffer.h"
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
@@ -40,7 +46,6 @@ static void ReadVector4D( const char *pString, Vector4D& out )
 	out[3] = w;
 }
 
-
 class CVPhysicsParse : public IVPhysicsKeyParser
 {
 public:
@@ -55,6 +60,7 @@ public:
 	void		ParseFluid( fluid_t *pFluid, IVPhysicsKeyHandler *unknownKeyHandler );
 	void		ParseRagdollConstraint( constraint_ragdollparams_t *pConstraint, IVPhysicsKeyHandler *unknownKeyHandler );
 	void		ParseSurfaceTable( int *table, IVPhysicsKeyHandler *unknownKeyHandler );
+	void		ParseSurfaceTablePacked( CUtlVector<char> &out );
 	void		ParseVehicle( vehicleparams_t *pVehicle, IVPhysicsKeyHandler *unknownKeyHandler );
 	void		ParseCustom( void *pCustom, IVPhysicsKeyHandler *unknownKeyHandler );
 	void		SkipBlock( void ) { ParseCustom(NULL, NULL); }
@@ -73,8 +79,6 @@ private:
 };
 
 
-
-
 CVPhysicsParse::CVPhysicsParse( const char *pKeyData )
 {
 	m_pText = pKeyData;
@@ -89,10 +93,13 @@ void CVPhysicsParse::NextBlock( void )
 		m_pText = ParseKeyvalue( m_pText, key, value );
 		if ( !Q_strcmp(value, "{") )
 		{
-			Q_strcpy( m_blockName, key );
+			V_strcpy_safe( m_blockName, key );
 			return;
 		}
 	}
+
+	// Make sure m_blockName is initialized -- should this be done?
+	m_blockName[ 0 ] = 0;
 }
 
 
@@ -187,7 +194,7 @@ void CVPhysicsParse::ParseSolid( solid_t *pSolid, IVPhysicsKeyHandler *unknownKe
 		}
 		else if ( !Q_stricmp( key, "rollingdrag" ) )
 		{
-			pSolid->params.rollingDrag = atof(value);
+			//pSolid->params.rollingDrag = atof(value);
 		}
 		else
 		{
@@ -214,6 +221,11 @@ void CVPhysicsParse::ParseRagdollConstraint( constraint_ragdollparams_t *pConstr
 		pConstraint->childIndex = -1;
 		pConstraint->parentIndex = -1;
 	}
+
+	// BUGBUG: xmin/xmax, ymin/ymax, zmin/zmax specify clockwise rotations.  
+	// BUGBUG: HL rotations are counter-clockwise, so reverse these limits at some point!!!
+	pConstraint->useClockwiseRotations = true;
+
 	while ( m_pText )
 	{
 		m_pText = ParseKeyvalue( m_pText, key, value );
@@ -294,6 +306,8 @@ void CVPhysicsParse::ParseFluid( fluid_t *pFluid, IVPhysicsKeyHandler *unknownKe
 	else
 	{
 		memset( pFluid, 0, sizeof(*pFluid) );
+		// HACKHACK: This is a reasonable default even though it is hardcoded
+		V_strcpy_safe( pFluid->surfaceprop, "water" );
 	}
 
 	while ( m_pText )
@@ -309,10 +323,6 @@ void CVPhysicsParse::ParseFluid( fluid_t *pFluid, IVPhysicsKeyHandler *unknownKe
 		{
 			pFluid->index = atoi( value );
 		}
-		else if ( !Q_stricmp( key, "density" ) )
-		{
-			pFluid->params.density = atof( value );
-		}
 		else if ( !Q_stricmp( key, "damping" ) )
 		{
 			pFluid->params.damping = atof( value );
@@ -324,6 +334,14 @@ void CVPhysicsParse::ParseFluid( fluid_t *pFluid, IVPhysicsKeyHandler *unknownKe
 		else if ( !Q_stricmp( key, "currentvelocity" ) )
 		{
 			ReadVector( value, pFluid->params.currentVelocity );
+		}
+		else if ( !Q_stricmp( key, "contents" ) )
+		{
+			pFluid->params.contents = atoi( value );
+		}
+		else if ( !Q_stricmp( key, "surfaceprop" ) )
+		{
+			Q_strncpy( pFluid->surfaceprop, value, sizeof(pFluid->surfaceprop) );
 		}
 		else
 		{
@@ -351,10 +369,34 @@ void CVPhysicsParse::ParseSurfaceTable( int *table, IVPhysicsKeyHandler *unknown
 
 		int propIndex = physprops->GetSurfaceIndex( key );
 		int tableIndex = atoi(value);
-		if ( tableIndex < 128 )
+		if ( tableIndex >= 0 && tableIndex < 128 )
 		{
 			table[tableIndex] = propIndex;
 		}
+	}
+}
+
+void CVPhysicsParse::ParseSurfaceTablePacked( CUtlVector<char> &out )
+{
+	char key[MAX_KEYVALUE], value[MAX_KEYVALUE];
+
+	key[0] = 0;
+	int lastIndex = 0;
+	while ( m_pText )
+	{
+		m_pText = ParseKeyvalue( m_pText, key, value );
+		if ( key[0] == '}' )
+		{
+			NextBlock();
+			return;
+		}
+
+		int len = Q_strlen( key );
+		int outIndex = out.AddMultipleToTail( len + 1 );
+		memcpy( &out[outIndex], key, len+1 );
+		int tableIndex = atoi(value);
+		Assert( tableIndex == lastIndex + 1);
+		lastIndex = tableIndex;
 	}
 }
 
@@ -426,7 +468,7 @@ void CVPhysicsParse::ParseVehicleWheel( vehicle_wheelparams_t &wheel )
 		}
 		else if ( !Q_stricmp( key, "inertia" ) )
 		{
-			wheel.inertia = atof( value );
+			wheel.inertia = atof(value);
 		}
 		else if ( !Q_stricmp( key, "damping" ) )
 		{
@@ -448,7 +490,10 @@ void CVPhysicsParse::ParseVehicleWheel( vehicle_wheelparams_t &wheel )
 		{
 			wheel.skidMaterialIndex = physprops->GetSurfaceIndex( value );
 		}
-
+		else if ( !Q_stricmp( key, "brakematerial" ) )
+		{
+			wheel.brakeMaterialIndex = physprops->GetSurfaceIndex( value );
+		}
 	}
 }
 
@@ -506,6 +551,10 @@ void CVPhysicsParse::ParseVehicleBody( vehicle_bodyparams_t &body )
 		else if ( !Q_stricmp( key, "addgravity" ) )
 		{
 			body.addGravity = atof( value );
+		}
+		else if ( !Q_stricmp( key, "maxAngularVelocity" ) )
+		{
+			body.maxAngularVelocity = atof( value );
 		}
 		else if ( !Q_stricmp( key, "massOverride" ) )
 		{
@@ -590,8 +639,16 @@ void CVPhysicsParse::ParseVehicleEngine( vehicle_engineparams_t &engine )
 		}
 		else if ( !Q_stricmp( key, "gear" ) )
 		{
-			engine.gearRatio[engine.gearCount] = atof( value );
-			engine.gearCount++;
+			// Protect against exploits/overruns
+			if ( engine.gearCount < ARRAYSIZE(engine.gearRatio) )
+			{
+				engine.gearRatio[engine.gearCount] = atof( value );
+				engine.gearCount++;
+			}
+			else
+			{
+				Assert( 0 );
+			}
 		}
 		else if ( !Q_stricmp( key, "horsepower" ) )
 		{
@@ -629,6 +686,14 @@ void CVPhysicsParse::ParseVehicleEngine( vehicle_engineparams_t &engine )
 		{
 			engine.shiftDownRPM = atof( value );
 		}
+		else if ( !Q_stricmp( key, "autobrakeSpeedGain" ) )
+		{
+			engine.autobrakeSpeedGain = atof( value );
+		}
+		else if ( !Q_stricmp( key, "autobrakeSpeedFactor" ) )
+		{
+			engine.autobrakeSpeedFactor = atof( value );
+		}
 	}
 }
 
@@ -644,9 +709,17 @@ void CVPhysicsParse::ParseVehicleSteering( vehicle_steeringparams_t &steering )
 		if ( key[0] == '}' )
 			return;
 		// parse subchunks
-		if ( !Q_stricmp( key, "degrees" ) )
+		if ( !Q_stricmp( key, "degreesSlow" ) )
 		{
-			steering.degrees = atof( value );
+			steering.degreesSlow = atof( value );
+		}
+		else if ( !Q_stricmp( key, "degreesFast" ) )
+		{
+			steering.degreesFast = atof( value );
+		}
+		else if ( !Q_stricmp( key, "degreesBoost" ) )
+		{
+			steering.degreesBoost = atof( value );
 		}
 		else if ( !Q_stricmp( key, "fastcarspeed" ) )
 		{
@@ -664,9 +737,45 @@ void CVPhysicsParse::ParseVehicleSteering( vehicle_steeringparams_t &steering )
 		{
 			steering.steeringRateFast = atof( value );
 		}
-		else if ( !Q_stricmp( key, "steeringRestFactor" ) )
+		else if ( !Q_stricmp( key, "steeringRestRateSlow" ) )
 		{
-			steering.steeringRestFactor = atof( value );
+			steering.steeringRestRateSlow = atof( value );
+		}
+		else if ( !Q_stricmp( key, "steeringRestRateFast" ) )
+		{
+			steering.steeringRestRateFast = atof( value );
+		}
+		else if ( !Q_stricmp( key, "throttleSteeringRestRateFactor" ) )
+		{
+			steering.throttleSteeringRestRateFactor = atof( value );
+		}
+		else if ( !Q_stricmp( key, "boostSteeringRestRateFactor" ) )
+		{
+			steering.boostSteeringRestRateFactor = atof( value );
+		}
+		else if ( !Q_stricmp( key, "boostSteeringRateFactor" ) )
+		{
+			steering.boostSteeringRateFactor = atof( value );
+		}
+		else if ( !Q_stricmp( key, "steeringExponent" ) )
+		{
+			steering.steeringExponent = atof( value );
+		}
+		else if ( !Q_stricmp( key, "turnThrottleReduceSlow" ) )
+		{
+			steering.turnThrottleReduceSlow = atof( value );
+		}
+		else if ( !Q_stricmp( key, "turnThrottleReduceFast" ) )
+		{
+			steering.turnThrottleReduceFast = atof( value );
+		}
+		else if ( !Q_stricmp( key, "brakeSteeringRateFactor" ) )
+		{
+			steering.brakeSteeringRateFactor = atof( value );
+		}
+		else if ( !Q_stricmp( key, "powerSlideAccel" ) )
+		{
+			steering.powerSlideAccel = atof( value );
 		}
 		else if ( !Q_stricmp( key, "skidallowed" ) )
 		{
@@ -707,8 +816,16 @@ void CVPhysicsParse::ParseVehicle( vehicleparams_t *pVehicle, IVPhysicsKeyHandle
 		{
 			if ( !Q_stricmp( key, "axle" ) )
 			{
-				ParseVehicleAxle( pVehicle->axles[pVehicle->axleCount] );
-				pVehicle->axleCount++;
+				// Protect against exploits/overruns
+				if ( pVehicle->axleCount < ARRAYSIZE(pVehicle->axles) )
+				{
+					ParseVehicleAxle( pVehicle->axles[pVehicle->axleCount] );
+					pVehicle->axleCount++;
+				}
+				else
+				{
+					Assert( 0 );
+				}
 			}
 			else if ( !Q_stricmp( key, "body" ) )
 			{
@@ -799,30 +916,25 @@ void DestroyVPhysicsKeyParser( IVPhysicsKeyParser *pParser )
 // Helper functions for parsing script file
 //-----------------------------------------------------------------------------
 
-const char *ParseKeyvalue( const char *pBuffer, char *key, char *value )
+const char *ParseKeyvalue( const char *pBuffer, char (&key)[MAX_KEYVALUE], char (&value)[MAX_KEYVALUE] )
 {
-	char com_token[1024];
+	// Make sure value is always null-terminated.
+	value[0] = 0;
 
-	pBuffer = (const char *)ParseFile( pBuffer, com_token, NULL );
-	if ( Q_strlen( com_token ) < MAX_KEYVALUE )
-	{
-		Q_strncpy( key, com_token, MAX_KEYVALUE );
-		Q_strlower( key );
-	}
+	pBuffer = ParseFile( pBuffer, key, NULL );
+
 	// no value on a close brace
-	if ( !Q_strcmp( key, "}" ) )
+	if ( key[0] == '}' && key[1] == 0 )
 	{
 		value[0] = 0;
 		return pBuffer;
 	}
 
-	pBuffer = (const char *)ParseFile( pBuffer, com_token, NULL );
-	if ( Q_strlen( com_token ) < MAX_KEYVALUE )
-	{
-		Q_strncpy( value, com_token, MAX_KEYVALUE );
-		Q_strlower( value );
-	}
+	Q_strlower( key );
+	
+	pBuffer = ParseFile( pBuffer, value, NULL );
+
+	Q_strlower( value );
 
 	return pBuffer;
 }
-

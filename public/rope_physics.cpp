@@ -1,8 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 
 #include "rope_physics.h"
 #include "tier0/dbg.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 CBaseRopePhysics::CBaseRopePhysics( CSimplePhysics::CNode *pNodes, int nNodes, CRopeSpring *pSprings, float *flSpringDistsSqr )
 {
@@ -51,7 +60,7 @@ void CBaseRopePhysics::Restart()
 
 void CBaseRopePhysics::ResetSpringLength( float flSpringDist )
 {
-	m_flSpringDist = max( flSpringDist, 0 );
+	m_flSpringDist = max( flSpringDist, 0.f );
 	m_flSpringDistSqr = m_flSpringDist * m_flSpringDist;
 
 	for( int i=0; i < NumSprings(); i++ )

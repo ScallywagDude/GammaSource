@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_ListPanel.h>
+#include "vgui/IVGui.h"
+#include "vgui_controls/Controls.h"
+#include "tier1/KeyValues.h"
+#include <vgui_controls/ListPanel.h>
 
 
 using namespace vgui;
@@ -37,10 +37,10 @@ ListPanelDemo::ListPanelDemo(Panel *parent, const char *name) : DemoPage(parent,
 	m_pListPanel = new ListPanel(this, "AListPanel");
 
 	// Add a column header
-	m_pListPanel->AddColumnHeader(0, "Muppet", "Muppet", 150, true, 20, 200, true);  
+	m_pListPanel->AddColumnHeader(0, "Muppet", "Muppet", 150, 20, 200);  
 
 	// Add another column header
-	m_pListPanel->AddColumnHeader(1, "Description", "Description", 150, true, 20, 200, true);  
+	m_pListPanel->AddColumnHeader(1, "Description", "Description", 150, 20, 200 );  
 
 	// Set its position.
 	m_pListPanel->SetPos(90, 25);
@@ -50,39 +50,39 @@ ListPanelDemo::ListPanelDemo(Panel *parent, const char *name) : DemoPage(parent,
 	KeyValues *data = new KeyValues ("item");
 	data->SetString("Muppet", "Kermit");
 	data->SetString("Description", "The frog");
-	m_pListPanel->AddItem(data); 
+	m_pListPanel->AddItem(data, 0, false, false); 
 
 	data->SetString("Muppet", "Miss Piggy");
 	data->SetString("Description", "The diva");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Scooter");
 	data->SetString("Description", "The man");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Statler");
 	data->SetString("Description", "Old guy");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Waldorf");
 	data->SetString("Description", "Old guy");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Gonzo");
 	data->SetString("Description", "The unknown");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Scooter");
 	data->SetString("Description", "The man");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Fozzie");
 	data->SetString("Description", "The bear");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 
 	data->SetString("Muppet", "Betty Lou");
 	data->SetString("Description", "[none]");
-	m_pListPanel->AddItem(data);
+	m_pListPanel->AddItem(data, 0, false, false);
 }
 
 //-----------------------------------------------------------------------------

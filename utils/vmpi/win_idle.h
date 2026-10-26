@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // WinIdle.h - Defines a class for sending idle messages to a window from a secondary thread
 
 #ifndef __WINIDLE_H__

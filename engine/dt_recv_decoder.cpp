@@ -1,12 +1,13 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #include "dt_recv_decoder.h"
 
-
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // ------------------------------------------------------------------------------------ //
 // CRecvDecoder.
@@ -28,20 +29,15 @@ CClientSendProp::~CClientSendProp()
 	delete [] m_pTableName;
 }
 
-
-CClientSendTable::CClientSendTable()
-{
-}
-
-
 CClientSendTable::~CClientSendTable()
 {
-	delete m_SendTable.m_pNetTableName;
+	delete [] m_SendTable.m_pNetTableName;
 	
 	for ( int iProp=0; iProp < m_SendTable.m_nProps; iProp++ )
 	{
 		delete [] m_SendTable.m_pProps[iProp].m_pVarName;
 		delete [] m_SendTable.m_pProps[iProp].m_pExcludeDTName;
+		delete [] m_SendTable.m_pProps[iProp].m_pParentArrayPropName;
 	}
 
 	delete [] m_SendTable.m_pProps;

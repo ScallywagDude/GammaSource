@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CL_DEMOSMOOTHING_H
 #define CL_DEMOSMOOTHING_H
@@ -11,13 +11,14 @@
 #pragma once
 #endif
 
-#include "vector.h"
+#include "mathlib/vector.h"
 #include "quakedef.h"
 #include "tier0/platform.h"
 
 #define FDEMO_NORMAL		0
 #define FDEMO_USE_ORIGIN2	(1<<0)
 #define FDEMO_USE_ANGLES2	(1<<1)
+#define FDEMO_NOINTERP		(1<<2)	// don't interpolate between this an last view
 
 struct democmdinfo_t
 {
@@ -61,6 +62,7 @@ struct democmdinfo_t
 		}
 		return viewOrigin;
 	}
+
 	const QAngle& GetViewAngles()
 	{
 		if ( flags & FDEMO_USE_ANGLES2 )
@@ -87,11 +89,13 @@ struct democmdinfo_t
 	}
 
 	int			flags;
+
+	// original origin/viewangles
 	Vector		viewOrigin;
 	QAngle		viewAngles;
 	QAngle		localViewAngles;
 
-	// Resampled origin/angles
+	// Resampled origin/viewangles
 	Vector		viewOrigin2;
 	QAngle		viewAngles2;
 	QAngle		localViewAngles2;
@@ -102,8 +106,7 @@ struct demosmoothing_t
 	demosmoothing_t()
 	{
 		file_offset = 0;
-		framenumber = 0;
-		frametime = 0;
+		frametick = 0;
 		selected = false;
 		samplepoint = false;
 
@@ -120,8 +123,7 @@ struct demosmoothing_t
 			return *this;
 
 		file_offset = src.file_offset;
-		framenumber = src.framenumber;
-		frametime = src.frametime;
+		frametick = src.frametick;
 		selected = src.selected;
 		samplepoint = src.samplepoint;
 		vecmoved = src.vecmoved;
@@ -137,8 +139,7 @@ struct demosmoothing_t
 
 	int					file_offset;
 
-	int					framenumber;
-	float				frametime;
+	int					frametick;
 
 	bool				selected;
 
@@ -167,7 +168,7 @@ struct CSmoothingContext
 			return *this;
 
 		active = src.active;
-		strcpy( filename, src.filename );
+		Q_strncpy( filename, src.filename, sizeof( filename ) );
 
 		smooth.RemoveAll();
 		int c = src.smooth.Count();

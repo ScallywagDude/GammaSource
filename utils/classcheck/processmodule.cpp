@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <assert.h>
 #include <time.h>
 #include "stdafx.h"
@@ -141,8 +141,6 @@ void CCodeProcessor::ResolveBaseClasses( const char *baseentityclass )
 		cl = cl->m_pNext;
 	}
 }
-
-
 
 void CCodeProcessor::PrintMissingTDFields( void ) const
 {
@@ -337,6 +335,31 @@ void CCodeProcessor::PrintMissingTDFields( void ) const
 		cl = cl->m_pNext;
 	}
 	vprint( 0, "\n" );
+}
+
+void CCodeProcessor::ReportHungarianNotationErrors()
+{
+	if ( !GetCheckHungarian() )
+		return;
+
+	vprint( 0, "\tChecking for hungarian notation issues\n" );
+
+	CClass *cl = m_pClassList;
+	int classcount = 0;
+	int warningcount = 0;
+	while ( cl )
+	{
+		int c = 0;
+		
+		cl->CheckForHungarianErrors( c );
+		
+		classcount++;
+		warningcount += c;
+
+		cl = cl->m_pNext;
+	}
+
+	vprint( 0, "\tFound %i notation errors across %i classes\n", classcount, warningcount );
 }
 
 void CCodeProcessor::PrintClassList( void ) const
@@ -546,7 +569,7 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 		}
 
 		current = CC_ParseToken( current );
-		assert( !stricmp( com_token, ":" ) );
+		Assert( !stricmp( com_token, ":" ) );
 
 		current = CC_ParseToken( current );
 		if ( strlen( com_token ) <= 0 )
@@ -583,7 +606,7 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 	{
 		char ch;
 		current = CC_RawParseChar( current, "{", &ch );
-		assert( ch == '{' );
+		Assert( ch == '{' );
 		if ( strlen( com_token ) <= 0 )
 			return current;
 	}
@@ -610,7 +633,8 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 		}
 		else
 		{
-			if ( !stricmp( com_token, "END_DATADESC" ) )
+			if ( !stricmp( com_token, "END_DATADESC" ) ||
+				 !stricmp( com_token, "END_BYTESWAP_DATADESC" ) )
 				break;
 		}
 
@@ -627,7 +651,7 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 			if ( !stricmp( com_token, "/" ) )
 			{
 				// There are two styles supported. One is to have the member definition present but commented out:
-				//		DEFINE_FIELD( CMyClass, m_member, FIELD_INTEGER ),
+				//		DEFINE_FIELD( m_member, FIELD_INTEGER ),
 				// the other is to have a comment where the first token of the comment is a member name:
 				//		m_member
 				current = CC_ParseToken( current );
@@ -667,26 +691,6 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 		if ( stricmp( com_token, "(" ) )
 			break;
 
-		// skip classname
-		current = CC_ParseToken( current );
-		if( stricmp( com_token, classname ) )
-		{
-			vprint( 0, "TYPEDESCRIPTION for class %s uses offset from class %s\n",
-				classname, com_token );
-		}
-		// skip comma
-		current = CC_ParseToken( current );
-		if ( !stricmp( com_token, ":" ) )
-		{
-			// Scoped class name here...
-			current = CC_ParseToken( current );
-			assert( !stricmp( com_token, ":" ) );
-			current = CC_ParseToken( current );
-
-			// skip comma
-			current = CC_ParseToken( current );
-		}
-
 		char varname[ 256 ];
 		current = CC_ParseToken( current );
 
@@ -707,13 +711,16 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 			strcpy( vartype, "funcptr" );
 		}
 		else if ( !stricmp(definetype, "DEFINE_FIELD") || 
+			!stricmp(definetype, "DEFINE_INDEX") ||
 			!stricmp(definetype, "DEFINE_KEYFIELD") || 
 			!stricmp(definetype, "DEFINE_KEYFIELD_NOT_SAVED") || 
 			!stricmp(definetype, "DEFINE_UTLVECTOR") || 
 			!stricmp(definetype, "DEFINE_GLOBAL_FIELD") || 
 			!stricmp(definetype, "DEFINE_GLOBAL_KEYFIELD") || 
+			!stricmp(definetype, "DEFINE_CUSTOM_FIELD") ||
 			!stricmp(definetype, "DEFINE_INPUT") ||
 			!stricmp(definetype, "DEFINE_AUTO_ARRAY") ||
+			!stricmp(definetype, "DEFINE_AUTO_ARRAY_KEYFIELD") ||
 			!stricmp(definetype, "DEFINE_AUTO_ARRAY2D") ||
 			!stricmp(definetype, "DEFINE_ARRAY") )
 		{
@@ -726,7 +733,19 @@ char *CCodeProcessor::ParseTypeDescription( char *current, bool fIsMacroized )
 				strcat( varname, "[" );
 				strcat( varname, com_token );
 				current = CC_ParseToken( current );
-				assert (!strcmp( com_token, "]" ));
+
+				// eat everything until the next "]"
+				while (strcmp( com_token, "]") != 0)
+				{
+					strcat( varname, com_token );
+					current = CC_ParseToken( current );
+				}
+
+				if ( strcmp( com_token, "]" ))
+				{
+					current = current;
+				}
+
  				strcat( varname, "]" );
 
 				// skip comma
@@ -1040,16 +1059,6 @@ char *CCodeProcessor::ParsePredictionTypeDescription( char *current )
 		if ( stricmp( com_token, "(" ) )
 			break;
 
-		// skip classname
-		current = CC_ParseToken( current );
-		if( stricmp( com_token, classname ) )
-		{
-			vprint( 0, "PREDICTION TYPEDESCRIPTION for class %s uses offset from class %s\n",
-				classname, com_token );
-		}
-		// skip comma
-		current = CC_ParseToken( current );
-
 		char varname[ 256 ];
 		current = CC_ParseToken( current );
 
@@ -1248,7 +1257,7 @@ void CCodeProcessor::ProcessModule( bool forcequiet, int depth, int& maxdepth, i
 		return;
 	}
 
-	assert( buffer );
+	Assert( buffer );
 
 	m_nBytesProcessed += filelength;
 
@@ -1452,7 +1461,8 @@ void CCodeProcessor::ProcessModule( bool forcequiet, int depth, int& maxdepth, i
 		}
 		else if ( !strcmp( com_token, "BEGIN_DATADESC" ) ||
 				  !strcmp( com_token, "BEGIN_DATADESC_NO_BASE" ) ||
-				  !strcmp( com_token, "BEGIN_SIMPLE_DATADESC" ) )
+				  !strcmp( com_token, "BEGIN_SIMPLE_DATADESC" ) ||
+				  !strcmp( com_token, "BEGIN_BYTESWAP_DATADESC" ) )
 		{
 			current = ParseTypeDescription( current, true );
 		}
@@ -1535,8 +1545,8 @@ void CCodeProcessor::PrintResults( const char *baseentityclass )
 	ResolveBaseClasses( baseentityclass );
 	PrintClassList();
 	PrintMissingTDFields();
-
 	ReportMissingTypes();
+	ReportHungarianNotationErrors();
 
 	vprint( 0, "%i total classes parsed from %i files ( %i headers parsed )\n",
 		m_nClassesParsed,
@@ -1570,6 +1580,7 @@ CCodeProcessor::CCodeProcessor( void )
 	m_bPrintPredictionDescErrors	= true;
 	m_bCreateMissingTDs				= false;
 	m_bLogToFile					= false;
+	m_bCheckHungarian				= false;
 
 	m_nFilesProcessed				= 0;
 	m_nHeadersProcessed				= 0;
@@ -1839,6 +1850,16 @@ void CCodeProcessor::SetPrintCreateMissingPredTDs( bool print )
 bool CCodeProcessor::GetPrintCreateMissingPredTDs( void ) const
 {
 	return m_bCreateMissingPredTDs;
+}
+
+void CCodeProcessor::SetCheckHungarian( bool check )
+{
+	m_bCheckHungarian = check;
+}
+
+bool CCodeProcessor::GetCheckHungarian() const
+{
+	return m_bCheckHungarian;
 }
 
 static CCodeProcessor g_Processor;

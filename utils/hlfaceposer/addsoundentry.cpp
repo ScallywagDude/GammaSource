@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
-#include "mx/mx.h"
+#include "mxtk/mx.h"
 #include "resource.h"
 #include "AddSoundEntry.h"
 #include "mdlviewer.h"
-#include "SoundEmitterSystemBase.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
 #include "filesystem.h"
 
 static CAddSoundParams g_Params;
@@ -29,10 +29,15 @@ static void PopulateScriptList( HWND wnd )
 		// add text to combo box
 		SendMessage( control, CB_ADDSTRING, 0, (LPARAM)soundemitter->GetSoundScriptName( i ) );
 
-		if ( i == 0 )
+		if ( i == 0 && !g_Params.m_szScriptName[ 0 ] )
 		{
 			SendMessage( control, WM_SETTEXT , 0, (LPARAM)soundemitter->GetSoundScriptName( i ) );
 		}
+	}
+
+	if ( g_Params.m_szScriptName[ 0 ] )
+	{
+		SendMessage( control, WM_SETTEXT , 0, (LPARAM)g_Params.m_szScriptName );
 	}
 }
 
@@ -58,6 +63,14 @@ static BOOL CALLBACK AddSoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPAR
 			PopulateScriptList( hwndDlg );
 
 			SetDlgItemText( hwndDlg, IDC_SOUNDNAME, g_Params.m_szSoundName );
+			if ( g_Params.m_bReadOnlySoundName )
+			{
+				HWND ctrl = GetDlgItem( hwndDlg, IDC_SOUNDNAME );
+				if ( ctrl )
+				{
+					SendMessage( ctrl, EM_SETREADONLY, (WPARAM)TRUE, 0 );
+				}
+			}
 
 			SetWindowText( hwndDlg, g_Params.m_szDialogTitle );
 
@@ -83,8 +96,15 @@ static BOOL CALLBACK AddSoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPAR
 				int idx = soundemitter->GetSoundIndex( g_Params.m_szSoundName );
 				if ( soundemitter->IsValidIndex( idx ) )
 				{
-					mxMessageBox( NULL, va( "Sound '%s' already exists",
-						g_Params.m_szSoundName ), g_appTitle, MX_MB_OK );
+					if ( !g_Params.m_bAllowExistingSound )
+					{
+						mxMessageBox( NULL, va( "Sound '%s' already exists",	
+							g_Params.m_szSoundName ), g_appTitle, MX_MB_OK );
+					}
+					else
+					{
+						EndDialog( hwndDlg, 1 );
+					}
 					return TRUE;
 				}
 
@@ -104,10 +124,11 @@ static BOOL CALLBACK AddSoundPropertiesDialogProc( HWND hwndDlg, UINT uMsg, WPAR
 				}
 
 				// Add the entry
-				CSoundEmitterSystemBase::CSoundParametersInternal params;
-				params.channel = CHAN_VOICE;
-				CUtlSymbol sym = soundemitter->AddWaveName( g_Params.m_szWaveFile );
-				params.soundnames.AddToTail( sym );
+				CSoundParametersInternal params;
+				params.SetChannel( CHAN_VOICE );
+				params.SetSoundLevel( SNDLVL_TALKING );
+				
+				soundemitter->ExpandSoundNameMacros( params, g_Params.m_szWaveFile );
 				soundemitter->AddSound( g_Params.m_szSoundName, g_Params.m_szScriptName, params );
 
 				EndDialog( hwndDlg, 1 );

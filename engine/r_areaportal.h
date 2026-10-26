@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef R_AREAPORTAL_H
 #define R_AREAPORTAL_H
@@ -21,6 +21,7 @@ class Frustum_t;
 
 // Used to clip area portals. The coordinates here are in normalized
 // view space (-1,-1) - (1,1)
+// BUGBUG: NOTE!!!: These are left->right, and bottom->top, so a full rect is left=-1,top=1,right=1,bottom=-1
 class CPortalRect
 {
 public:
@@ -34,14 +35,13 @@ public:
 
 // Copies cl.pAreaBits, finds the area the viewer is in, and figures out what
 // other areas are visible. The new bits are placed in g_RenderAreaBits.
-//
-// If iForceViewLeaf is not -1, then it uses the specified leaf as your starting area for setting up area portal culling.
-// This is used by water since your reflected view origin is often in solid space, but we still want to treat it as though
-// the first portal we're looking out of is a water portal, so our view effectively originates under the water.
-void R_SetupAreaBits( int iForceViewLeaf );
+void R_SetupAreaBits( int iForceViewLeaf = -1, const VisOverrideData_t* pVisData = NULL, float *pWaterReflectionHeight = NULL );
 
 // Ask if an area is visible to the renderer.
 unsigned char R_IsAreaVisible( int area );
+
+void R_Areaportal_LevelInit();
+void R_Areaportal_LevelShutdown();
 
 // Decides if the node can be seen through the area portals (ie: if you're
 // looking out a window with an areaportal in it, this will clip out the
@@ -66,7 +66,7 @@ enum
 };
 
 
-bool R_CullNode( mnode_t *pNode, int &nClipMask );
+bool R_CullNode( Frustum_t *pAreaFrustum, mnode_t *pNode, int &nClipMask );
 
 const Frustum_t* GetAreaFrustum( int area );
 

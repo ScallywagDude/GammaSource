@@ -1,14 +1,14 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
+#include <VGUI/IVGui.h>
 
-#include <VGUI_HTML.h>
+#include <vgui_controls/HTML.h>
 
 
 using namespace vgui;
@@ -43,12 +43,13 @@ HTMLDemo2::HTMLDemo2(Panel *parent, const char *name) : DemoPage(parent, name)
 	m_pHTML2->SetBounds(20+250, 10, 240, 300);
 	
 	// now open a URL
-	m_pHTML1->OpenURL("http://www.valvesoftware.com");
-	m_pHTML2->OpenURL("http://www.valve-erc.com");
+	m_pHTML1->OpenURL("http://www.valvesoftware.com", NULL);
+	m_pHTML2->OpenURL("http://www.valve-erc.com", NULL);
 	// the URL can be any valid URL accepted by Internet Explorer, use file:///c:/... for local filesystem files :)
 	
 	// this call causes the control to repaint itself every 1000msec or so, to allow animated gifs to work
-	m_pHTML1->StartAnimate(1000);
+	// bdawson:TODO
+	//m_pHTML1->StartAnimate(1000);
 }
 
 

@@ -1,0 +1,26 @@
+{
+  "baseline": "GammaSource_Beta_Core_Stability_Round5_Full_Source.zip",
+  "changed_files": {
+    "GammaSource-main/public/mempool.cpp": {
+      "size": 7811,
+      "sha256": "4379e34ae7f75a1ea97059238cb5d08f07b1bbb54988f9e38ad1370248085b14"
+    },
+    "GammaSource-main/public/mempool.h": {
+      "size": 5346,
+      "sha256": "8d08140f0c4de673f8623dd47a27502a87b1e470b5e9dda8bbb37879d070f1a5"
+    },
+    "GammaSource-main/engine/modelloader.cpp": {
+      "size": 100494,
+      "sha256": "aa38aa890bd1218a0af7a5c814e2d0cb097c48466064645a8fb4093fe8c2716b"
+    },
+    "GammaSource-main/modernize/tests/test_memory_pool_and_model_cache_stability.py": {
+      "size": 8979,
+      "sha256": "2af9e0b5ce24351964bb526f85645e24756aeaac7f7d33cc4dff4bc66c92e665"
+    },
+    "GammaSource-main/CORE_RUNTIME_STABILITY_ROUND6.md": {
+      "size": 2703,
+      "sha256": "879f185558dfae02b8fb2ff540a3865e7203843cce799ce74bb5962323a101e0"
+    }
+  },
+  "hud_weapons_terrain_unchanged": true
+}

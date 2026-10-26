@@ -1,13 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
+
 
 #include <stdio.h>
 #include <memory.h>
+#if defined( WIN32 ) && !defined( _X360 )
 #include <windows.h>
+#endif
 
 #include "ContentControlDialog.h"
 #include "checksum_md5.h"
@@ -16,7 +19,8 @@
 #include <vgui/IInput.h>
 #include <vgui/ISystem.h>
 #include <vgui/ISurface.h>
-#include <KeyValues.h>
+#include "tier1/KeyValues.h"
+#include "tier1/convar.h"
 
 #include <vgui_controls/Button.h>
 #include <vgui_controls/CheckButton.h>
@@ -24,6 +28,10 @@
 #include <vgui_controls/RadioButton.h>
 #include <vgui_controls/TextEntry.h>
 #include <tier0/vcrmode.h>
+
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
@@ -33,12 +41,10 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 // Purpose: Basic help dialog
 //-----------------------------------------------------------------------------
-CContentControlDialog::CContentControlDialog(vgui::Panel *parent) : CTaskFrame(parent, "ContentControlDialog")
+CContentControlDialog::CContentControlDialog(vgui::Panel *parent) : vgui::Frame(parent, "ContentControlDialog")
 {
 	SetBounds(0, 0, 372, 160);
 	SetSizeable( false );
-
-	g_pTaskbar->AddTask(GetVPanel());
 
 	SetTitle( "#GameUI_ContentLock", true );
 
@@ -93,19 +99,25 @@ void CContentControlDialog::Activate()
 void CContentControlDialog::ResetPassword()
 {
 	// Set initial value
+#ifdef WIN32
+#ifndef _XBOX
 	HKEY key;
-	if ( ERROR_SUCCESS == g_pVCR->Hook_RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_READ, &key))
+	if ( ERROR_SUCCESS == VCRHook_RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_READ, &key))
 	{
 		DWORD type;
 		DWORD bufSize = sizeof(m_szGorePW);
 
-		g_pVCR->Hook_RegQueryValueEx(key, "User Token 2", NULL, &type, (unsigned char *)m_szGorePW, &bufSize );
-		g_pVCR->Hook_RegCloseKey( key );
+		VCRHook_RegQueryValueEx(key, "User Token 2", NULL, &type, (unsigned char *)m_szGorePW, &bufSize );
+		VCRHook_RegCloseKey( key );
 	}
     else
+#endif
     {
         m_szGorePW[ 0 ] = 0;
     }
+#else
+	vgui::system()->SetRegistryString( "Software\\Valve\\Half-Life\\Settings\\User Token 2", m_szGorePW );
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -128,7 +140,7 @@ void CContentControlDialog::Explain( char const *fmt, ... )
 	char		text[1024];
 
 	va_start (argptr,fmt);
-	_vsnprintf (text, sizeof(text), fmt, argptr);
+	Q_vsnprintf (text, sizeof(text), fmt, argptr);
 	va_end (argptr);
 
 	m_pExplain->SetText( text );
@@ -197,43 +209,26 @@ void CContentControlDialog::OnClose()
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-char *CContentControlDialog::BinPrintf( unsigned char *buf, int nLen )
-{
-	static char szReturn[1024];
-	unsigned char c;
-	char szChunk[10];
-	int i;
-
-	memset(szReturn, 0, sizeof( szReturn ) );
-
-	for (i = 0; i < nLen; i++)
-	{
-		c = (unsigned char)buf[i];
-		_snprintf(szChunk, sizeof(szChunk), "%02x", c);
-		strncat(szReturn, szChunk, sizeof(szReturn) - strlen(szReturn) - 1);
-	}
-
-	return szReturn;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
 void CContentControlDialog::WriteToken( const char *str )
 {
 	// Set initial value
+#ifdef WIN32
+#ifndef _XBOX
 	HKEY key;
-	if ( ERROR_SUCCESS == g_pVCR->Hook_RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_WRITE, &key))
+	if ( ERROR_SUCCESS == VCRHook_RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_WRITE, &key))
 	{
 		DWORD type = REG_SZ;
 		DWORD bufSize = strlen( str ) + 1;
 
-		g_pVCR->Hook_RegSetValueEx(key, "User Token 2", 0, type, (const unsigned char *)str, bufSize );
+		VCRHook_RegSetValueEx(key, "User Token 2", 0, type, (const unsigned char *)str, bufSize );
 
-		g_pVCR->Hook_RegCloseKey( key );
+		VCRHook_RegCloseKey( key );
 	}
-
-	strcpy( m_szGorePW, str );
+#endif
+#else
+	vgui::system()->SetRegistryString( "Software\\Valve\\Half-Life\\Settings\\User Token 2", m_szGorePW );
+#endif
+	Q_strncpy( m_szGorePW, str, sizeof( m_szGorePW ) );
 
 	UpdateContentControlStatus();
 }
@@ -241,18 +236,21 @@ void CContentControlDialog::WriteToken( const char *str )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CContentControlDialog::HashPassword(const char *newPW, char *hashBuffer)
+void CContentControlDialog::HashPassword(const char *newPW, char *hashBuffer, int maxlen )
 {
 	// Compute the md5 hash and save it.
 	unsigned char md5_hash[16];
 	MD5Context_t ctx;
 
 	MD5Init( &ctx );
-	MD5Update( &ctx, (unsigned char const *)(LPCSTR)newPW, strlen( newPW ) );
+	MD5Update( &ctx, (unsigned char const *)newPW, strlen( newPW ) );
 	MD5Final( md5_hash, &ctx );
 
+	char hex[ 128 ];
+	Q_binarytohex( md5_hash, sizeof( md5_hash ), hex, sizeof( hex ) );
+
 //	char digestedPW[ 128 ];
-	strcpy( hashBuffer, BinPrintf( md5_hash, 16 ) );
+	Q_strncpy( hashBuffer, hex, maxlen );
 }
 
 //-----------------------------------------------------------------------------
@@ -262,7 +260,7 @@ void CContentControlDialog::HashPassword(const char *newPW, char *hashBuffer)
 bool CContentControlDialog::CheckPassword( char const *oldPW, char const *newPW, bool enableContentControl )
 {
 	char digestedPW[ 128 ];
-    HashPassword(newPW, digestedPW);
+    HashPassword(newPW, digestedPW, sizeof( digestedPW ) );
 	
     // Compute the md5 hash and save it.
 	unsigned char md5_hash[16];
@@ -272,7 +270,10 @@ bool CContentControlDialog::CheckPassword( char const *oldPW, char const *newPW,
 	MD5Update( &ctx, (unsigned char const *)(LPCSTR)newPW, strlen( newPW ) );
 	MD5Final( md5_hash, &ctx );
 
-	strcpy( digestedPW, BinPrintf( md5_hash, 16 ) );
+	char hex[ 128 ];
+	Q_binarytohex( md5_hash, sizeof( md5_hash ), hex, sizeof( hex ) );
+
+	Q_strncpy( digestedPW, hex, sizeof( digestedPW ) );
 */
 
 //-----------------------------------------------------------------------------
@@ -287,7 +288,7 @@ bool CContentControlDialog::EnablePassword(const char *newPW)
     }
 
 	char digestedPW[ 128 ];
-    HashPassword(newPW, digestedPW);
+    HashPassword(newPW, digestedPW, sizeof( digestedPW ) );
 
 	// disable violence
 /*	engine->Cvar_SetValue("violence_hblood", 0.0 );
@@ -296,31 +297,21 @@ bool CContentControlDialog::EnablePassword(const char *newPW)
 	engine->Cvar_SetValue("violence_agibs" , 0.0 );
 	*/
 
-	ConVar *var = (ConVar *)cvar->FindVar( "violence_hblood" );
-	if ( var )
-	{
-		var->SetValue(false);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_hgibs" );
-	if ( var )
-	{
-		var->SetValue(false);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_ablood" );
-	if ( var )
-	{
-		var->SetValue(false);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_agibs" );
-	if ( var )
-	{
-		var->SetValue(false);
-	}
-	
+	ConVarRef violence_hblood( "violence_hblood" );
+	violence_hblood.SetValue(false);
 
+	ConVarRef violence_hgibs( "violence_hgibs" );
+	violence_hgibs.SetValue(false);
+
+	ConVarRef violence_ablood( "violence_ablood" );
+	violence_ablood.SetValue(false);
+
+	ConVarRef violence_agibs( "violence_agibs" );
+	violence_agibs.SetValue(false);
+	
     // Store digest to registry
 //    WriteToken( digestedPW );
-    strcpy(m_szGorePW, digestedPW);
+    Q_strncpy(m_szGorePW, digestedPW, sizeof( m_szGorePW ) );
     /*
 		}
 		else
@@ -348,7 +339,7 @@ bool CContentControlDialog::DisablePassword(const char *oldPW)
     }
 
 	char digestedPW[ 128 ];
-    HashPassword(oldPW, digestedPW);
+    HashPassword(oldPW, digestedPW, sizeof( digestedPW ) );
 
     if( stricmp( m_szGorePW, digestedPW ) )
     {
@@ -364,26 +355,17 @@ bool CContentControlDialog::DisablePassword(const char *oldPW)
 	engine->Cvar_SetValue("violence_ablood", 1.0 );
 	engine->Cvar_SetValue("violence_agibs" , 1.0 );
 	*/
-	ConVar *var = (ConVar *)cvar->FindVar( "violence_hblood" );
-	if ( var )
-	{
-		var->SetValue(true);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_hgibs" );
-	if ( var )
-	{
-		var->SetValue(true);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_ablood" );
-	if ( var )
-	{
-		var->SetValue(true);
-	}
-	var = (ConVar *)cvar->FindVar( "violence_agibs" );
-	if ( var )
-	{
-		var->SetValue(true);
-	}
+	ConVarRef violence_hblood( "violence_hblood" );
+	violence_hblood.SetValue(true);
+
+	ConVarRef violence_hgibs( "violence_hgibs" );
+	violence_hgibs.SetValue(true);
+
+	ConVarRef violence_ablood( "violence_ablood" );
+	violence_ablood.SetValue(true);
+
+	ConVarRef violence_agibs( "violence_agibs" );
+	violence_agibs.SetValue(true);
 
 
 //		// Remove digest value

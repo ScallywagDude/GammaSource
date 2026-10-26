@@ -1,15 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Revision: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ISPATIALPARTITIONINTERNAL_H
 #define ISPATIALPARTITIONINTERNAL_H
@@ -20,12 +15,14 @@
 //-----------------------------------------------------------------------------
 // These methods of the spatial partition manager are only used in the engine
 //-----------------------------------------------------------------------------
-class ISpatialPartitionInternal : public ISpatialPartition
+abstract_class ISpatialPartitionInternal : public ISpatialPartition
 {
 public:
 	// Call this to clear out the spatial partition and to re-initialize
 	// it given a particular world size
 	virtual void Init( const Vector& worldmin, const Vector& worldmax ) = 0;
+
+	virtual void DrawDebugOverlays() = 0;
 };
 
 
@@ -33,6 +30,24 @@ public:
 // Method to get at the singleton implementation of the spatial partition mgr
 //-----------------------------------------------------------------------------
 ISpatialPartitionInternal* SpatialPartition();
+
+//-----------------------------------------------------------------------------
+// Create/destroy a custom spatial partition
+//-----------------------------------------------------------------------------
+ISpatialPartition *CreateSpatialPartition( const Vector& worldmin, const Vector& worldmax );
+void DestroySpatialPartition( ISpatialPartition * );
+
+
+//-----------------------------------------------------------------------------
+// Method to get at the singleton implementation of the spatial partition mgr
+//-----------------------------------------------------------------------------
+ISpatialPartitionInternal* SpatialPartitionOld();
+
+//-----------------------------------------------------------------------------
+// Create/destroy a custom spatial partition
+//-----------------------------------------------------------------------------
+ISpatialPartition *CreateSpatialPartitionOld( const Vector& worldmin, const Vector& worldmax );
+void DestroySpatialPartitionOld( ISpatialPartition * );
 
 
 #endif	// ISPATIALPARTITIONINTERNAL_H

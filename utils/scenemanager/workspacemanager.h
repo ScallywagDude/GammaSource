@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef WORKSPACEMANAGER_H
 #define WORKSPACEMANAGER_H
@@ -73,6 +73,8 @@ public:
 
 	void			SetWorkspaceDirty();
 
+	int				GetLanguageId() const;
+
 private:
 
 	void			PerformLayout( bool movebrowsers );
@@ -135,6 +137,7 @@ private:
 	void			OnModifyVCDComments();
 
 	void			OnRecentWorkspace( int index );
+	void			OnChangeLanguage( int lang_index, bool force = false );
 	void			AddFileToRecentWorkspaceList( char const *filename );
 	void			UpdateRecentFilesMenu();
 
@@ -157,6 +160,8 @@ private:
 	mxMenu			*m_pRecentFileMenu;
 	int				m_nRecentMenuItems;
 	mxMenu			*m_pProjectMenu;
+	mxMenu			*m_pOptionsMenu;
+	mxMenu			*m_pMenuCloseCaptionLanguages;
 
 	CWorkspaceWorkArea	*m_pWorkArea;
 
@@ -170,6 +175,8 @@ private:
 	};
 
 	CUtlVector< RecentFile > m_RecentFiles;
+	int				m_nLanguageId;
+	long			m_lEnglishCaptionsFileChangeTime;
 };
 
 CWorkspaceManager *GetWorkspaceManager();

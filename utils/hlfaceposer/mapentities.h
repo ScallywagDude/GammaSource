@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef MAPENTITIES_H
 #define MAPENTITIES_H
@@ -18,6 +18,10 @@ class IMapEntities
 public:
 	virtual void	CheckUpdateMap( char const *mapname ) = 0;
 	virtual bool	LookupOrigin( char const *name, Vector& origin, QAngle& angles ) = 0;
+
+	virtual int		Count() = 0;
+	virtual char const *GetName( int number ) = 0;
+
 };
 
 extern IMapEntities *mapentities;

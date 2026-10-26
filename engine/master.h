@@ -21,6 +21,8 @@
 #pragma once
 #endif
 
+#include "engine/iserversinfo.h"
+
 //-----------------------------------------------------------------------------
 // Purpose: Implements a master server interface.
 //-----------------------------------------------------------------------------
@@ -31,8 +33,6 @@ public:
 	virtual void Init( void ) = 0;
 	// System is shutting down
 	virtual void Shutdown( void ) = 0;
-	// Called any time a master function might need to initialize the master system
-	virtual void InitConnection( void ) = 0;		  
 	// Server is shutting down
 	virtual void ShutdownConnection( void ) = 0;
 	// Sends the actual heartbeat to the master ( after challenge value is parsed )
@@ -44,13 +44,18 @@ public:
 	// See if it's time to send the next heartbeat
 	virtual void CheckHeartbeat( void ) = 0;
 	// Master sent back a challenge value, read it and send the actual heartbeat
-	virtual void RespondToHeartbeatChallenge( void ) = 0;
+	virtual void RespondToHeartbeatChallenge( netadr_t &from, bf_read &msg ) = 0;
 	// Console command to set/remove master server
-	virtual void SetMaster_f( void ) = 0;
+	virtual void AddMaster_f( const CCommand &args ) = 0;
 	// Force a heartbeat to be issued right away
 	virtual void Heartbeat_f( void ) = 0;
+
+	virtual void ProcessConnectionlessPacket( netpacket_t *packet ) = 0;
+
+	virtual void RunFrame( void ) = 0;
 };
 
 extern IMaster *master;
+extern IServersInfo *g_pServersInfo;
 
 #endif // MASTER_H

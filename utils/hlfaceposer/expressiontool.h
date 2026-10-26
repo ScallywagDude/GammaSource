@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef EXPRESSIONTOOL_H
 #define EXPRESSIONTOOL_H
@@ -11,9 +11,10 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "studio.h"
-#include "UtlVector.h"
+#include "utlvector.h"
+#include "tier1/utldict.h"
 #include "faceposertoolwindow.h"
 
 class CChoreoEvent;
@@ -25,6 +26,7 @@ class CExpressionToolWorkspace;
 class CChoreoView;
 class CFlexTimingTag;
 class CExpression;
+class mxSlider;
 
 #define IDC_EXPRESSIONTOOLVSCROLL	1000
 #define IDC_ADDTRACKS				1001
@@ -84,6 +86,14 @@ class CExpression;
 
 #define IDC_FLEX_SCALESAMPLES		1042
 
+#define IDC_TL_KB_TENSION			1050
+#define IDC_TL_KB_BIAS				1051
+#define IDC_TL_KB_CONTINUITY		1052
+
+#define IDC_ET_EDGEPROPERTIES		1053
+#define IDC_ET_SELECTION_COPY		1054
+#define IDC_ET_SELECTION_PASTE		1055
+
 #include "ExpressionSample.h"
 
 class ExpressionTool : public mxWindow, public IFacePoserToolWindow
@@ -123,8 +133,12 @@ public:
 
 	void				LayoutItems( bool force = false );
 
-	void				OnCopyToFlex( void );
-	void				OnCopyFromFlex( void );
+	void				OnCopyToFlex( bool isEdited );
+	void				OnCopyFromFlex( bool isEdited );
+
+	void				OnCopyToFlex( float scenetime, bool isEdited );
+	void				OnCopyFromFlex( float scenetime, bool isEdited );
+	void				OnSetSingleKeyFromFlex( char const *sliderName );
 
 	void				OnNewExpression( void );
 	void				ShowContextMenu( mxEvent *event, bool include_track_menus );
@@ -152,11 +166,16 @@ public:
 	int					CountSelectedSamples( void );
 	void				DeselectAll( void );
 
-	void				SetTimeZoomScale( int scale );
-	float				GetTimeZoomScale( void );
 	void				RepositionHSlider( void );
 
 	bool				IsFocusItem( TimelineItem *item );
+	virtual void		OnModelChanged();
+
+	float				GetScrub() const { return m_flScrub; }
+	float				GetScrubberSceneTime();
+
+	void				GetTimelineItems( CUtlVector< TimelineItem * >& list );
+	void				InvalidateLayout( void );
 
 private:
 	void				DoTrackLookup( CChoreoEvent *event );
@@ -224,16 +243,58 @@ private:
 	void				MoveTimeSliderToPos( int x );
 	void				OnChangeScale();
 	int					ComputeHPixelsNeeded( void );
-	void				InvalidateLayout( void );
 	float				GetTimeValueForMouse( int mx, bool clip = false );
+
+	void				OnEdgeProperties();
 
 public:
 	int					GetPixelForTimeValue( float time, bool *clipped = NULL );
 	float				GetPixelsPerSecond( void );
 	void				GetStartAndEndTime( float& st, float& ed );
+	float				GetEventEndTime();
+
 private:
 
-	char				m_szEvent[ 128 ];
+	class CColumnCopier
+	{
+	public:
+		class CTrackData
+		{
+		public:
+			CTrackData() {};
+			CTrackData( const CTrackData& other )
+			{
+				m_Samples[ 0 ].CopyArray( other.m_Samples[ 0 ].Base(), other.m_Samples[ 0 ].Count() );
+				m_Samples[ 1 ].CopyArray( other.m_Samples[ 1 ].Base(), other.m_Samples[ 1 ].Count() );
+			}
+			CUtlVector< CExpressionSample > m_Samples[ 2 ];
+		};
+
+		bool					m_bActive;
+		float					m_flCopyTimes[ 2 ];
+		CUtlDict< CTrackData, int >	m_Data;
+
+		CColumnCopier() : m_bActive( false )
+		{
+			m_flCopyTimes[ 0 ] = m_flCopyTimes[ 1 ] = 0.0f;
+		}
+
+		void Reset()
+		{
+			m_bActive = false;
+			m_flCopyTimes[ 0 ] = m_flCopyTimes[ 1 ] = 0.0f;
+			m_Data.Purge();
+		}
+	};
+
+	bool				HasCopiedColumn();
+	void				OnCopyColumn();
+	void				OnPasteColumn();
+	void				ClearColumnCopy();
+
+	CColumnCopier		m_ColumnCopy;
+
+	int					m_nFocusEventGlobalID;
 
 	float				m_flScrub;
 	float				m_flScrubTarget;
@@ -284,11 +345,9 @@ private:
 	bool				m_bSelectionActive;
 
 	bool				m_bSuppressLayout;
-	// 100 == normal scale
-	int					m_nTimeZoom;
 	// Height/width of scroll bars
 	int					m_nScrollbarHeight;
-	int					m_nLeftOffset;
+	float				m_flLeftOffset;
 	mxScrollbar			*m_pHorzScrollBar;
 	int					m_nLastHPixelsNeeded;
 	// How many pixels per second we are showing in the UI
@@ -298,6 +357,10 @@ private:
 	float				m_flLastDuration;
 	bool				m_bInSetEvent;
 	float				m_flScrubberTimeOffset;
+
+	friend class		CChoreoView;
+
+
 };
 
 extern ExpressionTool	*g_pExpressionTool;

@@ -1,18 +1,25 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
 
-BEGIN_SHADER( Wireframe, 
-			  "Help for Wireframe" )
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+#ifdef _WIN32
+DEFINE_FALLBACK_SHADER( Wireframe, Wireframe_DX6 )
+BEGIN_SHADER( Wireframe_DX6, 
+			  "Help for Wireframe_DX6" )
 
 	BEGIN_SHADER_PARAMS
-		SHADER_PARAM( POLYOFFSET, SHADER_PARAM_TYPE_BOOL, "0", "Enable/disable poly offset" )
+		SHADER_PARAM_OVERRIDE( BASETEXTURE, SHADER_PARAM_TYPE_TEXTURE, "shadertest/basetexture", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( FRAME, SHADER_PARAM_TYPE_INTEGER, "0", "unused", SHADER_PARAM_NOT_EDITABLE )
+		SHADER_PARAM_OVERRIDE( BASETEXTURETRANSFORM, SHADER_PARAM_TYPE_MATRIX, "center .5 .5 scale 1 1 rotate 0 translate 0 0", "unused", SHADER_PARAM_NOT_EDITABLE )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
@@ -36,20 +43,16 @@ BEGIN_SHADER( Wireframe,
 
 			int flags = SHADER_DRAW_POSITION;
 			if ( IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR) || IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA) )
+			{
 				flags |= SHADER_DRAW_COLOR;
-			
+			}
 			pShaderShadow->DrawFlags( flags );
-			
-			if( params[POLYOFFSET]->IsDefined() && params[POLYOFFSET]->GetIntValue() )
-				pShaderShadow->EnablePolyOffset( true );
-			else
-				pShaderShadow->EnablePolyOffset( false );
 		}
 		DYNAMIC_STATE
 		{
 			SetModulationDynamicState();
-//			DefaultFog();
 		}
 		Draw();
 	}
 END_SHADER
+#endif

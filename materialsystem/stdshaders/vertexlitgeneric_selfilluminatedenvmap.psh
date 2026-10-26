@@ -1,4 +1,3 @@
-;	"TEXKILL"			"0..1"
 ps.1.1
 
 ;------------------------------------------------------------------------------
@@ -12,9 +11,6 @@ ps.1.1
 ; Get the color from the texture
 tex t0
 tex t1
-#if TEXKILL
-texkill t3
-#endif
 
 mul r0.rgb, t0, c3 +		; base times modulation
 mov r0.a, c3.a				; use modulation alpha (don't use texture alpha)

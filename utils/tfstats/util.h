@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Util.h and Util.cpp provide lots of helper stuff for TFStats to work
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #ifndef UTIL_H
 #define UTIL_H
 #ifdef WIN32
@@ -95,7 +90,7 @@ public:
 	static char* daysofWeek[];
 	static char* ampm[];
 
-	static void debug_dir_printf(char* fmt,...);
+	static void debug_dir_printf(PRINTF_FORMAT_STRING char* fmt,...);
 
 	static void str2lowercase(char* out, const char* in);
 

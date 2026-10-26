@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PHONEEDITOR_H
 #define PHONEEDITOR_H
@@ -11,7 +11,7 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 class CAudioSource;
 class CAudioMixer;
 class mxBitmapButton;
@@ -77,29 +77,19 @@ class mxButton;
 
 #define IDC_PLAYBACKRATE				1044
 
+#define IDC_REALIGNPHONEMES				1045
+#define IDC_REALIGNWORDS				1046
+
 // Support for multiple speech api's
 #define IDC_API_SAPI					1050
 #define IDC_API_LIPSINC					1051
 
-#define IDC_EDIT_CC_ADDFIRSTPHRASE		1060
-#define IDC_EDIT_CC_DELETEPHRASE		1061
-#define IDC_EDIT_CC_PHRASE				1062
-#define IDC_EDIT_CC_INSERTPHRASEBEFORE	1063
-#define IDC_EDIT_CC_INSERTPHRASEAFTER	1064
-#define IDC_SELECT_CC_PHRASESRIGHT		1065
-#define IDC_SELECT_CC_PHRASESLEFT		1066
-#define IDC_CC_SNAPPHRASES				1067
-#define IDC_CC_SEPARATEPHRASES			1068
-#define IDC_DESELECT_CC_PHRASES			1069
-#define IDC_CC_CLEANUP					1070
-#define	IDC_SELECT_CC_ALLPHRASES		1071
-#define IDC_EDIT_CC_DEFAULT_PHRASE		1072
-#define IDC_EDIT_CC_MERGE_PHRASES		1073
-#define IDC_EDIT_CC_SPLIT_PHRASE		1074
-
 #define IDC_EXPORT_SENTENCE				1075
 #define IDC_IMPORT_SENTENCE				1076
 #define IDC_TOGGLE_VOICEDUCK			1077
+
+#define		IDC_PE_LANGUAGESTART		1100
+// #define  IDC_PE_LANGUAGEEND			1106 or so
 
 class IterateOutputRIFF;
 class IterateRIFF;
@@ -153,14 +143,6 @@ enum
 	COLOR_PHONEME_EMPHASIS_TEXT,
 	COLOR_PHONEME_EMPHASIS_MIDLINE,
 
-	COLOR_PHONEME_CC_TEXT,
-	COLOR_PHONEME_CC_TAG_BORDER,
-	COLOR_PHONEME_CC_TAG_BORDER_SELECTED,
-	COLOR_PHONEME_CC_TAG_FILLER_NORMAL,
-	COLOR_PHONEME_CC_TAG_SELECTED,
-	COLOR_PHONEME_CC_TAG_TEXT,
-	COLOR_PHONEME_CC_TAG_TEXT_SELECTED,	
-
 	NUM_COLORS,
 };
 
@@ -175,14 +157,12 @@ public:
 		BOUNDARY_NONE = 0,
 		BOUNDARY_PHONEME,
 		BOUNDARY_WORD,
-		BOUNDARY_PHRASE
 	};
 
 	typedef enum
 	{
 		MODE_PHONEMES = 0,
-		MODE_EMPHASIS,
-		MODE_CLOSECAPTION
+		MODE_EMPHASIS
 	} EditorMode;
 
 	// Construction
@@ -193,6 +173,8 @@ public:
 
 	virtual void		OnDelete();
 	virtual bool		CanClose();
+
+	void				ValidateSpeechAPIIndex();
 
 	virtual int			handleEvent( mxEvent *event );
 	virtual void		redraw( void );
@@ -210,14 +192,13 @@ public:
 	// so we don't have dangling pointers to tags, events, scene
 	void				ClearEvent( void );
 
+	void				Play();
+
 private:
 	void				DrawWords( CChoreoWidgetDrawHelper& drawHelper, RECT& rcWorkSpace, CSentence &sentence, int type, bool showactive = true );
 	void				DrawPhonemes( CChoreoWidgetDrawHelper& drawHelper, RECT& rcWorkSpace, CSentence &sentence, int type, bool showactive = true );
 	void				DrawRelativeTags( CChoreoWidgetDrawHelper& drawHelper, RECT& rc );
 
-	void				CloseCaption_Redraw( CChoreoWidgetDrawHelper& drawHelper, RECT& rcWorkSpace, CSentence &sentence );
-
-	
 	void				Emphasis_Redraw( CChoreoWidgetDrawHelper& drawHelper, RECT& rcWorkSpace );
 	void				Emphasis_GetRect( RECT const & rcWorkSpace, RECT& rcEmphasis );
 
@@ -270,60 +251,6 @@ private:
 	void				SentenceFromString( CSentence& sentence, char const *str );
 
 
-	// Close captioning
-	void				CloseCaption_EditInsertFirstPhrase( void );
-	void				CloseCaption_EditDefaultPhrase( void );
-	void				CloseCaption_EditPhrase( CCloseCaptionPhrase *phrase );
-	void				CloseCaption_EditPhrase( void );
-	void				CloseCaption_EditInsertBefore( void );
-	void				CloseCaption_EditInsertAfter( void );
-	void				CloseCaption_EditDelete( void );
-	void				CloseCaption_Select( bool forward );
-
-	void				CloseCaption_ShowMenu( CCloseCaptionPhrase *phrase, int mx, int my, mxPopupMenu *pop );
-	bool				CloseCaption_IsMouseOverRow( int my );
-
-	void				CloseCaption_FinishMove( int startx, int endx );
-	void				CloseCaption_FinishDrag( int startx, int endx );
-	int					CloseCaption_FindPhraseForTime( float time );
-
-	void				CloseCaption_DeselectPhrases( void );
-	void				CloseCaption_SelectPhrases( void );
-	void				CloseCaption_SnapPhrases( void );
-	void				CloseCaption_SeparatePhrases( void );
-	CCloseCaptionPhrase	*CloseCaption_GetPhraseUnderMouse( int mx, int my );
-	void				CloseCaption_GetTrayTopBottom( RECT& rc );
-
-	void				CloseCaption_GetPhraseRect( const CCloseCaptionPhrase *phrase, RECT& rc );
-	int					CloseCaption_GetPhraseTokenUnderMouse( const CCloseCaptionPhrase *phrase, int mx );
-	CCloseCaptionPhrase	*CloseCaption_GetClickedPhrase( void );
-	int					CloseCaption_GetClickedPhraseToken( void );
-	int					CloseCaption_IndexOfPhrase( CCloseCaptionPhrase	*phrase );
-	void				CloseCaption_SelectNextPhrase( int direction );
-	void				CloseCaption_ShiftSelectedPhrase( int direction );
-	void				CloseCaption_ExtendSelectedPhraseEndTime( int direction );
-	float				CloseCaption_GetTimeGapToNextPhrase( bool forward, CCloseCaptionPhrase *currentPhrase, CCloseCaptionPhrase **ppNextPhrase = NULL );
-	int					CloseCaption_IndexOPhrase( CCloseCaptionPhrase *phrase );
-	CCloseCaptionPhrase	*CloseCaption_GetSelectedPhrase( void );
-	bool				CloseCaption_AreSelectedPhrasesContiguous( void );
-	float				CloseCaption_ComputeMaxPhraseShift( bool forward, bool allowcrop );
-	bool				CloseCaption_FindSpanningPhrases( float time, CCloseCaptionPhrase **pp1, CCloseCaptionPhrase **pp2 );
-	void				CloseCaption_CleanupPhrases( bool prepareundo );
-	void				CloseCaption_SortPhrases( bool prepareundo );
-	void				CloseCaption_SetClickedPhrase( int index, int token );
-
-	void				CloseCaption_FinishPhraseMove( int startx, int endx );
-	void				CloseCaption_FinishPhraseDrag( int startx, int endx );
-
-	char const			*CloseCaption_StreamToShortName( CCloseCaptionPhrase *phrase );
-
-	void				CloseCaption_SplitPhraseAfterToken( CCloseCaptionPhrase *phrase, int splitToken );
-	void				CloseCaption_MergeSelected( void );
-	void				CloseCaption_SplitPhrase( void );
-
-	void				CloseCaption_GetCCAreaRect( RECT& rcOutput );
-	void				CloseCaption_DrawCCArea( CChoreoWidgetDrawHelper& drawHelper, RECT& rcOutput );
-
 	// Wav processing commands
 	void				RedoPhonemeExtraction( void );
 	// Redo extraction of selected words only
@@ -340,7 +267,6 @@ private:
 	void				ShowContextMenu( int mx, int my );
 	void				ShowContextMenu_Phonemes( int mx, int my );
 	void				ShowContextMenu_Emphasis( int mx, int my );
-	void				ShowContextMenu_CloseCaption( int mx, int my );
 
 	// UI helpers
 	void				GetWorkspaceRect( RECT &rc );
@@ -381,7 +307,7 @@ private:
 	void				CreateEvenWordDistribution( const char *wordlist );
 
 	// Dirty flag
-	void				SetDirty( bool dirty );
+	void				SetDirty( bool dirty, bool clearundo = true );
 	bool				GetDirty( void );
 
 	// FIXME:  Do something else here
@@ -448,31 +374,24 @@ private:
 
 	typedef void (PhonemeEditor::*PEWORDITERFUNC)( CWordTag *word, float fparam );
 	typedef void (PhonemeEditor::*PEPHONEMEITERFUNC)( CPhonemeTag *phoneme, CWordTag *word, float fparam );
-	typedef void (PhonemeEditor::*PEPHRASEITERFUNC)( CCloseCaptionPhrase *phrase, float fparam );
 
 	void				TraverseWords( PEWORDITERFUNC pfn, float fparam );
 	void				TraversePhonemes( PEPHONEMEITERFUNC pfn, float fparam );
-	void				TraversePhrases( PEPHRASEITERFUNC pfn, float fparam );
 
 	// Iteration functions
 	void				ITER_MoveSelectedWords( CWordTag *word, float amount );
 	void				ITER_MoveSelectedPhonemes( CPhonemeTag *phoneme, CWordTag *word, float amount );
-	void				ITER_MoveSelectedPhrases( CCloseCaptionPhrase *phrase, float amount );
 
 	void				ITER_ExtendSelectedPhonemeEndTimes( CPhonemeTag *phoneme, CWordTag *word, float amount );
 	void				ITER_ExtendSelectedWordEndTimes( CWordTag *word, float amount );
-	void				ITER_ExtendSelectedPhraseEndTimes( CCloseCaptionPhrase *word, float amount );
 
 	void				ITER_AddFocusRectSelectedWords( CWordTag *word, float amount );
 	void				ITER_AddFocusRectSelectedPhonemes( CPhonemeTag *phoneme, CWordTag *word, float amount );
-	void				ITER_AddFocusRectSelectedPhrases( CCloseCaptionPhrase *phrase, float amount );
 
 	void				ITER_CountSelectedWords( CWordTag *word, float amount );
 	void				ITER_CountSelectedPhonemes( CPhonemeTag *phoneme, CWordTag *word, float amount );
-	void				ITER_CountSelectedPhrases( CCloseCaptionPhrase *phrase, float amount );
 
 	void				ITER_SelectSpanningWords( CWordTag *word, float amount );
-	void				ITER_SelectSpanningPhrases( CCloseCaptionPhrase *phrase, float amount );
 
 // Undo/Redo
 	void				Undo( void );
@@ -498,7 +417,6 @@ private:
 	bool				IsPhonemeSelected( CWordTag *word );
 	void				ShiftSelectedWord( int direction );
 	void				ExtendSelectedWordEndTime( int direction );
-	int					CountWords( char const *str );
 
 	float				GetTimeGapToNextWord( bool forward, CWordTag *currentWord, CWordTag **ppNextWord = NULL );
 	float				GetTimeGapToNextPhoneme( bool forward, CPhonemeTag *currentPhoneme, CWordTag **ppword = NULL, CPhonemeTag **phoneme = NULL );
@@ -513,6 +431,8 @@ private:
 
 	bool				CreateCroppedWave( char const *filename, int startsample, int endsample );
 	void				CleanupWordsAndPhonemes( bool prepareundo );
+	void				RealignPhonemesToWords( bool prepareundo );
+	void				RealignWordsToPhonemes( bool prepareundo );
 	void				SortWords( bool prepareundo );
 	void				SortPhonemes( bool prepareundo );
 
@@ -552,7 +472,6 @@ private:
 	void				ClampTimeToSelectionInterval( float& timeval );
 	void				OnToggleVoiceDuck();
 
-
 	// Data
 private:
 	// Type of mouse movement
@@ -570,9 +489,7 @@ private:
 		DRAGTYPE_EVENTTAG_MOVE,
 		DRAGTYPE_EMPHASIS_SELECT,
 		DRAGTYPE_EMPHASIS_MOVE,
-		DRAGTYPE_SCRUBBER,
-		DRAGTYPE_PHRASE,
-		DRAGTYPE_MOVEPHRASE,
+		DRAGTYPE_SCRUBBER
 	};
 
 	float				m_flScrub;
@@ -598,6 +515,7 @@ private:
 	public:
 		char				m_szWaveFile[ 256 ];
 		char				m_szWorkingFile[ 256 ];
+		char				m_szBasePath[ 256 ];
 		bool				m_bDirty;
 	};
 	CWorkFile			m_WorkFile;
@@ -616,7 +534,6 @@ private:
 	mxButton			*m_btnLoad;
 
 	mxButton			*m_btnPlay; // selection or full depending
-	mxButton			*m_btnStop;
 
 	// Mouse dragging
 	HCURSOR				m_hPrevCursor;
@@ -635,8 +552,6 @@ private:
 
 	int					m_nClickedPhoneme;
 	int					m_nClickedWord;
-	int					m_nClickedPhrase;
-	int					m_nClickedPhraseToken;
 
 	// Current set of tags
 	CSentence			m_Tags;
@@ -650,7 +565,6 @@ private:
 
 	int					m_nSelectedPhonemeCount;
 	int					m_nSelectedWordCount;
-	int					m_nSelectedPhraseCount;
 
 	bool				m_bWordsActive;
 

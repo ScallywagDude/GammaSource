@@ -18,7 +18,7 @@ struct VS_OUTPUT
 	float2 coordTap3Neg				: TEXCOORD6;
 };
 
-float2 vsTapOffs[3] : register ( c90 );
+float2 vsTapOffs[3] : register ( SHADER_SPECIFIC_CONST_0 );
 
 VS_OUTPUT main( const VS_INPUT v )
 {

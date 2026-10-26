@@ -1,19 +1,17 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Core implementation of vgui
 //
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
+
+#if defined( WIN32 ) && !defined( _X360 )
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#define PROTECTED_THINGS_DISABLE
+#endif
 
+#include "VGuiMatSurface/IMatSystemSurface.h"
 #include <vgui/VGUI.h>
 #include <vgui/Dar.h>
 #include <vgui/IInputInternal.h>
@@ -24,44 +22,40 @@
 #include <vgui/IClientPanel.h>
 #include <vgui/IScheme.h>
 #include <KeyValues.h>
-
 #include <string.h>
-#include <Assert.h>
+#include <assert.h>
 #include <stdio.h>
 #include <stdarg.h>
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include <tier0/dbg.h>
-
+#include <tier1/utlhandletable.h>
 #include "vgui_internal.h"
 #include "VPanel.h"
 #include "IMessageListener.h"
-
-#include "UtlLinkedList.h"
-#include "UtlPriorityQueue.h"
-#include "UtlVector.h"
+#include "tier3/tier3.h"
+#include "utllinkedlist.h"
+#include "utlpriorityqueue.h"
+#include "utlvector.h"
 #include "tier0/vprof.h"
+#include "tier0/icommandline.h"
+
+#if defined( _X360 )
+#include "xbox/xbox_win32stubs.h"
+#endif
+
+#undef GetCursorPos // protected_things.h defines this, and it makes it so we can't access g_pInput->GetCursorPos.
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include <tier0/memdbgon.h>
 
 
 using namespace vgui;
-static const int WARN_PANEL_NUMBER = 4096; // in DEBUG if more panels than this are created then throw an Assert, helps catch panel leaks
-static const int INITIAL_PANEL_NUMBER = 1024; // seed the linked list with this number of entries to start with
-static const int GROW_PANEL_NUMBER = 1024; // tell the linked list to grow this number of entries each time
+static const int WARN_PANEL_NUMBER = 32768; // in DEBUG if more panels than this are created then throw an Assert, helps catch panel leaks
 
-namespace vgui
-{
-
-//-----------------------------------------------------------------------------
-// Purpose: Used to reference panels in a safe manner
-//-----------------------------------------------------------------------------
-struct SerialPanel_t
-{
-	unsigned short m_iSerialNumber;
-	VPANEL m_pPanel;
-};
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: Single item in the message queue
@@ -77,6 +71,7 @@ struct MessageItem_t
 
 	int _messageID;		// incrementing message index
 };
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -101,13 +96,13 @@ bool PriorityQueueComp(const MessageItem_t& x, const MessageItem_t& y)
 //-----------------------------------------------------------------------------
 // Purpose: Implementation of core vgui functionality
 //-----------------------------------------------------------------------------
-class CVGui : public IVGui
+class CVGui : public CTier3AppSystem< IVGui >
 {
+	typedef CTier3AppSystem< IVGui > BaseClass;
+
 public:
 	CVGui();
 	~CVGui();
-
-	virtual bool Init( CreateInterfaceFn *factoryList, int numFactories );
 
 //-----------------------------------------------------------------------------
 	// SRC specific stuff
@@ -155,6 +150,7 @@ public:
 	virtual void MarkPanelForDeletion(VPANEL panel);
 
 	virtual void AddTickSignal(VPANEL panel, int intervalMilliseconds = 0);
+	virtual void AddTickSignalToHead( VPANEL panel, int intervalMilliseconds = 0 ) OVERRIDE;
 	virtual void RemoveTickSignal(VPANEL panel );
 
 
@@ -162,10 +158,11 @@ public:
 	virtual void PostMessage(VPANEL target, KeyValues *params, VPANEL from, float delaySeconds = 0.0f);
 
 	virtual void SetSleep( bool state ) { m_bDoSleep = state; };
+	virtual bool GetShouldVGuiControlSleep() { return m_bDoSleep; }
 
 	virtual void DPrintf(const char *format, ...);
 	virtual void DPrintf2(const char *format, ...);
-
+	virtual void SpewAllActivePanelNames();
 
 	// Creates/ destroys vgui contexts, which contains information
 	// about which controls have mouse + key focus, for example.
@@ -180,6 +177,21 @@ public:
 	// to get the one normally used by VGUI
 	virtual void ActivateContext( HContext context );
 
+	// enables VR mode
+	virtual void SetVRMode( bool bVRMode ) OVERRIDE
+	{
+		m_bVRMode = bVRMode;
+	}
+	virtual bool GetVRMode() OVERRIDE
+	{
+		return m_bVRMode;
+	}
+
+	bool IsDispatchingMessages( void )
+	{
+		return m_InDispatcher;
+	}
+
 private:
 	// VGUI contexts
 	struct Context_t
@@ -189,13 +201,15 @@ private:
 
 	struct Tick_t
 	{
-		VPANEL	panel;
+		VPanel	*panel;
 		int		interval;
 		int		nexttick;
-
+		bool	bMarkDeleted;
 		// Debugging
 		char	panelname[ 64 ];
 	};
+
+	Tick_t* CreateNewTick( VPANEL panel, int intervalMilliseconds );
 
 	// Returns the current context
 	Context_t *GetContext( HContext context );
@@ -204,22 +218,27 @@ private:
 	void PanelDeleted(VPanel *panel);
 	bool DispatchMessages();
 	void DestroyAllContexts( );
-
-
-	bool m_bRunning;
+	void ClearMessageQueues();
+	inline bool IsReentrant() const 
+	{ 
+		return m_nReentrancyCount > 0; 
+	}
 
 	// safe panel handle stuff
-	CUtlLinkedList<SerialPanel_t, unsigned short> m_PanelList;
-	unsigned short m_iNextSerialNumber;
-	int m_iPanelsAlloced;
-	bool m_bInitialized;
+	CUtlHandleTable< VPanel, 20 > m_HandleTable;
 	int m_iCurrentMessageID;
-	bool m_bDoSleep;
+
+	bool m_bRunning : 1;
+	bool m_bDoSleep : 1;
+	bool m_InDispatcher : 1;
+	bool m_bDebugMessages : 1;
+	bool m_bVRMode : 1;
+	bool m_bCanRemoveTickSignal : 1;
+	int m_nReentrancyCount;
 
 	CUtlVector< Tick_t * > m_TickSignalVec;
 	CUtlLinkedList< Context_t >	m_Contexts;
 
-	bool m_InDispatcher;
 	HContext m_hContext;
 	Context_t m_DefaultContext;
 
@@ -228,10 +247,10 @@ private:
 #endif
 
 	// message queue. holds all vgui messages generated by windows events
-	CUtlLinkedList<MessageItem_t, short> m_MessageQueue;
+	CUtlLinkedList<MessageItem_t, ushort> m_MessageQueue;
 
 	// secondary message queue, holds all vgui messages generated by vgui
-	CUtlLinkedList<MessageItem_t, short> m_SecondaryQueue;
+	CUtlLinkedList<MessageItem_t, ushort> m_SecondaryQueue;
 
 	// timing queue, holds all the messages that have to arrive at a specified time
 	CUtlPriorityQueue<MessageItem_t> m_DelayedMessageQueue;
@@ -240,26 +259,29 @@ private:
 CVGui g_VGui;
 EXPOSE_SINGLE_INTERFACE_GLOBALVAR(CVGui, IVGui, VGUI_IVGUI_INTERFACE_VERSION, g_VGui);
 
-namespace vgui
+bool IsDispatchingMessageQueue( void )
 {
-
-vgui::IVGui *ivgui()
-{
-	return &g_VGui;
+	return g_VGui.IsDispatchingMessages();
 }
 
+namespace vgui
+{
+IVGui *g_pIVgui = &g_VGui;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CVGui::CVGui() : m_DelayedMessageQueue(0, 4, PriorityQueueComp), m_PanelList(GROW_PANEL_NUMBER, INITIAL_PANEL_NUMBER) 
+CVGui::CVGui() : m_DelayedMessageQueue(0, 4, PriorityQueueComp)
 {
-	m_iPanelsAlloced = 0;
-	m_bInitialized = false;
+	m_bRunning = false;
+	m_InDispatcher = false;
+	m_bDebugMessages = false;
 	m_bDoSleep = true;
+	m_bVRMode = false;
+	m_bCanRemoveTickSignal = true;
+	m_nReentrancyCount = 0;
 	m_hContext = DEFAULT_VGUI_CONTEXT;
-	m_iNextSerialNumber = 0;
 	m_DefaultContext.m_hInputContext = DEFAULT_INPUT_CONTEXT;
 }
 
@@ -268,42 +290,42 @@ CVGui::CVGui() : m_DelayedMessageQueue(0, 4, PriorityQueueComp), m_PanelList(GRO
 //-----------------------------------------------------------------------------
 CVGui::~CVGui()
 {
-	// print out debug results
-	if (m_iPanelsAlloced > 0)
+#ifdef _DEBUG
+	int nCount = m_HandleTable.GetHandleCount();
+	int nActualCount = 0;
+	for ( int i = 0; i < nCount; ++i )
 	{
-		ivgui()->DPrintf2("Memory leak: panels left in memory: %d\n", m_iPanelsAlloced);
-	}
-
-	if ( m_PanelList.Count() > 0 )
-	{
-		ivgui()->DPrintf2("Memory leak: panels left in Panel List: %d\n", m_PanelList.Count());
-	}
-/*
-	// even though we would like to iterate the panels and display their names here, we can't
-	// since the Client() pointer will be invalid since the clients dll has already been unloaded
-	for (int i = 0; i < MAX_SAFE_PANELS; i++)
-	{
-		if (m_PanelList[i].m_pPanel)
+		UtlHandle_t h = m_HandleTable.GetHandleFromIndex( i );
+		if ( m_HandleTable.IsHandleValid( h ) )
 		{
-			ivgui()->DPrintf2("%s - %s\n", m_PanelList[i].m_pPanel->Client()->GetName(), m_PanelList[i].m_pPanel->Client()->GetClassName());
+			++nActualCount;
 		}
 	}
-*/
-}
 
-//-----------------------------------------------------------------------------
-// Purpose: initializes internal vgui interfaces
-//-----------------------------------------------------------------------------
-bool CVGui::Init(CreateInterfaceFn *factoryList, int numFactories)
-{
-	if (!m_bInitialized)
+	if ( nActualCount > 0 )
 	{
-		m_bInitialized = true;
-		return VGui_InternalLoadInterfaces( factoryList, numFactories );
+		Msg("Memory leak: panels left in CVGui::m_PanelList: %d\n", nActualCount );
 	}
-
-	return true;
+#endif // _DEBUG
 }
+
+//-----------------------------------------------------------------------------
+// Purpose: Dumps out list of all active panels
+//-----------------------------------------------------------------------------
+void CVGui::SpewAllActivePanelNames()
+{
+	int nCount = m_HandleTable.GetHandleCount();
+	for ( int i = 0; i < nCount; ++i )
+	{
+		UtlHandle_t h = m_HandleTable.GetHandleFromIndex( i );
+		if ( m_HandleTable.IsHandleValid( h ) )
+		{
+			VPanel *pPanel = m_HandleTable.GetHandle( h );
+			Msg("\tpanel '%s' of type '%s' leaked\n", g_pIPanel->GetName( (VPANEL)pPanel ), ((VPanel *)pPanel)->GetClassName());
+		}
+	}
+}
+
 
 //-----------------------------------------------------------------------------
 // Creates/ destroys "input" contexts, which contains information
@@ -312,7 +334,7 @@ bool CVGui::Init(CreateInterfaceFn *factoryList, int numFactories)
 HContext CVGui::CreateContext()
 {
 	HContext i = m_Contexts.AddToTail();
-	m_Contexts[i].m_hInputContext = input()->CreateInputContext();
+	m_Contexts[i].m_hInputContext = g_pInput->CreateInputContext();
 	return i;
 }
 
@@ -325,7 +347,7 @@ void CVGui::DestroyContext( HContext context )
 		ActivateContext( DEFAULT_VGUI_CONTEXT );
 	}
 
-	input()->DestroyInputContext( GetContext(context)->m_hInputContext );
+	g_pInput->DestroyInputContext( GetContext(context)->m_hInputContext );
 	m_Contexts.Remove(context);
 }
 
@@ -360,7 +382,7 @@ CVGui::Context_t *CVGui::GetContext( HContext context )
 void CVGui::AssociatePanelWithContext( HContext context, VPANEL pRoot )
 {
 	Assert( context != DEFAULT_VGUI_CONTEXT );
-	input()->AssociatePanelWithInputContext( GetContext(context)->m_hInputContext, pRoot );
+	g_pInput->AssociatePanelWithInputContext( GetContext(context)->m_hInputContext, pRoot );
 }
 
 
@@ -372,30 +394,35 @@ void CVGui::ActivateContext( HContext context )
 {
 	Assert( (context == DEFAULT_VGUI_CONTEXT) || m_Contexts.IsValidIndex(context) );
 
-	if (m_hContext != context)
+	if ( m_hContext != context )
 	{
 		// Clear out any messages queues that may be full...
-		DispatchMessages();
+		if ( !IsReentrant() )
+		{
+			DispatchMessages();
+		}
 
 		m_hContext = context;
-		input()->ActivateInputContext( GetContext(m_hContext)->m_hInputContext ); 
+		g_pInput->ActivateInputContext( GetContext(m_hContext)->m_hInputContext ); 
 
-		if (context != DEFAULT_VGUI_CONTEXT)
+		if ( context != DEFAULT_VGUI_CONTEXT && !IsReentrant() )
 		{
-			input()->RunFrame( );
+			g_pInput->RunFrame( );
 		}
 	}
 }
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Runs a single vgui frame, pumping all message to panels
 //-----------------------------------------------------------------------------
 void CVGui::RunFrame() 
 {
-	Assert(_heapchk() == _HEAPOK);
-	bool shouldSleep = false;
+	// NOTE: This can happen when running in Maya waiting for modal dialogs
+	bool bIsReentrant = m_InDispatcher;
+	if ( bIsReentrant )
+	{
+		++m_nReentrancyCount;
+	}
 
 #ifdef DEBUG
 //  memory allocation debug helper
@@ -406,69 +433,55 @@ void CVGui::RunFrame()
 	// this will generate all key and mouse events as well as make a real repaint
 	{
 		VPROF( "surface()->RunFrame()" );
-		surface()->RunFrame();
+		g_pSurface->RunFrame();
 	}
 
 	// give the system a chance to process
 	{
 		VPROF( "system()->RunFrame()" );
-		system()->RunFrame();
+		g_pSystem->RunFrame();
 	}
 
 	// update cursor positions
-	int cursorX, cursorY;
+	if ( IsPC() && !IsReentrant() )
 	{
 		VPROF( "update cursor positions" );
-		input()->GetCursorPos(cursorX, cursorY);
+		int cursorX, cursorY;
+		g_pInput->GetCursorPosition(cursorX, cursorY);
 
 		// this does the actual work given a x,y and a surface
-		input()->UpdateMouseFocus(cursorX, cursorY);
+		g_pInput->UpdateMouseFocus(cursorX, cursorY);
 
-		// if the cursor is not over any of the surfaces the mouse focus is set to null
-		if (!surface()->IsWithin(cursorX, cursorY))
-		{
-			input()->SetMouseFocus(NULL);
-			if (input()->GetFocus() == NULL)
-			{
-				// nothing has focus, sleep
-				shouldSleep = true;
-			}
-		}
 	}
 
-	// while we are at it, this looks like a good place to set the emulated cursor position to its current position
-//	_private->_surfaceBaseDar[i]->setEmulatedCursorPos(cursorX, cursorY);
-
+	if ( !bIsReentrant )
 	{
 		VPROF( "input()->RunFrame()" );
-		input()->RunFrame();
+		g_pInput->RunFrame();
 	}
 
 	// messenging
+	if ( !bIsReentrant )
 	{
-		VPROF( "messenging" );
-				// send all the messages waiting in the queue
+		VPROF( "messaging" );
+
 		// send all the messages waiting in the queue
-		if (!DispatchMessages())
-		{
-			shouldSleep = true;
-		}
+		DispatchMessages();
 
-		int time = system()->GetTimeMillis();
+		// Do the OnTicks before purging messages, since in previous code they were posted after dispatch and wouldn't hit
+		//  until next frame
+		int time = g_pSystem->GetTimeMillis();
 
+		m_bCanRemoveTickSignal = false;
+
+		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s - Ticks", __FUNCTION__ );
 		// directly invoke tick all who asked to be ticked
 		int count = m_TickSignalVec.Count();
 		for (int i = count - 1; i >= 0; i-- )
 		{
 			Tick_t *t = m_TickSignalVec[i];
-			
-			VPANEL tickTarget = t->panel;
-			if ( !tickTarget )
-			{
-				m_TickSignalVec.Remove( i );
-				delete t;
+			if ( t->bMarkDeleted )
 				continue;
-			}
 
 			if ( t->interval != 0 )
 			{
@@ -477,32 +490,50 @@ void CVGui::RunFrame()
 
 				t->nexttick = time + t->interval;
 			}
+			
+			t->panel->Client()->OnTick();
+			tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s - Ticks: %s", __FUNCTION__, t->panel->Client()->GetName() );
+		}
 
-			PostMessage(tickTarget, new KeyValues("Tick"), NULL);
+		m_bCanRemoveTickSignal = true;
+
+		// get count again. panels could be added to tick vector in OnTick
+		count = m_TickSignalVec.Count();
+
+		// Remove all panels that tried to remove tick in OnTick
+		for (int i = count - 1; i >= 0; i-- )
+		{
+			Tick_t *t = m_TickSignalVec[i];
+			if ( t->bMarkDeleted )
+			{
+				m_TickSignalVec.Remove( i );
+				delete t;
+			}
 		}
 	}
 
 	{
 		VPROF( "SolveTraverse" );
 		// make sure the hierarchy is up to date
-		surface()->SolveTraverse(surface()->GetEmbeddedPanel());
-		surface()->ApplyChanges();
-
-		Assert(_heapchk() == _HEAPOK);
+		g_pSurface->SolveTraverse(g_pSurface->GetEmbeddedPanel());
+		g_pSurface->ApplyChanges();
+#ifdef WIN32
+		Assert( IsX360() || ( IsPC() && _heapchk() == _HEAPOK ) );
+#endif
 	}
 
-	if (m_bDoSleep && shouldSleep)
+	if ( bIsReentrant )
 	{
-		::Sleep(5);
+		--m_nReentrancyCount;
 	}
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 VPANEL CVGui::AllocPanel()
 {
-	m_iPanelsAlloced++;
 #ifdef DEBUG
 	m_iDeleteCount++;
 #endif
@@ -519,7 +550,6 @@ void CVGui::FreePanel(VPANEL ipanel)
 {
 	PanelDeleted((VPanel *)ipanel);
 	delete (VPanel *)ipanel;
-	m_iPanelsAlloced--;
 #ifdef DEBUG
 	m_iDeleteCount--;
 #endif
@@ -530,48 +560,73 @@ void CVGui::FreePanel(VPANEL ipanel)
 //-----------------------------------------------------------------------------
 HPanel CVGui::PanelToHandle(VPANEL panel)
 {
-	if (!panel)
-		return INVALID_PANEL;
-
-	HPanelList baseIndex =  ((VPanel *)panel)->GetListEntry();
-	return (baseIndex << 16) + m_PanelList[baseIndex].m_iSerialNumber;
+	if (panel)
+		return ((VPanel*)panel)->GetHPanel();
+	return INVALID_PANEL;
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Returns the panel at the specified index
 //-----------------------------------------------------------------------------
 VPANEL CVGui::HandleToPanel(HPanel index)
 {
-	HPanelList baseIndex = static_cast<HPanelList>( (index >> 16) );
-	int serial = index - (baseIndex << 16);
-
-	if ( index == INVALID_PANEL ||  !m_PanelList.IsValidIndex(baseIndex) )
+	if ( !m_HandleTable.IsHandleValid( index ) )
 	{
 		return NULL;
 	}
-
-	if (m_PanelList[baseIndex].m_iSerialNumber != serial)
-		return NULL;
-
-	return (VPANEL)(m_PanelList[baseIndex].m_pPanel);
+	return (VPANEL)m_HandleTable.GetHandle( (UtlHandle_t)index );
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Called whenever a panel is constructed
 //-----------------------------------------------------------------------------
 void CVGui::PanelCreated(VPanel *panel)
 {
-	SerialPanel_t slot;
-	slot.m_pPanel = (VPANEL)panel;
-	slot.m_iSerialNumber = m_iNextSerialNumber++;
-	HPanelList index = m_PanelList.AddToTail();
-	m_PanelList[ index ] = slot;
+	UtlHandle_t h = m_HandleTable.AddHandle();
+	m_HandleTable.SetHandle( h, panel );
 
-	Assert( m_PanelList.Count() < WARN_PANEL_NUMBER );
+#if DUMP_PANEL_LIST
+	int nCount = m_HandleTable.GetHandleCount();
+	int nActualCount = 0;
+	for ( int i = 0; i < nCount; ++i )
+	{
+		UtlHandle_t h = m_HandleTable.GetHandleFromIndex( i );
+		if ( m_HandleTable.IsHandleValid( h ) )
+		{
+			++nActualCount;
+		}
+	}
 
-	((VPanel *)panel)->SetListEntry( index );
+	if ( nActualCount >= WARN_PANEL_NUMBER )
+	{
+		FILE *file1 = fopen("panellist.txt", "w");
+		if (file1 != NULL)
+		{
+			fprintf(file1, "Too many panels...listing them all.\n");
+			int panelIndex;
+			for (panelIndex = 0; panelIndex < nCount; ++panelIndex)
+			{
+				UtlHandle_t h = m_HandleTable.GetHandleFromIndex( i );
+				VPanel *pPanel = m_HandleTable.GetHandle( h );
+				IClientPanel *ipanel = ( pPanel ) ? pPanel->Client() : NULL;
+				if ( ipanel )
+					fprintf(file1, "panel %d: name: %s   classname: %s\n", panelIndex, ipanel->GetName(), ipanel->GetClassName());
+				else
+					fprintf(file1, "panel %d: can't get ipanel\n", panelIndex);
+			}
 
-	surface()->AddPanel((VPANEL)panel);
+			fclose(file1);
+		}
+	}
+
+	Assert( nActualCount < WARN_PANEL_NUMBER );
+#endif // DUMP_PANEL_LIST
+
+	((VPanel *)panel)->SetHPanel( h );
+
+	g_pSurface->AddPanel((VPANEL)panel);
 }
 
 //-----------------------------------------------------------------------------
@@ -581,29 +636,28 @@ void CVGui::PanelCreated(VPanel *panel)
 void CVGui::PanelDeleted(VPanel *focus)
 {
 	Assert( focus );
-	surface()->ReleasePanel((VPANEL)focus);
-	input()->PanelDeleted((VPANEL)focus);
+	g_pSurface->ReleasePanel((VPANEL)focus);
+	g_pInput->PanelDeleted((VPANEL)focus);
 
 	// remove from safe handle list
+	UtlHandle_t h = ((VPanel *)focus)->GetHPanel();
 
-	Assert( m_PanelList.IsValidIndex(((VPanel *)focus)->GetListEntry()) );
-	if ( m_PanelList.IsValidIndex(((VPanel *)focus)->GetListEntry()) )
+	Assert( m_HandleTable.IsHandleValid(h) );
+	if ( m_HandleTable.IsHandleValid(h) )
 	{
-		m_PanelList.Remove( ((VPanel *)focus)->GetListEntry() );
+		m_HandleTable.RemoveHandle( h );
 	}
 
-	((VPanel *)focus)->SetListEntry( INVALID_PANELLIST );
+	((VPanel *)focus)->SetHPanel( INVALID_PANEL );
 
 	// remove from tick signal dar
 	RemoveTickSignal( (VPANEL)focus );
 }
 
-
 //-----------------------------------------------------------------------------
-// Purpose: Adds the panel to a tick signal list, so the panel receives a message every frame
-// Input  : *panel - 
+// Purpose: Creates or updates a tick signal for a panel.  Returns NULL if already ticking.
 //-----------------------------------------------------------------------------
-void CVGui::AddTickSignal(VPANEL panel, int intervalMilliseconds /*=0*/ )
+CVGui::Tick_t* CVGui::CreateNewTick( VPANEL panel, int intervalMilliseconds )
 {
 	Tick_t *t;
 	// See if it's already in list
@@ -611,21 +665,25 @@ void CVGui::AddTickSignal(VPANEL panel, int intervalMilliseconds /*=0*/ )
 	for (int i = 0; i < count; i++ )
 	{
 		Tick_t *t = m_TickSignalVec[i];
-		if ( t->panel == panel )
+		if ( t->panel == (VPanel *)panel )
 		{
 			// Go ahead and update intervals
 			t->interval = intervalMilliseconds;
-			t->nexttick = system()->GetTimeMillis() + t->interval;
-			return;
+			t->nexttick = g_pSystem->GetTimeMillis() + t->interval;
+
+			// Somebody added this panel back to the tick list, don't delete it
+			t->bMarkDeleted = false;
+			return NULL;
 		}
 	}
 
 	// Add to list
 	t = new Tick_t;
 
-	t->panel = panel;
+	t->panel = (VPanel *)panel;
 	t->interval = intervalMilliseconds;
-	t->nexttick = system()->GetTimeMillis() + t->interval;
+	t->nexttick = g_pSystem->GetTimeMillis() + t->interval;
+	t->bMarkDeleted = false;
 
 	if ( strlen( ((VPanel *)panel)->Client()->GetName() ) > 0 )
 	{
@@ -636,27 +694,65 @@ void CVGui::AddTickSignal(VPANEL panel, int intervalMilliseconds /*=0*/ )
 		strncpy( t->panelname, ((VPanel *)panel)->Client()->GetClassName(), sizeof( t->panelname ) );
 	}
 
-	// simply add the element to the list 
-	m_TickSignalVec.AddToTail( t );
-	// panel is removed from list when deleted
+	return t;
 }
 
 //-----------------------------------------------------------------------------
+// Purpose: Adds the panel to the tail of a tick signal list, so the panel receives a message every frame
+//-----------------------------------------------------------------------------
+void CVGui::AddTickSignal(VPANEL panel, int intervalMilliseconds /*=0*/ )
+{
+	Tick_t* t = CreateNewTick( panel, intervalMilliseconds );
+
+	if ( t )
+	{
+		// add the element to the end list 
+		m_TickSignalVec.AddToTail( t );
+		// panel is removed from list when deleted
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Adds the panel to the head of a tick signal list, so the panel receives a message every frame
+//-----------------------------------------------------------------------------
+void CVGui::AddTickSignalToHead(VPANEL panel, int intervalMilliseconds /*=0*/ )
+{
+	Tick_t* t = CreateNewTick( panel, intervalMilliseconds );
+
+	if ( t )
+	{
+		// simply add the element to the head list 
+		m_TickSignalVec.AddToHead( t );
+		// panel is removed from list when deleted
+	}
+}
+
+
+//-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : panel - 
 //-----------------------------------------------------------------------------
 void CVGui::RemoveTickSignal( VPANEL panel )
 {
+	VPanel *search = (VPanel *)panel;
+
 	// remove from tick signal dar
 	int count = m_TickSignalVec.Count();
 
 	for (int i = 0; i < count; i++ )
 	{
 		Tick_t *tick = m_TickSignalVec[i];
-		if ( tick->panel == panel )
+		if ( tick->panel == search )
 		{
-			m_TickSignalVec.Remove( i );
-			delete tick;
+			if ( m_bCanRemoveTickSignal )
+			{
+				m_TickSignalVec.Remove( i );
+				delete tick;
+			}
+			else
+			{
+				tick->bMarkDeleted = true;
+			}
+			
 			return;
 		}
 	}
@@ -671,98 +767,142 @@ void CVGui::RemoveTickSignal( VPANEL panel )
 //-----------------------------------------------------------------------------
 bool CVGui::DispatchMessages()
 {
-	int time = system()->GetTimeMillis();
+	int time = g_pSystem->GetTimeMillis();
 
 	m_InDispatcher = true;
 	bool doneWork = (m_MessageQueue.Count() > 12);
 
 	bool bUsingDelayedQueue = (m_DelayedMessageQueue.Count() > 0);
 
-	while (m_MessageQueue.Count() > 0 || (m_SecondaryQueue.Count() > 0) || bUsingDelayedQueue)
+	// Need two passes because we send the mouse move message after all
+	// other messages are done, but the mouse move message may itself generate
+	// some more messages
+	int nPassCount = 0;
+	while ( nPassCount < 2 )
 	{
-		// get the first message
-		MessageItem_t *messageItem = NULL;
-		int messageIndex = 0;
+		while (m_MessageQueue.Count() > 0 || (m_SecondaryQueue.Count() > 0) || bUsingDelayedQueue)
+		{
+			// get the first message
+			MessageItem_t *messageItem = NULL;
+			int messageIndex = 0;
 
-		// use the secondary queue until it empties. empty it after each message in the
-		// primary queue. this makes primary messages completely resolve 
-		bool bUsingSecondaryQueue = (m_SecondaryQueue.Count() > 0);
-		if (bUsingSecondaryQueue)
-		{
-			doneWork = true;
-			messageIndex = m_SecondaryQueue.Head();
-			messageItem = &m_SecondaryQueue[messageIndex];
-		}
-		else if (bUsingDelayedQueue)
-		{
-			if (m_DelayedMessageQueue.Count() >0)
+			// use the secondary queue until it empties. empty it after each message in the
+			// primary queue. this makes primary messages completely resolve 
+			bool bUsingSecondaryQueue = (m_SecondaryQueue.Count() > 0);
+			if (bUsingSecondaryQueue)
 			{
-				messageItem = (MessageItem_t*)&m_DelayedMessageQueue.ElementAtHead();
+				doneWork = true;
+				messageIndex = m_SecondaryQueue.Head();
+				messageItem = &m_SecondaryQueue[messageIndex];
 			}
-			if (!messageItem || messageItem->_arrivalTime > time)
+			else if (bUsingDelayedQueue)
 			{
-				// no more items in the delayed message queue, move to the system queue
-				bUsingDelayedQueue = false;
-				continue;
-			}
-		}
-		else
-		{
-			messageIndex = m_MessageQueue.Head();
-			messageItem = &m_MessageQueue[messageIndex];
-		}
-
-		// message debug code 
-	/*	
-		char qname[20] = "Primary";
-		if (bUsingSecondaryQueue)
-			strcpy(qname, "Secondary");
-		
-		if (strcmp(messageItem->_params->GetName(), "Tick")
-			&& strcmp(messageItem->_params->GetName(), "MouseFocusTicked") 
-			&& strcmp(messageItem->_params->GetName(), "KeyFocusTicked")
-			&& strcmp(messageItem->_params->GetName(), "CursorMoved"))
-		{
-			if (!stricmp(messageItem->_params->GetName(), "command"))
-			{
-				ivgui()->DPrintf2( "%s Queue dispatching command( %s, %s -- %i )\n", qname, messageItem->_params->GetName(), messageItem->_params->GetString("command"), messageItem->_messageID );
+				if (m_DelayedMessageQueue.Count() >0)
+				{
+					messageItem = (MessageItem_t*)&m_DelayedMessageQueue.ElementAtHead();
+				}
+				if (!messageItem || messageItem->_arrivalTime > time)
+				{
+					// no more items in the delayed message queue, move to the system queue
+					bUsingDelayedQueue = false;
+					continue;
+				}
 			}
 			else
 			{
-				ivgui()->DPrintf2( "%s Queue dispatching( %s -- %i )\n", qname ,messageItem->_params->GetName(), messageItem->_messageID );
+				messageIndex = m_MessageQueue.Head();
+				messageItem = &m_MessageQueue[messageIndex];
+			}
+
+			// message debug code 
+
+			if ( m_bDebugMessages )
+			{
+				const char *qname = bUsingSecondaryQueue ? "Secondary" : "Primary";
+
+				if (strcmp(messageItem->_params->GetName(), "Tick")
+					&& strcmp(messageItem->_params->GetName(), "MouseFocusTicked") 
+					&& strcmp(messageItem->_params->GetName(), "KeyFocusTicked")
+					&& strcmp(messageItem->_params->GetName(), "CursorMoved"))
+				{
+					if (!stricmp(messageItem->_params->GetName(), "command"))
+					{
+						g_pIVgui->DPrintf2( "%s Queue dispatching command( %s, %s -- %i )\n", qname, messageItem->_params->GetName(), messageItem->_params->GetString("command"), messageItem->_messageID );
+					}
+					else
+					{
+						g_pIVgui->DPrintf2( "%s Queue dispatching( %s -- %i )\n", qname ,messageItem->_params->GetName(), messageItem->_messageID );
+					}
+				}
+			}
+
+			// send it
+			KeyValues *params = messageItem->_params;
+
+			// Deal with special internal cursor movement messages
+			if ( messageItem->_messageTo == 0xFFFFFFFF )
+			{
+				if ( !Q_stricmp( params->GetName(), "SetCursorPosInternal" ) )
+				{
+					int nXPos = params->GetInt( "xpos", 0 );
+					int nYPos = params->GetInt( "ypos", 0 );
+					g_pInput->UpdateCursorPosInternal( nXPos, nYPos );
+				}
+			}
+#ifdef _X360
+			else if ( messageItem->_messageTo == 0xFFFFFFFE ) // special tag to always give message to the active key focus
+			{
+				VPanel *vto = (VPanel *) g_pInput->GetCalculatedFocus();
+				if (vto)
+				{
+					vto->SendMessage(params, g_pIVgui->HandleToPanel(messageItem->_from));
+				}
+			}
+#endif
+			else
+			{
+				VPanel *vto = (VPanel *)g_pIVgui->HandleToPanel(messageItem->_messageTo);
+				if (vto)
+				{
+					//			Msg("Sending message: %s to %s\n", params ? params->GetName() : "\"\"", vto->GetName() ? vto->GetName() : "\"\"");
+					vto->SendMessage(params, g_pIVgui->HandleToPanel(messageItem->_from));
+				}
+			}
+
+			// free the keyvalues memory
+			// we can't reference the messageItem pointer anymore since the queue might have moved in memory
+			if (params)
+			{
+				params->deleteThis();
+			}
+
+			// remove it from the queue
+			if (bUsingSecondaryQueue)
+			{
+				m_SecondaryQueue.Remove(messageIndex);
+			}
+			else if (bUsingDelayedQueue)
+			{
+				m_DelayedMessageQueue.RemoveAtHead();
+			}
+			else
+			{
+				m_MessageQueue.Remove(messageIndex);
 			}
 		}
-	*/	
-		
-		// send it
-		KeyValues *params = messageItem->_params;
-		VPanel *vto = (VPanel *)ivgui()->HandleToPanel(messageItem->_messageTo);
-		if (vto)
-		{
-			vto->SendMessage(params, ivgui()->HandleToPanel(messageItem->_from));
-		}
 
-		// free the keyvalues memory
-		// we can't reference the messageItem pointer anymore since the queue might have moved in memory
-		if (params)
+		++nPassCount;
+		if ( nPassCount == 1 )
 		{
-			params->deleteThis();
-		}
-
-		// remove it from the queue
-		if (bUsingSecondaryQueue)
-		{
-			m_SecondaryQueue.Remove(messageIndex);
-		}
-		else if (bUsingDelayedQueue)
-		{
-			m_DelayedMessageQueue.RemoveAtHead();
-		}
-		else
-		{
-			m_MessageQueue.Remove(messageIndex);
+			// Specifically post the current mouse position as a message
+			g_pInput->PostCursorMessage();
 		}
 	}
+
+	// Make sure the windows cursor is in the right place after processing input 
+	// Needs to be done here because a message provoked by the cursor moved
+	// message may move the cursor also
+	g_pInput->HandleExplicitSetCursor( );
 
 	m_InDispatcher = false;
 	return doneWork;
@@ -781,6 +921,17 @@ void CVGui::MarkPanelForDeletion(VPANEL panel)
 //-----------------------------------------------------------------------------
 void CVGui::PostMessage(VPANEL target, KeyValues *params, VPANEL from, float delay)
 {
+	// Ignore all messages in re-entrant mode
+	if ( IsReentrant() )
+	{
+		Assert( 0 );
+		if (params)
+		{
+			params->deleteThis();
+		}
+		return;
+	}
+
 	if (!target)
 	{
 		if (params)
@@ -791,24 +942,37 @@ void CVGui::PostMessage(VPANEL target, KeyValues *params, VPANEL from, float del
 	}
 
 	MessageItem_t messageItem;
-	messageItem._messageTo = ivgui()->PanelToHandle(target);
+	 
+#ifdef _X360
+	// Special coded target that will always send the message to the key focus
+	// this is needed since we might send two messages on a tice, and the first
+	// could change the focus.
+	if( target == (VPANEL) MESSAGE_CURRENT_KEYFOCUS )
+	{
+		messageItem._messageTo = 0xFFFFFFFE;
+	}
+	else
+#endif	
+	{
+		messageItem._messageTo = (target != (VPANEL) MESSAGE_CURSOR_POS ) ? g_pIVgui->PanelToHandle(target) : 0xFFFFFFFF;
+	}
 	messageItem._params = params;
 	Assert(params->GetName());
-	messageItem._from = ivgui()->PanelToHandle(from);
+	messageItem._from = g_pIVgui->PanelToHandle(from);
 	messageItem._arrivalTime = 0;
 	messageItem._messageID = m_iCurrentMessageID++;
 
 	/* message debug code
 	//if ( stricmp(messageItem._params->GetName(),"CursorMoved") && stricmp(messageItem._params->GetName(),"KeyFocusTicked"))
 	{
-		ivgui()->DPrintf2( "posting( %s -- %i )\n", messageItem._params->GetName(), messageItem._messageID );
+		g_pIVgui->DPrintf2( "posting( %s -- %i )\n", messageItem._params->GetName(), messageItem._messageID );
 	}
 	*/
 				
 	// add the message to the correct message queue
 	if (delay > 0.0f)
 	{
-		messageItem._arrivalTime = system()->GetTimeMillis() + (delay * 1000);
+		messageItem._arrivalTime = g_pSystem->GetTimeMillis() + (delay * 1000);
 		m_DelayedMessageQueue.Insert(messageItem);
 	}
 	else if (m_InDispatcher)
@@ -827,16 +991,52 @@ void CVGui::PostMessage(VPANEL target, KeyValues *params, VPANEL from, float del
 void CVGui::ShutdownMessage(unsigned int shutdownID)
 {
 	// broadcast Shutdown to all the top level windows, and see if any take notice
-	VPANEL panel = surface()->GetEmbeddedPanel();
+	VPANEL panel = g_pSurface->GetEmbeddedPanel();
 	for (int i = 0; i < ((VPanel *)panel)->GetChildCount(); i++)
 	{
-		ivgui()->PostMessage((VPANEL)((VPanel *)panel)->GetChild(i), new KeyValues("ShutdownRequest", "id", shutdownID), NULL);
+		g_pIVgui->PostMessage((VPANEL)((VPanel *)panel)->GetChild(i), new KeyValues("ShutdownRequest", "id", shutdownID), NULL);
 	}
 
 	// post to the top level window as well
-	ivgui()->PostMessage(panel, new KeyValues("ShutdownRequest", "id", shutdownID), NULL);
+	g_pIVgui->PostMessage(panel, new KeyValues("ShutdownRequest", "id", shutdownID), NULL);
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Clears all the memory queues and free's their memory
+//-----------------------------------------------------------------------------
+void CVGui::ClearMessageQueues()
+{
+	Assert(!m_InDispatcher);
+
+	{FOR_EACH_LL( m_MessageQueue, i )
+	{
+		if (m_MessageQueue[i]._params)
+		{
+			m_MessageQueue[i]._params->deleteThis();
+		}
+	}}
+	m_MessageQueue.RemoveAll();
+
+	// secondary message queue, holds all vgui messages generated by vgui
+	{FOR_EACH_LL( m_SecondaryQueue, i )
+	{
+		if (m_SecondaryQueue[i]._params)
+		{
+			m_SecondaryQueue[i]._params->deleteThis();
+		}
+	}}
+	m_SecondaryQueue.RemoveAll();
+
+	// timing queue, holds all the messages that have to arrive at a specified time
+	while (m_DelayedMessageQueue.Count() > 0)
+	{
+		if (m_DelayedMessageQueue.ElementAtHead()._params)
+		{
+			m_DelayedMessageQueue.ElementAtHead()._params->deleteThis();
+		}
+		m_DelayedMessageQueue.RemoveAtHead();
+	}
+}
 
 /*
 static void*(*staticMalloc)(size_t size)=malloc;
@@ -882,10 +1082,14 @@ void CVGui::DPrintf(const char* format,...)
 	va_list argList;
 
 	va_start(argList,format);
-	vsprintf(buf,format,argList);
+	Q_vsnprintf(buf,sizeof( buf ), format,argList);
 	va_end(argList);
 
+#ifdef WIN32
 	::OutputDebugString(buf);
+#else
+	Msg( "%s", buf );
+#endif
 }
 
 void CVGui::DPrintf2(const char* format,...)
@@ -894,13 +1098,17 @@ void CVGui::DPrintf2(const char* format,...)
 	va_list argList;
 	static int ctr=0;
 
-	sprintf(buf,"%d:",ctr++);
+	Q_snprintf(buf,sizeof( buf ), "%d:",ctr++ );
 
 	va_start(argList,format);
-	vsprintf(buf+strlen(buf),format,argList);
+	Q_vsnprintf(buf+strlen(buf),sizeof( buf )-strlen(buf),format,argList);
 	va_end(argList);
 
+#ifdef WIN32
 	::OutputDebugString(buf);
+#else
+	Msg( "%s", buf );
+#endif
 }
 
 void vgui::vgui_strcpy(char* dst,int dstLen,const char* src)
@@ -926,12 +1134,22 @@ void vgui::vgui_strcpy(char* dst,int dstLen,const char* src)
 //-----------------------------------------------------------------------------
 bool CVGui::Connect( CreateInterfaceFn factory )
 {
+	if ( !BaseClass::Connect( factory ) )
+		return false;
+
+	if ( !g_pFullFileSystem || !g_pVGuiLocalize )
+	{
+		Warning( "IVGui unable to connect to required interfaces!\n" );
+		return false;
+	}
+
 	return VGui_InternalLoadInterfaces( &factory, 1 );
 }
 
 void CVGui::Disconnect()
 {
 	// FIXME: Blat out interface pointers
+	BaseClass::Disconnect();
 }
 
 
@@ -941,13 +1159,31 @@ void CVGui::Disconnect()
 InitReturnVal_t CVGui::Init()
 {
 	m_hContext = DEFAULT_VGUI_CONTEXT;
+	m_bDebugMessages = CommandLine()->FindParm( "-vguimessages" ) ? true : false;
+
+	InitReturnVal_t nRetVal = BaseClass::Init();
+	if ( nRetVal != INIT_OK )
+		return nRetVal;
+
 	return INIT_OK;
 }
 
 void CVGui::Shutdown()
 {
+	g_pSystem->SaveUserConfigFile();
+
 	DestroyAllContexts();
-	scheme()->Shutdown();
+	ClearMessageQueues();
+
+	g_pSystem->Shutdown();
+	g_pScheme->Shutdown(true);
+
+	if ( !g_pSurface->QueryInterface( MAT_SYSTEM_SURFACE_INTERFACE_VERSION ) )
+	{
+		g_pSurface->Shutdown();
+	}
+
+	BaseClass::Shutdown();
 }
 
 //-----------------------------------------------------------------------------
@@ -961,7 +1197,3 @@ void *CVGui::QueryInterface( const char *pInterfaceName )
 	CreateInterfaceFn vguiFactory = Sys_GetFactoryThis();
 	return vguiFactory( pInterfaceName, NULL );
 }
-
-	// End of specific interface
-//-----------------------------------------------------------------------------
-

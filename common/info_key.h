@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Utility functions for parsing info strings
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef INFO_H
 #define INFO_H

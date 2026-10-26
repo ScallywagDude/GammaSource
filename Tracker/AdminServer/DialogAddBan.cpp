@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -8,35 +8,44 @@
 #include <stdio.h>
 #include "DialogAddBan.h"
 
-#include <VGUI_Button.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
-#include <VGUI_TextEntry.h>
-#include <VGUI_CheckButton.h>
-#include <VGUI_MessageBox.h>
+#include <vgui/ISurface.h>
+#include <KeyValues.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_ISurface.h>
+#include <vgui_controls/Button.h>
+#include <vgui_controls/Label.h>
+#include <vgui_controls/TextEntry.h>
+#include <vgui_controls/CheckButton.h>
+#include <vgui_controls/MessageBox.h>
 
 using namespace vgui;
 
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
-CDialogAddBan::CDialogAddBan() : Frame(NULL, "DialogAddBan")
+CDialogAddBan::CDialogAddBan(vgui::Panel *parent) : Frame(parent, "DialogAddBan")
 {
 	SetSize(320, 200);
-
+	SetTitle("#Game_Ban_Add_Title", false);
 
 	m_pIDTextEntry = new TextEntry(this, "IDTextEntry");
+
+	m_pOkayButton = new Button(this, "OkayButton", "#Okay_Button");
+
+	m_pPermBanRadio = new RadioButton(this, "PermBanRadio", "#Add_Ban_Time_Permanent");
+	m_pTempBanRadio = new RadioButton(this, "TempBanRadio", "#Add_Ban_Time_Temporary");
+	m_pPermBanRadio->SetSelected(true);
+
 	m_pTimeTextEntry = new TextEntry(this, "TimeTextEntry");
+	m_pTimeCombo = new ComboBox(this, "TimeCombo",3,false);
+	int defaultItem = m_pTimeCombo->AddItem("#Add_Ban_Period_Minutes", NULL);
+	m_pTimeCombo->AddItem("#Add_Ban_Period_Hours", NULL);
+	m_pTimeCombo->AddItem("#Add_Ban_Period_Days", NULL);
+	m_pTimeCombo->ActivateItem(defaultItem);
 
-	m_pOkayButton = new Button(this, "OkayButton", "&Okay");
-	//m_pCvarEntry->setTextHidden(true);
+	LoadControlSettings("Admin\\DialogAddBan.res", "PLATFORM");
 
-	LoadControlSettings("Admin\\DialogAddBan.res");
-
-	SetTitle("Enter new Ban", true);
+	SetTitle("#Add_Ban_Title", true);
+	SetSizeable(false);
 
 	// set our initial position in the middle of the workspace
 	MoveToCenterOfScreen();
@@ -53,7 +62,7 @@ CDialogAddBan::~CDialogAddBan()
 //-----------------------------------------------------------------------------
 // Purpose: initializes the dialog and brings it to the foreground
 //-----------------------------------------------------------------------------
-void CDialogAddBan::Activate(const char *type)
+void CDialogAddBan::Activate(const char *type,const char *player,const char *authid)
 {
 
 	m_cType=type;
@@ -64,6 +73,11 @@ void CDialogAddBan::Activate(const char *type)
 
 	RequestFocus();
 	m_pIDTextEntry->RequestFocus();
+	SetVisible(true);
+	
+	SetTextEntry("PlayerTextEntry",player);
+	SetTextEntry("IDTextEntry",authid);
+
 	BaseClass::Activate();
 }
 
@@ -79,19 +93,44 @@ void CDialogAddBan::SetLabelText(const char *textEntryName, const char *text)
 	}
 }
 
-bool CDialogAddBan::IsIPCheck()
+//-----------------------------------------------------------------------------
+// Purpose: Sets the text of a labell by name
+//-----------------------------------------------------------------------------
+void CDialogAddBan::SetTextEntry(const char *textEntryName, const char *text)
 {
-	CheckButton *entry = dynamic_cast<CheckButton *>(FindChildByName("IPCheck"));
+	TextEntry *entry = dynamic_cast<TextEntry *>(FindChildByName(textEntryName));
 	if (entry)
 	{
-		return entry->IsSelected();
+		entry->SetText(text);
 	}
-	return false;
+}
+
+bool CDialogAddBan::IsIPCheck()
+{
+	char buf[64];
+	int dotCount=0;
+	m_pIDTextEntry->GetText(buf, sizeof(buf)-1);
+
+	for(unsigned int i=0;i<strlen(buf);i++)
+	{
+		if(buf[i]=='.')
+		{
+			dotCount++;
+		}
+	}
+
+	if(dotCount>0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Input  : *command - 
 //-----------------------------------------------------------------------------
 void CDialogAddBan::OnCommand(const char *command)
 {
@@ -100,28 +139,63 @@ void CDialogAddBan::OnCommand(const char *command)
 	if (!stricmp(command, "Okay"))
 	{
 		KeyValues *msg = new KeyValues("AddBanValue");
-		char buf[64];
-		m_pTimeTextEntry->GetText(buf,64);
+		char buf[64],idbuf[64];
 		float time;
-		sscanf(buf,"%f",&time);
-		if(time<0) 
+		m_pIDTextEntry->GetText(idbuf, sizeof(idbuf));
+		m_pTimeTextEntry->GetText(buf, 64);
+	
+
+		if(strlen(idbuf)<=0)
 		{
-			MessageBox *dlg = new MessageBox("Add Ban Error", "The time you entered is invalid. \nIt must be equal to or greater than zero.");
+			MessageBox *dlg = new MessageBox("#Add_Ban_Error", "#Add_Ban_ID_Invalid");
+			dlg->DoModal();
+			bClose=false;
+		} 
+		else if(strlen(buf)<=0 && !m_pPermBanRadio->IsSelected())
+		{
+			MessageBox *dlg = new MessageBox("#Add_Ban_Error", "#Add_Ban_Time_Empty");
 			dlg->DoModal();
 			bClose=false;
 		}
 		else
 		{
-			msg->SetString("time", buf );
-			m_pIDTextEntry->GetText(buf, sizeof(buf)-1);
-			msg->SetString("id", buf);
-			msg->SetString("type",m_cType);
-			msg->SetInt("ipcheck",IsIPCheck());
+			if(m_pPermBanRadio->IsSelected())
+			{
+				time=0;
+			}
+			else
+			{
+				sscanf(buf,"%f",&time);
+				m_pTimeCombo->GetText(buf,64);
+				if(strstr(buf,"hour"))
+				{
+					time*=60;
+				}
+				else if(strstr(buf,"day"))
+				{
+					time*=(60*24);
+				}
+				if(time<0) 
+				{
+					MessageBox *dlg = new MessageBox("#Add_Ban_Error", "#Add_Ban_Time_Invalid");
+					dlg->DoModal();
+					bClose=false;
+				}
+			}
 
-			PostActionSignal(msg);
+			if(time>=0)
+			{
+				msg->SetFloat("time", time);
+				msg->SetString("id", idbuf);
+				msg->SetString("type",m_cType);
+				msg->SetInt("ipcheck",IsIPCheck());
 
-			bClose = true;
+				PostActionSignal(msg);
+
+				bClose = true;
+			}
 		}
+		
 	}
 	else if (!stricmp(command, "Close"))
 	{
@@ -134,8 +208,7 @@ void CDialogAddBan::OnCommand(const char *command)
 
 	if (bClose)
 	{
-		PostMessage(this, new KeyValues("Close"));
-		MarkForDeletion();
+		Close();
 	}
 }
 
@@ -157,6 +230,21 @@ void CDialogAddBan::OnClose()
 	MarkForDeletion();
 }
 
-
-
-
+//-----------------------------------------------------------------------------
+// Purpose: called when the perm/temp ban time radio buttons are pressed
+//-----------------------------------------------------------------------------
+void CDialogAddBan::OnButtonToggled(Panel *panel)
+{
+	if (panel == m_pPermBanRadio)
+	{
+		m_pTimeTextEntry->SetEnabled(false);
+		m_pTimeCombo->SetEnabled(false);
+	}
+	else
+	{
+		m_pTimeTextEntry->SetEnabled(true);
+		m_pTimeCombo->SetEnabled(true);	
+	}
+	
+	Repaint();
+}

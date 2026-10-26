@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ICLIENTTHINKABLE_H
 #define ICLIENTTHINKABLE_H
@@ -20,7 +20,7 @@ typedef CClientThinkHandlePtr* ClientThinkHandle_t;
 
 
 // Entities that implement this interface can be put into the client think list.
-class IClientThinkable
+abstract_class IClientThinkable
 {
 public:
 	// Gets at the containing class...

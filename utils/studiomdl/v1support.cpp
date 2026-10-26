@@ -1,12 +1,10 @@
-/***
-*
-*	Copyright (c) 1998, Valve LLC. All rights reserved.
-*	
-*	This product contains software technology licensed from Id 
-*	Software, Inc. ("Id Technology").  Id Technology (c) 1996 Id Software, Inc. 
-*	All Rights Reserved.
-*
-****/
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 //
 // studiomdl.c: generates a studio .mdl file from a .qc script
@@ -26,14 +24,21 @@
 
 #include "cmdlib.h"
 #include "scriplib.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "studio.h"
 #include "studiomdl.h"
 
+// The current version of the SMD file being parsed
+// Yes, I know this file is called 'v1support' and there's never actually
+// been a v > 1 but now there is
+// (actually, there was a while when we were using developing progressive mesh 
+// stuff in the middle of HL2 development, but most all that code has long since 
+// been deleted)
+int g_smdVersion = 1;
 
-int lookup_index( s_source_t *psource, int material, Vector& vertex, Vector& normal, Vector2D texcoord )
+int lookup_index( s_source_t *psource, int material, Vector& vertex, Vector& normal, Vector2D texcoord, int iCount, int bones[], float weights[] )
 {
-	int i;
+	int i, j;
 
 	for (i = 0; i < numvlist; i++) 
 	{
@@ -43,17 +48,35 @@ int lookup_index( s_source_t *psource, int material, Vector& vertex, Vector& nor
 			&& g_texcoord[i][0] == texcoord[0]
 			&& g_texcoord[i][1] == texcoord[1])
 		{
-			v_listdata[i].lastref = numvlist;
-			return i;
+			if (g_bone[i].numbones == iCount)
+			{
+				for (j = 0; j < iCount; j++)
+				{
+					if (g_bone[i].bone[j] != bones[j] || g_bone[i].weight[j] != weights[j])
+						break;
+				}
+				if (j == iCount)
+				{
+					v_listdata[i].lastref = numvlist;
+					return i;
+				}
+			}
 		}
 	}
 	if (i >= MAXSTUDIOVERTS) {
-		Error( "too many indices in source: \"%s\"\n", psource->filename);
+		MdlError( "too many indices in source: \"%s\"\n", psource->filename);
 	}
 
 	VectorCopy( vertex, g_vertex[i] );
 	VectorCopy( normal, g_normal[i] );
 	Vector2Copy( texcoord, g_texcoord[i] );
+
+    g_bone[i].numbones = iCount;
+	for ( j = 0; j < iCount; j++)
+	{
+		g_bone[i].bone[j] = bones[j];
+		g_bone[i].weight[j] = weights[j];
+	}
 
 	v_listdata[i].v = i;
 	v_listdata[i].m = material;
@@ -70,7 +93,7 @@ int lookup_index( s_source_t *psource, int material, Vector& vertex, Vector& nor
 
 void ParseFaceData( s_source_t *psource, int material, s_face_t *pFace )
 {
-	int index[3];
+	int index[3] = {};
 	int i, j;
 	Vector p;
 	Vector normal;
@@ -83,14 +106,13 @@ void ParseFaceData( s_source_t *psource, int material, s_face_t *pFace )
 	{
 		memset( g_szLine, 0, sizeof( g_szLine ) );
 
-		if (fgets( g_szLine, sizeof( g_szLine ), g_fpInput ) == NULL) 
+		if (!GetLineInput()) 
 		{
-			Error("%s: error on g_szLine %d: %s", g_szFilename, g_iLinecount, g_szLine );
+			MdlError("%s: error on g_szLine %d: %s", g_szFilename, g_iLinecount, g_szLine );
 		}
 
 		iCount = 0;
 
-		g_iLinecount++;
 		i = sscanf( g_szLine, "%d %f %f %f %f %f %f %f %f %d %d %f %d %f %d %f %d %f",
 			&bone, 
 			&p[0], &p[1], &p[2], 
@@ -104,7 +126,7 @@ void ParseFaceData( s_source_t *psource, int material, s_face_t *pFace )
 
 		if (bone < 0 || bone >= psource->numbones) 
 		{
-			Error("bogus bone index\n%d %s :\n%s", g_iLinecount, g_szFilename, g_szLine );
+			MdlError("bogus bone index\n%d %s :\n%s", g_iLinecount, g_szFilename, g_szLine );
 		}
 
 		//Scale face pos
@@ -112,7 +134,7 @@ void ParseFaceData( s_source_t *psource, int material, s_face_t *pFace )
 		
 		// continue parsing more bones.
 		// FIXME: don't we have a built in parser that'll do this?
-		if (iCount > MAXSTUDIOBONEWEIGHTS)
+		if (iCount > 4)
 		{
 			int k;
 			int ctr = 0;
@@ -163,45 +185,32 @@ void ParseFaceData( s_source_t *psource, int material, s_face_t *pFace )
 		// invert v
 		t[1] = 1.0 - t[1];
 
-		index[j] = lookup_index( psource, material, p, normal, t );
-
 		if (i == 9 || iCount == 0)
 		{
-			g_bone[index[j]].numbones = 1;
-			g_bone[index[j]].bone[0] = bone;
-			g_bone[index[j]].weight[0] = 1.0;
+			iCount = 1;
+			bones[0] = bone;
+			weights[0] = 1.0;
 		}
 		else
 		{
 			iCount = SortAndBalanceBones( iCount, MAXSTUDIOBONEWEIGHTS, bones, weights );
-
-			g_bone[index[j]].numbones = iCount;
-			for (i = 0; i < iCount; i++)
-			{
-				g_bone[index[j]].bone[i] = bones[i];
-				g_bone[index[j]].weight[i] = weights[i];
-			}
 		}
+
+
+		index[j] = lookup_index( psource, material, p, normal, t, iCount, bones, weights );
 	}
 
 	// pFace->material = material; // BUG
 	pFace->a		= index[0];
-	pFace->b		= index[1];
-	pFace->c		= index[2];
+	pFace->b		= index[2];
+	pFace->c		= index[1];
 	Assert( ((pFace->a & 0xF0000000) == 0) && ((pFace->b & 0xF0000000) == 0) && 
 		((pFace->c & 0xF0000000) == 0) );
-
-	if (flip_triangles)
-	{
-		j = pFace->b;  pFace->b  = pFace->c;  pFace->c  = j;
-	}
 }
 
 void Grab_Triangles( s_source_t *psource )
 {
 	int		i;
-	int		tcount = 0;	
-	int		ncount = 0;
 	Vector	vmin, vmax;
 
 	vmin[0] = vmin[1] = vmin[2] = 99999;
@@ -215,14 +224,12 @@ void Grab_Triangles( s_source_t *psource )
 	//
 	int texture;
 	int material;
-	char texturename[64];
+	char texturename[MAX_PATH];
 
 	while (1) 
 	{
-		if (fgets( g_szLine, sizeof( g_szLine ), g_fpInput ) == NULL) 
+		if (!GetLineInput()) 
 			break;
-
-		g_iLinecount++;
 
 		// check for end
 		if (IsEnd( g_szLine )) 
@@ -230,15 +237,15 @@ void Grab_Triangles( s_source_t *psource )
 
 		// Look for extra junk that we may want to avoid...
 		int nLineLength = strlen( g_szLine );
-		if (nLineLength >= 64)
+		if (nLineLength >= sizeof( texturename ))
 		{
-			Warning("Unexpected data at line %d, (need a texture name) ignoring...\n", g_iLinecount );
+			MdlWarning("Unexpected data at line %d, (need a texture name) ignoring...\n", g_iLinecount );
 			continue;
 		}
 
 		// strip off trailing smag
-		strncpy( texturename, g_szLine, 63 );
-		for (i = strlen( texturename ) - 1; i >= 0 && ! isgraph( texturename[i] ); i--)
+		V_strcpy_safe( texturename, g_szLine );
+		for (i = strlen( texturename ) - 1; i >= 0 && ! V_isgraph( texturename[i] ); i--)
 		{
 		}
 		texturename[i + 1] = '\0';
@@ -248,12 +255,12 @@ void Grab_Triangles( s_source_t *psource )
 		{
 			if (sourcetexture[i][0] == '\0') 
 			{
-				strcpy( texturename, defaulttexture[i] );
+				V_strcpy_safe( texturename, defaulttexture[i] );
 				break;
 			}
 			if (stricmp( texturename, sourcetexture[i]) == 0) 
 			{
-				strcpy( texturename, defaulttexture[i] );
+				V_strcpy_safe( texturename, defaulttexture[i] );
 				break;
 			}
 		}
@@ -261,70 +268,51 @@ void Grab_Triangles( s_source_t *psource )
 		if (texturename[0] == '\0')
 		{
 			// weird source problem, skip them
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			g_iLinecount += 3;
+			GetLineInput();
+			GetLineInput();
+			GetLineInput();
 			continue;
 		}
 
-		if (stricmp( texturename, "null.bmp") == 0 || stricmp( texturename, "null.tga") == 0)
+		if (stricmp( texturename, "null.bmp") == 0 || stricmp( texturename, "null.tga") == 0 || stricmp( texturename, "debug/debugempty" ) == 0)
 		{
 			// skip all faces with the null texture on them.
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			fgets( g_szLine, sizeof( g_szLine ), g_fpInput );
-			g_iLinecount += 3;
+			GetLineInput();
+			GetLineInput();
+			GetLineInput();
 			continue;
 		}
 
-		texture = lookup_texture( texturename );
+		texture = LookupTexture( texturename, ( g_smdVersion > 1 ) );
 		psource->texmap[texture] = texture;	// hack, make it 1:1
-		material = use_texture_as_material( texture );
+		material = UseTextureAsMaterial( texture );
 
 		s_face_t f;
 		ParseFaceData( psource, material, &f );
+
+		// remove degenerate triangles
+		if (f.a == f.b || f.b == f.c || f.a == f.c)
+		{
+			// printf("Degenerate triangle %d %d %d\n", f.a, f.b, f.c );
+			continue;
+		}
 	
 		g_src_uface[g_numfaces] = f;
 		g_face[g_numfaces].material = material;
 		g_numfaces++;
-		// psource->face[ psource->numfaces++ ] = f;  // BUG
 	}
 
 	BuildIndividualMeshes( psource );
-
-#if 0
-	// duplicate data
-	psource->boneweight = (s_boneweight_t *)kalloc( psource->numvertices, sizeof( s_boneweight_t ) );
-	psource->vertex = (Vector *)kalloc( psource->numvertices, sizeof( Vector ) );
-	psource->normal = (Vector *)kalloc( psource->numvertices, sizeof( Vector ) );
-	psource->texcoord = (Vector2D *)kalloc( psource->numindices, sizeof( Vector2D ) );
-
-	for (i = 0; i < psource->numvertices; i++)
-	{
-		psource->boneweight[i] = g_boneweight[i];
-		VectorCopy( g_vertex[i], psource->vertex[i] );
-		VectorCopy( g_normal[i], psource->normal[i] );
-		Vector2Copy( g_texcoord[i], psource->texcoord[i] );
-	}
-#endif
-
-	/*
-	BUG: move this
-	psource->minfacecount = psource->numfaces;
-	psource->maxfacecount = psource->numfaces;
-	*/
-	
-	if (ncount) printf("%d triangles with misdirected normals\n", ncount );
 }
-
-
 
 
 int Load_SMD ( s_source_t *psource )
 {
 	char	cmd[1024];
 	int		option;
+
+	// Reset smdVersion
+	g_smdVersion = 1;
 
 	if (!OpenGlobalFile( psource->filename ))
 		return 0;
@@ -336,42 +324,49 @@ int Load_SMD ( s_source_t *psource )
 
 	g_iLinecount = 0;
 
-	while (fgets( g_szLine, sizeof( g_szLine ), g_fpInput ) != NULL) 
+	while (GetLineInput()) 
 	{
-		g_iLinecount++;
 		int numRead = sscanf( g_szLine, "%s %d", cmd, &option );
 
 		// Blank line
 		if ((numRead == EOF) || (numRead == 0))
 			continue;
 
-		if (strcmp( cmd, "version" ) == 0) 
+		if (stricmp( cmd, "version" ) == 0) 
 		{
-			if (option != 1) 
+			if (option < 1 || option > 2) 
 			{
-				Error("bad version\n");
+				MdlError("bad version\n");
 			}
+			g_smdVersion = option;
 		}
-		else if (strcmp( cmd, "nodes" ) == 0) 
+		else if (stricmp( cmd, "nodes" ) == 0) 
 		{
 			psource->numbones = Grab_Nodes( psource->localBone );
 		}
-		else if (strcmp( cmd, "skeleton" ) == 0) 
+		else if (stricmp( cmd, "skeleton" ) == 0) 
 		{
-			Grab_Animation( psource );
+			Grab_Animation( psource, "BindPose" );
 		}
-		else if (strcmp( cmd, "triangles" ) == 0) 
+		else if (stricmp( cmd, "triangles" ) == 0) 
 		{
 			Grab_Triangles( psource );
 		}
+		else if (stricmp( cmd, "vertexanimation" ) == 0) 
+		{
+			Grab_Vertexanimation( psource, "BindPose" );
+		}
+		else if ((strncmp( cmd, "//", 2 ) == 0) || (strncmp( cmd, ";", 1 ) == 0) || (strncmp( cmd, "#", 1 ) == 0))
+		{
+			ProcessSourceComment( psource, cmd );
+			continue;
+		}
 		else 
 		{
-			printf("unknown studio command\n" );
+			MdlWarning("unknown studio command \"%s\"\n", cmd );
 		}
 	}
 	fclose( g_fpInput );
-
-	is_v1support = true;
 
 	return 1;
 }

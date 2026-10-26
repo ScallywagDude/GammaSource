@@ -1,16 +1,11 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( MEASURE_SECTION_H )
 #define MEASURE_SECTION_H
 #ifdef _WIN32
@@ -36,9 +31,9 @@
 // ------------------------------------------------------------------------------------ //
 // These things must exist in the executable for the CMeasureSection code to work.
 // ------------------------------------------------------------------------------------ //
-double GetRealTime();	// Get the clock's time.
+float GetRealTime();	// Get the clock's time.
 
-extern ConVar	host_speeds;
+extern ConVar	game_speeds;
 extern ConVar	measure_resort;
 // ------------------------------------------------------------------------------------ //
 

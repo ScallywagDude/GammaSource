@@ -1,5 +1,12 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
-#include <mx/mxWindow.h>
+#include <mxtk/mxWindow.h>
 #include "mxBitmapWindow.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

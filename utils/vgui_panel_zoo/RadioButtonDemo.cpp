@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Controls.h>
+#include <VGUI/IVGui.h>
+#include <Keyvalues.h>
+#include <vgui_controls/Controls.h>
 
-#include <VGUI_RadioButton.h>
+#include <vgui_controls/RadioButton.h>
 
 
 using namespace vgui;
@@ -123,7 +123,7 @@ MessageMapItem_t RadioButtonDemo::m_MessageMap[] =
 	MAP_MESSAGE( RadioButtonDemo, "RadioButtonChecked", OnRadioButtonHit ),
 };
 
-IMPLEMENT_PANELMAP(RadioButtonDemo, BaseClass);
+IMPLEMENT_PANELMAP(RadioButtonDemo, DemoPage);
 
 
 

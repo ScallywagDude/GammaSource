@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: simple TCP socket API for communicating as a TCP client over a TEXT
 //			connection
@@ -15,7 +10,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <winsock.h>
 
@@ -32,7 +27,7 @@ void SocketInit( void )
 	WSADATA wsData;
 
 	WORD wVersionRequested = MAKEWORD(1, 1);
-	int nResult = WSAStartup(wVersionRequested, &wsData);
+	WSAStartup(wVersionRequested, &wsData);
 }
 
 
@@ -122,7 +117,7 @@ void SocketSendString( HSOCKET socket, const char *pString )
 	if ( !pString )
 		return;
 
-	int len = strlen( pString );
+	int len = (int)strlen( pString );
 
 	if ( !len )
 		return;

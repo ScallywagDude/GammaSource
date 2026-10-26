@@ -5,13 +5,8 @@ import re
 import stat
 
 
-#
-# Useful function to return a list of files in a directory based on a dos-style wildcard like "*.txt"
-#
-# for name in WildcardSearch( "d:/hl2/src4/dt*.cpp", 1 ):
-#	print name
-#
-def WildcardSearch( wildcard, bRecurse=0 ):
+# This takes a DOS filename wildcard like *abc.t?t and returns a regex string that will match it.
+def GetRegExForDOSWildcard( wildcard ):
 	# First find the base directory name.
 	iLast = wildcard.rfind( "/" )
 	if iLast == -1:
@@ -30,6 +25,17 @@ def WildcardSearch( wildcard, bRecurse=0 ):
 	# .       -> \.
 	# ?       -> .
 	reString = dosStyleWildcard.replace( ".", r"\." ).replace( "*", ".*" ).replace( "?", "." )
+	return reString
+
+
+#
+# Useful function to return a list of files in a directory based on a dos-style wildcard like "*.txt"
+#
+# for name in WildcardSearch( "d:/hl2/src4/dt*.cpp", 1 ):
+#	print name
+#
+def WildcardSearch( wildcard, bRecurse=0 ):
+	reString = GetRegExForDOSWildcard( wildcard )
 	matcher = re.compile( reString, re.IGNORECASE )
 
 	return __GetFiles_R( matcher, dirName, bRecurse )

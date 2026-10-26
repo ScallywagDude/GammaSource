@@ -1,16 +1,38 @@
 vs.1.1
+
+# STATIC: "INTRO"					"0..1"
+# STATIC: "HALF_LAMBERT"			"0..1"
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "LIGHT_COMBO"			"0..21"
+# DYNAMIC: "SKINNING"				"0..1"
+
 ;------------------------------------------------------------------------------
-;	 c90	 = xyz = mouth forward direction vector, w = illum factor
+;	 $SHADER_SPECIFIC_CONST_0	 = xyz = mouth forward direction vector, w = illum factor
 ;------------------------------------------------------------------------------
 
 #include "macros.vsh"
+
+$WARPPARAM = $SHADER_SPECIFIC_CONST_2;
+$ENTITY_ORIGIN = $SHADER_SPECIFIC_CONST_3;
 
 ;------------------------------------------------------------------------------
 ; Vertex blending 
 ;------------------------------------------------------------------------------
 alloc $worldPos
 alloc $worldNormal
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
+
+;------------------------------------------------------------------------------
+; Optional intro warping
+;------------------------------------------------------------------------------
+if ( $INTRO == 1 )
+{
+	alloc $tmp
+	sub $tmp.xyz, $worldPos, $ENTITY_ORIGIN
+	mul $tmp.xy, $tmp, $WARPPARAM
+	add $worldPos.xyz, $tmp, $ENTITY_ORIGIN
+	free $tmp
+}
 
 ;------------------------------------------------------------------------------
 ; Transform the position from world to view space
@@ -36,8 +58,7 @@ free $projPos
 ; Lighting
 ;------------------------------------------------------------------------------
 alloc $linearColor
-&DoDynamicLightingToLinear( $g_ambientLightType, $g_localLightType1, $g_localLightType2, 
-                            $worldPos, $worldNormal, $linearColor );
+&DoDynamicLightingToLinear( $worldPos, $worldNormal, $linearColor );
 
 ;------------------------------------------------------------------------------
 ; Factor in teeth darkening factors
@@ -45,8 +66,8 @@ alloc $linearColor
 
 alloc $tmp
 
-mul $linearColor.xyz, c90.w, $linearColor	; FIXME Color darkened by illumination factor
-dp3 $tmp, $worldNormal, c90					; Figure out mouth forward dot normal
+mul $linearColor.xyz, $SHADER_SPECIFIC_CONST_0.w, $linearColor	; FIXME Color darkened by illumination factor
+dp3 $tmp, $worldNormal, $SHADER_SPECIFIC_CONST_0					; Figure out mouth forward dot normal
 max	$tmp, $cZero, $tmp						; clamp from 0 to 1
 mul $linearColor.xyz, $tmp, $linearColor	; Darken by forward dot normal too
 
@@ -58,7 +79,7 @@ alloc $gammaColor
 &LinearToGamma( $linearColor, $gammaColor );
 free $linearColor
 mul oD0.xyz, $gammaColor.xyz, $cOverbrightFactor
-mov oD0.w, c0.y				; make sure all components are defined
+mov oD0.w, $cOne				; make sure all components are defined
 
 
 free $gammaColor

@@ -1,14 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "stdafx.h"
 #include <stdio.h>
 #include <windows.h>
 #include "classcheck_util.h"
 #include "icodeprocessor.h"
+#include "tier1/strtools.h"
 #include "tier0/dbg.h"
 
 
@@ -42,6 +43,8 @@ void printusage( void )
 		\t-c = create missing save descriptions\n\
 		\t-x = create missing prediction descriptions\n\
 		\t-i = specify specific input file to parse\n\
+		\t-b = similar to -i, allows specifying files outside client\\server directories\n\
+		\t-j = check for Crazy Jay Stelly's mismatched Hungarian notation errors\n\
 		\t-l = log to file log.txt\n" );
 
 	// Exit app
@@ -119,8 +122,10 @@ int main( int argc, char* argv[] )
 	vprint( 0, "Valve Software - classcheck.exe (%s)\n", __DATE__ );
 	vprint( 0, "--- Game Code Static Analysis ---\n" );
 	char *pSpecificFile = NULL;
+	bool bOutsideGamedir = false;
 
-	for ( int i=1 ; i<argc ; i++)
+	int i = 1;
+	for ( i ; i<argc ; i++)
 	{
 		if ( argv[ i ][ 0 ] == '-' )
 		{
@@ -154,8 +159,19 @@ int main( int argc, char* argv[] )
 					++i;
 				}
 				break;
+			case 'b':
+				if (i < argc-1)
+				{
+					pSpecificFile = argv[i+1];
+					bOutsideGamedir = true;
+					++i;
+				}
+				break;
 			case 'l':
 				processor->SetLogFile( true );
+				break;
+			case 'j':
+				processor->SetCheckHungarian( true );
 				break;
 			default:
 				printusage();
@@ -176,17 +192,24 @@ int main( int argc, char* argv[] )
 	char sourcetreebase[ 256 ];
 	strcpy( sourcetreebase, argv[i-2] );
 
-	UTIL_StripTrailingSlashes( sourcetreebase );
+	Q_StripTrailingSlash( sourcetreebase );
 
 	if ( !pSpecificFile )
 	{
-		ProcessDirectory( argv[ i-1 ], sourcetreebase, "dlls",  "CBaseEntity" );
-		ProcessDirectory( argv[ i-1 ], sourcetreebase, "cl_dll",  "C_BaseEntity" );
+		ProcessDirectory( argv[ i-1 ], sourcetreebase, "server",  "CBaseEntity" );
+		ProcessDirectory( argv[ i-1 ], sourcetreebase, "client",  "C_BaseEntity" );
 	}
 	else
 	{
-		ProcessFile( argv[ i-1 ], sourcetreebase, "dlls",  "CBaseEntity", pSpecificFile );
-		ProcessFile( argv[ i-1 ], sourcetreebase, "cl_dll",  "C_BaseEntity", pSpecificFile );
+		if ( bOutsideGamedir )
+		{
+			ProcessFile( argv[ i-1 ], sourcetreebase, "", "", pSpecificFile );
+		}
+		else
+		{
+			ProcessFile( argv[ i-1 ], sourcetreebase, "server",  "CBaseEntity", pSpecificFile );
+			ProcessFile( argv[ i-1 ], sourcetreebase, "client",  "C_BaseEntity", pSpecificFile );
+		}
 	}
 
 	return 0;

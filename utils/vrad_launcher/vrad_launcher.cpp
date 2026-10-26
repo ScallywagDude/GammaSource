@@ -1,10 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // vrad_launcher.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
 #include <direct.h>
-#include "vstdlib/strtools.h"
-#include "vstdlib/icommandline.h"
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
 
 
 char* GetLastErrorString()
@@ -43,37 +50,29 @@ void MakeFullPath( const char *pIn, char *pOut, int outLen )
 	else
 	{
 		_getcwd( pOut, outLen );
-		Q_strncat( pOut, "\\", outLen );
-		Q_strncat( pOut, pIn, outLen );
+		Q_strncat( pOut, "\\", outLen, COPY_ALL_CHARACTERS );
+		Q_strncat( pOut, pIn, outLen, COPY_ALL_CHARACTERS );
 	}
 }
-
-
-void StripFilename( char *pFilename )
-{
-	char *pLastSlash = 0;
-	while ( *pFilename )
-	{
-		if ( *pFilename == '/' || *pFilename == '\\' )
-			pLastSlash = pFilename;
-
-		++pFilename;
-	}
-	if ( pLastSlash )
-		*pLastSlash = 0;
-}
-
 
 int main(int argc, char* argv[])
 {
 	char dllName[512];
-	bool bUseDefault = true;
 
 	CommandLine()->CreateCmdLine( argc, argv );
 
+	// check whether they used the -both switch. If this is specified, vrad will be run
+	// twice, once with -hdr and once without
+	int both_arg=0;
+	for(int arg=1;arg<argc;arg++)
+		if (Q_stricmp(argv[arg],"-both")==0)
+		{
+			both_arg=arg;
+		}
+
 	char fullPath[512], redirectFilename[512];
 	MakeFullPath( argv[0], fullPath, sizeof( fullPath ) );
-	StripFilename( fullPath );
+	Q_StripFilename( fullPath );
 	Q_snprintf( redirectFilename, sizeof( redirectFilename ), "%s\\%s", fullPath, "vrad.redirect" );
 
 	// First, look for vrad.redirect and load the dll specified in there if possible.
@@ -97,39 +96,50 @@ int main(int argc, char* argv[])
 		fclose( fp );
 	}
 
-	// If it didn't load the module above, then use the 
-	if ( !pModule )
-	{
-		strcpy( dllName, "vrad.dll" );
-		pModule = Sys_LoadModule( dllName );
-	}
-
-	if( !pModule )
-	{
-		printf( "vrad_launcher error: can't load %s\n%s", dllName, GetLastErrorString() );
-		return 1;
-	}
-
-	CreateInterfaceFn fn = Sys_GetFactory( pModule );
-	if( !fn )
-	{
-		printf( "vrad_launcher error: can't get factory from vrad.dll\n" );
-		Sys_UnloadModule( pModule );
-		return 2;
-	}
-
-	int retCode = 0;
-	IVRadDLL *pDLL = (IVRadDLL*)fn( VRAD_INTERFACE_VERSION, &retCode );
-	if( !pDLL )
-	{
-		printf( "vrad_launcher error: can't get IVRadDLL interface from vrad.dll\n" );
-		Sys_UnloadModule( pModule );
-		return 3;
-	}
-
-	int returnValue = pDLL->main( argc, argv );
-	Sys_UnloadModule( pModule );
+	int returnValue = 0;
 	
+	for(int mode=0;mode<2;mode++)
+	{
+		if (mode && (! both_arg))
+			continue;
+		
+
+		// If it didn't load the module above, then use the 
+		if ( !pModule )
+		{
+			strcpy( dllName, "vrad_dll.dll" );
+			pModule = Sys_LoadModule( dllName );
+		}
+		
+		if( !pModule )
+		{
+			printf( "vrad_launcher error: can't load %s\n%s", dllName, GetLastErrorString() );
+			return 1;
+		}
+		
+		CreateInterfaceFn fn = Sys_GetFactory( pModule );
+		if( !fn )
+		{
+			printf( "vrad_launcher error: can't get factory from vrad_dll.dll\n" );
+			Sys_UnloadModule( pModule );
+			return 2;
+		}
+		
+		int retCode = 0;
+		IVRadDLL *pDLL = (IVRadDLL*)fn( VRAD_INTERFACE_VERSION, &retCode );
+		if( !pDLL )
+		{
+			printf( "vrad_launcher error: can't get IVRadDLL interface from vrad_dll.dll\n" );
+			Sys_UnloadModule( pModule );
+			return 3;
+		}
+		
+		if (both_arg)
+			strcpy(argv[both_arg],(mode)?"-hdr":"-ldr");
+		returnValue = pDLL->main( argc, argv );
+		Sys_UnloadModule( pModule );
+		pModule=0;
+	}
 	return returnValue;
 }
 

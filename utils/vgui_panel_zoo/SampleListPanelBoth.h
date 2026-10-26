@@ -1,15 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_SectionedListPanel.h>
+#include <VGUI/IVGui.h>
+#include <vgui_controls/Controls.h>
+#include <Keyvalues.h>
+#include <vgui_controls/SectionedListPanel.h>
 
 
 using namespace vgui;

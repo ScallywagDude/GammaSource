@@ -1,15 +1,10 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
-// Interface to the engine system responsible for dealing with shadows
-//=============================================================================
+//===========================================================================//
 
 #ifndef SHADOWMGR_H
 #define SHADOWMGR_H
@@ -19,7 +14,15 @@
 #endif
 
 #include "engine/ishadowmgr.h"
-#include "vmatrix.h"
+#include "mathlib/vmatrix.h"
+#include "surfacehandle.h"
+#include "mathlib/ssemath.h"
+
+//-----------------------------------------------------------------------------
+// Forward declarations
+//-----------------------------------------------------------------------------
+class CDispInfo;
+
 
 //-----------------------------------------------------------------------------
 // Shadow decals are applied to a single surface
@@ -38,16 +41,33 @@ enum
 struct ShadowVertex_t
 {
 	Vector	m_Position;
-	Vector	m_TexCoord;	// Stored as 3D to help compute the fade amount
+	Vector	m_ShadowSpaceTexCoord;
+};
+
+
+//-----------------------------------------------------------------------------
+// This structure contains info to accelerate shadow darkness computation
+//-----------------------------------------------------------------------------
+struct ShadowDecalRenderInfo_t
+{
+	Vector2D m_vTexOrigin;
+	Vector2D m_vTexSize;
+	float m_flFalloffOffset;
+	float m_flOOZFalloffDist;
+	float m_flFalloffAmount;
+	float m_flFalloffBias;
 };
 
 
 //-----------------------------------------------------------------------------
 // Shadow-related functionality internal to the engine
 //-----------------------------------------------------------------------------
-class IShadowMgrInternal : public IShadowMgr
+abstract_class IShadowMgrInternal : public IShadowMgr
 {
 public:
+	virtual void LevelInit( int nSurfCount ) = 0;
+	virtual void LevelShutdown() = 0;
+
 	// This surface has been rendered; and we'll want to render the shadows
 	// on this surface
 	virtual void AddShadowsOnSurfaceToRenderList( ShadowDecalHandle_t decalHandle ) = 0;
@@ -55,7 +75,14 @@ public:
 	// This will render all shadows that were previously added using
 	// AddShadowsOnSurfaceToRenderList. If there's a model to world transform
 	// for the shadow receiver, then send it in!
+	// NOTE: This draws both shadows and projected textures.
+	virtual void RenderProjectedTextures( VMatrix const* pModelToWorld = 0 ) = 0;
+
+	// NOTE: This draws shadows
 	virtual void RenderShadows( VMatrix const* pModelToWorld = 0 ) = 0;
+
+	// NOTE: This draws flashlights
+	virtual void RenderFlashlights( bool bDoMasking, VMatrix const* pModelToWorld = 0 ) = 0;
 
 	// Clears the list of shadows to render 
 	virtual void ClearShadowRenderList() = 0;
@@ -68,13 +95,45 @@ public:
 	virtual int ProjectAndClipVertices( ShadowHandle_t handle, int count, 
 		Vector** ppPosition, ShadowVertex_t*** ppOutVertex ) = 0;
 
-	// Compute darkness when rendering
-	virtual unsigned char ComputeDarkness( float z, ShadowInfo_t const& info ) const = 0;
+	// Computes information for rendering
+	virtual void ComputeRenderInfo( ShadowDecalRenderInfo_t* pInfo, ShadowHandle_t handle ) const = 0;
 
 	// Shadow state...
 	virtual unsigned short InvalidShadowIndex( ) = 0;
 	virtual void SetModelShadowState( ModelInstanceHandle_t instance ) = 0;
+
+	virtual void SetNumWorldMaterialBuckets( int numMaterialSortBins ) = 0;
+
+	virtual void DrawFlashlightDecals( int sortGroup, bool bDoMasking ) = 0;
+
+	virtual void DrawFlashlightDecalsOnSingleSurface( SurfaceHandle_t surfID, bool bDoMasking ) = 0;
+
+	virtual void DrawFlashlightOverlays( int nSortGroup, bool bDoMasking ) = 0;
+
+	virtual void DrawFlashlightDepthTexture( ) = 0;
+
+	virtual void DrawFlashlightDecalsOnDisplacements( int sortGroup, CDispInfo **visibleDisps, int nVisibleDisps, bool bDoMasking ) = 0;
+
+	virtual void SetFlashlightStencilMasks( bool bDoMasking ) = 0;
+	virtual bool ModelHasShadows( ModelInstanceHandle_t instance ) = 0;
+
+	// Converts z value to darkness
+	inline unsigned char ComputeDarkness( float z, const ShadowDecalRenderInfo_t& info ) const;
 };
+
+
+//-----------------------------------------------------------------------------
+// inline methods
+//-----------------------------------------------------------------------------
+inline unsigned char IShadowMgrInternal::ComputeDarkness( float z, const ShadowDecalRenderInfo_t& info ) const
+{
+	// NOTE: 0 means black, non-zero adds towards white...
+	z = ( z - info.m_flFalloffOffset ) * info.m_flOOZFalloffDist;
+	z = fsel( z, z, 0.0f );
+	z = info.m_flFalloffBias + z * info.m_flFalloffAmount;
+	z = fsel( z - 255.0f, 255.0f, z );
+	return z;
+}
 
 
 //-----------------------------------------------------------------------------

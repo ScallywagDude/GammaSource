@@ -1,16 +1,15 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
-
-#include "glquake.h"
+//=============================================================================//
+ 
+#include "tier0/vprof.h"
 #include "server.h"
 #include "host_cmd.h"
 #include "keys.h"
 #include "screen.h"
 #include "vengineserver_impl.h"
-#include "game_interface.h"
 #include "host_saverestore.h"
 #include "sv_filter.h"
 #include "gl_matsysiface.h"
@@ -33,104 +32,287 @@
 #include "enginesingleuserfilter.h"
 #include "profile.h"
 #include "proto_version.h"
+#include "protocol.h"
+#include "cl_main.h"
+#include "sv_steamauth.h"
+#include "zone.h"
+#include "datacache/idatacache.h"
+#include "sys_dll.h"
 #include "cmd.h"
-
-#ifdef _WIN32
+#include "tier0/icommandline.h"
+#include "filesystem.h"
+#include "filesystem_engine.h"
+#include "icliententitylist.h"
+#include "icliententity.h"
+#include "GameEventManager.h"
+#include "hltvserver.h"
+#if defined( REPLAY_ENABLED )
+#include "replay_internal.h"
+#include "replayserver.h"
+#endif
+#include "cdll_engine_int.h"
+#include "cl_steamauth.h"
+#ifndef SWDS
+#include "vgui_baseui_interface.h"
+#endif
 #include "sound.h"
 #include "voice.h"
+#include "sv_rcon.h"
+#if defined( _X360 )
+#include "xbox/xbox_console.h"
+#include "xbox/xbox_launch.h"
 #endif
+#include "filesystem/IQueuedLoader.h"
+#include "sys.h"
+
+#include "ixboxsystem.h"
+extern IXboxSystem *g_pXboxSystem;
+
+#include <sys/stat.h>
+#include <stdio.h>
+#ifdef POSIX
+// sigh, microsoft put _ in front of its type defines for stat
+#define _stat stat
+#endif
+
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+#define STEAM_PREFIX "STEAM_"
+
+#define STATUS_COLUMN_LENGTH_LINEPREFIX	1
+#define STATUS_COLUMN_LENGTH_USERID		6
+#define STATUS_COLUMN_LENGTH_USERID_STR	"6"
+#define STATUS_COLUMN_LENGTH_NAME		19
+#define STATUS_COLUMN_LENGTH_STEAMID	19
+#define STATUS_COLUMN_LENGTH_TIME		9
+#define STATUS_COLUMN_LENGTH_PING		4
+#define STATUS_COLUMN_LENGTH_PING_STR	"4"
+#define STATUS_COLUMN_LENGTH_LOSS		4
+#define STATUS_COLUMN_LENGTH_LOSS_STR	"4"
+#define STATUS_COLUMN_LENGTH_STATE		6
+#define STATUS_COLUMN_LENGTH_ADDR		21
+
+#define KICKED_BY_CONSOLE "Kicked from server"
 
 #ifndef SWDS
-// In other C files.
-void VideoMode_SetVideoMode( int width, int height, int bpp );
-void VideoMode_ChangeFullscreenMode( bool fullscreen );
-
-extern qboolean	g_bInEditMode;
+bool g_bInEditMode = false;
+bool g_bInCommentaryMode = false;
 #endif
 
-extern qboolean allow_cheats;
-extern ConVar	pausable;
+static void host_name_changed_f( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	Steam3Server().NotifyOfServerNameChange();
+}
 
-Vector	r_origin(0,0,0);
+ConVar host_name( "hostname", "", 0, "Hostname for server.", host_name_changed_f );
+ConVar host_map( "host_map", "", 0, "Current map name." );
 
-ConVar	host_name		( "hostname", "Half-Life 2" );
-ConVar	host_map		( "host_map", "" );
-ConVar  rcon_password	( "rcon_password", "" );
+void Host_VoiceRecordStop_f(void);
+static void voiceconvar_file_changed_f( IConVar *pConVar, const char *pOldValue, float flOldValue )
+{
+#ifndef SWDS
+	ConVarRef var( pConVar );
+	if ( var.GetInt() == 0 )
+	{
+		// Force voice recording to stop if they turn off voice_inputfromfile or if sv_allow_voice_from_file is set to 0. 
+		// Prevents an exploit where clients turn it on, start voice sending a long file, and then turn it off immediately.
+		Host_VoiceRecordStop_f();
+	}
+#endif
+}
 
 ConVar voice_recordtofile("voice_recordtofile", "0", 0, "Record mic data and decompressed voice data into 'voice_micdata.wav' and 'voice_decompressed.wav'");
-ConVar voice_inputfromfile("voice_inputfromfile", "0", 0, "Get voice input from 'voice_input.wav' rather than from the microphone.");
+ConVar voice_inputfromfile("voice_inputfromfile", "0", 0, "Get voice input from 'voice_input.wav' rather than from the microphone.", &voiceconvar_file_changed_f );
+ConVar sv_allow_voice_from_file( "sv_allow_voice_from_file", "1", FCVAR_REPLICATED, "Allow or disallow clients from using voice_inputfromfile on this server.", &voiceconvar_file_changed_f );
 
-static ConVar sv_fullsendtables( "sv_fullsendtables", "0", 0, "Force full sendtable sending path." );
+class CStatusLineBuilder
+{
+public:
+	CStatusLineBuilder() { Reset(); }
+	void Reset() { m_curPosition = 0; m_szLine[0] = '\0'; }
+	void AddColumnText( const char *pszText, unsigned int columnWidth )
+	{
+		size_t len = strlen( m_szLine );
 
+		if ( m_curPosition > len )
+		{
+			for ( size_t i = len; i < m_curPosition; i++ )
+			{
+				m_szLine[i] = ' ';
+			}
+			m_szLine[m_curPosition] = '\0';
+		}
+		else if ( len != 0 )
+		{
+			// There is always at least one space between columns.
+			m_szLine[len] = ' ';
+			m_szLine[len+1] = '\0';
+		}
+
+		V_strncat( m_szLine, pszText, sizeof( m_szLine ) );
+		m_curPosition += columnWidth + 1;
+	}
+
+	void InsertEmptyColumn( unsigned int columnWidth )
+	{
+		m_curPosition += columnWidth + 1;
+	}
+
+	const char *GetLine() { return m_szLine; }
+
+private:
+	size_t m_curPosition;
+	char m_szLine[512];
+};
+
+uint GetSteamAppID()
+{
+	static uint sunAppID = 0;
+	static bool bHaveValidSteamInterface = false;
+	
+	if ( !bHaveValidSteamInterface )
+	{
+#ifndef SWDS
+		if ( Steam3Client().SteamUtils() )
+		{
+			bHaveValidSteamInterface = true;
+			sunAppID = Steam3Client().SteamUtils()->GetAppID();
+		}
+#endif
+		if ( Steam3Server().SteamGameServerUtils() )
+		{
+			bHaveValidSteamInterface = true;
+			sunAppID = Steam3Server().SteamGameServerUtils()->GetAppID();
+		}
+
+		if ( !sunAppID )
+			sunAppID = 215;	// defaults to Source SDK Base (215) if no steam.inf can be found.
+	}
+	
+	return sunAppID;
+}
+
+EUniverse GetSteamUniverse()
+{
+#ifndef SWDS
+	if ( Steam3Client().SteamUtils() )
+		return Steam3Client().SteamUtils()->GetConnectedUniverse();
+#endif
+	if ( Steam3Server().SteamGameServerUtils() )
+		return Steam3Server().SteamGameServerUtils()->GetConnectedUniverse();
+
+	return k_EUniverseInvalid;
+}
 
 // Globals
 int	gHostSpawnCount = 0;
+
+// If any quit handlers balk, then aborts quit sequence
+bool EngineTool_CheckQuitHandlers();
+
+#if defined( _X360 )
+CON_COMMAND( quit_x360, "" )
+{
+	int launchFlags = LF_EXITFROMGAME;
+
+	// allocate the full payload
+	int nPayloadSize = XboxLaunch()->MaxPayloadSize();
+	byte *pPayload = (byte *)stackalloc( nPayloadSize );
+	V_memset( pPayload, 0, sizeof( nPayloadSize ) );
+
+	// payload is at least the command line
+	// any user data needed must be placed AFTER the command line
+	const char *pCmdLine = CommandLine()->GetCmdLine();
+	int nCmdLineLength = (int)strlen( pCmdLine ) + 1;
+	V_memcpy( pPayload, pCmdLine, min( nPayloadSize, nCmdLineLength ) );
+
+	// add any other data here to payload, after the command line
+	// ...
+
+	// storage device may have changed since previous launch
+	XboxLaunch()->SetStorageID( XBX_GetStorageDeviceId() );
+
+	// Close the storage devices
+	g_pXboxSystem->CloseContainers();
+	// persist the user id
+	bool bInviteRestart = args.FindArg( "invite" );
+	DWORD nUserID = ( bInviteRestart ) ? XBX_GetInvitedUserId() : XBX_GetPrimaryUserId();
+	XboxLaunch()->SetUserID( nUserID );
+
+	if ( args.FindArg( "restart" ) )
+	{
+		launchFlags |= LF_GAMERESTART;
+	}
+	
+	// If we're relaunching due to invite
+	if ( bInviteRestart )
+	{
+		launchFlags |= LF_INVITERESTART;
+		XNKID nSessionID = XBX_GetInviteSessionId();
+		XboxLaunch()->SetInviteSessionID( &nSessionID );
+	}
+
+	bool bLaunch = XboxLaunch()->SetLaunchData( pPayload, nPayloadSize, launchFlags );
+	if ( bLaunch )
+	{
+		COM_TimestampedLog( "Launching: \"%s\" Flags: 0x%8.8x", pCmdLine, XboxLaunch()->GetLaunchFlags() );
+		g_pMaterialSystem->PersistDisplay();
+		XBX_DisconnectConsoleMonitor();
+		XboxLaunch()->Launch();
+	}
+}
+#endif
 
 /*
 ==================
 Host_Quit_f
 ==================
 */
-void Host_Quit_f (void)
+void Host_Quit_f( const CCommand &args )
 {
+#if !defined(SWDS)
+	
+	if ( args.FindArg( "prompt" ) )
+	{
+		// confirm they want to quit
+		EngineVGui()->ConfirmQuit();
+		return;
+	}
+
+	if ( !EngineTool_CheckQuitHandlers() )
+	{
+		return;
+	}
+#endif
+
+	IGameEvent *event = g_GameEventManager.CreateEvent( "host_quit" );
+	if ( event )
+	{
+		g_GameEventManager.FireEventClientSide( event );
+	}
+
 	HostState_Shutdown();
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Host_Quit_Restart_f( void )
+CON_COMMAND( _restart, "Shutdown and restart the engine." )
 {
+	/*
+	// FIXME:  How to handle restarts?
+#ifndef SWDS
+	if ( !EngineTool_CheckQuitHandlers() )
+	{
+		return;
+	}
+#endif
+	*/
+
 	HostState_Restart();
 }
-
-#ifndef SWDS
-//-----------------------------------------------------------------------------
-// Purpose: Change to hardware renderer
-//-----------------------------------------------------------------------------
-void Host_SetRenderer_f( void )
-{
-	bool fullscreen = true;
-
-	if ( cls.state == ca_dedicated )
-		return;
-
-	if ( Cmd_Argc() != 2 )
-	{
-		return;
-	}
-
-	if ( !stricmp( Cmd_Argv(1), "windowed" ) )
-	{
-		fullscreen = false;
-	}
-
-	VideoMode_ChangeFullscreenMode( fullscreen );
-}
-
-void Host_SetVideoMode_f( void )
-{
-	int w, h, bpp = 16;
-
-	if ( cls.state == ca_dedicated )
-		return;
-
-	if ( Cmd_Argc() != 3 &&
-		 Cmd_Argc() != 4 )
-	{
-		return;
-	}
-
-	w = Q_atoi( Cmd_Argv(1) );
-	h = Q_atoi( Cmd_Argv(2) );
-	if ( Cmd_Argc() == 4 )
-	{
-		bpp = Q_atoi( Cmd_Argv(3) );
-	}
-
-	VideoMode_SetVideoMode( w, h, bpp );
-}
-#endif
 
 #ifndef SWDS
 //-----------------------------------------------------------------------------
@@ -138,7 +320,7 @@ void Host_SetVideoMode_f( void )
 //-----------------------------------------------------------------------------
 void Host_LightCrosshair (void);
 
-static ConCommand light_crosshair( "light_crosshair", Host_LightCrosshair );
+static ConCommand light_crosshair( "light_crosshair", Host_LightCrosshair, "Show texture color at crosshair", FCVAR_CHEAT );
 
 void Host_LightCrosshair (void)
 {
@@ -146,14 +328,14 @@ void Host_LightCrosshair (void)
 	Vector lightmapColor;
 
 	// max_range * sqrt(3)
-	VectorMA( r_origin, COORD_EXTENT * 1.74f, vpn, endPoint );
+	VectorMA( MainViewOrigin(), COORD_EXTENT * 1.74f, MainViewForward(), endPoint );
 	
-	R_LightVec( r_origin, endPoint, true, lightmapColor );
+	R_LightVec( MainViewOrigin(), endPoint, true, lightmapColor );
 	int r = LinearToTexture( lightmapColor.x );
 	int g = LinearToTexture( lightmapColor.y );
 	int b = LinearToTexture( lightmapColor.z );
 
-	Con_Printf( "Luxel Value: %d %d %d\n", r, g, b );
+	ConMsg( "Luxel Value: %d %d %d\n", r, g, b );
 }
 #endif
 
@@ -164,182 +346,456 @@ Host_Status_PrintClient
 Print client info to console 
 ==================
 */
-void Host_Status_PrintClient( char *pszStatus, qboolean bShowAddress, void (*print) (const char *fmt, ...), int j, client_t *client )
+void Host_Status_PrintClient( IClient *client, bool bShowAddress, void (*print) (const char *fmt, ...) )
 {
-	int			seconds;
-	int			minutes;
-	int			hours = 0;
+	INetChannelInfo *nci = client->GetNetChannel();
 
-	seconds = (int)(realtime - client->netchan.connect_time);
-	minutes = seconds / 60;
-	if (minutes)
+	const char *state = "challenging";
+	if ( client->IsActive() )
+		state = "active";
+	else if ( client->IsSpawned() )
+		state = "spawning";
+	else if ( client->IsConnected() )
+		state = "connecting";
+
+	CStatusLineBuilder builder;
+	builder.AddColumnText( "#", STATUS_COLUMN_LENGTH_LINEPREFIX );
+	builder.AddColumnText( va( "%" STATUS_COLUMN_LENGTH_USERID_STR "i", client->GetUserID() ), STATUS_COLUMN_LENGTH_USERID );
+	builder.AddColumnText( va( "\"%s\"", client->GetClientName() ), STATUS_COLUMN_LENGTH_NAME );
+	builder.AddColumnText( client->GetNetworkIDString(), STATUS_COLUMN_LENGTH_STEAMID );
+
+	if ( nci != NULL )
 	{
-		seconds -= (minutes * 60);
-		hours = minutes / 60;
-		if (hours)
-			minutes -= (hours * 60);
+		builder.AddColumnText( COM_FormatSeconds( nci->GetTimeConnected() ), STATUS_COLUMN_LENGTH_TIME );
+		builder.AddColumnText( va( "%" STATUS_COLUMN_LENGTH_PING_STR "i", (int)(1000.0f*nci->GetAvgLatency( FLOW_OUTGOING )) ), STATUS_COLUMN_LENGTH_PING );
+		builder.AddColumnText( va( "%" STATUS_COLUMN_LENGTH_LOSS_STR "i", (int)(100.0f*nci->GetAvgLoss(FLOW_INCOMING)) ), STATUS_COLUMN_LENGTH_LOSS );
+		builder.AddColumnText( state, STATUS_COLUMN_LENGTH_STATE );
+		if ( bShowAddress )
+			builder.AddColumnText( nci->GetAddress(), STATUS_COLUMN_LENGTH_ADDR );
 	}
 	else
-		hours = 0;
+	{
+		builder.InsertEmptyColumn( STATUS_COLUMN_LENGTH_TIME );
+		builder.InsertEmptyColumn( STATUS_COLUMN_LENGTH_PING );
+		builder.InsertEmptyColumn( STATUS_COLUMN_LENGTH_LOSS );
+		builder.AddColumnText( state, STATUS_COLUMN_LENGTH_STATE );
+	}
 
-	print ("#%-2u %-12.12s\n", j + 1, client->name  );
-				
-	if ( hours != 0 )
-		print ( "   time :  %2i:%02i:%02i\n", hours, minutes, seconds );
-	else
-		print ( "   time :  %02i:%02i\n", minutes, seconds );
-
-	print ( "   ping :  %4i\n", (int)SV_CalcLatency( client ) );
-//	print ( "   drop :  %5.2f %%\n", (100.0*(float)client->netchan.drop_count) / (float)client->netchan.incoming_sequence );
-	
-	if ( pszStatus && pszStatus[0] )
-		print( "   %s\n", pszStatus );
-
-	if ( client->fakeclient )
-		print ( "  (fake)\n" );
-	else if ( bShowAddress )
-		print ("   %s\n", NET_BaseAdrToString(client->netchan.remote_address));
-
-	print( "\n" );
-
+	print( "%s\n", builder.GetLine() );
 }
 
-/*
-==================
-Host_Status_f
-==================
-*/
-void Host_Status_f (void)
+void Host_Client_Printf(const char *fmt, ...)
 {
-	client_t	*client;
+	va_list		argptr;
+	char		string[1024];
 
-	int			j;
-	int nClients;
-	void		(*print) (const char *fmt, ...);
+	va_start (argptr,fmt);
+	Q_vsnprintf (string, sizeof( string ), fmt,argptr);
+	va_end (argptr);
 
-	if (cmd_source == src_command)
+	host_client->ClientPrintf( "%s", string );
+}
+
+#define LIMIT_PER_CLIENT_COMMAND_EXECUTION_ONCE_PER_INTERVAL(seconds) \
+	{ \
+		static float g_flLastTime__Limit[ABSOLUTE_PLAYER_LIMIT] = { 0.0f }; /* we don't have access to any of the three MAX_PLAYERS #define's here unfortunately */ \
+		int playerindex = cmd_clientslot; \
+		if ( playerindex >= 0 && playerindex < (ARRAYSIZE(g_flLastTime__Limit)) && realtime - g_flLastTime__Limit[playerindex] > (seconds) ) \
+		{ \
+			g_flLastTime__Limit[playerindex] = realtime; \
+		} \
+		else \
+		{ \
+			return; \
+		} \
+	}
+
+//-----------------------------------------------------------------------------
+// Host_Status_f
+//-----------------------------------------------------------------------------
+CON_COMMAND( status, "Display map and connection status." )
+{
+	IClient	*client;
+	int j;
+	void (*print) (const char *fmt, ...);
+
+#if defined( _X360 )
+	Vector org;
+	QAngle ang;
+	const char *pName;
+
+	if ( cl.IsActive() )
 	{
-		if (!sv.active)
+		pName = cl.m_szLevelNameShort;
+		org = MainViewOrigin();
+		VectorAngles( MainViewForward(), ang );
+		IClientEntity *localPlayer = entitylist->GetClientEntity( cl.m_nPlayerSlot + 1 );
+		if ( localPlayer )
 		{
-			Cmd_ForwardToServer ();
-			return;
+			org = localPlayer->GetAbsOrigin();
 		}
-		print = Con_Printf;
 	}
 	else
-		print = SV_ClientPrintf;
-
-// ============================================================
-// Server status information.
-	print ( "hostname:  %s\n", host_name.GetString() );
-	print ( "version :  %s\n", gpszVersionString );
-	print ( "build   :  %d\n", build_number() );
-	
-	if ( !noip )
 	{
-		print ( "tcp/ip  :  %s\n", NET_AdrToString (net_local_adr) );
+		pName = "";
+		org.Init();
+		ang.Init();
 	}
 
-	print (" map     :  %s at: %d x, %d y, %d z\n", sv.name, (int)r_origin[0], (int)r_origin[1], (int)r_origin[2]);
+	// send to vxconsole
+	xMapInfo_t mapInfo;
+	mapInfo.position[0] = org[0];
+	mapInfo.position[1] = org[1];
+	mapInfo.position[2] = org[2];
+	mapInfo.angle[0]    = ang[0];
+	mapInfo.angle[1]    = ang[1];
+	mapInfo.angle[2]    = ang[2];
+	mapInfo.build       = build_number();
+	mapInfo.skill       = skill.GetInt();
 
-	SV_CountPlayers( &nClients );
+	// generate the qualified path where .sav files are expected to be written
+	char savePath[MAX_PATH];
+	V_snprintf( savePath, sizeof( savePath ), "%s", saverestore->GetSaveDir() );
+	V_StripTrailingSlash( savePath );
+	g_pFileSystem->RelativePathToFullPath( savePath, "MOD", mapInfo.savePath, sizeof( mapInfo.savePath ) );
+	V_FixSlashes( mapInfo.savePath );
 
-	print (" players: %i active (%i max)\n\n", nClients, svs.maxclients);
-// ============================================================
+	if ( pName[0] )
+	{
+		// generate the qualified path from where the map was loaded
+		char mapPath[MAX_PATH];
+		Q_snprintf( mapPath, sizeof( mapPath ), "maps/%s.360.bsp", pName );
+		g_pFileSystem->GetLocalPath( mapPath, mapInfo.mapPath, sizeof( mapInfo.mapPath ) );
+		Q_FixSlashes( mapInfo.mapPath );
+	}
+	else
+	{
+		mapInfo.mapPath[0] = '\0';
+	}
+
+	XBX_rMapInfo( &mapInfo );
+#endif
+
+	if ( cmd_source == src_command )
+	{
+		if ( !sv.IsActive() )
+		{
+			Cmd_ForwardToServer( args );
+			return;
+		}
+		print = ConMsg;
+	}
+	else
+	{
+		print = Host_Client_Printf;
+
+		// limit this to once per 5 seconds
+		LIMIT_PER_CLIENT_COMMAND_EXECUTION_ONCE_PER_INTERVAL(5.0);
+	}
+
+	// ============================================================
+	// Server status information.
+	print( "hostname: %s\n", host_name.GetString() );
+
+	const char *pchSecureReasonString = "";
+	const char *pchUniverse = "";
+	bool bGSSecure = Steam3Server().BSecure();
+	if ( !bGSSecure && Steam3Server().BWantsSecure() )
+	{
+		if ( Steam3Server().BLoggedOn() )
+		{
+			pchSecureReasonString = " (secure mode enabled, connected to Steam3)";
+		}
+		else
+		{
+			pchSecureReasonString = " (secure mode enabled, disconnected from Steam3)";
+		}
+	}
+
+	switch ( GetSteamUniverse() )
+	{
+		case k_EUniversePublic:
+			pchUniverse = "";
+			break;
+		case k_EUniverseBeta:
+			pchUniverse = " (beta)";
+			break;
+		case k_EUniverseInternal:
+			pchUniverse = " (internal)";
+			break;
+		case k_EUniverseDev:
+			pchUniverse = " (dev)";
+			break;
+		default:
+			pchUniverse = " (unknown)";
+			break;
+	}
+	
+
+	print( "version : %s/%d %d %s%s%s\n", GetSteamInfIDVersionInfo().szVersionString,
+		PROTOCOL_VERSION, build_number(), bGSSecure ? "secure" : "insecure", pchSecureReasonString, pchUniverse );
+
+	if ( NET_IsMultiplayer() )
+	{
+		CUtlString sPublicIPInfo;
+		if ( !Steam3Server().BLanOnly() )
+		{
+			uint32 unPublicIP = Steam3Server().GetPublicIP();
+			if ( unPublicIP != 0 )
+			{
+				netadr_t addr;
+				addr.SetIP( unPublicIP );
+				sPublicIPInfo.Format("  (public ip: %s)", addr.ToString( true ) );
+			}
+		}
+		print( "udp/ip  : %s:%i%s\n", net_local_adr.ToString(true), sv.GetUDPPort(), sPublicIPInfo.String() );
+
+		if ( !Steam3Server().BLanOnly() )
+		{
+			if ( Steam3Server().BLoggedOn() )
+				print( "steamid : %s (%llu)\n", Steam3Server().SteamGameServer()->GetSteamID().Render(), Steam3Server().SteamGameServer()->GetSteamID().ConvertToUint64() );
+			else
+				print( "steamid : not logged in\n" );
+		}
+	}
+
+	// Check if this game uses server registration, then output status
+	ConVarRef sv_registration_successful( "sv_registration_successful", true );
+	if ( sv_registration_successful.IsValid() )
+	{
+		CUtlString sExtraInfo;
+		ConVarRef sv_registration_message( "sv_registration_message", true );
+		if ( sv_registration_message.IsValid() )
+		{
+			const char *msg = sv_registration_message.GetString();
+			if ( msg && *msg )
+			{
+				sExtraInfo.Format("  (%s)", msg );
+			}
+		}
+
+		if ( sv_registration_successful.GetBool() )
+		{
+			print( "account : logged in%s\n", sExtraInfo.String() );
+		}
+		else
+		{
+			print( "account : not logged in%s\n", sExtraInfo.String() );
+		}
+	}
+
+	print( "map     : %s at: %d x, %d y, %d z\n", sv.GetMapName(), (int)MainViewOrigin()[0], (int)MainViewOrigin()[1], (int)MainViewOrigin()[2]);
+	static ConVarRef sv_tags( "sv_tags" );
+	print( "tags    : %s\n", sv_tags.GetString() );
+
+	if ( hltv && hltv->IsActive() )
+	{
+		print( "sourcetv:  port %i, delay %.1fs\n", hltv->GetUDPPort(), hltv->GetDirector()->GetDelay() );
+	}
+
+#if defined( REPLAY_ENABLED )
+	if ( replay && replay->IsActive() )
+	{
+		print( "replay  :  %s\n", replay->IsRecording() ? "recording" : "not recording" );
+	}
+#endif
+
+	int players = sv.GetNumClients();
+	int nBots = sv.GetNumFakeClients();
+	int nHumans = players - nBots;
+
+	print( "players : %i humans, %i bots (%i max)\n", nHumans, nBots, sv.GetMaxClients() );
+	// ============================================================
+
+	print( "edicts  : %d used of %d max\n", sv.num_edicts - sv.free_edicts, sv.max_edicts );
+
+	if ( ( g_iServerGameDLLVersion >= 10 ) && serverGameDLL )
+	{
+		serverGameDLL->Status( print );
+	}
 
 	// Early exit for this server.
-	if ( Cmd_Argc() == 2 )
+	if ( args.ArgC() == 2 )
 	{
-		if ( !stricmp( Cmd_Argv(1), "short" ) )
+		if ( !Q_stricmp( args[1], "short" ) )
 		{
-			for ( j=0, client = svs.clients ; j < svs.maxclients ; j++, client++)
+			for ( j=0 ; j < sv.GetClientCount() ; j++ )
 			{
-				if ( !client->active )
+				client = sv.GetClient( j );
+
+				if ( !client->IsActive() )
 					continue;
 
-				print( "#%i - %s\n" , j + 1, client->name );
+				print( "#%i - %s\n" , j + 1, client->GetClientName() );
 			}
 			return;
 		}
 	}
 
-	for ( j=0, client = svs.clients ; j < svs.maxclients ; j++, client++)
+	// the header for the status rows
+	// print( "# userid %-19s %-19s connected ping loss state%s\n", "name", "uniqueid", cmd_source == src_command ? "  adr" : "" );
+	CStatusLineBuilder header;
+	header.AddColumnText( "#", STATUS_COLUMN_LENGTH_LINEPREFIX );
+	header.AddColumnText( "userid", STATUS_COLUMN_LENGTH_USERID );
+	header.AddColumnText( "name", STATUS_COLUMN_LENGTH_NAME );
+	header.AddColumnText( "uniqueid", STATUS_COLUMN_LENGTH_STEAMID );
+	header.AddColumnText( "connected", STATUS_COLUMN_LENGTH_TIME );
+	header.AddColumnText( "ping", STATUS_COLUMN_LENGTH_PING );
+	header.AddColumnText( "loss", STATUS_COLUMN_LENGTH_LOSS );
+	header.AddColumnText( "state", STATUS_COLUMN_LENGTH_STATE );
+	if ( cmd_source == src_command )
 	{
-		if (!client->active)
-		{
-			if ( client->connected )
-			{
-				Host_Status_PrintClient
-				( 
-					"CONNECTING" ,
-					(cmd_source == src_command),
-					print,
-					j,
-					client
-				);
-			}
-			continue;
-		}
+		header.AddColumnText( "adr", STATUS_COLUMN_LENGTH_ADDR );
+	}
+
+	print( "%s\n", header.GetLine() );
+
+	for ( j=0 ; j < sv.GetClientCount() ; j++ )
+	{
+		client = sv.GetClient( j );
+
+		if ( !client->IsConnected() )
+			continue; // not connected yet, maybe challenging
 		
-		Host_Status_PrintClient
-		(
-			NULL, 
-			(cmd_source == src_command),
-			print,
-			j,
-			client
-		);
+		Host_Status_PrintClient( client, (cmd_source == src_command), print );
 	}
 }
 
 
-/*
-==================
-Host_Ping_f
-
-==================
-*/
-void Host_Ping_f (void)
+//-----------------------------------------------------------------------------
+// Host_Ping_f
+//-----------------------------------------------------------------------------
+CON_COMMAND( ping, "Display ping to server." )
 {
-	int		i;
-	client_t	*client;
-	
-	if (cmd_source == src_command)
+	if ( cmd_source == src_command )
 	{
-		Cmd_ForwardToServer ();
+		Cmd_ForwardToServer( args );
 		return;
 	}
+	// limit this to once per 5 seconds
+	LIMIT_PER_CLIENT_COMMAND_EXECUTION_ONCE_PER_INTERVAL(5.0);
 
-	SV_ClientPrintf ("Client ping times:\n");
-	for (i=0, client = svs.clients ; i<svs.maxclients ; i++, client++)
+	host_client->ClientPrintf( "Client ping times:\n" );
+
+	for ( int i=0; i< sv.GetClientCount(); i++ )
 	{
-		if (!client->active)
+		IClient	*client = sv.GetClient(i);
+
+		if ( !client->IsConnected() || client->IsFakeClient() )
 			continue;
-		SV_ClientPrintf ("%4i %s\n", (int)SV_CalcLatency(client), client->name);
+
+		host_client->ClientPrintf ("%4.0f ms : %s\n", 
+			1000.0f * client->GetNetChannel()->GetAvgLatency( FLOW_OUTGOING ), client->GetClientName() );
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : editmode - 
-//-----------------------------------------------------------------------------
-extern void GetPlatformMapPath( const char *pMapPath, char *pPlatformMapPath, int maxLength );
-void Host_Map_Helper( bool editmode )
+bool CL_HL2Demo_MapCheck( const char *name )
 {
-	int		i;
-	char	name[MAX_QPATH];
+	if ( IsPC() && CL_IsHL2Demo() && !sv.IsDedicated() )
+	{
+		if (    !Q_stricmp( name, "d1_trainstation_01" ) || 
+				!Q_stricmp( name, "d1_trainstation_02" ) || 
+				!Q_stricmp( name, "d1_town_01" ) || 
+				!Q_stricmp( name, "d1_town_01a" ) || 
+				!Q_stricmp( name, "d1_town_02" ) || 
+				!Q_stricmp( name, "d1_town_03" ) ||
+				!Q_stricmp( name, "background01" ) ||
+				!Q_stricmp( name, "background03" ) 
+			)
+		{
+			return true;
+		}
+		return false;
+	}
 
-	if (cmd_source != src_command)
+	return true;
+}
+
+bool CL_PortalDemo_MapCheck( const char *name )
+{
+	if ( IsPC() && CL_IsPortalDemo() && !sv.IsDedicated() )
+	{
+		if (    !Q_stricmp( name, "testchmb_a_00" ) || 
+				!Q_stricmp( name, "testchmb_a_01" ) || 
+				!Q_stricmp( name, "testchmb_a_02" ) || 
+				!Q_stricmp( name, "testchmb_a_03" ) || 
+				!Q_stricmp( name, "testchmb_a_04" ) || 
+				!Q_stricmp( name, "testchmb_a_05" ) ||
+				!Q_stricmp( name, "testchmb_a_06" ) ||
+				!Q_stricmp( name, "background1" ) 
+			)
+		{
+			return true;
+		}
+		return false;
+	}
+
+	return true;
+}
+
+int _Host_Map_f_CompletionFunc( char const *cmdname, char const *partial, char commands[ COMMAND_COMPLETION_MAXITEMS ][ COMMAND_COMPLETION_ITEM_LENGTH ] );
+
+// Note, leaves name alone if no match possible
+static bool Host_Map_Helper_FuzzyName( const CCommand &args, char *name, size_t bufsize )
+{
+	char commands[ COMMAND_COMPLETION_MAXITEMS ][ COMMAND_COMPLETION_ITEM_LENGTH ];
+	CUtlString argv0;
+	argv0 = args.Arg( 0 );
+	argv0 += " ";
+
+	if ( _Host_Map_f_CompletionFunc( argv0, args.ArgS(), commands ) > 0 )
+	{
+		Q_strncpy( name, &commands[ 0 ][ argv0.Length() ], bufsize );
+		return true;
+	}
+	return false;
+}
+
+void Host_Map_Helper( const CCommand &args, bool bEditmode, bool bBackground, bool bCommentary )
+{
+	if ( cmd_source != src_command )
 		return;
+	if (args.ArgC() < 2)
+	{
+		Warning("No map specified\n");
+		return;
+	}
 
-	GetPlatformMapPath( Cmd_Argv(1), name, sizeof( name ) );
-	
+	const char *pszReason = NULL;
+	if ( ( g_iServerGameDLLVersion >= 10 ) && !serverGameDLL->IsManualMapChangeOkay( &pszReason ) )
+	{
+		if ( pszReason && pszReason[0] )
+		{
+			Warning( "%s\n", pszReason );
+		}
+		return;
+	}
+
+	char szMapName[ MAX_QPATH ] = { 0 };
+	V_strncpy( szMapName, args[ 1 ], sizeof( szMapName ) );
+
+	// Call find map, proceed for any value besides NotFound
+	IVEngineServer::eFindMapResult eResult = g_pVEngineServer->FindMap( szMapName, sizeof( szMapName ) );
+	if ( eResult == IVEngineServer::eFindMap_NotFound )
+	{
+		Warning( "map load failed: %s not found or invalid\n", args[ 1 ] );
+		return;
+	}
+
+	COM_TimestampedLog( "*** Map Load: %s", szMapName );
+
+	// There is a precision issue here, as described Bruce Dawson's blog.
+	// In our case, we don't care because we're looking for anything on the order of second precision, which 
+	// covers runtime up to around 4 months.
+	static ConVarRef dev_loadtime_map_start( "dev_loadtime_map_start" );
+	dev_loadtime_map_start.SetValue( (float)Plat_FloatTime() );
+
 	// If I was in edit mode reload config file
 	// to overwrite WC edit key bindings
-#ifndef SWDS
-	if ( !editmode )
+#if !defined(SWDS)
+	if ( !bEditmode )
 	{
-		if (g_bInEditMode)
+		if ( g_bInEditMode )
 		{
 			// Re-read config from disk
 			Host_ReadConfiguration();
@@ -350,32 +806,55 @@ void Host_Map_Helper( bool editmode )
 	{
 		g_bInEditMode = true;
 	}
+
+	g_bInCommentaryMode = bCommentary;
 #endif
 
-	// If there is a .bsp on the end, strip it off!
-	i = strlen(name);
-	if ( i > 4 && !Q_strcasecmp( name + i - 4, ".bsp" ) )
+	if ( !CL_HL2Demo_MapCheck( szMapName ) )
 	{
-		name[i-4] = 0;
+		Warning( "map load failed: %s not found or invalid\n", szMapName );
+		return;	
 	}
 
-	if ( !g_pVEngineServer->IsMapValid( name ) )
+	if ( !CL_PortalDemo_MapCheck( szMapName ) )
 	{
-		Warning( "map load failed: %s not found or invalid\n", name );
-		return;
+		Warning( "map load failed: %s not found or invalid\n", szMapName );
+		return;	
 	}
 
-	// Update whether we have a valid authentication cert
-	if ( ( svs.maxclients > 1 ) && !sv_lan.GetInt() )
+#if defined( REPLAY_ENABLED )
+	// If we're recording the game, finalize the replay so players can download it.
+	if ( g_pReplay && g_pReplay->IsRecording() )
 	{
-		COM_CheckAuthenticationType();
+		g_pReplay->SV_EndRecordingSession();
 	}
+#endif
 
-	// JAY: UNDONE: Remove this?
-	HostState_NewGame( name );
+	// Stop demo loop
+	cl.demonum = -1;
 
-	// If any test scripts are running, make them wait until the map is loaded.
-	GetTestScriptMgr()->SetWaitCheckPoint( "FinishedMapLoad" );
+	Host_Disconnect( false );	// stop old game
+
+	HostState_NewGame( szMapName, false, bBackground );
+
+	if (args.ArgC() == 10)
+	{
+		if (Q_stricmp(args[2], "setpos") == 0
+			&& Q_stricmp(args[6], "setang") == 0) 
+		{
+			Vector newpos;
+			newpos.x = atof( args[3] );
+			newpos.y = atof( args[4] );
+			newpos.z = atof( args[5] );
+
+			QAngle newangle;
+			newangle.x = atof( args[7] );
+			newangle.y = atof( args[8] );
+			newangle.z = atof( args[9] );
+			
+			HostState_SetSpawnPoint(newpos, newangle);
+		}
+	}
 }
 
 /*
@@ -387,78 +866,142 @@ map <servername>
 command from the console.  Active clients are kicked off.
 ======================
 */
-void Host_Map_f (void)
+void Host_Map_f( const CCommand &args )
 {
-	Host_Map_Helper( false );
-}
-
-/* 
-UNDONE: protect this from use if not in dev. mode
-======================
-Host_Map_Edit_f
-
-handle a 
-map_edit <servername>
-command from the console.  Active clients are kicked off.
-======================
-*/
-void Host_Map_Edit_f (void)
-{
-	Host_Map_Helper( true );
+	Host_Map_Helper( args, false, false, false );
 }
 
 
-/*
-==================
-Host_Restart_f
-
-Restarts the current server for a dead player
-==================
-*/
-void Host_Restart_f (void)
+//-----------------------------------------------------------------------------
+// handle a map_edit <servername> command from the console. 
+// Active clients are kicked off.
+// UNDONE: protect this from use if not in dev. mode
+//-----------------------------------------------------------------------------
+#ifndef SWDS
+CON_COMMAND( map_edit, "" )
 {
-	if (Demo_IsPlayingBack() || !sv.active)
+	Host_Map_Helper( args, true, false, false );
+}
+#endif
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Runs a map as the background
+//-----------------------------------------------------------------------------
+void Host_Map_Background_f( const CCommand &args )
+{
+	Host_Map_Helper( args, false, true, false );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Runs a map in commentary mode
+//-----------------------------------------------------------------------------
+void Host_Map_Commentary_f( const CCommand &args )
+{
+	Host_Map_Helper( args, false, false, true );
+}
+
+
+//-----------------------------------------------------------------------------
+// Restarts the current server for a dead player
+//-----------------------------------------------------------------------------
+CON_COMMAND( restart, "Restart the game on the same level (add setpos to jump to current view position on restart)." )
+{
+	if ( 
+#if !defined(SWDS)
+		demoplayer->IsPlayingBack() || 
+#endif
+		!sv.IsActive() )
 		return;
 
-	if (cmd_source != src_command)
+	if ( sv.IsMultiplayer() )
 		return;
 
-	HostState_NewGame( sv.name );
+	if ( cmd_source != src_command )
+		return;
+
+	bool bRememberLocation = ( args.ArgC() == 2 && !Q_stricmp( args[1], "setpos" ) );
+
+	Host_Disconnect(false);	// stop old game
+
+	if ( !CL_HL2Demo_MapCheck( sv.GetMapName() ) )
+	{
+		Warning( "map load failed: %s not found or invalid\n", sv.GetMapName() );
+		return;	
+	}
+
+	if ( !CL_PortalDemo_MapCheck( sv.GetMapName() ) )
+	{
+		Warning( "map load failed: %s not found or invalid\n", sv.GetMapName() );
+		return;	
+	}
+
+	HostState_NewGame( sv.GetMapName(), bRememberLocation, false );
 }
 
-/*
-==================
-Host_Reload_f
 
-Restarts the current server for a dead player
-==================
-*/
-void Host_Reload_f (void)
+//-----------------------------------------------------------------------------
+// Restarts the current server for a dead player
+//-----------------------------------------------------------------------------
+CON_COMMAND( reload, "Reload the most recent saved game (add setpos to jump to current view position on reload).")
 {
 #ifndef SWDS
 	const char *pSaveName;
 	char name[MAX_OSPATH];
 #endif
 
-	if (Demo_IsPlayingBack() || !sv.active)
+	if ( 
+#if !defined(SWDS)
+		demoplayer->IsPlayingBack() || 
+#endif
+		!sv.IsActive() )
+		return;
+
+	if ( sv.IsMultiplayer() )
 		return;
 
 	if (cmd_source != src_command)
 		return;
+
+	bool remember_location = false;
+	if ( args.ArgC() == 2 && 
+		!Q_stricmp( args[1], "setpos" ) )
+	{
+		remember_location = true;
+	}
 
 	// See if there is a most recently saved game
 	// Restart that game if there is
 	// Otherwise, restart the starting game map
 #ifndef SWDS
 	pSaveName = saverestore->FindRecentSave( name, sizeof( name ) );
-	if ( pSaveName )
+
+	// Put up loading plaque
+  	SCR_BeginLoadingPlaque();
+
+	Host_Disconnect( false );	// stop old game
+
+	if ( pSaveName && saverestore->SaveFileExists( pSaveName ) )
 	{
-		HostState_LoadGame( pSaveName );
+		HostState_LoadGame( pSaveName, remember_location );
 	}
 	else
 #endif
 	{
-		HostState_NewGame( host_map.GetString() );
+		if ( !CL_HL2Demo_MapCheck( host_map.GetString() ) )
+		{
+			Warning( "map load failed: %s not found or invalid\n", host_map.GetString() );
+			return;	
+		}
+
+		if ( !CL_PortalDemo_MapCheck( host_map.GetString() ) )
+		{
+			Warning( "map load failed: %s not found or invalid\n", host_map.GetString() );
+			return;	
+		} 
+
+		HostState_NewGame( host_map.GetString(), remember_location, false );
 	}
 }
 
@@ -467,754 +1010,637 @@ void Host_Reload_f (void)
 // Purpose: Goes to a new map, taking all clients along
 // Output : void Host_Changelevel_f
 //-----------------------------------------------------------------------------
-void Host_Changelevel_f (void)
+void Host_Changelevel_f( const CCommand &args )
 {
-	if ( Cmd_Argc() < 2 )
+	if ( args.ArgC() < 2 )
 	{
-		Msg ("changelevel <levelname> : continue game on a new level\n");
+		ConMsg( "changelevel <levelname> : continue game on a new level\n" );
 		return;
 	}
 
-	if ( !sv.active )
+	if ( !sv.IsActive() )
 	{
-		Msg( "Can't changelevel, not running server\n" );
+		ConMsg( "Can't changelevel, not running server\n" );
 		return;
 	}
 
-	if ( !g_pVEngineServer->IsMapValid( Cmd_Argv(1) ) )
+	char szName[MAX_PATH] = { 0 };
+	V_strncpy( szName, args[1], sizeof( szName ) );
+
+	// Call find map to attempt to resolve fuzzy/non-canonical map names
+	IVEngineServer::eFindMapResult eResult = g_pVEngineServer->FindMap( szName, sizeof( szName ) );
+	if ( eResult == IVEngineServer::eFindMap_NotFound )
 	{
-		Warning( "changelevel failed: %s not found\n", Cmd_Argv(1) );
+		// Warn, but but proceed even if the map is not found, such that we hit the proper server_levelchange_failed
+		// codepath and event later on.
+		Warning( "Failed to find map %s\n", args[ 1 ] );
+	}
+
+	if ( !CL_HL2Demo_MapCheck(szName) )
+	{
+		Warning( "changelevel failed: %s not found\n", szName );
 		return;
 	}
 
-	HostState_ChangeLevelMP( Cmd_Argv(1), Cmd_Argv(2) );
+	if ( !CL_PortalDemo_MapCheck(szName) )
+	{
+		Warning( "changelevel failed: %s not found\n", szName );
+		return;
+	}
+
+	const char *pszReason = NULL;
+	if ( ( g_iServerGameDLLVersion >= 10 ) && !serverGameDLL->IsManualMapChangeOkay( &pszReason ) )
+	{
+		if ( pszReason && pszReason[0] )
+		{
+			Warning( "%s", pszReason );
+		}
+		return;
+	}
+
+	HostState_ChangeLevelMP( szName, args[2] );
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Changing levels within a unit, uses save/restore
 //-----------------------------------------------------------------------------
-void Host_Changelevel2_f( void )
+void Host_Changelevel2_f( const CCommand &args )
 {
-	if ( Cmd_Argc() < 2 )
+	if ( args.ArgC() < 2 )
 	{
-		Msg ("changelevel2 <levelname> : continue game on a new level in the unit\n");
+		ConMsg ("changelevel2 <levelname> : continue game on a new level in the unit\n");
 		return;
 	}
 
-	if ( !sv.active )
+	if ( !sv.IsActive() || sv.IsMultiplayer() )
 	{
-		Msg( "Can't changelevel2, not in a map\n" );
+		ConMsg( "Can't changelevel2, not in a single-player map\n" );
 		return;
 	}
 
-	if ( !g_pVEngineServer->IsMapValid( Cmd_Argv(1) ) )
+	char szName[MAX_PATH] = { 0 };
+	V_strncpy( szName, args[1], sizeof( szName ) );
+	IVEngineServer::eFindMapResult eResult = g_pVEngineServer->FindMap( szName, sizeof( szName ) );
+	if ( eResult == IVEngineServer::eFindMap_NotFound )
 	{
-		Warning( "changelevel2 failed: %s not found\n", Cmd_Argv(1) );
-		return;
+		if ( !CL_IsHL2Demo() || (CL_IsHL2Demo() && !(!Q_stricmp( szName, "d1_trainstation_03" ) || !Q_stricmp( szName, "d1_town_02a" ))) )	
+		{
+			Warning( "changelevel2 failed: %s not found\n", szName );
+			return;
+		}
 	}
-	
-	HostState_ChangeLevelSP( Cmd_Argv(1), Cmd_Argv(2) );
+
+#if !defined(SWDS)
+	// needs to be before CL_HL2Demo_MapCheck() check as d1_trainstation_03 isn't a valid map
+	if ( IsPC() && CL_IsHL2Demo() && !sv.IsDedicated() && !Q_stricmp( szName, "d1_trainstation_03" ) ) 
+	{
+		void CL_DemoTransitionFromTrainstation();
+		CL_DemoTransitionFromTrainstation();
+		return; 
+	}
+
+	// needs to be before CL_HL2Demo_MapCheck() check as d1_trainstation_03 isn't a valid map
+	if ( IsPC() && CL_IsHL2Demo() && !sv.IsDedicated() && !Q_stricmp( szName, "d1_town_02a" ) && !Q_stricmp( args[2], "d1_town_02_02a" )) 
+	{
+		void CL_DemoTransitionFromRavenholm();
+		CL_DemoTransitionFromRavenholm();
+		return; 
+	}
+
+	if ( IsPC() && CL_IsPortalDemo() && !sv.IsDedicated() && !Q_stricmp( szName, "testchmb_a_07" ) ) 
+	{
+		void CL_DemoTransitionFromTestChmb();
+		CL_DemoTransitionFromTestChmb();
+		return; 
+	}
+
+#endif
+
+	// allow a level transition to d1_trainstation_03 so the Host_Changelevel() can act on it
+	if ( !CL_HL2Demo_MapCheck( szName ) ) 
+	{
+		Warning( "changelevel failed: %s not found\n", szName );
+		return;	
+	}
+
+	HostState_ChangeLevelSP( szName, args[2] );
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Shut down client connection and any server
 //-----------------------------------------------------------------------------
-void Host_Disconnect( void )
+void Host_Disconnect( bool bShowMainMenu, const char *pszReason )
 {
+	if ( IsX360() )
+	{
+		g_pQueuedLoader->EndMapLoading( false );
+	}
+
 #ifndef SWDS
-	CL_Disconnect();
+	if ( !sv.IsDedicated() )
+	{
+		cl.Disconnect( pszReason, bShowMainMenu );
+	}
 #endif
+	Host_AllowQueuedMaterialSystem( false );
 	HostState_GameShutdown();
 }
 
-/*
-=======================
-Host_Disconnect_f
-
-Kill the client and any local server.
-=======================
-*/
-void Host_Disconnect_f (void)
+void Disconnect()
 {
-	Host_Disconnect();
+	cl.demonum = -1;
+	Host_Disconnect(true);
+
+#if defined( REPLAY_ENABLED )
+	// Finalize the recording replay on the server, if is recording.
+	// NOTE: We don't want this in Host_Disconnect() as that would be called more
+	// than necessary.
+	if ( g_pReplay && g_pReplay->IsReplayEnabled() && sv.IsDedicated() )
+	{
+		g_pReplay->SV_EndRecordingSession();
+	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: 
-// Output : void Host_Version_f
+// Kill the client and any local server.
 //-----------------------------------------------------------------------------
-void Host_Version_f (void)
+CON_COMMAND( disconnect, "Disconnect game from server." )
 {
-	Msg( "Exe version %s (protocol %i)\n", gpszVersionString, PROTOCOL_VERSION );
-	Msg ("Build: " __TIME__ " " __DATE__ " (%i)\n", build_number() );
+#if !defined( SWDS )
+	// Just run the regular Disconnect function if we're not the client or the client didn't handle it for us
+	if( !g_ClientDLL || !g_ClientDLL->DisconnectAttempt() )
+	{
+		Disconnect();
+	}
+#else
+	Disconnect();
+#endif
 }
 
-/*
-==================
-Host_FullInfo_f
-
-Allow clients to change userinfo
-==================
-*/
-void Host_FullInfo_f (void)
+#ifdef _WIN32
+// manually pull in the GetEnvironmentVariableA defn so we don't need to include windows.h
+extern "C"
 {
-	char	key[512];
-	char	value[512];
-	char	*o;
-	char	*s;
+DWORD __declspec(dllimport) __stdcall GetEnvironmentVariableA( const char *, char *, DWORD );
+}
+#endif // _WIN32
 
-	if (Cmd_Argc() != 2)
+CON_COMMAND( version, "Print version info string." )
+{
+	ConMsg( "Build Label:          %8d   # Uniquely identifies each build\n", GetSteamInfIDVersionInfo().ServerVersion );
+	ConMsg( "Network PatchVersion: %8s   # Determines client and server compatibility\n", GetSteamInfIDVersionInfo().szVersionString );
+	ConMsg( "Protocol version:     %8d   # High level network protocol version\n", PROTOCOL_VERSION );
+
+	if ( sv.IsDedicated() || serverGameDLL )
 	{
-		Msg ("fullinfo <complete info string>\n");
-		return;
+		ConMsg( "Server version:       %8i\n", GetSteamInfIDVersionInfo().ServerVersion );
+		ConMsg( "Server AppID:         %8i\n", GetSteamInfIDVersionInfo().ServerAppID );
 	}
-
-	s = Cmd_Argv(1);
-	if (*s == '\\')
-		s++;
-	while (*s)
+	if ( !sv.IsDedicated() )
 	{
-		o = key;
-		while (*s && *s != '\\')
-			*o++ = *s++;
-		*o = 0;
-
-		if (!*s)
-		{
-			Warning ("MISSING VALUE\n");
-			return;
-		}
-
-		o = value;
-		s++;
-		while (*s && *s != '\\')
-			*o++ = *s++;
-		*o = 0;
-
-		if (*s)
-			s++;
-
-		if (cmd_source == src_command)
-		{
-			Info_SetValueForKey (cls.userinfo, key, value, MAX_INFO_STRING);
-			Cmd_ForwardToServer();
-			return;
-		}
-
-		Info_SetValueForKey (host_client->userinfo, key, value, MAX_INFO_STRING);
-		SV_ExtractFromUserinfo (host_client);  // parse some info from the info strings
+		ConMsg( "Client version:       %8i\n", GetSteamInfIDVersionInfo().ClientVersion );
+		ConMsg( "Client AppID:         %8i\n", GetSteamInfIDVersionInfo().AppID );
 	}
 }
 
-/*
-==================
-Host_SetInfo_f
-
-Allow clients to change userinfo
-==================
-*/
-void Host_SetInfo_f (void)
-{
-	if (Cmd_Argc() == 1)
-	{
-		Info_Print (cls.userinfo);
-		return;
-	}
-	if (Cmd_Argc() != 3)
-	{
-		Msg ("usage: setinfo [ <key> <value> ]\n");
-		return;
-	}
-
-
-	if (cmd_source == src_command)
-	{
-		Info_SetValueForKey (cls.userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
-		Cmd_ForwardToServer ();
-		return;
-	}
-
-	Info_SetValueForKey (host_client->userinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_INFO_STRING);
-	host_client->sendinfo = true;
-
-	SV_ExtractFromUserinfo (host_client);  // parse some info from the info strings
-}
-
-void Host_Say(qboolean teamonly)
-{
-	client_t *client;
-	client_t *save;
-	int		j;
-	char	*p;
-	char	text[64];
-
-	if (cls.state != ca_dedicated)
-	{
-		if (cmd_source != src_command)
-			return;  // this will only happen if the game engine handles the say command instead of the entity dll;  that shouldn't happen
-		
-		Cmd_ForwardToServer ();
-		return;
-	}
-
-	if (Cmd_Argc () < 2)
-		return;
-
-	p = Cmd_Args();
-	if (!p)
-		return;
-
-	save = host_client;
-
-// remove quotes if present
-	if (*p == '"')
-	{
-		p++;
-		p[Q_strlen(p)-1] = 0;
-	}
-
-	Q_snprintf(text, sizeof( text ), "<%s> ", host_name.GetString() );
-
-	j = sizeof(text) - 2 - Q_strlen(text);  // -2 for /n and null terminator
-	if (Q_strlen(p) > j)
-		p[j] = 0;
-
-	strcat (text, p);
-	strcat (text, "\n");
-
-	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
-	{
-		if (!client || !client->active || !client->spawned)
-			continue;
-
-		host_client = client;
-
-		CEngineSingleUserFilter singleUserFilter( j + 1 );
-
-		host_client->netchan.message.WriteByte (svc_stufftext);
-		host_client->netchan.message.WriteString (va("echo %s\n", text ) );
-	}
-
-	host_client = save;
-
-	Sys_Printf( "%s", &text[1] );
-}
-
-void Host_Say_f(void)
-{
-	Host_Say(false);
-}
-
-void Host_Say_Team_f(void)
-{
-	Host_Say(true);
-}
-
-void Host_Tell_f(void)
-{
-	client_t *client;
-	client_t *save;
-	int		j;
-	char	*p;
-	char	text[64];
-
-	if (cmd_source == src_command)
-	{
-		Cmd_ForwardToServer ();
-		return;
-	}
-
-	if (Cmd_Argc () < 3)
-		return;
-
-	Q_strcpy(text, host_client->name);
-	Q_strcat(text, ": ");
-
-	p = Cmd_Args();
-	if (!p)
-		return;
-
-// remove quotes if present
-	if (*p == '"')
-	{
-		p++;
-		p[Q_strlen(p)-1] = 0;
-	}
-
-// check length & truncate if necessary
-	j = sizeof(text) - 2 - Q_strlen(text);  // -2 for /n and null terminator
-	if (Q_strlen(p) > j)
-		p[j] = 0;
-
-	strcat (text, p);
-	strcat (text, "\n");
-
-	save = host_client;
-	for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
-	{
-		if (!client->active && !client->spawned)
-			continue;
-		if (Q_strcasecmp(client->name, Cmd_Argv(1)))
-			continue;
-		host_client = client;
-		SV_ClientPrintf("%s", text);
-		break;
-	}
-	host_client = save;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : Returns true on success, false on failure.
-//-----------------------------------------------------------------------------
-bool IsPausable( void )
-{
-	if ( svs.maxclients > 1 )
-		return false;
-
-	return pausable.GetInt() ? true : false;
-}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Host_TogglePause_f (void)
+CON_COMMAND( pause, "Toggle the server pause state." )
 {
 #ifndef SWDS
-	if ( !cl.levelname[ 0 ] )
+	if ( !sv.IsDedicated() )
+	{
+		if ( !cl.m_szLevelFileName[ 0 ] )
+			return;
+	}
+#endif
+
+	if ( cmd_source == src_command )
+	{
+		Cmd_ForwardToServer( args );
+		return;
+	}
+
+	if ( !sv.IsPausable() )
+		return;
+
+	// toggle paused state
+	sv.SetPaused( !sv.IsPaused() );
+	
+	// send text messaage who paused the game
+	sv.BroadcastPrintf( "%s %s the game\n", host_client->GetClientName(), sv.IsPaused() ? "paused" : "unpaused" );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+CON_COMMAND( setpause, "Set the pause state of the server." )
+{
+#ifndef SWDS
+	if ( !cl.m_szLevelFileName[ 0 ] )
 		return;
 #endif
 
 	if ( cmd_source == src_command )
 	{
-		Cmd_ForwardToServer ();
-		return;
-	}
-	if ( !IsPausable() )
-	{
+		Cmd_ForwardToServer( args );
 		return;
 	}
 
-
-	sv.paused = !sv.paused;
-
-	Assert( serverGameClients );
-	CPlayerState *pl = serverGameClients->GetPlayerState( sv_player );
-	if ( pl )
-	{
-		SV_BroadcastPrintf( "%s %s the game\n", STRING( pl->netname ), !sv.paused ? "paused" : "unpaused" );
-	}
-
-	// send notification to all clients
-	sv.reliable_datagram.WriteByte ( svc_setpause );
-	sv.reliable_datagram.WriteByte ( sv.paused );
+	sv.SetPaused( true );
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Output : void Host_SetPause_f
 //-----------------------------------------------------------------------------
-void Host_SetPause_f (void)
+CON_COMMAND( unpause, "Unpause the game." )
 {
 #ifndef SWDS
-	if ( !cl.levelname[ 0 ] )
+	if ( !cl.m_szLevelFileName[ 0 ] )
 		return;
 #endif
 
-	if (cmd_source == src_command)
+	if ( cmd_source == src_command )
 	{
-		Cmd_ForwardToServer ();
-		return;
-	}
-	if ( !IsPausable() )
-	{
-		return;
-	}
-
-	sv.paused = true;
-
-	// send notification to all clients
-	sv.reliable_datagram.WriteByte ( svc_setpause );
-	sv.reliable_datagram.WriteByte ( sv.paused );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : void Host_UnPause_f
-//-----------------------------------------------------------------------------
-void Host_UnPause_f (void)
-{
-#ifndef SWDS
-	if ( !cl.levelname[ 0 ] )
-		return;
-#endif
-
-	if (cmd_source == src_command)
-	{
-		Cmd_ForwardToServer ();
-		return;
-	}
-	if ( !IsPausable() )
-	{
-		return;
-	}
-
-	sv.paused = false;
-
-	// send notification to all clients
-	sv.reliable_datagram.WriteByte ( svc_setpause );
-	sv.reliable_datagram.WriteByte ( sv.paused );
-}
-
-
-/*
-==================
-Host_PreSpawn_f
-==================
-*/
-void Host_PreSpawn_f (void)
-{
-	if (cmd_source == src_command)
-	{
-		Warning ("prespawn is not valid from the console\n");
-		return;
-	}
-
-	if (host_client->spawned)
-	{
-		Warning ("prespawn not valid -- already spawned\n");
+		Cmd_ForwardToServer( args );
 		return;
 	}
 	
-	if ( Cmd_Argc() != 2 )
+	sv.SetPaused( false );
+}
+
+// No non-testing use for this at the moment, though server mods in public will expose similar functionality
+#if defined( STAGING_ONLY ) || defined( _DEBUG )
+//-----------------------------------------------------------------------------
+// Purpose: Send a string command to a client by userid
+//-----------------------------------------------------------------------------
+CON_COMMAND( clientcmd, "Send a clientside command to a player by userid" )
+{
+	if ( args.ArgC() <= 2 )
 	{
-		Warning ("prespawn without level tag!\n");
+		ConMsg( "Usage:  clientcmd < userid > { command string }\n" );
 		return;
 	}
 
-	// handle the case of a level changing while a client was connecting
-	if (!Demo_IsPlayingBack() &&
-	 ( atoi(Cmd_Argv(1)) != svs.spawncount ) )
+	// Args
+	int userid = Q_atoi( args[1] );
+	int messageArgStart = 2;
+
+	// Concatenate other arguments into string
+	CUtlString commandString;
+
+	commandString.SetLength( Q_strlen( args.ArgS() ) );
+	commandString.Set( args[ messageArgStart ] );
+	for ( int i = messageArgStart + 1; i < args.ArgC(); i++ )
 	{
-		Warning ("SV_PreSpawn_f from different level\n");
-		SV_New_f();
-		return;
+		commandString.Append( " " );
+		commandString.Append( args[i] );
 	}
 
-	if ( sv.signon.IsOverflowed() )
+	// find client
+	IClient *client = NULL;
+	for ( int i = 0; i < sv.GetClientCount(); i++ )
 	{
-		Host_Error( "Signon buffer overflowed %i bytes!!!\n", sv.signon.GetNumBytesWritten() );
-		return;
-	}
+		IClient *searchclient = sv.GetClient( i );
 
-	if ( sv.signon_fullsendtables.IsOverflowed() )
-	{
-		Host_Error( "Send Table signon buffer overflowed %i bytes!!!\n", sv.signon_fullsendtables.GetNumBytesWritten() );
-		return;
-	}
+		if ( !searchclient->IsConnected() )
+			continue;
 
-	// Full packet of buffers
-	byte buffer[ NET_MAX_PAYLOAD ];
-	bf_write msg( "Host_PreSpawn_f", buffer, sizeof( buffer ) );
-
-	bool send_full_tables = true;
-	if ( svs.sendtable_crc != (CRC32_t)0 )
-	{
-		if ( host_client->sendtable_crc == svs.sendtable_crc )
+		if ( userid != -1 && searchclient->GetUserID() == userid )
 		{
-			send_full_tables = false;
+			client = searchclient;
+			break;
 		}
 	}
 
-	// Write the send tables if needed
-	if ( send_full_tables || sv_fullsendtables.GetBool() )
+	if ( !client )
 	{
-		msg.WriteBits( sv.signon_fullsendtables.GetData(), sv.signon_fullsendtables.GetNumBitsWritten() );
-	}
-	else
-	{
-		// Write the shortcut command
-		msg.WriteByte(svc_classinfo);
-		msg.WriteByte(CLASSINFO_CREATEFROMSENDTABLES);
+		ConMsg( "userid \"%d\" not found\n", userid );
+		return;
 	}
 
-	// Write the regular signon now
-	msg.WriteBits( sv.signon.GetData(), sv.signon.GetNumBitsWritten() );
-
-	sv.allowsignonwrites = false;
-
-	msg.WriteByte ( svc_signonnum );
-	msg.WriteByte ( 1 );
-
-	Netchan_CreateFragments( true, &host_client->netchan, &msg );
+	NET_StringCmd cmdMsg( commandString ) ;
+	client->SendNetMsg( cmdMsg, true );
 }
+#endif // defined( STAGING_ONLY ) || defined( _DEBUG )
 
-/*
-==================
-Host_Spawn_f
-==================
-*/
-void Host_Spawn_f (void)
+//-----------------------------------------------------------------------------
+// Kicks a user off of the server using their userid or uniqueid
+//-----------------------------------------------------------------------------
+CON_COMMAND( kickid, "Kick a player by userid or uniqueid, with a message." )
 {
-	int			i;
-	client_t	*client;
-	edict_t		*ent;
-	int			spawncount;
+	char		*who = NULL;
+	const char	*pszArg1 = NULL, *pszMessage = NULL;
+	IClient		*client = NULL;
+	int			iSearchIndex = -1;
+	char		szSearchString[128];
+	int			argsStartNum = 1;
+	bool		bSteamID = false;
+	int			i = 0;
 
-	if (cmd_source == src_command)
+	if ( args.ArgC() <= 1 )
 	{
-		Warning ("spawn is not valid from the console\n");
+		ConMsg( "Usage:  kickid < userid | uniqueid > { message }\n" );
 		return;
 	}
 
-	if (!host_client->connected)
+	// get the first argument
+	pszArg1 = args[1];
+
+	// if the first letter is a character then
+	// we're searching for a uniqueid ( e.g. STEAM_ )
+	if ( *pszArg1 < '0' || *pszArg1 > '9' )
 	{
-		Warning ("Spawn not valid -- already spawned\n");
-		return;
+		// SteamID (need to reassemble it)
+		if ( !Q_strnicmp( pszArg1, STEAM_PREFIX, strlen( STEAM_PREFIX ) ) && Q_strstr( args[2], ":" ) )
+		{
+			Q_snprintf( szSearchString, sizeof( szSearchString ), "%s:%s:%s", pszArg1, args[3], args[5] );
+			argsStartNum = 5;
+			bSteamID = true;
+		}
+		// some other ID (e.g. "UNKNOWN", "STEAM_ID_PENDING", "STEAM_ID_LAN")
+		// NOTE: assumed to be one argument
+		else
+		{
+			Q_snprintf( szSearchString, sizeof( szSearchString ), "%s", pszArg1 );
+		}
 	}
-
-	spawncount = atoi(Cmd_Argv(1));
-
-// handle the case of a level changing while a client was connecting
-   if (!Demo_IsPlayingBack() && 
-   ( spawncount != svs.spawncount ) )
-	{
-		Warning ("Spawn from different level\n");
-		SV_New_f();
-		return;
-	}
-
-	host_client->netchan.message.Reset();
-	// Set client clock to match server's
-
-	SV_WriteServerTimestamp( host_client->netchan.message, host_client );
-
-	// Grab name from userinfo string
-	Q_strncpy( host_client->name, SV_ExtractNameFromUserinfo( host_client ), sizeof( host_client->name ) );
-
-	// Spawned into server, not fully active, though
-	host_client->spawned = true;
-
-// run the entrance script
-	if (sv.loadgame)
-	{	// loaded games are fully inited already
-		// if this is the last client to be connected, unpause
-		sv.paused = false;
-	}
+	// this is a userid
 	else
 	{
-		// set up the edict
-		ent = host_client->edict;
-		sv.state = ss_loading;
-
-		serverGameEnts->FreeContainingEntity(ent);
-
-		InitializeEntityDLLFields(ent);
-		Assert( serverGameClients );
-		// call the spawn function
-		g_ServerGlobalVariables.curtime = sv.gettime();
-		serverGameClients->ClientPutInServer( sv_player, host_client->name );
-		sv.state = ss_active;
+		iSearchIndex = Q_atoi( pszArg1 );
 	}
 
-	// Do we need to upload our logo
-	if ( host_client->request_logo )
+	// check for a message
+	if ( args.ArgC() > argsStartNum )
 	{
-		host_client->request_logo = false;
-		// Don't have it locally, so we need to request logo file upload
-		host_client->netchan.message.WriteByte( svc_sendlogo );
-		host_client->netchan.message.WriteLong( (unsigned int)host_client->logo );
-	}
+		int j;
+		int dataLen = 0;
 
-	// Parse some other info from the info strings and tell other players
-
-	SV_ExtractFromUserinfo( host_client );  
-	
-	// send other clients userinfo 
-	for (i=0, client = svs.clients ; i<svs.maxclients ; i++, client++)
-	{
-		SV_FullClientUpdate( client, &host_client->netchan.message );
-	}
-
-	host_client->netchan.message.WriteByte( svc_lightstyle );
-	host_client->netchan.message.WriteOneBit( 1 );
-	// send all current light styles
-	for ( i=0 ; i< MAX_LIGHTSTYLES ; i++ )
-	{
-		if ( sv.lightstyles[i] && sv.lightstyles[ i ][ 0 ] )
+		pszMessage = args.ArgS();
+		for ( j = 1; j <= argsStartNum; j++ )
 		{
-			host_client->netchan.message.WriteOneBit( 1 );
-			host_client->netchan.message.WriteString( sv.lightstyles[i] );
+			dataLen += Q_strlen( args[j] ) + 1; // +1 for the space between args
+		}
+
+		if ( bSteamID )
+		{
+			dataLen -= 5; // SteamIDs don't have spaces between the args[) values
+		}
+
+		if ( dataLen > Q_strlen( pszMessage ) ) // saftey check
+		{
+			pszMessage = NULL;
 		}
 		else
 		{
-			host_client->netchan.message.WriteOneBit( 0 );
+			pszMessage += dataLen;
 		}
 	}
 
-	//
-	// send a fixangle
-	// Never send a roll angle, because savegames can catch the server
-	// in a state where it is expecting the client to correct the angle
-	// and it won't happen if the game was just loaded, so you wind up
-	// with a permanent head tilt
-	ent = sv.edicts + ( 1 + (host_client - svs.clients) );
- 	host_client->netchan.message.WriteByte ( svc_setangle);
-
-	Assert( serverGameClients );
-	CPlayerState *pl = serverGameClients->GetPlayerState( sv_player );
-	Assert( pl );
-
-	for ( i=0 ; i < 2 ; i++ )
+	// find this client
+	for ( i = 0; i < sv.GetClientCount(); i++ )
 	{
-		host_client->netchan.message.WriteBitAngle( pl->v_angle[i] , 16 );
-	}
-	host_client->netchan.message.WriteBitAngle( 0, 16 );
+		client = sv.GetClient( i );
 
-	SV_WriteClientdataToMessage (host_client, &host_client->netchan.message);
+		if ( !client->IsConnected() )
+			continue;
 
-	host_client->netchan.message.WriteByte ( svc_signonnum );
-	host_client->netchan.message.WriteByte ( 2 );
-}
+#if defined( REPLAY_ENABLED )
+		if ( client->IsReplay() )
+			continue;
+#endif
 
-/*
-==================
-Host_Begin_f
-==================
-*/
-void Host_Begin_f (void)
-{
-	int spawncount;
+		if ( client->IsHLTV() )
+			continue;
 
-	if (cmd_source == src_command)
-	{
-		Warning ("begin is not valid from the console\n");
-		return;
+		// searching by UserID
+		if ( iSearchIndex != -1 )
+		{
+			if ( client->GetUserID() == iSearchIndex )
+			{
+				// found!
+				break;
+			}
+		}
+		// searching by UniqueID
+		else	
+		{
+			if ( Q_stricmp( client->GetNetworkIDString(), szSearchString ) == 0 ) 
+			{
+				// found!
+				break;
+			}
+		}
 	}
 
-	spawncount = atoi(Cmd_Argv(1));
-
-// handle the case of a level changing while a client was connecting
-    if ( !Demo_IsPlayingBack() && 
-	( spawncount != svs.spawncount ) )
+	// now kick them
+	if ( i < sv.GetClientCount() )
 	{
-		Warning ("Begin from different level\n");
-		SV_New_f();
-		return;
+		if ( cmd_source != src_command )
+		{
+			who = host_client->m_Name;
+		}
+
+		// can't kick yourself!
+		if ( cmd_source != src_command && host_client == client && !sv.IsDedicated() )
+		{
+			return;
+		}
+
+		if ( iSearchIndex != -1 || !client->IsFakeClient() )
+		{
+			if ( who == NULL )
+			{
+				if ( pszMessage )
+				{
+					client->Disconnect( "%s", pszMessage );
+				}
+				else
+				{
+					client->Disconnect( KICKED_BY_CONSOLE );
+				}
+			}
+			else
+			{
+				if ( pszMessage )
+				{
+					client->Disconnect( "Kicked by %s : %s", who, pszMessage );
+				}
+				else
+				{
+					client->Disconnect( "Kicked by %s", who );
+				}
+			}
+		}
 	}
-	
-	host_client->active = true;
-	// host_client->spawned = true;
-	host_client->connected = false; // done d'l ing
-
-	serverGameClients->ClientActive( sv_player );
-
-	GetTestScriptMgr()->CheckPoint( "client_connected" );
+	else
+	{
+		if ( iSearchIndex != -1 )
+		{
+			ConMsg( "userid \"%d\" not found\n", iSearchIndex );
+		}
+		else
+		{
+			ConMsg( "uniqueid \"%s\" not found\n", szSearchString );			
+		}
+	}
 }
 
 /*
 ==================
 Host_Kick_f
 
-Kicks a user off of the server
+Kicks a user off of the server using their name
 ==================
 */
-void Host_Kick_f (void)
+CON_COMMAND( kick, "Kick a player by name." )
 {
-	char		*who;
-	char		*message = NULL;
-	client_t	*save;
-	int			i;
-	qboolean	byNumber = false;
+	char		*who = NULL;
+	char		*pszName = NULL;
+	IClient		*client = NULL;
+	int			i = 0;
+	char		name[64];
 
-	if ( Cmd_Argc() <= 1 )
+	if ( args.ArgC() <= 1 )
 	{
-		Msg( "usage:  kick < name > | < # userid >\n" );
+		ConMsg( "Usage:  kick < name >\n" );
 		return;
 	}
 
-	if (cmd_source == src_command)
+	// copy the name to a local buffer
+	memset( name, 0, sizeof(name) );
+	Q_strncpy( name, args.ArgS(), sizeof(name) );
+	pszName = name;
+
+	// safety check
+	if ( pszName && pszName[0] != 0 )
 	{
-		if (!sv.active)
+		//HACK-HACK
+		// check for the name surrounded by quotes (comes in this way from rcon)
+		int len = Q_strlen( pszName ) - 1; // (minus one since we start at 0)
+		if ( pszName[0] == '"' && pszName[len] == '"' )
 		{
-			Cmd_ForwardToServer ();
-			return;
+			// get rid of the quotes at the beginning and end
+			pszName[len] = 0;
+			pszName++;
 		}
-	}
-	else if (g_ServerGlobalVariables.deathmatch)
-		return;
 
-	save = host_client;
-
-	if (Cmd_Argc() > 2 && Q_strcmp(Cmd_Argv(1), "#") == 0)
-	{
-		i = Q_atof(Cmd_Argv(2)) - 1;
-		if (i < 0 || i >= svs.maxclients)
-			return;
-		if (!svs.clients[i].active)
-			return;
-		host_client = &svs.clients[i];
-		byNumber = true;
-	}
-	else
-	{
-		for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+		for ( i = 0; i < sv.GetClientCount(); i++ )
 		{
-			if (!host_client->active && !host_client->connected)
+			client = sv.GetClient(i);
+
+			if ( !client->IsConnected() )
 				continue;
-			if (Q_strcasecmp(host_client->name, Cmd_Argv(1)) == 0)
+
+#if defined( REPLAY_ENABLED )
+			if ( client->IsReplay() )
+				continue;
+#endif
+
+			if ( client->IsHLTV() )
+				continue;
+
+			// found!
+			if ( Q_strcasecmp( client->GetClientName(), pszName ) == 0 ) 
 				break;
 		}
-	}
 
-	if (i < svs.maxclients)
-	{
-		
-		if (cmd_source == src_command)
+		// now kick them
+		if ( i < sv.GetClientCount() )
 		{
-#ifdef SWDS
-                        who = "Console";
-#else
-                        if ( cls.state == ca_dedicated )
-                        {
-                                who = "Console";
-                        }
-                        else
-                        {
-				who =  const_cast<char *>(cl_name.GetString());
-                        }
-#endif
+			if ( cmd_source != src_command )
+			{
+				who = host_client->m_Name;
+			}
+
+			// can't kick yourself!
+			if ( cmd_source != src_command && host_client == client && !sv.IsDedicated() )
+				return;
+
+			if ( who )
+			{
+				client->Disconnect( "Kicked by %s", who );
+			}
+			else
+			{
+				client->Disconnect( KICKED_BY_CONSOLE );
+			}
 		}
 		else
 		{
-			who = save->name;
+			ConMsg( "name \"%s\" not found\n", pszName );
 		}
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Kicks all users off of the server
+//-----------------------------------------------------------------------------
+CON_COMMAND( kickall, "Kicks everybody connected with a message." )
+{
+	char		*who = NULL;
+	IClient		*client = NULL;
+	int			i = 0;
+	char		szMessage[128];
+
+	// copy the message to a local buffer
+	memset( szMessage, 0, sizeof(szMessage) );
+	V_strcpy_safe( szMessage, args.ArgS() );
+
+	if ( cmd_source != src_command )
+	{
+		who = host_client->m_Name;
+	}
+
+	for ( i = 0; i < sv.GetClientCount(); i++ )
+	{
+		client = sv.GetClient(i);
+
+		if ( !client->IsConnected() )
+			continue;
 
 		// can't kick yourself!
-		if (host_client == save)
-			return;
+		if ( cmd_source != src_command && host_client == client && !sv.IsDedicated() )
+			continue;
 
-		if (Cmd_Argc() > 2)
+#if defined( REPLAY_ENABLED )
+		if ( client->IsReplay() )
+			continue;
+#endif
+
+		if ( client->IsHLTV() )
+			continue;
+
+		if ( who )
 		{
-			message = COM_Parse(Cmd_Args());
-			if (byNumber)
+			if ( szMessage[0] )
 			{
-				message++;							// skip the #
-				while (*message == ' ')				// skip white space
-					message++;
-				message += Q_strlen(Cmd_Argv(2));	// skip the number
+				client->Disconnect( "Kicked by %s : %s", who, szMessage );
 			}
-			while (*message && *message == ' ')
-				message++;
+			else
+			{
+				client->Disconnect( "Kicked by %s", who );
+			}
 		}
-		if (message)
-			SV_ClientPrintf ("Kicked by %s: %s\n", who, message);
 		else
-			SV_ClientPrintf ("Kicked by %s\n", who);
-		SV_DropClient (host_client, false, "kicked by %s", who );
+		{
+			if ( szMessage[0] )
+			{
+				client->Disconnect( "%s", szMessage );
+			}
+			else
+			{
+				client->Disconnect( KICKED_BY_CONSOLE );
+			}
+		}
 	}
-
-	host_client = save;
 }
 
 /*
@@ -1225,77 +1651,50 @@ DEBUGGING TOOLS
 ===============================================================================
 */
 
-/*
-==================
-Host_ShowMaterials_f
-==================
-*/
-void Host_ShowMaterials_f (void)
+
+//-----------------------------------------------------------------------------
+// Dump memory stats
+//-----------------------------------------------------------------------------
+CON_COMMAND( memory, "Print memory stats." )
 {
-	if( Cmd_Argc() == 1 )
+#if !defined(NO_MALLOC_OVERRIDE)
+	ConMsg( "Heap Used:\n" );
+	int nTotal = MemAlloc_GetSize( 0 );
+	if (nTotal == -1)
 	{
-		materialSystemInterface->DebugPrintUsedMaterials( NULL, false );
+		ConMsg( "Corrupted!\n" );
 	}
 	else
 	{
-		materialSystemInterface->DebugPrintUsedMaterials( Cmd_Argv( 1 ), false );
+		ConMsg( "%5.2f MB (%d bytes)\n", nTotal/(1024.0f*1024.0f), nTotal );
 	}
-}
+#endif
 
-/*
-==================
-Host_ShowMaterials_f
-==================
-*/
-void Host_ShowMaterialsVerbose_f (void)
-{
-	if( Cmd_Argc() == 1 )
+#ifdef VPROF_ENABLED
+	ConMsg("\nVideo Memory Used:\n");
+	CVProfile *pProf = &g_VProfCurrentProfile;
+	int prefixLen = strlen( "TexGroup_Global_" );
+	float total = 0.0f;
+	for ( int i=0; i < pProf->GetNumCounters(); i++ )
 	{
-		materialSystemInterface->DebugPrintUsedMaterials( NULL, true );
+		if ( pProf->GetCounterGroup( i ) == COUNTER_GROUP_TEXTURE_GLOBAL )
+		{
+			float value = pProf->GetCounterValue( i ) * (1.0f/(1024.0f*1024.0f) );
+			total += value;
+			const char *pName = pProf->GetCounterName( i );
+			if ( !Q_strnicmp( pName, "TexGroup_Global_", prefixLen ) )
+			{
+				pName += prefixLen;
+			}
+			ConMsg( "%5.2f MB: %s\n", value, pName );
+		}
 	}
-	else
-	{
-		materialSystemInterface->DebugPrintUsedMaterials( Cmd_Argv( 1 ), true );
-	}
-}
+	ConMsg("------------------\n");
+	ConMsg( "%5.2f MB: total\n", total );
+#endif
 
-/*
-==================
-Host_ShowTextures_f
-==================
-*/
-void Host_ShowTextures_f (void)
-{
-	materialSystemInterface->DebugPrintUsedTextures();
-}
-
-/*
-==================
-Host_ReloadMaterials_f
-==================
-*/
-
-void ReleaseMaterialSystemObjects();
-void RestoreMaterialSystemObjects();
-
-void Host_ReloadAllMaterials_f (void)
-{
-	materialSystemInterface->ReloadMaterials( NULL );
-}
-
-void Host_ReloadMaterial_f (void)
-{
-	if( Cmd_Argc() != 2 )
-	{
-		Warning( "Usage: mat_reloadmaterials material_name_substring\n" );
-		return;
-	}
-	materialSystemInterface->ReloadMaterials( Cmd_Argv( 1 ) );
-}
-
-void Host_ReloadTextures_f( void )
-{
-	materialSystemInterface->ReloadTextures();
+	ConMsg( "\nHunk Memory Used:\n" );
+	Hunk_Print();
 }
 
 /*
@@ -1308,24 +1707,76 @@ DEMO LOOP CONTROL
 
 
 #ifndef SWDS
-/*
-==================
-Host_Startdemos_f
-==================
-*/
-void Host_Startdemos_f (void)
-{
-	int		i, c;
 
-	if (cls.state == ca_dedicated)
+//MOTODO move all demo commands to demoplayer
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Gets number of valid demo names
+// Output : int
+//-----------------------------------------------------------------------------
+int Host_GetNumDemos()
+{
+	int c = 0;
+#ifndef SWDS
+	for ( int i = 0; i < MAX_DEMOS; ++i )
 	{
-		if (!sv.active)
-			Msg("Cannot play demos on a dedicated server.\n");
-			//Cbuf_AddText ("map hldm1\n");
-		return;
+		const char *demoname = cl.demos[ i ].Get();
+		if ( !demoname[ 0 ] )
+			break;
+
+		++c;
+	}
+#endif
+	return c;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+//-----------------------------------------------------------------------------
+void Host_PrintDemoList()
+{
+	int count = Host_GetNumDemos();
+
+	int next = cl.demonum;
+	if ( next >= count || next < 0 )
+	{
+		next = 0;
 	}
 
-	c = Cmd_Argc() - 1;
+#ifndef SWDS
+	for ( int i = 0; i < MAX_DEMOS; ++i )
+	{
+		const char *demoname = cl.demos[ i ].Get();
+		if ( !demoname[ 0 ] )
+			break;
+
+		bool isnextdemo = next == i ? true : false;
+
+		DevMsg( "%3s % 2i : %20s\n", isnextdemo ? "-->" : "   ", i, cl.demos[ i ].Get() );
+	}
+#endif
+
+	if ( !count )
+	{
+		DevMsg( "No demos in list, use startdemos <demoname> <demoname2> to specify\n" );
+	}
+}
+
+
+#ifndef SWDS
+//-----------------------------------------------------------------------------
+//
+// Con commands related to demos, not available on dedicated servers
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Purpose: Specify list of demos for the "demos" command
+//-----------------------------------------------------------------------------
+CON_COMMAND( startdemos, "Play demos in demo sequence." )
+{
+	int	c = args.ArgC() - 1;
 	if (c > MAX_DEMOS)
 	{
 		Msg ("Max %i demos in demoloop\n", MAX_DEMOS);
@@ -1333,160 +1784,249 @@ void Host_Startdemos_f (void)
 	}
 	Msg ("%i demo(s) in loop\n", c);
 
-	for (i=1 ; i<c+1 ; i++)
-		Q_strncpy(cls.demos[i-1], Cmd_Argv(i), sizeof(cls.demos[0]));
-
-	cls.demonum = 0;
-
-	if (!sv.active 
-		&& !Demo_IsPlayingBack() )
+	for ( int i=1 ; i<c+1 ; i++ )
 	{
-		cls.demonum = 0;
+		cl.demos[i-1] = args[i];
+	}
+
+	cl.demonum = 0;
+
+	Host_PrintDemoList();
+
+	if ( !sv.IsActive() && !demoplayer->IsPlayingBack() )
+	{
 		CL_NextDemo ();
 	}
 	else
-		cls.demonum = -1;
+	{
+		cl.demonum = -1;
+	}
 }
 
 
-/*
-==================
-Host_Demos_f
-
-Return to looping demos
-==================
-*/
-void Host_Demos_f (void)
+//-----------------------------------------------------------------------------
+// Purpose: Return to looping demos, optional resume demo index
+//-----------------------------------------------------------------------------
+CON_COMMAND( demos, "Demo demo file sequence." )
 {
-	if (cls.state == ca_dedicated)
-		return;
-	if (cls.demonum == -1)
-		cls.demonum = 0;
-	Host_Disconnect();
+	int oldn = cl.demonum;
+	cl.demonum = -1;
+	Host_Disconnect(false);
+	cl.demonum = oldn;
+
+	if (cl.demonum == -1)
+		cl.demonum = 0;
+
+	if ( args.ArgC() == 2 )
+	{
+		int numdemos = Host_GetNumDemos();
+		if ( numdemos >= 1 )
+		{
+			cl.demonum = clamp( Q_atoi( args[1] ), 0, numdemos - 1 );
+			DevMsg( "Jumping to %s\n", cl.demos[ cl.demonum ].Get() );
+		}
+	}
+
+	Host_PrintDemoList();
+
 	CL_NextDemo ();
 }
 
-/*
-==================
-Host_Stopdemo_f
-
-Return to looping demos
-==================
-*/
-void Host_Stopdemo_f (void)
+//-----------------------------------------------------------------------------
+// Purpose: Stop current demo
+//-----------------------------------------------------------------------------
+CON_COMMAND_F( stopdemo, "Stop playing back a demo.", FCVAR_DONTRECORD )
 {
-	if (cls.state == ca_dedicated)
-		return;
-
-	if (!Demo_IsPlayingBack())
+	if ( !demoplayer->IsPlayingBack() )
 		return;
 	
-	Host_Disconnect ();
+	Host_Disconnect (true);
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: Skip to next demo
 //-----------------------------------------------------------------------------
-void Host_NextDemo_f( void )
+CON_COMMAND( nextdemo, "Play next demo in sequence." )
 {
-	Host_EndGame( "Moving to next demo..." );
+	if ( args.ArgC() == 2 )
+	{
+		int numdemos = Host_GetNumDemos();
+		if ( numdemos >= 1 )
+		{
+			cl.demonum = clamp( Q_atoi( args[1] ), 0, numdemos - 1 );
+			DevMsg( "Jumping to %s\n", cl.demos[ cl.demonum ].Get() );
+		}
+	}
+	Host_EndGame( false, "Moving to next demo..." );
 }
 
-/*
-==================
-Host_Soundfade_f
+//-----------------------------------------------------------------------------
+// Purpose: Print out the current demo play order
+//-----------------------------------------------------------------------------
+CON_COMMAND( demolist, "Print demo sequence list." )
+{
+	Host_PrintDemoList();
+}
 
-==================
-*/
-void Host_Soundfade_f(void)
+
+//-----------------------------------------------------------------------------
+// Purpose: Host_Soundfade_f
+//-----------------------------------------------------------------------------
+CON_COMMAND_F( soundfade, "Fade client volume.", FCVAR_SERVER_CAN_EXECUTE )
 {
 	float percent;
 	float inTime, holdTime, outTime;
 
-	if (Cmd_Argc() != 3 && Cmd_Argc() != 5)
+	if (args.ArgC() != 3 && args.ArgC() != 5)
 	{
 		Msg("soundfade <percent> <hold> [<out> <int>]\n");
 		return;
 	}
 
-	percent = clamp( atof(Cmd_Argv(1)), 0.0f, 100.0f );
+	percent = clamp( (float) atof(args[1]), 0.0f, 100.0f );
 	
-	holdTime = max( 0.0f, atof(Cmd_Argv(2)) );
+	holdTime = max( 0., atof(args[2]) );
 
 	inTime = 0.0f;
 	outTime = 0.0f;
-	if (Cmd_Argc() == 5)
+	if (args.ArgC() == 5)
 	{
-		outTime = max( 0.0f, atof(Cmd_Argv(3)) );
-		inTime = max( 0.0f, atof( Cmd_Argv(4)) );
+		outTime = max( 0., atof(args[3]) );
+		inTime = max( 0., atof( args[4]) );
 	}
 
 	S_SoundFade( percent, holdTime, outTime, inTime );
 }
+
+#endif // !SWDS
+
 #endif
 
-/*
-==================
-Host_KillServer_f
 
-==================
-*/
-void Host_KillServer_f(void)
+//-----------------------------------------------------------------------------
+// Shutdown the server
+//-----------------------------------------------------------------------------
+CON_COMMAND( killserver, "Shutdown the server." )
 {
-	Host_Disconnect();
-	if ( cls.state != ca_dedicated )
+	Host_Disconnect(true);
+	
+	if ( !sv.IsDedicated() )
 	{
 		// close network sockets
-		NET_Config ( false );
+		NET_SetMutiplayer( false );
 	}
 }
 
-#ifndef SWDS
-
+#if !defined(SWDS)
 void Host_VoiceRecordStart_f(void)
 {
-	if (cls.state == ca_active)
+#ifdef VOICE_VOX_ENABLE
+	ConVarRef voice_vox( "voice_vox" );
+	if ( voice_vox.IsValid() && voice_vox.GetBool() )
+		return;
+#endif // VOICE_VOX_ENABLE
+
+	if ( cl.IsActive() )
 	{
 		const char *pUncompressedFile = NULL;
 		const char *pDecompressedFile = NULL;
 		const char *pInputFile = NULL;
 		
-		if(voice_recordtofile.GetInt())
+		if (voice_recordtofile.GetInt())
 		{
 			pUncompressedFile = "voice_micdata.wav";
 			pDecompressedFile = "voice_decompressed.wav";
 		}
 
-		if(voice_inputfromfile.GetInt())
+		if (voice_inputfromfile.GetInt())
 		{
 			pInputFile = "voice_input.wav";
 		}
-
+		if ( !sv_allow_voice_from_file.GetBool() )
+		{
+			pInputFile = NULL;
+		}
+#if !defined( NO_VOICE )
 		if (Voice_RecordStart(pUncompressedFile, pDecompressedFile, pInputFile))
 		{
 		}
+#endif
 	}
 }
 
 
 void Host_VoiceRecordStop_f(void)
 {
-	if (cls.state == ca_active)
+#ifdef VOICE_VOX_ENABLE
+	ConVarRef voice_vox( "voice_vox" );
+	if ( voice_vox.IsValid() && voice_vox.GetBool() )
+		return;
+#endif // VOICE_VOX_ENABLE
+
+	if ( cl.IsActive() )
 	{
+#if !defined( NO_VOICE )
 		if (Voice_IsRecording())
 		{
-			CL_SendVoicePacket(true);
-			Voice_RecordStop();
+			CL_SendVoicePacket( g_bUsingSteamVoice ? false : true );
+			Voice_UserDesiresStop();
 		}
+#endif
 	}
 }
-#endif
 
+#ifdef VOICE_VOX_ENABLE
+void Host_VoiceToggle_f( const CCommand &args )
+{
+	if ( cl.IsActive() )
+	{
+#if !defined( NO_VOICE )	
+		bool bToggle = false;
+
+		if ( args.ArgC() == 2 && V_strcasecmp( args[1], "on" ) == 0 )
+		{
+			bToggle = true;
+		}
+
+		if ( Voice_IsRecording() && bToggle == false )
+		{
+			CL_SendVoicePacket( g_bUsingSteamVoice ? false : true );
+			Voice_UserDesiresStop();
+		}
+		else if ( !Voice_IsRecording() && bToggle == true )
+		{
+			const char *pUncompressedFile = NULL;
+			const char *pDecompressedFile = NULL;
+			const char *pInputFile = NULL;
+
+			if (voice_recordtofile.GetInt())
+			{
+				pUncompressedFile = "voice_micdata.wav";
+				pDecompressedFile = "voice_decompressed.wav";
+			}
+
+			if (voice_inputfromfile.GetInt())
+			{
+				pInputFile = "voice_input.wav";
+			}
+			if ( !sv_allow_voice_from_file.GetBool() )
+			{
+				pInputFile = NULL;
+			}
+
+			Voice_RecordStart( pUncompressedFile, pDecompressedFile, pInputFile );
+		}
+#endif // NO_VOICE
+	}
+}
+#endif // VOICE_VOX_ENABLE
+	
+#endif // SWDS
 
 //-----------------------------------------------------------------------------
 // Purpose: Wrapper for modelloader->Print() function call
 //-----------------------------------------------------------------------------
-void Mod_Print( void )
+CON_COMMAND( listmodels, "List loaded models." )
 {
 	modelloader->Print();
 }
@@ -1496,32 +2036,32 @@ void Mod_Print( void )
 Host_IncrementCVar
 ==================
 */
-void Host_IncrementCVar_f( void )
+CON_COMMAND_F( incrementvar, "Increment specified convar value.", FCVAR_DONTRECORD )
 {
-	if( Cmd_Argc() != 5 )
+	if( args.ArgC() != 5 )
 	{
-		Warning( "Usage: incrementvar varName minValue maxValue delta" );
+		Warning( "Usage: incrementvar varName minValue maxValue delta\n" );
 		return;
 	}
 
-	char const *varName = Cmd_Argv( 1 );
+	const char *varName = args[ 1 ];
 	if( !varName )
 	{
-		Con_DPrintf( "Host_IncrementCVar_f without a varname\n" );
+		ConDMsg( "Host_IncrementCVar_f without a varname\n" );
 		return;
 	}
 
-	ConVar *var = ( ConVar * )cv->FindVar( varName );
+	ConVar *var = ( ConVar * )g_pCVar->FindVar( varName );
 	if( !var )
 	{
-		Con_DPrintf( "cvar \"%s\" not found\n", varName );
+		ConDMsg( "cvar \"%s\" not found\n", varName );
 		return;
 	}
 
 	float currentValue = var->GetFloat();
-	float startValue = atof( Cmd_Argv( 2 ) );
-	float endValue = atof( Cmd_Argv( 3 ) );
-	float delta = atof( Cmd_Argv( 4 ) );
+	float startValue = atof( args[ 2 ] );
+	float endValue = atof( args[ 3 ] );
+	float delta = atof( args[ 4 ] );
 	float newValue = currentValue + delta;
 	if( newValue > endValue )
 	{
@@ -1533,15 +2073,62 @@ void Host_IncrementCVar_f( void )
 	}
 
 	// Conver incrementvar command to direct sets to avoid any problems with state in a demo loop.
-	Cbuf_InsertText( va("%s %f", varName, newValue) );
+	Cbuf_AddText( va("%s %f", varName, newValue) );
 
-	Con_DPrintf( "%s = %f\n", var->GetName(), newValue );
+	ConDMsg( "%s = %f\n", var->GetName(), newValue );
 }
+
+
+//-----------------------------------------------------------------------------
+// Host_MultiplyCVar_f
+//-----------------------------------------------------------------------------
+CON_COMMAND_F( multvar, "Multiply specified convar value.", FCVAR_DONTRECORD )
+{
+	if (( args.ArgC() != 5 ))
+	{
+		Warning( "Usage: multvar varName minValue maxValue factor\n" );
+		return;
+	}
+
+	const char *varName = args[ 1 ];
+	if( !varName )
+	{
+		ConDMsg( "multvar without a varname\n" );
+		return;
+	}
+
+	ConVar *var = ( ConVar * )g_pCVar->FindVar( varName );
+	if( !var )
+	{
+		ConDMsg( "cvar \"%s\" not found\n", varName );
+		return;
+	}
+
+	float currentValue = var->GetFloat();
+	float startValue = atof( args[ 2 ] );
+	float endValue = atof( args[ 3 ] );
+	float factor = atof( args[ 4 ] );
+	float newValue = currentValue * factor;
+	if( newValue > endValue )
+	{
+		newValue = endValue;
+	}
+	else if ( newValue < startValue )
+	{
+		newValue = startValue;
+	}
+
+	// Conver incrementvar command to direct sets to avoid any problems with state in a demo loop.
+	Cbuf_AddText( va("%s %f", varName, newValue) );
+
+	ConDMsg( "%s = %f\n", var->GetName(), newValue );
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void Host_DumpStringTables_f( void )
+CON_COMMAND( dumpstringtables, "Print string tables to console." )
 {
 	SV_PrintStringTables();
 #ifndef SWDS
@@ -1550,54 +2137,275 @@ void Host_DumpStringTables_f( void )
 }
 
 // Register shared commands
-static ConCommand dumpstringtables( "dumpstringtables", Host_DumpStringTables_f );
-static ConCommand killserver("killserver", Host_KillServer_f);
-static ConCommand status("status", Host_Status_f);
-static ConCommand quit("quit", Host_Quit_f);
-static ConCommand cmd_exit("exit", Host_Quit_f);
-static ConCommand quti("quti", Host_Quit_f);
-static ConCommand _restart("_restart", Host_Quit_Restart_f );
+ConCommand quit("quit", Host_Quit_f, "Exit the engine.");
+static ConCommand cmd_exit("exit", Host_Quit_f, "Exit the engine.");
 
 #ifndef SWDS
-static ConCommand _setvideomode( "_setvideomode", Host_SetVideoMode_f );
-static ConCommand _setrenderer( "_setrenderer", Host_SetRenderer_f );
-static ConCommand map_edit("map_edit", Host_Map_Edit_f);
-static ConCommand soundfade("soundfade", Host_Soundfade_f);
 #ifdef VOICE_OVER_IP
 static ConCommand startvoicerecord("+voicerecord", Host_VoiceRecordStart_f);
 static ConCommand endvoicerecord("-voicerecord", Host_VoiceRecordStop_f);
+#ifdef VOICE_VOX_ENABLE
+static ConCommand togglevoicerecord("voicerecord_toggle", Host_VoiceToggle_f);
+#endif // VOICE_VOX_ENABLE
 #endif // VOICE_OVER_IP
-static ConCommand startdemos("startdemos", Host_Startdemos_f);
-static ConCommand nextdemo( "nextdemo", Host_NextDemo_f, "Play next demo in sequence." );
-static ConCommand demos("demos", Host_Demos_f);
-static ConCommand stopdemo("stopdemo", Host_Stopdemo_f);
-static ConCommand mat_showmaterials("mat_showmaterials", Host_ShowMaterials_f);
-static ConCommand mat_showmaterialsverbose("mat_showmaterialsverbose", Host_ShowMaterialsVerbose_f);
-static ConCommand mat_showtextures("mat_showtextures", Host_ShowTextures_f);
+
+#endif // SWDS
+
+
+#if defined( STAGING_ONLY )
+
+// From Kyle: For the GC we added this so we could call it over and
+//  over until we got the crash reporter fixed.
+
+// Visual studio optimizes this away unless we disable optimizations.
+#pragma optimize( "", off )
+
+class PureCallBase
+{
+public:
+	virtual void PureFunction() = 0;
+
+	PureCallBase()
+	{
+		NonPureFunction();
+	}
+
+	void NonPureFunction()
+	{
+		PureFunction();
+	}
+};
+ 
+class PureCallDerived : public PureCallBase
+{
+public:
+	void PureFunction() OVERRIDE
+	{
+	}
+};
+
+//-----------------------------------------------------------------------------
+// Purpose: Force various crashes. useful for testing minidumps.
+//  crash : Write 0 to address 0.
+//  crash sys_error : Call Sys_Error().
+//  crash hang : Hang.
+//  crash purecall : Call virtual function in ctor.
+//-----------------------------------------------------------------------------
+CON_COMMAND( crash, "[ sys_error | hang | purecall | segfault | minidump ]: Cause the engine to crash." )
+{ 
+	if ( cmd_source != src_command )
+		return;
+
+	CUtlString cmd( ( args.ArgC() > 1 ) ? args[ 1 ] : "" );
+
+	if ( cmd == "hang" )
+	{
+		// Hang. Useful to test watchdog code.
+		Msg( "Hanging... Watchdog time: %d.\n ", Plat_GetWatchdogTime() );
+		for ( ;; )
+		{
+			Msg( "%d ", Plat_MSTime() );
+			ThreadSleep( 5000 );
+		}
+	}
+	else if ( cmd == "purecall" )
+	{
+		Msg( "Instantiating PureCallDerived_derived...\n" );
+		PureCallDerived derived;
+	}
+	else if ( cmd == "sys_error" )
+	{
+		Msg( "Calling Sys_Error...\n" );
+		Sys_Error( "%s: Sys_Error()!!!", __FUNCTION__ );
+	}
+	else if ( cmd == "minidump" )
+	{
+		Msg( "Forcing minidump. build_number: %d.\n", build_number() );
+		SteamAPI_WriteMiniDump( 0, NULL, build_number() );
+	}
+	else
+	{
+		Msg( "Segfault...\n" );
+		char *p = 0;
+		*p = 0;
+	}
+}
+
+#pragma optimize( "", on )
+
+#endif // STAGING_ONLY
+
+CON_COMMAND_F( flush, "Flush unlocked cache memory.", FCVAR_CHEAT )
+{
+#if !defined( SWDS )
+	g_ClientDLL->InvalidateMdlCache();
+#endif // SWDS
+	serverGameDLL->InvalidateMdlCache();
+	g_pDataCache->Flush( true );
+}
+
+CON_COMMAND_F( flush_locked, "Flush unlocked and locked cache memory.", FCVAR_CHEAT )
+{
+#if !defined( SWDS )
+	g_ClientDLL->InvalidateMdlCache();
+#endif // SWDS
+	serverGameDLL->InvalidateMdlCache();
+	g_pDataCache->Flush( false );
+}
+
+CON_COMMAND( cache_print, "cache_print [section]\nPrint out contents of cache memory." )
+{
+	const char *pszSection = NULL;
+	if ( args.ArgC() == 2 )
+	{
+		pszSection = args[ 1 ];
+	}
+	g_pDataCache->OutputReport( DC_DETAIL_REPORT, pszSection );
+}
+
+CON_COMMAND( cache_print_lru, "cache_print_lru [section]\nPrint out contents of cache memory." )
+{
+	const char *pszSection = NULL;
+	if ( args.ArgC() == 2 )
+	{
+		pszSection = args[ 1 ];
+	}
+	g_pDataCache->OutputReport( DC_DETAIL_REPORT_LRU, pszSection );
+}
+
+CON_COMMAND( cache_print_summary, "cache_print_summary [section]\nPrint out a summary contents of cache memory." )
+{
+	const char *pszSection = NULL;
+	if ( args.ArgC() == 2 )
+	{
+		pszSection = args[ 1 ];
+	}
+	g_pDataCache->OutputReport( DC_SUMMARY_REPORT, pszSection );
+}
+
+CON_COMMAND( sv_dump_edicts, "Display a list of edicts allocated on the server." )
+{
+	if ( !sv.IsActive() )
+		return;
+
+	CUtlMap<CUtlString, int> classNameCountMap;
+	classNameCountMap.SetLessFunc( UtlStringLessFunc );
+
+	Msg( "\nCurrent server edicts:\n");
+	for ( int i = 0; i < sv.num_edicts; ++i )
+	{
+		CUtlMap<CUtlString, int>::IndexType_t index = classNameCountMap.Find( sv.edicts[ i ].GetClassName() );
+		if ( index == classNameCountMap.InvalidIndex() )
+		{
+			index = classNameCountMap.Insert( sv.edicts[ i ].GetClassName(), 0 );
+		}
+
+		classNameCountMap[ index ]++;
+	}
+
+	Msg( "Count Classname\n");
+	FOR_EACH_MAP( classNameCountMap, i )
+	{
+		Msg("%5d %s\n", classNameCountMap[ i ], classNameCountMap.Key(i).String() );
+	}
+	Msg( "NumEdicts: %d\n", sv.num_edicts );
+	Msg( "FreeEdicts: %d\n\n", sv.free_edicts );
+}
+
+// make valve_ds only?
+CON_COMMAND_F( memory_list, "dump memory list (linux only)", FCVAR_CHEAT )
+{
+	DumpMemoryLog( 128 * 1024 );
+}
+
+// make valve_ds only?
+CON_COMMAND_F( memory_status, "show memory stats (linux only)", FCVAR_CHEAT )
+{
+	DumpMemorySummary();
+}
+
+// make valve_ds only?
+CON_COMMAND_F( memory_mark, "snapshot current allocation status", FCVAR_CHEAT )
+{
+	SetMemoryMark();
+}
+// make valve_ds only?
+CON_COMMAND_F( memory_diff, "show memory stats relative to snapshot", FCVAR_CHEAT )
+{
+	DumpChangedMemory( 64 * 1024 );
+}
+
+//-----------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------
+CON_COMMAND( namelockid, "Prevent name changes for this userID." )
+{
+	if ( args.ArgC() <= 2 )
+	{
+		ConMsg( "Usage:  namelockid < userid > < 0 | 1 >\n" );
+		return;
+	}
+
+	CBaseClient	*pClient = NULL;
+
+	int iIndex = Q_atoi( args[1] );
+	if ( iIndex > 0 )
+	{
+		for ( int i = 0; i < sv.GetClientCount(); i++ )
+		{
+			pClient = static_cast< CBaseClient* >( sv.GetClient( i ) );
+
+			if ( !pClient->IsConnected() )
+				continue;
+
+#if defined( REPLAY_ENABLED )
+			if ( pClient->IsReplay() )
+				continue;
 #endif
 
-static ConCommand restart("restart", Host_Restart_f);
-static ConCommand disconnect("disconnect", Host_Disconnect_f);
-static ConCommand reload("reload", Host_Reload_f);
-static ConCommand changelevel("changelevel", Host_Changelevel_f);
-static ConCommand changelevel2("changelevel2", Host_Changelevel2_f);
-static ConCommand version("version", Host_Version_f);
-static ConCommand say("say", Host_Say_f);
-static ConCommand say_team("say_team", Host_Say_Team_f);
-static ConCommand tell("tell", Host_Tell_f);
-static ConCommand setpause("setpause", Host_SetPause_f);
-static ConCommand unpause("unpause", Host_UnPause_f);
-static ConCommand conpause("pause", Host_TogglePause_f);
-static ConCommand spawn("spawn", Host_Spawn_f);
-static ConCommand begin("begin", Host_Begin_f);
-static ConCommand prespawn("prespawn", Host_PreSpawn_f);
-static ConCommand kick("kick", Host_Kick_f);
-static ConCommand ping("ping", Host_Ping_f);
-static ConCommand setinfo("setinfo", Host_SetInfo_f);
-static ConCommand fullinfo("fullinfo", Host_FullInfo_f);
-static ConCommand mat_reloadmaterial("mat_reloadmaterial", Host_ReloadMaterial_f);
-static ConCommand mat_reloadallmaterials("mat_reloadallmaterials", Host_ReloadAllMaterials_f);
-static ConCommand mat_reloadtextures("mat_reloadtextures", Host_ReloadTextures_f);
-static ConCommand mcache("mcache", Mod_Print);
-static ConCommand cmd_new("new", SV_New_f);
-static ConCommand incrementvar( "incrementvar", Host_IncrementCVar_f );
+			if ( pClient->IsHLTV() )
+				continue;
+
+			if ( pClient->GetUserID() == iIndex )
+				break;
+
+			pClient = NULL;
+		}
+	}
+
+	if ( pClient )
+	{
+		pClient->SetPlayerNameLocked( ( Q_atoi( args[2] ) == 0 ) ? false : true );
+	}
+	else
+	{
+		ConMsg( "Player id \"%d\" not found.\n", iIndex );
+	}
+}
+
+#if defined( STAGING_ONLY ) || defined( _DEBUG )
+CON_COMMAND( fs_find, "Run virtual filesystem find" )
+{
+	if ( args.ArgC() != 3 )
+	{
+		ConMsg( "Usage:  fs_find wildcard pathid\n" );
+		return;
+	}
+
+	const char *pWildcard = args.Arg(1);
+	const char *pPathID = args.Arg(2);
+
+	FileFindHandle_t findhandle;
+	const char *pFile = NULL;
+	size_t matches = 0;
+	for ( pFile = g_pFullFileSystem->FindFirstEx( pWildcard, pPathID, &findhandle );
+	      pFile;
+	      pFile = g_pFullFileSystem->FindNext( findhandle ) )
+	{
+		ConMsg( "%s\n", pFile );
+		matches++;
+	}
+
+	ConMsg( "  %u matching files/directories\n", matches );
+}
+#endif // defined( STAGING_ONLY ) || defined( _DEBUG )

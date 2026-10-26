@@ -1,13 +1,13 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "stdafx.h"
 #include "shell_icon_mgr.h"
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
 #include "tier0/dbg.h"
 #include "shellapi.h"
 
@@ -20,7 +20,7 @@ CShellIconMgr::CShellIconMgr()
 {
 	m_hWnd = NULL;
 	m_hWndClass = NULL;
-	m_uTaskbarRestart = -1;
+	m_uTaskbarRestart = (UINT)-1;
 	m_iCurIconResourceID = 0;
 	m_pHelper = NULL;
 }

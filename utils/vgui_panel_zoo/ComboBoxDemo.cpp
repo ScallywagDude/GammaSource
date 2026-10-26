@@ -1,16 +1,16 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_Controls.h>
+#include "vgui/IVGui.h"
+#include "vgui_controls/Controls.h"
 
-#include <VGUI_KeyValues.h>
-#include <VGUI_ComboBox.h>
+#include "tier1/KeyValues.h"
+#include <vgui_controls/ComboBox.h>
 
 
 using namespace vgui;
@@ -48,12 +48,12 @@ ComboBoxDemo::ComboBoxDemo(Panel *parent, const char *name) : DemoPage(parent, n
 	m_pComboBox->SetWide(80);
 
 	// Add text selections to the menu list
-	m_pComboBox->AddItem("Right");
-	m_pComboBox->AddItem("Left");
-	m_pComboBox->AddItem("Up");
-	m_pComboBox->AddItem("Down");
-	m_pComboBox->AddItem("Forward");
-	m_pComboBox->AddItem("Backward");
+	m_pComboBox->AddItem("Right", NULL );
+	m_pComboBox->AddItem("Left", NULL );
+	m_pComboBox->AddItem("Up", NULL );
+	m_pComboBox->AddItem("Down", NULL );
+	m_pComboBox->AddItem("Forward", NULL );
+	m_pComboBox->AddItem("Backward", NULL );
 
 	// Activate the first item in the list, so our box will start out
 	// with a default selection. ("Right")

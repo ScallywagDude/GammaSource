@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include "typedefs.h"
 
 #define MIN(x,y)     (((x) < (y)) ? (x) : (y))

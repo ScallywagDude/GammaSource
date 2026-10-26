@@ -1,9 +1,4 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #if !defined( MOUTHINFO_H )
 #define MOUTHINFO_H
 #ifdef _WIN32
@@ -23,18 +18,47 @@
 
 class CAudioSource;
 
+#pragma pack(push,4)
 class CVoiceData
 {
 public:
 	CVoiceData( void )
 	{
-		m_flVoiceStartTime = 0.0f;
+		m_flElapsed = 0.0f;
 		m_pAudioSource = NULL;
+		m_bIgnorePhonemes = false;
 	}
 
-	// voice data for players
-	float					m_flVoiceStartTime;
+	void SetElapsedTime( float t )
+	{
+		m_flElapsed = t;
+	}
+
+	float GetElapsedTime() const
+	{
+		return m_flElapsed;
+	}
+
+	void SetSource( CAudioSource *source, bool bIgnorePhonemes )
+	{
+		m_pAudioSource = source;
+		m_bIgnorePhonemes = bIgnorePhonemes;
+	}
+
+	bool ShouldIgnorePhonemes() const
+	{
+		return m_bIgnorePhonemes;
+	}
+
+	CAudioSource	*GetSource()
+	{
+		return m_pAudioSource;
+	}
+
+private:
+	float					m_flElapsed;
 	CAudioSource 			*m_pAudioSource;
+	bool					m_bIgnorePhonemes;
 };
 
 #define UNKNOWN_VOICE_SOURCE -1
@@ -53,7 +77,7 @@ public:
 	int						sndavg;			
 
 public:
-							CMouthInfo( void ) { m_nVoiceSources = 0; }
+							CMouthInfo( void ) { m_nVoiceSources = 0; m_needsEnvelope = false; }
 	virtual					~CMouthInfo( void ) { ClearVoiceSources(); }
 
 	int						GetNumVoiceSources( void );
@@ -63,12 +87,14 @@ public:
 	int						GetIndexForSource( CAudioSource *source );
 	bool					IsSourceReferenced( CAudioSource *source );
 
-	CVoiceData				*AddSource( CAudioSource *source, float start = 0.0f );
+	CVoiceData				*AddSource( CAudioSource *source, bool bIgnorePhonemes );
 
 	void					RemoveSource( CAudioSource *source );
 	void					RemoveSourceByIndex( int index );
 
 	bool					IsActive( void );
+	bool					NeedsEnvelope() { return m_needsEnvelope != 0; }
+	void					ActivateEnvelope() { m_needsEnvelope = true; }
 
 private:
 	enum
@@ -76,9 +102,12 @@ private:
 		MAX_VOICE_DATA = 4
 	};
 
+	short					m_nVoiceSources;
+	short					m_needsEnvelope; 
 	CVoiceData				m_VoiceSources[ MAX_VOICE_DATA ];
-	int						m_nVoiceSources;
 };
+#pragma pack(pop)
+
 
 inline bool CMouthInfo::IsActive( void )
 {
@@ -111,7 +140,7 @@ inline int CMouthInfo::GetIndexForSource( CAudioSource *source )
 		if ( !v )
 			continue;
 
-		if ( v->m_pAudioSource == source )
+		if ( v->GetSource() == source )
 			return i;
 	}
 
@@ -143,7 +172,7 @@ inline void CMouthInfo::RemoveSourceByIndex( int index )
 	m_VoiceSources[ index ] = m_VoiceSources[ --m_nVoiceSources ];
 }
 
-inline CVoiceData *CMouthInfo::AddSource( CAudioSource *source, float start /*= 0.0f*/ )
+inline CVoiceData *CMouthInfo::AddSource( CAudioSource *source, bool bIgnorePhonemes )
 {
 	int idx = GetIndexForSource( source );
 	if ( idx == UNKNOWN_VOICE_SOURCE )
@@ -160,8 +189,8 @@ inline CVoiceData *CMouthInfo::AddSource( CAudioSource *source, float start /*= 
 	}
 
 	CVoiceData *data = &m_VoiceSources[ idx ];
-	data->m_pAudioSource = source;
-	data->m_flVoiceStartTime = start;
+	data->SetSource( source, bIgnorePhonemes );
+	data->SetElapsedTime( 0.0f );
 	return data;
 }
 

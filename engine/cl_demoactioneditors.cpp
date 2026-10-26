@@ -1,33 +1,20 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
-#include <vgui/VGUI.h>
-#include <vgui_controls/Controls.h>
-#include <vgui_controls/Label.h>
-#include <vgui_controls/TextEntry.h>
-#include <vgui_controls/Button.h>
-#include <vgui_controls/ComboBox.h>
-#include <vgui_controls/CheckButton.h>
-#include <vgui_controls/FileOpenDialog.h>
-#include <KeyValues.h>
+//=============================================================================//
+#include "client_pch.h"
+#include "shake.h"
+#include "tmessage.h"
 #include "cl_demoaction.h"
 #include "cl_demoactionmanager.h"
-#include "UtlBuffer.h"
 #include "cl_demoactioneditors.h"
-#include "shake.h"
-#include "cdll_engine_int.h"
-#include "tmessage.h"
-#include "sound.h"
-#include "soundflags.h"
-#include "screen.h"
 #include "cl_demoaction_types.h"
 #include "cl_demoeditorpanel.h"
-#include "filesystem.h"
-#include "filesystem_engine.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -85,9 +72,9 @@ void CBaseActionEditDialog::Init( void )
 			m_pStart->SetText( "" );
 		}
 		break;
-	case ACTION_USES_FRAME:
+	case ACTION_USES_TICK:
 		{
-			m_pStart->SetText( va( "%i", m_pAction->GetStartFrame() ) );
+			m_pStart->SetText( va( "%i", m_pAction->GetStartTick() ) );
 		}
 		break;
 	case ACTION_USES_TIME:
@@ -136,12 +123,12 @@ bool CBaseActionEditDialog::OnSaveChanges( void )
 		{
 		}
 		break;
-	case ACTION_USES_FRAME:
+	case ACTION_USES_TICK:
 		{
-			int frame = atoi( starttext );
-			if ( frame != m_pAction->GetStartFrame() )
+			int tick = atoi( starttext );
+			if ( tick != m_pAction->GetStartTick() )
 			{
-				m_pAction->SetStartFrame( frame );
+				m_pAction->SetStartTick( tick );
 				bret = true;
 			}
 		}
@@ -300,10 +287,10 @@ void CBaseActionSkipAheadDialog::Init( void )
 
 	BaseClass::Init();
 
-	if ( GetAction()->m_bUsingSkipFrame )
+	if ( GetAction()->m_bUsingSkipTick )
 	{
-		m_pSkipType->SetText( "TimeUseFrame" );
-		m_pSkip->SetText( va( "%i", GetAction()->m_nSkipToFrame ) );
+		m_pSkipType->SetText( "TimeUseTick" );
+		m_pSkip->SetText( va( "%i", GetAction()->m_nSkipToTick ) );
 	}
 	else
 	{
@@ -329,12 +316,12 @@ bool CBaseActionSkipAheadDialog::OnSaveChanges( void )
 	float fskip = (float)atof( skipto );
 	int	 iskip = (int)atoi( skipto );
 
-	if ( !Q_strcasecmp( skiptype, "TimeUseFrame" ) )
+	if ( !Q_strcasecmp( skiptype, "TimeUseTick" ) )
 	{
-		if ( GetAction()->m_nSkipToFrame != iskip )
+		if ( GetAction()->m_nSkipToTick != iskip )
 		{
 			bret = true;
-			GetAction()->SetSkipToFrame( iskip );
+			GetAction()->SetSkipToTick( iskip );
 			GetAction()->SetSkipToTime( -1.0f );
 		}
 	}
@@ -344,7 +331,7 @@ bool CBaseActionSkipAheadDialog::OnSaveChanges( void )
 		{
 			bret = true;
 			GetAction()->SetSkipToTime( fskip );
-			GetAction()->SetSkipToFrame( -1 );
+			GetAction()->SetSkipToTick( -1 );
 		}
 	}
 
@@ -450,11 +437,11 @@ void CBaseActionScreenFadeStartDialog::Init( void )
 	m_pDuration->SetText( va( "%.3f", duration ) );
 	m_pHoldTime->SetText( va( "%.3f", holdTime ) );
 	m_pColor->SetText( va( "%i %i %i %i", r, g, b, a ) );
-	m_pFFADE_IN->SetSelected( fadein );
-	m_pFFADE_OUT->SetSelected( fadeout );
-	m_pFFADE_MODULATE->SetSelected( fademodulate );
-	m_pFFADE_STAYOUT->SetSelected( fadestayout );
-	m_pFFADE_PURGE->SetSelected( fadepurge );
+	m_pFFADE_IN->SetSelected( fadein != 0 );
+	m_pFFADE_OUT->SetSelected( fadeout != 0 );
+	m_pFFADE_MODULATE->SetSelected( fademodulate != 0 );
+	m_pFFADE_STAYOUT->SetSelected( fadestayout != 0 );
+	m_pFFADE_PURGE->SetSelected( fadepurge != 0 );
 
 }
 
@@ -472,10 +459,10 @@ bool CBaseActionScreenFadeStartDialog::OnSaveChanges( void )
 	float duration = f->duration * (1.0f/(float)(1<<SCREENFADE_FRACBITS));
 	float holdTime = f->holdTime * (1.0f/(float)(1<<SCREENFADE_FRACBITS));
 	bool fadein = f->fadeFlags & FFADE_IN;
-	bool fadeout = f->fadeFlags & FFADE_OUT;
-	bool fademodulate = f->fadeFlags & FFADE_MODULATE;
-	bool fadestayout = f->fadeFlags & FFADE_STAYOUT;
-	bool fadepurge = f->fadeFlags & FFADE_PURGE;
+	bool fadeout = ( f->fadeFlags & FFADE_OUT ) != 0;
+	bool fademodulate = ( f->fadeFlags & FFADE_MODULATE ) != 0;
+	bool fadestayout = ( f->fadeFlags & FFADE_STAYOUT ) != 0;
+	bool fadepurge = ( f->fadeFlags & FFADE_PURGE ) != 0;
 	int r = f->r;
 	int g = f->g;
 	int b = f->b;
@@ -719,7 +706,7 @@ void CBaseActionTextMessageStartDialog::FillInFonts()
 	if ( !schemeFile )
 		return;
 
-	if ( schemeFile->LoadFromFile( g_pFileSystem, "resource/TrackerScheme.res" ) )
+	if ( schemeFile->LoadFromFile( g_pFileSystem, "resource/SourceScheme.res" ) )
 	{
 		// Iterate fonts
 		for (	KeyValues *kv = schemeFile->FindKey("Fonts", true)->GetFirstSubKey(); 
@@ -996,7 +983,7 @@ DECLARE_DEMOACTIONEDIT( DEMO_ACTION_PLAYCDTRACK_START, CBaseActionCDTrackStartDi
 //-----------------------------------------------------------------------------
 class CBaseActionPlaySoundStartDialog : public CBaseActionEditDialog
 {
-	typedef CBaseActionEditDialog BaseClass;
+	DECLARE_CLASS_SIMPLE( CBaseActionPlaySoundStartDialog, CBaseActionEditDialog );
 
 public:
 	CBaseActionPlaySoundStartDialog( CDemoEditorPanel *parent, CBaseDemoAction *action, bool newaction );
@@ -1008,11 +995,10 @@ public:
 
 	virtual void	OnCommand( char const *command );
 
-	DECLARE_PANELMAP();
 private:
 	CDemoActionPlaySoundStart	*GetAction( void ) { return static_cast< CDemoActionPlaySoundStart * >( m_pAction ); }
 
-	void		OnFileSelected( char const *fullpath );
+	MESSAGE_FUNC_CHARPTR( OnFileSelected, "FileSelected", fullpath );
 
 	vgui::TextEntry	*m_pSoundName;
 	vgui::Button	*m_pChooseSound;
@@ -1065,9 +1051,9 @@ void CBaseActionPlaySoundStartDialog::OnFileSelected( char const *fullpath )
 		return;
 
 	char relativepath[ 512 ];
-	g_pFileSystem->FullPathToRelativePath( fullpath, relativepath );
+	g_pFileSystem->FullPathToRelativePath( fullpath, relativepath, sizeof( relativepath ) );
 
-	COM_FixSlashes( relativepath );
+	Q_FixSlashes( relativepath );
 
 	char *soundname = relativepath;
 	if ( !Q_strnicmp( relativepath, "sound\\", strlen( "sound\\" ) ) )
@@ -1095,7 +1081,7 @@ void CBaseActionPlaySoundStartDialog::OnCommand( char const *command )
 		{
 			char startPath[ MAX_PATH ];
 			Q_strncpy( startPath, com_gamedir, sizeof( startPath ) );
-			COM_FixSlashes( startPath );
+			Q_FixSlashes( startPath );
 			m_hFileOpenDialog->SetStartDirectory( va( "%s/sound", startPath ) );
 			m_hFileOpenDialog->DoModal( false );
 		}
@@ -1104,14 +1090,6 @@ void CBaseActionPlaySoundStartDialog::OnCommand( char const *command )
 	
 	BaseClass::OnCommand( command );
 }
-
-vgui::MessageMapItem_t CBaseActionPlaySoundStartDialog::m_MessageMap[] =
-{
-	MAP_MESSAGE_CONSTCHARPTR( CBaseActionPlaySoundStartDialog, "FileSelected", OnFileSelected, "fullpath" ),   
-};
-
-IMPLEMENT_PANELMAP(CBaseActionPlaySoundStartDialog, BaseClass);
-
 
 DECLARE_DEMOACTIONEDIT( DEMO_ACTION_PLAYSOUND_START, CBaseActionPlaySoundStartDialog );
 
@@ -1151,10 +1129,10 @@ void CBaseActionWithStopTimeDialog::Init( void )
 {
 	BaseClass::Init();
 
-	if ( GetAction()->m_bUsingStopFrame )
+	if ( GetAction()->m_bUsingStopTick )
 	{
-		m_pStopType->SetText( "TimeUseFrame" );
-		m_pStop->SetText( va( "%i", GetAction()->m_nStopFrame ) );
+		m_pStopType->SetText( "TimeUseTick" );
+		m_pStop->SetText( va( "%i", GetAction()->m_nStopTick ) );
 	}
 	else
 	{
@@ -1180,12 +1158,12 @@ bool CBaseActionWithStopTimeDialog::OnSaveChanges( void )
 	float fstop = (float)atof( stop );
 	int	 istop = (int)atoi( stop );
 
-	if ( !Q_strcasecmp( stoptype, "TimeUseFrame" ) )
+	if ( !Q_strcasecmp( stoptype, "TimeUseTick" ) )
 	{
-		if ( GetAction()->m_nStopFrame != istop )
+		if ( GetAction()->m_nStopTick != istop )
 		{
 			bret = true;
-			GetAction()->SetStopFrame( istop );
+			GetAction()->SetStopTick( istop );
 			GetAction()->SetStopTime( -1.0f );
 		}
 	}
@@ -1195,7 +1173,7 @@ bool CBaseActionWithStopTimeDialog::OnSaveChanges( void )
 		{
 			bret = true;
 			GetAction()->SetStopTime( fstop );
-			GetAction()->SetStopFrame( -1 );
+			GetAction()->SetStopTick( -1 );
 		}
 	}
 

@@ -1,5 +1,13 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <windows.h>
 #include <stdio.h>
+#include "tier1/strtools.h"
 #include "ifaceposerworkspace.h"
 
 //-----------------------------------------------------------------------------
@@ -10,6 +18,9 @@ class CWorkspaceFiles : public IWorkspaceFiles
 public:
 					CWorkspaceFiles( void );
 					~CWorkspaceFiles( void );
+
+	virtual void	Init( char const *pchShortName );
+
 	// Restore
 	int				GetNumStoredFiles( int type );
 	const char		*GetStoredFile( int type, int number );
@@ -23,7 +34,7 @@ private:
 	static const char *NameForType( int type );
 	static int		TypeForName( const char *name );
 
-	LONG			CreateWorkspaceKey( PHKEY phKey );
+	LONG			CreateWorkspaceKey( char const *pchGameName, PHKEY phKey );
 	bool			ReadInt( const char *szSubKey, int *value );
 	bool			WriteInt( const char *szSubKey, int value );
 	bool			ReadString( const char *szSubKey, char *value, int bufferlen );
@@ -37,16 +48,23 @@ private:
 static CWorkspaceFiles g_WorkspaceFiles;
 IWorkspaceFiles *workspacefiles = ( IWorkspaceFiles * )&g_WorkspaceFiles;
 
-CWorkspaceFiles::CWorkspaceFiles( void )
+CWorkspaceFiles::CWorkspaceFiles( void ) :
+	m_hKeyMain( (HKEY)0 )
 {
 	memset( m_nStoredFiles, 0, sizeof( m_nStoredFiles ) );
-
-	CreateWorkspaceKey( &m_hKeyMain );
 }
 
 CWorkspaceFiles::~CWorkspaceFiles( void )
 {
-	RegCloseKey( m_hKeyMain );
+	if ( (HKEY)0 != m_hKeyMain )
+	{
+		RegCloseKey( m_hKeyMain );
+	}
+}
+
+void CWorkspaceFiles::Init( char const *pchShortName )
+{
+	CreateWorkspaceKey( pchShortName, &m_hKeyMain );
 }
 
 const char *CWorkspaceFiles::NameForType( int type )
@@ -68,15 +86,15 @@ const char *CWorkspaceFiles::NameForType( int type )
 
 int CWorkspaceFiles::TypeForName( const char *name )
 {
-	if ( !stricmp( name, "expressionfiles" ) )
+	if ( !Q_stricmp( name, "expressionfiles" ) )
 	{
 		return EXPRESSION;
 	}
-	else if ( !stricmp( name, "choreodatafiles" ) )
+	else if ( !Q_stricmp( name, "choreodatafiles" ) )
 	{
 		return CHOREODATA;
 	}
-	else if ( !stricmp( name, "modelfiles" ) )
+	else if ( !Q_stricmp( name, "modelfiles" ) )
 	{
 		return MODELDATA;
 	}
@@ -87,7 +105,7 @@ int CWorkspaceFiles::TypeForName( const char *name )
 int CWorkspaceFiles::GetNumStoredFiles( int type )
 {
 	char szKeyName[ 256 ];
-	sprintf( szKeyName, "%s\\total", NameForType( type ) );
+	Q_snprintf( szKeyName, sizeof( szKeyName ), "%s\\total", NameForType( type ) );
 
 	int num = 0;
 	ReadInt( szKeyName, &num );
@@ -126,20 +144,23 @@ void CWorkspaceFiles::StoreFile( int type, const char *filename )
 	WriteString( szKeyName, filename );
 }
 
-LONG CWorkspaceFiles::CreateWorkspaceKey( PHKEY phKey )
+LONG CWorkspaceFiles::CreateWorkspaceKey( char const *pchGameName, PHKEY phKey )
 {
 	DWORD disp;
 
+	char sz[ 512 ];
+	Q_snprintf( sz, sizeof( sz ), "Software\\Valve\\faceposer\\workspace\\%s", pchGameName );
+
 	return RegCreateKeyEx(
 		HKEY_CURRENT_USER,	// handle of open key 
-		"Software\\Valve\\faceposer\\workspace", // address of name of subkey to open 
+		sz, //				address of name of subkey to open 
 		0,					// DWORD ulOptions,	  // reserved 
-		NULL,			// Type of value
+		NULL,				// Type of value
 		REG_OPTION_NON_VOLATILE, // Store permanently in reg.
 		KEY_ALL_ACCESS,		// REGSAM samDesired, // security access mask 
 		NULL,
 		phKey,				// Key we are creating
-		&disp );    // Type of creation
+		&disp );			// Type of creation
 }
 
 bool CWorkspaceFiles::ReadInt( const char *szSubKey, int *value )

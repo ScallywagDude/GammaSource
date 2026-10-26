@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef ENGINESINGLEUSERFILTER_H
 #define ENGINESINGLEUSERFILTER_H
@@ -12,59 +12,42 @@
 #endif
 
 #include "irecipientfilter.h"
+#include "bitvec.h"
+#include "utlvector.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
 class CEngineRecipientFilter : public IRecipientFilter
 {
-public:
+public:	// IRecipientFilter interface:
+	
 					CEngineRecipientFilter();
-
-	virtual bool	IsReliable( void ) const;
-
 	virtual int		GetRecipientCount( void ) const;
 	virtual int		GetRecipientIndex( int slot ) const;
-
-	virtual bool	IsEntityMessage( void ) const
-	{
-		return false;
-	}
-	virtual const char *GetEntityMessageName( void ) const
-	{
-		return "";
-	}
-
-	virtual int		GetEntityIndex( void ) const
-	{
-		return -1;
-	}
-
-	virtual bool	IsBroadcastMessage( void );
-
-	virtual bool	IsInitMessage( void ) const
-	{
-		return false;
-	}
+	virtual bool	IsReliable( void ) const { return m_bReliable; };
+	virtual bool	IsInitMessage( void )  const { return m_bInit; };
 
 public:
 
 	void			Reset( void );
 
+	void			MakeInitMessage( void );
 	void			MakeReliable( void );
-	
+
 	void			AddAllPlayers( void );
 	void			AddRecipientsByPVS( const Vector& origin );
 	void			AddRecipientsByPAS( const Vector& origin );
+	void			AddPlayersFromBitMask( CBitVec< ABSOLUTE_PLAYER_LIMIT >& playerbits );
+	void			AddPlayersFromFilter( const IRecipientFilter *filter );
 	void			AddRecipient( int playerindex );
 	void			RemoveRecipient( int playerindex );
-
+	bool			IncludesPlayer(int playerindex);
+	
 private:
-	void			EnsureTruePlayerCount( void );
-	void			AddPlayersFromBitMask( unsigned int playerbits );
 
+	bool				m_bInit;
 	bool				m_bReliable;
-	int					m_nTruePlayerCount;
 	CUtlVector< int >	m_Recipients;
 };
 
@@ -74,14 +57,15 @@ private:
 class CEngineSingleUserFilter : public IRecipientFilter
 {
 public:
-	CEngineSingleUserFilter( int clientindex )
+	CEngineSingleUserFilter( int clientindex, bool bReliable = false )
 	{
 		m_nClientIndex = clientindex;
+		m_bReliable = bReliable;
 	}
 
 	virtual bool	IsReliable( void ) const
 	{
-		return false;
+		return m_bReliable;
 	}
 
 	virtual int		GetRecipientCount( void ) const
@@ -94,22 +78,7 @@ public:
 		return m_nClientIndex;
 	}
 
-	virtual bool	IsEntityMessage( void ) const
-	{
-		return false;
-	}
-
-	virtual int		GetEntityIndex( void ) const
-	{
-		return -1;
-	}
-
-	virtual const char *GetEntityMessageName( void ) const
-	{
-		return "";
-	}
-
-	virtual bool	IsBroadcastMessage( void )
+	virtual bool	IsBroadcastMessage( void ) const
 	{
 		return false;
 	}
@@ -121,6 +90,7 @@ public:
 
 private:
 	int				m_nClientIndex;
+	bool			m_bReliable;
 };
 
 #endif // ENGINESINGLEUSERFILTER_H

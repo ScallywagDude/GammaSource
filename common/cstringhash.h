@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CSTRINGHASH_H
 #define CSTRINGHASH_H
@@ -68,8 +68,9 @@ public:
 			newEntry->next = m_HashTable[hashID];
 			m_HashTable[hashID] = newEntry;
 		}
-		newEntry->string = new char[strlen( string ) + 1];
-		strcpy( newEntry->string, string );
+		int len = strlen( string ) + 1;
+		newEntry->string = new char[len];
+		Q_strncpy( newEntry->string, string, len );
 		newEntry->data = val;
 		return true;
 	}

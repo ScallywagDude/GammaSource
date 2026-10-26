@@ -1,12 +1,15 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Lightmap only shader
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 DEFINE_FALLBACK_SHADER( LightmappedGeneric, LightmappedGeneric_DX6 )
  
@@ -19,14 +22,18 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 		SHADER_PARAM( DETAILSCALE, SHADER_PARAM_TYPE_FLOAT, "4", "scale of the detail texture" )
 		SHADER_PARAM( ENVMAP, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_env", "envmap" )
 		SHADER_PARAM( ENVMAPFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
-		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/BaseTimesLightmapPlusMaskedCubicEnvMap_glass", "envmap mask" )
+		SHADER_PARAM( ENVMAPMASK, SHADER_PARAM_TYPE_TEXTURE, "shadertest/shadertest_envmask", "envmap mask" )
 		SHADER_PARAM( ENVMAPMASKFRAME, SHADER_PARAM_TYPE_INTEGER, "", "" )
 		SHADER_PARAM( ENVMAPMASKSCALE, SHADER_PARAM_TYPE_FLOAT, "1", "envmap mask scale" )
 		SHADER_PARAM( ENVMAPTINT, SHADER_PARAM_TYPE_COLOR, "[1 1 1]", "envmap tint" )
+		SHADER_PARAM( ENVMAPOPTIONAL, SHADER_PARAM_TYPE_BOOL, "90", "Do specular pass only on dxlevel or higher (ie.80, 81, 90)" )
 	END_SHADER_PARAMS
 
 	SHADER_INIT_PARAMS()
 	{
+		// FLASHLIGHTFIXME
+		params[FLASHLIGHTTEXTURE]->SetStringValue( "effects/flashlight001" );
+
 		if( params[BASETEXTURE]->IsDefined() )
 		{
 			if( !IS_FLAG_SET(MATERIAL_VAR_MULTIPASS) )
@@ -62,10 +69,25 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 		}
 
 		SET_FLAGS2( MATERIAL_VAR2_LIGHTING_LIGHTMAP );
+
+		// Get rid of the envmap if it's optional for this dx level.
+		if( params[ENVMAPOPTIONAL]->IsDefined() && params[ENVMAPOPTIONAL]->GetIntValue() )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
+
+		// If mat_specular 0, then get rid of envmap
+		if( !g_pConfig->UseSpecular() && params[ENVMAP]->IsDefined() && params[BASETEXTURE]->IsDefined() )
+		{
+			params[ENVMAP]->SetUndefined();
+		}
+
+		SET_FLAGS2( MATERIAL_VAR2_NEEDS_FIXED_FUNCTION_FLASHLIGHT );
 	}
 
 	SHADER_INIT
 	{
+		LoadTexture( FLASHLIGHTTEXTURE );
 		if (params[BASETEXTURE]->IsDefined())
 		{
 			LoadTexture( BASETEXTURE );
@@ -121,7 +143,7 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 		int flags = SHADER_DRAW_POSITION | SHADER_DRAW_LIGHTMAP_TEXCOORD0;
 		if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
 			flags |= SHADER_DRAW_COLOR;
-		if (params[BASETEXTURE]->IsDefined())
+		if (params[BASETEXTURE]->IsTexture())
 			flags |= SHADER_DRAW_TEXCOORD1;
 		return flags;
 	}
@@ -130,18 +152,18 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-			pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE0, g_pConfig->overbright );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+			pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE0, OVERBRIGHT );
 
 			SetModulationShadowState();
 			SetDefaultBlendingShadowState( );
 			pShaderShadow->DrawFlags( GetDrawFlagsPass1( params ) );
+			DefaultFog();
 		}
 		DYNAMIC_STATE
 		{
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE0 );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER0, TEXTURE_LIGHTMAP );
 			SetModulationDynamicState();
-			DefaultFog();
 		}
 		Draw();
 	}
@@ -162,31 +184,43 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 
 			// color channel
 			
-			// lightmap
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
-
 			// base
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE1, true );
-			if (!IS_FLAG_SET(MATERIAL_VAR_NOOVERBRIGHT))
-				pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE1, g_pConfig->overbright );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+
+			// lightmap
+			pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );
+			pShaderShadow->OverbrightValue( SHADER_TEXTURE_STAGE1, OVERBRIGHT );
 
 			pShaderShadow->EnableConstantColor( IsColorModulating() );
 
 			// alpha channel
 			pShaderShadow->EnableConstantAlpha( IsAlphaModulating() );
-			pShaderShadow->EnableVertexAlpha( IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA) );
-			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE0, false );
-			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE1, TextureIsTranslucent(BASETEXTURE, true) );
+			if ((! IsColorModulating()) && ( ! IsAlphaModulating()))
+				pShaderShadow->EnableVertexAlpha( IS_FLAG_SET(MATERIAL_VAR_VERTEXALPHA) );
+			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE0, TextureIsTranslucent(BASETEXTURE, true) );
+			pShaderShadow->EnableTextureAlpha( SHADER_TEXTURE_STAGE1, false );
 
-			pShaderShadow->DrawFlags( GetDrawFlagsPass1( params ) );
+			int flags = SHADER_DRAW_POSITION | SHADER_DRAW_LIGHTMAP_TEXCOORD1;
+			if (IS_FLAG_SET(MATERIAL_VAR_VERTEXCOLOR))
+			{
+				if ( (! IsColorModulating()) && ( ! IsAlphaModulating()))
+					flags |= SHADER_DRAW_COLOR;
+			
+			}
+			if (params[BASETEXTURE]->IsTexture())
+			{
+				flags |= SHADER_DRAW_TEXCOORD0;
+			}
+
+			pShaderShadow->DrawFlags( flags );
+			DefaultFog();
 		}
 		DYNAMIC_STATE
 		{
-			pShaderAPI->BindLightmap( SHADER_TEXTURE_STAGE0 );
-			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE1, BASETEXTURETRANSFORM );
-			BindTexture( SHADER_TEXTURE_STAGE1, BASETEXTURE, FRAME );
+			pShaderAPI->BindStandardTexture( SHADER_SAMPLER1, TEXTURE_LIGHTMAP );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
 			SetModulationDynamicState();
-			DefaultFog();
 		}
 		Draw();
 
@@ -199,7 +233,7 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 	void DrawMode1( IMaterialVar** params, IShaderDynamicAPI *pShaderAPI, IShaderShadow* pShaderShadow )
 	{
 		// Pass 1 : Base * lightmap or just lightmap
-		if ( params[BASETEXTURE]->IsDefined() )
+		if ( params[BASETEXTURE]->IsTexture() )
 		{
 			DrawBaseTimesLightmap( params, pShaderAPI, pShaderShadow );
 			FixedFunctionMultiplyByDetailPass(
@@ -209,7 +243,7 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 			if ( IS_FLAG_SET(MATERIAL_VAR_SELFILLUM) )
 			{
 				FixedFunctionSelfIlluminationPass( 
-					SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME, BASETEXTURETRANSFORM, SELFILLUMTINT );
+					SHADER_SAMPLER0, BASETEXTURE, FRAME, BASETEXTURETRANSFORM, SELFILLUMTINT );
 			}
 		}
 		else
@@ -220,7 +254,7 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 		}
 
 		// Pass 2 : Masked environment map
-		if (params[ENVMAP]->IsDefined())
+		if (params[ENVMAP]->IsTexture())
 		{
 			FixedFunctionAdditiveMaskedEnvmapPass( 
 				ENVMAP, ENVMAPMASK, BASETEXTURE,
@@ -231,7 +265,24 @@ BEGIN_SHADER( LightmappedGeneric_DX6,
 
 	SHADER_DRAW
 	{
-		// Base * Lightmap + env
-		DrawMode1( params, pShaderAPI, pShaderShadow );
+		bool hasFlashlight = UsingFlashlight( params );
+
+		if( hasFlashlight )
+		{
+			DrawFlashlight_dx70( params, pShaderAPI, pShaderShadow, FLASHLIGHTTEXTURE, FLASHLIGHTTEXTUREFRAME );
+		}
+		else
+		{
+			// Base * Lightmap + env
+			DrawMode1( params, pShaderAPI, pShaderShadow );
+		}
 	}
 END_SHADER
+
+
+//-----------------------------------------------------------------------------
+// This allows us to use a block labelled 'Water_DX60' in the water materials
+//-----------------------------------------------------------------------------
+BEGIN_INHERITED_SHADER( Water_DX60, LightmappedGeneric_DX6, "Help for Water_DX60" )
+END_INHERITED_SHADER
+

@@ -1,9 +1,9 @@
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
-;	 c90-c91 = Base texture transform
-;    c92-c93 = Mask texture transform
-;	 c94	 = Modulation color 
+;	 $SHADER_SPECIFIC_CONST_0-$SHADER_SPECIFIC_CONST_1 = Base texture transform
+;    $SHADER_SPECIFIC_CONST_2-$SHADER_SPECIFIC_CONST_3 = Mask texture transform
+;	 $SHADER_SPECIFIC_CONST_4	 = Modulation color 
 ;------------------------------------------------------------------------------
 
 sub LightmappedGeneric
@@ -26,7 +26,7 @@ sub LightmappedGeneric
 
 	&AllocateRegister( \$worldPos );
 
-	if( $g_fogType eq "heightfog" )
+	if( $DOWATERFOG == 1 )
 	{
 		; Get the worldpos z component only since that's all we need for height fog
 		dp4 $worldPos.z, $vPos, $cModel2
@@ -38,8 +38,8 @@ sub LightmappedGeneric
 	; Texture coordinates
 	;------------------------------------------------------------------------------
 	; base texcoords
-	dp4 oT0.x, $vTexCoord0, c90 ; FIXME
-	dp4 oT0.y, $vTexCoord0, c91 ; FIXME
+	dp4 oT0.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_0
+	dp4 oT0.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_1
 
 	; lightmap texcoords
 	mov oT1, $vTexCoord1
@@ -51,7 +51,7 @@ sub LightmappedGeneric
 		; Transform the position + normal to world space
 		dp4 $worldPos.x, $vPos, $cModel0
 		dp4 $worldPos.y, $vPos, $cModel1
-		if( $g_fogType ne "heightfog" )
+		if( $DOWATERFOG ne 1 )
 		{
 			dp4 $worldPos.z, $vPos, $cModel2
 		}
@@ -82,8 +82,8 @@ sub LightmappedGeneric
 			&ComputeReflectionVector( $worldPos, $worldNormal, "oT2" );
 		}
 		; envmap mask
-		dp4 oT3.x, $vTexCoord0, c92	; FIXME
-		dp4 oT3.y, $vTexCoord0, c93	; FIXME
+		dp4 oT3.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_2	; FIXME
+		dp4 oT3.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_3	; FIXME
 
 #		&FreeRegister( \$worldPos );
 		&FreeRegister( \$worldNormal );
@@ -93,8 +93,8 @@ sub LightmappedGeneric
 
 	if( $detail )
 	{
-		dp4 oT2.x, $vTexCoord0, c94		; FIXME
-		dp4 oT2.y, $vTexCoord0, c95		; FIXME
+		dp4 oT2.x, $vTexCoord0, $SHADER_SPECIFIC_CONST_4		; FIXME
+		dp4 oT2.y, $vTexCoord0, $SHADER_SPECIFIC_CONST_5		; FIXME
 	}
 
 	if( $vertexcolor )

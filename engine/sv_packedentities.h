@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef SV_PACKEDENTITIES_H
 #define SV_PACKEDENTITIES_H
@@ -19,17 +19,16 @@
 
 void SV_ComputeClientPacks( 
 	int clientCount, 
-	client_t** clients,
-	CFrameSnapshot *snapshot, 
-	client_frame_t **pPack );
+	CGameClient** clients,
+	CFrameSnapshot *snapshot );
 
-void SV_EmitPacketEntities( client_t *client, client_frame_t *to, CFrameSnapshot *to_snapshot, bf_write *msg );
-
-void SV_WriteSendTables( ServerClass *pClasses, bf_write *pBuf );
-
-void SV_WriteClassInfos( ServerClass *pClasses, bf_write *pBuf );
+void SV_WriteSendTables( ServerClass *pClasses, bf_write &pBuf );
+void SV_WriteClassInfos( ServerClass *pClasses, bf_write &pBuf );
 
 void SV_ComputeClassInfosCRC( CRC32_t* crc );
+void SV_EnsureInstanceBaseline( ServerClass *pServerClass, int iEdict, const void *pData, int nBytes );
+
+void SV_EnableChangeFrames( bool state );
 
 
 #endif // SV_PACKEDENTITIES_H

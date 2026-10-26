@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef WAVEBROWSER_H
 #define WAVEBROWSER_H
@@ -10,7 +10,7 @@
 #pragma once
 #endif
 
-#include "mx/mxListView.h"
+#include "mxtk/mxListView.h"
 #include "commctrl.h"
 #include "utldict.h"
 
@@ -66,6 +66,11 @@ private:
 	void		OnDisableVoiceDucking();
 	void		OnCheckout();
 	void		OnCheckin();
+
+	void		OnImportSentence();
+	void		OnExportSentence();
+
+	void		OnGetSentence();
 
 	void		PopulateTree( char const *subdirectory, bool textsearch = false );
 

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_VALVELIBAW_H__9C6B3FB5_1D05_4B77_A095_DC8F516057DE__INCLUDED_)
 #define AFX_VALVELIBAW_H__9C6B3FB5_1D05_4B77_A095_DC8F516057DE__INCLUDED_
 
@@ -5,6 +12,7 @@
 //
 
 class CDialogChooser;
+class IBuildProject;
 
 // All function calls made by mfcapwz.dll to this custom AppWizard (except for
 //  GetCustomAppWizClass-- see valvelib.cpp) are through this class.  You may

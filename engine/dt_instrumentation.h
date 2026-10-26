@@ -1,16 +1,15 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef DATATABLE_INSTRUMENTATION_H
 #define DATATABLE_INSTRUMENTATION_H
 #ifdef _WIN32
 #pragma once
 #endif
-
 
 #include "dt_recv_eng.h"
 #include "dt_encode.h"
@@ -25,7 +24,7 @@ extern bool g_bDTIEnabled;
 // ------------------------------------------------------------------------------------------ // 
 
 // This is called at startup to enable instrumentation.
-void DTI_Init( const char *pDTIFilename );
+void DTI_Init();
 
 // Calls DTI_Flush and cleans up.
 void DTI_Term();
@@ -53,6 +52,5 @@ inline void DTI_HookDeltaBits( CRecvDecoder *pDecoder, int iProp, int nDataBits,
 		_DTI_HookDeltaBits( pDecoder, iProp, nDataBits, nIndexBits );
 	}
 }
-
 
 #endif // DATATABLE_INSTRUMENTATION_H

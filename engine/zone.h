@@ -1,87 +1,83 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #ifndef ZONE_H
 #define ZONE_H
 #pragma once
 
-/*
- memory allocation
-
-
-H_??? The hunk manages the entire memory block given to quake.  It must be
-contiguous.  Memory can be allocated from either the low or high end in a
-stack fashion.  The only way memory is released is by resetting one of the
-pointers.
-
-Hunk allocations should be given a name, so the Hunk_Print () function
-can display usage.
-
-Hunk allocations are guaranteed to be 16 byte aligned.
-
-The video buffers are allocated high to avoid leaving a hole underneath
-server allocations when changing to a higher video mode.
-
-Cache_??? Cache memory is for objects that can be dynamically loaded and
-can usefully stay persistant between levels.  The size of the cache
-fluctuates from level to level.
-
-To allocate a cachable object
-
-
-Temp_??? Temp memory is used for file loading and surface caching.  The size
-of the cache memory is adjusted so that there is a minimum of 512k remaining
-for temp memory.
-
-
------- Top of Memory -------
-
-high hunk allocations
-
-<--- high hunk reset point held by vid
-
-video buffer
-
-z buffer
-
-surface cache
-
-<--- high hunk used
-
-cachable memory
-
-<--- low hunk used
-
-client and server low hunk allocations
-
-<-- low hunk reset point held by host
-
-startup hunk allocations
-
-Zone block
-
------ Bottom of Memory -----
-
-
-
-*/
+#include "tier0/dbg.h"
 
 void Memory_Init (void);
 void Memory_Shutdown( void );
 
-void *Hunk_Alloc (int size);		// returns 0 filled memory
-void *Hunk_AllocName (int size, const char *name);
-
-void *Hunk_HighAllocName (int size, char *name);
+void *Hunk_Alloc(int size, bool bClear = true );
+void *Hunk_AllocName (int size, const char *name, bool bClear = true );
 
 int	Hunk_LowMark (void);
 void Hunk_FreeToLowMark (int mark);
 
-int	Hunk_HighMark (void);
-void Hunk_FreeToHighMark (int mark);
-
-void *Hunk_TempAlloc (int size);
-
 void Hunk_Check (void);
 
-int MEM_Summary_Console( void );
+int Hunk_MallocSize();
+int Hunk_Size();
+
+void Hunk_Print();
+
+template< typename T >
+class CHunkMemory
+{
+public:
+	// constructor, destructor
+	CHunkMemory( int nGrowSize = 0, int nInitSize = 0 )		{ m_pMemory = NULL; m_nAllocated = 0; if ( nInitSize ) Grow( nInitSize ); }
+	CHunkMemory( T* pMemory, int numElements )				{ Assert( 0 ); }
+
+	// Can we use this index?
+	bool IsIdxValid( int i ) const							{ return (i >= 0) && (i < m_nAllocated); }
+
+	// Gets the base address
+	T* Base()												{ return (T*)m_pMemory; }
+	const T* Base() const									{ return (T*)m_pMemory; }
+
+	// element access
+	T& operator[]( int i )									{ Assert( IsIdxValid(i) ); return Base()[i];	}
+	const T& operator[]( int i ) const						{ Assert( IsIdxValid(i) ); return Base()[i];	}
+	T& Element( int i )										{ Assert( IsIdxValid(i) ); return Base()[i];	}
+	const T& Element( int i ) const							{ Assert( IsIdxValid(i) ); return Base()[i];	}
+
+	// Attaches the buffer to external memory....
+	void SetExternalBuffer( T* pMemory, int numElements )	{ Assert( 0 ); }
+
+	// Size
+	int NumAllocated() const								{ return m_nAllocated; }
+	int Count() const										{ return m_nAllocated; }
+
+	// Grows the memory, so that at least allocated + num elements are allocated
+	void Grow( int num = 1 )								{ Assert( !m_nAllocated ); m_pMemory = (T *)Hunk_Alloc( num * sizeof(T), false ); m_nAllocated = num; }
+
+	// Makes sure we've got at least this much memory
+	void EnsureCapacity( int num )							{ Assert( num <= m_nAllocated ); }
+
+	// Memory deallocation
+	void Purge()											{ m_nAllocated = 0; }
+
+	// Purge all but the given number of elements (NOT IMPLEMENTED IN )
+	void Purge( int numElements )							{ Assert( 0 ); }
+
+	// is the memory externally allocated?
+	bool IsExternallyAllocated() const						{ return false; }
+
+	// Set the size by which the memory grows
+	void SetGrowSize( int size )							{}
+
+private:
+	T *m_pMemory;
+	int m_nAllocated;
+};
+
 
 #endif // ZONE_H
 

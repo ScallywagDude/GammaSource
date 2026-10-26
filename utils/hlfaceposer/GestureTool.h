@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef GESTURETOOL_H
 #define GESTURETOOL_H
@@ -11,9 +11,9 @@
 #pragma once
 #endif
 
-#include <mx/mx.h>
+#include <mxtk/mx.h>
 #include "studio.h"
-#include "UtlVector.h"
+#include "utlvector.h"
 #include "faceposertoolwindow.h"
 
 class CChoreoEvent;
@@ -75,6 +75,7 @@ public:
 
 	void				SetScrubTime( float t );
 	void				SetScrubTargetTime( float t );
+	virtual void		OnModelChanged();
 
 private:
 
@@ -107,12 +108,11 @@ private:
 	void				MoveTimeSliderToPos( int x );
 	void				OnChangeScale();
 	int					ComputeHPixelsNeeded( void );
-	void				SetTimeZoomScale( int scale );
-	float				GetTimeZoomScale( void );
 	float				GetPixelsPerSecond( void );
 	void				InvalidateLayout( void );
 	void				RepositionHSlider( void );
 	void				GetStartAndEndTime( float& st, float& ed );
+	float				GetEventEndTime();
 	float				GetTimeValueForMouse( int mx, bool clip = false );
 	int					GetPixelForTimeValue( float time, bool *clipped = NULL );
 
@@ -126,7 +126,7 @@ private:
 		DRAGTYPE_ABSOLUTE_TIMING_TAG,
 	};
 
-	char				m_szEvent[ 128 ];
+	int					m_nFocusEventGlobalID;
 
 	int					m_nMousePos[ 2 ];
 
@@ -154,11 +154,9 @@ private:
 	CChoreoEvent				*m_pLastEvent;
 
 	bool				m_bSuppressLayout;
-	// 100 == normal scale
-	int					m_nTimeZoom;
 	// Height/width of scroll bars
 	int					m_nScrollbarHeight;
-	int					m_nLeftOffset;
+	float				m_flLeftOffset;
 	mxScrollbar			*m_pHorzScrollBar;
 	int					m_nLastHPixelsNeeded;
 	// How many pixels per second we are showing in the UI
@@ -168,6 +166,8 @@ private:
 	float				m_flLastDuration;
 	bool				m_bInSetEvent;
 	float				m_flScrubberTimeOffset;
+
+	friend class		CChoreoView;
 };
 
 extern GestureTool	*g_pGestureTool;

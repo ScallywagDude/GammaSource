@@ -1,22 +1,20 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include "IMessageListener.h"
 #include "VPanel.h"
-#include "VGUI_Internal.h"
+#include "vgui_internal.h"
 
 #include <KeyValues.h>
 #include "vgui/IClientPanel.h"
-#include "vgui/IVGUI.h"
+#include "vgui/IVGui.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 namespace vgui
 {
@@ -96,7 +94,7 @@ void CMessageListener::Message( VPanel* pSender, VPanel* pReceiver, KeyValues* p
 		return;
 	}
 
-	ivgui()->DPrintf2( "%s : (%s (%s) - > %s (%s)) )\n", 
+	Msg( "%s : (%s (%s) - > %s (%s)) )\n", 
 	pKeyValues->GetName(), pSenderClass, pSenderName, pReceiverClass, pReceiverName );
 		
 }

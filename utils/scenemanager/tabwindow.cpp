@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "cbase.h"
 #include "tabwindow.h"
 #include "DrawHelper.h"
@@ -102,8 +102,10 @@ void CTabWindow::DrawTab( CDrawHelper& drawHelper, RECT& rcClient, int tabnum, b
 	if ( tabnum < 0 || tabnum >= m_Items.Size() )
 		return;
 
+#if defined( _DEBUG )
 	CETItem *p = &m_Items[ tabnum ];
 	Assert( p );
+#endif
 
 	GetTabRect( rcClient, rcTab, tabnum );
 

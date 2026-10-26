@@ -1,24 +1,35 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef CONVERT_H
 #define CONVERT_H
 #pragma once
 
-#include "vector.h"
-#include "mathlib.h"
+#include "mathlib/vector.h"
+#include "mathlib/mathlib.h"
 #include "ivp_physics.hxx"
 struct cplane_t;
 #include "vphysics_interface.h"
 
 // UNDONE: Remove all conversion/scaling
 // Convert our units (inches) to IVP units (meters)
-#define HL2IVP_FACTOR	METERS_PER_INCH
-#define IVP2HL(x)		(float)(x * (1.0f/HL2IVP_FACTOR))
+struct vphysics_units_t
+{
+	float		unitScaleMeters;			// factor that converts game units to meters
+	float		unitScaleMetersInv;			// factor that converts meters to game units
+	float		globalCollisionTolerance;	// global collision tolerance in game units
+	float		collisionSweepEpsilon;		// collision sweep tests clip at this, must be the same as engine's DIST_EPSILON
+	float		collisionSweepIncrementalEpsilon;	// near-zero test for incremental steps in collision sweep tests
+};
+
+extern vphysics_units_t g_PhysicsUnits;
+
+#define HL2IVP_FACTOR	g_PhysicsUnits.unitScaleMeters
+#define IVP2HL(x)		(float)(x * (g_PhysicsUnits.unitScaleMetersInv))
 #define HL2IVP(x)		(double)(x * HL2IVP_FACTOR)
 
 // Convert HL engine units to IVP units
@@ -34,6 +45,17 @@ inline void ConvertPositionToIVP( const Vector &in, IVP_U_Float_Point &out )
 }
 
 inline void ConvertPositionToIVP( const Vector &in, IVP_U_Point &out )
+{
+	float tmpZ;
+
+	tmpZ = in[1];
+
+	out.k[0] = HL2IVP(in[0]);
+	out.k[1] = -HL2IVP(in[2]);
+	out.k[2] = HL2IVP(tmpZ);
+}
+
+inline void ConvertPositionToIVP( const Vector &in, IVP_U_Float_Point3 &out )
 {
 	float tmpZ;
 
@@ -82,6 +104,11 @@ inline void ConvertDirectionToIVP( const Vector &in, IVP_U_Point &out )
 #define ConvertForceImpulseToIVP ConvertPositionToIVP
 #define ConvertForceImpulseToHL ConvertPositionToHL
 
+inline float ConvertAngleToIVP( float angleIn )
+{
+	return DEG2RAD(angleIn);
+}
+
 inline void ConvertAngularImpulseToIVP( const AngularImpulse &in, IVP_U_Float_Point &out )
 {
 	float tmpZ;
@@ -126,9 +153,27 @@ extern void ConvertMatrixToIVP( const matrix3x4_t& matrix, IVP_U_Matrix &out );
 extern void ConvertRotationToIVP( const QAngle &angles, IVP_U_Matrix3 &out );
 extern void ConvertRotationToIVP( const QAngle& angles, IVP_U_Quat &out );
 extern void ConvertBoxToIVP( const Vector &mins, const Vector &maxs, Vector &outmins, Vector &outmaxs );
+extern int ConvertCoordinateAxisToIVP( int axisIndex );
+extern int ConvertCoordinateAxisToHL( int axisIndex );
 
 // IVP to HL conversions
 inline void ConvertPositionToHL( const IVP_U_Point &point, Vector& out )
+{
+	float tmpY = IVP2HL(point.k[2]);
+	out[2] = -IVP2HL(point.k[1]);
+	out[1] = tmpY;
+	out[0] = IVP2HL(point.k[0]);
+}
+
+inline void ConvertPositionToHL( const IVP_U_Float_Point &point, Vector& out )
+{
+	float tmpY = IVP2HL(point.k[2]);
+	out[2] = -IVP2HL(point.k[1]);
+	out[1] = tmpY;
+	out[0] = IVP2HL(point.k[0]);
+}
+
+inline void ConvertPositionToHL( const IVP_U_Float_Point3 &point, Vector& out )
 {
 	float tmpY = IVP2HL(point.k[2]);
 	out[2] = -IVP2HL(point.k[1]);
@@ -153,6 +198,11 @@ inline void ConvertDirectionToHL( const IVP_U_Float_Point &point, Vector& out )
 	out[0] = point.k[0];
 }
 
+
+inline float ConvertAngleToHL( float angleIn )
+{
+	return RAD2DEG(angleIn);
+}
 
 inline void ConvertAngularImpulseToHL( const IVP_U_Float_Point &point, AngularImpulse &out )
 {

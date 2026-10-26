@@ -1,0 +1,52 @@
+{
+  "release": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-25_18-29-57\\GammaSource_2018",
+  "build_log": "verification/build_release.log",
+  "binaries": [
+    {
+      "path": "bin\\engine.dll",
+      "bytes": 8179712,
+      "sha256": "ba71e2f61c6e82991815b6a0f989486bfad6423e5de8a781e89f8f0a9b9de113"
+    },
+    {
+      "path": "bin\\datacache.dll",
+      "bytes": 1845760,
+      "sha256": "3f2e8f4aeea17f756766633061e5b749395cd029138c2caf6869f3ca7586d3f4"
+    },
+    {
+      "path": "bin\\GameUI.dll",
+      "bytes": 4577792,
+      "sha256": "24c0215de84b4bb9876f3d0450e03ed1991b333fd0d774881af250c9ec65b6e4"
+    },
+    {
+      "path": "gammasource\\bin\\server.dll",
+      "bytes": 18904576,
+      "sha256": "242a0ece50a50f7deb4c9e5f27eb44739938a3c5455b86f506d2c1e48236f79d"
+    },
+    {
+      "path": "gammasource\\bin\\client.dll",
+      "bytes": 13234688,
+      "sha256": "bd4130567b9dbbe9890462a9726e7e1db397491df3652ead24bc7578ef917875"
+    },
+    {
+      "path": "bin\\vphysics.dll",
+      "bytes": 3606016,
+      "sha256": "1b1a306d176f5d6fb0d368aa4f916a13075a4e29d3dee978c98185bdad00ca4f"
+    }
+  ],
+  "runtime_verified": [
+    "UI Apply/Cancel",
+    "HUD layout",
+    "classic black loading dialog",
+    "borderless dimensions/styles/startup",
+    "NPC flex mapping/gestures and converted layer data"
+  ],
+  "pending": [
+    "normal choreographed body SEQUENCE playback/fallbacks",
+    "zoo_item physgun/suit/sky visual run",
+    "fresh four-map movement regression in final delivery"
+  ],
+  "overlay_files_verified": 153,
+  "user_profile_present": true,
+  "user_profile_has_bindings": true,
+  "profile_note": "The user launched the dated build after staging; preserve their generated settings. Automated UI/NPC tests used the separate t_handoffui profile."
+}

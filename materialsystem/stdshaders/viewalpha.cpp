@@ -1,15 +1,17 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Header: $
 // $NoKeywords: $
-//=============================================================================
+//===========================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
 
-BEGIN_SHADER( ViewAlpha, 
-			  "Help for ViewAlpha" )
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+BEGIN_SHADER_FLAGS( ViewAlpha, "Help for ViewAlpha", SHADER_NOT_EDITABLE )
 			  
 	BEGIN_SHADER_PARAMS
 	END_SHADER_PARAMS
@@ -23,7 +25,7 @@ BEGIN_SHADER( ViewAlpha,
 	{
 		SHADOW_STATE
 		{
-			pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+			pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 			pShaderShadow->EnableCustomPixelPipe( true );
 			pShaderShadow->CustomTextureStages( 1 );
 			pShaderShadow->CustomTextureOperation( SHADER_TEXTURE_STAGE0, 
@@ -37,9 +39,8 @@ BEGIN_SHADER( ViewAlpha,
 		}
 		DYNAMIC_STATE
 		{
-			BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
+			BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			SetFixedFunctionTextureTransform( MATERIAL_TEXTURE0, BASETEXTURETRANSFORM );
-			DisableFog();
 		}
 		Draw( );
 

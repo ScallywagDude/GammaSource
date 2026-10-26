@@ -1,286 +1,129 @@
-#include "glquake.h"
-#include "const.h"
-#include "cmodel.h"
-#include "gl_model_private.h"
-#include "convar.h"
-#include "gl_cvars.h"
-#include "gl_matsysiface.h"
-#include "materialsystem/imesh.h"
-#include "gl_rmain.h"
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//===========================================================================//
+#include "render_pch.h"
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // Leaf visualization routines
-#define MAX_LEAF_PPLANES	64
-#define MAX_LEAF_PVERTS		32
-#define MAX_TOTAL_PVERTS	(MAX_LEAF_PPLANES * MAX_LEAF_PVERTS)
 
-typedef struct leafvis_s
+struct leafvis_t
 {
-	Vector	verts[ MAX_TOTAL_PVERTS ];
-	int		polyVertCount[ MAX_LEAF_PPLANES ];
-	int		polyCount;
-} leafvis_t;
+	leafvis_t()
+	{
+		leafIndex = 0;
+		CCollisionBSPData *pBSP = GetCollisionBSPData();
+		if ( pBSP )
+		{
+			numbrushes = pBSP->numbrushes;
+			numentitychars = pBSP->numentitychars;
+		}
+	}
+
+	bool IsValid()
+	{
+		CCollisionBSPData *pBSP = GetCollisionBSPData();
+		if ( !pBSP || numbrushes != pBSP->numbrushes || numentitychars != pBSP->numentitychars )
+			return false;
+
+		return true;
+	}
+
+	CUtlVector<Vector>		verts;
+	CUtlVector<int>			polyVertCount;
+	Vector					color;
+	int						numbrushes;
+	int						numentitychars;
+	int						leafIndex;
+};
+const int MAX_LEAF_PVERTS = 128;
 
 // Only allocate this after it is turned on
 leafvis_t *g_LeafVis = NULL;
 
-static void AddPlaneToList( cplane_t *list, int index, Vector& normal, float dist, int invert )
+static void AddPlaneToList( CUtlVector<cplane_t> &list, const Vector& normal, float dist, int invert )
 {
-	list += index;
+	cplane_t plane;
+	plane.dist = invert ? -dist : dist;
+	plane.normal = invert ? -normal : normal;
 
-	if ( invert )
+	Vector point = plane.dist * plane.normal;
+	for ( int i = 0; i < list.Count(); i++ )
 	{
-		VectorScale( normal, -1, list->normal );
-		list->dist = -dist;
+		// same plane, remove or replace
+		if ( list[i].normal == plane.normal )
+		{
+			float d = DotProduct(point, list[i].normal) - list[i].dist;
+			if ( d > 0 )
+			{
+				// new plane is in front of the old one
+				list[i].dist = plane.dist;
+			}
+			// new plane is behind the old one
+			return;
+		}
+
 	}
-	else
-	{
-		VectorCopy( normal, list->normal );
-		list->dist = dist;
-	}
+	list.AddToTail( plane );
 }
 
-static int PlaneList( Vector& p, model_t *model, cplane_t *planeList, int maxPlanes )
+static void PlaneList( int leafIndex, model_t *model, CUtlVector<cplane_t> &planeList )
 {
-	int			planeIndex = 0;
-	mnode_t		*node;
-	float		d;
-	cplane_t	*plane, *outPlane;
-	
-	if (!model || !model->brush.nodes)
+	if (!model || !model->brush.pShared || !model->brush.pShared->nodes)
 		Sys_Error ("PlaneList: bad model");
 
-	node = model->brush.nodes;
-	while (1)
+	mleaf_t *pLeaf = &model->brush.pShared->leafs[leafIndex];
+	mnode_t *pNode = pLeaf->parent;
+	mnode_t *pChild = (mnode_t *)pLeaf;
+	while (pNode)
 	{
-		if (node->contents >= 0)
-			return planeIndex;
-
-		plane = node->plane;
-		if ( plane->type <= PLANE_Z )
-		{
-			d = p[plane->type] - plane->dist;
-		}
-		else
-		{
-			d = DotProduct (p,plane->normal) - plane->dist;
-		}
-		outPlane = planeList + planeIndex;
-
-		if (d > 0)
-		{
-			// Add this plane, it already points toward the vert
-			AddPlaneToList( planeList, planeIndex, plane->normal, plane->dist, false );
-			node = node->children[0];
-		}
-		else
-		{
-			// Add this plane, reverse direction to point toward the vert
-			AddPlaneToList( planeList, planeIndex, plane->normal, plane->dist, true );
-			node = node->children[1];
-		}
-		
-		planeIndex ++;
-
-		if ( planeIndex >= maxPlanes )
-			return planeIndex;
+		// was the child on the front or back of the plane of this node?
+		bool front = (pNode->children[0] == pChild) ? true : false;
+		AddPlaneToList( planeList, pNode->plane->normal, pNode->plane->dist, !front );
+		pChild = pNode;
+		pNode = pNode->parent;
 	}
-	
-	return planeIndex;
+}
+
+Vector CSGInsidePoint( cplane_t *pPlanes, int planeCount )
+{
+	Vector point = vec3_origin;
+
+	for ( int i = 0; i < planeCount; i++ )
+	{
+		float d = DotProduct( pPlanes[i].normal, point ) - pPlanes[i].dist;
+		if ( d < 0 )
+		{
+			point -= d * pPlanes[i].normal;
+		}
+	}
+	return point;
+}
+
+void TranslatePlaneList( cplane_t *pPlanes, int planeCount, const Vector &offset )
+{
+	for ( int i = 0; i < planeCount; i++ )
+	{
+		pPlanes[i].dist += DotProduct( offset, pPlanes[i].normal );
+	}
 }
 
 
-//-----------------------------------------------------------------------------
-// Purpose: This is a clone of BaseWindingForPlane()
-// Input  : *outVerts - an array of preallocated verts to build the polygon in
-//			normal - the plane normal
-//			dist - the plane constant
-// Output : int - vert count (always 4)
-//-----------------------------------------------------------------------------
-static int PolyFromPlane( Vector *outVerts, Vector& normal, float dist )
+void CSGPlaneList( leafvis_t *pVis, CUtlVector<cplane_t> &planeList)
 {
-	int		i, x;
-	vec_t	max, v;
-	Vector	org, vright, vup;
-	
-// find the major axis
-
-	max = -MAX_COORD_INTEGER;
-	x = -1;
-	for (i=0 ; i<3; i++)
-	{
-		v = fabs(normal[i]);
-		if (v > max)
-		{
-			x = i;
-			max = v;
-		}
-	}
-
-	if (x==-1)
-		return 0;
-
-	// Build a unit vector along something other than the major axis
-	VectorCopy (vec3_origin, vup);	
-	switch (x)
-	{
-	case 0:
-	case 1:
-		vup[2] = 1;
-		break;		
-	case 2:
-		vup[0] = 1;
-		break;		
-	}
-
-	// Remove the component of this vector along the normal
-	v = DotProduct (vup, normal);
-	VectorMA (vup, -v, normal, vup);
-	// Make it a unit (perpendicular)
-	VectorNormalize (vup);
-	
-	// Center of the poly is at normal * dist
-	VectorScale (normal, dist, org);
-	// Calculate the third orthonormal basis vector for our plane space (this one and vup are in the plane)
-	CrossProduct (vup, normal, vright);
-	
-	// Make the plane's basis vectors big (these are the half-sides of the polygon we're making)
-	VectorScale (vup, 9000, vup);
-	VectorScale (vright, 9000, vright);
-
-	// Move diagonally away from org to create the corner verts
-	VectorSubtract (org, vright, outVerts[0]);	// left
-	VectorAdd (outVerts[0], vup, outVerts[0]);	// up
-	
-	VectorAdd (org, vright, outVerts[1]);		// right
-	VectorAdd (outVerts[1], vup, outVerts[1]);	// up
-	
-	VectorAdd (org, vright, outVerts[2]);		// right
-	VectorSubtract (outVerts[2], vup, outVerts[2]);	// down
-	
-	VectorSubtract (org, vright, outVerts[3]);		// left
-	VectorSubtract (outVerts[3], vup, outVerts[3]);	// down
-
-	// The four corners form a planar quadrilateral normal to "normal"
-	return 4;
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: clip a poly to the plane and return the poly on the front side of the plane
-// Input  : *inVerts - input polygon
-//			vertCount - # verts in input poly
-//			*outVerts - destination poly
-//			normal - plane normal
-//			dist - plane constant
-// Output : int - # verts in output poly
-//-----------------------------------------------------------------------------
-
-#pragma warning (disable:4701)
-
-static int ClipPolyToPlane( Vector *inVerts, int vertCount, Vector *outVerts, Vector& normal, float dist )
-{
-	vec_t	dists[MAX_LEAF_PVERTS+4];
-	int		sides[MAX_LEAF_PVERTS+4];
-	int		counts[3];
-	vec_t	dot;
-	int		i, j;
-	Vector	mid;
-	int		outCount;
-
-	counts[0] = counts[1] = counts[2] = 0;
-
-// determine sides for each point
-	for ( i = 0; i < vertCount; i++ )
-	{
-		dot = DotProduct( inVerts[i], normal) - dist;
-		dists[i] = dot;
-		if ( dot > ON_EPSILON )
-		{
-			sides[i] = SIDE_FRONT;
-		}
-		else if ( dot < -ON_EPSILON )
-		{
-			sides[i] = SIDE_BACK;
-		}
-		else
-		{
-			sides[i] = SIDE_ON;
-		}
-		counts[sides[i]]++;
-	}
-	sides[i] = sides[0];
-	dists[i] = dists[0];
-	
-	if (!counts[0])
-		return 0;
-	
-	if (!counts[1])
-	{
-		// Copy to output verts
-		for ( i = 0; i < vertCount; i++ )
-		{
-			VectorCopy( inVerts[i], outVerts[i] );
-		}
-		return vertCount;
-	}
-
-	outCount = 0;
-	for ( i = 0; i < vertCount; i++ )
-	{
-		Vector& p1 = inVerts[i];
-		
-		if (sides[i] == SIDE_ON)
-		{
-			VectorCopy( p1, outVerts[outCount]);
-			outCount++;
-			continue;
-		}
-	
-		if (sides[i] == SIDE_FRONT)
-		{
-			VectorCopy( p1, outVerts[outCount]);
-			outCount++;
-		}
-
-		if (sides[i+1] == SIDE_ON || sides[i+1] == sides[i])
-			continue;
-			
-	// generate a split point
-		Vector& p2 = inVerts[(i+1)%vertCount];
-		
-		dot = dists[i] / (dists[i]-dists[i+1]);
-		for (j=0 ; j<3 ; j++)
-		{	// avoid round off error when possible
-			if (normal[j] == 1)
-				mid[j] = dist;
-			else if (normal[j] == -1)
-				mid[j] = -dist;
-			else
-				mid[j] = p1[j] + dot*(p2[j]-p1[j]);
-		}
-			
-		VectorCopy (mid, outVerts[outCount]);
-		outCount++;
-	}
-	
-	if (outCount > MAX_LEAF_PVERTS)
-	{
-		Con_DPrintf("Too many points!!!\n");
-		return 0;
-	}
-
-	return outCount;
-}
-
-#pragma warning (default:4701)
-
-
-void CSGPlaneList( leafvis_t *pVis, cplane_t *planeList, int planeCount )
-{
-	int totalVerts = 0;
+	int planeCount = planeList.Count();
 	Vector	vertsIn[MAX_LEAF_PVERTS], vertsOut[MAX_LEAF_PVERTS];
 
-	pVis->polyCount = 0;
+	// compute a point inside the volume defined by these planes
+	Vector insidePoint = CSGInsidePoint( planeList.Base(), planeList.Count() );
+	// move the planes so that the inside point is at the origin 
+	// NOTE: This is to maximize precision for the CSG operations
+	TranslatePlaneList( planeList.Base(), planeList.Count(), -insidePoint );
+
 	// Build the CSG solid of this leaf given that the planes in the list define a convex solid
 	for ( int i = 0; i < planeCount; i++ )
 	{
@@ -312,96 +155,143 @@ void CSGPlaneList( leafvis_t *pVis, cplane_t *planeList, int planeCount )
 		// We've got a polygon here
 		if ( vertCount >= 3 )
 		{
-			if ( (totalVerts + vertCount) <= MAX_TOTAL_PVERTS && pVis->polyCount <= MAX_LEAF_PPLANES )
+			// Copy polygon out
+			pVis->polyVertCount.AddToTail( vertCount );
+			for ( j = 0; j < vertCount; j++ )
 			{
-				// Copy polygon out
-				pVis->polyVertCount[ pVis->polyCount ] = vertCount;
-				for ( j = 0; j < vertCount; j++ )
-				{
-					pVis->verts[ totalVerts ][0] = vertsIn[j][0];
-					pVis->verts[ totalVerts ][1] = vertsIn[j][1];
-					pVis->verts[ totalVerts ][2] = vertsIn[j][2];
-					totalVerts++;
-				}
-				pVis->polyCount++;
-			}
-			else
-			{
-				Con_DPrintf("too many verts or polys\n" );
+				// move the verts back by the initial translation
+				Vector vert = vertsIn[j] + insidePoint;
+				pVis->verts.AddToTail( vert );
 			}
 		}
 	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: Builds a convex polyhedron of the leaf boundary around p
-// Input  : p - point to classify determining the leaf
-//-----------------------------------------------------------------------------
-void LeafVisBuild( Vector &p )
+void LeafvisChanged( IConVar *pLeafvisVar, const char *pOld, float flOldValue )
 {
-	int planeCount;
-	cplane_t planeList[MAX_LEAF_PPLANES];
+	if ( g_LeafVis )
+	{
+		delete g_LeafVis;
+		g_LeafVis = NULL;
+	}
+}
+
+void AddLeafPortals( leafvis_t *pLeafvis, int leafIndex )
+{
+	CUtlVector<cplane_t> planeList;
 	Vector	normal;
 
-	static int last_matleafvis = 0;
-	static int last_visframe = -1;
-
-	int nowLeafvis = mat_leafvis.GetInt();
-	if ( !nowLeafvis )
-		return;
-
-	if ( nowLeafvis == last_matleafvis && last_visframe == r_visframecount )
-		return;
-
-	last_matleafvis = nowLeafvis;
-	last_visframe = r_visframecount;
-
-	if ( !g_LeafVis )
-	{
-		g_LeafVis = new leafvis_t;
-	}
 	// Build a list of inward pointing planes of the tree descending to this
-	planeCount = PlaneList( p, host_state.worldmodel, planeList, 60 );
+	PlaneList( leafIndex, host_state.worldmodel, planeList );
 	
 	VectorCopy( vec3_origin, normal );
-	
 	// Add world bounding box planes in case the world isn't closed
 	// x-axis
 	normal[0] = 1;
-	AddPlaneToList( planeList, planeCount, normal, MAX_COORD_INTEGER, true );
-	planeCount++;
-	AddPlaneToList( planeList, planeCount, normal, -MAX_COORD_INTEGER, false );
-	planeCount++;
+	AddPlaneToList( planeList, normal, MAX_COORD_INTEGER, true );
+	AddPlaneToList( planeList, normal, -MAX_COORD_INTEGER, false );
 	normal[0] = 0;
 	
 	// y-axis
 	normal[1] = 1;
-	AddPlaneToList( planeList, planeCount, normal, MAX_COORD_INTEGER, true );
-	planeCount++;
-	AddPlaneToList( planeList, planeCount, normal, -MAX_COORD_INTEGER, false );
-	planeCount++;
+	AddPlaneToList( planeList, normal, MAX_COORD_INTEGER, true );
+	AddPlaneToList( planeList, normal, -MAX_COORD_INTEGER, false );
 	normal[1] = 0;
 	
 	// z-axis
 	normal[2] = 1;
-	AddPlaneToList( planeList, planeCount, normal, MAX_COORD_INTEGER, true );
-	planeCount++;
-	AddPlaneToList( planeList, planeCount, normal, -MAX_COORD_INTEGER, false );
-	planeCount++;
-
-	CSGPlaneList( g_LeafVis, planeList, planeCount );
+	AddPlaneToList( planeList, normal, MAX_COORD_INTEGER, true );
+	AddPlaneToList( planeList, normal, -MAX_COORD_INTEGER, false );
+	CSGPlaneList( pLeafvis, planeList );
 }
+
+ConVar mat_leafvis("mat_leafvis","0", FCVAR_CHEAT, "Draw wireframe of current leaf", LeafvisChanged );
+ConVar r_visambient("r_visambient","0", 0, "Draw leaf ambient lighting samples.  Needs mat_leafvis 1 to work" );
+
+//-----------------------------------------------------------------------------
+// Purpose: Builds a convex polyhedron of the leaf boundary around p
+// Input  : p - point to classify determining the leaf
+//-----------------------------------------------------------------------------
+void LeafVisBuild( const Vector &p )
+{
+	if ( !mat_leafvis.GetInt() )
+	{
+		Assert( !g_LeafVis );
+		return;
+	}
+	else
+	{
+		static int last_leaf = -1;
+
+		int leafIndex = CM_PointLeafnum( p );
+		if ( g_LeafVis && last_leaf == leafIndex )
+			return;
+
+		DevMsg( 1, "Leaf %d, Area %d, Cluster %d\n", leafIndex, CM_LeafArea( leafIndex ), CM_LeafCluster( leafIndex ) );
+		last_leaf = leafIndex;
+
+		delete g_LeafVis;
+		g_LeafVis = new leafvis_t;
+		g_LeafVis->color.Init( 1.0f, 0.0f, 0.0f );
+		g_LeafVis->leafIndex = leafIndex;
+		switch( mat_leafvis.GetInt() )
+		{
+		case 2:
+			{
+				const mleaf_t *pLeaf = host_state.worldmodel->brush.pShared->leafs;
+				int leafCount = host_state.worldmodel->brush.pShared->numleafs;
+				int visCluster = pLeaf[leafIndex].cluster;
+				// do entire viscluster
+				for ( int i = 0; i < leafCount; i++ )
+				{
+					if ( pLeaf[i].cluster == visCluster )
+					{
+						AddLeafPortals( g_LeafVis, i );
+					}
+				}
+			}
+			break;
+		case 3:
+			{
+				// do entire pvs
+				byte pvs[ MAX_MAP_LEAFS/8 ];
+				const mleaf_t *pLeaf = host_state.worldmodel->brush.pShared->leafs;
+				int leafCount = host_state.worldmodel->brush.pShared->numleafs;
+				int visCluster = pLeaf[leafIndex].cluster;
+				CM_Vis( pvs, sizeof( pvs ), visCluster, DVIS_PVS );
+
+				for ( int i = 0; i < leafCount; i++ )
+				{
+					int cluster = pLeaf[i].cluster;
+					if ( cluster >= 0 && (pvs[cluster>>3] & (1<<(cluster&7))) )
+					{
+						AddLeafPortals( g_LeafVis, i );
+					}
+				}
+			}
+			break;
+		case 0:
+		default:
+			AddLeafPortals( g_LeafVis, leafIndex );
+			break;
+		}
+	}
+}
+
 
 #ifndef SWDS
 void DrawLeafvis( leafvis_t *pVis )
 {
+	CMatRenderContextPtr pRenderContext( materials );
+
 	int vert = 0;
-	materialSystemInterface->Bind( g_materialLeafVisWireframe );
-	for ( int i = 0; i < pVis->polyCount; i++ )
+	g_materialLeafVisWireframe->ColorModulate( pVis->color[0], pVis->color[1], pVis->color[2] );
+	pRenderContext->Bind( g_materialLeafVisWireframe );
+	for ( int i = 0; i < pVis->polyVertCount.Count(); i++ )
 	{
 		if ( pVis->polyVertCount[i] >= 3 )
 		{
-			IMesh *pMesh = materialSystemInterface->GetDynamicMesh( );
+			IMesh *pMesh = pRenderContext->GetDynamicMesh( );
 			CMeshBuilder meshBuilder;
 			meshBuilder.Begin( pMesh, MATERIAL_LINES, pVis->polyVertCount[i] );
 			for ( int j = 0; j < pVis->polyVertCount[i]; j++ )
@@ -418,7 +308,187 @@ void DrawLeafvis( leafvis_t *pVis )
 	}
 }
 
-leafvis_t *g_FrustumVis = NULL;
+void DrawLeafvis_Solid( leafvis_t *pVis )
+{
+	CMatRenderContextPtr pRenderContext( materials );
+
+	int vert = 0;
+	
+	Vector lightNormal(1,1,1);
+	VectorNormalize(lightNormal);
+	pRenderContext->Bind( g_pMaterialDebugFlat );
+	for ( int i = 0; i < pVis->polyVertCount.Count(); i++ )
+	{
+		int vertCount = pVis->polyVertCount[i];
+		if ( vertCount >= 3 )
+		{
+			IMesh *pMesh = pRenderContext->GetDynamicMesh( );
+			CMeshBuilder meshBuilder;
+			int triangleCount = vertCount-2;
+			meshBuilder.Begin( pMesh, MATERIAL_TRIANGLES, triangleCount );
+			Vector e0 = pVis->verts[vert+1] - pVis->verts[vert];
+			Vector e1 = pVis->verts[vert+2] - pVis->verts[vert];
+			Vector normal = CrossProduct(e1,e0);
+			VectorNormalize( normal );
+			float light = 0.5f + (DotProduct(normal, lightNormal)*0.5f);
+			Vector color = pVis->color * light;
+
+			for ( int j = 0; j < vertCount; j++ )
+			{
+				meshBuilder.Position3fv( pVis->verts[ vert + j ].Base() );
+				meshBuilder.Color3fv( color.Base() );
+				meshBuilder.AdvanceVertex();
+			}
+			for ( int j = 0; j < triangleCount; j++ )
+			{
+				meshBuilder.FastIndex(0);
+				meshBuilder.FastIndex(j+2);
+				meshBuilder.FastIndex(j+1);
+			}
+			meshBuilder.End();
+			pMesh->Draw();
+		}
+		vert += vertCount;
+	}
+}
+
+leafvis_t *g_FrustumVis = NULL, *g_ClipVis[3] = {NULL,NULL,NULL};
+
+int FindMinBrush( CCollisionBSPData *pBSPData, int nodenum, int brushIndex )
+{
+	while (1)
+	{
+		if (nodenum < 0)
+		{
+			int leafIndex = -1 - nodenum;
+			cleaf_t &leaf = pBSPData->map_leafs[leafIndex];
+			int firstbrush = pBSPData->map_leafbrushes[ leaf.firstleafbrush ];
+			if ( firstbrush < brushIndex )
+			{
+				brushIndex = firstbrush;
+			}
+			return brushIndex;
+		}
+
+		cnode_t &node = pBSPData->map_rootnode[nodenum];
+		brushIndex = FindMinBrush( pBSPData, node.children[0], brushIndex );
+		nodenum = node.children[1];
+	}
+
+	return brushIndex;
+}
+
+void RecomputeClipbrushes( bool bEnabled )
+{
+	for ( int v = 0; v < 3; v++ )
+	{
+		delete g_ClipVis[v];
+		g_ClipVis[v] = NULL;
+	}
+
+	if ( !bEnabled )
+		return;
+
+	for ( int v = 0; v < 3; v++ )
+	{
+		int contents[3] = {CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP, CONTENTS_MONSTERCLIP, CONTENTS_PLAYERCLIP};
+		g_ClipVis[v] = new leafvis_t;
+		g_ClipVis[v]->color.Init( v != 1 ? 1.0f : 0.5, 0.0f, v != 0 ? 1.0f : 0.0f );
+		CCollisionBSPData *pBSP = GetCollisionBSPData();
+		int lastBrush = pBSP->numbrushes; 
+		if ( pBSP->numcmodels > 1 )
+		{
+			lastBrush = FindMinBrush( pBSP, pBSP->map_cmodels[1].headnode, lastBrush );
+		}
+		for ( int i = 0; i < lastBrush; i++ )
+		{
+			cbrush_t *pBrush = &pBSP->map_brushes[i];
+			if ( (pBrush->contents & (CONTENTS_PLAYERCLIP|CONTENTS_MONSTERCLIP)) == contents[v] )
+			{
+				CUtlVector<cplane_t> planeList;
+				if ( pBrush->IsBox() )
+				{
+					cboxbrush_t *pBox = &pBSP->map_boxbrushes[pBrush->GetBox()];
+					for ( int idxSide = 0; idxSide < 3; idxSide++ )
+					{
+						Vector normal = vec3_origin;
+						normal[idxSide] = 1.0f;
+						AddPlaneToList( planeList, normal, pBox->maxs[idxSide], true );
+						AddPlaneToList( planeList, -normal, -pBox->mins[idxSide], true );
+					}
+				}
+				else
+				{
+					for ( int j = 0; j < pBrush->numsides; j++ )
+					{
+						cbrushside_t *pSide = &pBSP->map_brushsides[pBrush->firstbrushside + j];
+						if ( pSide->bBevel )
+							continue;
+						AddPlaneToList( planeList, pSide->plane->normal, pSide->plane->dist, true );
+					}
+				}
+				CSGPlaneList( g_ClipVis[v], planeList );
+			}
+		}
+	}
+}
+
+// NOTE: UNDONE: This doesn't work on brush models - only the world.
+void ClipChanged( IConVar *pConVar, const char *pOld, float flOldValue )
+{
+	ConVarRef clipVar( pConVar );
+	RecomputeClipbrushes( clipVar.GetBool() );
+}
+
+static ConVar r_drawclipbrushes( "r_drawclipbrushes", "0", FCVAR_CHEAT, "Draw clip brushes (red=NPC+player, pink=player, purple=NPC)", ClipChanged );
+
+static Vector LeafAmbientSamplePos( int leafIndex, const mleafambientlighting_t &sample )
+{
+	mleaf_t *pLeaf = &host_state.worldbrush->leafs[leafIndex];
+	Vector out = pLeaf->m_vecCenter - pLeaf->m_vecHalfDiagonal;
+	out.x += float(sample.x) * pLeaf->m_vecHalfDiagonal.x * (2.0f / 255.0f);
+	out.y += float(sample.y) * pLeaf->m_vecHalfDiagonal.y * (2.0f / 255.0f);
+	out.z += float(sample.z) * pLeaf->m_vecHalfDiagonal.z * (2.0f / 255.0f);
+	
+	return out;
+}
+
+// convert color formats
+static void ColorRGBExp32ToColor32( const ColorRGBExp32 &color, color32 &out )
+{
+	Vector tmp;
+	ColorRGBExp32ToVector( color, tmp );
+	out.r = LinearToScreenGamma(tmp.x);
+	out.g = LinearToScreenGamma(tmp.y);
+	out.b = LinearToScreenGamma(tmp.z);
+}
+
+// some simple helpers to draw a cube in the special way the ambient visualization wants
+static Vector CubeSide( const Vector &pos, float size, int vert )
+{
+	Vector side = pos;
+	side.x += (vert & 1) ? -size : size;
+	side.y += (vert & 2) ? -size : size;
+	side.z += (vert & 4) ? -size : size;
+	return side;
+}
+
+static void CubeFace( CMeshBuilder &meshBuilder, const Vector org, int v0, int v1, int v2, int v3, float size, const color32 &color )
+{
+	meshBuilder.Position3fv( CubeSide(org,size,v0).Base() );
+	meshBuilder.Color4ubv( (byte *)&color );
+	meshBuilder.AdvanceVertex();
+	meshBuilder.Position3fv( CubeSide(org,size,v1).Base() );
+	meshBuilder.Color4ubv( (byte *)&color );
+	meshBuilder.AdvanceVertex();
+	meshBuilder.Position3fv( CubeSide(org,size,v2).Base() );
+	meshBuilder.Color4ubv( (byte *)&color );
+	meshBuilder.AdvanceVertex();
+	meshBuilder.Position3fv( CubeSide(org,size,v3).Base() );
+	meshBuilder.Color4ubv( (byte *)&color );
+	meshBuilder.AdvanceVertex();
+}
+
 
 //-----------------------------------------------------------------------------
 // Purpose: Draw the leaf geometry that was computed by LeafVisBuild()
@@ -429,25 +499,82 @@ void LeafVisDraw( void )
 	{
 		DrawLeafvis( g_FrustumVis );
 	}
-	if ( mat_leafvis.GetInt() && g_LeafVis )
+	if ( g_LeafVis )
 	{
 		DrawLeafvis( g_LeafVis );
+	}
+	if ( g_ClipVis[0] )
+	{
+		if ( !g_ClipVis[0]->IsValid() )
+		{
+			RecomputeClipbrushes(true);
+		}
+		if ( r_drawclipbrushes.GetInt() == 2 )
+		{
+			DrawLeafvis_Solid( g_ClipVis[0] );
+			DrawLeafvis_Solid( g_ClipVis[1] );
+			DrawLeafvis_Solid( g_ClipVis[2] );
+		}
+		else
+		{
+			DrawLeafvis( g_ClipVis[0] );
+			DrawLeafvis( g_ClipVis[1] );
+			DrawLeafvis( g_ClipVis[2] );
+		}
+	}
+
+	if ( g_LeafVis && r_visambient.GetBool() )
+	{
+		CMatRenderContextPtr pRenderContext( materials );
+		pRenderContext->Bind( g_pMaterialDebugFlat );
+		float cubesize = 12.0f;
+		int leafIndex = g_LeafVis->leafIndex;
+		mleafambientindex_t *pAmbient = &host_state.worldbrush->m_pLeafAmbient[leafIndex];
+		if ( !pAmbient->ambientSampleCount && pAmbient->firstAmbientSample )
+		{
+			// this leaf references another leaf, move there (this leaf is a solid leaf so it borrows samples from a neighbor)
+			leafIndex = pAmbient->firstAmbientSample;
+			pAmbient = &host_state.worldbrush->m_pLeafAmbient[leafIndex];
+		}
+		for ( int i = 0; i < pAmbient->ambientSampleCount; i++ )
+		{
+			IMesh *pMesh = pRenderContext->GetDynamicMesh( );
+			CMeshBuilder meshBuilder;
+			meshBuilder.Begin( pMesh, MATERIAL_QUADS, 6 );
+			const mleafambientlighting_t &sample = host_state.worldbrush->m_pAmbientSamples[pAmbient->firstAmbientSample+i];
+			Vector pos = LeafAmbientSamplePos( leafIndex, sample );
+			// x axis
+			color32 color;
+			ColorRGBExp32ToColor32( sample.cube.m_Color[0], color );	// x
+			CubeFace( meshBuilder, pos, 4, 6, 2, 0, cubesize, color );
+			ColorRGBExp32ToColor32( sample.cube.m_Color[1], color );	// -x
+			CubeFace( meshBuilder, pos, 7, 5, 1, 3, cubesize, color );
+			ColorRGBExp32ToColor32( sample.cube.m_Color[2], color );	// y
+			CubeFace( meshBuilder, pos, 0, 1, 5, 4, cubesize, color );
+			ColorRGBExp32ToColor32( sample.cube.m_Color[3], color );	// -y
+			CubeFace( meshBuilder, pos, 3, 2, 6, 7, cubesize, color );
+			ColorRGBExp32ToColor32( sample.cube.m_Color[4], color );	// z
+			CubeFace( meshBuilder, pos, 2, 3, 1, 0, cubesize, color );
+			ColorRGBExp32ToColor32( sample.cube.m_Color[5], color );	// -z
+			CubeFace( meshBuilder, pos, 4, 5, 7, 6, cubesize, color );
+			meshBuilder.End();
+			pMesh->Draw();
+		}
 	}
 }
 
 
 void CSGFrustum( Frustum_t &frustum )
 {
-	if ( !g_FrustumVis )
-	{
-		g_FrustumVis = new leafvis_t;
-	}
+	delete g_FrustumVis;
+	g_FrustumVis = new leafvis_t;
 
-	cplane_t planeList[6];
+	g_FrustumVis->color.Init(1.0f, 1.0f, 1.0f);
+	CUtlVector<cplane_t> planeList;
 	for ( int i = 0; i < 6; i++ )
 	{
-		planeList[i] = *frustum.GetPlane( i );
+		planeList.AddToTail( *frustum.GetPlane( i ) );
 	}
-	CSGPlaneList( g_FrustumVis, planeList, 6 );
+	CSGPlaneList( g_FrustumVis, planeList );
 }
 #endif

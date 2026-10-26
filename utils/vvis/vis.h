@@ -1,11 +1,17 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // vis.h
 
 #include "cmdlib.h"
-#include "mathlib.h"
+#include "mathlib/mathlib.h"
 #include "bsplib.h"
 
 
-//#define	MAX_PORTALS	32768
 #define	MAX_PORTALS	65536
 
 #define	PORTALFILE	"PRT1"
@@ -13,21 +19,21 @@
 extern bool g_bUseRadius;			// prototyping TF2, "radius vis" solution
 extern double g_VisRadius;			// the radius for the TF2 "radius vis"
 
-typedef struct
+struct plane_t
 {
 	Vector		normal;
 	float		dist;
-} plane_t;
+};
 
 #define MAX_POINTS_ON_WINDING	64
 #define	MAX_POINTS_ON_FIXED_WINDING	12
 
-typedef struct
+struct winding_t
 {
 	qboolean	original;			// don't free, it's part of the portal
 	int		numpoints;
 	Vector	points[MAX_POINTS_ON_FIXED_WINDING];			// variable sized
-} winding_t;
+};
 
 winding_t	*NewWinding (int points);
 void		FreeWinding (winding_t *w);
@@ -35,7 +41,7 @@ winding_t	*CopyWinding (winding_t *w);
 
 
 typedef enum {stat_none, stat_working, stat_done} vstatus_t;
-typedef struct
+struct portal_t
 {
 	plane_t		plane;	// normal pointing into neighbor
 	int			leaf;	// neighbor
@@ -50,35 +56,18 @@ typedef struct
 	byte		*portalvis;		// [portals], final
 
 	int			nummightsee;	// bit count on portalflood for sort
-} portal_t;
+};
 
-typedef struct seperating_plane_s
+struct leaf_t
 {
-	struct seperating_plane_s *next;
-	plane_t		plane;		// from portal is on positive side
-} sep_t;
-
-
-typedef struct passage_s
-{
-	struct passage_s	*next;
-	int			from, to;		// leaf numbers
-	sep_t				*planes;
-} passage_t;
-
-#define	MAX_PORTALS_ON_LEAF		128
-typedef struct leaf_s
-{
-	int			numportals;
-	passage_t	*passages;
-	portal_t	*portals[MAX_PORTALS_ON_LEAF];
-} leaf_t;
+	CUtlVector<portal_t *> portals;
+};
 
 	
-typedef struct pstack_s
+struct pstack_t
 {
 	byte		mightsee[MAX_PORTALS/8];		// bit string
-	struct pstack_s	*next;
+	pstack_t	*next;
 	leaf_t		*leaf;
 	portal_t	*portal;	// portal exiting
 	winding_t	*source;
@@ -88,14 +77,14 @@ typedef struct pstack_s
 	int			freewindings[3];
 
 	plane_t		portalplane;
-} pstack_t;
+};
 
-typedef struct
+struct threaddata_t
 {
 	portal_t	*base;
 	int			c_chains;
 	pstack_t	pstack_head;
-} threaddata_t;
+};
 
 extern	int			g_numportals;
 extern	int			portalclusters;
@@ -124,8 +113,10 @@ void LeafFlow (int leafnum);
 void BasePortalVis (int iThread, int portalnum);
 void BetterPortalVis (int portalnum);
 void PortalFlow (int iThread, int portalnum);
+void WritePortalTrace( const char *source );
 
 extern	portal_t	*sorted_portals[MAX_MAP_PORTALS*2];
+extern int g_TraceClusterStart, g_TraceClusterStop;
 
 int CountBits (byte *bits, int numbits);
 

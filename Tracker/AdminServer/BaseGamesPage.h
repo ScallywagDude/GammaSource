@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,7 +12,6 @@
 #endif
 
 #include <VGUI_Frame.h>
-#include <VGUI_ListPanel.h>
 #include "ServerList.h"
 #include "IServerRefreshResponse.h"
 #include "server.h"
@@ -46,7 +45,6 @@ public:
 	virtual serveritem_t &GetServer(unsigned int serverID);
 
 	virtual void SetRefreshing(bool state);
-	virtual int GetInvalidServerListID();
 
 protected:
 	virtual void OnTick();
@@ -87,7 +85,6 @@ private:
 
 	typedef vgui::Frame BaseClass;
 
-protected: // Derived page maps refer to this base map.
 	DECLARE_PANELMAP();
 };
 

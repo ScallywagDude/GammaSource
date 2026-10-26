@@ -1,9 +1,19 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 // vvis_launcher.cpp : Defines the entry point for the console application.
 //
 
 #include "stdafx.h"
 #include <direct.h>
-#include "vstdlib/strtools.h"
+#include "tier1/strtools.h"
+#include "tier0/icommandline.h"
+#include "ilaunchabledll.h"
+
 
 
 char* GetLastErrorString()
@@ -34,7 +44,8 @@ char* GetLastErrorString()
 
 int main(int argc, char* argv[])
 {
-	const char *pDLLName = "vvis.dll";
+	CommandLine()->CreateCmdLine( argc, argv );
+	const char *pDLLName = "vvis_dll.dll";
 	
 	CSysModule *pModule = Sys_LoadModule( pDLLName );
 	if ( !pModule )
@@ -52,7 +63,7 @@ int main(int argc, char* argv[])
 	}
 
 	int retCode = 0;
-	IVVisDLL *pDLL = (IVVisDLL*)fn( VVIS_INTERFACE_VERSION, &retCode );
+	ILaunchableDLL *pDLL = (ILaunchableDLL*)fn( LAUNCHABLE_DLL_INTERFACE_VERSION, &retCode );
 	if( !pDLL )
 	{
 		printf( "vvis launcher error: can't get IVVisDLL interface from %s\n", pDLLName );
@@ -60,7 +71,7 @@ int main(int argc, char* argv[])
 		return 3;
 	}
 
-	int returnValue = pDLL->main( argc, argv );
+	pDLL->main( argc, argv );
 	Sys_UnloadModule( pModule );
 
 	return 0;

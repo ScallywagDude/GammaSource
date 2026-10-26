@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <stdio.h>
 #include "hlfaceposer.h"
 #include "choreoviewcolors.h"
@@ -86,7 +86,22 @@ void CChoreoGlobalEventWidget::redraw( CChoreoWidgetDrawHelper& drawHelper )
 		}
 		break;
 	}
-	drawHelper.DrawTriangleMarker( rcTab, pointColor );
+
+	if ( IsSelected() )
+	{
+		InflateRect( &rcTab, 2, 2 );
+
+		drawHelper.DrawTriangleMarker( rcTab, pointColor );
+
+		InflateRect( &rcTab, -2, -2 );
+
+		drawHelper.DrawTriangleMarker( rcTab, RGB( 240, 240, 220 ) );
+
+	}
+	else
+	{
+		drawHelper.DrawTriangleMarker( rcTab, pointColor );
+	}
 
 	RECT rcClient;
 	drawHelper.GetClientRect( rcClient );
@@ -97,7 +112,14 @@ void CChoreoGlobalEventWidget::redraw( CChoreoWidgetDrawHelper& drawHelper )
 	rcLine.left = ( rcLine.left + rcLine.right ) / 2;
 	rcLine.right = rcLine.left;
 
-	drawHelper.DrawColoredLine( clr, PS_DOT, 1, rcLine.left, rcLine.top, rcLine.right, rcLine.bottom );
+	if ( IsSelected() )
+	{
+		drawHelper.DrawColoredLine( clr, PS_DOT, 2, rcLine.left, rcLine.top, rcLine.right, rcLine.bottom );
+	}
+	else
+	{
+		drawHelper.DrawColoredLine( clr, PS_DOT, 1, rcLine.left, rcLine.top, rcLine.right, rcLine.bottom );
+	}
 
 	if ( event->GetType() == CChoreoEvent::STOPPOINT )
 	{

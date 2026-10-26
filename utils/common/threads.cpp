@@ -1,9 +1,4 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -14,7 +9,7 @@
 // $Log: $
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #define	USED
 
@@ -145,7 +140,7 @@ void ThreadSetDefault (void)
 			numthreads = 1;
 	}
 
-	qprintf ("%i threads\n", numthreads);
+	Msg ("%i threads\n", numthreads);
 }
 
 
@@ -179,8 +174,9 @@ DWORD WINAPI InternalRunThreadsFn( LPVOID pParameter )
 }
 
 
-void RunThreads_Start( RunThreadsFn fn, void *pUserData )
+void RunThreads_Start( RunThreadsFn fn, void *pUserData, ERunThreadsPriority ePriority )
 {
+	Assert( numthreads > 0 );
 	threaded = true;
 
 	if ( numthreads > MAX_TOOL_THREADS )
@@ -201,8 +197,15 @@ void RunThreads_Start( RunThreadsFn fn, void *pUserData )
 		   0,			// DWORD fdwCreate,
 		   &dwDummy );
 
-		if( g_bLowPriorityThreads )
-			SetThreadPriority( g_ThreadHandles[i], THREAD_PRIORITY_LOWEST );
+		if ( ePriority == k_eRunThreadsPriority_UseGlobalState )
+		{
+			if( g_bLowPriorityThreads )
+				SetThreadPriority( g_ThreadHandles[i], THREAD_PRIORITY_LOWEST );
+		}
+		else if ( ePriority == k_eRunThreadsPriority_Idle )
+		{
+			SetThreadPriority( g_ThreadHandles[i], THREAD_PRIORITY_IDLE );
+		}
 	}
 }
 
@@ -226,7 +229,7 @@ void RunThreadsOn( int workcnt, qboolean showpacifier, RunThreadsFn fn, void *pU
 {
 	int		start, end;
 
-	start = I_FloatTime ();
+	start = Plat_FloatTime();
 	dispatch = 0;
 	workcount = workcnt;
 	StartPacifier("");
@@ -243,7 +246,7 @@ void RunThreadsOn( int workcnt, qboolean showpacifier, RunThreadsFn fn, void *pU
 	RunThreads_End();
 
 
-	end = I_FloatTime ();
+	end = Plat_FloatTime();
 	if (pacifier)
 	{
 		EndPacifier(false);

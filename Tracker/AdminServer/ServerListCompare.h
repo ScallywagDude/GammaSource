@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -12,11 +12,11 @@
 #endif
 
 // these functions are common to most server lists in sorts
-int __cdecl PasswordCompare(const void *elem1, const void *elem2 );
-int __cdecl PingCompare(const void *elem1, const void *elem2 );
-int __cdecl PlayersCompare(const void *elem1, const void *elem2 );
-int __cdecl MapCompare(const void *elem1, const void *elem2 );
-int __cdecl GameCompare(const void *elem1, const void *elem2 );
-int __cdecl ServerNameCompare(const void *elem1, const void *elem2 );
+int __cdecl PasswordCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
+int __cdecl PingCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
+int __cdecl PlayersCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
+int __cdecl MapCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
+int __cdecl GameCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
+int __cdecl ServerNameCompare(vgui::ListPanel *pPanel, const ListPanelItem &item1, const ListPanelItem &item2 );
 
 #endif // SERVERLISTCOMPARE_H

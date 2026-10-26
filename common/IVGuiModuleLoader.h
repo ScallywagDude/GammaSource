@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef IVGUIMODULELOADER_H
 #define IVGUIMODULELOADER_H
@@ -16,7 +16,7 @@
 //-----------------------------------------------------------------------------
 // Purpose: interface to accessing all loaded modules
 //-----------------------------------------------------------------------------
-class IVGuiModuleLoader : public IBaseInterface
+abstract_class IVGuiModuleLoader : public IBaseInterface
 {
 public:
 	virtual int GetModuleCount() = 0;

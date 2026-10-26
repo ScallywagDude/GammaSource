@@ -1,154 +1,294 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $Workfile:     $
 // $Date:         $
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
-#include "utllinkedlist.h"
-#include "quakedef.h"
-#include "cdll_int.h"
-#include "r_local.h"
+//===========================================================================//
+
+#include "client_pch.h"
 #include "sound.h"
-#include "screen.h"
-#include "vid.h"
-#include "server.h"
+#include <inetchannel.h>
 #include "checksum_engine.h"
-#include "cl_servercache.h"
-#include "host.h"
 #include "con_nprint.h"
-#include "cl_pred.h"
-#include "gl_texture.h"
+#include "r_local.h"
 #include "gl_lightmap.h"
-#include "client_class.h"
 #include "console.h"
-#include "icliententitylist.h"
-#include "cl_ents.h"
-#include "con_nprint.h"
-#include "measure_section.h"
 #include "traceinit.h"
-#include "demo.h"
+#include "cl_demo.h"
 #include "cdll_engine_int.h"
-#include "voice.h"
-#include "DebugOverlay.h"
-#include "FileSystem.h"
-#include "FileSystem_Engine.h"
-#include "NetworkStringTableContainerClient.h"
-#include "precache.h"
+#include "debugoverlay.h"
+#include "filesystem_engine.h"
 #include "icliententity.h"
-#include "decal.h"
 #include "dt_recv_eng.h"
-#include "iregistry.h"
-#include "vgui_int.h"
+#include "vgui_baseui_interface.h"
 #include "testscriptmgr.h"
-#include "tier0/vprof.h"
-#include "proto_oob.h"
+#include <tier0/vprof.h>
+#include <proto_oob.h>
 #include "materialsystem/imaterialsystemhardwareconfig.h"
 #include "gl_matsysiface.h"
-#include "cl_ents_parse.h"
 #include "staticpropmgr.h"
-#include "ISpatialPartitionInternal.h"
-#include "cl_localnetworkbackdoor.h"
-#include "vstdlib/icommandline.h"
-#include "enginebugreporter.h"
+#include "ispatialpartitioninternal.h"
+#include "cbenchmark.h"
+#include "vox.h"
+#include "LocalNetworkBackdoor.h"
+#include <tier0/icommandline.h>
+#include "GameEventManager.h"
+#include "host_saverestore.h"
+#include "ivideomode.h"
+#include "host_phonehome.h"
+#include "decal.h"
+#include "sv_rcon.h"
+#include "cl_rcon.h"
+#include "vgui_baseui_interface.h"
+#include "snd_audio_source.h"
+#include "iregistry.h"
+#include "sys.h"
+#include <vstdlib/random.h>
+#include "tier0/etwprof.h"
+#include "tier0/vcrmode.h"
+#include "sys_dll.h"
+#include "video/ivideoservices.h"
+#include "cl_steamauth.h"
+#include "filesystem/IQueuedLoader.h"
+#include "tier2/tier2.h"
+#include "host_state.h"
+#include "enginethreads.h"
+#include "vgui/ISystem.h"
+#include "pure_server.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
+#include "LoadScreenUpdate.h"
+#include "tier0/systeminformation.h"
+#include "steam/steam_api.h"
+#include "SourceAppInfo.h"
+#include "cl_steamauth.h"
+#include "sv_steamauth.h"
+#include "engine/ivmodelinfo.h"
+#ifdef _X360
+#include "xbox/xbox_launch.h"
+#endif
+#if defined( REPLAY_ENABLED )
+#include "replay_internal.h"
+#endif
+
+#include "language.h"
+#include "igame.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
+
+extern IVEngineClient *engineClient;
 
 void R_UnloadSkys( void );
 void CL_ResetEntityBits( void );
-void COM_CopyFile (char *netpath, char *cachepath);
+void EngineTool_UpdateScreenshot();
+void WriteConfig_f( ConVar *var, const char *pOldString );
 
-// Mininum time gap (in seconds) before a subsequent connection request is sent.
-#define CL_MIN_RESEND_TIME			1.5    
-// Max time.  The cvar cl_resend is bounded by these.
-#define CL_MAX_RESEND_TIME			20.0    
- // Only send this many requests before timing out.
-#define CL_CONNECTION_RETRIES		4   
 // If we get more than 250 messages in the incoming buffer queue, dump any above this #
 #define MAX_INCOMING_MESSAGES		250
-// Largest # of commands to send in a packet
-#define MAX_TOTAL_CMDS				16
 // Size of command send buffer
 #define MAX_CMD_BUFFER				4000
-// In release, send commands at least this many times per second
-#define MIN_CMD_RATE				10.0
-// If the network connection hasn't been active in this many seconds, display some warning text.
-#define CONNECTION_PROBLEM_TIME		15.0
 
 CGlobalVarsBase g_ClientGlobalVariables( true );
+IVideoRecorder *g_pVideoRecorder = NULL;
 
 extern ConVar rcon_password;
+extern ConVar host_framerate;
+extern ConVar cl_clanid;
 
-static server_cache_t	cached_servers[MAX_LOCAL_SERVERS];
-static int		num_servers;
+ConVar sv_unlockedchapters( "sv_unlockedchapters", "1", FCVAR_ARCHIVE | FCVAR_ARCHIVE_XBOX, "Highest unlocked game chapter." );
 
-// Local server cache request timeout
-static float       slist_time;         // Time we started listening for broadcast server info responses.
-class CConnectionInfo
-{
-public:
-	int         retrynumber;      // After CL_CONNECTION_RETRIES, give up...
-	int			challenge;			// from the server to use for connecting
-	byte		authprotocol;       // Connect using Hashed CD key, or auth certificate
-};
+static ConVar tv_nochat	( "tv_nochat", "0", FCVAR_ARCHIVE | FCVAR_USERINFO, "Don't receive chat messages from other SourceTV spectators" );
+static ConVar cl_LocalNetworkBackdoor( "cl_localnetworkbackdoor", "1", 0, "Enable network optimizations for single player games." );
+static ConVar cl_ignorepackets( "cl_ignorepackets", "0", FCVAR_CHEAT, "Force client to ignore packets (for debugging)." );
+static ConVar cl_playback_screenshots( "cl_playback_screenshots", "0", 0, "Allows the client to playback screenshot and jpeg commands in demos." );
 
-static CConnectionInfo s_connection;
+#if defined( STAGING_ONLY ) || defined( _DEBUG )
+static ConVar cl_block_usercommand( "cl_block_usercommand", "0", FCVAR_CHEAT, "Force client to not send usercommand (for debugging)." );
+#endif // STAGING_ONLY || _DEBUG
 
-ConVar	cl_interp			( "cl_interp", "0.1", 0, "Interpolate object positions starting this many seconds in past" );  
-ConVar	cl_cmdrate			( "cl_cmdrate", "30", FCVAR_ARCHIVE, "Max number of command packets sent to server per second" );
-ConVar	cl_cmdbackup		( "cl_cmdbackup", "2", FCVAR_ARCHIVE, "For each command packet, how many additional history commands are sent ( helps in case of packet loss )" );
-ConVar	cl_showmessages		( "cl_showmessages", "0", 0, "Dump network traffic to debug console" );
-ConVar  cl_captions			( "cl_captions", "0", FCVAR_ARCHIVE, "Show captions for voice" );
-ConVar	cl_timeout			( "cl_timeout", "305", FCVAR_ARCHIVE, "After this many seconds without receiving a packet from the server, the client will disconnect itself" );
-ConVar	cl_shownet			( "cl_shownet","0", 0, "Show network traffic ( 0, 1 or 2 )" );
-ConVar	rcon_address		( "rcon_address", "", 0, "Address of remote server if sending unconnected rcon commands" );
-ConVar  rcon_port			( "rcon_port"   , "0", 0, "Port of remote server if sending unconnected rcon commands" );
-ConVar	cl_resend			( "cl_resend","6", 0, "Delay in seconds before the client will resend the 'connect' attempt", true, CL_MIN_RESEND_TIME, true, CL_MAX_RESEND_TIME );
-ConVar  cl_slisttimeout		( "cl_slist", "10", 0, "Number of seconds to wait for server ping responses when checking for server on your lan" );
-// Thes vars are also userinfo mirrors
-ConVar	password( "password", "", FCVAR_USERINFO, "Current server access password" );
-ConVar	cl_name( "name","unnamed", FCVAR_ARCHIVE | FCVAR_USERINFO | FCVAR_PRINTABLEONLY, "Current user name" );
-ConVar	team( "team","", FCVAR_ARCHIVE | FCVAR_USERINFO, "Selected team" );
-ConVar	skin( "skin","", FCVAR_ARCHIVE | FCVAR_USERINFO, "Selected skin" );
-ConVar	cl_model( "model", "", FCVAR_ARCHIVE | FCVAR_USERINFO, "Current model name" );
-ConVar	rate( "rate","10000" /*2500*/, FCVAR_ARCHIVE | FCVAR_USERINFO, "Bytes per second max that the server can send you data" );
-ConVar	cl_updaterate( "cl_updaterate","20", FCVAR_ARCHIVE | FCVAR_USERINFO, "Number of packets per second of updates you are requesting from the server" );
+ConVar dev_loadtime_map_start( "dev_loadtime_map_start", "0.0", FCVAR_HIDDEN);
+ConVar dev_loadtime_map_elapsed( "dev_loadtime_map_elapsed", "0.0", FCVAR_HIDDEN );
 
-
-ConVar  cl_forcepreload( "cl_forcepreload", "0", FCVAR_ARCHIVE, "Whether we should force preloading.");
-static ConVar cl_logofile( "cl_logofile", "smscorch1", FCVAR_ARCHIVE, "Spraypoint logo decal." );
-ConVar cl_LocalNetworkBackdoor( "cl_LocalNetworkBackdoor", "1", 0, "Enable network optimizations for single player games." );
-
-client_static_t	cls;
-
-char cl_moviename[256] = "\0";
-int cl_movieframe = 0;
+MovieInfo_t cl_movieinfo;
 
 // FIXME: put these on hunk?
-lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
 dlight_t		cl_elights[MAX_ELIGHTS];
+CFastPointLeafNum g_DLightLeafAccessors[MAX_DLIGHTS];
+CFastPointLeafNum g_ELightLeafAccessors[MAX_ELIGHTS];
 
-static int cl_snapshotnum;
+bool cl_takesnapshot = false;
+static bool cl_takejpeg = false;
+static bool cl_takesnapshot_internal = false;
+
+static int cl_jpegquality = DEFAULT_JPEG_QUALITY;
+static ConVar jpeg_quality( "jpeg_quality", "90", 0, "jpeg screenshot quality." );
+
+static int	cl_snapshotnum = 0;
+static char cl_snapshotname[MAX_OSPATH];
+static char cl_snapshot_subdirname[MAX_OSPATH];
 
 // Must match game .dll definition
 // HACK HACK FOR E3 -- Remove this after E3
 #define	HIDEHUD_ALL			( 1<<2 )
 
-const CPrecacheUserData* CL_GetPrecacheUserData( TABLEID tableID, int index )
+void PhonemeMP3Shutdown( void );
+
+struct ResourceLocker 
+{
+	ResourceLocker()
+	{
+		g_pFileSystem->AsyncFinishAll();
+		g_pFileSystem->AsyncSuspend();
+
+		// Need to temporarily disable queued material system, then lock it
+		m_QMS = Host_AllowQueuedMaterialSystem( false );
+		m_MatLock = g_pMaterialSystem->Lock();
+	}
+
+	~ResourceLocker()
+	{
+		// Restore QMS
+		materials->Unlock( m_MatLock );
+		Host_AllowQueuedMaterialSystem( m_QMS );
+		g_pFileSystem->AsyncResume();
+
+		// ??? What?  Why?
+		//// Need to purge cached materials due to a sv_pure change.
+		//g_pMaterialSystem->UncacheAllMaterials();
+	}
+
+	bool			m_QMS;
+	MaterialLock_t	m_MatLock;
+};
+
+// Reloads a list of files if they are still loaded
+void CL_ReloadFilesInList( IFileList *pFilesToReload )
+{
+	if ( !pFilesToReload )
+	{
+		return;
+	}
+
+	ResourceLocker crashPreventer;
+
+	// Handle materials..
+	materials->ReloadFilesInList( pFilesToReload );
+
+	// Handle models.. NOTE: this MUST come after materials->ReloadFilesInList because the
+	// models need to know which materials got flushed.
+	modelloader->ReloadFilesInList( pFilesToReload );
+
+	S_ReloadFilesInList( pFilesToReload );
+
+	// Let the client at it (for particles)
+	if ( g_ClientDLL )
+	{
+		g_ClientDLL->ReloadFilesInList( pFilesToReload );
+	}
+}
+
+void CL_HandlePureServerWhitelist( CPureServerWhitelist *pWhitelist, /* out */ IFileList *&pFilesToReload )
+{
+	// Free the old whitelist and get the new one.
+	if ( cl.m_pPureServerWhitelist )
+		cl.m_pPureServerWhitelist->Release();
+
+	cl.m_pPureServerWhitelist = pWhitelist;
+	if ( cl.m_pPureServerWhitelist )
+		cl.m_pPureServerWhitelist->AddRef();
+
+	g_pFileSystem->RegisterFileWhitelist( pWhitelist, &pFilesToReload );
+
+	// Now that we've flushed any files that shouldn't have been on disk, we should have a CRC
+	// set that we can check with the server.
+	cl.m_bCheckCRCsWithServer = true;
+}
+
+void PrintSvPureWhitelistClassification( const CPureServerWhitelist *pWhiteList )
+{
+	if ( pWhiteList == NULL )
+	{
+		Msg( "The server is using sv_pure -1 (no file checking).\n" );
+		return;
+	}
+
+	// Load up the default whitelist
+	CPureServerWhitelist *pStandardList = CPureServerWhitelist::Create( g_pFullFileSystem );
+	pStandardList->Load( 0 );
+	if ( *pStandardList == *pWhiteList )
+	{
+		Msg( "The server is using sv_pure 0.  (Enforcing consistency for select files only)\n" );
+	}
+	else
+	{
+		pStandardList->Load( 2 );
+		if ( *pStandardList == *pWhiteList )
+		{
+			Msg( "The server is using sv_pure 2.  (Fully pure)\n" );
+		}
+		else
+		{
+			Msg( "The server is using sv_pure 1.  (Custom pure server rules.)\n" );
+		}
+	}
+	pStandardList->Release();
+}
+
+void CL_PrintWhitelistInfo()
+{
+	PrintSvPureWhitelistClassification( cl.m_pPureServerWhitelist );
+	if ( cl.m_pPureServerWhitelist )
+	{
+		cl.m_pPureServerWhitelist->PrintWhitelistContents();
+	}
+}
+
+// Console command to force a whitelist on the system.
+#ifdef _DEBUG
+void whitelist_f( const CCommand &args )
+{
+	int pureLevel = 2;
+	if ( args.ArgC() == 2 )
+	{
+		pureLevel = atoi( args[1] );
+	}
+	else
+	{
+		Warning( "Whitelist 0, 1, or 2\n" );
+	}
+
+	if ( pureLevel == 0 )
+	{
+		Warning( "whitelist 0: CL_HandlePureServerWhitelist( NULL )\n" );
+		IFileList *pFilesToReload = NULL;
+		CL_HandlePureServerWhitelist( NULL, pFilesToReload );
+		CL_ReloadFilesInList( pFilesToReload );
+	}
+	else
+	{
+		CPureServerWhitelist *pWhitelist = CPureServerWhitelist::Create( g_pFileSystem );
+		pWhitelist->Load( pureLevel == 1 );
+		IFileList *pFilesToReload = NULL;
+		CL_HandlePureServerWhitelist( pWhitelist, pFilesToReload );
+		CL_ReloadFilesInList( pFilesToReload );
+		pWhitelist->Release();
+	}
+}
+ConCommand whitelist( "whitelist", whitelist_f );
+#endif
+
+const CPrecacheUserData* CL_GetPrecacheUserData( INetworkStringTable *table, int index )
 {
 	int testLength;
-	const CPrecacheUserData *data = ( CPrecacheUserData * )networkStringTableContainerClient->GetStringUserData( tableID, index, &testLength );
+	const CPrecacheUserData *data = ( CPrecacheUserData * )table->GetStringUserData( index, &testLength );
 	if ( data )
 	{
 		ErrorIfNot( 
 			testLength == sizeof( *data ),
-			("CL_GetPrecacheUserData(%d,%d) - length (%d) invalid.", (int)tableID, index, testLength)
+			("CL_GetPrecacheUserData(%d,%d) - length (%d) invalid.", table->GetTableId(), index, testLength)
 		);
 
 	}
@@ -156,589 +296,206 @@ const CPrecacheUserData* CL_GetPrecacheUserData( TABLEID tableID, int index )
 }
 
 
-void CL_HideHud_f( void )
+//-----------------------------------------------------------------------------
+// Purpose: setup the demo flag, split from CL_IsHL2Demo so CL_IsHL2Demo can be inline
+//-----------------------------------------------------------------------------
+static bool s_bIsHL2Demo = false;
+void CL_InitHL2DemoFlag()
 {
-	unsigned char c;
+#if defined(_X360)
+	s_bIsHL2Demo = false;
+#else
+	static bool initialized = false;
+	if ( !initialized )
+	{
+		if ( Steam3Client().SteamApps() && !Q_stricmp( COM_GetModDirectory(), "hl2" ) )
+		{
+			initialized = true;
 
-	if ( Cmd_Argc() != 2 )
-	{
-		Con_Printf( "Usage:  hud <on | off>\nShows or hides the hud\n" );
+			// if user didn't buy HL2 yet, this must be the free demo
+			if ( VCRGetMode() != VCR_Playback )
+			{
+				s_bIsHL2Demo = !Steam3Client().SteamApps()->BIsSubscribedApp( GetAppSteamAppId( k_App_HL2 ) );
+			}
+#if !defined( NO_VCR )
+			VCRGenericValue( "e", &s_bIsHL2Demo, sizeof( s_bIsHL2Demo ) );
+#endif
+		}
+		
+		if ( !Q_stricmp( COM_GetModDirectory(), "hl2" ) && CommandLine()->CheckParm( "-demo" ) ) 
+		{
+			s_bIsHL2Demo = true;
+		}
 	}
-
-	if ( !stricmp( Cmd_Argv(1), "off" ) )
-	{
-		Con_Printf( "hiding hud\n" );
-		c = HIDEHUD_ALL;
-		DispatchDirectUserMsg("HideWeapon", 1, (void *)&c);
-	}
-	else if ( !stricmp( Cmd_Argv(1), "on" ) )
-	{
-		c = 0;
-		Con_Printf( "showing hud\n" );
-		DispatchDirectUserMsg("HideWeapon", 1, (void *)&c);
-	}
-	else
-	{
-		Con_Printf( "Unknown hud option %s\n", Cmd_Argv(1) );	
-	}
+#endif
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: If the client is in the process of connecting and the cls.signon hits
+// Purpose: Returns true if the user is playing the HL2 Demo (rather than the full game)
+//-----------------------------------------------------------------------------
+bool CL_IsHL2Demo()
+{
+	CL_InitHL2DemoFlag();
+	return s_bIsHL2Demo;
+}
+
+static bool s_bIsPortalDemo = false;
+void CL_InitPortalDemoFlag()
+{
+#if defined(_X360)
+	s_bIsPortalDemo = false;
+#else
+	static bool initialized = false;
+	if ( !initialized )
+	{
+		if ( Steam3Client().SteamApps() && !Q_stricmp( COM_GetModDirectory(), "portal" ) )
+		{
+			initialized = true;
+		
+			// if user didn't buy Portal yet, this must be the free demo
+			if ( VCRGetMode() != VCR_Playback )
+			{
+				s_bIsPortalDemo = !Steam3Client().SteamApps()->BIsSubscribedApp( GetAppSteamAppId( k_App_PORTAL ) );
+			}
+				
+#if !defined( NO_VCR )
+			VCRGenericValue( "e", &s_bIsPortalDemo, sizeof( s_bIsPortalDemo ) );
+#endif
+		}
+		
+		if ( !Q_stricmp( COM_GetModDirectory(), "portal" ) && CommandLine()->CheckParm( "-demo" ) ) 
+		{
+			s_bIsPortalDemo = true;
+		}
+	}
+#endif
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Returns true if the user is playing the Portal Demo (rather than the full game)
+//-----------------------------------------------------------------------------
+bool CL_IsPortalDemo()
+{
+	CL_InitPortalDemoFlag();
+	return s_bIsPortalDemo;
+}
+
+
+#ifdef _XBOX
+extern void Host_WriteConfiguration( const char *dirname, const char *filename );
+//-----------------------------------------------------------------------------
+// Convar callback to write the user configuration 
+//-----------------------------------------------------------------------------
+void WriteConfig_f( ConVar *var, const char *pOldString )
+{
+	Host_WriteConfiguration( "xboxuser.cfg" );
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// Purpose: If the client is in the process of connecting and the cl.signon hits
 //  is complete, make sure the client thinks its totally connected.
 //-----------------------------------------------------------------------------
 void CL_CheckClientState( void )
 {
 	// Setup the local network backdoor (we do this each frame so it can be toggled on and off).
-	CL_SetupLocalNetworkBackDoor( 
-		cl_LocalNetworkBackdoor.GetInt() && 
-		cls.netchan.remote_address.type == NA_LOOPBACK &&
-		(sv.active && svs.maxclients == 1) &&
-		!demo->IsRecording() );
+	bool useBackdoor = cl_LocalNetworkBackdoor.GetInt() && 
+						(cl.m_NetChannel ? cl.m_NetChannel->IsLoopback() : false) &&
+						sv.IsActive() &&
+						!demorecorder->IsRecording() &&
+						!demoplayer->IsPlayingBack() &&
+						Host_IsSinglePlayerGame();
 
-
-	if ( ( cls.state == ca_connected ) &&
-		 ( cls.signon == SIGNONS ) )
-	{	
-		// first update is the final signon stage
-		cls.state = ca_active;
-
-		// communicate to tracker that we're in a game
-		{
-			unsigned char *IPPtr = cls.netchan.remote_address.ip;
-			short port = cls.netchan.remote_address.port;
-			if (!port)
-			{
-				IPPtr = net_local_adr.ip;
-				port = net_local_adr.port;
-			}
-
-			VGui_NotifyOfServerConnect(com_gamedir, *((int *)IPPtr), NET_NetToHostShort(port));
-		}
-
-		GetTestScriptMgr()->CheckPoint( "FinishedMapLoad" );
-
-		char mapname[ MAX_OSPATH ];
-		COM_FileBase( modelloader->GetName( host_state.worldmodel ), mapname );
-
-		demo->CheckAutoRecord( mapname );
-		demo->StartRendering();
-	}
+	CL_SetupLocalNetworkBackDoor( useBackdoor );
 }
+
+
 
 //-----------------------------------------------------------------------------
-// Purpose: Broadcast pings to any servers that we can see on our LAN
+// bool CL_CheckCRCs( const char *pszMap )
 //-----------------------------------------------------------------------------
-void CL_PingServers_f(void)
+bool CL_CheckCRCs( const char *pszMap )
 {
-	netadr_t	adr;
-	int			i;
+	CRC32_t mapCRC;        // If this is the worldmap, CRC against server's map
+	MD5Value_t mapMD5;
+	V_memset( mapMD5.bits, 0, MD5_DIGEST_LENGTH );
 
-	// send a broadcast packet
-	Con_Printf ("Searching for local servers...\n");
+	// Don't verify CRC if we are running a local server (i.e., we are playing single player, or we are the server in multiplay
+	if ( sv.IsActive() ) // Single player
+		return true;
 
-	slist_time = realtime;
-
-	NET_Config (true);		// allow remote	
-
-	Q_memset( &adr, 0, sizeof( adr ) );
-
-	for ( i = 0; i < 10; i++ )
+	if ( IsX360() )
 	{
-		adr.port = BigShort((unsigned short)(Q_atoi(PORT_SERVER) + i));
-
-		if ( !noip )
-		{
-			adr.type = NA_BROADCAST;
-			Netchan_OutOfBandPrint( NS_CLIENT, adr, "infostring" );
-		}
-	}
-}
-
-/*
-==================
-CL_Slist_f (void)
-
-Populates the client's server_cache_t structrue
-Replaces Slist command
-==================
-*/
-void CL_Slist_f (void)
-{
-	num_servers = 0;
-	memset(cached_servers, 0, MAX_LOCAL_SERVERS * sizeof(server_cache_t));
-
-	// send out info packets
-	// FIXME:  Record realtime when sent and determine ping times for responsive servers.
-	CL_PingServers_f();
-}
-
-void CL_PrintCachedServer( int slot )
-{
-	server_cache_t *p;
-
-	if ( slot < 0 || slot >= MAX_LOCAL_SERVERS )
-		return;
-
-	p = &cached_servers[ slot ];
-
-	if ( !p->inuse )
-		return;
-
-	Con_Printf( "%i. ", slot + 1 );
-
-	Con_Printf( "%s on map %s (%i/%i) at %s\n",
-		Info_ValueForKey( p->info, "gamedir" ),
-		Info_ValueForKey( p->info, "map" ),
-		Q_atoi( Info_ValueForKey( p->info, "players" ) ),
-		Q_atoi( Info_ValueForKey( p->info, "max" ) ),
-		NET_AdrToString(p->adr) );
-
-	Con_Printf ("    hostname:  \"%s\"\n",
-		Info_ValueForKey( p->info, "hostname" )
-		 );
-
-	char const *desc = Info_ValueForKey( p->info, "desciption" );
-	if ( desc && desc[ 0 ] )
-	{
-		Con_Printf( "%s\n", Info_ValueForKey( p->info, "desciption" ) );
+		return true;
 	}
 
-	bool indent = true;
-
-	if ( *Info_ValueForKey( p->info, "type") == 'p' )	// is it a proxy ??
+	bool couldHash = false;
+	if ( g_ClientGlobalVariables.network_protocol > PROTOCOL_VERSION_17 )
 	{
-		Con_Printf( "    proxy for %s - ",
-			Info_ValueForKey( p->info, "proxyaddress" ) );
-
-		indent = false;
-	}
-	else if ( Q_atoi( Info_ValueForKey( p->info, "proxytarget" ) ) )
-	{
-		Con_Printf( "    proxy target - " );
-		indent = false;
-	}
-
-	if ( indent )
-	{
-		Con_Printf( "    " );
-		indent = false;
-	}
-		
-	switch ( *Info_ValueForKey( p->info, "type" ) )
-	{
-	case 'l':
-		Con_Printf( "listen - " ); 
-		break;
-	case 'd':
-		Con_Printf( "dedicated - " ); 
-		break;
-	case 'p':
-		Con_Printf( "proxy - " ); 
-		break;
-	default:
-		Con_Printf( "unknown server type - " ); 
-		break;
-	}
-
-	if ( *Info_ValueForKey( p->info, "os") == 'w' )
-	{
-		Con_Printf( "win32 - " );
+		couldHash = MD5_MapFile( &mapMD5, pszMap );
 	}
 	else
 	{
-		Con_Printf( "linux - " );
+		CRC32_Init(&mapCRC);
+		couldHash = CRC_MapFile( &mapCRC, pszMap );
 	}
 
-	if ( Q_atoi( Info_ValueForKey( p->info, "password" ) ) == 1 )
+	if (!couldHash )
 	{
-		Con_Printf( "password - " );
-	}
-	else
-	{
-		Con_Printf( "nopasswd - " );
-	}
+		// Does the file exist?
+		FileHandle_t fp = 0;
+		int nSize = -1;
 
-	if ( Q_atoi( Info_ValueForKey( p->info, "secure" ) ) == 1 )
-	{
-		Con_Printf( "secure" );
-	}
-	else
-	{
-		Con_Printf( "insecure" );
-	}
+		nSize = COM_OpenFile( pszMap, &fp );
+		if ( fp )
+			g_pFileSystem->Close( fp );
 
-	Con_Printf( "\n" );
-}
-
-/*
-=================
-CL_AddToServerCache
-
-Adds the address, name to the server cache
-=================
-*/
-void CL_AddToServerCache (netadr_t adr, char *info )
-{
-	int		i;
-
-	// Too many servers.
-	if ( num_servers >= MAX_LOCAL_SERVERS )   
-	{
-		return;
-	}
-	
-	if ( cl_slisttimeout.GetFloat() > 0.0 )
-	{
-		if ( ( realtime - slist_time ) >= cl_slisttimeout.GetFloat())
+		if ( nSize != -1 )
 		{
-			return;
-		}
-	}
-	
-	 // Already cached by address
-	for (i=0 ; i<num_servers ; i++)        
-	{
-		if ( NET_CompareAdr( cached_servers[i].adr, adr) )
-		{
-			return;
-		}
-	}
-
-	// Display it.
-	cached_servers[num_servers].inuse	= 1;
-	cached_servers[num_servers].adr		= adr;
-
-	Q_strncpy(cached_servers[num_servers].info, info, MAX_LOCAL_SERVERINFOSTRING );
-	num_servers++;
-
-	CL_PrintCachedServer( num_servers - 1 );
-}
-
-/*
-==================
-CL_ServiceInfoStringResponse
-
-Handle a reply from a ping request that we broadcast via IP
-=================
-*/
-void CL_ServiceInfoStringResponse ( void )
-{
-	char		*info;
-
-	info = MSG_ReadString();
-
-	if ( !info || !info[0] )
-		return;
-
-	CL_AddToServerCache ( net_from, info );
-}
-
-/*
-===================
-CL_ListCachedServers_f()
-
-===================
-*/
-void CL_ListCachedServers_f (void)
-{
-	int i;
-	server_cache_t *p;
-
-	if (num_servers == 0)
-	{
-		Con_Printf("No local servers in list.\nTry 'slist' to search again.\n");
-		return;
-	}
-
-	for (i=0 ; i<num_servers ; i++)
-	{
-		p = &cached_servers[i];
-		if ( !p->inuse )
-			continue;
-
-		Con_Printf ("------------------\n");
-		CL_PrintCachedServer( i );
-	}
-
-}
-
-/*
-================
-CL_ConnectClient
-
-Received connection initiation response from server, set up connection
-================
-*/
-void CL_ConnectClient( void )
-{
-	// Already connected?
-	if ( cls.state == ca_connected )
-	{
-		return;
-	}
-
-	// Initiate the network channel
-	Netchan_Setup (NS_CLIENT, &cls.netchan, net_from );
-
-	// Clear remaining lagged packets to prevent problems
-	NET_ClearLagData( true, false );
-
-	// Report connection success.
-	if ( stricmp("loopback", NET_AdrToString (net_from) ) )
-	{
-		Con_Printf( "Connected to %s\n", NET_AdrToString (net_from) );
-	}
-
-	// Signon process will commence now that server ok'd connection.
-	cls.netchan.message.WriteByte(clc_stringcmd);
-	cls.netchan.message.WriteString ("new");	
-
-	// Not in the demo loop now
-	cls.demonum = -1;			
-
-	// Mark client as connected
-	cls.state = ca_connected;
-	// Need all the signon messages before playing ( or drawing first frame )
-	cls.signon  = 0;			
-	
-	// Bump connection time to now so we don't resend a connection
-	// Request	
-	cls.connect_time = realtime; 
-
-	// Haven't gotten a valid frame update yet
-	cl.validsequence = 0;
-
-	// We'll request a full delta from the baseline
-	cl.delta_sequence = -1;
-
-	// We don't have a backed up cmd history yet
-	cls.lastoutgoingcommand = -1;
-
-	// We can send a cmd right away
-	cls.nextcmdtime = realtime;
-
-	// Start spooling demo info in case we record a demo on this level
-	demo->StartupDemoHeader();
-}
-
-/*
-=======================
-CL_ClientDllQuery
-
-=======================
-*/
-int CL_ClientDllQuery ( const char *s )
-{
-	int len;
-	int maxsize = 2048;
-	byte	data[2048];
-	int valid;
-	
-	if ( cl.maxclients == 1 )   // ignore in single player
-		return 0;
-
-	Q_memset( data, 0, maxsize );
-
-	// Allow game .dll to parse string
-	len = maxsize - sizeof( int );
-	valid = g_ClientDLL->ClientConnectionlessPacket( &net_from, s, (char *)( data + sizeof( int ) ), &len );
-	if ( len && ( len <= ( maxsize - 4 ) ) )
-	{
-		// Always prepend connectionless / oob signal to this packet
-		*(int *)&data[0] = -1;
-		NET_SendPacket ( NS_CLIENT, len + 4, data, net_from );
-	}
-
-	return valid;
-}
-
-/*
-=================
-CL_ConnectionlessPacket
-
-Responses to broadcasts, etc
-=================
-*/
-void CL_ConnectionlessPacket (void)
-{
-	char	*s;
-	char    *cmd;
-	char	*args;
-	unsigned char c = 0;
-	char	data[6];
-
-	MSG_BeginReading ();
-	// skip the -1 marker
-	MSG_ReadLong ();		
-
-	s = MSG_ReadStringLine ();
-
-	args = s;
-
-	Cmd_TokenizeString (s);
-
-	cmd = Cmd_Argv(0);
-	if ( cmd )
-	{
-		c = (unsigned char)cmd[0];
-	}
-
-	if ( !stricmp( cmd, "infostringresponse" ) )
-	{
-		CL_ServiceInfoStringResponse();
-		return;
-	}
-
-	// FIXME:  For some of these, we should confirm that the sender of 
-	// the message is what we think the server is...
-
-	switch ( c )
-	{
-	case S2C_CONNECTION:
-		if ( cls.state == ca_connecting )
-		{
-			CL_ConnectClient();
-		}
-		break;
-		
-	case S2C_CHALLENGE:
-		// Response from getchallenge we sent to the server we are connecting to
-		// Blow it off if we are not connected.
-		if ( cls.state != ca_connecting )
-			break;
-
-		if ( Cmd_Argc() != 3 )
-			return;
-
-		s_connection.challenge = ( unsigned int )Q_atoi( Cmd_Argv(1) );
-		s_connection.authprotocol = ( int )Q_atoi( Cmd_Argv(2) ) ;
-		if ( s_connection.authprotocol == (unsigned char)-1 )
-		{
-			s_connection.authprotocol = PROTOCOL_HASHEDCDKEY;
-		}
-		
-		if ( s_connection.authprotocol == PROTOCOL_AUTHCERTIFICATE )
-		{
-			// Make sure we have a certificate
-			COM_CheckAuthenticationType();
-			if ( !gfUseLANAuthentication )
-			{
-				Con_Printf( "The server requires that you authenticated.\nAuth not supported in this build.\n" );
-				Host_Disconnect();
-			}
-			else
-			{
-				Con_Printf( "The server requires that you authenticated.\nCould not obtain authentication.\n" );
-				Host_Disconnect();
-			}
+			COM_ExplainDisconnection( true, "Couldn't CRC map %s, disconnecting\n", pszMap);
+			Host_Error( "Bad map" );
 		}
 		else
 		{
-			//Con_Printf( "Using Normal\n");
-			CL_SendConnectPacket ();
-		}
-		break;
-	case A2C_PRINT:
-		MSG_BeginReading ();
-		MSG_ReadLong ();		// skip the -1 marker
-		MSG_ReadByte();
-
-		Con_Printf ( "%s\n", MSG_ReadString() );
-		break;
-	case S2C_BADPASSWORD:
-		if ( cls.state != ca_connecting )  // Spoofed?
-			return;
-
-		s++;
-
-		if ( !Q_strncasecmp( s, "BADPASSWORD", Q_strlen( "BADPASSWORD" ) ) )
-			s += Q_strlen( "BADPASSWORD" );
-
-		Con_Printf (s);
-
-		// Force bad pw dialog to come up now.
-		COM_ExplainDisconnection( false, "BADPASSWORD" );
-		Con_Printf( "Invalid server password.\n" );
-		Host_Disconnect();
-		break;
-	case S2C_CONNREJECT:
-		if ( cls.state != ca_connecting )  // Spoofed?
-			return;
-		
-		s++;
-
-		// Force failure dialog to come up now.
-		COM_ExplainDisconnection( true, s );
-		Host_Disconnect();
-		break;
-	case A2A_PING:
-		data[0] = -1;
-		data[1] = -1;
-		data[2] = -1;
-		data[3] = -1;
-		data[4] = A2A_ACK;
-		data[5] = 0;
-		NET_SendPacket (NS_CLIENT, 6, &data, net_from);
-		break;
-	case A2A_ACK:
-		break;
-	/*
-	case S2A_INFO_DETAILED:
-		MSG_BeginReading ();
-		MSG_ReadLong ();		// skip the -1 marker
-		MSG_ReadByte();
-		CL_ParseServerInfoResponse();
-		break;
-	*/
-	// Unknown?
-	default:
-		// Does the client .dll want to accept it?
-		if ( CL_ClientDllQuery( args ) )
-		{
-			break;
+			COM_ExplainDisconnection( true, "Missing map %s,  disconnecting\n", pszMap);
+			Host_Error( "Map is missing" );
 		}
 
-		// Otherwise, don't do anything.
-		Con_DPrintf ( "CL_ConnectionlessPacket:  Unknown command:\n%c\n", c );
-		break;
+		return false;
 	}
-}
 
-/*
-====================
-CL_ProcessFile
-
-A file has been received via the fragmentation/reassembly layer, put it in the right spot and
- see if we have finished downloading files.
-====================
-*/
-void CL_ProcessFile( bool successfully_received, const char *filename )
-{
-	// Con_Printf( "Received %s, but file processing is not hooked up!!!\n", filename );
-}
-
-/*
-====================
-CL_GetMessage
-
-Handles recording and playback of demos, on top of NET_ code
-====================
-*/
-int CL_GetMessage (void)
-{
-	if ( demo->IsPlayingBack() )
+	bool hashValid = false;
+	if ( g_ClientGlobalVariables.network_protocol > PROTOCOL_VERSION_17 )
 	{
-		if ( demo->ReadMessage() )
-			return true;
+		hashValid = MD5_Compare( cl.serverMD5, mapMD5 );
+	}
 
+	// Hacked map
+	if ( !hashValid && !demoplayer->IsPlayingBack())
+	{
+		if ( IsX360() )
+		{
+			Warning( "Disconnect: BSP CRC failed!\n" );
+		}
+		COM_ExplainDisconnection( true, "Your map [%s] differs from the server's.\n", pszMap );
+		Host_Error( "Client's map differs from the server's" );
 		return false;
 	}
 
-	if (!NET_GetPacket (NS_CLIENT))
-		return false;
-	
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : nMaxClients - 
+//-----------------------------------------------------------------------------
+void CL_ReallocateDynamicData( int maxclients )
+{
+	Assert( entitylist );
+	if ( entitylist )
+	{
+		entitylist->SetMaxEntities( MAX_EDICTS );
+	}
 }
 
 /*
@@ -748,114 +505,47 @@ CL_ReadPackets
 Updates the local time and reads/handles messages on client net connection.
 =================
 */
-void CL_ReadPackets ( bool framefinished )
+
+void CL_ReadPackets ( bool bFinalTick )
 {
-	if( cls.state == ca_dedicated )
-		return;
-
-	MEASURECODE( "CL_ReadPackets" );
-
-	int msg_count = 0;
+	VPROF_BUDGET( "CL_ReadPackets", VPROF_BUDGETGROUP_OTHER_NETWORKING );
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
 	if ( !Host_ShouldRun() )
 		return;
 	
-	cl.oldtickcount = cl.tickcount;
-	if ( !demo->IsPlaybackPaused() )
+	// update client times/tick
+
+	cl.oldtickcount = cl.GetServerTickCount();
+	if ( !cl.IsPaused() )
 	{
-		cl.tickcount++;
-		g_ClientGlobalVariables.tickcount = cl.tickcount;
-		g_ClientGlobalVariables.curtime = cl.gettime();
+		cl.SetClientTickCount( cl.GetClientTickCount() + 1 );
+		
+		// While clock correction is off, we have the old behavior of matching the client and server clocks.
+		if ( !CClockDriftMgr::IsClockCorrectionEnabled() )
+			cl.SetServerTickCount( cl.GetClientTickCount() );
+
+		g_ClientGlobalVariables.tickcount = cl.GetClientTickCount();
+		g_ClientGlobalVariables.curtime = cl.GetTime();
 	}
 	// 0 or tick_rate if simulating
-	g_ClientGlobalVariables.frametime = cl.getframetime();
+	g_ClientGlobalVariables.frametime = cl.GetFrameTime();
 
-	cl.continue_reading_packets = true;
-
-	while ( CL_GetMessage() )
-	{	
-		if ( !demo->IsPlayingBack() )
-		{
-			// Swallow and discard all remaining incoming packets from stream (and don't write them into .dem file either!!!)
-			if ( !cl.continue_reading_packets )
-				continue;
-
-			msg_count++;
-			if ( msg_count > MAX_INCOMING_MESSAGES )
-			{
-				// Ignore rest of messages this frame, we won't be able to uncompress the delta
-				//  if there is one!!!
-				continue;
-			}
-		}
-		
-		//
-		// remote command packet
-		//
-		if (*(int *)net_message.data == -1)
-		{
-			CL_ConnectionlessPacket ();
-			continue;
-		}
-
-		// Sequenced message before fully connected, throw away.
-		if ( cls.state == ca_disconnected || 
-			 cls.state == ca_connecting )
-			continue;		// dump sequenced message from server if not connected yet
-
-		if (net_message.cursize < 8)
-		{
-			Con_Printf ("%s: Runt packet\n",NET_AdrToString(net_from));
-			continue;
-		}
-
-		//
-		// packet from server, verify source IP address.
-		//
-		if (!demo->IsPlayingBack() && 
-			!NET_CompareAdr (net_from, cls.netchan.remote_address))
-		{
-			Con_Printf ("%s:sequenced packet without connection\n"
-				,NET_AdrToString(net_from));
-			continue;
-		}
-
-		// Do we have the bandwidth to process this packet and are we
-		//  up to date on the reliable message stream.
-		if (!demo->IsPlayingBack() && !Netchan_Process(&cls.netchan))
-			continue;		// wasn't accepted for some reason
-
-		if (demo->IsPlayingBack())
-		{
-			MSG_BeginReading();
-		}
-
-		// Parse out the commands.
-		CL_ParseServerMessage();
-	}
-
-	if ( msg_count > MAX_INCOMING_MESSAGES )
+	// read packets, if any in queue
+	if ( demoplayer->IsPlayingBack() && cl.m_NetChannel )
 	{
-		Con_DPrintf( "Ignored %i messages\n", msg_count - MAX_INCOMING_MESSAGES );
+		tmZoneFiltered( TELEMETRY_LEVEL0, 50, TMZF_NONE, "ReadPacket" );
+
+		// process data from demo file
+		cl.m_NetChannel->ProcessPlayback();
 	}
-
-	// Check for fragmentation/reassembly related packets.
-	if ( cls.state != ca_dedicated &&
-		 cls.state != ca_disconnected && 
-		 Netchan_IncomingReady( &cls.netchan )  )
+	else
 	{
-
-		// Process the incoming buffer(s)
-		if ( Netchan_CopyNormalFragments( &cls.netchan) )
+		if ( !cl_ignorepackets.GetInt() )
 		{
-			MSG_BeginReading();
-			CL_ParseServerMessage( false );
-		}
-		
-		if ( Netchan_CopyFileFragments( &cls.netchan ) )
-		{
-			// Remove from resource request stuff.
-			CL_ProcessFile( true, cls.netchan.incomingfilename );
+			tmZoneFiltered( TELEMETRY_LEVEL0, 50, TMZF_NONE, "ProcessSocket" );
+			// process data from net socket
+			NET_ProcessSocket( NS_CLIENT, &cl );
 		}
 	}
 
@@ -864,42 +554,25 @@ void CL_ReadPackets ( bool framefinished )
 	// Only check on final frame because that's when the server might send us a packet in single player.  This avoids
 	//  a bug where if you sit in the game code in the debugger then you get a timeout here on resuming the engine
 	//  because the timestep is > 1 tick because of the debugging delay but the server hasn't sent the next packet yet.  ywb 9/5/03
-	if ( framefinished &&   
-		( cls.state >= ca_connected ) &&
-		 ( !demo->IsPlayingBack() ) && 
-		 ( (realtime - cls.netchan.last_received ) > cl_timeout.GetFloat() ) )
+	if ( (cl.m_NetChannel?cl.m_NetChannel->IsTimedOut():false) &&
+		 bFinalTick &&
+		 !demoplayer->IsPlayingBack() &&
+		 cl.IsConnected() )
 	{
-		Con_Printf ("\nServer connection timed out.\n");
-		Host_Disconnect ();
+		ConMsg ("\nServer connection timed out.\n");
+
+		// Show the vgui dialog on timeout
+		COM_ExplainDisconnection( false, "Lost connection to server.");
+		if ( IsPC() )
+		{
+			EngineVGui()->ShowErrorMessage();
+		}
+
+		Host_Disconnect( true, "Lost connection" );
 		return;
 	}
 #endif
 
-	if (cl_shownet.GetInt())
-		Con_Printf ("\n");
-
-	Netchan_UpdateProgress( &cls.netchan );
-
-	CL_PostReadMessages();
-}
-
-/*
-=====================
-Clear cl.frames.
-=====================
-*/
-void CL_ClearClientFrames()
-{
-	int i;
-	CRecvEntList *pClientPack;
-
-	for (i = 0; i < CL_UPDATE_BACKUP; i++)
-	{
-		pClientPack = &cl.frames[i].packet_entities; 
-		pClientPack->Term();
-	}
-
-	memset( cl.frames, 0, MULTIPLAYER_BACKUP * sizeof( frame_t ) );
 }
 
 //-----------------------------------------------------------------------------
@@ -907,376 +580,256 @@ void CL_ClearClientFrames()
 //-----------------------------------------------------------------------------
 void CL_ClearState ( void )
 {
-	if ( cls.state == ca_dedicated )
-		return;
+	// clear out the current whitelist
+	IFileList *pFilesToReload = NULL;
+	CL_HandlePureServerWhitelist( NULL, pFilesToReload );
+	CL_ReloadFilesInList( pFilesToReload );
 
 	CL_ResetEntityBits();
 
 	R_UnloadSkys();
+
+	// clear decal index directories
+	Decal_Init();
 
 	StaticPropMgr()->LevelShutdownClient();
 
 	// shutdown this level in the client DLL
 	if ( g_ClientDLL )
 	{
+		if ( host_state.worldmodel )
+		{
+			char mapname[256];
+			CL_SetupMapName( modelloader->GetName( host_state.worldmodel ), mapname, sizeof( mapname ) );
+			phonehome->Message( IPhoneHome::PHONE_MSG_MAPEND, mapname );
+		}
+		audiosourcecache->LevelShutdown();
 		g_ClientDLL->LevelShutdown();
 	}
 
-	cls.signon = 0;
-
-	cls.netchan.message.Reset();
+	R_LevelShutdown();
+	if ( IsX360() )
+	{
+		// Reset material system temporary memory (frees up memory for map loading)
+		bool bOnLevelShutdown = true;
+		materials->ResetTempHWMemory( bOnLevelShutdown );
+	}
 	
+	if ( g_pLocalNetworkBackdoor )
+		g_pLocalNetworkBackdoor->ClearState();
+
 	// clear other arrays	
 	memset (cl_dlights, 0, sizeof(cl_dlights));
 	memset (cl_elights, 0, sizeof(cl_elights));
-	memset (cl_lightstyle, 0, sizeof(cl_lightstyle));
-
-	FreeEntityBaselines();
-
-	CL_ClearClientFrames();
-
-	// Free datatable stuff.
-	delete[] cl.m_pServerClasses;
-	cl.m_pServerClasses = NULL;
-	
-	RecvTable_Term( false );
 
 	// Wipe the hunk ( unless the server is active )
+	Host_FreeStateAndWorld( false );
 	Host_FreeToLowMark( false );
+
+	PhonemeMP3Shutdown();
 
 	// Wipe the remainder of the structure.
 	cl.Clear();
 }
 
-/*
-=====================
-CL_Disconnect
-
-Sends a disconnect message to the server
-This is also called on Host_Error, so it shouldn't cause any errors
-=====================
-*/
-void CL_Disconnect (void)
+//-----------------------------------------------------------------------------
+// Purpose: Used for sorting sounds
+// Input  : &sound1 - 
+//			&sound2 - 
+// Output : static bool
+//-----------------------------------------------------------------------------
+static bool CL_SoundMessageLessFunc( SoundInfo_t const &sound1, SoundInfo_t const &sound2 )
 {
-	if ( cls.state == ca_dedicated )
-	{
-		return;
-	}
-
-	cls.connect_time  = -99999;
-	s_connection.retrynumber = 0;
-
-	// stop sounds (especially looping!)
-	S_StopAllSounds (true);
-	
-	demo->StopPlayback();
-	demo->StopRecording();
-
-	if ( cls.state == ca_disconnected )
-		return;
-
-	if ( cls.netchan.remote_address.type != NA_UNUSED )
-	{
-		byte	final[20];
-
-		// Send a drop command.
-		final[0] = clc_stringcmd;                         
-		strcpy ((char*)(final+1), "dropclient\n");
-		Netchan_Transmit( &cls.netchan, 13, final );
-		Netchan_Transmit( &cls.netchan, 13, final );
-		Netchan_Transmit( &cls.netchan, 13, final );
-	}
-
-	cls.state = ca_disconnected;
-	cls.signon = 0;
-
-	CL_ClearState();
-	
-	// Clear the network channel, too.
-	Netchan_Clear( &cls.netchan );
-
-	// notify game ui dll of out-of-in-game status
-	VGui_NotifyOfServerDisconnect();
+	return sound1.nSequenceNumber < sound2.nSequenceNumber;
 }
 
-// HL1 CD Key
-#define GUID_LEN 13
+static CUtlRBTree< SoundInfo_t, int > g_SoundMessages( 0, 0, CL_SoundMessageLessFunc );
+extern ConVar snd_show;
 
-/*
-=======================
-CL_GetCDKeyHash()
-
-Connections will now use a hashed cd key value
-A LAN server will know not to allows more then xxx users with the same CD Key
-=======================
-*/
-char *CL_GetCDKeyHash( void )
+//-----------------------------------------------------------------------------
+// Purpose: Add sound to queue
+// Input  : sound - 
+//-----------------------------------------------------------------------------
+void CL_AddSound( const SoundInfo_t &sound )
 {
-	char szKeyBuffer[256]; // Keys are about 13 chars long.	
-	static char szHashedKeyBuffer[256];
-	int nKeyLength;
-	qboolean bDedicated = false;
-	MD5Context_t ctx;
-	unsigned char digest[16]; // The MD5 Hash
+	g_SoundMessages.Insert( sound );
+}
 
-	nKeyLength = Q_snprintf( szKeyBuffer, sizeof( szKeyBuffer ), "%s", registry->ReadString( "key", "" ) );
+//-----------------------------------------------------------------------------
+// Purpose: Play sound packet
+// Input  : sound - 
+//-----------------------------------------------------------------------------
+void CL_DispatchSound( const SoundInfo_t &sound )
+{
+	int nSoundNum = sound.nSoundNum;
 
-	if (bDedicated)
+	CSfxTable *pSfx;
+
+	char name[ MAX_QPATH ];
+
+	name[ 0 ] = 0;
+	if ( sound.bIsSentence )
 	{
-		Con_Printf("Key has no meaning on dedicated server...\n");
-		return "";
+		// make dummy sfx for sentences
+		const char *pSentenceName = VOX_SentenceNameFromIndex( sound.nSoundNum );
+		if ( !pSentenceName )
+		{
+			pSentenceName = "";
+		}
+
+		V_snprintf( name, sizeof( name ), "%c%s", CHAR_SENTENCE, pSentenceName );		
+		pSfx = S_DummySfx( name );
+	}
+	else
+	{
+		V_strncpy( name, cl.GetSoundName( sound.nSoundNum ), sizeof( name ) );
+
+		const char *pchTranslatedName = g_ClientDLL->TranslateEffectForVisionFilter( "sounds", name );
+		if ( V_strcmp( pchTranslatedName, name ) != 0 )
+		{
+			V_strncpy( name, pchTranslatedName, sizeof( name ) );
+			nSoundNum = cl.LookupSoundIndex( name );
+		}
+
+		pSfx = cl.GetSound( nSoundNum );
 	}
 
-// HACK HACK:  This all goes away on Steam, but we need to have a non-zero cd key if the registry is
-//  blank so just fill in a fake one
-#if 1
-	if ( nKeyLength == 0 )
+	if ( snd_show.GetInt() >= 2 )
 	{
-		nKeyLength = 13;
-		strcpy( szKeyBuffer, "1234567890123" );
-		Assert( Q_strlen( szKeyBuffer ) == nKeyLength );
-
-		Con_Printf( "Missing CD Key from registry, using fake cd key 1234567890123 for now...\n" );
-
-		registry->WriteString( "key", szKeyBuffer );
+		DevMsg( "%i (seq %i) %s : src %d : ch %d : %d dB : vol %.2f : time %.3f (%.4f delay) @%.1f %.1f %.1f\n", 
+			host_framecount,
+			sound.nSequenceNumber,
+			name, 
+			sound.nEntityIndex, 
+			sound.nChannel, 
+			sound.Soundlevel, 
+			sound.fVolume, 
+			cl.GetTime(),
+			sound.fDelay,
+			sound.vOrigin.x,
+			sound.vOrigin.y,
+			sound.vOrigin.z );
 	}
+
+	StartSoundParams_t params;
+	params.staticsound = (sound.nChannel == CHAN_STATIC) ? true : false;
+	params.soundsource = sound.nEntityIndex;
+	params.entchannel = params.staticsound ? CHAN_STATIC : sound.nChannel;
+	params.pSfx = pSfx;
+	params.origin = sound.vOrigin;
+	params.fvol = sound.fVolume;
+	params.soundlevel = sound.Soundlevel;
+	params.flags = sound.nFlags;
+	params.pitch = sound.nPitch;
+	params.specialdsp = sound.nSpecialDSP;
+	params.fromserver = true;
+	params.delay = sound.fDelay;
+	// we always want to do this when this flag is set - even if the delay is zero we need to precisely
+	// schedule this sound
+	if ( sound.nFlags & SND_DELAY )
+	{
+		// anything adjusted less than 100ms forward was probably scheduled this frame
+		if ( sound.fDelay > -0.100f )
+		{
+			float soundtime = cl.m_flLastServerTickTime + sound.fDelay;
+			// this adjusts for host_thread_mode or any other cases where we're running more than one
+			// tick at a time, but we get network updates on the first tick
+			soundtime -= ((g_ClientGlobalVariables.simTicksThisFrame-1) * host_state.interval_per_tick);
+			// this sound was networked over from the server, use server clock
+			params.delay = S_ComputeDelayForSoundtime( soundtime, CLOCK_SYNC_SERVER );
+#if 0
+			static float lastSoundTime = 0;
+			Msg("[%.3f] Play %s at %.3f %.1fsms delay\n", soundtime - lastSoundTime, name, soundtime, params.delay * 1000.0f );
+			lastSoundTime = soundtime;
 #endif
-
-	if (nKeyLength <= 0 ||
-		nKeyLength >= 256 )
-	{
-		Con_Printf("Bogus key length on CD Key...\n");
-		return "";
-	}
-
-	// Now get the md5 hash of the key
-	memset( &ctx, 0, sizeof( ctx ) );
-	memset( digest, 0, sizeof( digest ) );
-	
-	MD5Init(&ctx);
-	MD5Update(&ctx, (unsigned char*)szKeyBuffer, nKeyLength);
-	MD5Final(digest, &ctx);
-	memset ( szHashedKeyBuffer, 0, 256 );
-	strcpy ( szHashedKeyBuffer, MD5_Print ( digest ) );
-	return szHashedKeyBuffer;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *protinfo - 
-//			length - 
-//-----------------------------------------------------------------------------
-void CL_CheckLogoFile( char *protinfo, int length )
-{
-	char logotexture[ 512 ];
-	Q_snprintf( logotexture, sizeof( logotexture ), "materials/decals/%s.vtf", cl_logofile.GetString() );
-	if ( !g_pFileSystem->FileExists( logotexture ) )
-		return;
-
-	// Compute checksum of texture
-	CRC32_t crc;
-	CRC_File( &crc, logotexture );
-
-	char crcfilename[ 512 ];
-
-	Q_snprintf( crcfilename, sizeof( crcfilename ), "materials/decals/downloads/%s.vtf",
-		COM_BinPrintf( (byte *)&crc, 4 ) );
-
-	if ( !g_pFileSystem->FileExists( crcfilename ) )
-	{
-		// Copy it over under the new name
-		COM_CopyFile( logotexture, crcfilename );
-	}
-	
-	if ( !g_pFileSystem->FileExists( crcfilename ) )
-	{
-		return;
-	}
-
-	CRC32_t test;
-	CRC_File( &test, crcfilename );
-
-	Assert( test == crc );
-
-	// FIXME: Validate the .vtf file!!!
-
-	// Send the CRC of the logo file
-	Info_SetValueForKey( protinfo, "logo", COM_BinPrintf( (byte *)&crc, 4 ), length );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *protinfo - 
-//			length - 
-//-----------------------------------------------------------------------------
-void CL_CheckSendTableCRC( char *protinfo, int length )
-{
-	// Game .dll wasn't loaded...?
-	CRC32_t crc = Host_GetServerSendtableCRC();
-	if ( crc == (CRC32_t)0 )
-	{
-		Assert( 0 );
-		return;
-	}
-
-	Info_SetValueForKey( protinfo, "tablecrc", COM_BinPrintf( (byte *)&crc, 4 ), length );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: called by CL_Connect and CL_CheckResend
-// If we are in ca_connecting state and we have gotten a challenge
-//   response before the timeout, send another "connect" request.
-// Output : void CL_SendConnectPacket
-//-----------------------------------------------------------------------------
-void CL_SendConnectPacket (void)
-{
-	netadr_t adr;
-	char	data[2048];
-	char szServerName[MAX_OSPATH];
-	int len;
-	unsigned char buffer[1024];
-	char protinfo[ 1024 ];
-
-	Q_memset( protinfo, 0, sizeof( protinfo ) );
-
-	Q_strncpy(szServerName, cls.servername, MAX_OSPATH);
-
-	// Deal with local connection.
-	if ( !stricmp( cls.servername, "local" ) )
-	{
-		Q_snprintf(szServerName, sizeof( szServerName ), "%s", "localhost");
-	}
-
-	if (!NET_StringToAdr (szServerName, &adr))
-	{
-		Con_Printf ("Bad server address\n");
-		Host_Disconnect();
-		return;
-	}
-
-	if ( adr.port == (unsigned short)0 )
-	{
-		adr.port = BigShort( (unsigned short)atoi(PORT_SERVER) );
-	}
-
-	switch ( s_connection.authprotocol )
-	{
-	default:
-		s_connection.authprotocol = PROTOCOL_HASHEDCDKEY;
-		// Fall through, bogus protocol type, use CD key hash.
-	case PROTOCOL_HASHEDCDKEY:
-		len = strlen( CL_GetCDKeyHash() );
-		strcpy( (char*)buffer, CL_GetCDKeyHash() );
-		break;
-	case PROTOCOL_AUTHCERTIFICATE:
-		Host_Error( "PROTOCOL_AUTHCERTIFICATE, unexepected!\n" );
-		return;
-	}
-
-	Info_SetValueForKey( protinfo, "prot", va( "%i", s_connection.authprotocol ), 1024 );
-	Info_SetValueForKey( protinfo, "raw", (char *)buffer, 1024 );
-
-	CL_CheckLogoFile( protinfo, sizeof( protinfo ) );
-	CL_CheckSendTableCRC( protinfo, sizeof( protinfo ) );
-
-	Q_snprintf (data, sizeof( data ), "%c%c%c%cconnect %i %i \"%s\" \"%s\"\n", 255, 255, 255, 255, 
-		PROTOCOL_VERSION, s_connection.challenge, protinfo, cls.userinfo );  // Send protocol and challenge value
-
-	// Mark time of this attempt for retransmit requests
-	cls.connect_time = realtime;
-	
-	NET_SendPacket (NS_CLIENT, strlen(data), data, adr);
-}
-
-/*
-=================
-CL_CheckForResend
-
-Resend a connect message if the last one has timed out
-=================
-*/
-void CL_CheckForResend (void)
-{
-	netadr_t	adr;
-	char	data[2048];
-	char szServerName[MAX_OSPATH];
-
-	// resend if we haven't gotten a reply yet
-	// We only resend during the connection process.
-	if (cls.state != ca_connecting)
-		return;
-
-	// Wait at least the resend # of seconds.
-	if ( ( realtime - cls.connect_time ) < cl_resend.GetFloat())
-		return;
-
-	Q_strncpy(szServerName, cls.servername, MAX_OSPATH);
-
-	// Deal with local connection.
-	if (!stricmp(cls.servername, "local"))
-		Q_snprintf(szServerName, sizeof( szServerName ), "%s", "localhost");
-
-	if (!NET_StringToAdr (szServerName, &adr))
-	{
-		Con_Printf ("Bad server address\n");
-		Host_Disconnect();
-		return;
-	}
-	if (adr.port == 0)
-	{
-		adr.port = BigShort ((unsigned short)atoi(PORT_SERVER));
-	}
-
-	// Only retry so many times before failure.
-	if ( s_connection.retrynumber >= CL_CONNECTION_RETRIES )
-	{
-		COM_ExplainDisconnection( true, "Connection failed after %i retries.\n", CL_CONNECTION_RETRIES );
-		Host_Disconnect();
-		return;
-	}
-	
-	// Mark time of this attempt.
-	cls.connect_time = realtime;	// for retransmit requests
-
-	// Display appropriate message
-	if (stricmp(szServerName, "localhost"))
-	{
-		if (s_connection.retrynumber == 0)
-			Con_Printf ("Connecting to %s...\n", szServerName);
+			if ( params.delay <= 0 )
+			{
+				// leave a little delay to flag the channel in the low-level sound system
+				params.delay = 1e-6f;
+			}
+		}
 		else
-			Con_Printf ("Retrying %s...\n", szServerName);
+		{
+			params.delay = sound.fDelay;
+		}
+	}
+	params.speakerentity = sound.nSpeakerEntity;
+
+	// Give the client DLL a chance to run arbitrary code to affect the sound parameters before we
+	// play.
+	g_ClientDLL->ClientAdjustStartSoundParams( params );
+
+	if ( params.staticsound )
+	{
+		S_StartSound( params );
+	}
+	else
+	{
+		// Don't actually play non-static sounds if playing a demo and skipping ahead
+		// but always stop sounds
+		if ( demoplayer->IsSkipping() && !(sound.nFlags&SND_STOP) )
+		{
+			return;
+		}
+		S_StartSound( params );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Called after reading network messages to play sounds encoded in the network packet
+//-----------------------------------------------------------------------------
+void CL_DispatchSounds( void )
+{
+	int i;
+	// Walk list in sequence order
+	i = g_SoundMessages.FirstInorder();
+	while ( i != g_SoundMessages.InvalidIndex() )
+	{
+		SoundInfo_t const *msg = &g_SoundMessages[ i ];
+		Assert( msg );
+		if ( msg )
+		{
+			// Play the sound
+			CL_DispatchSound( *msg );
+		}
+		i = g_SoundMessages.NextInorder( i );
 	}
 
-	s_connection.retrynumber++;
-
-	// Request another challenge value.
-	Q_snprintf (data, sizeof( data ), "%c%c%c%cgetchallenge\n",
-		255, 255, 255, 255);
-	
-	// Send the request.
-	NET_SendPacket (NS_CLIENT, strlen(data), data, adr);
+	// Reset the queue each time we empty it!!!
+	g_SoundMessages.RemoveAll();
 }
 
 
-/*
-================
-CL_Retry_f
-
-  Retry last connection (e.g., after we enter a password)
-
-================
-*/
-void CL_Retry_f ( void )
+//-----------------------------------------------------------------------------
+// Retry last connection (e.g., after we enter a password)
+//-----------------------------------------------------------------------------
+void CL_Retry()
 {
-	if ( !cls.retry_address[ 0 ] )
+	if ( !cl.m_szRetryAddress[ 0 ] )
 	{
-		Con_Printf( "Can't retry, no previous connection\n" );
+		ConMsg( "Can't retry, no previous connection\n" );
 		return;
 	}
 
-	Con_Printf( "Commencing connection retry to %s\n", cls.retry_address );
-	Cbuf_AddText( va( "connect %s\n", cls.retry_address ) );
+	// Check that we can add the two execution markers
+	bool bCanAddExecutionMarkers = Cbuf_HasRoomForExecutionMarkers( 2 );
+
+	ConMsg( "Commencing connection retry to %s\n", cl.m_szRetryAddress );
+
+	// We need to temporarily disable this execution marker so the connect command succeeds if it was executed by the server.
+	// We would still need this even if we called CL_Connect directly because the connect process may execute commands which we want to succeed.
+	const char *pszCommand = va( "connect %s %s\n", cl.m_szRetryAddress, cl.m_sRetrySourceTag.String() );
+	if ( cl.m_bRestrictServerCommands && bCanAddExecutionMarkers )
+		Cbuf_AddTextWithMarkers( eCmdExecutionMarker_Disable_FCVAR_SERVER_CAN_EXECUTE, pszCommand, eCmdExecutionMarker_Enable_FCVAR_SERVER_CAN_EXECUTE );
+	else
+		Cbuf_AddText( pszCommand );
 }
+
+CON_COMMAND_F( retry, "Retry connection to last server.", FCVAR_DONTRECORD | FCVAR_SERVER_CAN_EXECUTE | FCVAR_CLIENTCMD_CAN_EXECUTE )
+{
+	CL_Retry();
+}
+
 
 /*
 =====================
@@ -1285,91 +838,92 @@ CL_Connect_f
 User command to connect to server
 =====================
 */
-void CL_Connect_f (void)
+
+void CL_Connect( const char *address, const char *pszSourceTag )
 {
-	if ( Cmd_Argc() < 2 )
+	// If it's not a single player connection to "localhost", initialize networking & stop listenserver
+	if ( Q_strncmp( address, "localhost", 9 ) )
 	{
-		Con_Printf( "Usage:  connect <server>\n" );
-		return;
+		Host_Disconnect(false);	
+
+		// allow remote
+		NET_SetMutiplayer( true );		
+
+		// start progress bar immediately for remote connection
+		EngineVGui()->EnabledProgressBarForNextLoad();
+
+		SCR_BeginLoadingPlaque();
+
+		EngineVGui()->UpdateProgressBar(PROGRESS_BEGINCONNECT);
+	}
+	else
+	{
+		// we are connecting/reconnecting to local game
+		// so don't stop listenserver 
+		cl.Disconnect( "Connecting to local host", false );
 	}
 
-	// Disconnect from current server
-	// Don't call Host_Disconnect, because we don't want to shutdown the listen server!
-	CL_Disconnect();
+	// This happens as part of the load process anyway, but on slower systems it causes the server to timeout the
+	// connection.  Use the opportunity to flush anything before starting a new connection.
+	UpdateMaterialSystemConfig();
 
-	// Get new server name
-	Q_strncpy( cls.servername, Cmd_Args(), sizeof(cls.servername) );
-
-	int num = atoi( cls.servername );  // In case it's an index.
-
-	// Check the cached_servers list for a text match or index match:
-	if ( ( num > 0 ) && ( num <= num_servers ) && !Q_strstr( cls.servername , "." ) )
-	{
-		Q_strncpy( cls.servername, NET_AdrToString(cached_servers[num - 1].adr), sizeof(cls.servername)-1 );
-	}
-
-	// Store off the last address we tried to get to
-	strcpy ( cls.retry_address, cls.servername );
-
-	// For the check for resend timer to fire a connection / getchallenge request.
-	cls.state = ca_connecting;
-	// Force connection request to fire.
-	cls.connect_time = -99999;  
-
-	s_connection.retrynumber = 0;
+	cl.Connect( address, pszSourceTag );
 
 	// Reset error conditions
 	gfExtendedError = false;
-
-	// If it's not a single player connection, initialize networking
-	if ( strnicmp( cls.servername, "local", 5 ) )
-	{
-		// allow remote
-		NET_Config (true);		
-	}
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: This command causes the client to wait for the signon messages again.
-// This is sent just before a server changes levels
-// Output : void CL_Reconnect_f
-//-----------------------------------------------------------------------------
-void CL_Reconnect_f (void)
+CON_COMMAND_F( connect, "Connect to specified server.", FCVAR_DONTRECORD )
 {
-	if (cls.state == ca_dedicated )
+	// Default command processing considers ':' a command separator,
+	// and we donly want spaces to count.  So we'll need to re-split the arg string
+	CUtlVector<char*> vecArgs;
+	V_SplitString( args.ArgS(), " ", vecArgs );
+
+	// How many arguments?
+	if ( vecArgs.Count() == 1  )
 	{
+		CL_Connect( vecArgs[0], "" );
+	}
+	else if ( vecArgs.Count() == 2 )
+	{
+		CL_Connect( vecArgs[0], vecArgs[1] );
+	}
+	else
+	{
+		ConMsg( "Usage:  connect <server>\n" );
+	}
+	vecArgs.PurgeAndDeleteElementsArray();
+}
+
+CON_COMMAND_F( redirect, "Redirect client to specified server.", FCVAR_DONTRECORD | FCVAR_SERVER_CAN_EXECUTE )
+{
+	if ( !CBaseClientState::ConnectMethodAllowsRedirects() )
+	{
+		ConMsg( "redirect: Current connection method does not allow silent redirects.\n");
 		return;
 	}
-	if ( cls.state == ca_disconnected ||
-		cls.state == ca_connecting )
+
+	// Default command processing considers ':' a command separator,
+	// and we donly want spaces to count.  So we'll need to re-split the arg string
+	CUtlVector<char*> vecArgs;
+	V_SplitString( args.ArgS(), " ", vecArgs );
+
+	if ( vecArgs.Count() == 1  )
 	{
-		if ( cls.retry_address[ 0 ] )
-		{
-			CL_Retry_f();
-		}
-		return;
+		CL_Connect( vecArgs[0], "redirect" );
 	}
-
-	SCR_BeginLoadingPlaque ();
-
-	cls.signon = 0;		// need new connection messages
-	cls.state = ca_connected;	// not active anymore, but not disconnected
-
-	// Clear channel and stuff
-	Netchan_Clear( &cls.netchan );
-	
-	cls.netchan.message.Reset();
-
-	// Write a "new" command into client's buffer.
-	cls.netchan.message.WriteChar (clc_stringcmd);
-	cls.netchan.message.WriteString ("new");
+	else
+	{
+		ConMsg( "Usage:  redirect <server>\n" );
+	}
+	vecArgs.PurgeAndDeleteElements();
 }
 
 //-----------------------------------------------------------------------------
 // Takes the map name, strips path and extension
 //-----------------------------------------------------------------------------
-
-static void CL_SetupMapName( char const* pName, char* pFixedName )
+void CL_SetupMapName( const char* pName, char* pFixedName, int maxlen )
 {
 	const char* pSlash = strrchr( pName, '\\' );
 	const char* pSlash2 = strrchr( pName, '/' );
@@ -1380,69 +934,295 @@ static void CL_SetupMapName( char const* pName, char* pFixedName )
 	else 
 		pSlash = pName;
 
-	strcpy( pFixedName, pSlash );
+	Q_strncpy( pFixedName, pSlash, maxlen );
 	char* pExt = strchr( pFixedName, '.' );
 	if (pExt)
 		*pExt = 0;
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: A svc_signonnum has been received, perform a client side setup
-// Output : void CL_SignonReply
-//-----------------------------------------------------------------------------
-void CL_SignonReply (void)
+CPureServerWhitelist* CL_LoadWhitelist( INetworkStringTable *pTable, const char *pName )
 {
-	char 	str[8192];
+	// If there is no entry for the pure server whitelist, then sv_pure is off and the client can do whatever it wants.
+	int iString = pTable->FindStringIndex( pName );
+	if ( iString == INVALID_STRING_INDEX )
+		return NULL;
 
-//	Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
-
-	switch (cls.signon)
+	int dataLen; 
+	const void *pData = pTable->GetStringUserData( iString, &dataLen );
+	if ( pData )
 	{
-	case 1:
-		{
-			cls.netchan.message.WriteByte (clc_stringcmd);
-			Q_snprintf ( str, sizeof( str ), "spawn %i", cl.servercount );
-			cls.netchan.message.WriteString (str);
-		}
-		break;
+		CUtlBuffer buf( pData, dataLen, CUtlBuffer::READ_ONLY );
 		
-	case 2:	
-		{
-			cls.netchan.message.WriteByte (clc_stringcmd);
-			Q_snprintf( str, sizeof( str ), "begin %i", cl.servercount );
-			cls.netchan.message.WriteString ( str );
-			Cache_Report ();		        // print remaining memory
-			// Tell client .dll about the transition
-			char mapname[256];
-
-			CL_SetupMapName( host_state.worldmodel->name, mapname );
-			g_ClientDLL->LevelInitPreEntity(mapname);
-		}
-
-		break;
-		
-	case 3:
-		{
-			SpatialPartition()->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, false );
-
-			// This has to happen here, in phase 3, because it is in this phase
-			// that raycasts against the world is supported (owing to the fact
-			// that the world entity has been created by this point)
-			StaticPropMgr()->LevelInitClient();
- 			g_ClientDLL->LevelInitPostEntity();
-
-			SpatialPartition()->SuppressLists( PARTITION_ALL_CLIENT_EDICTS, true );
-
-			SCR_EndLoadingPlaque ();		// allow normal screen updates
-
-			if ( developer.GetInt() > 0 )
-			{
-				Netchan_ReportFlow( &cls.netchan );
-			}
-		}
-		break;
+		CPureServerWhitelist *pWhitelist = CPureServerWhitelist::Create( g_pFullFileSystem );
+		pWhitelist->Decode( buf );
+		return pWhitelist;
+	}
+	else
+	{
+		return NULL;
 	}
 }
+
+
+void CL_CheckForPureServerWhitelist( /* out */ IFileList *&pFilesToReload )
+{
+#ifdef DISABLE_PURE_SERVER_STUFF
+	return;
+#endif
+
+	// Don't do sv_pure stuff in SP games or HLTV/replay
+	if ( cl.m_nMaxClients <= 1 || cl.ishltv || demoplayer->IsPlayingBack()
+#ifdef REPLAY_ENABLED
+		|| cl.isreplay
+#endif // ifdef REPLAY_ENABLED
+		)
+		return;
+	
+	CPureServerWhitelist *pWhitelist = NULL;
+	if ( cl.m_pServerStartupTable )
+		pWhitelist = CL_LoadWhitelist( cl.m_pServerStartupTable, "PureServerWhitelist" );
+		
+	PrintSvPureWhitelistClassification( pWhitelist );
+	CL_HandlePureServerWhitelist( pWhitelist, pFilesToReload );
+	if ( pWhitelist )
+	{
+		pWhitelist->Release();
+	}
+}
+
+int CL_GetServerQueryPort()
+{
+	// Yes, this is ugly getting this data out of a string table. Would be better to have it in our network protocol,
+	// but we don't have a way to change the protocol without breaking things for people.
+	if ( !cl.m_pServerStartupTable )
+		return 0;
+		
+	int iString = cl.m_pServerStartupTable->FindStringIndex( "QueryPort" );
+	if ( iString == INVALID_STRING_INDEX )
+		return 0;
+		
+	int dataLen; 
+	const void *pData = cl.m_pServerStartupTable->GetStringUserData( iString, &dataLen );
+	if ( pData && dataLen == sizeof( int ) )
+		return *((const int*)pData);
+	else
+		return 0;
+}
+
+/*
+==================
+CL_RegisterResources
+
+Clean up and move to next part of sequence.
+==================
+*/
+void CL_RegisterResources( void )
+{
+	// All done precaching.
+	host_state.SetWorldModel( cl.GetModel( 1 ) );
+	if ( !host_state.worldmodel )
+	{
+		Host_Error( "CL_RegisterResources:  host_state.worldmodel/cl.GetModel( 1 )==NULL\n" );
+	}
+
+	// Force main window to repaint... (only does something if running shaderapi
+	videomode->InvalidateWindow();
+}
+
+void CL_FullyConnected( void )
+{
+	CETWScope timer( "CL_FullyConnected" );
+
+	EngineVGui()->UpdateProgressBar( PROGRESS_FULLYCONNECTED );
+
+	// This has to happen here, in phase 3, because it is in this phase
+	// that raycasts against the world is supported (owing to the fact
+	// that the world entity has been created by this point)
+	StaticPropMgr()->LevelInitClient();
+
+	if ( IsX360() )
+	{
+		// Notify the loader the end of the loading context, preloads are about to be purged
+		g_pQueuedLoader->EndMapLoading( false );
+	}
+
+	// flush client-side dynamic models that have no refcount
+	modelloader->FlushDynamicModels();
+
+	// loading completed
+	// can NOW safely purge unused models and their data hierarchy (materials, shaders, etc)
+	modelloader->PurgeUnusedModels();
+
+	// Purge the preload stores, oreder is critical
+	g_pMDLCache->ShutdownPreloadData();
+
+	// NOTE: purposely disabling for singleplayer, memory spike causing issues, preload's stay in
+	// UNDONE: discard preload for TF to save memory
+	// g_pFileSystem->DiscardPreloadData();
+
+	// We initialize this list before the load, but don't perform reloads until after flushes have happened to avoid
+	// unnecessary reloads of items that wont be used on this map.
+	if ( cl.m_pPendingPureFileReloads )
+	{
+		CL_ReloadFilesInList( cl.m_pPendingPureFileReloads );
+		cl.m_pPendingPureFileReloads->Release();
+		cl.m_pPendingPureFileReloads = NULL;
+	}
+
+	// ***************************************************************
+	// NO MORE PRELOAD DATA AVAILABLE PAST THIS POINT!!!
+	// ***************************************************************
+
+ 	g_ClientDLL->LevelInitPostEntity();
+
+	// communicate to tracker that we're in a game
+	int ip = cl.m_NetChannel->GetRemoteAddress().GetIPNetworkByteOrder();
+	short port = cl.m_NetChannel->GetRemoteAddress().GetPort();
+	if (!port)
+	{
+		ip = net_local_adr.GetIPNetworkByteOrder();
+		port = net_local_adr.GetPort();
+	}
+
+	int iQueryPort = CL_GetServerQueryPort();
+	EngineVGui()->NotifyOfServerConnect(com_gamedir, ip, port, iQueryPort);
+
+	GetTestScriptMgr()->CheckPoint( "FinishedMapLoad" );
+
+	EngineVGui()->UpdateProgressBar( PROGRESS_READYTOPLAY );
+
+	if ( !IsX360() || cl.m_nMaxClients == 1 )
+	{
+		// Need this to persist for multiplayer respawns, 360 can't reload
+		CM_DiscardEntityString();
+	}
+
+	g_pMDLCache->EndMapLoad();
+
+#if defined( _MEMTEST )
+	Cbuf_AddText( "mem_dump\n" );
+#endif
+
+	if ( developer.GetInt() > 0 )
+	{
+		ConDMsg( "Signon traffic \"%s\":  incoming %s, outgoing %s\n",
+			cl.m_NetChannel->GetName(),
+			Q_pretifymem( cl.m_NetChannel->GetTotalData( FLOW_INCOMING ), 3 ),
+			Q_pretifymem( cl.m_NetChannel->GetTotalData( FLOW_OUTGOING ), 3 ) );
+	}
+
+	if ( IsX360() )
+	{
+		// Reset material system temporary memory (once loading is complete), ready for in-map use
+		bool bOnLevelShutdown = false;
+		materials->ResetTempHWMemory( bOnLevelShutdown );
+	}
+
+	// allow normal screen updates
+	SCR_EndLoadingPlaque();
+	EndLoadingUpdates();
+
+	// FIXME: Please oh please move this out of this spot...
+	// It so does not belong here. Instead, we want some phase of the
+	// client DLL where it knows its read in all entities
+	if ( IsPC() )
+	{
+		int i;
+		if( (i = CommandLine()->FindParm( "-buildcubemaps" )) != 0 )
+		{
+			int numIterations = 1;
+			if( CommandLine()->ParmCount() > i + 1 )
+			{
+				numIterations = atoi( CommandLine()->GetParm(i+1) );
+			}
+			if( numIterations == 0 )
+			{
+				numIterations = 1;
+			}
+			char cmd[1024] = { 0 };
+			V_snprintf( cmd, sizeof( cmd ), "buildcubemaps %u\nquit\n", numIterations );
+			Cbuf_AddText( cmd );
+		}
+		else if( CommandLine()->FindParm( "-navanalyze" ) )
+		{
+			Cbuf_AddText( "nav_edit 1;nav_analyze_scripted\n" );
+		}
+		else if( CommandLine()->FindParm( "-navforceanalyze" ) )
+		{
+			Cbuf_AddText( "nav_edit 1;nav_analyze_scripted force\n" );
+		}
+		else if ( CommandLine()->FindParm("-exit") )
+		{
+			Cbuf_AddText( "quit\n" );
+		}
+	}
+
+	// background maps are for main menu UI, QMS not needed or used, easier context
+	if ( !engineClient->IsLevelMainMenuBackground() )
+	{
+		// map load complete, safe to allow QMS
+		Host_AllowQueuedMaterialSystem( true );
+	}
+
+	// This is a Hack, but we need to suppress rendering for a bit in single player to let values settle on the client
+	if ( (cl.m_nMaxClients == 1) && !demoplayer->IsPlayingBack() )
+	{
+		scr_nextdrawtick = host_tickcount + TIME_TO_TICKS( 0.25f );
+	}
+
+#ifdef _X360
+	// At this point, check for a valid controller connection.  If it's been lost, then we need to pop our game UI up
+	XINPUT_CAPABILITIES caps;
+	if ( XInputGetCapabilities( XBX_GetPrimaryUserId(), XINPUT_FLAG_GAMEPAD, &caps ) == ERROR_DEVICE_NOT_CONNECTED )
+	{
+		EngineVGui()->ActivateGameUI();
+	}
+#endif // _X360
+
+	// Now that we're connected, toggle the clan tag so it gets sent to the server
+	int id = cl_clanid.GetInt();
+	cl_clanid.SetValue( 0 );
+	cl_clanid.SetValue( id );
+
+	MemAlloc_CompactHeap();
+
+	extern double g_flAccumulatedModelLoadTime;
+	extern double g_flAccumulatedSoundLoadTime;
+	extern double g_flAccumulatedModelLoadTimeStudio;
+	extern double g_flAccumulatedModelLoadTimeVCollideSync;
+	extern double g_flAccumulatedModelLoadTimeVCollideAsync;
+	extern double g_flAccumulatedModelLoadTimeVirtualModel;
+	extern double g_flAccumulatedModelLoadTimeStaticMesh;
+	extern double g_flAccumulatedModelLoadTimeBrush;
+	extern double g_flAccumulatedModelLoadTimeSprite;
+	extern double g_flAccumulatedModelLoadTimeMaterialNamesOnly;
+//	extern double g_flLoadStudioHdr;
+
+	COM_TimestampedLog( "Sound Loading time %.4f", g_flAccumulatedSoundLoadTime );
+	COM_TimestampedLog( "Model Loading time %.4f", g_flAccumulatedModelLoadTime );
+	COM_TimestampedLog( "  Model Loading time studio %.4f", g_flAccumulatedModelLoadTimeStudio );
+	COM_TimestampedLog( "    Model Loading time GetVCollide %.4f -sync", g_flAccumulatedModelLoadTimeVCollideSync );
+	COM_TimestampedLog( "    Model Loading time GetVCollide %.4f -async", g_flAccumulatedModelLoadTimeVCollideAsync );
+	COM_TimestampedLog( "    Model Loading time GetVirtualModel %.4f", g_flAccumulatedModelLoadTimeVirtualModel );
+	COM_TimestampedLog( "    Model loading time Mod_GetModelMaterials only %.4f", g_flAccumulatedModelLoadTimeMaterialNamesOnly );
+	COM_TimestampedLog( "  Model Loading time world %.4f", g_flAccumulatedModelLoadTimeBrush );
+	COM_TimestampedLog( "  Model Loading time sprites %.4f", g_flAccumulatedModelLoadTimeSprite );
+	COM_TimestampedLog( "  Model Loading time meshes %.4f", g_flAccumulatedModelLoadTimeStaticMesh );
+//	COM_TimestampedLog( "    Model Loading time meshes studiohdr load %.4f", g_flLoadStudioHdr );
+
+	COM_TimestampedLog( "*** Map Load Complete" );
+
+	float map_loadtime_start = dev_loadtime_map_start.GetFloat();
+	if (map_loadtime_start > 0.0)
+	{
+		float elapsed = Plat_FloatTime() - map_loadtime_start;
+		dev_loadtime_map_elapsed.SetValue( elapsed );
+
+		// Clear this for next time so we know we did.
+		dev_loadtime_map_start.SetValue( 0.0f );
+	}
+}
+
 
 /*
 =====================
@@ -1455,48 +1235,112 @@ void CL_NextDemo (void)
 {
 	char	str[1024];
 
-	if (cls.demonum == -1)
+	if (cl.demonum == -1)
 		return;		// don't play demos
 
 	SCR_BeginLoadingPlaque ();
 
-	if (!cls.demos[cls.demonum][0] || cls.demonum == MAX_DEMOS)
+	if ( cl.demos[cl.demonum].IsEmpty() || cl.demonum == MAX_DEMOS )
 	{
-		cls.demonum = 0;
-		if (!cls.demos[cls.demonum][0])
+		cl.demonum = 0;
+		if ( cl.demos[cl.demonum].IsEmpty() )
 		{
 			scr_disabled_for_loading = false;
 
-			Con_Printf ("No demos listed with startdemos\n");
-			cls.demonum = -1;
+			ConMsg ("No demos listed with startdemos\n");
+			cl.demonum = -1;
+			return;
+		}
+		else if ( !demoplayer->ShouldLoopDemos() )
+		{
+			cl.demonum = -1;
+			scr_disabled_for_loading = false;
+			Host_Disconnect( true );
+
+			demoplayer->OnLastDemoInLoopPlayed();
+
 			return;
 		}
 	}
 
-	Q_snprintf (str,sizeof( str ), "playdemo %s\n", cls.demos[cls.demonum]);
-	Cbuf_InsertText (str);
-	cls.demonum++;
+	Q_snprintf (str,sizeof( str ), "%s %s", CommandLine()->FindParm("-timedemoloop") ? "timedemo" : "playdemo", cl.demos[cl.demonum].Get());
+	Cbuf_AddText (str);
+	cl.demonum++;
 }
 
-/*
-===============
-CL_TakeSnapshot_f
+ConVar cl_screenshotname( "cl_screenshotname", "", 0, "Custom Screenshot name" );
 
-Generates a filename and calls the vidwin.c function to write a .bmp file
-===============
-*/
-
-static bool cl_takesnapshot = false;
-
-static char cl_snapshotname[MAX_OSPATH];
-
-void CL_TakeSnapshot_f( void )
+// We'll take a snapshot at the next available opportunity
+void CL_TakeScreenshot(const char *name)
 {
-	// We'll take a snapshot at the next available opportunity
 	cl_takesnapshot = true;
-	if( Cmd_Argc() == 2 )
+	cl_takejpeg = false;
+	cl_takesnapshot_internal = false;
+
+	if ( name != NULL )
 	{
-		Q_strncpy( cl_snapshotname, Cmd_Argv( 1 ), sizeof( cl_snapshotname ) );		
+		Q_strncpy( cl_snapshotname, name, sizeof( cl_snapshotname ) );		
+	}
+	else
+	{
+		cl_snapshotname[0] = 0;
+
+		if ( Q_strlen( cl_screenshotname.GetString() ) > 0 )
+		{
+			Q_snprintf( cl_snapshotname, sizeof( cl_snapshotname ), "%s", cl_screenshotname.GetString() );		
+		}
+	}
+
+	cl_snapshot_subdirname[0] = 0;
+}
+
+CON_COMMAND_F( screenshot, "Take a screenshot.", FCVAR_CLIENTCMD_CAN_EXECUTE )
+{
+	GetTestScriptMgr()->SetWaitCheckPoint( "screenshot" );
+
+	// Don't playback screenshots unless specifically requested.	
+	if ( demoplayer->IsPlayingBack() && !cl_playback_screenshots.GetBool() )
+		return;
+
+	if( args.ArgC() == 2 )
+	{
+		CL_TakeScreenshot( args[ 1 ] );
+	}
+	else
+	{
+		CL_TakeScreenshot( NULL );
+	}
+}
+
+CON_COMMAND_F( devshots_screenshot, "Used by the -makedevshots system to take a screenshot. For taking your own screenshots, use the 'screenshot' command instead.", FCVAR_DONTRECORD )
+{
+	CL_TakeScreenshot( NULL );
+
+	// See if we got a subdirectory to store the devshots in
+	if ( args.ArgC() == 2 )
+	{
+		Q_strncpy( cl_snapshot_subdirname, args[1], sizeof( cl_snapshot_subdirname ) );		
+
+		// Use the first available shot in each subdirectory
+		cl_snapshotnum = 0;
+	}
+}
+
+// We'll take a snapshot at the next available opportunity
+void CL_TakeJpeg(const char *name, int quality)
+{
+	// Don't playback screenshots unless specifically requested.	
+	if ( demoplayer->IsPlayingBack() && !cl_playback_screenshots.GetBool() )
+		return;
+	
+	cl_takesnapshot = true;
+	cl_takejpeg = true;
+	cl_jpegquality = clamp( quality, 1, 100 );
+	cl_takesnapshot_internal = false;
+
+	if ( name != NULL )
+	{
+		Q_strncpy( cl_snapshotname, name, sizeof( cl_snapshotname ) );		
 	}
 	else
 	{
@@ -1504,64 +1348,316 @@ void CL_TakeSnapshot_f( void )
 	}
 }
 
+CON_COMMAND( jpeg, "Take a jpeg screenshot:  jpeg <filename> <quality 1-100>." )
+{
+	if( args.ArgC() >= 2 )
+	{
+		if ( args.ArgC() == 3 )
+		{
+			CL_TakeJpeg( args[ 1 ], Q_atoi( args[2] ) );
+		}
+		else
+		{
+			CL_TakeJpeg( args[ 1 ], jpeg_quality.GetInt() );
+		}
+	}
+	else
+	{
+		CL_TakeJpeg( NULL, jpeg_quality.GetInt() );
+	}
+}
+
+static void screenshot_internal( const CCommand &args )
+{
+
+	if( args.ArgC() != 2 )
+	{
+		Assert( args.ArgC() >= 2 );
+		Warning( "__screenshot_internal - wrong number of arguments" );
+		return;
+	}
+	Q_strncpy( cl_snapshotname, args[1], ARRAYSIZE(cl_snapshotname) );
+	cl_takesnapshot = true;
+	cl_takejpeg = true;
+	cl_jpegquality = 70;
+	cl_takesnapshot_internal = true;
+}
+
+ConCommand screenshot_internal_command( "__screenshot_internal", screenshot_internal, "Internal command to take a screenshot without renumbering or notifying Steam.", FCVAR_DONTRECORD | FCVAR_HIDDEN );
+
 void CL_TakeSnapshotAndSwap()
 {
+	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
+
 	bool bReadPixelsFromFrontBuffer = g_pMaterialSystemHardwareConfig->ReadPixelsFromFrontBuffer();
-	if( bReadPixelsFromFrontBuffer )
+	if ( bReadPixelsFromFrontBuffer )
 	{
 		Shader_SwapBuffers();
 	}
 	
 	if (cl_takesnapshot)
 	{
-		char base[ MAX_OSPATH ];
-		char filename[ MAX_OSPATH ];
+		// Disable threading for the duration of the screenshots, because we need to get pointers to the (complete) 
+		// back buffer right now.
+		bool bEnabled = materials->AllowThreading( false, g_nMaterialSystemThread );
+
+		char base[MAX_OSPATH];
+		char filename[MAX_OSPATH];
 		IClientEntity *world = entitylist->GetClientEntity( 0 );
 
-		g_pFileSystem->CreateDirHierarchy( "screenshots", "GAME" );
-		if( cl_snapshotname[0] )
+		g_pFileSystem->CreateDirHierarchy( "screenshots", "DEFAULT_WRITE_PATH" );
+
+		if ( cl_takesnapshot_internal )
 		{
-			Q_strncpy( base, cl_snapshotname, sizeof( base ) );
-			Q_snprintf( filename, sizeof( filename ), "screenshots/%s.tga", base );
+
+			// !KLUDGE! Don't save this screenshot to steam
+			ConVarRef cl_savescreenshotstosteam( "cl_savescreenshotstosteam" );
+			bool bSaveValue = cl_savescreenshotstosteam.GetBool();
+			cl_savescreenshotstosteam.SetValue( false );
+
+			Q_snprintf( filename, sizeof( filename ), "screenshots/%s.jpg", cl_snapshotname );
+			videomode->TakeSnapshotJPEG( filename, cl_jpegquality );
+
+			cl_savescreenshotstosteam.SetValue( bSaveValue );
 		}
 		else
 		{
-			if( world && world->GetModel() )
+			if ( world && world->GetModel() )
 			{
-				COM_FileBase( modelloader->GetName( ( model_t *)world->GetModel() ), base );
+				Q_FileBase( modelloader->GetName( ( model_t *)world->GetModel() ), base, sizeof( base ) );
+
+				if ( IsX360() )
+				{
+					// map name has an additional extension
+					V_StripExtension( base, base, sizeof( base ) );
+				}
 			}
 			else
 			{
-				strcpy( base, "Snapshot" );
+				Q_strncpy( base, "Snapshot", sizeof( base ) );
 			}
-			while( 1 )
+
+			char extension[MAX_OSPATH];
+			Q_snprintf( extension, sizeof( extension ), "%s.%s", GetPlatformExt(), cl_takejpeg ? "jpg" : "tga" );
+
+			// Using a subdir? If so, create it
+			if ( cl_snapshot_subdirname[0] )
 			{
-				Q_snprintf( filename, sizeof( filename ), "screenshots/%s%04d.tga", base, cl_snapshotnum++ );
-				if( !g_pFileSystem->GetFileTime( filename ) )
+				Q_snprintf( filename, sizeof( filename ), "screenshots/%s/%s", base, cl_snapshot_subdirname );
+				g_pFileSystem->CreateDirHierarchy( filename, "DEFAULT_WRITE_PATH" );
+			}
+
+			if ( cl_snapshotname[0] )
+			{
+				Q_strncpy( base, cl_snapshotname, sizeof( base ) );
+				Q_snprintf( filename, sizeof( filename ), "screenshots/%s%s", base, extension );
+
+				int iNumber = 0;
+				char renamedfile[MAX_OSPATH];
+
+				while ( 1 )
 				{
-					// woo hoo!  The file doesn't exist already, so use it.
-					break;
+					Q_snprintf( renamedfile, sizeof( renamedfile ), "screenshots/%s_%04d%s", base, iNumber++, extension );	
+					if( !g_pFileSystem->GetFileTime( renamedfile ) )
+						break;
+				}
+
+				if ( iNumber > 0 && g_pFileSystem->GetFileTime( filename ) )
+				{
+					g_pFileSystem->RenameFile(filename, renamedfile);
+				}
+
+				cl_screenshotname.SetValue( "" );
+			}
+			else
+			{
+				while( 1 )
+				{
+					if ( cl_snapshot_subdirname[0] )
+					{
+						Q_snprintf( filename, sizeof( filename ), "screenshots/%s/%s/%s%04d%s", base, cl_snapshot_subdirname, base, cl_snapshotnum++, extension  );
+					}
+					else
+					{
+						Q_snprintf( filename, sizeof( filename ), "screenshots/%s%04d%s", base, cl_snapshotnum++, extension  );
+					}
+
+					if( !g_pFileSystem->GetFileTime( filename ) )
+					{
+						// woo hoo!  The file doesn't exist already, so use it.
+						break;
+					}
 				}
 			}
+			if ( cl_takejpeg )
+			{
+				videomode->TakeSnapshotJPEG( filename, cl_jpegquality );
+				g_ServerRemoteAccess.UploadScreenshot( filename );
+			}
+			else
+			{
+				videomode->TakeSnapshotTGA( filename );
+			}
 		}
-
-		VID_TakeSnapshot( filename );
-
 		cl_takesnapshot = false;
+		cl_takesnapshot_internal = false;
+		GetTestScriptMgr()->CheckPoint( "screenshot" );
+
+		// Restore threading if it was previously enabled (if it wasn't this will do nothing).
+		materials->AllowThreading( bEnabled, g_nMaterialSystemThread );
 	}
 
 	// If recording movie and the console is totally up, then write out this frame to movie file.
-	if ( cl_moviename[0] && Con_IsVisible() )
+	if ( cl_movieinfo.IsRecording() && !Con_IsVisible() && !scr_drawloading )
 	{
-		VID_WriteMovieFrame();
+		videomode->WriteMovieFrame( cl_movieinfo );
+		++cl_movieinfo.movieframe;
 	}
 
 	if( !bReadPixelsFromFrontBuffer )
 	{
 		Shader_SwapBuffers();
 	}
+
+	// take a screenshot for savegames if necessary
+	saverestore->UpdateSaveGameScreenshots();
+
+	// take screenshot for bx movie maker
+	EngineTool_UpdateScreenshot();
 }
 
+static float s_flPreviousHostFramerate = 0;
+ConVar cl_simulate_no_quicktime( "cl_simulate_no_quicktime", "0", FCVAR_HIDDEN );
+void CL_StartMovie( const char *filename, int flags, int nWidth, int nHeight, float flFrameRate, int nJpegQuality, VideoSystem_t videoSystem )
+{
+	Assert( g_pVideoRecorder == NULL );
+
+	// StartMove depends on host_framerate not being 0.
+	s_flPreviousHostFramerate = host_framerate.GetFloat();
+	host_framerate.SetValue( flFrameRate );
+
+	cl_movieinfo.Reset();
+	Q_strncpy( cl_movieinfo.moviename, filename, sizeof( cl_movieinfo.moviename ) );
+	cl_movieinfo.type = flags;
+	cl_movieinfo.jpeg_quality = nJpegQuality;
+
+	bool bSuccess = true;
+	if ( cl_movieinfo.DoVideo() || cl_movieinfo.DoVideoSound() )
+	{
+// HACK:  THIS MUST MATCH snd_device.h.  Should be exposed more cleanly!!!
+#define SOUND_DMA_SPEED		44100		// hardware playback rate
+
+		// MGP - switched over to using valve video services from avi
+		if ( videoSystem == VideoSystem::NONE && g_pVideo )
+		{
+			// Find a video system based on features if they didn't specify a specific one.
+			VideoSystemFeature_t neededFeatures = VideoSystemFeature::NO_FEATURES;
+			if ( cl_movieinfo.DoVideo() )
+				neededFeatures |= VideoSystemFeature::ENCODE_VIDEO_TO_FILE;
+			if ( cl_movieinfo.DoVideoSound() )
+				neededFeatures |= VideoSystemFeature::ENCODE_AUDIO_TO_FILE;
+		
+			videoSystem = g_pVideo->FindNextSystemWithFeature( neededFeatures );
+		}
+
+		if ( !cl_simulate_no_quicktime.GetBool() && g_pVideo && videoSystem != VideoSystem::NONE )
+		{
+			g_pVideoRecorder = g_pVideo->CreateVideoRecorder( videoSystem );
+			if ( g_pVideoRecorder != NULL )
+			{
+				VideoFrameRate_t theFps;
+	 			if ( IsIntegralValue( flFrameRate ) )
+	 			{
+	 				theFps.SetFPS( RoundFloatToInt( flFrameRate ), false );
+	 			}
+	 			else if ( IsIntegralValue( flFrameRate * 1001.0f / 1000.0f ) ) // 1001 is the ntsc divisor (30*1000/1001 = 29.97, etc)
+	 			{
+	 				theFps.SetFPS( RoundFloatToInt( flFrameRate + 0.05f ), true );
+	 			}
+	 			else
+	 			{
+					theFps.SetFPS( RoundFloatToInt( flFrameRate ), false );
+	 			} 	
+
+				const int nSize = 256;
+				CFmtStrN<nSize> fmtFullFilename( "%s%c%s", com_gamedir, CORRECT_PATH_SEPARATOR, filename );
+
+				char szFullFilename[nSize];
+				V_FixupPathName( szFullFilename, nSize, fmtFullFilename.Access() );
+#ifdef USE_WEBM_FOR_REPLAY
+				V_DefaultExtension( szFullFilename, ".webm", sizeof( szFullFilename ) );
+#else
+				V_DefaultExtension( szFullFilename, ".mp4", sizeof( szFullFilename ) );
+#endif
+
+				g_pVideoRecorder->CreateNewMovieFile( szFullFilename, cl_movieinfo.DoVideoSound() );
+#ifdef USE_WEBM_FOR_REPLAY
+				g_pVideoRecorder->SetMovieVideoParameters( VideoEncodeCodec::WEBM_CODEC, nJpegQuality, nWidth, nHeight, theFps );
+#else
+				g_pVideoRecorder->SetMovieVideoParameters( VideoEncodeCodec::DEFAULT_CODEC, nJpegQuality, nWidth, nHeight, theFps );
+#endif
+				
+				if ( cl_movieinfo.DoVideo() )
+				{
+					g_pVideoRecorder->SetMovieSourceImageParameters( VideoEncodeSourceFormat::BGR_24BIT, nWidth, nHeight );
+				}
+				
+				if ( cl_movieinfo.DoVideoSound() )
+				{
+					g_pVideoRecorder->SetMovieSourceAudioParameters( AudioEncodeSourceFormat::AUDIO_16BIT_PCMStereo, SOUND_DMA_SPEED, AudioEncodeOptions::LIMIT_AUDIO_TRACK_TO_VIDEO_DURATION  );
+				}
+			}
+			else
+			{
+				bSuccess = false;
+			}
+		}
+		else
+		{
+			bSuccess = false;
+		}
+	}
+
+	if ( bSuccess )
+	{
+		SND_MovieStart();
+	}
+	else
+	{
+#ifdef USE_WEBM_FOR_REPLAY
+		Warning( "Failed to launch startmovie!\n" );
+#else
+		Warning( "Failed to launch startmovie!  If you are trying to use h264, please make sure you have QuickTime installed.\n" );
+#endif
+		CL_EndMovie();
+	}
+}
+
+void CL_EndMovie()
+{
+	if ( !CL_IsRecordingMovie() )
+		return;
+
+	host_framerate.SetValue( s_flPreviousHostFramerate );
+	s_flPreviousHostFramerate = 0.0f;
+
+	SND_MovieEnd();
+
+	if ( g_pVideoRecorder && ( cl_movieinfo.DoVideo() || cl_movieinfo.DoVideoSound() ) )
+	{
+		g_pVideoRecorder->FinishMovie();
+		
+		g_pVideo->DestroyVideoRecorder( g_pVideoRecorder );
+		g_pVideoRecorder = NULL;
+	}
+	
+	cl_movieinfo.Reset();
+}
+
+bool CL_IsRecordingMovie()
+{
+	return cl_movieinfo.IsRecording();
+}
 
 /*
 ===============
@@ -1570,45 +1666,145 @@ CL_StartMovie_f
 Sets the engine up to dump frames
 ===============
 */
-void CL_StartMovie_f( void )
+
+CON_COMMAND_F( startmovie, "Start recording movie frames.", FCVAR_DONTRECORD )
 {
-	if (cmd_source != src_command)
+	if ( cmd_source != src_command )
 		return;
 
-	if( Cmd_Argc() != 2 )
+	if( args.ArgC() < 2 )
 	{
-		Con_Printf ("startmovie <filename>\n");
+		ConMsg( "startmovie <filename>\n [\n" );
+		ConMsg( " (default = TGAs + .wav file)\n" );
+#ifdef USE_WEBM_FOR_REPLAY
+		ConMsg( " webm = WebM encoded audio and video\n" );
+#else
+		ConMsg( " h264 = H.264-encoded audio and video (must have QuickTime installed!)\n" );
+#endif
+		ConMsg( " raw = TGAs + .wav file, same as default\n" );
+		ConMsg( " tga = TGAs\n" );
+		ConMsg( " jpg/jpeg = JPegs\n" );
+		ConMsg( " wav = Write .wav audio file\n" );
+		ConMsg( " jpeg_quality nnn = set jpeq quality to nnn (range 1 to 100), default %d\n", DEFAULT_JPEG_QUALITY );
+		ConMsg( " ]\n" );
+		ConMsg( "examples:\n" );
+		ConMsg( "   startmovie testmovie jpg wav jpeg_qality 75\n" );
+#ifdef USE_WEBM_FOR_REPLAY
+		ConMsg( "   startmovie testmovie webm\n" );
+#else
+		ConMsg( "   startmovie testmovie h264   <--- requires QuickTime\n" );
+		ConMsg( "AVI is no longer supported.\n" );
+#endif
 		return;
 	}
 
-	strcpy( cl_moviename, Cmd_Argv( 1 ) );
-	cl_movieframe = 0;
+	if ( CL_IsRecordingMovie() )
+	{
+		ConMsg( "Already recording movie!\n" );
+		return;
+	}
 
-	SND_MovieStart();
-	Con_Printf( "Started recording movie, frames will record after console is cleared...\n" );
+	int flags = MovieInfo_t::FMOVIE_TGA | MovieInfo_t::FMOVIE_WAV;
+	VideoSystem_t videoSystem = VideoSystem::NONE;
+	int nJpegQuality = DEFAULT_JPEG_QUALITY;
+
+	if ( args.ArgC() > 2 )
+	{
+		flags = 0;
+		for ( int i = 2; i < args.ArgC(); ++i )
+		{
+			if ( !Q_stricmp( args[ i ], "avi" ) )
+			{
+				//flags |= MovieInfo_t::FMOVIE_VID | MovieInfo_t::FMOVIE_VIDSOUND;
+				//videoSystem = VideoSystem::AVI;
+#ifdef USE_WEBM_FOR_REPLAY
+				Warning( "AVI is not supported on this platform!  Use \"webm\".\n" );
+#else
+				Warning( "AVI is no longer supported!  Make sure QuickTime is installed and use \"h264\" - if you install QuickTime, you will need to reboot before using startmovie.\n" );
+#endif
+				return;
+			}
+#ifdef USE_WEBM_FOR_REPLAY
+			else if ( !Q_stricmp( args[ i ], "webm" ) )
+			{
+				flags |= MovieInfo_t::FMOVIE_VID | MovieInfo_t::FMOVIE_VIDSOUND;
+				videoSystem = VideoSystem::WEBM;
+			}
+			else if ( !Q_stricmp( args[ i ], "h264" ) )
+			{
+				Warning( "h264 is not supported on this platform!  Use \"webm\".\n" );
+				return;
+			}
+#else
+			else if ( !Q_stricmp( args[ i ], "h264" ) )
+			{
+				flags |= MovieInfo_t::FMOVIE_VID | MovieInfo_t::FMOVIE_VIDSOUND;
+				videoSystem = VideoSystem::QUICKTIME;
+			}
+			else if ( !Q_stricmp( args[ i ], "webm" ) )
+			{
+				Warning( "WebM is not supported on this platform!  Make sure QuickTime is installed and use \"h264\" - if you install QuickTime, you will need to reboot before using startmovie.\n" );
+				return;
+			}
+#endif
+			if ( !Q_stricmp( args[ i ], "raw" ) )
+			{
+				flags |= MovieInfo_t::FMOVIE_TGA | MovieInfo_t::FMOVIE_WAV;
+			}
+			if ( !Q_stricmp( args[ i ], "tga" ) )
+			{
+				flags |= MovieInfo_t::FMOVIE_TGA;
+			}
+			if ( !Q_stricmp( args[ i ], "jpeg" ) || !Q_stricmp( args[ i ], "jpg" ) )
+			{
+				flags &= ~MovieInfo_t::FMOVIE_TGA;
+				flags |= MovieInfo_t::FMOVIE_JPG;
+			}
+			if ( !Q_stricmp( args[ i ], "jpeg_quality" ) )
+			{
+				nJpegQuality = clamp( Q_atoi( args[ ++i ] ), 1, 100 );
+			}
+			if ( !Q_stricmp( args[ i ], "wav" ) )
+			{
+				flags |= MovieInfo_t::FMOVIE_WAV;
+			}
+			
+		}
+	}
+
+	if ( flags == 0 )
+	{
+#ifdef USE_WEBM_FOR_REPLAY
+		Warning( "Missing or unknown recording types, must specify one or both of 'webm' or 'raw'\n" );
+#else
+		Warning( "Missing or unknown recording types, must specify one or both of 'h264' or 'raw'\n" );
+#endif
+		return;
+	}
+
+	float flFrameRate = host_framerate.GetFloat();
+	if ( flFrameRate == 0.0f )
+	{
+		flFrameRate = 30.0f;
+	}
+	CL_StartMovie( args[ 1 ], flags, videomode->GetModeStereoWidth(), videomode->GetModeStereoHeight(), flFrameRate, nJpegQuality, videoSystem );
+	ConMsg( "Started recording movie, frames will record after console is cleared...\n" );
 }
 
 
-/*
-===============
-CL_EndMovie_f
-
-Ends frame dumping
-===============
-*/
-
-void CL_EndMovie_f( void )
+//-----------------------------------------------------------------------------
+// Ends frame dumping
+//-----------------------------------------------------------------------------
+CON_COMMAND_F( endmovie, "Stop recording movie frames.", FCVAR_DONTRECORD )
 {
-	if( !cl_moviename[0] )
+	if( !CL_IsRecordingMovie() )
 	{
-		Con_Printf( "No movie started.\n" );
+		ConMsg( "No movie started.\n" );
 	}
 	else
 	{
-		SND_MovieEnd();
-		cl_moviename[0] = 0;
-		cl_movieframe = 0;
-		Con_Printf( "Stopped recording movie...\n" );
+		CL_EndMovie();
+		ConMsg( "Stopped recording movie...\n" );
 	}
 }
 
@@ -1620,76 +1816,48 @@ CL_Rcon_f
   an unconnected command.
 =====================
 */
-void CL_Rcon_f (void)
+CON_COMMAND_F( rcon, "Issue an rcon command.", FCVAR_DONTRECORD )
 {
 	char	message[1024];   // Command message
 	char    szParam[ 256 ];
-	int		i;
-	netadr_t to;    // Command destination
-	unsigned short nPort;    // Outgoing port.
-
-	if (!rcon_password.GetString())
+	message[0] = 0;
+	for (int i=1 ; i<args.ArgC() ; i++)
 	{
-		Con_Printf ("You must set 'rcon_password' before\n"
-					"issuing an rcon command.\n");
-		return;
-	}
-
-	NET_Config (true);		// allow remote	
-
-	// If we are connected to a server, send rcon to it, otherwise
-	//  send rcon commaand to whereever we specify in rcon_address, if possible.
-	if (cls.state >= ca_connected)
-		to = cls.netchan.remote_address;
-	else
-	{
-		if (!strlen(rcon_address.GetString()))
+		const char *pParam = args[i];
+		// put quotes around empty arguments so we can pass things like this: rcon sv_password ""
+		// otherwise the "" on the end is lost
+		if ( strchr( pParam, ' ' ) || ( Q_strlen( pParam ) == 0 ) )
 		{
-			Con_Printf ("You must either be connected,\n"
-						"or set the 'rcon_address' cvar\n"
-						"to issue rcon commands\n");
-
-			return;
+			Q_snprintf( szParam, sizeof( szParam ), "\"%s\"", pParam );
+			Q_strncat( message, szParam, sizeof( message ), COPY_ALL_CHARACTERS );
 		}
-		if ( !NET_StringToAdr( rcon_address.GetString(), &to) )
+		else
 		{
-			Con_Printf( "Unable to resolve rcon address %s\n", rcon_address.GetString() );
-			return;
+			Q_strncat( message, pParam, sizeof( message ), COPY_ALL_CHARACTERS );
+		}
+		if ( i != ( args.ArgC() - 1 ) )
+		{
+			Q_strncat (message, " ", sizeof( message ), COPY_ALL_CHARACTERS);
 		}
 	}
 
-	nPort = (unsigned short)rcon_port.GetInt();  // ?? BigShort
-	if (!nPort)
-		nPort = atoi(PORT_SERVER); //DEFAULTnet_hostport;
-
-	to.port = BigShort(nPort);
-
-	Q_snprintf(message, sizeof( message ), "rcon \"%s\" ", rcon_password.GetString());
-
-	for (i=1 ; i<Cmd_Argc() ; i++)
-	{
-		Q_snprintf( szParam, sizeof( szParam ), "\"%s\"", Cmd_Argv(i) );
-		strcat( message, szParam );
-		if ( i != ( Cmd_Argc() - 1 ) )
-			strcat (message, " ");
-	}
-
-	Netchan_OutOfBandPrint( NS_CLIENT, to, "%s", message);
+	RCONClient().SendCmd( message );
 }
 
-void CL_DebugBox_f()
+
+CON_COMMAND_F( box, "Draw a debug box.", FCVAR_CHEAT )
 {
-	if( Cmd_Argc() != 7 )
+	if( args.ArgC() != 7 )
 	{
-		Con_Printf ("box x1 y1 z1 x2 y2 z2\n");
+		ConMsg ("box x1 y1 z1 x2 y2 z2\n");
 		return;
 	}
 
 	Vector mins, maxs;
 	for (int i = 0; i < 3; ++i)
 	{
-		mins[i] = atof(Cmd_Argv(i + 1)); 
-		maxs[i] = atof(Cmd_Argv(i + 4)); 
+		mins[i] = atof(args[i + 1]); 
+		maxs[i] = atof(args[i + 4]); 
 	}
 	CDebugOverlay::AddBoxOverlay( vec3_origin, mins, maxs, vec3_angle, 255, 0, 0, 0, 100 );
 }
@@ -1701,28 +1869,58 @@ CL_View_f
 Debugging changes the view entity to the specified index
 ===============
 */
-void CL_View_f (void)
+CON_COMMAND_F( cl_view, "Set the view entity index.", FCVAR_CHEAT )
 {
 	int nNewView;
 
-	if( Cmd_Argc() != 2 )
+	if( args.ArgC() != 2 )
 	{
-		Con_Printf ("cl_view entity#\nCurrent %i\n", cl.viewentity);
+		ConMsg ("cl_view entity#\nCurrent %i\n", cl.m_nViewEntity );
 		return;
 	}
 
-	nNewView = atoi(Cmd_Argv(1));
+	if ( cl.m_nMaxClients > 1 )
+		return;
+
+	nNewView = atoi( args[1] );
 	if (!nNewView)
 		return;
 
 	if ( nNewView > entitylist->GetHighestEntityIndex() )
 		return;
 
-	cl.viewentity = nNewView;
-	vid.recalc_refdef = true; // Force recalculation
-	Con_Printf("View entity set to %i\n", nNewView);
+	cl.m_nViewEntity = nNewView;
+	videomode->MarkClientViewRectDirty(); // Force recalculation
+	ConMsg("View entity set to %i\n", nNewView);
 }
 
+
+static int CL_AllocLightFromArray( dlight_t *pLights, int lightCount, int key )
+{
+	int		i;
+
+	// first look for an exact key match
+	if (key)
+	{
+		for ( i = 0; i < lightCount; i++ )
+		{
+			if (pLights[i].key == key)
+				return i;
+		}
+	}
+
+	// then look for anything else
+	for ( i = 0; i < lightCount; i++ )
+	{
+		if (pLights[i].die < cl.GetTime())
+			return i;
+	}
+
+	return 0;
+}
+
+bool g_bActiveDlights = false;
+bool g_bActiveElights = false;
 /*
 ===============
 CL_AllocDlight
@@ -1731,45 +1929,14 @@ CL_AllocDlight
 */
 dlight_t *CL_AllocDlight (int key)
 {
-	int		i;
-	dlight_t	*dl;
-
-// first look for an exact key match
-	if (key)
-	{
-		dl = cl_dlights;
-		for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-		{
-			if (dl->key == key)
-			{
-				memset (dl, 0, sizeof(*dl));
-				dl->key = key;
-				r_dlightchanged |= (1 << i);
-				r_dlightactive |= (1 << i);
-				return dl;
-			}
-		}
-	}
-
-// then look for anything else
-	dl = cl_dlights;
-	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-	{
-		if (dl->die < cl.gettime())
-		{
-			memset (dl, 0, sizeof(*dl));
-			dl->key = key;
-			r_dlightchanged |= (1 << i);
-			r_dlightactive |= (1 << i);
-			return dl;
-		}
-	}
-
-	dl = &cl_dlights[0];
+	int i = CL_AllocLightFromArray( cl_dlights, MAX_DLIGHTS, key );
+	dlight_t *dl = &cl_dlights[i];
+	R_MarkDLightNotVisible( i );
 	memset (dl, 0, sizeof(*dl));
 	dl->key = key;
-	r_dlightchanged |= (1 << 0);
-	r_dlightactive |= (1 << 0);
+	r_dlightchanged |= (1 << i);
+	r_dlightactive |= (1 << i);
+	g_bActiveDlights = true;
 	return dl;
 }
 
@@ -1782,39 +1949,11 @@ CL_AllocElight
 */
 dlight_t *CL_AllocElight (int key)
 {
-	int		i;
-	dlight_t	*el;
-
-// first look for an exact key match
-	if (key)
-	{
-		el = cl_elights;
-		for (i=0 ; i<MAX_ELIGHTS ; i++, el++)
-		{
-			if (el->key == key)
-			{
-				memset (el, 0, sizeof(*el));
-				el->key = key;
-				return el;
-			}
-		}
-	}
-
-// then look for anything else
-	el = cl_elights;
-	for (i=0 ; i<MAX_ELIGHTS ; i++, el++)
-	{
-		if (el->die < cl.gettime())
-		{
-			memset (el, 0, sizeof(*el));
-			el->key = key;
-			return el;
-		}
-	}
-
-	el = &cl_elights[0];
+	int i = CL_AllocLightFromArray( cl_elights, MAX_ELIGHTS, key );
+	dlight_t *el = &cl_elights[i];
 	memset (el, 0, sizeof(*el));
 	el->key = key;
+	g_bActiveElights = true;
 	return el;
 }
 
@@ -1831,10 +1970,12 @@ void CL_DecayLights (void)
 	dlight_t	*dl;
 	float		time;
 	
-	time = cl.getframetime();
+	time = cl.GetFrameTime();
 	if ( time <= 0.0f )
 		return;
 
+	g_bActiveDlights = false;
+	g_bActiveElights = false;
 	dl = cl_dlights;
 
 	r_dlightchanged = 0;
@@ -1842,34 +1983,46 @@ void CL_DecayLights (void)
 
 	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
 	{
-		if (dl->radius != 0)
+		if (!dl->IsRadiusGreaterThanZero())
 		{
-			if (dl->die < cl.gettime())
+			R_MarkDLightNotVisible( i );
+			continue;
+		}
+
+		if ( dl->die < cl.GetTime() )
+		{
+			r_dlightchanged |= (1 << i);
+			dl->radius = 0;
+		}
+		else if (dl->decay)
+		{
+			r_dlightchanged |= (1 << i);
+
+			dl->radius -= time*dl->decay;
+			if (dl->radius < 0)
 			{
-				r_dlightchanged |= (1 << i);
 				dl->radius = 0;
 			}
-			else if (dl->decay)
-			{
-				r_dlightchanged |= (1 << i);
+		}
 
-				dl->radius -= time*dl->decay;
-				if (dl->radius < 0)
-					dl->radius = 0;
-			}
-			if (dl->radius != 0)
-			{
-				r_dlightactive |= (1 << i);
-			}
+		if (dl->IsRadiusGreaterThanZero())
+		{
+			g_bActiveDlights = true;
+			r_dlightactive |= (1 << i);
+		}
+		else
+		{
+			R_MarkDLightNotVisible( i );
 		}
 	}
 
 	dl = cl_elights;
 	for (i=0 ; i<MAX_ELIGHTS ; i++, dl++)
 	{
-		if (!dl->radius)
+		if (!dl->IsRadiusGreaterThanZero())
 			continue;
-		if (dl->die < cl.gettime())
+
+		if (dl->die < cl.GetTime())
 		{
 			dl->radius = 0;
 			continue;
@@ -1877,322 +2030,240 @@ void CL_DecayLights (void)
 		
 		dl->radius -= time*dl->decay;
 		if (dl->radius < 0)
-			dl->radius = 0;
-	}
-}
-
-#define CL_PACKETLOSS_RECALC 1.0
-/*
-=================
-CL_ComputePacketLoss
-
-=================
-*/
-void CL_ComputePacketLoss( void )
-{
-	int i;
-	int frm;
-	frame_t *frame;
-	int count = 0;
-	int lost = 0;
-
-	if ( realtime < cls.packet_loss_recalc_time )
-		return;
-
-	cls.packet_loss_recalc_time = realtime + CL_PACKETLOSS_RECALC;
-
-	// Compuate packet loss
-	// Fill in frame data
-	for ( i = cls.netchan.incoming_sequence-CL_UPDATE_BACKUP+1
-		; i <= cls.netchan.incoming_sequence
-		; i++)
-	{
-		frm = i;
-		frame = &cl.frames[ frm &CL_UPDATE_MASK];
-
-		if (frame->receivedtime == -1)
 		{
-			lost++;
-		}	
-		count++;
-	}
-
-	if ( count <= 0 )
-	{
-		cls.packet_loss = 0.0;
-	}
-	else
-	{
-		cls.packet_loss = ( 100.0 * (float)lost ) / (float)count;
+			dl->radius = 0;
+		}
+		if ( dl->IsRadiusGreaterThanZero() )
+		{
+			g_bActiveElights = true;
+		}
 	}
 }
+
 
 void CL_ExtraMouseUpdate( float frametime )
 {
 	// Not ready for commands yet.
-	if (cls.state == ca_dedicated || 
-		cls.state == ca_disconnected ||
-		cls.state == ca_connecting )
+	if ( !cl.IsActive() )
 		return;
 
 	if ( !Host_ShouldRun() )
 		return;
 
 	// Don't create usercmds here during playback, they were encoded into the packet already
-	if ( demo->IsPlayingBack() )
+#if defined( REPLAY_ENABLED )
+	if ( demoplayer->IsPlayingBack() && !cl.ishltv && !cl.isreplay )
 		return;
-
-	// Are we fully signed on?
-	int active = !demo->IsPlayingBack() && ( cls.signon == SIGNONS ) ? 1 : 0;
+#else
+	if ( demoplayer->IsPlayingBack() && !cl.ishltv )
+		return;
+#endif
 
 	// Have client .dll create and store usercmd structure
-	g_ClientDLL->ExtraMouseSample( frametime, active );
-
+	g_ClientDLL->ExtraMouseSample( frametime, !cl.m_bPaused );
 }
 
 /*
 =================
-CL_Move
+CL_SendMove
 
 Constructs the movement command and sends it to the server if it's time.
 =================
 */
-bool SV_IsSimulating( void );
-void CL_Move( float accumulated_extra_samples )
+void CL_SendMove( void )
 {
-	VPROF( "CL_Move" );
-	
-	byte			data[ MAX_CMD_BUFFER ];
-	int				i;
-	int				from, to;
-	cmd_t			*pcmd;
-	int				numbackup = 2;
-	int				numcmds;
-	int				newcmds;
-	int				cmdnumber;
-	int				active = 0;
+#if defined( STAGING_ONLY ) || defined( _DEBUG )
+	if ( cl_block_usercommand.GetBool() )
+		return;
+#endif // STAGING_ONLY || _DEBUG
 
-	// Not ready for commands yet.
-	if (cls.state == ca_dedicated || 
-		cls.state == ca_disconnected ||
-		cls.state == ca_connecting )
+	byte data[ MAX_CMD_BUFFER ];
+	
+	int nextcommandnr = cl.lastoutgoingcommand + cl.chokedcommands + 1;
+
+	// send the client update packet
+
+	CLC_Move moveMsg;
+
+	moveMsg.m_DataOut.StartWriting( data, sizeof( data ) );
+
+	// Determine number of backup commands to send along
+	int cl_cmdbackup = 2;
+	moveMsg.m_nBackupCommands = clamp( cl_cmdbackup, 0, MAX_BACKUP_COMMANDS );
+
+	// How many real new commands have queued up
+	moveMsg.m_nNewCommands = 1 + cl.chokedcommands;
+	moveMsg.m_nNewCommands = clamp( moveMsg.m_nNewCommands, 0, MAX_NEW_COMMANDS );
+
+	int numcmds = moveMsg.m_nNewCommands + moveMsg.m_nBackupCommands;
+
+	int from = -1;	// first command is deltaed against zeros 
+
+	bool bOK = true;
+
+	for ( int to = nextcommandnr - numcmds + 1; to <= nextcommandnr; to++ )
+	{
+		bool isnewcmd = to >= (nextcommandnr - moveMsg.m_nNewCommands + 1);
+
+		// first valid command number is 1
+		bOK = bOK && g_ClientDLL->WriteUsercmdDeltaToBuffer( &moveMsg.m_DataOut, from, to, isnewcmd );
+		from = to;
+	}
+
+	if ( bOK )
+	{
+		// only write message if all usercmds were written correctly, otherwise parsing would fail
+		cl.m_NetChannel->SendNetMsg( moveMsg );
+	}
+}
+
+void CL_Move(float accumulated_extra_samples, bool bFinalTick )
+{
+	if ( !cl.IsConnected() )
 		return;
 
 	if ( !Host_ShouldRun() )
 		return;
 
+	tmZoneFiltered( TELEMETRY_LEVEL0, 50, TMZF_NONE, "%s", __FUNCTION__ );
+
+	// only send packets on the final tick in one engine frame
+	bool bSendPacket = true;	
+
 	// Don't create usercmds here during playback, they were encoded into the packet already
-	if ( demo->IsPlayingBack() )
-		return;
-
-	/*
-	// This is a bit of a hack/cluttering of server and client code, but we don't want to accumulate usercmds when we
-	//  are paused with the console showing
-	if ( sv.active && sv.paused )
+	if ( demoplayer->IsPlayingBack() )
 	{
-		cls.lastoutgoingcommand++;
-		Netchan_Transmit( &cls.netchan, NULL, NULL );	
-		return;
-	}
-	*/
-
-	CL_ComputePacketLoss();
-
-	bf_write buf( "CL_Move", data, sizeof( data ) );
-
-	// Message we are constructing.
-	i		= cls.netchan.outgoing_sequence & CL_UPDATE_MASK;   
-
-	pcmd = &cl.commands[ i ];
-
-	pcmd->senttime			= demo->IsPlayingBack() ? 0.0 : realtime;      
-	pcmd->receivedtime		= -1;
-	pcmd->processedfuncs	= false;
-	// Assume we'll transmit this command this frame ( rather than queueing it for next frame )
-	pcmd->heldback			= false;
-	pcmd->sendsize			= 0;
-
-	// Are we fully signed on?
-	active =  !demo->IsPlayingBack() && ( cls.signon == SIGNONS ) ? 1 : 0;
-
-	// Have client .dll create and store usercmd structure
-	g_ClientDLL->CreateMove( 
-		cls.netchan.outgoing_sequence, 
-		CL_UPDATE_BACKUP, 
-		TICK_RATE, 
-		TICK_RATE - accumulated_extra_samples,
-		active, 
-		cls.packet_loss );
-
-	// Determine number of backup commands to send along
-	numbackup = cl_cmdbackup.GetInt();
-	if ( numbackup < 0 )
-	{
-		numbackup = 0;
-	}
-	else if ( numbackup > MAX_BACKUP_COMMANDS )
-	{
-		numbackup = MAX_BACKUP_COMMANDS;
-	}
-
-
-	// Write a clc_move message
-	buf.WriteByte( clc_move );
-	buf.WriteOneBit( Voice_GetLoopback() ); // tell the server if we want loopback on.
-
-#if !defined( _DEBUG )
-	// In release build, validate the cl_cmdrate
-	if ( cl_cmdrate.GetInt() < MIN_CMD_RATE )
-	{
-		cl_cmdrate.SetValue( (float)MIN_CMD_RATE );
-	}
+#if defined( REPLAY_ENABLED )
+		if ( cl.ishltv || cl.isreplay )
+#else
+		if ( cl.ishltv )
 #endif
+		{
+			// still do it when playing back a HLTV/replay demo
+			bSendPacket = false;
+		}
+		else
+		{
+            return;
+		}
+	}
 
-	// Check to see if we can actually send this command
-	//
-	// In single player, send commands as fast as possible
-	// Otherwise, only send when ready and when not choking bandwidth
-	if ( cl.force_send_usercmd || 
-		( cl.maxclients == 1 ) || 
-		 ( ( cls.netchan.remote_address.type == NA_LOOPBACK ) && !host_limitlocal.GetInt() ) ||
-		( ( realtime >= cls.nextcmdtime ) && Netchan_CanPacket( &cls.netchan ) ) )
+	// don't send packets if update time not reached or chnnel still sending
+	// in loopback mode don't send only if host_limitlocal is enabled
+
+	if ( ( !cl.m_NetChannel->IsLoopback() || host_limitlocal.GetInt() ) &&
+		 ( ( net_time < cl.m_flNextCmdTime ) || !cl.m_NetChannel->CanPacket()  || !bFinalTick ) )
 	{
-		cl.force_send_usercmd = false;
+		bSendPacket = false;
+	}
 
-		if ( cl_cmdrate.GetInt() > 0 )
+	if ( cl.IsActive() )
+	{
+		VPROF( "CL_Move" );
+
+		int nextcommandnr = cl.lastoutgoingcommand + cl.chokedcommands + 1;
+
+		// Have client .dll create and store usercmd structure
+		g_ClientDLL->CreateMove( 
+			nextcommandnr, 
+			host_state.interval_per_tick - accumulated_extra_samples,
+			!cl.IsPaused() );
+
+		// Store new usercmd to dem file
+		if ( demorecorder->IsRecording() )
 		{
-			cls.nextcmdtime = realtime + ( 1.0f / cl_cmdrate.GetFloat() );
+			// Back up one because we've incremented outgoing_sequence each frame by 1 unit
+			demorecorder->RecordUserInput( nextcommandnr );
+		}
+
+		if ( bSendPacket )
+		{
+			CL_SendMove();
 		}
 		else
 		{
-			// Always able to send right away
-			cls.nextcmdtime = realtime;
+			// netchanll will increase internal outgoing sequnce number too
+			cl.m_NetChannel->SetChoked();	
+			// Mark command as held back so we'll send it next time
+			cl.chokedcommands++;
 		}
+	}
 
-		int outgoing_sequence;
-		if ( cls.lastoutgoingcommand == -1 )
-		{
-			outgoing_sequence		= cls.netchan.outgoing_sequence;
-			cls.lastoutgoingcommand = cls.netchan.outgoing_sequence;
-		}
-		else
-		{
-			outgoing_sequence		= cls.lastoutgoingcommand + 1;
-		}
+	if ( !bSendPacket )
+		return;
+
+		// Request non delta compression if high packet loss, show warning message
+	bool hasProblem = cl.m_NetChannel->IsTimingOut() && !demoplayer->IsPlayingBack() &&	cl.IsActive();
+
+	// Request non delta compression if high packet loss, show warning message
+	if ( hasProblem )
+	{
+		con_nprint_t np;
+		np.time_to_live = 1.0;
+		np.index = 2;
+		np.fixed_width_font = false;
+		np.color[ 0 ] = 1.0;
+		np.color[ 1 ] = 0.2;
+		np.color[ 2 ] = 0.2;
 		
-		// Say how many backups we'll be sending
-		buf.WriteUBitLong( numbackup, NUM_BACKUP_COMMAND_BITS );
+		float flTimeOut = cl.m_NetChannel->GetTimeoutSeconds();
+		Assert( flTimeOut != -1.0f );
+		float flRemainingTime = flTimeOut - cl.m_NetChannel->GetTimeSinceLastReceived();
+		Con_NXPrintf( &np, "WARNING:  Connection Problem" );
+		np.index = 3;
+		Con_NXPrintf( &np, "Auto-disconnect in %.1f seconds", flRemainingTime );
 
-		// How many real commands have queued up
-		newcmds = ( cls.netchan.outgoing_sequence - cls.lastoutgoingcommand );
+		cl.ForceFullUpdate(); // sets m_nDeltaTick to -1
+	}
 
-		// Put an upper/lower bound on this
-		newcmds = clamp( newcmds, 0, MAX_TOTAL_CMDS );
+	if ( cl.IsActive() )
+	{
+		NET_Tick mymsg( cl.m_nDeltaTick, host_frametime_unbounded, host_frametime_stddeviation );
+		cl.m_NetChannel->SendNetMsg( mymsg );
+	}
 
-		buf.WriteByte( newcmds );
+	//COM_Log( "cl.log", "Sending command number %i(%i) to server\n", cl.m_NetChan->m_nOutSequenceNr, cl.m_NetChan->m_nOutSequenceNr & CL_UPDATE_MASK );
 
-		numcmds = newcmds + numbackup;
+	// Remember outgoing command that we are sending
+	cl.lastoutgoingcommand = cl.m_NetChannel->SendDatagram( NULL );
 
-		from = -1;
-		for ( i = numcmds - 1; i >= 0; i-- )
-		{
-			cmdnumber = ( cls.netchan.outgoing_sequence - i ) & CL_UPDATE_MASK;
-			to = cmdnumber;
+	cl.chokedcommands = 0;
 
-			int startbit = buf.GetNumBitsWritten();
+	// calc next packet send time
 
-			bool isnewcmd = ( i < newcmds ) ? true : false;
-
-			g_ClientDLL->WriteUsercmdDeltaToBuffer( &buf, from, to, isnewcmd );
-		
-			int endbit = buf.GetNumBitsWritten();
-
-			if ( buf.IsOverflowed() )
-			{
-				Host_Error( "WriteUsercmdDeltaToBuffer (%i %i) Overflowed %i byte buffer, last cmd was %i bits long\n",
-					from, to, MAX_CMD_BUFFER, endbit - startbit );
-			}
-
-			from = to;
-		}
-
-		// Write a tag to see if there is a mis-parse on the server
-		buf.WriteUBitLong( 0xffffffff, 32 );
-
-		// Request delta compression of entities
-		if ( ( cls.state == ca_active ) &&
-			 ( cls.signon == SIGNONS ) &&
-			 ( ( cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged ) >= CL_UPDATE_MASK ) &&
-			 ( ( realtime - cls.netchan.last_received ) > CONNECTION_PROBLEM_TIME ) &&
-			 !demo->IsPlayingBack() )
-		{
-			con_nprint_t np;
-			np.time_to_live = 1.0;
-			np.index = 0;
-			np.fixed_width_font = false;
-			np.color[ 0 ] = 1.0;
-			np.color[ 1 ] = 0.2;
-			np.color[ 2 ] = 0.0;
-			Con_NXPrintf( &np, "WARNING:  Connection Problem" );
-			cl.validsequence = 0;
-		}
-
-		// Determine if we need to ask for a new set of delta's.
-		if ( cl.validsequence &&
-			( cls.state == ca_active ) &&
-			!( demo->IsRecording() && demo->IsWaitingForUpdate() ) )
-		{
-			cl.delta_sequence = cl.validsequence;
-
-			buf.WriteByte( clc_delta );
-			buf.WriteUBitLong( cl.validsequence & DELTAFRAME_MASK, DELTAFRAME_NUMBITS );
-		}
-		else
-		{
-			// Tell server to send us an uncompressed update
-			cl.delta_sequence = -1;
-		}
-
-		if ( buf.IsOverflowed() )
-		{
-			Host_Error( "CL_Move, overflowed command buffer (%i bytes)\n", MAX_CMD_BUFFER );
-		}
-
-		// Remember outgoing command that we are sending
-		cls.lastoutgoingcommand = cls.netchan.outgoing_sequence;
-
-		// Update size counter for netgraph
-		cl.commands[ cls.netchan.outgoing_sequence & CL_UPDATE_MASK ].sendsize = buf.GetNumBytesWritten();
-
-		// Composite the rest of the datagram..
-		if( cls.datagram.GetNumBitsWritten() <= buf.GetNumBitsLeft() )
-		{
-			buf.WriteBits( cls.datagram.GetBasePointer(), cls.datagram.GetNumBitsWritten() );
-		}
-		cls.datagram.Reset();
-
-		//COM_Log( "cl.log", "Sending command number %i(%i) to server\n", cls.netchan.outgoing_sequence, cls.netchan.outgoing_sequence & CL_UPDATE_MASK );
-		// Send the message
-		Netchan_Transmit( &cls.netchan, buf.GetNumBytesWritten(), buf.GetBasePointer() );	
+	if ( cl.IsActive() )
+	{
+		// use full update rate when active
+		float commandInterval = 1.0f / cl_cmdrate->GetFloat();
+		float maxDelta = min ( host_state.interval_per_tick, commandInterval );
+		float delta = clamp( (float)(net_time - cl.m_flNextCmdTime), 0.0f, maxDelta );
+		cl.m_flNextCmdTime = net_time + commandInterval - delta;
 	}
 	else
 	{
-		// Mark command as held back so we'll send it next time
-		cl.commands[ cls.netchan.outgoing_sequence & CL_UPDATE_MASK ].heldback = true;
-		// Increment sequence number so we can detect that we've held back packets.
-		cls.netchan.outgoing_sequence++;
+		// during signon process send only 5 packets/second
+		cl.m_flNextCmdTime = net_time + ( 1.0f / 5.0f );
 	}
 
-	// Store new usercmd to dem file
-	if ( demo->IsRecording() )
+}
+
+#define TICK_INTERVAL			(host_state.interval_per_tick)
+#define ROUND_TO_TICKS( t )		( TICK_INTERVAL * TIME_TO_TICKS( t ) )
+
+void CL_LatchInterpolationAmount()
+{
+	if ( !cl.IsConnected() )
+		return;
+
+	float dt = cl.m_NetChannel->GetTimeSinceLastReceived();
+	float flClientInterpolationAmount = ROUND_TO_TICKS( cl.GetClientInterpAmount() );
+
+	float flInterp = 0.0f;
+	if ( flClientInterpolationAmount > 0.001 )
 	{
-		// Back up one because we've incremented outgoing_sequence each frame by 1 unit
-		cmdnumber = ( cls.netchan.outgoing_sequence - 1 ) & CL_UPDATE_MASK;
-		demo->WriteUserCmd( cmdnumber );
+		flInterp = clamp( dt / flClientInterpolationAmount, 0.0f, 3.0f );
 	}
-
-	// Update download/upload slider.
-	Netchan_UpdateProgress( &cls.netchan );
+	cl.m_NetChannel->SetInterpolationAmount( flInterp );
 }
 
 //-----------------------------------------------------------------------------
@@ -2201,16 +2272,20 @@ void CL_Move( float accumulated_extra_samples )
 //-----------------------------------------------------------------------------
 void CL_HudMessage( const char *pMessage )
 {
-	DispatchDirectUserMsg( "HudText", strlen(pMessage) + 1, (void *)pMessage );
+	if ( g_ClientDLL )
+	{
+		g_ClientDLL->HudText( pMessage );
+	}
 }
-void CL_ShowEnts_f()
+
+CON_COMMAND_F( cl_showents, "Dump entity list to console.", FCVAR_CHEAT )
 {
 	for ( int i = 0; i < entitylist->GetMaxEntities(); i++ )
 	{
 		char entStr[256], classStr[256];
 		IClientNetworkable *pEnt;
 
-		if(pEnt = entitylist->GetClientNetworkable(i))
+		if((pEnt = entitylist->GetClientNetworkable(i)) != NULL)
 		{
 			entStr[0] = 0;
 			Q_snprintf(classStr, sizeof( classStr ), "'%s'", pEnt->GetClientClass()->m_pNetworkName);
@@ -2222,28 +2297,517 @@ void CL_ShowEnts_f()
 		}
 
 		if ( pEnt )
-			Con_Printf("Ent %3d: %s class %s\n", i, entStr, classStr);
+			ConMsg("Ent %3d: %s class %s\n", i, entStr, classStr);
 	}
 }
+
+
+//-----------------------------------------------------------------------------
+// Purpose: returns true if the background level should be loaded on startup
+//-----------------------------------------------------------------------------
+bool CL_ShouldLoadBackgroundLevel( const CCommand &args )
+{
+	// GammaSource: the menu uses the static 2003 image, never a live background map.
+	return false;
+
+	if ( InEditMode() )
+		return false;
+
+	// If TF2 and PC we don't want to load the background map.
+	bool bIsTF2 = false;
+	if ( ( Q_stricmp( COM_GetModDirectory(), "tf" ) == 0 ) || ( Q_stricmp( COM_GetModDirectory(), "tf_beta" ) == 0 ) )
+	{
+		bIsTF2 = true;
+	}
+
+	if ( bIsTF2 && IsPC() )
+		return false;
+
+	if ( args.ArgC() == 2 )
+	{
+		// presence of args identifies an end-of-game situation
+		if ( IsX360() )
+		{
+			// 360 needs to get UI in the correct state to transition to the Background level
+			// from the credits.
+			EngineVGui()->OnCreditsFinished();
+			return true;
+		}
+
+		if ( !Q_stricmp( args[1], "force" ) )
+		{
+			// Adrian: Have to do this so the menu shows up if we ever call this while in a level.
+			Host_Disconnect( true );
+			// pc can't get into background maps fast enough, so just show main menu
+			return false;
+		}
+
+		if ( !Q_stricmp( args[1], "playendgamevid" ) )
+		{
+			// Bail back to the menu and play the end game video.
+			CommandLine()->AppendParm( "-endgamevid", NULL ); 
+			CommandLine()->RemoveParm( "-recapvid" );
+			game->PlayStartupVideos();
+			CommandLine()->RemoveParm( "-endgamevid" );
+			cl.Disconnect( "Finished playing end game videos", true );
+			return false;
+		}
+
+		if ( !Q_stricmp( args[1], "playrecapvid" ) )
+		{
+			// Bail back to the menu and play the recap video
+			CommandLine()->AppendParm( "-recapvid", NULL ); 
+			CommandLine()->RemoveParm( "-endgamevid" );
+			HostState_Restart();
+			return false;
+		}
+	}
+	
+	// if force is set, then always return true
+	if (CommandLine()->CheckParm("-forcestartupmenu"))
+		return true;
+
+	// don't load the map in developer or console mode
+	if ( developer.GetInt() || 
+		CommandLine()->CheckParm("-console") || 
+		CommandLine()->CheckParm("-dev") ||
+		CommandLine()->CheckParm("-nobackgroundlevel") )
+		return false;
+
+	// don't load the map if we're going straight into a level
+	if ( CommandLine()->CheckParm("+map") ||
+		CommandLine()->CheckParm("+connect") ||
+		CommandLine()->CheckParm("+playdemo") ||
+		CommandLine()->CheckParm("+timedemo") ||
+		CommandLine()->CheckParm("+timedemoquit") ||
+		CommandLine()->CheckParm("+load") ||
+		CommandLine()->CheckParm("-makereslists"))
+		return false;
+
+#ifdef _X360
+	// check if we are accepting an invite
+	if ( XboxLaunch()->GetLaunchFlags() & LF_INVITERESTART )
+		return false;
+#endif
+
+	// nothing else is going on, so load the startup level
+
+	return true;
+}
+
+// GammaSource: the 2003 static menu art (materials/console/console_background[_widescreen]).
+#define DEFAULT_BACKGROUND_NAME	"console_background"
+
+int g_iRandomChapterIndex = -1;
+
+int CL_GetBackgroundLevelIndex( int nNumChapters )
+{
+	if ( g_iRandomChapterIndex != -1 )
+		return g_iRandomChapterIndex;
+
+	int iChapterIndex = sv_unlockedchapters.GetInt();
+	if ( iChapterIndex <= 0 )
+	{
+		// expected to be [1..N]
+		iChapterIndex = 1;
+	}
+
+	if ( sv_unlockedchapters.GetInt() >= ( nNumChapters-1 ) )
+	{
+		RandomSeed( Plat_MSTime() );
+		g_iRandomChapterIndex = iChapterIndex = RandomInt( 1, nNumChapters );
+	}
+
+	return iChapterIndex;
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: returns the name of the background level to load
+//-----------------------------------------------------------------------------
+void CL_GetBackgroundLevelName( char *pszBackgroundName, int bufSize, bool bMapName )
+{
+	Q_strncpy( pszBackgroundName, DEFAULT_BACKGROUND_NAME, bufSize );
+
+	KeyValues *pChapterFile = new KeyValues( pszBackgroundName );
+
+	if ( pChapterFile->LoadFromFile( g_pFileSystem, "scripts/ChapterBackgrounds.txt" ) )
+	{
+		KeyValues *pChapterRoot = pChapterFile;
+
+		const char *szChapterIndex;
+		int nNumChapters = 1;
+		KeyValues *pChapters = pChapterFile->GetNextKey();
+		if ( bMapName && pChapters )
+		{
+			const char *pszName = pChapters->GetName();
+			if ( pszName && pszName[0] && !Q_strncmp( "BackgroundMaps", pszName, 14 ) )
+			{
+				pChapterRoot = pChapters;
+				pChapters = pChapters->GetFirstSubKey();
+			}
+			else
+			{
+				pChapters = NULL;
+			}
+		}
+		else
+		{
+			pChapters = NULL;
+		}
+
+		if ( !pChapters )
+		{
+			pChapters = pChapterFile->GetFirstSubKey();
+		}
+
+		// Find the highest indexed chapter
+		while ( pChapters )
+		{
+			szChapterIndex = pChapters->GetName();
+
+			if ( szChapterIndex )
+			{
+				int nChapter = atoi(szChapterIndex);
+
+				if( nChapter > nNumChapters )
+					nNumChapters = nChapter;
+			}
+			
+			pChapters = pChapters->GetNextKey();
+		}	
+
+		int nChapterToLoad = CL_GetBackgroundLevelIndex( nNumChapters );
+
+		// Find the chapter background with this index
+		char buf[4];
+		Q_snprintf( buf, sizeof(buf), "%d", nChapterToLoad );
+		KeyValues *pLoadChapter = pChapterRoot->FindKey(buf);
+
+		// Copy the background name
+		if ( pLoadChapter )
+		{
+			Q_strncpy( pszBackgroundName, pLoadChapter->GetString(), bufSize );
+		}
+	}
+
+	pChapterFile->deleteThis();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Callback to open the game menus
+//-----------------------------------------------------------------------------
+void CL_CheckToDisplayStartupMenus( const CCommand &args )
+{
+	if ( CL_ShouldLoadBackgroundLevel( args ) )
+	{
+		char szBackgroundName[_MAX_PATH];
+		CL_GetBackgroundLevelName( szBackgroundName, sizeof(szBackgroundName), true );
+
+		char cmd[_MAX_PATH];
+		Q_snprintf( cmd, sizeof(cmd), "map_background %s\n", szBackgroundName );
+		Cbuf_AddText( cmd );
+	}
+}
+
+static float s_fDemoRevealGameUITime = -1;
+float s_fDemoPlayMusicTime = -1;
+static bool s_bIsRavenHolmn = false;
+//-----------------------------------------------------------------------------
+// Purpose: run the special demo logic when transitioning from the trainstation levels
+//----------------------------------------------------------------------------
+void CL_DemoTransitionFromTrainstation()
+{
+	// kick them out to GameUI instead and bring up the chapter page with raveholm unlocked
+	sv_unlockedchapters.SetValue(6); // unlock ravenholm
+	Cbuf_AddText( "sv_cheats 1; fadeout 1.5; sv_cheats 0;");
+	Cbuf_Execute();
+	s_fDemoRevealGameUITime = Sys_FloatTime() + 1.5;
+	s_bIsRavenHolmn = false;
+}
+
+void CL_DemoTransitionFromRavenholm()
+{
+	Cbuf_AddText( "sv_cheats 1; fadeout 2; sv_cheats 0;");
+	Cbuf_Execute();
+	s_fDemoRevealGameUITime = Sys_FloatTime() + 1.9;
+	s_bIsRavenHolmn = true;
+}
+
+void CL_DemoTransitionFromTestChmb()
+{
+	Cbuf_AddText( "sv_cheats 1; fadeout 2; sv_cheats 0;");
+	Cbuf_Execute();
+	s_fDemoRevealGameUITime = Sys_FloatTime() + 1.9;	
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: make the gameui appear after a certain interval
+//----------------------------------------------------------------------------
+void V_RenderVGuiOnly();
+bool V_CheckGamma();
+void CL_DemoCheckGameUIRevealTime( ) 
+{
+	if ( s_fDemoRevealGameUITime > 0 )
+	{
+		if ( s_fDemoRevealGameUITime < Sys_FloatTime() )
+		{
+			s_fDemoRevealGameUITime = -1;
+
+			SCR_BeginLoadingPlaque();
+			Cbuf_AddText( "disconnect;");
+
+			CCommand args;
+			CL_CheckToDisplayStartupMenus( args );
+
+			s_fDemoPlayMusicTime = Sys_FloatTime() + 1.0;
+		}
+	}
+
+	if ( s_fDemoPlayMusicTime > 0 )
+	{
+		V_CheckGamma();
+		V_RenderVGuiOnly();
+		if ( s_fDemoPlayMusicTime < Sys_FloatTime() )
+		{
+			s_fDemoPlayMusicTime = -1;
+			EngineVGui()->ActivateGameUI();
+
+			if ( CL_IsHL2Demo() )
+			{
+				if ( s_bIsRavenHolmn )
+				{
+					Cbuf_AddText( "play music/ravenholm_1.mp3;" );
+				}
+				else
+				{
+					EngineVGui()->ShowNewGameDialog(6);// bring up the new game dialog in game UI
+				}
+			}
+		}
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: setup a debug string that is uploaded on crash
+//----------------------------------------------------------------------------
+extern bool g_bV3SteamInterface;
+char g_minidumpinfo[ 4096 ] = {0};
+PAGED_POOL_INFO_t g_pagedpoolinfo = { 0 };
+void DisplaySystemVersion( char *osversion, int maxlen );
+
+void CL_SetPagedPoolInfo()
+{
+	if ( IsX360() )
+		return;
+#if !defined( _X360 ) && !defined(NO_STEAM) && !defined(SWDS)
+	Plat_GetPagedPoolInfo( &g_pagedpoolinfo );
+#endif
+}
+
+void CL_SetSteamCrashComment()
+{
+	if ( IsX360() )
+		return;
+
+	char map[ 80 ];
+	char videoinfo[ 2048 ];
+	char misc[ 256 ];
+	char driverinfo[ 2048 ];
+	char osversion[ 256 ];
+
+	map[ 0 ] = 0;
+	driverinfo[ 0 ] = 0;
+	videoinfo[ 0 ] = 0;
+	misc[ 0 ] = 0;
+	osversion[ 0 ] = 0;
+
+	if ( host_state.worldmodel )
+	{
+		CL_SetupMapName( modelloader->GetName( host_state.worldmodel ), map, sizeof( map ) );
+	}
+
+	DisplaySystemVersion( osversion, sizeof( osversion ) );
+
+	MaterialAdapterInfo_t info;
+	materials->GetDisplayAdapterInfo( materials->GetCurrentAdapter(), info );
+
+	const char *dxlevel = "Unk";
+	int nDxLevel = g_pMaterialSystemHardwareConfig->GetDXSupportLevel();
+	if ( g_pMaterialSystemHardwareConfig )
+	{
+		dxlevel = COM_DXLevelToString( nDxLevel ) ;
+	}
+
+	// Make a string out of the high part and low parts of driver version
+	char szDXDriverVersion[ 64 ];
+	Q_snprintf( szDXDriverVersion, sizeof( szDXDriverVersion ), "%ld.%ld.%ld.%ld", 
+		( long )( info.m_nDriverVersionHigh>>16 ), 
+		( long )( info.m_nDriverVersionHigh & 0xffff ), 
+		( long )( info.m_nDriverVersionLow>>16 ), 
+		( long )( info.m_nDriverVersionLow & 0xffff ) );
+
+	Q_snprintf( driverinfo, sizeof(driverinfo), "Driver Name:  %s\nDriver Version: %s\nVendorId / DeviceId:  0x%x / 0x%x\nSubSystem / Rev:  0x%x / 0x%x\nDXLevel:  %s [%d]\nVid:  %i x %i",
+		info.m_pDriverName,
+		szDXDriverVersion,
+		info.m_VendorID,
+		info.m_DeviceID,
+		info.m_SubSysID,
+		info.m_Revision,
+		dxlevel ? dxlevel : "Unk", nDxLevel, 
+		videomode->GetModeWidth(), videomode->GetModeHeight() );
+
+	ConVarRef mat_picmip( "mat_picmip" );
+	ConVarRef mat_forceaniso( "mat_forceaniso" );
+	ConVarRef mat_trilinear( "mat_trilinear" );
+	ConVarRef mat_antialias( "mat_antialias" );
+	ConVarRef mat_aaquality( "mat_aaquality" );
+	ConVarRef r_shadowrendertotexture( "r_shadowrendertotexture" );
+	ConVarRef r_flashlightdepthtexture( "r_flashlightdepthtexture" );
+#ifndef _X360
+	ConVarRef r_waterforceexpensive( "r_waterforceexpensive" );
+#endif
+		ConVarRef r_waterforcereflectentities( "r_waterforcereflectentities" );
+		ConVarRef mat_vsync( "mat_vsync" );
+		ConVarRef r_rootlod( "r_rootlod" );
+		ConVarRef mat_reducefillrate( "mat_reducefillrate" );
+		ConVarRef mat_motion_blur_enabled( "mat_motion_blur_enabled" );
+		ConVarRef mat_queue_mode( "mat_queue_mode" );
+
+#ifdef _X360
+	Q_snprintf( videoinfo, sizeof(videoinfo), "picmip: %i forceansio: %i trilinear: %i antialias: %i vsync: %i rootlod: %i reducefillrate: %i\n"\
+		"shadowrendertotexture: %i r_flashlightdepthtexture %i waterforcereflectentities: %i mat_motion_blur_enabled: %i",
+										mat_picmip.GetInt(), mat_forceaniso.GetInt(), mat_trilinear.GetInt(), mat_antialias.GetInt(), mat_aaquality.GetInt(),
+										mat_vsync.GetInt(), r_rootlod.GetInt(), mat_reducefillrate.GetInt(), 
+										r_shadowrendertotexture.GetInt(), r_flashlightdepthtexture.GetInt(),
+										r_waterforcereflectentities.GetInt(),
+										mat_motion_blur_enabled.GetInt() );
+#else
+		Q_snprintf( videoinfo, sizeof(videoinfo), "picmip: %i forceansio: %i trilinear: %i antialias: %i vsync: %i rootlod: %i reducefillrate: %i\n"\
+			"shadowrendertotexture: %i r_flashlightdepthtexture %i waterforceexpensive: %i waterforcereflectentities: %i mat_motion_blur_enabled: %i mat_queue_mode %i",
+											mat_picmip.GetInt(), mat_forceaniso.GetInt(), mat_trilinear.GetInt(), mat_antialias.GetInt(), 
+											mat_vsync.GetInt(), r_rootlod.GetInt(), mat_reducefillrate.GetInt(), 
+											r_shadowrendertotexture.GetInt(), r_flashlightdepthtexture.GetInt(),
+											r_waterforceexpensive.GetInt(), r_waterforcereflectentities.GetInt(),
+											mat_motion_blur_enabled.GetInt(), mat_queue_mode.GetInt() );
+#endif
+	int latency = 0;
+	if ( cl.m_NetChannel )
+	{
+		latency = (int)( 1000.0f * cl.m_NetChannel->GetAvgLatency( FLOW_OUTGOING ) );
+	}
+
+	Q_snprintf( misc, sizeof( misc ), "skill:%i rate %i update %i cmd %i latency %i msec", 
+		skill.GetInt(),
+		cl_rate->GetInt(),
+		(int)cl_updaterate->GetFloat(),
+		(int)cl_cmdrate->GetFloat(),
+		latency
+	);
+
+	const char *pNetChannel = "Not Connected";
+	if ( cl.m_NetChannel )
+	{
+		pNetChannel = cl.m_NetChannel->GetRemoteAddress().ToString();
+	}
+
+		CL_SetPagedPoolInfo();
+
+		Q_snprintf( g_minidumpinfo, sizeof(g_minidumpinfo),
+				"Map: %s\n"\
+				"Game: %s\n"\
+				"Build: %i\n"\
+				"Misc: %s\n"\
+				"Net: %s\n"\
+				"cmdline:%s\n"\
+				"driver: %s\n"\
+				"video: %s\n"\
+				"OS: %s\n",
+				map, com_gamedir, build_number(), misc, pNetChannel, CommandLine()->GetCmdLine(), driverinfo, videoinfo, osversion );
+
+		char full[ 4096 ];
+		Q_snprintf( full, sizeof( full ), "%sPP PAGES: used: %d, free %d\n", g_minidumpinfo, (int)g_pagedpoolinfo.numPagesUsed, (int)g_pagedpoolinfo.numPagesFree );
+
+#ifndef NO_STEAM
+	SteamAPI_SetMiniDumpComment( full );
+#endif
+}
+
 
 //
 // register commands
 //
-static ConCommand cl_showents( "cl_showents", CL_ShowEnts_f );
-static ConCommand cl_hud( "cl_hud", CL_HideHud_f );
-static ConCommand retry("retry", CL_Retry_f); 
-static ConCommand connect("connect", CL_Connect_f);
-static ConCommand reconnect("reconnect", CL_Reconnect_f);
-static ConCommand snapshot( "snapshot", CL_TakeSnapshot_f );
-static ConCommand screenshot( "screenshot", CL_TakeSnapshot_f );
-static ConCommand startmovie( "startmovie", CL_StartMovie_f );
-static ConCommand endmovie( "endmovie", CL_EndMovie_f );
-static ConCommand rcon("rcon", CL_Rcon_f);
-static ConCommand cl_view("cl_view", CL_View_f);
-static ConCommand pingservers("pingservers", CL_PingServers_f );
-static ConCommand slist("slist", CL_Slist_f );     
-static ConCommand list("list", CL_ListCachedServers_f );
-static ConCommand box( "box", CL_DebugBox_f );
+static ConCommand startupmenu( "startupmenu", &CL_CheckToDisplayStartupMenus, "Opens initial menu screen and loads the background bsp, but only if no other level is being loaded, and we're not in developer mode." );
+
+ConVar cl_language( "cl_language", "english", FCVAR_USERINFO, "Language (from HKCU\\Software\\Valve\\Steam\\Language)" );
+void CL_InitLanguageCvar()
+{
+	Msg("CL_InitLanguageCvar\n");
+	if ( Steam3Client().SteamApps() )
+	{
+		cl_language.SetValue( Steam3Client().SteamApps()->GetCurrentGameLanguage() );
+	}
+	else
+	{
+		char *szLang = getenv("LANG");
+
+		if ( CommandLine()->CheckParm( "-language" ) )
+		{
+			cl_language.SetValue( CommandLine()->ParmValue( "-language", "english") );
+			return;
+		}
+		else if( szLang )
+		{
+			ELanguage lang = PchLanguageICUCodeToELanguage(szLang, k_Lang_English);
+			const char *szShortLang = GetLanguageShortName(lang);
+			if( Q_strncmp(szShortLang, "none", 4) != 0 )
+			{
+				cl_language.SetValue( szShortLang );
+				return;
+			}
+		}
+
+		cl_language.SetValue( "english" );
+	}
+}
+
+void CL_ChangeCloudSettingsCvar( IConVar *var, const char *pOldValue, float flOldValue );
+ConVar cl_cloud_settings( "cl_cloud_settings", "1", FCVAR_HIDDEN, "Cloud enabled from (from HKCU\\Software\\Valve\\Steam\\Apps\\appid\\Cloud)", CL_ChangeCloudSettingsCvar );
+void CL_ChangeCloudSettingsCvar( IConVar *var, const char *pOldValue, float flOldValue )
+{
+	// !! bug do i need to do something linux-wise here.
+	if ( IsPC() && Steam3Client().SteamRemoteStorage() )
+	{
+		ConVarRef ref( var->GetName() );
+		Steam3Client().SteamRemoteStorage()->SetCloudEnabledForApp( ref.GetBool() );
+		if ( cl_cloud_settings.GetInt() == STEAMREMOTESTORAGE_CLOUD_ON && flOldValue == STEAMREMOTESTORAGE_CLOUD_OFF )
+		{
+			// If we were just turned on, get our configuration from remote storage.
+			engineClient->ReadConfiguration( false );
+			engineClient->ClientCmd_Unrestricted( "refresh_options_dialog" );
+		}
+
+	}
+}
+
+void CL_InitCloudSettingsCvar()
+{
+	if ( IsPC()	&& Steam3Client().SteamRemoteStorage() )
+	{
+		int iCloudSettings = STEAMREMOTESTORAGE_CLOUD_OFF;
+		if ( Steam3Client().SteamRemoteStorage()->IsCloudEnabledForApp() )
+			iCloudSettings = STEAMREMOTESTORAGE_CLOUD_ON;
+		
+		cl_cloud_settings.SetValue( iCloudSettings );
+	}
+	else
+	{
+		// If not on PC or steam not available, set to 0 to make sure no replication occurs or is attempted
+		cl_cloud_settings.SetValue( STEAMREMOTESTORAGE_CLOUD_OFF );
+	}
+}
+
 
 /*
 =================
@@ -2252,19 +2816,10 @@ CL_Init
 */
 void CL_Init (void)
 {	
-	cls.datagram.StartWriting(cls.datagram_buf, sizeof(cls.datagram_buf));
-	cls.datagram.SetDebugName( "cls.datagram" );
-	cls.netchan.message.SetDebugName( "cls.netchan.message" );
-
-	// set default userinfo values
-	Info_SetValueForKey( cls.userinfo, "name", "unnamed", MAX_INFO_STRING );
-	Info_SetValueForKey( cls.userinfo, "rate", "2500", MAX_INFO_STRING);
-	Info_SetValueForKey( cls.userinfo, "cl_updaterate", "20", MAX_INFO_STRING );
-
-	TRACEINIT( demo->Init(), demo->Shutdown() );
-
-	 // Don't use memset here because there are vtables.
 	cl.Clear();
+	
+	CL_InitLanguageCvar();
+	CL_InitCloudSettingsCvar();
 }
 
 //-----------------------------------------------------------------------------
@@ -2272,591 +2827,339 @@ void CL_Init (void)
 //-----------------------------------------------------------------------------
 void CL_Shutdown( void )
 {
-	TRACESHUTDOWN( demo->Shutdown() );
 }
 
-float CClientState::gettime() const
+CON_COMMAND_F( cl_fullupdate, "Forces the server to send a full update packet", FCVAR_CHEAT )
 {
-	// Out
-	if ( !insimulation )
-	{
-		return tickcount * TICK_RATE + tickremainder;
-	}
-	return tickcount * TICK_RATE;
+	cl.ForceFullUpdate();
 }
 
-float CClientState::getframetime() const
-{
-	if ( !insimulation )
-	{
-		return cl.paused || bugreporter->ShouldPause() ? 0 : host_frametime;
-	}
-	if ( tickcount == oldtickcount )
-	{
-		return 0.0f;
-	}
-	return ( tickcount - oldtickcount) * TICK_RATE;
-}
 
-//-----------------------------------------------------------------------------
-// Purpose: // Clear all the variables in the CClientState.
-//-----------------------------------------------------------------------------
-void CClientState::Clear( void )
+#ifdef STAGING_ONLY
+
+CON_COMMAND( cl_download, "Downloads a file from server." )
 {
-	if ( networkStringTableContainerClient )
-		networkStringTableContainerClient->RemoveAllTables();
+	if ( args.ArgC() != 2 )
+		return;
+
+	if ( !cl.m_NetChannel )
+		return;
 	
-	m_hModelPrecacheTable = INVALID_STRING_TABLE;
-	m_hGenericPrecacheTable = INVALID_STRING_TABLE;
-	m_hSoundPrecacheTable = INVALID_STRING_TABLE;
-	m_hDecalPrecacheTable = INVALID_STRING_TABLE;
-	m_hInstanceBaselineTable = INVALID_STRING_TABLE;
-
-	servercount = 0;
-	validsequence = 0;
-	parsecount = 0;
-	viewangles.Init();
-	paused = 0;
-	mtime[0] = mtime[1] = 0;
-	tickcount = 0;
-	oldtickcount = 0;
-	tickremainder = 0;
-	insimulation = false;
-
-
-	addangle.RemoveAll();
-
-	memset( frames, 0, MULTIPLAYER_BACKUP * sizeof( frame_t ) );
-	playernum = 0;
-	memset(model_precache, 0, sizeof(model_precache));
-	memset(sound_precache, 0, sizeof(sound_precache));
-	levelname[0] = 0;
-	maxclients = 0;
-	viewentity = 0;
-	cdtrack = 0;
-	serverCRC = 0;
-	serverClientSideDllCRC = 0;
-	memset(players, 0, sizeof(players));
-	m_pServerClasses = 0;
-	m_nServerClasses = 0;
-	m_nServerClassBits = 0;
-
-	last_incoming_sequence = 0;
-	last_command_ack = 0;
+	cl.m_NetChannel->RequestFile( args[ 1 ] ); // just for testing stuff
 }
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : model_t
-//-----------------------------------------------------------------------------
-model_t *CClientState::GetModel( int index )
+#endif // STAGING_ONLY
+
+
+CON_COMMAND_F( setinfo, "Adds a new user info value", FCVAR_CLIENTCMD_CAN_EXECUTE )
 {
-	if ( index <= 0 )
+	if ( args.ArgC() != 3 )
 	{
-		return NULL;
-	}
-
-	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hModelPrecacheTable ) )
-	{
-		return NULL;
-	}
-
-	CPrecacheItem *p = &model_precache[ index ];
-	model_t *m = p->GetModel();
-	if ( m )
-	{
-		return m;
-	}
-
-	char const *name = networkStringTableContainerClient->GetString( m_hModelPrecacheTable, index );
-
-	if ( host_showcachemiss.GetBool() )
-	{
-		Con_DPrintf( "client model cache miss on %s\n", name );
-	}
-
-	m = modelloader->GetModelForName( name, IModelLoader::FMODELLOADER_CLIENT );
-	if ( !m )
-	{
-		const CPrecacheUserData *data = CL_GetPrecacheUserData( m_hModelPrecacheTable, index );
-		if ( data && ( data->flags & RES_FATALIFMISSING ) )
-		{
-			COM_ExplainDisconnection( true, "Cannot continue without model %s, disconnecting\n", name );
-			Host_Disconnect();
-		}
-	}
-
-	p->SetModel( m );
-	return m;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *name - 
-// Output : int -- note -1 if missing
-//-----------------------------------------------------------------------------
-int CClientState::LookupModelIndex( char const *name )
-{
-	int idx = networkStringTableContainerClient->FindStringIndex( m_hModelPrecacheTable, name );
-	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-//			*name - 
-//-----------------------------------------------------------------------------
-void CClientState::SetModel( int tableIndex )
-{
-	// Bogus index
-	if ( tableIndex < 0 || 
-		 tableIndex >= networkStringTableContainerClient->GetNumStrings( m_hModelPrecacheTable ) )
-	{
+		Msg("Syntax: setinfo <key> <value>\n");
 		return;
 	}
 
-	CPrecacheItem *p = &model_precache[ tableIndex ];
-	const CPrecacheUserData *data = CL_GetPrecacheUserData( m_hModelPrecacheTable, tableIndex );
+	const char *name = args[ 1 ];
+	const char *value = args[ 2 ];
 
-	bool loadnow = ( data && ( data->flags & RES_PRELOAD ) );
+	// Prevent players manually changing their name (their Steam account provides it now)
+	if ( Q_stricmp( name, "name" ) == 0 )
+		return;
 
-	if ( CommandLine()->FindParm( "-nopreload" ) )
+	// Discard any convar change request if contains funky characters
+	bool bFunky = false;
+	for (const char *s = name ; *s != '\0' ; ++s )
 	{
-		loadnow = false;
+		if ( !V_isalnum(*s) && *s != '_' )
+		{
+			bFunky = true;
+			break;
+		}
 	}
-	else if ( cl_forcepreload.GetInt() || CommandLine()->FindParm( "-preload" ) )
+	if ( bFunky )
 	{
-		loadnow = true;
-	}
-
-	if ( loadnow )
-	{
-		char const *name = networkStringTableContainerClient->GetString( m_hModelPrecacheTable, tableIndex );
-		p->SetModel( modelloader->GetModelForName( name, IModelLoader::FMODELLOADER_CLIENT ) );
-	}
-	else
-	{
-		p->SetModel( NULL );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : TABLEID
-//-----------------------------------------------------------------------------
-TABLEID CClientState::GetModelPrecacheTable( void ) const
-{
-	return m_hModelPrecacheTable;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : id - 
-//-----------------------------------------------------------------------------
-void CClientState::SetModelPrecacheTable( TABLEID id )
-{
-	m_hModelPrecacheTable = id;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : model_t
-//-----------------------------------------------------------------------------
-char const *CClientState::GetGeneric( int index )
-{
-	if ( index <= 0 )
-		return "";
-
-	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hGenericPrecacheTable ) )
-	{
-		return "";
-	}
-
-	CPrecacheItem *p = &generic_precache[ index ];
-	char const *g = p->GetGeneric();
-	return g;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *name - 
-// Output : int -- note -1 if missing
-//-----------------------------------------------------------------------------
-int CClientState::LookupGenericIndex( char const *name )
-{
-	int idx = networkStringTableContainerClient->FindStringIndex( m_hGenericPrecacheTable, name );
-	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-//			*name - 
-//-----------------------------------------------------------------------------
-void CClientState::SetGeneric( int tableIndex )
-{
-	// Bogus index
-	if ( tableIndex < 0 || 
-		 tableIndex >= networkStringTableContainerClient->GetNumStrings( m_hGenericPrecacheTable ) )
-	{
+		Msg( "Ignoring convar change request for variable '%s', which contains invalid character(s)\n", name );
 		return;
 	}
 
-	char const *name = networkStringTableContainerClient->GetString( m_hGenericPrecacheTable, tableIndex );
-	CPrecacheItem *p = &generic_precache[ tableIndex ];
-	p->SetGeneric( name );
-}
+	ConCommandBase *pCommand = g_pCVar->FindCommandBase( name );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : TABLEID
-//-----------------------------------------------------------------------------
-TABLEID CClientState::GetGenericPrecacheTable( void ) const
-{
-	return m_hGenericPrecacheTable;
-}
+	ConVarRef sv_cheats( "sv_cheats" );
 
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : id - 
-//-----------------------------------------------------------------------------
-void CClientState::SetGenericPrecacheTable( TABLEID id )
-{
-	m_hGenericPrecacheTable = id;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : char const
-//-----------------------------------------------------------------------------
-char const *CClientState::GetSoundName( int index )
-{
-	if ( index <= 0 )
-		return "";
-
-	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hSoundPrecacheTable ) )
+	if ( pCommand )
 	{
-		return "";
-	}
-
-	char const *name = networkStringTableContainerClient->GetString( m_hSoundPrecacheTable, index );
-	return name;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : model_t
-//-----------------------------------------------------------------------------
-CSfxTable *CClientState::GetSound( int index )
-{
-	if ( index <= 0 )
-		return NULL;
-
-	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hSoundPrecacheTable ) )
-	{
-		return NULL;
-	}
-
-	CPrecacheItem *p = &sound_precache[ index ];
-	CSfxTable *s = p->GetSound();
-	if ( s )
-		return s;
-
-	char const *name = networkStringTableContainerClient->GetString( m_hSoundPrecacheTable, index );
-
-	if ( host_showcachemiss.GetBool() )
-	{
-		Con_DPrintf( "client sound cache miss on %s\n", name );
-	}
-
-	s = S_PrecacheSound( name );
-
-	p->SetSound( s );
-	return s;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : *name - 
-// Output : int -- note -1 if missing
-//-----------------------------------------------------------------------------
-int CClientState::LookupSoundIndex( char const *name )
-{
-	int idx = networkStringTableContainerClient->FindStringIndex( m_hSoundPrecacheTable, name );
-	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
-}
-
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-//			*name - 
-//-----------------------------------------------------------------------------
-void CClientState::SetSound( int tableIndex )
-{
-	// Bogus index
-	if ( tableIndex < 0 || 
-		 tableIndex >= networkStringTableContainerClient->GetNumStrings( m_hSoundPrecacheTable ) )
-	{
-		return;
-	}
-
-	CPrecacheItem *p = &sound_precache[ tableIndex ];
-	const CPrecacheUserData *data = CL_GetPrecacheUserData( m_hSoundPrecacheTable, tableIndex );
-
-	bool loadnow = ( data && ( data->flags & RES_PRELOAD ) );
-
-	if ( CommandLine()->FindParm( "-nopreload" ) )
-	{
-		loadnow = false;
-	}
-	else if ( cl_forcepreload.GetInt() || CommandLine()->FindParm( "-preload" ) )
-	{
-		loadnow = true;
-	}
-
-	if ( loadnow )
-	{
-		char const *name = networkStringTableContainerClient->GetString( m_hSoundPrecacheTable, tableIndex );
-		p->SetSound( S_PrecacheSound( name ) );
-	}
-	else
-	{
-		p->SetSound( NULL );
-	}
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : TABLEID
-//-----------------------------------------------------------------------------
-TABLEID CClientState::GetSoundPrecacheTable( void ) const
-{
-	return m_hSoundPrecacheTable;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : id - 
-//-----------------------------------------------------------------------------
-void CClientState::SetSoundPrecacheTable( TABLEID id )
-{
-	m_hSoundPrecacheTable = id;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-// Output : model_t
-//-----------------------------------------------------------------------------
-char const *CClientState::GetDecalName( int index )
-{
-	if ( index <= 0 )
-	{
-		return NULL;
-	}
-
-	if ( index >= networkStringTableContainerClient->GetNumStrings( m_hDecalPrecacheTable ) )
-	{
-		return NULL;
-	}
-
-	CPrecacheItem *p = &decal_precache[ index ];
-	char const *d = p->GetDecal();
-	return d;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : index - 
-//			*name - 
-//-----------------------------------------------------------------------------
-void CClientState::SetDecal( int tableIndex )
-{
-	// Bogus index
-	if ( tableIndex < 0 || 
-		 tableIndex >= networkStringTableContainerClient->GetNumStrings( m_hDecalPrecacheTable ) )
-	{
-		return;
-	}
-
-	char const *name = networkStringTableContainerClient->GetString( m_hDecalPrecacheTable, tableIndex );
-	CPrecacheItem *p = &decal_precache[ tableIndex ];
-	p->SetDecal( name );
-
-	Draw_DecalSetName( tableIndex, (char *)name );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Output : TABLEID
-//-----------------------------------------------------------------------------
-TABLEID CClientState::GetDecalPrecacheTable( void ) const
-{
-	return m_hDecalPrecacheTable;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-// Input  : id - 
-//-----------------------------------------------------------------------------
-void CClientState::SetDecalPrecacheTable( TABLEID id )
-{
-	m_hDecalPrecacheTable = id;
-}
-
-TABLEID CClientState::GetInstanceBaselineTable() const
-{
-	return m_hInstanceBaselineTable;
-}
-
-void CClientState::SetInstanceBaselineTable( TABLEID id )
-{
-	m_hInstanceBaselineTable = id;
-}
-
-void CClientState::UpdateInstanceBaseline( int iStringID )
-{
-	// We used to update C_ServerClassInfo::m_InstanceBaselineIndex in here but we
-	// do it lazily now. See GetDynamicBaseline for an explanation.
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void CClientState::DumpPrecacheStats( TABLEID table )
-{
-	if ( table == INVALID_STRING_TABLE )
-	{
-		Con_Printf( "Can only dump stats when active in a level\n" );
-		return;
-	}
-
-	CPrecacheItem *items = NULL;
-	if ( table == m_hModelPrecacheTable )
-	{
-		items = model_precache;
-	}
-	else if ( table == m_hGenericPrecacheTable )
-	{
-		items = generic_precache;
-	}
-	else if ( table == m_hSoundPrecacheTable )
-	{
-		items = sound_precache;
-	}
-	else if ( table == m_hDecalPrecacheTable )
-	{
-		items = decal_precache;
-	}
-
-	if ( !items )
-		return;
-
-	int count = networkStringTableContainerClient->GetNumStrings( table );
-	int maxcount = networkStringTableContainerClient->GetMaxStrings( table );
-
-	Con_Printf( "\n" );
-	Con_Printf( "Precache table %s:  %i of %i slots used\n", networkStringTableContainerClient->GetTableName( table ),
-		count, maxcount );
-
-	int used = 0, total = 0;
-	for ( int i = 0; i < count; i++ )
-	{
-		char const *name = networkStringTableContainerClient->GetString( table, i );
-		CPrecacheItem *slot = &items[ i ];
-		const CPrecacheUserData *p = CL_GetPrecacheUserData( table, i );
-
-		if ( !name || !slot || !p )
-			continue;
-
-		Con_Printf( "%03i:  %s (%s):   ",
-			i,
-			name, 
-			GetFlagString( p->flags ) );
-
-		int filesize = p->filesize << 10;
-
-		if ( p->filesize > 0 || name[ 0 ] == '*' )
+		if ( pCommand->IsCommand() )		
 		{
-			Con_Printf( "%.2f kb,", (float)( filesize ) / 1024.0f );
-		}
-		else
-		{
-			Con_Printf( "missing!," );
+			Msg("Name %s is already registered as console command\n", name );
+			return;
 		}
 
-		total += filesize;
-
-		if ( slot->GetReferenceCount() == 0 )
+		if ( !pCommand->IsFlagSet(FCVAR_USERINFO) )
 		{
-			Con_Printf( " never used\n" );
-		}
-		else
-		{
-			used += filesize;
-
-			Con_Printf( " %i refs, first %.2f mru %.2f\n",
-				slot->GetReferenceCount(), 
-				slot->GetFirstReference(), 
-				slot->GetMostRecentReference() );
-		}
-	}
-
-	if ( total > 0 )
-	{
-		Con_Printf( " -- Total %.2f Mb, %.2f %% used\n",
-			(float)( total ) / ( 1024.0f * 1024.0f ), ( 100.0f * (float)used ) / ( float ) total );
-	}
-	Con_Printf( "\n" );
-}
-
-void CL_PrecacheInfo_f( void )
-{
-	if ( Cmd_Argc() == 2 )
-	{
-		char const *table = Cmd_Argv( 1 );
-
-		bool dumped = true;
-		if ( !Q_strcasecmp( table, "generic" ) )
-		{
-			cl.DumpPrecacheStats( cl.GetGenericPrecacheTable() );
-		}
-		else if ( !Q_strcasecmp( table, "sound" ) )
-		{
-			cl.DumpPrecacheStats( cl.GetSoundPrecacheTable() );
-		}
-		else if ( !Q_strcasecmp( table, "decal" ) )
-		{
-			cl.DumpPrecacheStats( cl.GetDecalPrecacheTable() );
-		}
-		else if ( !Q_strcasecmp( table, "model" ) )
-		{
-			cl.DumpPrecacheStats( cl.GetModelPrecacheTable() );
-		}
-		else
-		{
-			dumped = false;
+			Msg("Convar %s is already registered but not as user info value\n", name );
+			return;
 		}
 
-		if ( dumped )
+		if ( pCommand->IsFlagSet( FCVAR_NOT_CONNECTED ) )
 		{
+#ifndef DEDICATED
+			// Connected to server?
+			if ( cl.IsConnected() )
+			{
+				extern IBaseClientDLL *g_ClientDLL;
+				if ( pCommand->IsFlagSet( FCVAR_USERINFO ) && g_ClientDLL && g_ClientDLL->IsConnectedUserInfoChangeAllowed( NULL ) )
+				{
+					// Client.dll is allowing the convar change
+				}
+				else
+				{
+					ConMsg( "Can't change %s when playing, disconnect from the server or switch team to spectators\n", pCommand->GetName() );
+					return;
+				}
+			}
+#endif
+		}
+
+		if ( IsPC() )
+		{
+#if !defined(NO_STEAM)
+			EUniverse eUniverse = GetSteamUniverse();
+			if ( (( eUniverse != k_EUniverseBeta ) && ( eUniverse != k_EUniverseDev )) && pCommand->IsFlagSet( FCVAR_DEVELOPMENTONLY ) )
+				return;
+#endif 
+		}
+
+		if ( pCommand->IsFlagSet( FCVAR_CHEAT ) && sv_cheats.GetBool() == 0  )
+		{
+			Msg("Convar %s is marked as cheat and cheats are off\n", name );
 			return;
 		}
 	}
-	
-	// Show all data
-	cl.DumpPrecacheStats( cl.GetGenericPrecacheTable() );
-	cl.DumpPrecacheStats( cl.GetDecalPrecacheTable() );
-	cl.DumpPrecacheStats( cl.GetSoundPrecacheTable() );
-	cl.DumpPrecacheStats( cl.GetModelPrecacheTable() );
+	else
+	{
+		// cvar not found, create it now
+		char *pszString = V_strdup( name );
+
+		pCommand = new ConVar( pszString, "", FCVAR_USERINFO, "Custom user info value" );
+	}
+
+	ConVar *pConVar = (ConVar*)pCommand;
+
+	pConVar->SetValue( value );
+
+	if ( cl.IsConnected() )
+	{
+		// send changed cvar to server
+		NET_SetConVar convar( name, value );
+		cl.m_NetChannel->SendNetMsg( convar );
+	}
 }
 
-static ConCommand cl_precacheinfo( "cl_precacheinfo", CL_PrecacheInfo_f, "Show precache info (client)." );
+
+CON_COMMAND( cl_precacheinfo, "Show precache info (client)." )
+{
+	if ( args.ArgC() == 2 )
+	{
+		cl.DumpPrecacheStats( args[ 1 ] );
+		return;
+	}
+	
+	// Show all data
+	cl.DumpPrecacheStats( MODEL_PRECACHE_TABLENAME );
+	cl.DumpPrecacheStats( DECAL_PRECACHE_TABLENAME );
+	cl.DumpPrecacheStats( SOUND_PRECACHE_TABLENAME );
+	cl.DumpPrecacheStats( GENERIC_PRECACHE_TABLENAME );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *object - 
+//			stringTable - 
+//			stringNumber - 
+//			*newString - 
+//			*newData - 
+//-----------------------------------------------------------------------------
+void Callback_ModelChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	if ( stringTable == cl.m_pModelPrecacheTable )
+	{
+		// Index 0 is always NULL, just ignore it
+		// Index 1 == the world, don't 
+		if ( stringNumber > 1 )
+		{
+//			DevMsg( "Preloading model %s\n", newString );
+			cl.SetModel( stringNumber );
+		}
+	}
+	else
+	{
+		Assert( 0 ) ; // Callback_*Changed called with wrong stringtable
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *object - 
+//			stringTable - 
+//			stringNumber - 
+//			*newString - 
+//			*newData - 
+//-----------------------------------------------------------------------------
+void Callback_GenericChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	if ( stringTable == cl.m_pGenericPrecacheTable )
+	{
+		// Index 0 is always NULL, just ignore it
+		if ( stringNumber >= 1 )
+		{
+			cl.SetGeneric( stringNumber );
+		}
+	}
+	else
+	{
+		Assert( 0 ) ; // Callback_*Changed called with wrong stringtable
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *object - 
+//			stringTable - 
+//			stringNumber - 
+//			*newString - 
+//			*newData - 
+//-----------------------------------------------------------------------------
+void Callback_SoundChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	if ( stringTable == cl.m_pSoundPrecacheTable )
+	{
+		// Index 0 is always NULL, just ignore it
+		if ( stringNumber >= 1 )
+		{
+			cl.SetSound( stringNumber );
+		}
+	}
+	else
+	{
+		Assert( 0 ) ; // Callback_*Changed called with wrong stringtable
+	}
+}
+
+void Callback_DecalChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	if ( stringTable == cl.m_pDecalPrecacheTable )
+	{
+		cl.SetDecal( stringNumber );
+	}
+	else
+	{
+		Assert( 0 ) ; // Callback_*Changed called with wrong stringtable
+	}
+}
+
+
+void Callback_InstanceBaselineChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	Assert( stringTable == cl.m_pInstanceBaselineTable );
+	// cl.UpdateInstanceBaseline( stringNumber );
+}
+
+void Callback_UserInfoChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+	Assert( stringTable == cl.m_pUserInfoTable );
+
+	// stringnumber == player slot
+
+	player_info_t *player = (player_info_t*)newData;
+
+	if ( !player )
+		return; // player left the game
+
+	// request custom user files if necessary
+	for ( int i=0; i<MAX_CUSTOM_FILES; i++ )
+	{
+		cl.CheckOthersCustomFile( player->customFiles[i] );
+	}
+
+	// fire local client event game event
+	IGameEvent * event = g_GameEventManager.CreateEvent( "player_info" );
+
+	if ( event )
+	{
+		event->SetInt( "userid", player->userID );
+		event->SetInt( "friendsid", player->friendsID );
+		event->SetInt( "index", stringNumber );
+		event->SetString( "name", player->name );
+		event->SetString( "networkid", player->guid );
+		event->SetBool( "bot", player->fakeplayer );
+
+		g_GameEventManager.FireEventClientSide( event );
+	}
+}
+
+void Callback_DynamicModelsChanged( void *object, INetworkStringTable *stringTable, int stringNumber, const char *newString, const void *newData )
+{
+#ifndef SWDS
+	extern IVModelInfoClient *modelinfoclient;
+	if ( modelinfoclient )
+	{
+		modelinfoclient->OnDynamicModelsStringTableChange( stringNumber, newString, newData );
+	}
+#endif
+}
+
+void CL_HookClientStringTables()
+{
+	// install hooks
+	int numTables = cl.m_StringTableContainer->GetNumTables();
+
+	for ( int i =0; i<numTables; i++)
+	{
+		// iterate through server tables
+		CNetworkStringTable *pTable = 
+			(CNetworkStringTable*)cl.m_StringTableContainer->GetTable( i );
+
+		if ( !pTable )
+			continue;
+
+		cl.HookClientStringTable( pTable->GetTableName() );
+	}
+}
+// Installs the all, and invokes cb for all existing items
+void CL_InstallAndInvokeClientStringTableCallbacks()
+{
+	// install hooks
+	int numTables = cl.m_StringTableContainer->GetNumTables();
+
+	for ( int i =0; i<numTables; i++)
+	{
+		// iterate through server tables
+		CNetworkStringTable *pTable = 
+			(CNetworkStringTable*)cl.m_StringTableContainer->GetTable( i );
+
+		if ( !pTable )
+			continue;
+
+		pfnStringChanged pOldFunction = pTable->GetCallback();
+
+		cl.InstallStringTableCallback( pTable->GetTableName() );
+
+		pfnStringChanged pNewFunction = pTable->GetCallback();
+		if ( !pNewFunction )
+			continue;
+
+		// We already had it installed (e.g., from client .dll) so all of the callbacks have been called and don't need a second dose
+		if ( pNewFunction == pOldFunction )
+			continue;
+
+		for ( int j = 0; j < pTable->GetNumStrings(); ++j )
+		{
+			int userDataSize;
+			const void *pUserData = pTable->GetStringUserData( j, &userDataSize );
+			(*pNewFunction)( NULL, pTable, j, pTable->GetString( j ), pUserData );
+		}
+	}
+}
 
 // Singleton client state
 CClientState	cl;

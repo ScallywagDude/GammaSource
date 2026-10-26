@@ -1,9 +1,56 @@
+BEGIN {use File::Basename; push @INC, dirname($0); }
+require "valve_perl_helpers.pl";
+
+sub ReadInputFile
+{
+	local( $filename ) = shift;
+	local( *INPUT );
+	local( @output );
+	open INPUT, "<$filename" || die;
+
+	local( $line );
+	local( $linenum ) = 1;
+	while( $line = <INPUT> )
+	{
+#		print "LINE: $line";
+#		$line =~ s/\n//g;
+#		local( $postfix ) = "\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t";
+#		$postfix .= "; LINEINFO($filename)($linenum)\n";
+		if( $line =~ m/\#include\s+\"(.*)\"/i )
+		{
+			push @output, &ReadInputFile( $1 );
+		}
+		else
+		{
+#			push @output, $line . $postfix;
+			push @output, $line;
+		}
+		$linenum++;
+	}
+
+	close INPUT;
+#	print "-----------------\n";
+#	print @output;
+#	print "-----------------\n";
+	return @output;
+}
+
+$dynamic_compile = defined $ENV{"dynamic_shaders"} && $ENV{"dynamic_shaders"} != 0;
+$generateListingFile = 0;
+$spewCombos = 0;
+
+@startTimes = times;
+$startTime = time;
+
+$g_produceCppClasses = 1;
+$g_produceCompiledVcs = 1;
+
 while( 1 )
 {
 	$fxc_filename = shift;
-	if( $fxc_filename =~ m/-dx9/i )
+	if( $fxc_filename =~ m/-source/ )
 	{
-		$g_dx9 = 1;
+		shift;
 	}
 	elsif( $fxc_filename =~ m/-nv3x/i )
 	{
@@ -13,15 +60,131 @@ while( 1 )
 	{
 		$ps2a = 1;
 	}
+	elsif( $fxc_filename =~ m/-x360/i )
+	{
+		# enable x360
+		$g_x360 = 1;
+	}
+	elsif( $fxc_filename =~ m/-novcs/i )
+	{
+		$g_produceCompiledVcs = 0;
+	}
+	elsif( $fxc_filename =~ m/-nocpp/i )
+	{
+		$g_produceCppClasses = 0;
+	}
 	else
 	{
 		last;
 	}
 }
 
+$argstring = $fxc_filename;
+$fxc_basename = $fxc_filename;
+$fxc_basename =~ s/^.*-----//;
+$fxc_filename =~ s/-----.*$//;
 
 $debug = 0;
 $forcehalf = 0;
+
+sub ToUpper
+{
+	local( $in ) = shift;
+	$in =~ tr/a-z/A-Z/;
+	return $in;
+}
+
+sub CreateCCodeToSpewDynamicCombo
+{
+	local( $out ) = "";
+
+	$out .= "\t\tOutputDebugString( \"src:$fxc_filename vcs:$fxc_basename dynamic index\" );\n";
+	$out .= "\t\tchar tmp[128];\n";
+	$out .= "\t\tint shaderID = ";
+	local( $scale ) = 1;
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		local( $name ) = @dynamicDefineNames[$i];
+		local( $varname ) = "m_n" . $name;
+		$out .= "( $scale * $varname ) + ";
+		$scale *= $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1;
+	}
+	$out .= "0;\n";
+	if( scalar( @dynamicDefineNames ) + scalar( @staticDefineNames ) > 0 )
+	{
+		$out .= "\t\tint nCombo = shaderID;\n";
+	}
+	
+	my $type = GetShaderType( $fxc_filename );
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		$out .= "\t\tint n$dynamicDefineNames[$i] = nCombo % ";
+		$out .= ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) + $dynamicDefineMin[$i];
+		$out .= ";\n";
+
+		$out .= "\t\tsprintf( tmp, \"\%d\", n$dynamicDefineNames[$i] );\n";
+		$out .= "\t\tOutputDebugString( \" $dynamicDefineNames[$i]";
+		$out .= "=\" );\n";
+		$out .= "\t\tOutputDebugString( tmp );\n";
+
+		$out .= "\t\tnCombo = nCombo / " . ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) . ";\n";
+		$out .= "\n";
+	}
+	$out .= "\t\tOutputDebugString( \"\\n\" );\n";
+	return $out;
+}
+
+sub CreateCCodeToSpewStaticCombo
+{
+	local( $out ) = "";
+
+	$out .= "\t\tOutputDebugString( \"src:$fxc_filename vcs:$fxc_basename static index\" );\n";
+	$out .= "\t\tchar tmp[128];\n";
+	$out .= "\t\tint shaderID = ";
+
+	local( $scale ) = 1;
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		$scale *= $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1;
+	}
+	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
+	{
+		local( $name ) = @staticDefineNames[$i];
+		local( $varname ) = "m_n" . $name;
+		$out .= "( $scale * $varname ) + ";
+		$scale *= $staticDefineMax[$i] - $staticDefineMin[$i] + 1;
+	}
+	$out .= "0;\n";
+
+#	$out .= "\t\tsprintf( tmp, \"\%d\\n\", shaderID );\n";
+#	$out .= "\t\tOutputDebugString( tmp );\n\n";
+	if( scalar( @staticDefineNames ) + scalar( @staticDefineNames ) > 0 )
+	{
+		$out .= "\t\tint nCombo = shaderID;\n";
+	}
+	
+	my $type = GetShaderType( $fxc_filename );
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		$out .= "\t\tnCombo = nCombo / " . ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) . ";\n";
+	}
+	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
+	{
+		$out .= "\t\tint n$staticDefineNames[$i] = nCombo % ";
+		$out .= ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) + $staticDefineMin[$i];
+		$out .= ";\n";
+
+		$out .= "\t\tsprintf( tmp, \"\%d\", n$staticDefineNames[$i] );\n";
+		$out .= "\t\tOutputDebugString( \" $staticDefineNames[$i]";
+		$out .= "=\" );\n";
+		$out .= "\t\tOutputDebugString( tmp );\n";
+
+		$out .= "\t\tnCombo = nCombo / " . ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) . ";\n";
+		$out .= "\n";
+	}
+	$out .= "\t\tOutputDebugString( \"\\n\" );\n";
+	return $out;
+}
 
 sub WriteHelperVar
 {
@@ -90,21 +253,13 @@ sub WriteDynamicBoolExpression
 	push @outputHeader, ";\n";
 }
 
-sub WriteHelperClasses
+sub WriteDynamicHelperClasses
 {
-	local( $basename ) = $fxc_filename;
-	$basename =~ s/\.fxc//i;
+	local( $basename ) = $fxc_basename;
 	$basename =~ tr/A-Z/a-z/;
-	local( $classname ) = $basename . "_Index";
+	local( $classname ) = $basename . "_Dynamic_Index";
 	push @outputHeader, "class $classname\n";
 	push @outputHeader, "{\n";
-	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
-	{
-		$name = $staticDefineNames[$i];
-		$min = $staticDefineMin[$i];
-		$max = $staticDefineMax[$i];
-		&WriteHelperVar( $name, $min, $max );
-	}
 	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
 	{
 		$name = $dynamicDefineNames[$i];
@@ -113,6 +268,7 @@ sub WriteHelperClasses
 		&WriteHelperVar( $name, $min, $max );
 	}
 	push @outputHeader, "public:\n";
+#	push @outputHeader, "void SetPixelShaderIndex( IShaderAPI *pShaderAPI ) { pShaderAPI->SetPixelShaderIndex( GetIndex() ); }\n";
 	push @outputHeader, "\t$classname()\n";
 	push @outputHeader, "\t{\n";
 	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
@@ -125,15 +281,105 @@ sub WriteHelperClasses
 		push @outputHeader, "#endif // _DEBUG\n";
 		push @outputHeader, "\t\t$varname = 0;\n";
 	}
+	push @outputHeader, "\t}\n";
+	push @outputHeader, "\tint GetIndex()\n";
+	push @outputHeader, "\t{\n";
+	push @outputHeader, "\t\t// Asserts to make sure that we aren't using any skipped combinations.\n";
+	foreach $skip (@perlskipcodeindividual)
+	{
+		# can't do this static and dynamic can see each other.
+#		$skip =~ s/\$/m_n/g;
+#		$skip =~ s/defined//g;
+#		push @outputHeader, "\t\tAssert( !( $skip ) );\n";
+#		print "\t\tAssert( !( $skip ) );\n";
+	}
+	push @outputHeader, "\t\t// Asserts to make sure that we are setting all of the combination vars.\n";
+
+	push @outputHeader, "#ifdef _DEBUG\n";
+	if( scalar( @dynamicDefineNames ) > 0 )
+	{
+		push @outputHeader, "\t\tbool bAllDynamicVarsDefined = ";
+		WriteDynamicBoolExpression( "", "&&" );
+	}
+	if( scalar( @dynamicDefineNames ) > 0 )
+	{
+		push @outputHeader, "\t\tAssert( bAllDynamicVarsDefined );\n";
+	}
+	push @outputHeader, "#endif // _DEBUG\n";
+
+	if( $spewCombos && scalar( @dynamicDefineNames ) )
+	{
+		push @outputHeader, &CreateCCodeToSpewDynamicCombo();
+	}
+	push @outputHeader, "\t\treturn ";
+	local( $scale ) = 1;
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		local( $name ) = @dynamicDefineNames[$i];
+		local( $varname ) = "m_n" . $name;
+		push @outputHeader, "( $scale * $varname ) + ";
+		$scale *= $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1;
+	}
+	push @outputHeader, "0;\n";
+	push @outputHeader, "\t}\n";
+	push @outputHeader, "};\n";
+	push @outputHeader, "\#define shaderDynamicTest_" . $basename . " ";
+	my $prefix;
+	my $shaderType = &GetShaderType( $fxc_filename );
+	if( $shaderType =~ m/^vs/i )
+	{
+		$prefix = "vsh_";
+	}
+	else
+	{
+		$prefix = "psh_";
+	}
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		local( $name ) = @dynamicDefineNames[$i];
+		push @outputHeader, $prefix . "forgot_to_set_dynamic_" . $name . " + ";
+	}
+	push @outputHeader, "0\n";
+}
+
+sub WriteStaticHelperClasses
+{
+	local( $basename ) = $fxc_basename;
+	$basename =~ tr/A-Z/a-z/;
+	local( $classname ) = $basename . "_Static_Index";
+	push @outputHeader, "#include \"shaderlib/cshader.h\"\n";
+	push @outputHeader, "class $classname\n";
+	push @outputHeader, "{\n";
+	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
+	{
+		$name = $staticDefineNames[$i];
+		$min = $staticDefineMin[$i];
+		$max = $staticDefineMax[$i];
+		&WriteHelperVar( $name, $min, $max );
+	}
+	push @outputHeader, "public:\n";
+#	push @outputHeader, "void SetShaderIndex( IShaderShadow *pShaderShadow ) { pShaderShadow->SetPixelShaderIndex( GetIndex() ); }\n";
+	push @outputHeader, "\t$classname( )\n";
+	push @outputHeader, "\t{\n";
 	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
 	{
 		local( $name ) = @staticDefineNames[$i];
 		local( $boolname ) = "m_b" . $name;
 		local( $varname ) = "m_n" . $name;
-		push @outputHeader, "#ifdef _DEBUG\n";
-		push @outputHeader, "\t\t$boolname = false;\n";
-		push @outputHeader, "#endif // _DEBUG\n";
-		push @outputHeader, "\t\t$varname = 0;\n";
+		if ( length( $staticDefineInit{$name} ) )
+		  {
+			push @outputHeader, "#ifdef _DEBUG\n";
+			push @outputHeader, "\t\t$boolname = true;\n";
+			push @outputHeader, "#endif // _DEBUG\n";
+			push @outputHeader, "\t\t$varname = $staticDefineInit{$name};\n";
+		  }
+		else
+		  {
+			push @outputHeader, "#ifdef _DEBUG\n";
+			push @outputHeader, "\t\t$boolname = false;\n";
+			push @outputHeader, "#endif // _DEBUG\n";
+			push @outputHeader, "\t\t$varname = 0;\n";
+		  }
 	}
 	push @outputHeader, "\t}\n";
 	push @outputHeader, "\tint GetIndex()\n";
@@ -151,38 +397,22 @@ sub WriteHelperClasses
 	{
 		push @outputHeader, "\t\tbool bAllStaticVarsDefined = ";
 		WriteStaticBoolExpression( "", "&&" );
-		push @outputHeader, "\t\tbool bNoStaticVarsDefined = ";
-		WriteStaticBoolExpression( "!", "&&" );
-	}
-	if( scalar( @dynamicDefineNames ) > 0 )
-	{
-		push @outputHeader, "\t\tbool bAllDynamicVarsDefined = ";
-		WriteDynamicBoolExpression( "", "&&" );
-		push @outputHeader, "\t\tbool bNoDynamicVarsDefined = ";
-		WriteDynamicBoolExpression( "!", "&&" );
+
 	}
 	if( scalar( @staticDefineNames ) > 0 )
 	{
-		push @outputHeader, "\t\tAssert( bAllStaticVarsDefined != bNoStaticVarsDefined );\n";
-	}
-	if( scalar( @dynamicDefineNames ) > 0 )
-	{
-		push @outputHeader, "\t\tAssert( bAllDynamicVarsDefined != bNoDynamicVarsDefined );\n";
-	}
-	if( scalar( @dynamicDefineNames ) > 0 && scalar( @staticDefineNames ) > 0 )
-	{
-		push @outputHeader, "\t\tAssert( bAllDynamicVarsDefined != bAllStaticVarsDefined );\n";
-		push @outputHeader, "\t\tAssert( bNoDynamicVarsDefined != bNoStaticVarsDefined );\n";
+		push @outputHeader, "\t\tAssert( bAllStaticVarsDefined );\n";
 	}
 	push @outputHeader, "#endif // _DEBUG\n";
 
+	if( $spewCombos && scalar( @staticDefineNames ) )
+	{
+		push @outputHeader, &CreateCCodeToSpewStaticCombo();
+	}
 	push @outputHeader, "\t\treturn ";
 	local( $scale ) = 1;
 	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
 	{
-		local( $name ) = @dynamicDefineNames[$i];
-		local( $varname ) = "m_n" . $name;
-		push @outputHeader, "( $scale * $varname ) + ";
 		$scale *= $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1;
 	}
 	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
@@ -195,46 +425,23 @@ sub WriteHelperClasses
 	push @outputHeader, "0;\n";
 	push @outputHeader, "\t}\n";
 	push @outputHeader, "};\n";
-}
-
-sub BuildDefineOptions
-{
-	local( $output );
-	local( $combo ) = shift;
-	local( $i );
-	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	push @outputHeader, "\#define shaderStaticTest_" . $basename . " ";
+	my $prefix;
+	my $shaderType = &GetShaderType( $fxc_filename );
+	if( $shaderType =~ m/^vs/i )
 	{
-		local( $val ) = ( $combo % ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) ) + $dynamicDefineMin[$i];
-		$output .= "/D$dynamicDefineNames[$i]=$val ";
-		$combo = $combo / ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 );
+		$prefix = "vsh_";
+	}
+	else
+	{
+		$prefix = "psh_";
 	}
 	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
 	{
-		local( $val ) = ( $combo % ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) ) + $staticDefineMin[$i];
-		$output .= "/D$staticDefineNames[$i]=$val ";
-		$combo = $combo / ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 );
+		local( $name ) = @staticDefineNames[$i];
+		push @outputHeader, $prefix . "forgot_to_set_static_" . $name . " + " unless (length($staticDefineInit{$name} ));
 	}
-	return $output;
-}
-
-sub SetPerlVarsForCombo
-{
-	local( $combo ) = shift;
-	local( $i );
-	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
-	{
-		local( $val ) = ( $combo % ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) ) + $dynamicDefineMin[$i];
-		local( $eval ) = "\$" . $dynamicDefineNames[$i] . " = $val;";
-		eval $eval;
-		$combo = $combo / ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 );
-	}
-	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
-	{
-		local( $val ) = ( $combo % ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) ) + $staticDefineMin[$i];
-		local( $eval ) = "\$" . $staticDefineNames[$i] . " = $val;";
-		eval $eval;
-		$combo = $combo / ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 );
-	}
+	push @outputHeader, "0\n";
 }
 
 sub GetNewMainName
@@ -264,8 +471,24 @@ sub RenameMain
 
 sub GetShaderType
 {
-	local( $shadername ) = shift;
-	if( $shadername =~ m/ps20/i )
+	local( $shadername ) = shift; # hack - use global variables
+	$shadername = $fxc_basename;
+	if( $shadername =~ m/ps30/i )
+	{
+		if( $debug )
+		{
+			return "ps_3_sw";
+		}
+		else
+		{
+			return "ps_3_0";
+		}
+	}
+	elsif( $shadername =~ m/ps20b/i )
+	{
+		return "ps_2_b";
+	}
+	elsif( $shadername =~ m/ps20/i )
 	{
 		if( $debug )
 		{
@@ -286,6 +509,21 @@ sub GetShaderType
 	elsif( $shadername =~ m/ps14/i )
 	{
 		return "ps_1_4";
+	}
+	elsif( $shadername =~ m/ps11/i )
+	{
+		return "ps_1_1";
+	}
+	elsif( $shadername =~ m/vs30/i )
+	{
+		if( $debug )
+		{
+			return "vs_3_sw";
+		}
+		else
+		{
+			return "vs_3_0";
+		}
 	}
 	elsif( $shadername =~ m/vs20/i )
 	{
@@ -308,7 +546,7 @@ sub GetShaderType
 	}
 	else
 	{
-		die;
+		die "\n\nSHADERNAME = $shadername\n\n";
 	}
 }
 
@@ -338,29 +576,157 @@ sub CalcNumDynamicCombos
 	return $numCombos;
 }
 
-print "--------\n";
-
-if( $g_dx9 )
+sub CreateCFuncToCreateCompileCommandLine
 {
-	if( $nvidia )
+	local( $out ) = "";
+
+	$out .= "\t\tOutputDebugString( \"compiling src:$fxc_filename vcs:$fxc_basename \" );\n";
+	$out .= "\t\tchar tmp[128];\n";
+	$out .= "\t\tsprintf( tmp, \"\%d\\n\", shaderID );\n";
+	$out .= "\t\tOutputDebugString( tmp );\n";
+	$out .= "\t\tstatic PrecompiledShaderByteCode_t byteCode;\n";
+	if( scalar( @dynamicDefineNames ) + scalar( @staticDefineNames ) > 0 )
 	{
-		if( $ps2a )
-		{
-			$fxctmp = "fxctmp9_nv3x";
-		}
-		else
-		{
-			$fxctmp = "fxctmp9_nv3x_ps20";
-		}
+		$out .= "\t\tint nCombo = shaderID;\n";
 	}
-	else
+	
+#	$out .= "\tvoid BuildCompileCommandLine( int nCombo, char *pResult, int maxLength )\n";
+#	$out .= "\t{\n";
+	$out .= "\t\tD3DXMACRO ";
+	$out .= "defineMacros";
+	$out .= "[";
+	$out .= scalar( @dynamicDefineNames ) + scalar( @staticDefineNames ) + 1; # add 1 for null termination
+	$out .= "];\n";
+	if( scalar( @dynamicDefineNames ) + scalar( @staticDefineNames ) > 0 )
 	{
-		$fxctmp = "fxctmp9";
+		$out .= "\t\tchar tmpStringBuf[1024];\n";
+		$out .= "\t\tchar *pTmpString = tmpStringBuf;\n\n";
 	}
+
+	local( $i );
+	my $type = GetShaderType( $fxc_filename );
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); $i++ )
+	{
+		$out .= "\t\tsprintf( pTmpString, \"%d\", nCombo % ";
+		$out .= ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) + $dynamicDefineMin[$i];
+		$out .= " );\n";
+		$out .= "\t\tdefineMacros";
+		$out .= "[";
+		$out .= $i;
+		$out .= "]";
+		$out .= "\.Name = ";
+		$out .= "\"$dynamicDefineNames[$i]\";\n";
+
+		$out .= "\t\tint n$dynamicDefineNames[$i] = nCombo % ";
+		$out .= ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) + $dynamicDefineMin[$i];
+		$out .= ";\n";
+		$out .= "\t\tUNUSED( n$dynamicDefineNames[$i] );\n";
+
+		$out .= "\t\tdefineMacros";
+		$out .= "[";
+		$out .= $i;
+		$out .= "]";
+		$out .= "\.Definition = ";
+		$out .= "pTmpString;\n";
+		$out .= "\t\tpTmpString += strlen( pTmpString ) + 1;\n";
+
+		$out .= "\t\tsprintf( tmp, \"\%d\", n$dynamicDefineNames[$i] );\n";
+		$out .= "\t\tOutputDebugString( \" $dynamicDefineNames[$i]";
+		$out .= "=\" );\n";
+		$out .= "\t\tOutputDebugString( tmp );\n";
+
+		$out .= "\t\tnCombo = nCombo / " . ( $dynamicDefineMax[$i] - $dynamicDefineMin[$i] + 1 ) . ";\n";
+		$out .= "\n";
+	}
+	for( $i = 0; $i < scalar( @staticDefineNames ); $i++ )
+	{
+		$out .= "\t\tsprintf( pTmpString, \"%d\", nCombo % ";
+		$out .= ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) + $staticDefineMin[$i];
+		$out .= " );\n";
+		$out .= "\t\tdefineMacros";
+		$out .= "[";
+		$out .= $i + scalar( @dynamicDefineNames );
+		$out .= "]";
+		$out .= "\.Name = ";
+		$out .= "\"$staticDefineNames[$i]\";\n";
+
+		$out .= "\t\tint n$staticDefineNames[$i] = nCombo % ";
+		$out .= ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) + $staticDefineMin[$i];
+		$out .= ";\n";
+		$out .= "\t\tUNUSED( n$staticDefineNames[$i] );\n";
+
+		$out .= "\t\tdefineMacros";
+		$out .= "[";
+		$out .= $i + scalar( @dynamicDefineNames );
+		$out .= "]";
+		$out .= "\.Definition = ";
+		$out .= "pTmpString;\n";
+		$out .= "\t\tpTmpString += strlen( pTmpString ) + 1;\n";
+
+		$out .= "\t\tsprintf( tmp, \"\%d\", n$staticDefineNames[$i] );\n";
+		$out .= "\t\tOutputDebugString( \" $staticDefineNames[$i]";
+		$out .= "=\" );\n";
+		$out .= "\t\tOutputDebugString( tmp );\n";
+
+		$out .= "\t\tnCombo = nCombo / " . ( $staticDefineMax[$i] - $staticDefineMin[$i] + 1 ) . ";\n";
+		$out .= "\n";
+	}
+
+	$out .= "\t\tOutputDebugString( \"\\n\" );\n";
+
+	$cskipcode = $perlskipcode;
+	$cskipcode =~ s/\$/n/g;
+	$out .= "\t\tif( $cskipcode )\n\t\t{\n";
+	$out .= "\t\t\tstatic char blah[4] = { 0, 0, 0, 0 };\n";
+	$out .= "\t\t\tbyteCode.m_pRawData = blah;\n";
+	$out .= "\t\t\tbyteCode.m_nSizeInBytes = 4;\n";
+	$out .= "\t\t\treturn byteCode;\n";
+	$out .= "\t\t}\n";
+
+	
+
+	$out .= "\t\t// Must null terminate macros.\n";
+	$out .= "\t\tdefineMacros[";
+	$out .= scalar( @dynamicDefineNames ) + scalar( @staticDefineNames );
+	$out .= "]";
+	$out .= ".Name = NULL;\n";
+	$out .= "\t\tdefineMacros[";
+	$out .= scalar( @dynamicDefineNames ) + scalar( @staticDefineNames );
+	$out .= "]";
+	$out .= ".Definition = NULL;\n\n";
+
+
+	$out .= "\t\tLPD3DXBUFFER pShader; // NOTE: THESE LEAK!!!\n";
+	$out .= "\t\tLPD3DXBUFFER pErrorMessages; // NOTE: THESE LEAK!!!\n";
+	$out .= "\t\tHRESULT hr = D3DXCompileShaderFromFile( \"u:\\\\hl2_e3_2004\\\\src_e3_2004\\\\materialsystem\\\\stdshaders\\\\$fxc_filename\",\n\t\t\tdefineMacros,\n\t\t\tNULL, // LPD3DXINCLUDE \n\t\t\t\"main\",\n\t\t\t\"$type\",\n\t\t\t0, // DWORD Flags\n\t\t\t&pShader,\n\t\t\t&pErrorMessages,\n\t\t\tNULL // LPD3DXCONSTANTTABLE *ppConstantTable\n\t\t\t );\n";
+	$out .= "\t\tif( hr != D3D_OK )\n";
+	$out .= "\t\t{\n";
+	$out .= "\t\t\tconst char *pErrorMessageString = ( const char * )pErrorMessages->GetBufferPointer();\n";
+	$out .= "\t\t\tOutputDebugString( pErrorMessageString );\n";
+	$out .= "\t\t\tOutputDebugString( \"\\n\" );\n";
+	$out .= "\t\t\tAssert( 0 );\n";
+	$out .= "\t\t\tstatic char blah[4] = { 0, 0, 0, 0 };\n";
+	$out .= "\t\t\tbyteCode.m_pRawData = blah;\n";
+	$out .= "\t\t\tbyteCode.m_nSizeInBytes = 4;\n";
+	$out .= "\t\t}\n";
+	$out .= "\t\telse\n";
+	$out .= "\t\t{\n";
+	$out .= "\t\t\tbyteCode.m_pRawData = pShader->GetBufferPointer();\n";
+	$out .= "\t\t\tbyteCode.m_nSizeInBytes = pShader->GetBufferSize();\n";
+	$out .= "\t\t}\n";
+	$out .= "\t\treturn byteCode;\n";
+	return $out;
+}
+
+#print "--------\n";
+
+if ( $g_x360 )
+{
+	$fxctmp = "fxctmp9_360_tmp";
 }
 else
 {
-	$fxctmp = "fxctmp8";
+	$fxctmp = "fxctmp9_tmp";
 }
 
 if( !stat $fxctmp )
@@ -368,62 +734,101 @@ if( !stat $fxctmp )
 	mkdir $fxctmp, 0777 || die $!;
 }
 
-open FXC, "<$fxc_filename";
+# suck in an input file (using includes)
+#print "$fxc_filename...";
+@fxc = ReadInputFile( $fxc_filename );
+
 # READ THE TOP OF THE FILE TO FIND SHADER COMBOS
-while( <FXC> )
+foreach $line ( @fxc )
 {
-	next if( m/^\s*$/ );
-	last if( !m,^//, );
-	s,^//\s*,,;
-	if( m/\s*STATIC\s*\:\s*\"(.*)\"\s+\"(\d+)\.\.(\d+)\"/ )
+	$line="" if ($g_x360 && ($line=~/\[PC\]/));										# line marked as [PC] when building for x360
+	$line="" if (($g_x360 == 0)  && ($line=~/\[XBOX\]/));							# line marked as [XBOX] when building for pc
+	
+	if ( $fxc_basename =~ m/_ps(\d+\w?)$/i )
+	{
+		my $psver = $1;
+		$line="" if (($line =~/\[ps\d+\w?\]/i) && ($line!~/\[ps$psver\]/i));	# line marked for a version of compiler and not what we build
+	}
+	if ( $fxc_basename =~ m/_vs(\d+\w?)$/i )
+	{
+		my $vsver = $1;
+		$line="" if (($line =~/\[vs\d+\w?\]/i) && ($line!~/\[vs$vsver\]/i));	# line marked for a version of compiler and not what we build
+	}
+	
+	my $init_expr;
+
+	$init_expr = $1 if ( $line=~/\[\=([^\]]+)\]/);	# parse default init expression for combos
+
+	$line=~s/\[[^\[\]]*\]//;		# cut out all occurrences of
+                                    # square brackets and whatever is
+                                    # inside all these modifications
+                                    # to the line are seen later when
+                                    # processing skips and centroids
+	
+	next if( $line =~ m/^\s*$/ );
+	
+	if( $line =~ m/^\s*\/\/\s*STATIC\s*\:\s*\"(.*)\"\s+\"(\d+)\.\.(\d+)\"/ )
 	{
 		local( $name, $min, $max );
 		$name = $1;
 		$min = $2;
 		$max = $3;
-		print "\"$name\" \"$min..$max\"\n";
+		# print STDERR "STATIC: \"$name\" \"$min..$max\"\n";
 		push @staticDefineNames, $name;
 		push @staticDefineMin, $min;
 		push @staticDefineMax, $max;
+		$staticDefineInit{$name}=$init_expr;
 	}
-	elsif( m/\s*DYNAMIC\s*\:\s*\"(.*)\"\s+\"(\d+)\.\.(\d+)\"/ )
+	elsif( $line =~ m/^\s*\/\/\s*DYNAMIC\s*\:\s*\"(.*)\"\s+\"(\d+)\.\.(\d+)\"/ )
 	{
 		local( $name, $min, $max );
 		$name = $1;
 		$min = $2;
 		$max = $3;
-		print "\"$name\" \"$min..$max\"\n";
+		# print STDERR "DYNAMIC: \"$name\" \"$min..$max\"\n";
 		push @dynamicDefineNames, $name;
 		push @dynamicDefineMin, $min;
 		push @dynamicDefineMax, $max;
 	}
 }
-seek FXC, 0, 0;
 # READ THE WHOLE FILE AND FIND SKIP STATEMENTS
-while( <FXC> )
+foreach $line ( @fxc )
 {
-	if( m/^\s*\/\/\s*SKIP\s*\:\s*(.*)$/ )
+	if( $line =~ m/^\s*\/\/\s*SKIP\s*\s*\:\s*(.*)$/ )
 	{
+		#		print $1 . "\n";
 		$perlskipcode .= "(" . $1 . ")||";
 		push @perlskipcodeindividual, $1;
-	}	
+	}
 }
+
 if( defined $perlskipcode )
 {
 	$perlskipcode .= "0";
 	$perlskipcode =~ s/\n//g;
 }
-seek FXC, 0, 0;
-# READ THE WHOLE FILE AND FIND CENTROID STATEMENTS
-while( <FXC> )
+else
 {
-	if( m/^\s*\/\/\s*CENTROID\s*\:\s*TEXCOORD(\d+)\s*$/ )
+	$perlskipcode = "0";
+}
+
+# READ THE WHOLE FILE AND FIND CENTROID STATEMENTS
+foreach $line ( @fxc )
+{
+	if( $line =~ m/^\s*\/\/\s*CENTROID\s*\:\s*TEXCOORD(\d+)\s*$/ )
 	{
 		$centroidEnable{$1} = 1;
 #		print "CENTROID: $1\n";
 	}
 }
-close FXC;
+
+if( $spewCombos )
+{
+	push @outputHeader, "#include \"windows.h\"\n";
+}
+
+#push @outputHeader, "\#include \"shaderlib\\baseshader.h\"\n";
+#push @outputHeader, "IShaderDynamicAPI *CBaseShader::s_pShaderAPI;\n";
 
 # Go ahead an compute the mask of samplers that need to be centroid sampled
 $centroidMask = 0;
@@ -435,174 +840,110 @@ foreach $centroidRegNum ( keys( %centroidEnable ) )
 
 #printf "0x%x\n", $centroidMask;
 
-#print "\$perlskipcode: $perlskipcode\n";
-
 $numCombos = &CalcNumCombos();
-print "$numCombos combos\n";
+#print "$numCombos combos\n";
 
-# Write out the C++ helper class for picking shader combos
-&WriteHelperClasses();
 
-push @outputHeader, "#ifdef DEFINE_SHADERS\n";
-
-for( $i = 0; $i < $numCombos; $i++ )
+if( $g_produceCompiledVcs && !$dynamic_compile )
 {
-	&SetPerlVarsForCombo( $i );
-	local( $compileFailed );
-	if( !defined $perlskipcode )
-	{
-		$ret = 0;
-	}
-	else
-	{
-		$ret = eval $perlskipcode;
-	}
-#	$ret = 0;
-#	print "\$ret = $ret\n";
-	if( !defined $ret )
-	{
-		die "$@\n";
-	}
-	if( $ret )
-	{
-		# skip this combo!
-#		print "$i/$numCombos: SKIP\n";
-		$compileFailed = 1;
-		$numSkipped++;
-	}
-	else
-	{
-		local( $cmd );
-		if( $fxc_filename =~ /_vs/i )
-		{
-			#$cmd = "..\\..\\devtools\\bin\\oldfxc.exe ";
-			$cmd = ($ENV{"HL2_MODERN_FXC_COMMAND"} || "..\\..\\devtools\\bin\\fxc.exe") . " ";
-		}
-		else
-		{
-			$cmd = ($ENV{"HL2_MODERN_FXC_COMMAND"} || "..\\..\\devtools\\bin\\fxc.exe") . " ";
-		}
-		$cmd .= &BuildDefineOptions( $i );
-		$cmd .= &RenameMain( $fxc_filename, $i );
-		$cmd .= "/T" . &GetShaderType( $fxc_filename ) . " ";
-		if( $debug )
-		{
-			$cmd .= "/Od "; # disable optimizations
-			$cmd .= "/Zi "; # enable debug info
-		}
-		$cmd .= "/nologo ";
-	#	$cmd .= "/Gp ";  # predication
-		if( $fxc_filename =~ /ps20/i && $forcehalf )
-		{
-			$cmd .= "/Gpp "; # use half everywhere
-		}
-		$cmd .= "/Fhtmpshader.h ";
-		$cmd .= "$fxc_filename";
-		print $i . "/" . $numCombos . " " . $cmd . "\n";
+	open FOUT, ">>filelistgen.txt" || die "can't open filelistgen.txt";
 
-		# GROSS!!  Have to suppress stderr output by redirecting to a file. . has to be a better way.
-	#	@out = `$cmd 1<&2`;
-		unlink "tmpshader.h";
-		system "$cmd > shit.txt 2>&1";
-		if ( $? != 0 ) { die "shader compiler failed: " . `type shit.txt`; }
-		@out = `type shit.txt`;
-		print @out;
-		
-		local( *FILE );
-		if( !open FILE, "<tmpshader.h" )
-		{
-			$compileFailed = 1;
-			die "compile failed\n";
-		}
-		else
-		{
-			$compileFailed = 0;
-
-			@header = <FILE>;
-			close FILE;
-			unlink "tmpshader.h";
-		}
-	}
-
-#	print "compileFailed: $compileFailed\n";
-
-	if( !$compileFailed )
+	print FOUT "**** generated by fxc_prep.pl ****\n";
+	print FOUT "#BEGIN " . $fxc_basename . "\n";
+	print FOUT "$fxc_filename" . "\n";
+	print FOUT "#DEFINES-D:\n";
+	for( $i = 0; $i < scalar( @dynamicDefineNames ); \$i++ )
 	{
-#		print @header;
-
-		local( $name ) = $fxc_filename;
-		$name =~ s/\.fxc//gi;
-		local( $line );
-		foreach $line( @header )
-		{
-			if( $line =~ m/g_.*\[\]/ )
-			{
-				$line = "static unsigned int pixelShader_" . $name . "_" . $i . "[] =\n";
-				$line =~ s/\./_/g;
-			}
-			push @outputHeader, $line;
-		}
+	  print FOUT "$dynamicDefineNames[$i]=";
+	  print FOUT $dynamicDefineMin[$i];
+	  print FOUT "..";
+	  print FOUT $dynamicDefineMax[$i];
+	  print FOUT "\n";
 	}
-	else
+	print FOUT "#DEFINES-S:\n";
+	for( $i = 0; $i < scalar( @staticDefineNames ); \$i++ )
 	{
-		local( $name ) = $fxc_filename;
-		$name =~ s/\.fxc//gi;
-
-		push @outputHeader, "\n// Invalid material\n";
-		push @outputHeader, "static unsigned int pixelShader_" . $name . "_" . $i . "[] =\n";
-		push @outputHeader, "{\n";
-		push @outputHeader, "\t0x00000000\n";
-		push @outputHeader, "};\n\n";
+	  print FOUT "$staticDefineNames[$i]=";
+	  print FOUT $staticDefineMin[$i];
+	  print FOUT "..";
+	  print FOUT $staticDefineMax[$i];
+	  print FOUT "\n";
 	}
+	print FOUT "#SKIP:\n";
+	print FOUT "$perlskipcode\n";
+	print FOUT "#COMMAND:\n";
+	# first line
+	print FOUT "fxc.exe ";
+	print FOUT "/DTOTALSHADERCOMBOS=$numCombos ";
+	print FOUT "/DCENTROIDMASK=$centroidMask ";
+	print FOUT "/DNUMDYNAMICCOMBOS=" . &CalcNumDynamicCombos() . " ";
+	print FOUT "/DFLAGS=0x0 "; # Nothing here for now.
+	print FOUT "\n";
+#defines go here
+# second line
+	print FOUT &RenameMain( $fxc_filename, $i );
+	print FOUT "/T" . &GetShaderType( $fxc_filename ) . " ";
+	print FOUT "/DSHADER_MODEL_" . &ToUpper( &GetShaderType( $fxc_filename ) ) . "=1 ";
+	if( $nvidia )
+	{
+		print FOUT "/DNV3X=1 "; # enable NV3X codepath
+	}
+	if ( $g_x360 )
+	{
+		print FOUT "/D_X360=1 "; # shaders can identify X360 centric code
+		# print FOUT "/Xbe:2- "; # use the less-broken old back end
+	}
+	if( $debug )
+	{
+		print FOUT "/Od "; # disable optimizations
+		print FOUT "/Zi "; # enable debug info
+	}
+#	print FOUT "/Zi "; # enable debug info
+	print FOUT "/nologo ";
+#	print FOUT "/Fhtmpshader.h ";
+	print FOUT "/Foshader.o ";
+	print FOUT "$fxc_filename";
+	print FOUT ">output.txt 2>&1";
+	print FOUT "\n";
+	#end of command line
+	print FOUT "#END\n";
+	print FOUT "**** end ****\n";
+	
+	close FOUT;
 }
 
-print "$numSkipped/$numCombos skipped\n";
-
-local( $name ) = $fxc_filename;
-$name =~ s/\.fxc//gi;
-push @outputHeader, "static PrecompiledShaderByteCode_t " . $name . "_pixel_shaders[" . $numCombos . "] = \n";
-push @outputHeader, "{\n";
-local( $j );
-for( $j = 0; $j < $numCombos; $j++ )
+if ( $g_produceCppClasses )
 {
-	local( $thing ) = "pixelShader_" . $name . "_" . $j;
-	push @outputHeader, "\t{ " . "$thing, sizeof( $thing ) },\n";
+	# Write out the C++ helper class for picking shader combos
+	&WriteStaticHelperClasses();
+	&WriteDynamicHelperClasses();
+	my $incfilename = "$fxctmp\\$fxc_basename" . ".inc";
+	&WriteFile( $incfilename, join( "", @outputHeader ) );
 }
-push @outputHeader, "};\n";
 
-push @outputHeader, "struct $name" . "PixelShader_t : public PrecompiledShader_t\n";
-push @outputHeader, "{\n";
-push @outputHeader, "\t$name" . "PixelShader_t()\n";
-push @outputHeader, "\t{\n";
-push @outputHeader, "\t\tm_nFlags = SHADER_CUSTOM_ENUMERATION;\n";
-push @outputHeader, sprintf "\t\tm_nCentroidMask = 0x%x;\n", $centroidMask;
-push @outputHeader, "\t\tm_pByteCode = " . $name . "_pixel_shaders;\n";
-push @outputHeader, "\t\tm_nShaderCount = $numCombos;\n";
-push @outputHeader, "\t\tm_pName = \"$name\";\n";
-push @outputHeader, "\t\tm_nDynamicCombos = " . &CalcNumDynamicCombos . ";\n";
-if( $name =~ /vs\d\d/ ) # hack
+
+
+if( $generateListingFile )
 {
-	push @outputHeader, "\t\tGetShaderDLL()->InsertPrecompiledShader( PRECOMPILED_VERTEX_SHADER, this );\n";
+	my $listFileName = "$fxctmp/$fxc_basename" . ".lst";
+	print "writing $listFileName\n";
+	if( !open FILE, ">$listFileName" )
+	{
+		die;
+	}
+	print FILE @listingOutput;
+	close FILE;
 }
-else
-{
-	push @outputHeader, "\t\tGetShaderDLL()->InsertPrecompiledShader( PRECOMPILED_PIXEL_SHADER, this );\n";
-}
-push @outputHeader, "\t}\n";
-push @outputHeader, "};\n";
 
-push @outputHeader, "static $name" . "PixelShader_t $name" . "_PixelShaderInstance;\n";
 
-push @outputHeader, "#endif // DEFINE_SHADERS\n";
+@endTimes = times;
 
-printf "writing $fxctmp/$name" . ".inc\n";
+$endTime = time;
 
-local( *FILE );
-if( !open FILE, ">$fxctmp/$name" . ".inc" )
-{
-	die;
-}
-print FILE @outputHeader;
-close FILE;
-undef @outputHeader;
+#printf "Elapsed user time: %.2f seconds!\n", $endTimes[0] - $startTimes[0];
+#printf "Elapsed system time: %.2f seconds!\n", $endTimes[1] - $startTimes[1];
+#printf "Elapsed child user time: %.2f seconds!\n", $endTimes[2] - $startTimes[2];
+#printf "Elapsed child system time: %.2f seconds!\n", $endTimes[3] - $startTimes[3];
+
+#printf "Elapsed total time: %.2f seconds!\n", $endTime - $startTime;
 

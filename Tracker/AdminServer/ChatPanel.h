@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,36 +11,19 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_PropertyPage.h>
+#include <KeyValues.h>
 
-#include "rcon.h"
-
-class KeyValues;
-
-namespace vgui
-{
-class Button;
-class ToggleButton;
-class RadioButton;
-class Label;
-class TextEntry;
-class ListPanel;
-class MessageBox;
-class ComboBox;
-class Panel;
-class PropertySheet;
-};
-
+#include <vgui_controls/Frame.h>
+#include <vgui_controls/PHandle.h>
+#include <vgui_controls/ListPanel.h>
+#include <vgui_controls/PropertyPage.h>
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
 //-----------------------------------------------------------------------------
-class CChatPanel:public vgui::PropertyPage
+class CChatPanel : public vgui::PropertyPage
 {
+	DECLARE_CLASS_SIMPLE( CChatPanel, vgui::PropertyPage );
 public:
 	CChatPanel(vgui::Panel *parent, const char *name);
 	~CChatPanel();
@@ -50,23 +33,12 @@ public:
 	virtual void OnPageHide();
 	void DoInsertString(const char *str);
 
-	void SetRcon(CRcon *rcon);
-
-	virtual void PerformLayout();
-
 private:
+	MESSAGE_FUNC( OnSendChat, "SendChat" );
 
-	void OnSendChat();
-	void OnTextChanged(vgui::Panel *panel, const char *text);
-
-	vgui::TextEntry *m_pServerChatPanel;
+	vgui::RichText *m_pServerChatPanel;
 	vgui::TextEntry *m_pEnterChatPanel;
 	vgui::Button *m_pSendChatButton;
-
-	CRcon *m_pRcon;
-		
-	DECLARE_PANELMAP();
-	typedef vgui::PropertyPage BaseClass;
 };
 
 #endif // CHATPANEL_H

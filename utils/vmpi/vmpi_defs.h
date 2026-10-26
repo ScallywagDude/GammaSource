@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef VMPI_DEFS_H
 #define VMPI_DEFS_H
@@ -13,7 +13,24 @@
 
 
 // This goes in front of all packets.
-#define VMPI_PROTOCOL_VERSION		4
+#define VMPI_PROTOCOL_VERSION		5
+
+// This represents the protocol between the service and its UI.
+#define VMPI_SERVICE_UI_PROTOCOL_VERSION	1
+
+// NOTE: the service version (embedded in vmpi_service.exe as a resource) is the version
+// that is used to apply patches.
+#define VMPI_SERVICE_IDS_VERSION_STRING	102	// This matches IDS_VERSION_STRING in vmpi_service.exe.
+
+// Known packet IDs in various systems.
+#define VMPI_PACKETID_FILESYSTEM	0	// The file system reserves this packet ID.
+										// All application traffic must set its first byte to something other
+										// than this value.
+#define VMPI_SHARED_PACKET_ID		10
+
+
+// Turn this on, and the various service apps will log stuff.
+//#define VMPI_SERVICE_LOGS
 
 
 // This value is put in the RunningTimeMS until the job is finished. This is how
@@ -26,18 +43,25 @@
 #define VMPI_SERVICE_NAME			"Valve MPI Service"
 
 // Stuff in the registry goes under here (in HKEY_LOCAL_MACHINE).
-#define VMPI_SERVICE_KEY			"Software\\Valve\\VMPI"
-
+#define VMPI_SERVICE_KEY				"Software\\Valve\\VMPI"
+#define SERVICE_INSTALL_LOCATION_KEY	"InstallLocation"
 
 // The VMPI service listens on one of these ports to talk to the UI.
 #define VMPI_SERVICE_FIRST_UI_PORT	23300
 #define VMPI_SERVICE_LAST_UI_PORT	23310
 
+// Port numbers that the master will use to broadcast unless -mpi_port is used.
+#define VMPI_MASTER_FIRST_PORT		23311
+#define VMPI_MASTER_LAST_PORT		23330
+
 
 // Packet IDs for vmpi_service to talk to UI clients.
-#define VMPI_SERVICE_CONSOLE_TEXT	0
-#define VMPI_SERVICE_STATE			1	// Updates state reflecting whether it's idle, busy, etc.
-	// Application state.
+#define VMPI_SERVICE_TO_UI_CONSOLE_TEXT		0	// Print some text to the UI's console.
+#define VMPI_SERVICE_TO_UI_STATE			1	// Updates state reflecting whether it's idle, busy, etc.
+#define VMPI_SERVICE_TO_UI_PATCHING			2	// Updates state reflecting whether it's idle, busy, etc.
+#define VMPI_SERVICE_TO_UI_EXIT				3	// Updates state reflecting whether it's idle, busy, etc.
+	
+	// Application state.. these are communicated between the service and the UI.
 	enum
 	{
 		VMPI_SERVICE_STATE_IDLE=0,
@@ -49,6 +73,7 @@
 #define VMPI_SERVICE_UPDATE_PASSWORD	4	// New password.
 #define VMPI_SERVICE_EXIT				5	// User chose "exit" from the menu. Kill the service.
 #define VMPI_SERVICE_SKIP_CSX_JOBS		6
+#define VMPI_SERVICE_SCREENSAVER_MODE	7
 
 
 // The worker service waits on this range of ports.
@@ -59,9 +84,15 @@
 #define VMPI_WORKER_PORT_FIRST		22340
 #define VMPI_WORKER_PORT_LAST		22350
 
+// The VMPI service downloader is still a worker but it uses this port range so the 
+// master knows it's just downloading the exes.
+#define VMPI_SERVICE_DOWNLOADER_PORT_FIRST		22351
+#define VMPI_SERVICE_DOWNLOADER_PORT_LAST		22360
+
 // Give it a small range so they can have multiple masters running.
 #define VMPI_MASTER_PORT_FIRST		21140
 #define VMPI_MASTER_PORT_LAST		21145
+#define VMPI_MASTER_FILESYSTEM_BROADCAST_PORT	21146
 
 
 
@@ -94,16 +125,23 @@
 // This tells the service to kill any process it has running.
 #define VMPI_KILL_PROCESS			(VMPI_MESSAGE_BASE+7)
 
-// This tells the service to stop itself and restart again in 60 seconds so we can copy new exes
-// for it to use.
+// This tells the service to patch itself.
 #define VMPI_SERVICE_PATCH			(VMPI_MESSAGE_BASE+8)
 
+// Sent back to the master via UDP to tell it if its job has started and ended.
+#define VMPI_NOTIFY_START_STATUS	(VMPI_MESSAGE_BASE+9)
+#define VMPI_NOTIFY_END_STATUS		(VMPI_MESSAGE_BASE+10)
+
+#define VMPI_FORCE_PASSWORD_CHANGE	(VMPI_MESSAGE_BASE+11)
 
 
-#define VMPI_STATE_IDLE				0
-#define VMPI_STATE_BUSY				1
-#define VMPI_STATE_PATCHING			2
-#define VMPI_STATE_DISABLED			3
+// These states are sent from the service to the services browser.
+#define VMPI_STATE_IDLE					0
+#define VMPI_STATE_BUSY					1
+#define VMPI_STATE_PATCHING				2
+#define VMPI_STATE_DISABLED				3
+#define VMPI_STATE_SCREENSAVER_DISABLED	4
+#define VMPI_STATE_DOWNLOADING			5
 
 
 #endif // VMPI_DEFS_H

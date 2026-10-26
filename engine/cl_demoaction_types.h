@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 //-----------------------------------------------------------------------------
 // Purpose: Skips ahead in demo to specified frame/time
 //-----------------------------------------------------------------------------
@@ -8,16 +15,16 @@ class CDemoActionSkipAhead : public CBaseDemoAction
 public:
 	virtual bool Init( KeyValues *pInitData );
 	virtual bool Update( const DemoActionTimingContext& tc );
-	virtual void			FireAction( void );
+	virtual void FireAction( void );
 	virtual void SaveKeysToBuffer( int depth, CUtlBuffer& buf );
 
-	void SetSkipToFrame( int frame );
+	void SetSkipToTick( int tick );
 	void SetSkipToTime( float t );
 	
 private:
 
-	bool		m_bUsingSkipFrame;
-	int			m_nSkipToFrame;
+	bool		m_bUsingSkipTick;
+	int			m_nSkipToTick;
 	float		m_flSkipToTime;
 
 	friend class CBaseActionSkipAheadDialog;
@@ -48,7 +55,7 @@ class CDemoActionPlayCommands : public CBaseDemoAction
 
 public:
 	virtual bool Init( KeyValues *pInitData );
-	virtual void			FireAction( void );
+	virtual void FireAction( void );
 	virtual void SaveKeysToBuffer( int depth, CUtlBuffer& buf );
 
 	void		SetCommandStream( char const *stream );
@@ -73,10 +80,10 @@ class CDemoActionScreenFadeStart : public CBaseDemoAction
 
 public:
 	virtual bool Init( KeyValues *pInitData );
-	virtual void			FireAction( void );
+	virtual void FireAction( void );
 	virtual void SaveKeysToBuffer( int depth, CUtlBuffer& buf );
 
-	ScreenFade_t		*GetScreenFade( void );
+	ScreenFade_t *GetScreenFade( void );
 
 private:
 	ScreenFade_t		fade;
@@ -185,13 +192,13 @@ public:
 	virtual bool Update( const DemoActionTimingContext& tc );
 	virtual void SaveKeysToBuffer( int depth, CUtlBuffer& buf );
 
-	void		SetStopFrame( int frame );
-	void		SetStopTime( float t );
+	void		SetStopTick( int tick );
+	void		SetStopTime( float time );
 	
 private:
 
-	bool		m_bUsingStopFrame;
-	int			m_nStopFrame;
+	bool		m_bUsingStopTick;
+	int			m_nStopTick;
 	float		m_flStopTime;
 
 	friend class CBaseActionWithStopTimeDialog;

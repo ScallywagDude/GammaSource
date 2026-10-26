@@ -1,27 +1,25 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
-#include "quakedef.h"
-#include "sv_main.h"
+
+#include "server_pch.h"
 #include "sv_precache.h"
-#include "networkstringtablecontainerserver.h"
 #include "host.h"
-#include "vstdlib/ICommandLine.h"
+#include "tier0/icommandline.h"
+#include "MapReslistGenerator.h"
+#include "DownloadListGenerator.h"
+#include "soundchars.h"
+#ifndef SWDS
+#include "vgui_baseui_interface.h"
+#endif
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
-void SV_PrecacheInfo_f();
-void SV_PrecacheGeneric_f();
-void SV_PreacacheModel_f();
-void SV_PreacacheSound_f();
-
-static ConCommand sv_precacheinfo( "sv_precacheinfo", SV_PrecacheInfo_f, "Show precache info." );
-static ConCommand sv_precachegeneric( "sv_precachegeneric", SV_PrecacheGeneric_f, "Usage:  sv_precachegeneric <name> [ preload ]\nAdd file to precache list." );
-static ConCommand sv_precachemodel( "sv_precachemodel", SV_PreacacheModel_f, "Usage:  sv_precachemodel <name> [ preload ]\nAdd model to precache list." );
-static ConCommand sv_precachesound( "sv_precachesound", SV_PreacacheSound_f, "Usage:  sv_precachesound <name> [ preload ]\nAdd sound to precache list." );
 static ConVar sv_forcepreload( "sv_forcepreload", "0", FCVAR_ARCHIVE, "Force server side preloading.");
 
 //-----------------------------------------------------------------------------
@@ -145,11 +143,33 @@ int SV_FindOrAddDecal(const char *name, bool preload )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
+// Input  : *name - 
+//-----------------------------------------------------------------------------
+void SV_ForceSimpleMaterial( const char *name )
+{
+	DownloadListGenerator().ForceSimpleMaterial( name );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
+// Input  : *name - 
+//			&mins - 
+//			&maxs - 
+//-----------------------------------------------------------------------------
+void SV_ForceModelBounds( const char *name, const Vector &mins, const Vector &maxs )
+{
+	DownloadListGenerator().ForceModelBounds( name, mins, maxs );
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: 
 // Output : TABLEID
 //-----------------------------------------------------------------------------
-TABLEID CServerState::GetModelPrecacheTable( void ) const
+INetworkStringTable *CGameServer::GetModelPrecacheTable( void ) const
 {
-	return m_hModelPrecacheTable;
+	return m_pModelPrecacheTable;
 }
 
 //-----------------------------------------------------------------------------
@@ -159,9 +179,12 @@ TABLEID CServerState::GetModelPrecacheTable( void ) const
 //			*model - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=NULL*/ )
+int CGameServer::PrecacheModel( char const *name, int flags, model_t *model /*=NULL*/ )
 {
-	int idx = networkStringTableContainerServer->AddString( m_hModelPrecacheTable, name );
+	if ( !m_pModelPrecacheTable )
+		return -1;
+
+	int idx = m_pModelPrecacheTable->AddString( true, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
 		return -1;
@@ -170,18 +193,10 @@ int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=
 	CPrecacheUserData p;
 
 	// first time, set file size & flags
-	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)networkStringTableContainerServer->GetStringUserData( m_hModelPrecacheTable, idx );
+	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)m_pModelPrecacheTable->GetStringUserData( idx, NULL );
 	if ( !pExisting )
 	{
 		p.flags = flags;
-		if ( name[ 0 ] )
-		{
-			p.filesize = max( modelloader->GetModelFileSize( name ), 0 ) >> 10;
-		}
-		else
-		{
-			p.filesize = 0;
-		}
 	}
 	else
 	{
@@ -190,7 +205,7 @@ int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=
 		p.flags |= flags;
 	}
 
-	networkStringTableContainerServer->SetStringUserData( m_hModelPrecacheTable, idx, sizeof( p ), &p );
+	m_pModelPrecacheTable->SetStringUserData( idx, sizeof( p ), &p );
 
 	CPrecacheItem *slot = &model_precache[ idx ];
 
@@ -199,22 +214,26 @@ int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=
 		slot->SetModel( model );
 	}
 
-	bool loadnow = ( !slot->GetModel() && ( flags & RES_PRELOAD ) );
-	
-	if ( CommandLine()->FindParm( "-nopreload" ) )
+	bool bLoadNow;
+	bLoadNow = ( !slot->GetModel() && ( ( flags & RES_PRELOAD ) || IsX360() ) );
+	if ( CommandLine()->FindParm( "-nopreload" ) ||	CommandLine()->FindParm( "-nopreloadmodels" ))
 	{
-		loadnow = false;
+		bLoadNow = false;
 	}
 	else if ( sv_forcepreload.GetInt() || CommandLine()->FindParm( "-preload" ) )
 	{
-		loadnow = true;
+		bLoadNow = true;
 	}
 
 	if ( idx != 0 )
 	{
-		if ( loadnow )
+		if ( bLoadNow )
 		{
 			slot->SetModel( modelloader->GetModelForName( name, IModelLoader::FMODELLOADER_SERVER ) );
+#ifndef SWDS
+			EngineVGui()->UpdateProgressBar(PROGRESS_PRECACHE); 
+#endif
+			MapReslistGenerator().OnModelPrecached(name);
 		}
 		else
 		{
@@ -231,12 +250,12 @@ int CServerState::PrecacheModel( char const *name, int flags, model_t *model /*=
 // Input  : index - 
 // Output : model_t
 //-----------------------------------------------------------------------------
-model_t *CServerState::GetModel( int index )
+model_t *CGameServer::GetModel( int index )
 {
-	if ( index <= 0 )
+	if ( index <= 0 || !m_pModelPrecacheTable )
 		return NULL;
 
-	if ( index >= networkStringTableContainerServer->GetNumStrings( m_hModelPrecacheTable ) )
+	if ( index >= m_pModelPrecacheTable->GetNumStrings() )
 	{
 		return NULL;
 	}
@@ -248,12 +267,12 @@ model_t *CServerState::GetModel( int index )
 		return m;
 	}
 
-	char const *modelname = networkStringTableContainerServer->GetString( m_hModelPrecacheTable, index );
+	char const *modelname = m_pModelPrecacheTable->GetString( index );
 	Assert( modelname );
 
 	if ( host_showcachemiss.GetBool() )
 	{
-		Con_DPrintf( "server model cache miss on %s\n", modelname );
+		ConDMsg( "server model cache miss on %s\n", modelname );
 	}
 
 	m = modelloader->GetModelForName( modelname, IModelLoader::FMODELLOADER_SERVER );
@@ -267,9 +286,12 @@ model_t *CServerState::GetModel( int index )
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::LookupModelIndex( char const *name )
+int CGameServer::LookupModelIndex( char const *name )
 {
-	int idx = networkStringTableContainerServer->FindStringIndex( m_hModelPrecacheTable, name );
+	if ( !m_pModelPrecacheTable )
+		return -1;
+
+	int idx = m_pModelPrecacheTable->FindStringIndex( name );
 	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
 }
 
@@ -277,9 +299,9 @@ int CServerState::LookupModelIndex( char const *name )
 // Purpose: 
 // Output : TABLEID
 //-----------------------------------------------------------------------------
-TABLEID CServerState::GetSoundPrecacheTable( void ) const
+INetworkStringTable *CGameServer::GetSoundPrecacheTable( void ) const
 {
-	return m_hSoundPrecacheTable;
+	return m_pSoundPrecacheTable;
 }
 
 //-----------------------------------------------------------------------------
@@ -288,29 +310,29 @@ TABLEID CServerState::GetSoundPrecacheTable( void ) const
 //			flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::PrecacheSound( char const *name, int flags )
+int CGameServer::PrecacheSound( char const *name, int flags )
 {
-	int idx = networkStringTableContainerServer->AddString( m_hSoundPrecacheTable, name );
+	if ( !m_pSoundPrecacheTable )
+		return -1;
+
+	int idx = m_pSoundPrecacheTable->AddString( true, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
 		return -1;
 	}
 
-	CPrecacheUserData p;
+	// mark the sound as being precached, but check first that reslist generation is enabled to save on the va() call
+	if (MapReslistGenerator().IsEnabled() && name[0])
+	{
+		MapReslistGenerator().OnResourcePrecached( va( "sound/%s", PSkipSoundChars( name ) ) );
+	}
 
 	// first time, set file size & flags
-	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)networkStringTableContainerServer->GetStringUserData( m_hSoundPrecacheTable, idx );
+	CPrecacheUserData p;
+	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)m_pSoundPrecacheTable->GetStringUserData( idx, NULL );
 	if ( !pExisting )
 	{
 		p.flags = flags;
-		if ( name[ 0 ] )
-		{
-			p.filesize = max( COM_FileSize( va( "sound/%s", name ) ), 0 ) >> 10;
-		}
-		else
-		{
-			p.filesize = 0;
-		}
 	}
 	else
 	{
@@ -319,10 +341,11 @@ int CServerState::PrecacheSound( char const *name, int flags )
 		p.flags |= flags;
 	}
 
-	networkStringTableContainerServer->SetStringUserData( m_hSoundPrecacheTable, idx, sizeof( p ), &p );
+	m_pSoundPrecacheTable->SetStringUserData( idx, sizeof( p ), &p );
 
 	CPrecacheItem *slot = &sound_precache[ idx ];
 	slot->SetName( name );
+
 	return idx;
 }
 
@@ -331,14 +354,14 @@ int CServerState::PrecacheSound( char const *name, int flags )
 // Input  : index - 
 // Output : char const
 //-----------------------------------------------------------------------------
-char const *CServerState::GetSound( int index )
+char const *CGameServer::GetSound( int index )
 {
-	if ( index <= 0 )
+	if ( index <= 0 || !m_pSoundPrecacheTable )
 	{
 		return NULL;
 	}
 
-	if ( index >= networkStringTableContainerServer->GetNumStrings( m_hSoundPrecacheTable ) )
+	if ( index >= m_pSoundPrecacheTable->GetNumStrings() )
 	{
 		return NULL;
 	}
@@ -352,9 +375,12 @@ char const *CServerState::GetSound( int index )
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::LookupSoundIndex( char const *name )
+int CGameServer::LookupSoundIndex( char const *name )
 {
-	int idx = networkStringTableContainerServer->FindStringIndex( m_hSoundPrecacheTable, name );
+	if ( !m_pSoundPrecacheTable )
+		return 0;
+
+	int idx = m_pSoundPrecacheTable->FindStringIndex( name );
 	return ( idx == INVALID_STRING_INDEX ) ? 0 : idx;
 }
 
@@ -362,9 +388,9 @@ int CServerState::LookupSoundIndex( char const *name )
 // Purpose: 
 // Output : TABLEID
 //-----------------------------------------------------------------------------
-TABLEID CServerState::GetGenericPrecacheTable( void ) const
+INetworkStringTable *CGameServer::GetGenericPrecacheTable( void ) const
 {
-	return m_hGenericPrecacheTable;
+	return m_pGenericPrecacheTable;
 }
 
 //-----------------------------------------------------------------------------
@@ -373,29 +399,28 @@ TABLEID CServerState::GetGenericPrecacheTable( void ) const
 //			flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::PrecacheGeneric( char const *name, int flags )
+int CGameServer::PrecacheGeneric( char const *name, int flags )
 {
-	int idx = networkStringTableContainerServer->AddString( m_hGenericPrecacheTable, name );
+	if ( !m_pGenericPrecacheTable )
+		return -1;
+
+	int idx = m_pGenericPrecacheTable->AddString( true, name );
+
 	if ( idx == INVALID_STRING_INDEX )
 	{
 		return -1;
 	}
 
+	MapReslistGenerator().OnResourcePrecached( name );
+
 	CPrecacheUserData p;
 
 	// first time, set file size & flags
-	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)networkStringTableContainerServer->GetStringUserData( m_hGenericPrecacheTable, idx );
+	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)m_pGenericPrecacheTable->GetStringUserData( idx, NULL );
 	if ( !pExisting )
 	{
 		p.flags = flags;
-		if ( name[ 0 ] )
-		{
-			p.filesize = max( COM_FileSize( name ), 0 ) >> 10;
-		}
-		else
-		{
-			p.filesize = 0;
-		}
+
 	}
 	else
 	{
@@ -404,7 +429,7 @@ int CServerState::PrecacheGeneric( char const *name, int flags )
 		p.flags |= flags;
 	}
 
-	networkStringTableContainerServer->SetStringUserData( m_hGenericPrecacheTable, idx, sizeof( p ), &p );
+	m_pGenericPrecacheTable->SetStringUserData( idx, sizeof( p ), &p );
 
 	CPrecacheItem *slot = &generic_precache[ idx ];
 	slot->SetGeneric( name );
@@ -416,11 +441,13 @@ int CServerState::PrecacheGeneric( char const *name, int flags )
 // Input  : index - 
 // Output : char const
 //-----------------------------------------------------------------------------
-char const *CServerState::GetGeneric( int index )
+char const *CGameServer::GetGeneric( int index )
 {
 	// Bogus index
-	if ( index < 0 || 
-		 index >= networkStringTableContainerServer->GetNumStrings( m_hGenericPrecacheTable ) )
+	if ( index < 0 || !m_pGenericPrecacheTable )
+		return "";
+
+	if ( index >= m_pGenericPrecacheTable->GetNumStrings() )
 	{
 		return "";
 	}
@@ -434,9 +461,13 @@ char const *CServerState::GetGeneric( int index )
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::LookupGenericIndex( char const *name )
+int CGameServer::LookupGenericIndex( char const *name )
 {
-	int idx = networkStringTableContainerServer->FindStringIndex( m_hGenericPrecacheTable, name );
+	if ( !m_pGenericPrecacheTable )
+		return 0;
+
+	int idx = m_pGenericPrecacheTable->FindStringIndex( name );
+
 	return ( idx == INVALID_STRING_INDEX ) ? 0 : idx;
 }
 
@@ -444,9 +475,9 @@ int CServerState::LookupGenericIndex( char const *name )
 // Purpose: 
 // Output : TABLEID
 //-----------------------------------------------------------------------------
-TABLEID CServerState::GetDecalPrecacheTable( void ) const
+INetworkStringTable *CGameServer::GetDecalPrecacheTable( void ) const
 {
-	return m_hDecalPrecacheTable;
+	return m_pDecalPrecacheTable;
 }
 
 //-----------------------------------------------------------------------------
@@ -455,29 +486,26 @@ TABLEID CServerState::GetDecalPrecacheTable( void ) const
 //			flags - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::PrecacheDecal( char const *name, int flags )
+int CGameServer::PrecacheDecal( char const *name, int flags )
 {
-	int idx = networkStringTableContainerServer->AddString( m_hDecalPrecacheTable, name );
+	if ( !m_pDecalPrecacheTable )
+		return -1;
+
+	int idx = m_pDecalPrecacheTable->AddString( true, name );
 	if ( idx == INVALID_STRING_INDEX )
 	{
 		return -1;
 	}
 
+	MapReslistGenerator().OnResourcePrecached(name);
+
 	CPrecacheUserData p;
 
 	// first time, set file size & flags
-	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)networkStringTableContainerServer->GetStringUserData( m_hDecalPrecacheTable, idx );
+	CPrecacheUserData const *pExisting = (CPrecacheUserData const *)m_pDecalPrecacheTable->GetStringUserData( idx, NULL );
 	if ( !pExisting )
 	{
 		p.flags = flags;
-		if ( name[ 0 ] )
-		{
-			p.filesize = max( COM_FileSize( name ), 0 ) >> 10;
-		}
-		else
-		{
-			p.filesize = 0;
-		}
 	}
 	else
 	{
@@ -486,7 +514,7 @@ int CServerState::PrecacheDecal( char const *name, int flags )
 		p.flags |= flags;
 	}
 
-	networkStringTableContainerServer->SetStringUserData( m_hDecalPrecacheTable, idx, sizeof( p ), &p );
+	m_pDecalPrecacheTable->SetStringUserData( idx, sizeof( p ), &p );
 
 	CPrecacheItem *slot = &decal_precache[ idx ];
 	slot->SetDecal( name );
@@ -495,49 +523,43 @@ int CServerState::PrecacheDecal( char const *name, int flags )
 
 //-----------------------------------------------------------------------------
 // Purpose: 
-// Output : TABLEID
-//-----------------------------------------------------------------------------
-TABLEID CServerState::GetInstanceBaselineTable() const
-{
-	return m_hInstanceBaselineTable;
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
 // Input  : *name - 
 // Output : int
 //-----------------------------------------------------------------------------
-int CServerState::LookupDecalIndex( char const *name )
+int CGameServer::LookupDecalIndex( char const *name )
 {
-	int idx = networkStringTableContainerServer->FindStringIndex( m_hDecalPrecacheTable, name );
+	if ( !m_pDecalPrecacheTable )
+		return -1;
+
+	int idx = m_pDecalPrecacheTable->FindStringIndex( name );
 	return ( idx == INVALID_STRING_INDEX ) ? -1 : idx;
 }
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CServerState::DumpPrecacheStats( TABLEID table )
+void CGameServer::DumpPrecacheStats( INetworkStringTable *table )
 {
-	if ( table == INVALID_STRING_TABLE )
+	if ( table == NULL )
 	{
-		Con_Printf( "Can only dump stats when active in a level\n" );
+		ConMsg( "Can only dump stats when active in a level\n" );
 		return;
 	}
 
 	CPrecacheItem *items = NULL;
-	if ( table == m_hModelPrecacheTable )
+	if ( table == m_pModelPrecacheTable )
 	{
 		items = model_precache;
 	}
-	else if ( table == m_hGenericPrecacheTable )
+	else if ( table == m_pGenericPrecacheTable )
 	{
 		items = generic_precache;
 	}
-	else if ( table == m_hSoundPrecacheTable )
+	else if ( table == m_pSoundPrecacheTable )
 	{
 		items = sound_precache;
 	}
-	else if ( table == m_hDecalPrecacheTable )
+	else if ( table == m_pDecalPrecacheTable )
 	{
 		items = decal_precache;
 	}
@@ -545,76 +567,57 @@ void CServerState::DumpPrecacheStats( TABLEID table )
 	if ( !items )
 		return;
 
-	int count = networkStringTableContainerServer->GetNumStrings( table );
-	int maxcount = networkStringTableContainerServer->GetMaxStrings( table );
+	int count = table->GetNumStrings();
+	int maxcount = table->GetMaxStrings();
 
-	Con_Printf( "\n" );
-	Con_Printf( "Precache table %s:  %i of %i slots used\n", networkStringTableContainerServer->GetTableName( table ),
+	ConMsg( "\n" );
+	ConMsg( "Precache table %s:  %i of %i slots used\n", table->GetTableName(),
 		count, maxcount );
 
-	int used = 0, total = 0;
 	for ( int i = 0; i < count; i++ )
 	{
-		char const *name = networkStringTableContainerServer->GetString( table, i );
+		char const *name = table->GetString( i );
 		CPrecacheItem *slot = &items[ i ];
 		
 		int testLength;
-		const CPrecacheUserData *p = ( const CPrecacheUserData * )networkStringTableContainerServer->GetStringUserData( table, i, &testLength );
+		const CPrecacheUserData *p = ( const CPrecacheUserData * )table->GetStringUserData( i, &testLength );
 		ErrorIfNot( testLength == sizeof( *p ),
-			("CServerState::DumpPrecacheStats: invalid CPrecacheUserData length (%d)", testLength)
+			("CGameServer::DumpPrecacheStats: invalid CPrecacheUserData length (%d)", testLength)
 		);
 
 		if ( !name || !slot || !p )
 			continue;
 
-		Con_Printf( "%03i:  %s (%s):   ",
+		ConMsg( "%03i:  %s (%s):   ",
 			i,
 			name, 
 			GetFlagString( p->flags ) );
 
-		int filesize = p->filesize << 10;
-
-		if ( p->filesize > 0 || name[ 0 ] == '*' )
-		{
-			Con_Printf( "%.2f kb,", (float)filesize / 1024.0f );
-		}
-		else
-		{
-			Con_Printf( "missing!," );
-		}
-
-		total += filesize;
-
 		if ( slot->GetReferenceCount() == 0 )
 		{
-			Con_Printf( " never used\n" );
+			ConMsg( " never used\n" );
 		}
 		else
 		{
-			used += filesize;
-
-			Con_Printf( " %i refs, first %.2f mru %.2f\n",
+			ConMsg( " %i refs, first %.2f mru %.2f\n",
 				slot->GetReferenceCount(), 
 				slot->GetFirstReference(), 
 				slot->GetMostRecentReference() );
 		}
 	}
-	if ( total > 0 )
-	{
-		Con_Printf( " -- Total %.2f Mb, %.2f %% used\n",
-			(float)( total ) / ( 1024.0f * 1024.0f ), ( 100.0f * (float)used ) / ( float ) total );
-	}
-	Con_Printf( "\n" );
+
+	ConMsg( "\n" );
 }
+
 
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void SV_PrecacheInfo_f( void )
+CON_COMMAND( sv_precacheinfo, "Show precache info." )
 {
-	if ( Cmd_Argc() == 2 )
+	if ( args.ArgC() == 2 )
 	{
-		char const *table = Cmd_Argv( 1 );
+		char const *table = args[ 1 ];
 
 		bool dumped = true;
 		if ( !Q_strcasecmp( table, "generic" ) )
@@ -650,137 +653,3 @@ void SV_PrecacheInfo_f( void )
 	sv.DumpPrecacheStats( sv.GetSoundPrecacheTable() );
 	sv.DumpPrecacheStats( sv.GetModelPrecacheTable() );
 }
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void SV_PreacacheModel_f( void )
-{
-	if ( sv.GetModelPrecacheTable() == INVALID_STRING_TABLE )
-	{
-		Con_Printf( "Cant' precache, not running a server\n" );
-		return;
-	}
-	if ( Cmd_Argc() < 2 )
-	{
-		Con_Printf( "Usage:  %s filename [preload]\n", Cmd_Argv(0) );
-		return;
-	}
-
-	bool preload = false;
-	if ( Cmd_Argc() == 3 && !Q_strcasecmp( Cmd_Argv(2), "preload" ) )
-	{
-		preload = true;
-	}
-	char const *model = Cmd_Argv(1);
-	if ( !model || !model[ 0 ] )
-	{
-		Con_Printf( "sv_precachemodel:  empty model!\n" );
-		return;
-	}
-
-	if ( sv.LookupModelIndex( model ) != 0 )
-	{
-		Con_Printf( "sv_precachemodel:  %s already in list.\n", model );
-		return;
-	}
-
-	// Look for a match or an empty slot...
-	int flags = RES_FATALIFMISSING;
-	if ( preload )
-	{
-		flags |= RES_PRELOAD;
-	}
-
-	sv.PrecacheModel( model, flags, NULL );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void SV_PreacacheSound_f( void )
-{
-	if ( sv.GetSoundPrecacheTable() == INVALID_STRING_TABLE )
-	{
-		Con_Printf( "Cant' precache, not running a server\n" );
-		return;
-	}
-	if ( Cmd_Argc() < 2 )
-	{
-		Con_Printf( "Usage:  %s filename [preload]\n", Cmd_Argv(0) );
-		return;
-	}
-
-	bool preload = false;
-	if ( Cmd_Argc() == 3 && !Q_strcasecmp( Cmd_Argv(2), "preload" ) )
-	{
-		preload = true;
-	}
-	char const *sound = Cmd_Argv(1);
-	if ( !sound || !sound[ 0 ] )
-	{
-		Con_Printf( "sv_precachesound:  empty sound!\n" );
-		return;
-	}
-
-	if ( sv.LookupSoundIndex( sound ) != 0 )
-	{
-		Con_Printf( "sv_precachesound:  %s already in list.\n", sound );
-		return;
-	}
-
-	// Look for a match or an empty slot...
-	int flags = RES_FATALIFMISSING;
-	if ( preload )
-	{
-		flags |= RES_PRELOAD;
-	}
-
-	sv.PrecacheSound( sound, flags );
-}
-
-//-----------------------------------------------------------------------------
-// Purpose: 
-//-----------------------------------------------------------------------------
-void SV_PrecacheGeneric_f( void )
-{
-	if ( sv.GetGenericPrecacheTable() == INVALID_STRING_TABLE )
-	{
-		Con_Printf( "Cant' precache, not running a server\n" );
-		return;
-	}
-	if ( Cmd_Argc() < 2 )
-	{
-		Con_Printf( "Usage:  %s filename [preload]\n", Cmd_Argv(0) );
-		return;
-	}
-
-	bool preload = false;
-	if ( Cmd_Argc() == 3 && !Q_strcasecmp( Cmd_Argv(2), "preload" ) )
-	{
-		preload = true;
-	}
-	char const *name = Cmd_Argv(1);
-	if ( !name || !name[ 0 ] )
-	{
-		Con_Printf( "sv_precachemodel:  empty model!\n" );
-		return;
-	}
-
-	if ( sv.LookupGenericIndex( name ) != 0 )
-	{
-		Con_Printf( "sv_precachegeneric:  %s already in list.\n", name );
-		return;
-	}
-
-	// Look for a match or an empty slot...
-	int flags = RES_FATALIFMISSING;
-	if ( preload )
-	{
-		flags |= RES_PRELOAD;
-	}
-
-	sv.PrecacheGeneric( name, flags );
-}
-
-

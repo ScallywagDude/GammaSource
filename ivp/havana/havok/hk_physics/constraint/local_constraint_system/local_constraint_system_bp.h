@@ -9,12 +9,24 @@ class hk_Local_Constraint_System_BP  //: public hk_Effector_BP
 
 		hk_real m_damp;
 		hk_real m_tau;
+        int	m_n_iterations;
+        int m_minErrorTicks;
+        float m_errorTolerance;
+        bool m_active;
 
-	public:
+        // Ghidra reports the following 3 fields exist:
+//        undefined field_0x15;
+//        undefined field_0x16;
+//        undefined field_0x17;
+
+public:
 
 		hk_Local_Constraint_System_BP()
 			:	m_damp( 1.0f ),
-				m_tau( 1.0f )
+				m_tau( 1.0f ),
+				m_n_iterations( 0 ),
+				m_minErrorTicks( 1 ),
+				m_errorTolerance( 0.03 )
 		{
 			;
 		}

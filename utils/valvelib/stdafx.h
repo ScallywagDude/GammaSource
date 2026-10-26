@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_STDAFX_H__A934D779_67D2_4174_BDA7_785C0F0F4E7A__INCLUDED_)
 #define AFX_STDAFX_H__A934D779_67D2_4174_BDA7_785C0F0F4E7A__INCLUDED_
 

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: defines a RCon class used to send rcon commands to remote servers
 //
@@ -13,7 +13,6 @@
 
 #include "server.h"
 #include "netadr.h"
-#include "UtlVector.h"
 
 class CSocket;
 class IResponse;

@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
@@ -11,98 +11,58 @@
 #pragma once
 #endif
 
-#include <VGUI_Frame.h>
-#include <VGUI_PHandle.h>
-#include <VGUI_ListPanel.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_PropertyPage.h>
+#include <KeyValues.h>
+
+#include <vgui_controls/Frame.h>
+#include <vgui_controls/PHandle.h>
+#include <vgui_controls/ListPanel.h>
+#include <vgui_controls/PropertyPage.h>
 
 #include "PlayerContextMenu.h"
-#include "player.h"
-
-namespace vgui
-{
-class Button;
-class ToggleButton;
-class RadioButton;
-class Label;
-class TextEntry;
-
-class ListPanel;
-
-class MessageBox;
-class ComboBox;
-class Panel;
-class PropertySheet;
-};
-
+#include "RemoteServer.h"
 
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
 //-----------------------------------------------------------------------------
-class CPlayerPanel: public vgui::PropertyPage
+class CPlayerPanel : public vgui::PropertyPage, public IServerDataResponse
 {
+	DECLARE_CLASS_SIMPLE( CPlayerPanel, vgui::PropertyPage );
 public:
 	CPlayerPanel(vgui::Panel *parent, const char *name);
 	~CPlayerPanel();
 
-	// sets whether to show admin mod specific options
-	void SetAdminMod(bool state);
-
-	// inputs a new player list
-	void NewPlayerList(CUtlVector<Players_t> *players);
-
 	// returns the keyvalues for the currently selected row
 	KeyValues *GetSelected(); 
 
-	//property page handlers
-	virtual void OnPageShow();
-	virtual void OnPageHide();
+protected:
+	// property page handlers
+	virtual void OnResetData();
+	virtual void OnThink();
+	virtual void OnKeyCodeTyped(vgui::KeyCode code);
 
-
-	// vgui overrides
-	virtual void PerformLayout();
-	virtual void OnCommand(const char *command);
-
-	void SetHasRcon(bool state);
+	// called when the server has returned a requested value
+	virtual void OnServerDataResponse(const char *value, const char *response);
 
 private:
+	// vgui overrides
+	virtual void OnCommand(const char *command);
 
 	// msg handlers
-	void OnOpenContextMenu(int row);
-	void OnEffectPlayer(KeyValues *data);
+	MESSAGE_FUNC_INT( OnOpenContextMenu, "OpenContextMenu", itemID );
+	MESSAGE_FUNC( OnItemSelected, "ItemSelected" );
 
-	// an inner class
-	class PlayerListPanel: public vgui::ListPanel
-	{
-	public:
-		PlayerListPanel(vgui::Panel *parent, const char *panelName): vgui::ListPanel(parent,panelName) { m_pParent=parent;};
-		
-		virtual void	OnMouseDoublePressed( vgui::MouseCode code );
-	private:
-		vgui::Panel *m_pParent;
+	MESSAGE_FUNC( OnKickButtonPressed, "KickPlayer" );
+	MESSAGE_FUNC( OnBanButtonPressed, "BanPlayer" );
+	MESSAGE_FUNC( KickSelectedPlayers, "KickSelectedPlayers" );
+	MESSAGE_FUNC_CHARPTR_CHARPTR( AddBanByID, "AddBanValue", id, time );
 
-	};
-
-
-	void OnTextChanged(vgui::Panel *panel, const char *text);
-
-	PlayerListPanel *m_pPlayerListPanel;
+	vgui::ListPanel *m_pPlayerListPanel;
 	vgui::Button *m_pKickButton;
 	vgui::Button *m_pBanButton;
-	vgui::Button *m_pSlapButton;
-	vgui::Button *m_pChatButton;
 
 	CPlayerContextMenu *m_pPlayerContextMenu;
 
-
-	bool m_bHasAdminMod;
-	bool m_bHasRcon;
-
-	vgui::Panel *m_pParent;
-		
-	DECLARE_PANELMAP();
-	typedef vgui::PropertyPage BaseClass;
+	float m_flUpdateTime;
 };
 
 #endif // PLAYERPANEL_H

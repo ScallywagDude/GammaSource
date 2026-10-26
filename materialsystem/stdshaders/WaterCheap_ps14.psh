@@ -19,26 +19,12 @@ mul    r3.rgb, r5, r3          ; 2N(N.Eye)
 dp3    r2.rgb, r5, r5          ; N.N
 mad    r2.rgb, -r4_bx2, r2, r3 ; 2N(N.Eye) - Eye(N.N)
 
-
 phase
 
 ; Sample environment map
 texld  r3, r2
 
-; dot eye-vector with per-pixel normal from r0
-dp3_sat	r1, v0_bx2, r0_bx2
-
 ; multiply color by reflecttint
-mul    r3.rgb, r3, c1
-
-; run Fresnel approx. on it: R0 + (1-R0) (1-cos(q))^5 in alpha channel
-mul r0.a, 1-r1.a, 1-r1.a			; squared
-mul r0.a, r0.a, r0.a				; quartic
-mul_sat r0.a, r0.a, 1-r1.a				; quintic
-
-#if 1
-lrp r0.rgb, r0.a, r3, c0			; blend between reflected color and fog color based on fresnel
-+mov r0.a, v0.a						; get the blend amount for cheap water
-#else
-mov r0, v0.a
-#endif
+mul r0.rgb, r3, c1 
++mov_sat r0.a, v0.a				; Necessary since v0.a may be negative
+add_sat r0.a, c1.a, r0.a

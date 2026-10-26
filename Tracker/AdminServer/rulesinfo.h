@@ -1,4 +1,4 @@
-//========= Copyright © 1996-2002, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: defines a RCon class used to send rcon commands to remote servers
 //
@@ -41,9 +41,9 @@ public:
 	void RunFrame();
 	bool Refreshed();
 
-	void UpdateServer(netadr_t *adr, CUtlVector<KeyValues *> *Rules);
+	void UpdateServer(netadr_t *adr, CUtlVector<vgui::KeyValues *> *Rules);
 	
-	CUtlVector<KeyValues *> *Rules();
+	CUtlVector<vgui::KeyValues *> *Rules();
 
 	int serverID;
 	int received;
@@ -59,7 +59,7 @@ private:
 	float m_fSendTime;
 	bool m_bRefreshed;
 
-	CUtlVector<KeyValues *> *m_vRules;
+	CUtlVector<vgui::KeyValues *> *m_vRules;
 
 };
 

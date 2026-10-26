@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include <assert.h>
 #include <vgui_controls/ScrollBar.h>
 #include <vgui_controls/Label.h>
@@ -16,13 +16,38 @@
 #include <vgui/IScheme.h>
 #include <vgui/ISurface.h>
 #include "PanelListPanel.h"
-// memdbgon must be the last include file in a .cpp file!!!
-#include <tier0/memdbgon.h>
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
 using namespace vgui;
+
+class VScrollBarReversedButtons : public ScrollBar
+{
+public:
+	VScrollBarReversedButtons( Panel *parent, const char *panelName, bool vertical );
+	virtual void ApplySchemeSettings( IScheme *pScheme );
+};
+
+VScrollBarReversedButtons::VScrollBarReversedButtons( Panel *parent, const char *panelName, bool vertical ) : ScrollBar( parent, panelName, vertical )
+{
+}
+
+void VScrollBarReversedButtons::ApplySchemeSettings( IScheme *pScheme )
+{
+	ScrollBar::ApplySchemeSettings( pScheme );
+
+	Button *pButton;
+	pButton = GetButton( 0 );
+	pButton->SetArmedColor(		pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDepressedColor(	pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDefaultColor(	pButton->GetFgColor(),							 pButton->GetBgColor());
+	
+	pButton = GetButton( 1 );
+	pButton->SetArmedColor(		pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDepressedColor(	pButton->GetSchemeColor("DimBaseText", pScheme), pButton->GetBgColor());
+	pButton->SetDefaultColor(	pButton->GetFgColor(),							 pButton->GetBgColor());
+}
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -32,11 +57,19 @@ using namespace vgui;
 //			tall - 
 // Output : 
 //-----------------------------------------------------------------------------
-CPanelListPanel::CPanelListPanel( vgui::Panel *parent, char const *panelName ) : Panel( parent, panelName )
+CPanelListPanel::CPanelListPanel( vgui::Panel *parent, char const *panelName, bool inverseButtons ) : Panel( parent, panelName )
 {
 	SetBounds( 0, 0, 100, 100 );
+	_sliderYOffset = 0;
 
-	_vbar = new ScrollBar(this, "CPanelListPanelVScroll", true );
+	if (inverseButtons)
+	{
+		_vbar = new VScrollBarReversedButtons(this, "CPanelListPanelVScroll", true );
+	}
+	else
+	{
+		_vbar = new ScrollBar(this, "CPanelListPanelVScroll", true );
+	}
 	_vbar->SetBounds( 0, 0, 20, 20 );
 	_vbar->SetVisible(false);
 	_vbar->AddActionSignalTarget( this );
@@ -212,8 +245,8 @@ void CPanelListPanel::PerformLayout()
 	_vbar->SetRange( 0, vpixels - tall + 24);
 	_vbar->SetRangeWindow( 24 /*vpixels / 10*/ );
 	_vbar->SetButtonPressedScrollValue( 24 );
-	_vbar->SetPos(wide - 20, 0);
-	_vbar->SetSize(18, tall - 2);
+	_vbar->SetPos(wide - 20, _sliderYOffset);
+	_vbar->SetSize(18, tall - 2 - _sliderYOffset);
 	_vbar->InvalidateLayout();
 
 	int top = _vbar->GetValue();
@@ -252,7 +285,7 @@ void CPanelListPanel::ApplySchemeSettings(IScheme *pScheme)
 	Panel::ApplySchemeSettings(pScheme);
 
 	SetBorder(pScheme->GetBorder("ButtonDepressedBorder"));
-	SetBgColor(GetSchemeColor("LabelBgColor", GetSchemeColor("WindowDisabledBgColor", pScheme), pScheme));
+	SetBgColor(GetSchemeColor("Label.BgColor", GetBgColor(), pScheme));
 
 
 //	_labelFgColor = GetSchemeColor("WindowFgColor");
@@ -266,11 +299,8 @@ void CPanelListPanel::OnSliderMoved( int position )
 }
 
 //-----------------------------------------------------------------------------
-// Purpose: Message mapping 
 //-----------------------------------------------------------------------------
-MessageMapItem_t CPanelListPanel::m_MessageMap[] =
+void CPanelListPanel::SetSliderYOffset( int pixels )
 {
-	MAP_MESSAGE_INT( CPanelListPanel, "ScrollBarSliderMoved", OnSliderMoved, "position" ),		// custom message
-};
-
-IMPLEMENT_PANELMAP(CPanelListPanel, BaseClass);
+	_sliderYOffset = pixels;
+}

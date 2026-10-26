@@ -1,5 +1,8 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"				"0..1"
+# DYNAMIC: "SKINNING"				"0..1"
+
 #include "macros.vsh"
 
 ;------------------------------------------------------------------------------
@@ -7,7 +10,7 @@ vs.1.1
 ;------------------------------------------------------------------------------
 &AllocateRegister( \$worldPos );
 &AllocateRegister( \$worldNormal );
-&SkinPositionAndNormal( $g_numBones, $worldPos, $worldNormal );
+&SkinPositionAndNormal( $worldPos, $worldNormal );
 
 ;------------------------------------------------------------------------------
 ; Transform the position from world to view space

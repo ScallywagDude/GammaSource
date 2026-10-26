@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 //
 // MessageBuffer - handy for serializing/unserializing
 // structures to be sent as messages  
@@ -6,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "messbuf.h"
+#include "tier1/strtools.h"
 
 
 ///////////////////////////
@@ -110,7 +118,7 @@ MessageBuffer::setOffset(int noffset)
 //
 //
 int
-MessageBuffer::write(void * p, int bytes)
+MessageBuffer::write(void const * p, int bytes)
 {
 	if (bytes + len > size) {
 		resize(bytes + len);
@@ -127,7 +135,7 @@ MessageBuffer::write(void * p, int bytes)
 //
 //
 int
-MessageBuffer::update(int loc, void * p, int bytes)
+MessageBuffer::update(int loc, void const * p, int bytes)
 {
 	if (loc + bytes > size) {
 		resize(loc + bytes);
@@ -167,6 +175,34 @@ MessageBuffer::read(void * p, int bytes)
 	offset += bytes;
 	return offset;
 }
+
+int MessageBuffer::WriteString( const char *pString )
+{
+	return write( pString, V_strlen( pString ) + 1 );
+}
+
+int MessageBuffer::ReadString( char *pOut, int bufferLength )
+{
+	int nChars = 0;
+	while ( 1 )
+	{
+		char ch;
+		if ( read( &ch, sizeof( ch ) ) == -1 )
+		{
+			pOut[0] = 0;
+			return -1;
+		}
+		
+		if ( ch == 0 || nChars >= (bufferLength-1) )
+			break;
+			
+		pOut[nChars] = ch;
+		++nChars;
+	}
+	pOut[nChars] = 0;
+	return nChars + 1;
+}
+
 
 ///////////////////////////
 //

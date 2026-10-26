@@ -1,19 +1,19 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 #include "DemoPage.h"
 
-#include <VGUI_IVGui.h>
-#include <VGUI_KeyValues.h>
-#include <VGUI_Label.h>
+#include "vgui/IVGui.h"
+#include "tier1/KeyValues.h"
+#include <vgui_controls/Label.h>
 
-#include <VGUI_Controls.h>
-#include <VGUI_IScheme.h>
-#include <VGUI_IImage.h>
-#include <VGUI_TextImage.h>
+#include "vgui_controls/Controls.h"
+#include <vgui/IScheme.h>
+#include <vgui/IImage.h>
+#include <vgui_controls/TextImage.h>
 
 
 using namespace vgui;
@@ -26,6 +26,8 @@ using namespace vgui;
 
 class Label2Demo: public DemoPage
 {
+	DECLARE_CLASS_SIMPLE( Label2Demo, DemoPage );
+
 	public:
 		Label2Demo(Panel *parent, const char *name);
 		~Label2Demo();
@@ -47,7 +49,7 @@ Label2Demo::Label2Demo(Panel *parent, const char *name) : DemoPage(parent, name)
 	m_pLabel = new Label(this, "Label2Demo", "Beginning Label Text");
 
 	// Create a label holding the ending text
-	m_pEndText = new TextImage("Ending Label Text", GetScheme());
+	m_pEndText = new TextImage("Ending Label Text");
 
 	m_pLabel->SetSize( 240, 24 );
 
@@ -72,7 +74,7 @@ void Label2Demo::ApplySchemeSettings(vgui::IScheme *pScheme)
 	// Label's ApplySchemeSettings wipes out the images that were added
 	// Re-add them.
 	m_pLabel->InvalidateLayout(true);
-	_statusImage = pScheme->GetImage("/friends/icon_busy");
+	_statusImage = scheme()->GetImage("/friends/icon_busy", false);
 	m_pLabel->AddImage(_statusImage, 0);
 	m_pLabel->AddImage(m_pEndText, 0);
 }

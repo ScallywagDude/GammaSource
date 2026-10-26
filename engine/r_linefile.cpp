@@ -1,27 +1,21 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-// $Workfile:     $
-// $Date:         $
-//
-//-----------------------------------------------------------------------------
-// $Log: $
-//
 // $NoKeywords: $
-//=============================================================================
-#include "glquake.h"
+//=============================================================================//
+
+#include "render_pch.h"
 #include "draw.h"
 #include "server.h"
 #include "filesystem.h"
 #include "filesystem_engine.h"
-#include "utlbuffer.h"
-#include "utlvector.h"
+#include "tier1/utlbuffer.h"
+#include "tier1/utlvector.h"
+#include "tier2/renderutils.h"
+
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 CUtlVector< Vector >	g_Points;
 //-----------------------------------------------------------------------------
@@ -35,7 +29,7 @@ void Linefile_Draw( void )
 
 	for ( int i = 0; i < pointCount-1; i++ )
 	{
-		Draw_Line( points[i], points[i+1], 255, 255, 0, FALSE );
+		RenderLine( points[i], points[i+1], Color( 255, 255, 0, 255 ), true );
 	}
 }
 
@@ -47,7 +41,6 @@ void Linefile_Draw( void )
 //-----------------------------------------------------------------------------
 void Linefile_Read_f( void )
 {
-	FileHandle_t f;
 	Vector	org;
 	int		r;
 	int		c;
@@ -55,22 +48,17 @@ void Linefile_Read_f( void )
 
 	g_Points.Purge();
 
-	Q_snprintf (name, sizeof( name ), "maps/%s.lin", sv.name);
+	Q_snprintf( name, sizeof( name ), "maps/%s.lin", sv.GetMapName() );
 
-	COM_OpenFile (name, &f);
-	if (!f)
+	CUtlBuffer buf( 0, 0, CUtlBuffer::TEXT_BUFFER );
+	if ( !g_pFileSystem->ReadFile( name, NULL, buf ) )
 	{
-		Con_Printf ("couldn't open %s\n", name);
+		ConMsg ("couldn't open %s\n", name);
 		return;
 	}
 	
-	Con_Printf ("Reading %s...\n", name);
+	ConMsg ("Reading %s...\n", name);
 	c = 0;
-
-	int size = g_pFileSystem->Size(f);
-	CUtlBuffer buf( 0, size, true );
-	g_pFileSystem->Read( buf.Base(), size, f );
-	g_pFileSystem->Close(f);
 
 	for ( ;; )
 	{
@@ -82,5 +70,5 @@ void Linefile_Read_f( void )
 		g_Points.AddToTail( org );
 	}
 
-	Con_Printf ("%i lines read\n", c);
+	ConMsg ("%i lines read\n", c);
 }

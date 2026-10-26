@@ -1,20 +1,18 @@
-//=========== (C) Copyright 1999 Valve, L.L.C. All rights reserved. ===========
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+// Purpose: 
 //
-// $Header: $
 // $NoKeywords: $
 //
 // Implementation of the sprite shader
-//=============================================================================
+//=============================================================================//
 
-#include "shaderlib/CShader.h"
+#include "shaderlib/cshader.h"
 #include <string.h>
 #include "const.h"
 
+// memdbgon must be the last include file in a .cpp file!!!
+#include "tier0/memdbgon.h"
 
 // WARNING!  Change these in engine/SpriteGn.h if you change them here!
 #define SPR_VP_PARALLEL_UPRIGHT		0
@@ -105,13 +103,13 @@ BEGIN_SHADER( Sprite_DX6,
 		case kRenderNormal:
 			SHADOW_STATE
 			{
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -121,13 +119,13 @@ BEGIN_SHADER( Sprite_DX6,
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -137,13 +135,13 @@ BEGIN_SHADER( Sprite_DX6,
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -155,13 +153,13 @@ BEGIN_SHADER( Sprite_DX6,
 				pShaderShadow->EnableDepthTest( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToBlack();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -171,13 +169,13 @@ BEGIN_SHADER( Sprite_DX6,
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -186,14 +184,29 @@ BEGIN_SHADER( Sprite_DX6,
 			{
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
-				pShaderShadow->BlendFunc( SHADER_BLEND_ONE, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE_MINUS_SRC_ALPHA );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
 				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToFogColor();
 			}
 			DYNAMIC_STATE
 			{
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToFogColor();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
+			}
+			Draw();
+
+			SHADOW_STATE
+			{
+				pShaderShadow->EnableDepthWrites( false );
+				pShaderShadow->EnableBlending( true );
+				pShaderShadow->BlendFunc( SHADER_BLEND_ONE_MINUS_SRC_ALPHA, SHADER_BLEND_ONE );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+				pShaderShadow->DrawFlags( SHADER_DRAW_POSITION | SHADER_DRAW_TEXCOORD0 | SHADER_DRAW_COLOR );
+				FogToBlack();
+			}
+			DYNAMIC_STATE
+			{
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -213,13 +226,13 @@ BEGIN_SHADER( Sprite_DX6,
 				pShaderShadow->EnableDepthWrites( false );
 				pShaderShadow->EnableBlending( true );
 				pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-				pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+				FogToBlack();
 			}
 			DYNAMIC_STATE
 			{
 				SetColorState( COLOR, ALPHA );
-				BindTexture( SHADER_TEXTURE_STAGE0, BASETEXTURE, FRAME );
-				FogToBlack();
+				BindTexture( SHADER_SAMPLER0, BASETEXTURE, FRAME );
 			}
 			Draw();
 			break;
@@ -241,25 +254,28 @@ BEGIN_SHADER( Sprite_DX6,
 					pShaderShadow->EnableDepthWrites( false );
 					pShaderShadow->EnableBlending( true );
 					pShaderShadow->BlendFunc( SHADER_BLEND_SRC_ALPHA, SHADER_BLEND_ONE );
-					pShaderShadow->EnableTexture( SHADER_TEXTURE_STAGE0, true );
+					pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );
+					FogToBlack();
 				}
 				DYNAMIC_STATE
 				{
 					float frameBlendAlpha = 1.0f - ( flFrame - ( int )flFrame );
 					pShaderAPI->Color3f( flFade * frameBlendAlpha, flFade * frameBlendAlpha, flFade * frameBlendAlpha );
 					ITexture *pTexture = params[BASETEXTURE]->GetTextureValue();
-					BindTexture( SHADER_TEXTURE_STAGE0, pTexture, ( int )flFrame );
-					FogToBlack();
+					BindTexture( SHADER_SAMPLER0, pTexture, ( int )flFrame );
 				}
 				Draw();
+				SHADOW_STATE
+				{
+					FogToBlack();
+				}
 				DYNAMIC_STATE
 				{
 					float frameBlendAlpha = ( flFrame - ( int )flFrame );
 					pShaderAPI->Color3f( flFade * frameBlendAlpha, flFade * frameBlendAlpha, flFade * frameBlendAlpha );
 					ITexture *pTexture = params[BASETEXTURE]->GetTextureValue();
 					int numAnimationFrames = pTexture->GetNumAnimationFrames();
-					BindTexture( SHADER_TEXTURE_STAGE0, pTexture, ( ( int )flFrame + 1 ) % numAnimationFrames );
-					FogToBlack();
+					BindTexture( SHADER_SAMPLER0, pTexture, ( ( int )flFrame + 1 ) % numAnimationFrames );
 				}
 				Draw();
 			}

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 
 #include "vbsp.h"
 
@@ -69,7 +76,7 @@ void WriteBrushList (char *name, bspbrush_t *brush, qboolean onlyvis)
 	side_t	*s;
 
 	qprintf ("writing %s\n", name);
-	FileHandle_t f = SafeOpenWrite (name);
+	FileHandle_t f = g_pFileSystem->Open(name, "w");
 
 	for ( ; brush ; brush=brush->next)
 	{
@@ -122,6 +129,29 @@ void BoundBrush (bspbrush_t *brush)
 	}
 }
 
+Vector PointInsideBrush( bspbrush_t *brush )
+{
+	Vector insidePoint = vec3_origin;
+
+	bool bInside = false;
+	for ( int k = 0; k < 4 && !bInside; k++ )
+	{
+		bInside = true;
+		for (int i = 0; i < brush->numsides; i++)
+		{
+			side_t *side = &brush->sides[i];
+			plane_t *plane = &g_MainMap->mapplanes[side->planenum];
+			float d = DotProduct( plane->normal, insidePoint ) - plane->dist;
+			if ( d < 0 )
+			{
+				bInside = false;
+				insidePoint -= d * plane->normal;
+			}
+		}
+	}
+	return insidePoint;
+}
+
 /*
 ==================
 CreateBrushWindings
@@ -135,21 +165,26 @@ void CreateBrushWindings (bspbrush_t *brush)
 	side_t		*side;
 	plane_t		*plane;
 
+	// translate the CSG problem to improve precision
+	Vector insidePoint = PointInsideBrush( brush );
+	Vector offset = -insidePoint;
+
 	for (i=0 ; i<brush->numsides ; i++)
 	{
 		side = &brush->sides[i];
-		plane = &mapplanes[side->planenum];
-		w = BaseWindingForPlane (plane->normal, plane->dist);
+		plane = &g_MainMap->mapplanes[side->planenum];
+		w = BaseWindingForPlane (plane->normal, plane->dist + DotProduct(plane->normal, offset));
 		for (j=0 ; j<brush->numsides && w; j++)
 		{
 			if (i == j)
 				continue;
 			if (brush->sides[j].bevel)
 				continue;
-			plane = &mapplanes[brush->sides[j].planenum^1];
-			ChopWindingInPlace (&w, plane->normal, plane->dist, 0); //CLIP_EPSILON);
+			plane = &g_MainMap->mapplanes[brush->sides[j].planenum^1];
+			ChopWindingInPlace (&w, plane->normal, plane->dist + DotProduct(plane->normal, offset), 0); //CLIP_EPSILON);
 		}
 
+		TranslateWinding( w, -offset );
 		side->winding = w;
 	}
 
@@ -177,11 +212,11 @@ bspbrush_t	*BrushFromBounds (Vector& mins, Vector& maxs)
 		VectorClear (normal);
 		normal[i] = 1;
 		dist = maxs[i];
-		b->sides[i].planenum = FindFloatPlane (normal, dist);
+		b->sides[i].planenum = g_MainMap->FindFloatPlane (normal, dist);
 
 		normal[i] = -1;
 		dist = -mins[i];
-		b->sides[3+i].planenum = FindFloatPlane (normal, dist);
+		b->sides[3+i].planenum = g_MainMap->FindFloatPlane (normal, dist);
 	}
 
 	CreateBrushWindings (b);
@@ -227,7 +262,7 @@ vec_t BrushVolume (bspbrush_t *brush)
 		w = brush->sides[i].winding;
 		if (!w)
 			continue;
-		plane = &mapplanes[brush->sides[i].planenum];
+		plane = &g_MainMap->mapplanes[brush->sides[i].planenum];
 		d = -(DotProduct (corner, plane->normal) - plane->dist);
 		area = WindingArea (w);
 		volume += d*area;
@@ -275,13 +310,15 @@ AllocNode
 */
 node_t *AllocNode (void)
 {
-	static s_NodeCount = 0;
+	static int s_NodeCount = 0;
 
 	node_t	*node;
 
 	node = (node_t*)malloc(sizeof(*node));
 	memset (node, 0, sizeof(*node));
 	node->id = s_NodeCount;
+	node->diskId = -1;
+
 	s_NodeCount++;
 
 	return node;
@@ -385,9 +422,17 @@ node_t	*PointInLeaf (node_t *node, Vector& point)
 
 	while (node->planenum != PLANENUM_LEAF)
 	{
-		plane = &mapplanes[node->planenum];
-		d = DotProduct (point, plane->normal) - plane->dist;
-		if (d > 0)
+		plane = &g_MainMap->mapplanes[node->planenum];
+		if (plane->type < 3)
+		{
+			d = point[plane->type] - plane->dist;
+		}
+		else
+		{
+			d = DotProduct (point, plane->normal) - plane->dist;
+		}
+
+		if (d >= 0)
 			node = node->children[0];
 		else
 			node = node->children[1];
@@ -478,7 +523,7 @@ int	QuickTestBrushToPlanenum (bspbrush_t *brush, int planenum, int *numsplits)
 	}
 
 	// box on plane side
-	plane = &mapplanes[planenum];
+	plane = &g_MainMap->mapplanes[planenum];
 	s = BrushBspBoxOnPlaneSide (brush->mins, brush->maxs, plane);
 
 	// if both sides, count the visible faces split
@@ -523,7 +568,7 @@ int	TestBrushToPlanenum (bspbrush_t *brush, int planenum,
 	}
 
 	// box on plane side
-	plane = &mapplanes[planenum];
+	plane = &g_MainMap->mapplanes[planenum];
 	s = BrushBspBoxOnPlaneSide (brush->mins, brush->maxs, plane);
 
 	if (s != PSIDE_BOTH)
@@ -601,11 +646,6 @@ existance by the vertex snapping.
 #define	EDGE_LENGTH	0.2
 qboolean WindingIsTiny (winding_t *w)
 {
-#if 0
-	if (WindingArea (w) < 1)
-		return true;
-	return false;
-#else
 	int		i, j;
 	vec_t	len;
 	Vector	delta;
@@ -624,8 +664,65 @@ qboolean WindingIsTiny (winding_t *w)
 		}
 	}
 	return true;
-#endif
 }
+
+
+// UNDONE: JAY: This should be a slightly better heuristic - it builds an OBB 
+// around the winding and tests planar dimensions.  NOTE: This can fail when a
+// winding normal cannot be constructed (or is degenerate), but that is probably
+// desired in this case.
+// UNDONE: Test & use this instead.
+#if 0
+qboolean WindingIsTiny2 (winding_t *w)
+{
+	int		i, j;
+	vec_t	len;
+	Vector	delta;
+	int		edges;
+
+	vec_t maxLen = 0;
+	Vector maxEdge = vec3_origin;
+
+	edges = 0;
+	for (i=0 ; i<w->numpoints ; i++)
+	{
+		j = i == w->numpoints - 1 ? 0 : i+1;
+		VectorSubtract (w->p[j], w->p[i], delta);
+		len = VectorLength (delta);
+		if (len > maxLen)
+		{
+			maxEdge = delta;
+			maxLen = len;
+		}
+	}
+	Vector normal;
+	vec_t dist;
+	WindingPlane (w, normal, &dist); // normal can come back vec3_origin in some cases
+	VectorNormalize(maxEdge);
+	Vector cross = CrossProduct(normal, maxEdge);
+	VectorNormalize(cross);
+	Vector mins, maxs;
+	ClearBounds( mins, maxs );
+	for (i=0 ; i<w->numpoints ; i++)
+	{
+		Vector point;
+		point.x = DotProduct( w->p[i], maxEdge );
+		point.y = DotProduct( w->p[i], cross );
+		point.z = DotProduct( w->p[i], normal );
+		AddPointToBounds( point, mins, maxs );
+	}
+
+	// check to see if the size in the plane is too small in either dimension
+	Vector size = maxs - mins;
+	for ( i = 0; i < 2; i++ )
+	{
+		if ( size[i] < EDGE_LENGTH )
+			return true;
+	}
+	return false;
+}
+#endif
+
 
 /*
 ================
@@ -764,7 +861,7 @@ side_t *SelectSplitSide (bspbrush_t *brushes, node_t *node)
 	int			bsplits;
 	int			bestsplits;
 	int			epsilonbrush;
-	qboolean	hintsplit;
+	qboolean	hintsplit = false;
 
 	bestside = NULL;
 	bestvalue = -99999;
@@ -842,7 +939,7 @@ side_t *SelectSplitSide (bspbrush_t *brushes, node_t *node)
 				value =  5*facing - 5*splits - abs(front-back);
 //					value =  -5*splits;
 //					value =  5*facing - 5*splits;
-				if (mapplanes[pnum].type < 3)
+				if (g_MainMap->mapplanes[pnum].type < 3)
 					value+=5;		// axial is better
 				value -= epsilonbrush*1000;	// avoid!
 
@@ -857,7 +954,7 @@ side_t *SelectSplitSide (bspbrush_t *brushes, node_t *node)
 					value = -9999999;
 
 				// water should split first
-				if (side->contents & CONTENTS_WATER)
+				if (side->contents & (CONTENTS_WATER | CONTENTS_SLIME))
 					value = 9999999;
 
 				// save off the side test so we don't need
@@ -958,7 +1055,7 @@ void SplitBrush( bspbrush_t *brush, int planenum, bspbrush_t **front, bspbrush_t
 	float		d, d_front, d_back;
 
 	*front = *back = NULL;
-	plane = &mapplanes[planenum];
+	plane = &g_MainMap->mapplanes[planenum];
 
 	// check all points
 	d_front = d_back = 0;
@@ -988,13 +1085,17 @@ void SplitBrush( bspbrush_t *brush, int planenum, bspbrush_t **front, bspbrush_t
 		return;
 	}
 
+
+	// Move the CSG problem so that offset is at the origin
+	// This gives us much better floating point precision in the clipping operations
+	Vector offset = -0.5f * (brush->mins + brush->maxs);
 	// create a new winding from the split plane
 
-	w = BaseWindingForPlane (plane->normal, plane->dist);
+	w = BaseWindingForPlane (plane->normal, plane->dist + DotProduct(plane->normal,offset));
 	for (i=0 ; i<brush->numsides && w ; i++)
 	{
-		plane2 = &mapplanes[brush->sides[i].planenum ^ 1];
-		ChopWindingInPlace (&w, plane2->normal, plane2->dist, 0); // PLANESIDE_EPSILON);
+		plane2 = &g_MainMap->mapplanes[brush->sides[i].planenum ^ 1];
+		ChopWindingInPlace (&w, plane2->normal, plane2->dist+DotProduct(plane2->normal,offset), 0); // PLANESIDE_EPSILON);
 	}
 
 	if (!w || WindingIsTiny (w) )
@@ -1014,6 +1115,7 @@ void SplitBrush( bspbrush_t *brush, int planenum, bspbrush_t **front, bspbrush_t
 		qprintf ("WARNING: huge winding\n");
 	}
 
+	TranslateWinding( w, -offset );
 	midwinding = w;
 
     //
@@ -1045,7 +1147,7 @@ void SplitBrush( bspbrush_t *brush, int planenum, bspbrush_t **front, bspbrush_t
 			continue;
 
         // clip the winding
-		ClipWindingEpsilon( w, plane->normal, plane->dist, 0 /*PLANESIDE_EPSILON*/, &cw[0], &cw[1] );
+		ClipWindingEpsilon_Offset( w, plane->normal, plane->dist, 0 /*PLANESIDE_EPSILON*/, &cw[0], &cw[1], offset );
 
 		for( j = 0; j < 2; j++ )
 		{
@@ -1239,9 +1341,6 @@ node_t *BuildTree_r (node_t *node, bspbrush_t *brushes)
 	if (numthreads == 1)
 		c_nodes++;
 
-	if (drawflag)
-		DrawBrushList (brushes, node);
-
 	// find the best plane to use as a splitter
 	bestside = SelectSplitSide (brushes, node);
 
@@ -1315,8 +1414,7 @@ tree_t *BrushBSP (bspbrush_t *brushlist, Vector& mins, Vector& maxs)
 		volume = BrushVolume (b);
 		if (volume < microvolume)
 		{
-			Warning("WARNING: entity %i, brush %i: microbrush\n",
-				b->original->entitynum, b->original->brushnum);
+			Warning("Brush %i: WARNING, microbrush\n", b->original->id);
 		}
 
 		for (i=0 ; i<b->numsides ; i++)

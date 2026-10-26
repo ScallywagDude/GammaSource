@@ -1,49 +1,37 @@
-//======== (C) Copyright 1999, 2000 Valve, L.L.C. All rights reserved. ========
-//
-// The copyright to the contents herein is the property of Valve, L.L.C.
-// The contents may be used and/or copied only with the written permission of
-// Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-// the agreement/contract under which the contents have been supplied.
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: An application framework 
 //
-// $Revision: $
-// $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
+#ifdef POSIX
+#error
+#else
+#if defined( _WIN32 ) && !defined( _X360 )
 #include <windows.h>
-#include "AppSystemGroup.h"
+#endif
+#include "appframework/appframework.h"
 #include "tier0/dbg.h"
-#include "vstdlib/icommandline.h"
+#include "tier0/icommandline.h"
 #include "interface.h"
+#include "filesystem.h"
+#include "appframework/iappsystemgroup.h"
+#include "filesystem_init.h"
+#include "vstdlib/cvar.h"
+#include "xbox/xbox_console.h"
+
+// NOTE: This has to be the last file included!
+#include "tier0/memdbgon.h"
 
 
 //-----------------------------------------------------------------------------
 // Globals...
 //-----------------------------------------------------------------------------
 HINSTANCE s_HInstance;
-extern IApplication *__g_pApplicationObject;
 
-//HWND s_HWnd;
-
-
-SpewRetval_t AppDefaultSpewFunc( SpewType_t spewType, char const *pMsg )
-{
-	OutputDebugString( pMsg );
-	switch( spewType )
-	{
-	case SPEW_MESSAGE:
-	case SPEW_WARNING:
-	case SPEW_LOG:
-		return SPEW_CONTINUE;
-
-	case SPEW_ASSERT:
-	case SPEW_ERROR:
-	default:
-		return SPEW_DEBUGGER;
-	}
-}
-
+//static CSimpleWindowsLoggingListener s_SimpleWindowsLoggingListener;
+//static CSimpleLoggingListener s_SimpleLoggingListener;
+//ILoggingListener *g_pDefaultLoggingListener = &s_SimpleLoggingListener;
 
 //-----------------------------------------------------------------------------
 // HACK: Since I don't want to refit vgui yet...
@@ -53,58 +41,208 @@ void *GetAppInstance()
 	return s_HInstance;
 }
 
+
 //-----------------------------------------------------------------------------
-// Method to initialize/shutdown all systems
+// Sets the application instance, should only be used if you're not calling AppMain.
 //-----------------------------------------------------------------------------
-int APIENTRY WinMain( HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow )
+void SetAppInstance( void* hInstance )
 {
-	s_HInstance = hInstance;
-	CommandLine()->CreateCmdLine( lpCmdLine );
-
-	// By default, direct dbg reporting...
-	SpewOutputFunc( AppDefaultSpewFunc );
-
-	// A bunch of systems that all have the same scope
-	CAppSystemGroup appSystems;
-
-	// Do I create a window here?
-
-	// Call an installed application creation function
-	if (!__g_pApplicationObject->Create( &appSystems ))
-		return -1;
-
-	// Let all systems know about each other
-	if (!appSystems.ConnectSystems())
-		return -1;
-
-	// Allow the application to do some work before init
-	if (!__g_pApplicationObject->PreInit( &appSystems ))
-		return -1;
-
-	// Call Init on all App Systems
-	if (!appSystems.InitSystems())
-		return -1;
-
-	// Main loop implemented by the application
-	// FIXME: HACK workaround to avoid vgui porting
-	__g_pApplicationObject->Main();
-
-	// Cal Shutdown on all App Systems
-	appSystems.ShutdownSystems();
-
-	// Allow the application to do some work after shutdown
-	__g_pApplicationObject->PostShutdown();
-
-	// Systems should disconnect from each other
-	appSystems.DisconnectSystems();
-
-	// Unload all DLLs loaded in the AppCreate block
-	appSystems.RemoveAllSystems();
-	appSystems.UnloadAllModules();
-
-	// Call an installed application destroy function
-	__g_pApplicationObject->Destroy();
-
-	return 0;
+	s_HInstance = (HINSTANCE)hInstance;
 }
 
+//-----------------------------------------------------------------------------
+// Specific 360 environment setup.
+//-----------------------------------------------------------------------------
+#if defined( _X360 )
+bool SetupEnvironment360()
+{
+	CommandLine()->CreateCmdLine( GetCommandLine() );
+
+	if ( !CommandLine()->FindParm( "-game" ) && !CommandLine()->FindParm( "-vproject" ) )
+	{
+		// add the default game name due to lack of vproject environment
+		CommandLine()->AppendParm( "-game", "hl2" );
+	}
+
+	// success
+	return true;
+}
+#endif
+
+//-----------------------------------------------------------------------------
+// Version of AppMain used by windows applications
+//-----------------------------------------------------------------------------
+int AppMain( void* hInstance, void* hPrevInstance, const char* lpCmdLine, int nCmdShow, CAppSystemGroup *pAppSystemGroup )
+{
+	Assert( pAppSystemGroup );
+
+//	g_pDefaultLoggingListener = &s_SimpleWindowsLoggingListener;
+	s_HInstance = (HINSTANCE)hInstance;
+#if !defined( _X360 )
+	CommandLine()->CreateCmdLine( ::GetCommandLine() );
+#else
+	SetupEnvironment360();
+#endif
+
+	return pAppSystemGroup->Run();
+}
+
+//-----------------------------------------------------------------------------
+// Version of AppMain used by console applications
+//-----------------------------------------------------------------------------
+int AppMain( int argc, char **argv, CAppSystemGroup *pAppSystemGroup )
+{
+	Assert( pAppSystemGroup );
+
+//	g_pDefaultLoggingListener = &s_SimpleLoggingListener;
+	s_HInstance = NULL;
+#if !defined( _X360 )
+	CommandLine()->CreateCmdLine( argc, argv );
+#else
+	SetupEnvironment360();
+#endif
+
+	return pAppSystemGroup->Run();
+}
+
+//-----------------------------------------------------------------------------
+// Used to startup/shutdown the application
+//-----------------------------------------------------------------------------
+int AppStartup( void* hInstance, void* hPrevInstance, const char* lpCmdLine, int nCmdShow, CAppSystemGroup *pAppSystemGroup )
+{
+	Assert( pAppSystemGroup );
+
+//	g_pDefaultLoggingListener = &s_SimpleWindowsLoggingListener;
+	s_HInstance = (HINSTANCE)hInstance;
+#if !defined( _X360 )
+	CommandLine()->CreateCmdLine( ::GetCommandLine() );
+#else
+	SetupEnvironment360();
+#endif
+
+	return pAppSystemGroup->Startup();
+}
+
+int AppStartup( int argc, char **argv, CAppSystemGroup *pAppSystemGroup )
+{
+	Assert( pAppSystemGroup );
+
+//	g_pDefaultLoggingListener = &s_SimpleLoggingListener;
+	s_HInstance = NULL;
+#if !defined( _X360 )
+	CommandLine()->CreateCmdLine( argc, argv );
+#else
+	SetupEnvironment360();
+#endif
+
+	return pAppSystemGroup->Startup();
+}
+
+void AppShutdown( CAppSystemGroup *pAppSystemGroup )
+{
+	Assert( pAppSystemGroup );
+	pAppSystemGroup->Shutdown();
+}
+
+
+//-----------------------------------------------------------------------------
+//
+// Default implementation of an application meant to be run using Steam
+//
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+// Constructor
+//-----------------------------------------------------------------------------
+CSteamApplication::CSteamApplication( CSteamAppSystemGroup *pAppSystemGroup )
+{
+	m_pChildAppSystemGroup = pAppSystemGroup;
+	m_pFileSystem = NULL;
+	m_bSteam = false;
+}
+
+//-----------------------------------------------------------------------------
+// Create necessary interfaces
+//-----------------------------------------------------------------------------
+bool CSteamApplication::Create()
+{
+	FileSystem_SetErrorMode( FS_ERRORMODE_AUTO );
+
+	char pFileSystemDLL[MAX_PATH];
+	if ( FileSystem_GetFileSystemDLLName( pFileSystemDLL, MAX_PATH, m_bSteam ) != FS_OK )
+		return false;
+	
+	// Add in the cvar factory
+	AppModule_t cvarModule = LoadModule( VStdLib_GetICVarFactory() );
+	AddSystem( cvarModule, CVAR_INTERFACE_VERSION );
+
+	AppModule_t fileSystemModule = LoadModule( pFileSystemDLL );
+	m_pFileSystem = (IFileSystem*)AddSystem( fileSystemModule, FILESYSTEM_INTERFACE_VERSION );
+	if ( !m_pFileSystem )
+	{
+		Error( "Unable to load %s", pFileSystemDLL );
+		return false;
+	}
+
+	return true;
+}
+
+//-----------------------------------------------------------------------------
+// The file system pointer is invalid at this point
+//-----------------------------------------------------------------------------
+void CSteamApplication::Destroy()
+{
+	m_pFileSystem = NULL;
+}
+
+//-----------------------------------------------------------------------------
+// Pre-init, shutdown
+//-----------------------------------------------------------------------------
+bool CSteamApplication::PreInit()
+{
+	return true;
+}
+
+void CSteamApplication::PostShutdown()
+{
+}
+
+//-----------------------------------------------------------------------------
+// Run steam main loop
+//-----------------------------------------------------------------------------
+int CSteamApplication::Main()
+{
+	// Now that Steam is loaded, we can load up main libraries through steam
+	if ( FileSystem_SetBasePaths( m_pFileSystem ) != FS_OK )
+		return 0;
+
+	m_pChildAppSystemGroup->Setup( m_pFileSystem, this );
+	return m_pChildAppSystemGroup->Run();
+}
+
+//-----------------------------------------------------------------------------
+// Use this version in cases where you can't control the main loop and
+// expect to be ticked
+//-----------------------------------------------------------------------------
+int CSteamApplication::Startup()
+{
+	int nRetVal = BaseClass::Startup();
+	if ( GetErrorStage() != NONE )
+		return nRetVal;
+
+	if ( FileSystem_SetBasePaths( m_pFileSystem ) != FS_OK )
+		return 0;
+
+	// Now that Steam is loaded, we can load up main libraries through steam
+	m_pChildAppSystemGroup->Setup( m_pFileSystem, this );
+	return m_pChildAppSystemGroup->Startup();
+}
+
+void CSteamApplication::Shutdown()
+{
+	m_pChildAppSystemGroup->Shutdown();
+	BaseClass::Shutdown();
+}
+
+#endif

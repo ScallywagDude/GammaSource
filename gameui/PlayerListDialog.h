@@ -1,9 +1,9 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #ifndef PLAYERLISTDIALOG_H
 #define PLAYERLISTDIALOG_H
@@ -12,12 +12,15 @@
 #endif
 
 #include <vgui_controls/Frame.h>
+#include "steam/steamclientpublic.h"
 
 //-----------------------------------------------------------------------------
-// Purpose: List of players, their ingame-name and their tracker-name
+// Purpose: List of players, their ingame-name and their friends-name
 //-----------------------------------------------------------------------------
 class CPlayerListDialog : public vgui::Frame
 {
+	DECLARE_CLASS_SIMPLE( CPlayerListDialog, vgui::Frame ); 
+
 public:
 	CPlayerListDialog(vgui::Panel *parent);
 	~CPlayerListDialog();
@@ -25,21 +28,26 @@ public:
 	virtual void Activate();
 
 private:
-  	virtual void OnItemSelected();
+  	MESSAGE_FUNC( OnItemSelected, "ItemSelected" );
 	virtual void OnCommand(const char *command);
 
-	void RequestAuthorizationFromSelectedUser();
 	void ToggleMuteStateOfSelectedUser();
 	void RefreshPlayerProperties();
 
-	DECLARE_PANELMAP();
+	void OnKeyCodePressed( vgui::KeyCode code )
+	{
+		if ( code == KEY_XBUTTON_B )
+		{
+			Close();
+		}
+		else
+		{
+			BaseClass::OnKeyCodePressed(code);
+		}
+	}
 
 	vgui::ListPanel *m_pPlayerList;
-	vgui::Button *m_pAddFriendButton;
 	vgui::Button *m_pMuteButton;
-
-	typedef vgui::Frame BaseClass;
 };
-
 
 #endif // PLAYERLISTDIALOG_H

@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #if !defined(AFX_VALVELIB_H__206ABDD3_0BD0_4E71_8462_B6D18D116D1E__INCLUDED_)
 #define AFX_VALVELIB_H__206ABDD3_0BD0_4E71_8462_B6D18D116D1E__INCLUDED_
 

@@ -1,20 +1,19 @@
-/************ (C) Copyright 2003 Valve, L.L.C. All rights reserved. ***********
-**
-** The copyright to the contents herein is the property of Valve, L.L.C.
-** The contents may be used and/or copied only with the written permission of
-** Valve, L.L.C., or in accordance with the terms and conditions stipulated in
-** the agreement/contract under which the contents have been supplied.
-**
-*******************************************************************************
-**
-** Contents:
-**
-**		ObjectList.cpp: implementation of the ObjectList class.
-**
-******************************************************************************/
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdio.h>
+#ifdef OSX
+#include <malloc/malloc.h>
+#else
 #include <malloc.h>
+#endif
 #include "ObjectList.h"
+#include "tier1/strtools.h"
+
 //#include "port.h"
 //#include "mem.h"
 // memdbgon must be the last include file in a .cpp file!!!

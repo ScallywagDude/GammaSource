@@ -1,12 +1,12 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
 // $NoKeywords: $
 //=============================================================================
 
-#ifndef TRACKER_ADMIN_POINT_H
-#define TRACKER_ADMIN_POINT_H
+#ifndef POINT_H
+#define POINT_H
 #ifdef _WIN32
 #pragma once
 #endif

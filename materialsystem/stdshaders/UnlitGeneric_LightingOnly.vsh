@@ -1,9 +1,12 @@
 vs.1.1
 
+# DYNAMIC: "DOWATERFOG"		"0..1"
+# DYNAMIC: "SKINNING"		"0..1"
+
 #include "macros.vsh"
 
 &AllocateRegister( \$worldPos );
-&SkinPosition( $g_numBones, $worldPos );
+&SkinPosition( $worldPos );
 
 ; Transform the position from world to view space
 dp4 oPos.x, $worldPos, $cViewProj0

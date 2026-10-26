@@ -1,8 +1,8 @@
-//========= Copyright © 1996-2003, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: 
 //
-//=============================================================================
+//=============================================================================//
 
 #ifndef MACRO_TEXTURE_H
 #define MACRO_TEXTURE_H
@@ -11,7 +11,7 @@
 #endif
 
 
-#include "vector.h"
+#include "mathlib/vector.h"
 
 
 // The macro texture looks for a TGA file with the same name as the BSP file and in

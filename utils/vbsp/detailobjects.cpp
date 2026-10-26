@@ -1,36 +1,33 @@
-//========= Copyright © 1996-2001, Valve LLC, All rights reserved. ============
+//========= Copyright Valve Corporation, All rights reserved. ============//
 //
 // Purpose: Places "detail" objects which are client-only renderable things
 //
 // $Revision: $
 // $NoKeywords: $
-//=============================================================================
+//=============================================================================//
 
 #include <windows.h>
 #include "vbsp.h"
 #include "bsplib.h"
 #include "KeyValues.h"
-#include "UtlSymbol.h"
-#include "UtlVector.h"
+#include "utlsymbol.h"
+#include "utlvector.h"
 #include <io.h>
 #include "bspfile.h"
 #include "utilmatlib.h"
 #include "gamebspfile.h"
-#include "VMatrix.h"
+#include "mathlib/VMatrix.h"
 #include "materialpatch.h"
 #include "pacifier.h"
 #include "vstdlib/random.h"
-
-// BUGBUG: This is in common, but the tools use it?
-// BUGBUG: I don't like this relative include, but I don't want to add the common directory to the tools.
-#include "..\..\common\builddisp.h"
-
+#include "builddisp.h"
 #include "disp_vbsp.h"
 #include "UtlBuffer.h"
 #include "CollisionUtils.h"
 #include <float.h>
 #include "UtlLinkedList.h"
-
+#include "byteswap.h"
+#include "writebsp.h"
 
 //-----------------------------------------------------------------------------
 // Information about particular detail object types
@@ -52,6 +49,9 @@ struct DetailModel_t
 	Vector2D	m_Pos[2];
 	Vector2D	m_Tex[2];
 	float		m_flRandomScaleStdDev;
+	unsigned char m_ShapeSize;
+	unsigned char m_ShapeAngle;
+	unsigned char m_SwayAmount;
 };
 
 struct DetailObjectGroup_t
@@ -142,7 +142,26 @@ static void ParseDetailGroup( int detailId, KeyValues* pGroupKeyValues )
 				const char *pSpriteData = pIter->GetString( "sprite", 0 );
 				if (pSpriteData)
 				{
-					model.m_Type = DETAIL_PROP_TYPE_SPRITE;
+					const char *pProcModelType = pIter->GetString( "sprite_shape", 0 );
+
+					if ( pProcModelType )
+					{
+						if ( !Q_stricmp( pProcModelType, "cross" ) )
+						{
+							model.m_Type = DETAIL_PROP_TYPE_SHAPE_CROSS;
+						}
+						else if ( !Q_stricmp( pProcModelType, "tri" ) )
+						{
+							model.m_Type = DETAIL_PROP_TYPE_SHAPE_TRI;
+						}
+						else
+							model.m_Type = DETAIL_PROP_TYPE_SPRITE;
+					}					
+					else
+					{
+						// card sprite
+                        model.m_Type = DETAIL_PROP_TYPE_SPRITE;
+					}
 
 					model.m_Tex[0].Init();
 					model.m_Tex[1].Init();
@@ -151,7 +170,7 @@ static void ParseDetailGroup( int detailId, KeyValues* pGroupKeyValues )
 					int nValid = sscanf( pSpriteData, "%f %f %f %f %f", &x, &y, &flWidth, &flHeight, &flTextureSize ); 
 					if ( (nValid != 5) || (flTextureSize == 0) )
 					{
-						Error( "Invalid arguments to \"sprite\" in detail.vbsp!\n" );
+						Error( "Invalid arguments to \"sprite\" in detail.vbsp (model %s)!\n", model.m_ModelName.String() );
 					}
 
 					model.m_Tex[0].x = ( x + 0.5f ) / flTextureSize;
@@ -177,6 +196,19 @@ static void ParseDetailGroup( int detailId, KeyValues* pGroupKeyValues )
 					}
 
 					model.m_flRandomScaleStdDev = pIter->GetFloat( "spriterandomscale", 0.0f );
+
+					// sway is a percent of max sway, cl_detail_max_sway
+					float flSway = clamp( pIter->GetFloat( "sway", 0.0f ), 0.0, 1.0 );
+					model.m_SwayAmount = (unsigned char)( 255.0 * flSway );
+
+					// shape angle
+					// for the tri shape, this is the angle each side is fanned out
+					model.m_ShapeAngle = pIter->GetInt( "shape_angle", 0 );
+
+					// shape size
+					// for the tri shape, this is the distance from the origin to the center of a side
+					float flShapeSize = clamp( pIter->GetFloat( "shape_size", 0.0f ), 0.0, 1.0 );
+					model.m_ShapeSize = (unsigned char)( 255.0 * flShapeSize );
 				}
 			}
 
@@ -247,17 +279,39 @@ static void ParseDetailObjectFile( KeyValues& keyValues )
 
 
 //-----------------------------------------------------------------------------
+// Finds the name of the detail.vbsp file to use
+//-----------------------------------------------------------------------------
+static const char *FindDetailVBSPName( void )
+{
+	for( int i = 0; i < num_entities; i++ )
+	{
+		char* pEntity = ValueForKey( &entities[i], "classname" );
+		if ( !strcmp( pEntity, "worldspawn" ) )
+		{
+			const char *pDetailVBSP = ValueForKey( &entities[i], "detailvbsp" );
+			if ( !pDetailVBSP || !pDetailVBSP[0] ) 
+			{
+				pDetailVBSP = "detail.vbsp";
+			}
+			return pDetailVBSP;
+		}
+	}
+	return "detail.vbsp";
+}
+
+
+//-----------------------------------------------------------------------------
 // Loads up the detail object dictionary
 //-----------------------------------------------------------------------------
 void LoadEmitDetailObjectDictionary( const char* pGameDir )
 {
 	// Set the required global lights filename and try looking in qproject
-	KeyValues * values = new KeyValues("detail.vbsp");
-	if (!values->LoadFromFile( g_pFileSystem, "detail.vbsp"))
-		return;
-
-	ParseDetailObjectFile( *values );
-
+	const char *pDetailVBSP = FindDetailVBSPName();
+	KeyValues * values = new KeyValues( pDetailVBSP );
+	if ( values->LoadFromFile( g_pFileSystem, pDetailVBSP ) )
+	{
+		ParseDetailObjectFile( *values );
+	}
 	values->deleteThis();
 }
 
@@ -291,7 +345,7 @@ static int SelectGroup( const DetailObject_t& detail, float alpha )
 	}
 
 	// Pick a number, any number...
-	float r = rand() / (float)RAND_MAX;
+	float r = rand() / (float)VALVE_RAND_MAX;
 
 	// When dist == 0, we *always* want start.
 	// When dist == 1, we *always* want end
@@ -306,7 +360,7 @@ static int SelectGroup( const DetailObject_t& detail, float alpha )
 static int SelectDetail( DetailObjectGroup_t const& group )
 {
 	// Pick a number, any number...
-	float r = rand() / (float)RAND_MAX;
+	float r = rand() / (float)VALVE_RAND_MAX;
 
 	// Look through the list of models + pick the one associated with this number
 	for ( int i = 0; i < group.m_Models.Count(); ++i )
@@ -405,6 +459,8 @@ static bool IsModelValid( const char* pModelName )
 static int s_nDetailOverflow = 0;
 static void AddDetailToLump( const char* pModelName, const Vector& pt, const QAngle& angles, int nOrientation )
 {
+	Assert( pt.IsValid() && angles.IsValid() );
+
 	// Make sure the model is valid...
 	if (!IsModelValid(pModelName))
 		return;
@@ -427,7 +483,7 @@ static void AddDetailToLump( const char* pModelName, const Vector& pt, const QAn
 	objectLump.m_Lighting.g = 255;
 	objectLump.m_Lighting.b = 255;
 	objectLump.m_Lighting.exponent = 0;
-	objectLump.m_LightStyles = -1;
+	objectLump.m_LightStyles = 0;
 	objectLump.m_LightStyleCount = 0;
 	objectLump.m_Orientation = nOrientation;
 	objectLump.m_Type = DETAIL_PROP_TYPE_MODEL;
@@ -437,14 +493,16 @@ static void AddDetailToLump( const char* pModelName, const Vector& pt, const QAn
 //-----------------------------------------------------------------------------
 // Add a detail sprite to the lump.
 //-----------------------------------------------------------------------------
-static void AddDetailSpriteToLump( const Vector &vecOrigin, const QAngle &vecAngles, int nOrientation, const Vector2D *pPos, const Vector2D *pTex, float flScale )
+static void AddDetailSpriteToLump( const Vector &vecOrigin, const QAngle &vecAngles, int nOrientation,
+								  const Vector2D *pPos, const Vector2D *pTex, float flScale, int iType,
+									int iShapeAngle = 0, int iShapeSize = 0, int iSwayAmount = 0 )
 {
 	// Insert an element into the object dictionary if it aint there...
 	int i = s_DetailObjectLump.AddToTail( );
 
 	if (i >= 65535)
 	{
-		Error( "Error! Too many detail props emitted on this map!\n" );
+		Error( "Error! Too many detail props emitted on this map! (64K max!)n" );
 	}
 
 	DetailObjectLump_t& objectLump = s_DetailObjectLump[i];
@@ -456,13 +514,29 @@ static void AddDetailSpriteToLump( const Vector &vecOrigin, const QAngle &vecAng
 	objectLump.m_Lighting.g = 255;
 	objectLump.m_Lighting.b = 255;
 	objectLump.m_Lighting.exponent = 0;
-	objectLump.m_LightStyles = -1;
+	objectLump.m_LightStyles = 0;
 	objectLump.m_LightStyleCount = 0;
 	objectLump.m_Orientation = nOrientation;
-	objectLump.m_Type = DETAIL_PROP_TYPE_SPRITE;
+	objectLump.m_Type = iType;
 	objectLump.m_flScale = flScale;
+	objectLump.m_ShapeAngle = iShapeAngle;
+	objectLump.m_ShapeSize = iShapeSize;
+	objectLump.m_SwayAmount = iSwayAmount;
 }
 
+static void AddDetailSpriteToLump( const Vector &vecOrigin, const QAngle &vecAngles, DetailModel_t const& model, float flScale )
+{
+	AddDetailSpriteToLump( vecOrigin,
+		vecAngles,
+		model.m_Orientation,
+		model.m_Pos,
+		model.m_Tex,
+		flScale,
+		model.m_Type,
+		model.m_ShapeAngle,
+		model.m_ShapeSize,
+		model.m_SwayAmount );
+}
 
 //-----------------------------------------------------------------------------
 // Got a detail! Place it on the surface...
@@ -471,7 +545,6 @@ static void AddDetailSpriteToLump( const Vector &vecOrigin, const QAngle &vecAng
 // (only when not in the debugger?)
 // Printing the values of normal at the bottom of the function fixes it as does
 // disabling global optimizations.
-#pragma optimize("g", off)
 static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vector& normal )
 {
 	// But only place it on the surface if it meets the angle constraints...
@@ -487,7 +560,7 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 		float probability = (cosAngle - model.m_MaxCosAngle) / 
 			(model.m_MinCosAngle - model.m_MaxCosAngle);
 
-		float t = rand() / (float)RAND_MAX;
+		float t = rand() / (float)VALVE_RAND_MAX;
 		if (t > probability)
 			return;
 	}
@@ -497,7 +570,7 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 	if (model.m_Flags & MODELFLAG_UPRIGHT)
 	{
 		// If it's upright, we just select a random yaw
-		angles.Init( 0, 360.0f * rand() / (float)RAND_MAX, 0.0f );
+		angles.Init( 0, 360.0f * rand() / (float)VALVE_RAND_MAX, 0.0f );
 	}
 	else
 	{
@@ -506,6 +579,7 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 
 		Vector zaxis;
 		VectorCopy( normal, zaxis );
+		VectorNormalize( zaxis );
 
 		// Choose any two arbitrary axes which are perpendicular to the normal
 		Vector xaxis( 1, 0, 0 );
@@ -513,11 +587,14 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 			xaxis.Init( 0, 1, 0 );
 		Vector yaxis;
 		CrossProduct( zaxis, xaxis, yaxis );
+		VectorNormalize( yaxis );
 		CrossProduct( yaxis, zaxis, xaxis );
+		VectorNormalize( xaxis );
 		VMatrix matrix;
 		matrix.SetBasisVectors( xaxis, yaxis, zaxis );
+		matrix.SetTranslation( vec3_origin );
 
-		float rotAngle = 360.0f * rand() / (float)RAND_MAX;
+		float rotAngle = 360.0f * rand() / (float)VALVE_RAND_MAX;
 		VMatrix rot = SetupMatrixAxisRot( Vector( 0, 0, 1 ), rotAngle );
 		matrix = matrix * rot;
 
@@ -533,7 +610,9 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 		AddDetailToLump( model.m_ModelName.String(), pt, angles, model.m_Orientation );
 		break;
 
+	// Sprites and procedural models made from sprites
 	case DETAIL_PROP_TYPE_SPRITE:
+	default:
 		{
 			float flScale = 1.0f;
 			if ( model.m_flRandomScaleStdDev != 0.0f ) 
@@ -541,7 +620,7 @@ static void PlaceDetail( DetailModel_t const& model, const Vector& pt, const Vec
 				flScale = fabs( RandomGaussianFloat( 1.0f, model.m_flRandomScaleStdDev ) );
 			}
 
-			AddDetailSpriteToLump( pt, angles, model.m_Orientation, model.m_Pos, model.m_Tex, flScale );
+			AddDetailSpriteToLump( pt, angles, model, flScale );
 		}
 		break;
 	}
@@ -587,8 +666,8 @@ static void EmitDetailObjectsOnFace( dface_t* pFace, DetailObject_t& detail )
 		for (int i = 0; i < numSamples; ++i )
 		{
 			// Create a random sample...
-			float u = rand() / (float)RAND_MAX;
-			float v = rand() / (float)RAND_MAX;
+			float u = rand() / (float)VALVE_RAND_MAX;
+			float v = rand() / (float)VALVE_RAND_MAX;
 			if (v > 1.0f - u)
 			{
 				u = 1.0f - u;
@@ -617,7 +696,6 @@ static void EmitDetailObjectsOnFace( dface_t* pFace, DetailObject_t& detail )
 		}
 	}
 }
-#pragma optimize("", on)
 
 
 //-----------------------------------------------------------------------------
@@ -674,8 +752,8 @@ static void EmitDetailObjectsOnDisplacementFace( dface_t* pFace,
 	for (int i = 0; i < numSamples; ++i )
 	{
 		// Create a random sample...
-		float u = rand() / (float)RAND_MAX;
-		float v = rand() / (float)RAND_MAX;
+		float u = rand() / (float)VALVE_RAND_MAX;
+		float v = rand() / (float)VALVE_RAND_MAX;
 
 		// Compute alpha
 		float alpha;
@@ -719,27 +797,35 @@ static void SetLumpData( )
 	// Sort detail props by leaf
 	qsort( s_DetailObjectLump.Base(), s_DetailObjectLump.Count(), sizeof(DetailObjectLump_t), SortFunc );
 
-	GameLumpHandle_t handle = GetGameLumpHandle(GAMELUMP_DETAIL_PROPS);
-	if (handle != InvalidGameLump())
-		DestroyGameLump(handle);
+	GameLumpHandle_t handle = g_GameLumps.GetGameLumpHandle(GAMELUMP_DETAIL_PROPS);
+	if (handle != g_GameLumps.InvalidGameLump())
+	{
+		g_GameLumps.DestroyGameLump(handle);
+	}
 	int nDictSize = s_DetailObjectDictLump.Count() * sizeof(DetailObjectDictLump_t);
 	int nSpriteDictSize = s_DetailSpriteDictLump.Count() * sizeof(DetailSpriteDictLump_t);
 	int nObjSize = s_DetailObjectLump.Count() * sizeof(DetailObjectLump_t);
-	int nSize = nDictSize + nSpriteDictSize + nObjSize + 3 * sizeof(int);
+	int nSize = nDictSize + nSpriteDictSize + nObjSize + (3 * sizeof(int));
 
-	handle = CreateGameLump( GAMELUMP_DETAIL_PROPS, nSize, 0, GAMELUMP_DETAIL_PROPS_VERSION );
+	handle = g_GameLumps.CreateGameLump( GAMELUMP_DETAIL_PROPS, nSize, 0, GAMELUMP_DETAIL_PROPS_VERSION );
 
 	// Serialize the data
-	CUtlBuffer buf( GetGameLump(handle), nSize );
+	CUtlBuffer buf( g_GameLumps.GetGameLump(handle), nSize );
 	buf.PutInt( s_DetailObjectDictLump.Count() );
 	if (nDictSize)
+	{
 		buf.Put( s_DetailObjectDictLump.Base(), nDictSize );
+	}
 	buf.PutInt( s_DetailSpriteDictLump.Count() );
 	if (nSpriteDictSize)
+	{
 		buf.Put( s_DetailSpriteDictLump.Base(), nSpriteDictSize );
+	}
 	buf.PutInt( s_DetailObjectLump.Count() );
 	if (nObjSize)
+	{
 		buf.Put( s_DetailObjectLump.Base(), nObjSize );
+	}
 }
 
 
@@ -788,6 +874,14 @@ void EmitDetailModels()
 		// Emit objects on a particular face
 		DetailObject_t& detail = s_DetailObjectDict[objectType];
 
+		// Initialize the Random Number generators for detail prop placement based on the hammer Face num.
+		int	detailpropseed = dfaceids[j].hammerfaceid;
+#ifdef WARNSEEDNUMBER
+		Warning( "[%d]\n",detailpropseed );
+#endif
+		srand( detailpropseed );
+		RandomSeed( detailpropseed );
+
 		if (pFace[j].dispinfo < 0)
 		{
 			EmitDetailObjectsOnFace( &pFace[j], detail );
@@ -797,7 +891,7 @@ void EmitDetailModels()
 			// Get a CCoreDispInfo. All we need is the triangles and lightmap texture coordinates.
 			mapdispinfo_t *pMapDisp = &mapdispinfo[pFace[j].dispinfo];
 			CCoreDispInfo coreDispInfo;
-			DispMapToCoreDispInfo( pMapDisp, &coreDispInfo, &pFace[j] );
+			DispMapToCoreDispInfo( pMapDisp, &coreDispInfo, NULL, NULL );
 
 			EmitDetailObjectsOnDisplacementFace( &pFace[j], detail, coreDispInfo );
 		}
@@ -843,7 +937,7 @@ void EmitDetailModels()
 			tex[0] /= flTextureSize;
 			tex[1] /= flTextureSize;
 
-			AddDetailSpriteToLump( origin, angles, nOrientation, pos, tex, 1.0f );
+			AddDetailSpriteToLump( origin, angles, nOrientation, pos, tex, 1.0f, DETAIL_PROP_TYPE_SPRITE );
 
 			// strip this ent from the .bsp file
 			entities[i].epairs = 0;
@@ -860,10 +954,6 @@ void EmitDetailModels()
 //-----------------------------------------------------------------------------
 void EmitDetailObjects()
 {
-	// Guarantee identical random emission...
-	srand(1);
-	RandomSeed( 1 );
-
 	EmitDetailModels();
 
 	// Done! Now lets add the lumps (destroy previous ones)

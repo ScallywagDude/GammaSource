@@ -1,3 +1,10 @@
+//========= Copyright Valve Corporation, All rights reserved. ============//
+//
+// Purpose: 
+//
+// $NoKeywords: $
+//
+//=============================================================================//
 #include <stdlib.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -36,8 +43,10 @@ int main( int argc, char **argv )
 		exit( -1 );
 	}
 
-	fread( srcData.Base(), srcFileSize, 1, fp );
+	int nBytesRead = fread( srcData.Base(), 1, srcFileSize, fp );
 	fclose( fp );
+
+	srcData.SeekPut( CUtlBuffer::SEEK_HEAD, nBytesRead );
 
 	IVTFTexture *pSrcTexture = CreateVTFTexture();
 	
