@@ -14,6 +14,12 @@
 #define SPEECH_LIST_MAX_SOUNDS	5
 
 class AI_Response;
+class CChoreoScene;
+class CChoreoEvent;
+
+// Gated diagnostics for the real scene/event/AI path; no playback overrides.
+int GammaSceneTraceLevel();
+void GammaTraceSceneEvent( const char *stage, CBaseFlex *actor, CChoreoScene *scene, CChoreoEvent *event, int layer = -1, int sequence = -1 );
 
 struct recentNPCSpeech_t
 {

@@ -1,0 +1,30 @@
+[
+  {
+    "model": "Alyx",
+    "bones": 70,
+    "vertices": 5018,
+    "weights4": 114,
+    "max_dropped_weight": 0.20217999815940857,
+    "mean_dropped_weight": 0.10994725579624637,
+    "max_weight_error": 5.206279485303611e-08,
+    "flex_records": 7505,
+    "max_flex_abs_component": 1.2161500453948975,
+    "max_half_error": 0.0004857182502746582,
+    "max_postloader_fixed_error": 0.0004857182502746582,
+    "issues": []
+  },
+  {
+    "model": "kleiner",
+    "bones": 65,
+    "vertices": 3944,
+    "weights4": 108,
+    "max_dropped_weight": 0.15290310978889465,
+    "mean_dropped_weight": 0.08718572688047532,
+    "max_weight_error": 8.429058051540039e-08,
+    "flex_records": 7384,
+    "max_flex_abs_component": 1.0418879985809326,
+    "max_half_error": 0.0008723735809326172,
+    "max_postloader_fixed_error": 0.0008723735809326172,
+    "issues": []
+  }
+]

@@ -1,0 +1,10 @@
+[
+  {
+    "path": "game/server/physgun.cpp",
+    "sha256": "8add7e0efde518c992fcf8757980f4f58b884dfbff74801053184148d70a2336"
+  },
+  {
+    "path": "game/client/hl2/c_weapon_gravitygun.cpp",
+    "sha256": "86b6b5db0fd7b3cadc8d3167715d4a4ab09f84fe52e1a52a030b1c69521a81cb"
+  }
+]

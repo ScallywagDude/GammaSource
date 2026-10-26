@@ -311,7 +311,7 @@ void CSelection::SetMode(SelectMode_t eNewSelectMode)
 		{
 			CMapClass *pObject = m_SelectionList[i];
 			AddLeavesToListCallback(pObject, &NewList);
-			pObject->EnumChildren((ENUMMAPCHILDRENPROC)AddLeavesToListCallback, (DWORD)&NewList);
+			pObject->EnumChildren((ENUMMAPCHILDRENPROC)AddLeavesToListCallback, (uintptr_t)&NewList);
 		}
 
 		SelectObject(NULL, scClear|scSaveChanges);

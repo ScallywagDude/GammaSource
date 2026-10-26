@@ -95,7 +95,7 @@ void CGroupList::AddVisGroupRecursive(CVisGroup *pVisGroup, HTREEITEM hItemParen
 	HTREEITEM hItem = InsertItem(pVisGroup->GetName(), hItemParent, TVI_LAST);
 	if (hItem != NULL)
 	{
-		SetItemData(hItem, (DWORD)pVisGroup);
+		SetItemData(hItem, (DWORD_PTR)pVisGroup);
 
 		// Add the item to our flattened list.
 //		VisGroupTreeItem_t item;
@@ -581,7 +581,7 @@ void CGroupList::Drop(DropType_t eDropType, UINT nFlags, CPoint point)
 // Purpose: 
 // Input  : nIDEvent - 
 //-----------------------------------------------------------------------------
-void CGroupList::OnTimer(UINT nIDEvent) 
+void CGroupList::OnTimer(UINT_PTR nIDEvent) 
 {
 	//DBG("OnTimer\n");
 	switch (nIDEvent)

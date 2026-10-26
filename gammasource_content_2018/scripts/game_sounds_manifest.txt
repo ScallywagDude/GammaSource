@@ -72,6 +72,7 @@ game_sounds_manifest
 	"precache_file"		"scripts/game_sounds_npc_antlionguard.txt"
 	"precache_file"		"scripts/game_sounds_npc_antlion.txt"
 	"precache_file"		"scripts/game_sounds_npc_bullsquid.txt"
+	"precache_file"		"scripts/game_sounds_npc_cremator.txt"
 	// GammaSource 2018 build: retail HL2 sound scripts
 	"precache_file"		"scripts/game_sounds_ui.txt"
 	"precache_file"		"scripts/game_sounds_world.txt"

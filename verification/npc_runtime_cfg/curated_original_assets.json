@@ -1,0 +1,1179 @@
+{
+  "original_root": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2",
+  "overlay_root": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018",
+  "models": [
+    {
+      "asset": "models/spitball_large.mdl",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.mdl"
+      },
+      "companions": [
+        {
+          "asset": "models/spitball_large.dx80.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.dx80.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_large.dx7_2bone.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.dx7_2bone.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_large.dx90.vtx",
+          "resolved": null
+        }
+      ],
+      "materials": [
+        {
+          "asset": "materials/models/bullsquid/spitball.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball_mask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball_mask.vtf"
+          }
+        }
+      ],
+      "version": 37,
+      "sha256": "2dc43482f4d0bc49deb243a32cb1ab90b90c3f9e138cd0c17fdd6e3b49a186dd",
+      "normalizer_warning": "requires a complete IDST37 blob with the 388-byte header",
+      "declared_length": 5416,
+      "actual_length": 5402
+    },
+    {
+      "asset": "models/spitball_medium.mdl",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.mdl"
+      },
+      "companions": [
+        {
+          "asset": "models/spitball_medium.dx80.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.dx80.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_medium.dx7_2bone.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.dx7_2bone.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_medium.dx90.vtx",
+          "resolved": null
+        }
+      ],
+      "materials": [
+        {
+          "asset": "materials/models/bullsquid/spitball.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball_mask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball_mask.vtf"
+          }
+        }
+      ],
+      "version": 37,
+      "sha256": "668a1f40e66cb764804a1eb64c2e626285a9412c9a3c8b5ae372dc0c2cdefcde",
+      "normalizer_warning": "requires a complete IDST37 blob with the 388-byte header",
+      "declared_length": 5416,
+      "actual_length": 5402
+    },
+    {
+      "asset": "models/spitball_small.mdl",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.mdl"
+      },
+      "companions": [
+        {
+          "asset": "models/spitball_small.dx80.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.dx80.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_small.dx7_2bone.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.dx7_2bone.vtx"
+          }
+        },
+        {
+          "asset": "models/spitball_small.dx90.vtx",
+          "resolved": null
+        }
+      ],
+      "materials": [
+        {
+          "asset": "materials/models/bullsquid/spitball.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/bullsquid/spitball_mask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\bullsquid\\spitball_mask.vtf"
+          }
+        }
+      ],
+      "version": 37,
+      "sha256": "14996c9ea8dd5f5bfee3996f269b233a84efddfa1feccfb3a7d7807ba38cb2ba",
+      "normalizer_warning": "requires a complete IDST37 blob with the 388-byte header",
+      "declared_length": 5416,
+      "actual_length": 5402
+    },
+    {
+      "asset": "models/combine_elite.mdl",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\combine_elite.mdl"
+      },
+      "companions": [
+        {
+          "asset": "models/combine_elite.dx80.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\combine_elite.dx80.vtx"
+          }
+        },
+        {
+          "asset": "models/combine_elite.dx7_2bone.vtx",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\combine_elite.dx7_2bone.vtx"
+          }
+        },
+        {
+          "asset": "models/combine_elite.dx90.vtx",
+          "resolved": null
+        }
+      ],
+      "materials": [
+        {
+          "asset": "materials/models/combine_elite//mouthdiff.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\mouthdiff.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/mouthdiff.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\mouthdiff.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/leatherspec.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\leatherspec.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/mouthmask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\mouthmask.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//halfmask.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\halfmask.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/halfmask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\halfmask.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/leatherspec.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\leatherspec.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/halfmask_mask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\halfmask_mask.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//camo7paletted.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\camo7paletted.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/camo7small.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\camo7small.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/envmap.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\envmap.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//sideholediffuse.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\sideholediffuse.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/sideholediffuse.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\sideholediffuse.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/leatherspec.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\leatherspec.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/sideholemask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\sideholemask.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//lens.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lens.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/lens.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lens.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/lensenvmap.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lensenvmap.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//lensrim_diff.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lensrim_diff.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/lensrim_diff.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lensrim_diff.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/leatherspec.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\leatherspec.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/lensrimmask.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\lensrimmask.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//glove.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\glove.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/glove.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\glove.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//belt_test.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\belt_test.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/belt_test.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\belt_test.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//soldiertex2.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\soldiertex2.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/soldiertex2.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\soldiertex2.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//doubleclip.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\doubleclip.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/doubleclip.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\doubleclip.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//canteen.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\canteen.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/canteen.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\canteen.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//buttpack.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\buttpack.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/buttpack.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\buttpack.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//clippouch.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\clippouch.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/clippouch.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\clippouch.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//eyeball_l.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\eyeball_l.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/eyeball_l.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\eyeball_l.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//eyeball_r.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\eyeball_r.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/eyeball_r.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\eyeball_r.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//pupil_r.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\pupil_r.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/pupil_r.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\pupil_r.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//glint.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\glint.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/police/glint.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\police\\glint.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//pupil_l.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\pupil_l.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite/pupil_l.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\pupil_l.vtf"
+          }
+        },
+        {
+          "asset": "materials/models/combine_elite//sniper3.vmt",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\combine_elite\\sniper3.vmt"
+          }
+        },
+        {
+          "asset": "materials/models/weapons/w_sniper/sniper3.vtf",
+          "resolved": {
+            "kind": "loose",
+            "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\w_sniper\\sniper3.vtf"
+          }
+        }
+      ],
+      "version": 37,
+      "sha256": "d9028c089e17b1760ca8cccaa12260715dc319dbe09ff163a47beda0e17fb671"
+    }
+  ],
+  "files": [
+    {
+      "asset": "materials/models/bullsquid/spitball.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Bullsquid\\spitball.vmt",
+      "bytes": 259,
+      "sha256": "2291caf128e3efbd357773a970dc73cf1aa4ce94ccc86a19609099dbb2690d46",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\bullsquid\\spitball.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/bullsquid/spitball.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Bullsquid\\spitball.vtf",
+      "bytes": 5680,
+      "sha256": "06ff876ac6b876377543d570e3444fa1ccb5a560b4fe11f9391361bf2df1e787",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\bullsquid\\spitball.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/bullsquid/spitball_mask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Bullsquid\\spitball_mask.vtf",
+      "bytes": 2936,
+      "sha256": "2687491ae70fdf025810c52bb32fc35bfdf03a0d6de4f22bbceba5c76cfe277c",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\bullsquid\\spitball_mask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//belt_test.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\belt_test.vmt",
+      "bytes": 115,
+      "sha256": "1a6e76687e050f070a2dce4f7a53f1db2d1b35f88a266e68007f2f9c66763a7d",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\belt_test.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//buttpack.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\buttpack.vmt",
+      "bytes": 114,
+      "sha256": "60eefcd3dc77064ccf0d290d578972f0d266a594e2dcd08a79960e0e76623fa4",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\buttpack.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//camo7paletted.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\camo7paletted.vmt",
+      "bytes": 620,
+      "sha256": "e37bdf5385cb893b532365b4e60225c2beac6844e1657429b4d12d8affe93dde",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\camo7paletted.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//canteen.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\canteen.vmt",
+      "bytes": 113,
+      "sha256": "f3939727540fbf18d0dc6f68c4215127aff2ae862079acd27df7327c585d8452",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\canteen.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//clippouch.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\clippouch.vmt",
+      "bytes": 115,
+      "sha256": "0d072b3cd3a19f6995fd84d8f7000997f1662e5cb5c288eb0b4bfdb5f62b782e",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\clippouch.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//doubleclip.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\doubleclip.vmt",
+      "bytes": 116,
+      "sha256": "ba96767e05e5f3453b2ff3c8216bdb8a7c338e401191297a59cb22b99c77fb47",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\doubleclip.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//eyeball_l.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\eyeball_l.vmt",
+      "bytes": 105,
+      "sha256": "b25d15855dcd996d2f0dbe3489b3b1a3683344e801fde0c48d9fc07a9b0b37bc",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\eyeball_l.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//eyeball_r.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\eyeball_r.vmt",
+      "bytes": 105,
+      "sha256": "b4384d8cca01dc0c76e514f4a062490beb1843c6e061299ec0765801c23487c0",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\eyeball_r.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//glint.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\glint.vmt",
+      "bytes": 123,
+      "sha256": "749d1ce3e02993cb378b8624a7df9b590e790ae18b72e82a926e0660a0c5fdb8",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\glint.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//glove.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\glove.vmt",
+      "bytes": 111,
+      "sha256": "b01ad677f8cb1d04df9d5042e5765d3ee51a3826181ce4446b18df9377845bd1",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\glove.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//halfmask.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\halfmask.vmt",
+      "bytes": 253,
+      "sha256": "d6d2766ddc90662027bd398d514be2002c04a115b98052313d1dd84a498ff595",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\halfmask.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//lens.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lens.vmt",
+      "bytes": 260,
+      "sha256": "4bd447d750b7cc5a15daf01ab0850944fef69b2d794502c42eb512af8770a6cf",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lens.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//lensrim_diff.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lensrim_diff.vmt",
+      "bytes": 231,
+      "sha256": "590979d36cab9aed1a7b94773811ce68a1a5bfb11140c2fe6ac91bc04a3b0ef4",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lensrim_diff.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//mouthdiff.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\mouthdiff.vmt",
+      "bytes": 226,
+      "sha256": "a2c817165391021de32648ca8f830a2ae0c5d7d899f3e084302e59198e919ade",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\mouthdiff.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//pupil_l.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\pupil_l.vmt",
+      "bytes": 65,
+      "sha256": "43e573836da4bd0d37f1200a0e2a5b70c7767aef6ac6726b20738e89528b8b00",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\pupil_l.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//pupil_r.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\pupil_r.vmt",
+      "bytes": 65,
+      "sha256": "65f0bfa3aef030ceff79d30b1b7392a023c0bc58ca1bd71c2a21c28e5ea2c3e3",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\pupil_r.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//sideholediffuse.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\sideholediffuse.vmt",
+      "bytes": 235,
+      "sha256": "a5cbb646997362971d7cbe581f2e3abcae5a2b478139b7a192b02579d1d1a423",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\sideholediffuse.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//sniper3.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\sniper3.vmt",
+      "bytes": 116,
+      "sha256": "b991b040f0f93fd336f100eb4d6ea061d6d82fcb0edc7a565e6b5f753ae8278c",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\sniper3.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite//soldiertex2.vmt",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\soldiertex2.vmt",
+      "bytes": 149,
+      "sha256": "f2414be08c02198c185d7525175f11c52349b55aa78f4971259aae803b507891",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\soldiertex2.vmt"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/belt_test.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\belt_test.vtf",
+      "bytes": 11048,
+      "sha256": "f90582c6286664f4cdfc4e75df8dec5fc431c1d8f87bc21c99ebaacc7ee58376",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\belt_test.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/buttpack.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\buttpack.vtf",
+      "bytes": 11128,
+      "sha256": "10e7d928769037a9ed739c7756b41f4150931d62f20f60cc4cfee6244f19161c",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\buttpack.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/camo7small.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\camo7small.vtf",
+      "bytes": 12352,
+      "sha256": "ec6139a093e0c08b4bb148ef038efff4de52d02e5a70c6bb73f9d2056de50325",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\camo7small.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/canteen.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\canteen.vtf",
+      "bytes": 2936,
+      "sha256": "d2742500301250901cd107a0bd0228287ee381e3600c3f087b38c9cb7e9138b9",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\canteen.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/clippouch.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\clippouch.vtf",
+      "bytes": 11128,
+      "sha256": "6b1f9210ceea2a48576d7c1b30b1055ffe590c0ec1d1e8e4d28d5f5715181c30",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\clippouch.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/doubleclip.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\doubleclip.vtf",
+      "bytes": 2936,
+      "sha256": "77ad0d4b8684487777d760161ea555ebc3c55290fd35d24c162af3d128fee579",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\doubleclip.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/envmap.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\envmap.vtf",
+      "bytes": 2936,
+      "sha256": "fa59253853c94a1139012ed03e39ed244a3ff6aabf2721df52e0a9cf175e3e0d",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\envmap.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/eyeball_l.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\eyeball_l.vtf",
+      "bytes": 2936,
+      "sha256": "98f2e069b3b8b8a765d6578910d0c41c4f82d5856eb40891131c857113449e51",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\eyeball_l.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/eyeball_r.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\eyeball_r.vtf",
+      "bytes": 2936,
+      "sha256": "8c40f34106ea2749cb9d6a14242ebd42f062f53f05708ea0f74433786f21aacd",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\eyeball_r.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/glove.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\glove.vtf",
+      "bytes": 2936,
+      "sha256": "e4445cdc5c383dd71a0508e8faa2c7f686f69cf985a558c8db77ee0b597d127b",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\glove.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/halfmask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\halfmask.vtf",
+      "bytes": 21992,
+      "sha256": "401263bfe23c055fa825b6b84dae2c049cd0993fe255501fb1997e779f3aa2d9",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\halfmask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/halfmask_mask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\halfmask_mask.vtf",
+      "bytes": 21992,
+      "sha256": "cf82ce6ab1268bb7c902b744b2b5bda2dff177394438684c898ccb52b4827ca5",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\halfmask_mask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/leatherspec.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\leatherspec.vtf",
+      "bytes": 2936,
+      "sha256": "fcd075c013f5cf14f7c48007171b4d59dad291922d9a2354dba4aa8b189a045a",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\leatherspec.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/lens.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lens.vtf",
+      "bytes": 22064,
+      "sha256": "13cc0d4069baa9c2d54e6dfc2cb625d9616a0588ef37ad48b474da01457d9f7f",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lens.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/lensenvmap.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lensenvmap.vtf",
+      "bytes": 174968,
+      "sha256": "21170fbbaaa17a3fcc5bd00f1663f1f762609b7ea971ac49fa96b2a73915d85c",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lensenvmap.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/lensrim_diff.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lensrim_diff.vtf",
+      "bytes": 11128,
+      "sha256": "b5bf01c81b72000252bfeae53e7ee692ad3de6a19e9b7d64a724bc92f5887818",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lensrim_diff.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/lensrimmask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\lensrimmask.vtf",
+      "bytes": 11128,
+      "sha256": "854e084f722a395e3da0144e378038492973ed0fb7fdc77da12d3fae3228fb2f",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\lensrimmask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/mouthdiff.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\mouthdiff.vtf",
+      "bytes": 21992,
+      "sha256": "e856b6b46124f93266715f8ed32a4e163f34b8b67b1bae7d69dd8cceb8b4c997",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\mouthdiff.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/mouthmask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\mouthmask.vtf",
+      "bytes": 21992,
+      "sha256": "7018692074027b14d2f530ca4d871435c70f90c45170406a511c991ef58452eb",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\mouthmask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/pupil_l.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\pupil_l.vtf",
+      "bytes": 5680,
+      "sha256": "d1342e60c675502f053e2567185f18f3c1bc6d599356fe918e4fd6ebec55bdd4",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\pupil_l.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/pupil_r.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\pupil_r.vtf",
+      "bytes": 5680,
+      "sha256": "d1342e60c675502f053e2567185f18f3c1bc6d599356fe918e4fd6ebec55bdd4",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\pupil_r.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/sideholediffuse.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\sideholediffuse.vtf",
+      "bytes": 2936,
+      "sha256": "3dbe181d168b998c61af8961a75dd49836b4cc4859174b6e2597bb981e166e0c",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\sideholediffuse.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/sideholemask.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\sideholemask.vtf",
+      "bytes": 2936,
+      "sha256": "3bd61ca801b9ed5d20864f55a36355dd80a20fdc225ba2735aed3394a96307f1",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\sideholemask.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/combine_elite/soldiertex2.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Combine_Elite\\soldiertex2.vtf",
+      "bytes": 87600,
+      "sha256": "09dd6cfa3b9ca7422fb8ac10353109e85bbf8c80e70d6c88af91b7898fee3a30",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\combine_elite\\soldiertex2.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/police/glint.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Police\\glint.vtf",
+      "bytes": 960,
+      "sha256": "180b57f3823ed81836fe4b5d8c56389410bfe7eff3d29be98796bccfbf85bbb1",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\police\\glint.vtf"
+      }
+    },
+    {
+      "asset": "materials/models/weapons/w_sniper/sniper3.vtf",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Models\\Weapons\\W_sniper\\sniper3.vtf",
+      "bytes": 21992,
+      "sha256": "d6a32b6fad0700521a4fdedca375005399d7f3ee118b5ffb66c7e606c5463547",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\materials\\models\\weapons\\w_sniper\\sniper3.vtf"
+      }
+    },
+    {
+      "asset": "models/combine_elite.dx7_2bone.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Combine_Elite.dx7_2bone.vtx",
+      "bytes": 87698,
+      "sha256": "42b5bbee9fb93f15a2a0fc8950eeede7eb9850ad98e4998aa4e138b99772e1cb",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.dx7_2bone.vtx"
+    },
+    {
+      "asset": "models/combine_elite.dx80.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Combine_Elite.dx80.vtx",
+      "bytes": 87698,
+      "sha256": "42b5bbee9fb93f15a2a0fc8950eeede7eb9850ad98e4998aa4e138b99772e1cb",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.dx80.vtx"
+    },
+    {
+      "asset": "models/combine_elite.mdl",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Combine_Elite.mdl",
+      "bytes": 584624,
+      "sha256": "d9028c089e17b1760ca8cccaa12260715dc319dbe09ff163a47beda0e17fb671",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\combine_elite.mdl"
+    },
+    {
+      "asset": "models/combine_elite.phy",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Combine_Elite.phy",
+      "bytes": 33676,
+      "sha256": "68a24ae1bbc3b12387c8bcb559a738f2bfa101d68f739f52a02b2e4a85c6a793",
+      "status": "existing_mount_preserved",
+      "resolved": {
+        "kind": "loose",
+        "path": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\combine_elite.phy"
+      }
+    },
+    {
+      "asset": "models/spitball_large.dx7_2bone.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.dx7_2bone.vtx",
+      "bytes": 1356,
+      "sha256": "70f86e44b3f2d2c2a188df2e9e32f4b86ab1be8428f87fbe8d4b30b851cb9cc9",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.dx7_2bone.vtx"
+    },
+    {
+      "asset": "models/spitball_large.dx80.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.dx80.vtx",
+      "bytes": 1356,
+      "sha256": "f5292c7d3a78b8b4cf1c553abb8e88906ed1656415019da14940bf42748820b0",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.dx80.vtx"
+    },
+    {
+      "asset": "models/spitball_large.mdl",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.mdl",
+      "bytes": 5402,
+      "sha256": "2dc43482f4d0bc49deb243a32cb1ab90b90c3f9e138cd0c17fdd6e3b49a186dd",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_large.mdl"
+    },
+    {
+      "asset": "models/spitball_medium.dx7_2bone.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.dx7_2bone.vtx",
+      "bytes": 1356,
+      "sha256": "ba938d1fa4a74e5b36c7c0b14c45ae6b5b66a91d405f446fbcaf6f9955c9a39f",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.dx7_2bone.vtx"
+    },
+    {
+      "asset": "models/spitball_medium.dx80.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.dx80.vtx",
+      "bytes": 1356,
+      "sha256": "d4edcc5fc5307d6f34347550334624e316b973f86e0bc28893916228bd5e7b01",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.dx80.vtx"
+    },
+    {
+      "asset": "models/spitball_medium.mdl",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.mdl",
+      "bytes": 5402,
+      "sha256": "668a1f40e66cb764804a1eb64c2e626285a9412c9a3c8b5ae372dc0c2cdefcde",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_medium.mdl"
+    },
+    {
+      "asset": "models/spitball_small.dx7_2bone.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.dx7_2bone.vtx",
+      "bytes": 1356,
+      "sha256": "3cf79b3b1321aed4dd2b05aac07325bd6e2dde529236f57a41f99e91e9218a35",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.dx7_2bone.vtx"
+    },
+    {
+      "asset": "models/spitball_small.dx80.vtx",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.dx80.vtx",
+      "bytes": 1356,
+      "sha256": "9f2581a2e7758363f76cde11db5c7feaa336ce6873649f4b899cf0bb8f2eedb8",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.dx80.vtx"
+    },
+    {
+      "asset": "models/spitball_small.mdl",
+      "original": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.mdl",
+      "bytes": 5402,
+      "sha256": "14996c9ea8dd5f5bfee3996f269b233a84efddfa1feccfb3a7d7807ba38cb2ba",
+      "status": "copied_exact_original",
+      "output": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\gammasource_content_2018\\models\\spitball_small.mdl"
+    }
+  ],
+  "limits": [
+    "Only listed missing original model dependencies are copied; configuration/scripts remain untouched.",
+    "Native v37 conversion, rendering and gameplay require a separate runtime test."
+  ]
+}

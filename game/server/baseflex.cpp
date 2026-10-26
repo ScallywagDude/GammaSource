@@ -108,6 +108,7 @@ CBaseFlex::CBaseFlex( void ) :
 #endif
 	m_bUpdateLayerPriorities = true;
 	m_flLastFlexAnimationTime = 0.0;
+	m_flGammaNextSceneTrace = 0.0f;
 }
 
 CBaseFlex::~CBaseFlex( void )
@@ -303,6 +304,7 @@ bool CBaseFlex::ClearSceneEvent( CSceneEventInfo *info, bool fastKill, bool canc
 	Assert( info );
 	Assert( info->m_pScene );
 	Assert( info->m_pEvent );
+	GammaTraceSceneEvent( canceled ? "clear_canceled" : "clear", this, info->m_pScene, info->m_pEvent, info->m_iLayer, info->m_nSequence );
 
 	// FIXME: this code looks duplicated
 	switch ( info->m_pEvent->GetType() )
@@ -421,10 +423,12 @@ void CBaseFlex::AddSceneEvent( CChoreoScene *scene, CChoreoEvent *event, CBaseEn
 
 	if (StartSceneEvent( &info, scene, event, actor, pTarget ))
 	{
+		GammaTraceSceneEvent( "accepted", this, scene, event, info.m_iLayer, info.m_nSequence );
 		m_SceneEvents.AddToTail( info );
 	}
 	else
 	{
+		GammaTraceSceneEvent( "rejected", this, scene, event, info.m_iLayer, info.m_nSequence );
 		Scene_Printf( "CBaseFlex::AddSceneEvent:  event failed\n" );
 		// Assert( 0 ); // expression failed to start
 	}
@@ -514,6 +518,7 @@ bool CBaseFlex::HandleStartSequenceSceneEvent( CSceneEventInfo *info, CChoreoSce
 	{
 		if (!event->GetPlayOverScript())
 		{
+			GammaTraceSceneEvent( "reject_ai_ownership", this, scene, event, info->m_iLayer, info->m_nSequence );
 			// this has failed to start
 			Warning( "CSceneEntity %s :\"%s\" failed to start sequence \"%s\"\n", STRING(GetEntityName()), actor->GetName(), event->GetParameters() );
 			return false;
@@ -568,8 +573,14 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 		return false;
 	}
 
-	// FIXME: this seems like way too much code
-	info->m_bIsGesture = false;
+	// The 2003 VCD event type is the gesture classification. Those models
+	// predate faceposer/type metadata and their authored gestures must remain
+	// active during locomotion, as in the original AddFlexGesture path.
+	// Modern models retain the existing posture default; explicit metadata
+	// below takes precedence for either model generation.
+	const bool legacyGesture = ( GetSequenceFlags( GetModelPtr(), info->m_nSequence ) & STUDIO_GAMMA_LEGACY2003 ) != 0;
+	info->m_bIsGesture = legacyGesture;
+	const char *gestureClassification = legacyGesture ? "legacy_vcd_gesture" : "modern_default";
 	KeyValues *seqKeyValues = GetSequenceKeyValues( info->m_nSequence );
 	if (seqKeyValues)
 	{
@@ -582,6 +593,7 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 			if (pkvType)
 			{
 				info->m_bIsGesture = (stricmp( pkvType->GetString(), "gesture" ) == 0) ? true : false;
+				gestureClassification = "faceposer_type";
 			}
 		}
 
@@ -591,7 +603,7 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 
 		// check in the tag indexes
 		KeyValues *pkvFaceposer;
-		for ( pkvFaceposer = pkvAllFaceposer->GetFirstSubKey(); pkvFaceposer; pkvFaceposer = pkvFaceposer->GetNextKey() )
+		for ( pkvFaceposer = pkvAllFaceposer ? pkvAllFaceposer->GetFirstSubKey() : NULL; pkvFaceposer; pkvFaceposer = pkvFaceposer->GetNextKey() )
 		{
 			if (!stricmp( pkvFaceposer->GetName(), "startloop" ))
 			{
@@ -670,6 +682,8 @@ bool CBaseFlex::HandleStartGestureSceneEvent( CSceneEventInfo *info, CChoreoScen
 
 		seqKeyValues->deleteThis();
 	}
+	if ( GammaSceneTraceLevel() )
+		Msg("GAMMA_SCENE_GESTURE_CLASS actor=%s sequence=%s legacy=%d classification=%s gesture=%d\n",STRING(GetEntityName()),event->GetParameters(),legacyGesture,gestureClassification,info->m_bIsGesture);
 
 	// initialize posture suppression
 	// FIXME: move priority of base animation so that layers can be inserted before
@@ -929,6 +943,8 @@ void CBaseFlex::ProcessSceneEvents( void )
 		SetFlexWeight( i, GetFlexWeight( i ) * 0.95 );
 	}
 
+	const bool traceSample = GammaSceneTraceLevel() > 1 && gpGlobals->curtime >= m_flGammaNextSceneTrace;
+	if ( traceSample ) m_flGammaNextSceneTrace = gpGlobals->curtime + 0.5f;
 	bool bHasForegroundEvents = false;
 	// Iterate SceneEvents and look for active slots
 	for ( int i = 0; i < m_SceneEvents.Count(); i++ )
@@ -950,8 +966,10 @@ void CBaseFlex::ProcessSceneEvents( void )
 
 		if (ProcessSceneEvent( info, scene, event ))
 		{
+			if ( !info->m_bStarted ) GammaTraceSceneEvent( "processed", this, scene, event, info->m_iLayer, info->m_nSequence );
 			info->m_bStarted = true;
 		}
+		if ( traceSample ) GammaTraceSceneEvent( "sample", this, scene, event, info->m_iLayer, info->m_nSequence );
 	}
 
 	if ( bHasForegroundEvents && scene_showunlock.GetBool())
@@ -1914,6 +1932,7 @@ bool CBaseFlex::ProcessSequenceSceneEvent( CSceneEventInfo *info, CChoreoScene *
 		bool result = HandleStartSequenceSceneEvent( info, scene, event, info->m_pActor );
 		if (!result)
 			return false;
+		GammaTraceSceneEvent( "allocated_sequence", this, scene, event, info->m_iLayer, info->m_nSequence );
 		bNewlyAllocated = true;
 	}
 

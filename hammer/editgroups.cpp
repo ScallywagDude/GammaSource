@@ -90,7 +90,7 @@ void CEditGroups::OnColor(void)
 			m_cColorBox.SetColor(dlg.m_cc.rgbResult, TRUE);
 
 			// change all object colors
-			GetActiveWorld()->EnumChildren(ENUMMAPCHILDRENPROC(UpdateObjectColor), DWORD(pGroup));
+			GetActiveWorld()->EnumChildren(ENUMMAPCHILDRENPROC(UpdateObjectColor), uintptr_t(pGroup));
 
 			CMapDoc::GetActiveMapDoc()->UpdateAllViews( MAPVIEW_UPDATE_COLOR );
 		}

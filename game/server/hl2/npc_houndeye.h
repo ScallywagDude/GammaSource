@@ -57,7 +57,7 @@ public:
 	float			m_flNextSecondaryAttack;
 	bool			m_bLoopClockwise;
 
-	CEnergyWave*	m_pEnergyWave;
+	CHandle<CEnergyWave> m_pEnergyWave;
 	float			m_flEndEnergyWaveTime;
 
 	bool			m_fAsleep;// some houndeyes sleep in idle mode if this is set, the houndeye is lying down

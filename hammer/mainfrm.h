@@ -95,7 +95,7 @@ public:
 	// ClassWizard generated virtual function overrides
 	//{{AFX_VIRTUAL(CMainFrame)
 	public:
-	virtual void WinHelp(DWORD dwData, UINT nCmd);
+	virtual void WinHelp(DWORD_PTR dwData, UINT nCmd);
 	virtual BOOL PreCreateWindow(CREATESTRUCT& cs);
 	virtual BOOL PreTranslateMessage(MSG* pMsg);
 	protected:
@@ -112,7 +112,7 @@ protected:
 	afx_msg void OnClose();
 	afx_msg void OnDestroy();
 	afx_msg void OnPaint();
-	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnToolsOptions();
 	afx_msg void OnViewShowconnections();
 	afx_msg void OnToolsPrefabfactory();

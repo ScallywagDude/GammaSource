@@ -1,0 +1,33 @@
+// Choreo version 1
+// Test-only authored-sequence playback; original story VCDs are unchanged.
+actor "!target1"
+{
+ channel "body"
+ {
+  event sequence "conscript_0"
+  {
+   time 0.000000 2.000000
+   param "draw"
+  }
+  event sequence "conscript_1"
+  {
+   time 2.000000 4.000000
+   param "aim"
+  }
+  event sequence "conscript_2"
+  {
+   time 4.000000 6.000000
+   param "disarm"
+  }
+  event sequence "conscript_3"
+  {
+   time 6.000000 8.000000
+   param "draw"
+  }
+  event sequence "conscript_4"
+  {
+   time 8.000000 10.000000
+   param "Idle01"
+  }
+ }
+}

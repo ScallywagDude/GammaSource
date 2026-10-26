@@ -925,7 +925,7 @@ void CMainFrame::OnPaint(void)
 //			sets the timer.  This is now also called for the autosave timer.
 // Input  : nIDEvent - 
 //-----------------------------------------------------------------------------
-void CMainFrame::OnTimer(UINT nIDEvent) 
+void CMainFrame::OnTimer(UINT_PTR nIDEvent) 
 {
 	if (!::IsWindow(m_hWnd))
 	{
@@ -1854,7 +1854,7 @@ bool CMainFrame::VerifyBarState(void)
 // Input  : dwData - 
 //			nCmd - 
 //-----------------------------------------------------------------------------
-void CMainFrame::WinHelp(DWORD dwData, UINT nCmd)
+void CMainFrame::WinHelp(DWORD_PTR dwData, UINT nCmd)
 {
 	// dvs: HACK: just punt them to the main help page
 	APP()->OpenURL(ID_HELP_TOPICS, m_hWnd);

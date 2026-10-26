@@ -20,8 +20,8 @@
 #define	NPC_CONSCRIPT_H
 #pragma once
 
-#if 0
-#include "npc_talker.h"
+#include "ai_playerally.h"
+#include "ai_behavior_follow.h"
 
 //=========================================================
 //	>> CNPC_Conscript
@@ -30,6 +30,16 @@ class CNPC_Conscript : public CAI_PlayerAlly
 {
 	DECLARE_CLASS( CNPC_Conscript, CAI_PlayerAlly );
 public:
+	CNPC_Conscript();
+	bool			CreateBehaviors();
+	void			StartTask( const Task_t *pTask );
+	void			FollowerUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
+	void			StopFollowing();
+	bool			IsValidSpeechTarget( int flags, CBaseEntity *pEntity );
+	bool			IsPlayerAlly( CBasePlayer *pPlayer = NULL );
+	void			TrySmellTalk();
+	void			Event_Killed( const CTakeDamageInfo &info );
+	void			SetGunDrawn( bool drawn );
 	void			Spawn( void );
 	void			Precache( void );
 	float			MaxYawSpeed( void );
@@ -55,8 +65,8 @@ public:
 	virtual int		TranslateSchedule( int scheduleType );
 	virtual int		SelectSchedule( void );
 
-	void			DeathSound( void );
-	void			PainSound( void );
+	void			DeathSound( const CTakeDamageInfo &info );
+	void			PainSound( const CTakeDamageInfo &info );
 	
 	void			TalkInit( void );
 
@@ -68,6 +78,7 @@ public:
 	float			m_nextLineFireTime;
 	bool			m_lastAttackCheck;
 	bool			m_bInBarnacleMouth;
+	CAI_FollowBehavior m_FollowBehavior;
 
 
 	//=========================================================
@@ -76,6 +87,7 @@ public:
 	enum 
 	{
 		TASK_CONSCRIPT_CROUCH = BaseClass::NEXT_TASK,
+		TASK_CONSCRIPT_HEADRESET,
 	};
 
 	//=========================================================
@@ -99,7 +111,5 @@ public:
 	DECLARE_DATADESC();
 	DEFINE_CUSTOM_AI;
 };
-
-#endif
 
 #endif	//NPC_CONSCRIPT_H

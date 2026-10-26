@@ -1,0 +1,26 @@
+[
+  {
+    "model": "Alyx",
+    "stats": {
+      "group_vertices": 5481,
+      "strips": 19,
+      "palette_checks": 8785,
+      "palette_unknown": 74
+    },
+    "max_rendered_weight_sum_error": 8.940696716308594e-08,
+    "issue_count": 0,
+    "issues": []
+  },
+  {
+    "model": "kleiner",
+    "stats": {
+      "group_vertices": 4242,
+      "strips": 19,
+      "palette_checks": 6983,
+      "palette_unknown": 165
+    },
+    "max_rendered_weight_sum_error": 9.685754776000977e-08,
+    "issue_count": 0,
+    "issues": []
+  }
+]

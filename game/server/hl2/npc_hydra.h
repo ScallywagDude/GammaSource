@@ -33,6 +33,8 @@ public:
 		//vecGoalDelta = Vector( 0, 0, 0 );
 		//flBendTension = 0.0;
 		flIdealLength = 1.0;
+		flActualLength = 0.0;
+		vecGoalPos = vec3_origin;
 		flGoalInfluence = 0.0;
 		bStuck = false;
 		bOnFire = false;
@@ -70,6 +72,7 @@ public:
 	void		Spawn( void );
 	void		Precache( void );
 	void		Activate( void );
+	void		UpdateOnRemove( void );
 
 	Class_T		Classify( void );
 

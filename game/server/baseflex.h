@@ -243,6 +243,7 @@ public:
 private:
 	// last time a foreground flex animation was played
 	float				m_flLastFlexAnimationTime;
+	float m_flGammaNextSceneTrace; // Diagnostic sampling only, not playback state.
 
 
 public:

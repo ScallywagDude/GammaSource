@@ -1,0 +1,8 @@
+"LightmappedGeneric"
+{
+	// Original shader: DecalBaseTimesLightmapAlphaBlend
+	"$translucent" 1
+	"$basetexture" "gamma_2003/decals/bigshot2"
+	"$decal" 1
+	"$modelmaterial" "gamma_2003/decals/bigshot1model"
+}

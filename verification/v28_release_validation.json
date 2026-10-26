@@ -1,0 +1,196 @@
+{
+  "release": "v28",
+  "date": "2026-10-26",
+  "architecture": "Windows x64",
+  "freeze_reason": "User requested development stop at 10 percent account usage remaining; development stopped at 90 percent used.",
+  "npc_restoration_complete": false,
+  "full_compile": "passed: v28_full_compile.log",
+  "final_install": "passed: v28_final_hydra_integration_install.log",
+  "regression_tests": {
+    "passed": 16,
+    "failed": 0,
+    "log": "v28_regression_tests_final.log"
+  },
+  "staging": "passed: 65544 hard links, 407 copies; final client/server DLLs refreshed afterward",
+  "binary_hashes": [
+    {
+      "path": "bin/datacache.dll",
+      "sha256": "863bcbd76f090867342f48d27d9b672f33bf432c60e559a2d2ff0c391e484c14",
+      "bytes": 1856000
+    },
+    {
+      "path": "bin/engine.dll",
+      "sha256": "dc2949c875086ce66f0ece065c80b4fcb96594d8bee6c7ff20c9f7d816da1a5a",
+      "bytes": 8179712
+    },
+    {
+      "path": "bin/filesystem_stdio.dll",
+      "sha256": "fe758cce21f6d3ac0accc90b8b1029788f84c309e29bca9436c0f2db888c43f6",
+      "bytes": 1915392
+    },
+    {
+      "path": "bin/GameUI.dll",
+      "sha256": "8dc5869455ff46c6869d6cc48a936eef02d3574f5baa29e6e22771b908d9c74d",
+      "bytes": 4577792
+    },
+    {
+      "path": "bin/hammer.exe",
+      "sha256": "e12eae0d5b8caf8ce3a38a7c058120cd30711b53e4274ee1a369781049ce4614",
+      "bytes": 1285120
+    },
+    {
+      "path": "bin/hammer_dll.dll",
+      "sha256": "d458663776f69f3713e20188724131908376e61da65022498da869b016dee3b3",
+      "bytes": 14249984
+    },
+    {
+      "path": "bin/inputsystem.dll",
+      "sha256": "b5919771099f2e74316c01d9530831e099602e0629c0ed2d7dd75a345ebbf1f3",
+      "bytes": 1094144
+    },
+    {
+      "path": "bin/launcher.dll",
+      "sha256": "c04baefa3a0aa59e70904e608959d01e20fc650cccd225a1df41c1447f2291b7",
+      "bytes": 1352192
+    },
+    {
+      "path": "bin/materialsystem.dll",
+      "sha256": "95b1f4280b3cda47ba93bae1512f319a30d4e2d90efa92b6feb3234fa16be687",
+      "bytes": 3205632
+    },
+    {
+      "path": "bin/scenefilecache.dll",
+      "sha256": "6bba0744831bfbc9f15ead33abed49c7fc4761188eb64b3925cd985656fe1c7c",
+      "bytes": 1048064
+    },
+    {
+      "path": "bin/SDL2.dll",
+      "sha256": "06f6cfbcf18221c728fb5e0824b0093ba43ada9c2b64d67d85153800ed90f202",
+      "bytes": 1270272
+    },
+    {
+      "path": "bin/ServerBrowser.dll",
+      "sha256": "e50b5a65780d3efd5aba40014b88a476e253c21c13c3eee62f99168dd919e5cb",
+      "bytes": 3000832
+    },
+    {
+      "path": "bin/shaderapidx9.dll",
+      "sha256": "b6e78e6c605d32c9b3b05b738f9bf975c0fb8ba2016c3a3b52e7728e391c4b3f",
+      "bytes": 2461184
+    },
+    {
+      "path": "bin/soundemittersystem.dll",
+      "sha256": "8789198daf6f70a270705bdd13da9525caa25da9cfad69d5840b5f76cf44f033",
+      "bytes": 1317376
+    },
+    {
+      "path": "bin/stdshader_dx9.dll",
+      "sha256": "9564fc1d8bf8f4afe1745fea6cd4fef048753856f374a95b42d353f7f1bfaa58",
+      "bytes": 2569216
+    },
+    {
+      "path": "bin/steam_api.dll",
+      "sha256": "43ce27f876e23bb413bcb6cca6cc8ae6208b3a076901091c13c3098171a3eafc",
+      "bytes": 744448
+    },
+    {
+      "path": "bin/studiorender.dll",
+      "sha256": "dcbe477e57bc4c879abac14f492cb428c8933727703de1d3a220a52059d43e93",
+      "bytes": 2658304
+    },
+    {
+      "path": "bin/tier0.dll",
+      "sha256": "e6a28e44e25626acc83e07d4561041e287ad6e396ab77c3cf51829435ba0d8e1",
+      "bytes": 1138176
+    },
+    {
+      "path": "bin/unicode.dll",
+      "sha256": "0c4e5816daac3ed486bbc5e7e2b9ccf38ea12038fcc1ce12760ce2ee350cd20f",
+      "bytes": 993280
+    },
+    {
+      "path": "bin/vaudio_minimp3.dll",
+      "sha256": "0ee4cf2983ee5fba3bbbc111ff804e45fd2c21e5f8528b3d5fd12f4e575c5fa3",
+      "bytes": 1056256
+    },
+    {
+      "path": "bin/vgui2.dll",
+      "sha256": "f841d6514cae08ff733c99fff2b7e2b33e8de75c0f977f802042e313cdc5900c",
+      "bytes": 1891840
+    },
+    {
+      "path": "bin/vguimatsurface.dll",
+      "sha256": "6d2a7d2feef972a7b02f3ea72ce7936cc0e09b1c5f05717b0c1d4c75e512fa36",
+      "bytes": 3431936
+    },
+    {
+      "path": "bin/video_services.dll",
+      "sha256": "c79ad6637d4ba49d84790de3504c581240530f69b580bbc81339348e192f0bec",
+      "bytes": 1050624
+    },
+    {
+      "path": "bin/vphysics.dll",
+      "sha256": "b8627d9802041a5d8c92e12ac10e4cfa70a9afa890690a63b2fa58c8f1d5edbf",
+      "bytes": 3606016
+    },
+    {
+      "path": "bin/vstdlib.dll",
+      "sha256": "aa6c7aac920cf401c8ebe862d36ed43e0949c32877e5498bba8a0f5920487445",
+      "bytes": 1384960
+    },
+    {
+      "path": "bin/vtex_dll.dll",
+      "sha256": "addc9acaecc7ddf6ec2f665c574c2212e9f78c9398ac741dd80fa56b38821b2b",
+      "bytes": 2233856
+    },
+    {
+      "path": "gammasource/bin/client.dll",
+      "sha256": "f3f56c1a7722b054b6f97c2f011f788bc859a2504263843ff0842da1772a02e1",
+      "bytes": 13272576
+    },
+    {
+      "path": "gammasource/bin/gamepadui.dll",
+      "sha256": "4a6a04bba575e5ed3b1938ed659cc87a6348394f8126fa1069117f714e218022",
+      "bytes": 1608704
+    },
+    {
+      "path": "gammasource/bin/GameUI.dll",
+      "sha256": "d24a0bb8ef7b4712d2deec864a5ce7ec348d5efb0b7ea921da58e64a643568fb",
+      "bytes": 4577792
+    },
+    {
+      "path": "gammasource/bin/server.dll",
+      "sha256": "9eccf4528d695437266d3bf7413fc9d62bd02698c94a3384392469250656622c",
+      "bytes": 19381248
+    },
+    {
+      "path": "hl2_launcher.exe",
+      "sha256": "f4ef5507f8a2c13b7de419a4e7cae3c58dfd024991879ed5c124ecb4bb93e128",
+      "bytes": 783872
+    }
+  ],
+  "native_checks": [
+    "Physgun original and modern props: grab, lift, visible beam, release",
+    "Alyx v7 sequence metadata, moving posture weights, scripted-scene cancel/restart/release",
+    "Bullsquid, Houndeye, Cremator and Alien Assassin: real target damage and save/restore continuation"
+  ],
+  "known_bugs": "docs/V28_KNOWN_BUGS.md",
+  "changelog": "docs/V28_CHANGELOG.md",
+  "notes": [
+    "No claim that every class or behavior is fully tested. See known bugs.",
+    "Raw multi-gigabyte frame captures remain in local verification storage and are not included in source or build delivery."
+  ],
+  "staged_native_smoke": {
+    "map": "zoo_item",
+    "completed": true,
+    "exit_code": 0,
+    "log": "v28_staged_smoke.log",
+    "profile": "isolated external QA profile; user bindings untouched"
+  },
+  "publisher_regression_tests": {
+    "passed": 16,
+    "failed": 0,
+    "log": "v28_publisher_tests_final.log"
+  },
+  "publication_source_closure": "Restored baseline policy headers, prior completed fixes, resource scripts and archived source omitted upstream. Generated shader caches and compiled binaries excluded."
+}

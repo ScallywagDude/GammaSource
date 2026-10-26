@@ -1,0 +1,136 @@
+{
+  "fixtures": [
+    {
+      "classname": "npc_bullsquid",
+      "boot": "gamma_phaseb_bullsquid_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": true,
+      "point_or_procedural_entity": false,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_houndeye",
+      "boot": "gamma_phaseb_houndeye_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": true,
+      "point_or_procedural_entity": false,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_assassin",
+      "boot": "gamma_phaseb_assassin_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": true,
+      "point_or_procedural_entity": false,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_miniturret",
+      "boot": "gamma_phaseb_miniturret_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": true,
+      "point_or_procedural_entity": false,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_sentry",
+      "boot": "gamma_phaseb_sentry_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": true,
+      "point_or_procedural_entity": false,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_hydra",
+      "boot": "gamma_phaseb_hydra_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        5
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": false,
+      "point_or_procedural_entity": true,
+      "save_load_requested": true
+    },
+    {
+      "classname": "npc_spotlight",
+      "boot": "gamma_phaseb_spotlight_boot.cfg",
+      "map": "e3_lab",
+      "subject_origin": [
+        2626.46,
+        -1889.63,
+        110
+      ],
+      "target_origin": [
+        2481.29,
+        -1886.11,
+        55
+      ],
+      "damage_required_for_combat_pass": false,
+      "point_or_procedural_entity": true,
+      "save_load_requested": true
+    }
+  ],
+  "limits": [
+    "e3_lab corridor reproduces original node positions but does not certify all navigation maps.",
+    "Controlled fixtures intentionally remove original NPCs; normal native lab/hydra scene validation remains separate.",
+    "Spotlight is an invisible point NPC; Hydra uses a procedural client chain and needs rendered/physics inspection.",
+    "Model/health/animation logs and damage require actual runtime captures. No fixture was run during preparation."
+  ]
+}

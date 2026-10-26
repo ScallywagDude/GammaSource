@@ -2075,10 +2075,11 @@ studiohdr_t *CMDLCache::UnserializeMDL( MDLHandle_t handle, void *pData, int nDa
 
 //-----------------------------------------------------------------------------
 // GammaSource: 2001-2003 models (MDL v36/v37) are converted to v48 the first time
-// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache_v2, which sits
+// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache_v7, which sits
 // at the head of the GAME search path, so later loads (and the .vvd/.vtx reads that
 // follow) find the converted files directly. The revisioned folder prevents old
-// conversions without autolayers/flex sentinels from shadowing the fixed data.
+// conversions missing beta scene metadata, procedural helpers, IK, blend
+// semantics or repaired eye/delta data from shadowing the fixed data.
 //-----------------------------------------------------------------------------
 static ConVar mdl_legacy_convert( "mdl_legacy_convert", "1", 0, "Convert MDL v36/v37 models to v48 at load time" );
 static char s_szLegacyCacheDir[MAX_PATH];
@@ -2096,7 +2097,7 @@ static void EnsureLegacyModelCachePath()
 		*pSemi = 0;
 	if ( !szMod[0] )
 		V_strncpy( szMod, ".", sizeof( szMod ) );
-	V_ComposeFileName( szMod, "legacy_models_cache_v2", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
+	V_ComposeFileName( szMod, "legacy_models_cache_v7", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
 	V_FixSlashes( s_szLegacyCacheDir );
 	g_pFullFileSystem->CreateDirHierarchy( s_szLegacyCacheDir, NULL );
 	g_pFullFileSystem->AddSearchPath( s_szLegacyCacheDir, "GAME", PATH_ADD_TO_HEAD );

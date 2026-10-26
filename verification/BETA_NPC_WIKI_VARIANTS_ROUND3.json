@@ -1,0 +1,128 @@
+[
+  {
+    "classname": "npc_combineelite",
+    "variant": "Beta camouflage Combine Elite",
+    "notes": "2003 camo unit; distinct npc_combineelite, 100HP; do not use retail Elite model",
+    "active_source": "game/server/gamma/npc_combinee.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Combine_Elite",
+    "verification": "source-repaired; Windows compile and runtime unverified"
+  },
+  {
+    "classname": "npc_combineguard",
+    "variant": "Synth Combine Guard",
+    "notes": "2003 armor, melee and muzzle beam",
+    "active_source": "game/server/gamma/npc_combineguard.cpp",
+    "source_file_present": true,
+    "wiki": "https://half-life.fandom.com/wiki/Combine_Guard",
+    "verification": "source-repaired; Windows compile and runtime unverified"
+  },
+  {
+    "classname": "npc_combine_s",
+    "variant": "2003 Combine Soldier",
+    "notes": "Reused by later model variants; compare old soldier schedule, loadout and default model",
+    "active_source": "game/server/hl2/npc_combines.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Combine_Elite",
+    "verification": "compiled classname; beta behavior not proven"
+  },
+  {
+    "classname": "npc_combine",
+    "variant": "2003 Combine grunt/base AI",
+    "notes": "Recycled original soldier classname; inherited AI behaviors diverge",
+    "active_source": "game/server/hl2/npc_combine.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "compiled classname; beta behavior not proven"
+  },
+  {
+    "classname": "npc_assassin",
+    "variant": "Alien Assassin and Combine Assassin",
+    "notes": "TWO cut concepts reuse npc_assassin; preserve variants instead of retail fast zombie",
+    "active_source": "game/server/hl2/npc_assassin.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Alien_Assassin",
+    "verification": "registered; model/abilities/variant runtime unverified"
+  },
+  {
+    "classname": "npc_cscanner",
+    "variant": "Combot and City Scanner",
+    "notes": "Combot is predecessor with gas attack; do not assume current scanner AI matches",
+    "active_source": "game/server/hl2/npc_scanner.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Combot",
+    "verification": "compiled classname; combot behavior not proven"
+  },
+  {
+    "classname": "npc_cremator",
+    "variant": "Cremator",
+    "notes": "No leaked AI implementation; implement original concept from map scripting, animations and relationships; never claim recovered code",
+    "active_source": null,
+    "source_file_present": false,
+    "wiki": "https://combineoverwiki.net/wiki/Cremator",
+    "verification": "reconstruction needed"
+  },
+  {
+    "classname": "npc_conscript",
+    "variant": "Conscript",
+    "notes": "2003 source currently #if 0; port 2003 schedules and model",
+    "active_source": "game/server/gamma/npc_conscript.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Conscripts",
+    "verification": "disabled source"
+  },
+  {
+    "classname": "npc_miniturret",
+    "variant": "2003 miniturret",
+    "notes": "Disabled original registration; needs isolated port away from turret_ceiling conflict",
+    "active_source": "game/server/hl2/npc_turret.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "disabled source"
+  },
+  {
+    "classname": "npc_sentry",
+    "variant": "2003 sentry",
+    "notes": "Original turret code not compiled; isolate to avoid turret_ceiling collision",
+    "active_source": "game/server/hl2/npc_turret.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "source not build-listed"
+  },
+  {
+    "classname": "npc_hydra",
+    "variant": "Hydra",
+    "notes": "Client chain renderer required for beta movement",
+    "active_source": "game/server/hl2/npc_hydra.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "build registration only"
+  },
+  {
+    "classname": "npc_bullsquid",
+    "variant": "Beta Bullsquid",
+    "notes": "2003 spit and swimming behavior need runtime asset check",
+    "active_source": "game/server/hl2/npc_bullsquid.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "build registration only"
+  },
+  {
+    "classname": "npc_houndeye",
+    "variant": "Beta Houndeye",
+    "notes": "Pack tactics/sonic sound wave, model and AI check",
+    "active_source": "game/server/hl2/npc_houndeye.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Houndeye",
+    "verification": "build registration only"
+  },
+  {
+    "classname": "npc_spotlight",
+    "variant": "Beta spotlight",
+    "notes": "Beta spotlight collision/beam relationships and map visuals",
+    "active_source": "game/server/hl2/npc_spotlight.cpp",
+    "source_file_present": true,
+    "wiki": "https://combineoverwiki.net/wiki/Half-Life_2_Beta",
+    "verification": "build registration only"
+  }
+]

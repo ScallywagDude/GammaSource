@@ -124,6 +124,9 @@ enum Class_T
 	CLASS_MORTAR_SYNTH,
 	CLASS_WASTE_SCANNER,
 	CLASS_CREMATOR,
+	// Append restored beta identities so existing 2018 class values stay stable.
+	CLASS_BULLSQUID,
+	CLASS_HOUNDEYE,
 
 	NUM_AI_CLASSES
 };

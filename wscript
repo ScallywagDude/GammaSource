@@ -149,6 +149,10 @@ projects={
 	]
 }
 
+# The original Windows editor ships with the regular game build. These tools
+# use the same selected architecture and CRT as the engine.
+hammer_projects = ['fgdlib', 'raytrace', 'hammer', 'hammer_launcher']
+
 @Configure.conf
 def check_pkg(conf, package, uselib_store, fragment, *k, **kw):
 	errormsg = '{0} not available! Install {0} development package. Also you may need to set PKG_CONFIG_PATH environment variable'.format(package)
@@ -305,6 +309,8 @@ def options(opt):
 
 	grp.add_option('--build-games', action = 'store', dest = 'GAMES', type = 'string', default = 'hl2',
 		help = 'build games [default: %default]')
+	grp.add_option('--disable-hammer', action='store_false', dest='BUILD_HAMMER', default=True,
+		help='omit the Windows Hammer editor from a game build (enabled by default)')
 
 	grp.add_option('--use-ccache', action = 'store_true', dest = 'CCACHE', default = False,
 		help = 'build using ccache [default: %default]')
@@ -458,6 +464,10 @@ def configure(conf):
 		conf.load('force_32bit')
 
 	define_platform(conf)
+	conf.env.BUILD_HAMMER = (conf.options.BUILD_HAMMER and conf.env.DEST_OS == 'win32'
+		and not conf.options.TESTS and not conf.options.DEDICATED)
+	if conf.env.BUILD_HAMMER:
+		projects['game'] += [p for p in hammer_projects if p not in projects['game']]
 
 	if conf.env.TOGLES:
 		projects['game'] += ['togles']
@@ -626,6 +636,8 @@ def configure(conf):
 
 def build(bld):
 	os.environ["CCACHE_DIR"] = os.path.abspath('.ccache/'+bld.env.COMPILER_CC+'/'+bld.env.DEST_OS+'/'+bld.env.DEST_CPU)
+	if bld.env.BUILD_HAMMER:
+		projects['game'] += [p for p in hammer_projects if p not in projects['game']]
 
 	if bld.env.DEST_OS in ['win32', 'android']:
 		sdl_name = 'SDL2.dll' if bld.env.DEST_OS == 'win32' else 'libSDL2.so'

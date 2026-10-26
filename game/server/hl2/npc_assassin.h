@@ -79,6 +79,9 @@ private:
 	bool		m_bEvade;
 	bool		m_bAggressive;		// Sets certain state, including whether or not her eye is visible
 	bool		m_bBlinkState;
+	float		m_flLastFootstepCycle;
+	int			m_iFootstepSequence;
+	bool		m_bStepLeft;
 
 	CSprite				*m_pEyeSprite;
 	CSpriteTrail		*m_pEyeTrail;

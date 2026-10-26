@@ -1,0 +1,13 @@
+"UnlitGeneric"
+{
+	// Compatibility: original mask alpha controls the decal/reflection blend.
+	"$translucent" 1
+	"$color2" "[0 0 0]"
+	// Original shader: DecalSpecularCubicEnvMap
+	"%tooltexture" "decals/shadertest/DecalSpecularCubicEnvMap_mask"
+	"$envmap" "gamma_2003/compat_reflective/shadertest/cubemap"
+	"$basetexture" "gamma_2003/compat_reflective/decals/shadertest/DecalSpecularCubicEnvMap_mask"
+	"$additive" 1
+	"$decal" 1
+	"$decalscale" 0.25
+}

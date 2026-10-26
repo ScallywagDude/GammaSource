@@ -1,0 +1,730 @@
+{
+  "models": 143,
+  "rules": 866,
+  "steps": "0..1 by 0.001 plus envelope edge +/-0.000001",
+  "relative_reference_inventory": {
+    "negative_sequence_lock_refs": 641,
+    "nonnegative_sequence_lock_refs": 0,
+    "negative_animation_rule_refs": 0,
+    "negative_error_refs": 0,
+    "negative_chain_link_refs": 0
+  },
+  "failures": [],
+  "results": [
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Alyx.mdl",
+      "rules": 74,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Barney.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\breen.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_citizen_chasmworker.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_female6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\c17_male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Combine_Soldier.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Combine_Strider.mdl",
+      "rules": 105,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Eli.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\ElitePolice.mdl",
+      "rules": 44,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\fassassin.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\female6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\gman.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker08.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\borealisworker09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\conscript09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker08.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Humans\\worker09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Kleiner.mdl",
+      "rules": 49,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\monk.mdl",
+      "rules": 41,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\mossman.mdl",
+      "rules": 63,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Odell.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Player\\citizen17.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Player\\Combine_Soldier.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Player\\male_03.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Player\\Male_07.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Player\\Manwich.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\striderscale1.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\striderscale2.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\striderscale3.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Vance.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Alyx.mdl",
+      "rules": 74,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Barney.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\breen.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_citizen_chasmworker.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\c17_female6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\Combine_Soldier.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Combine_Strider.mdl",
+      "rules": 105,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Eli.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\ElitePolice.mdl",
+      "rules": 44,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\fassassin.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\female6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\gman.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker08.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\borealisworker09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\conscript09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker01.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker02.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker03.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker04.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker05.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker07.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker08.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\worker09.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Kleiner.mdl",
+      "rules": 49,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\monk.mdl",
+      "rules": 41,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\mossman.mdl",
+      "rules": 63,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Odell.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Player\\citizen17.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Player\\Combine_Soldier.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Player\\male_03.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Player\\Male_07.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Player\\Manwich.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\striderscale1.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\striderscale2.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\striderscale3.mdl",
+      "rules": 3,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Vance.mdl",
+      "rules": 2,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male7.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\c17_male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\Combine_Soldier.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male1.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male2.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male3.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male4.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male5.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male6.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male7.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male8.mdl",
+      "rules": 0,
+      "status": "pass"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2_2003\\models\\male9.mdl",
+      "rules": 0,
+      "status": "pass"
+    }
+  ]
+}

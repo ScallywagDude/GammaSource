@@ -31,6 +31,7 @@
 #include "IEffects.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
+#include "beta_guard_armor_safety.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -118,7 +119,7 @@ public:
 	void			Precache( void );
 	void			Spawn( void );
 	void			PrescheduleThink( void );
-	void			TraceAttack( CBaseEntity *pAttacker, float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType );
+	void			TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	void			HandleAnimEvent( animevent_t *pEvent );
 	void			StartTask( const Task_t *pTask );
 	void			RunTask( const Task_t *pTask );
@@ -176,7 +177,8 @@ private:
 	DEFINE_CUSTOM_AI;
 };
 
-ConVar	sk_combineguard_health( "sk_combineguard_health", "0" );
+ConVar	sk_combineguard_health( "sk_combineguard_health", "100" );
+ConVar	sk_combineguard_beam_damage( "sk_combineguard_beam_damage", "30" );
 
 //FIXME: Make a cvar
 #define	CGUARD_DEFAULT_ARMOR_HEALTH		50
@@ -260,6 +262,9 @@ int ACT_COMBINEGUARD_HELPLESS;
 //-----------------------------------------------------------------------------
 CNPC_CombineGuard::CNPC_CombineGuard( void )
 {
+	for ( int i = 0; i < NUM_CGUARD_ATTACHMENTS; ++i )
+		m_pGlowSprite[i] = NULL;
+	m_nGibModel = 0; // No valid 2003 armor-gib model is supplied by default.
 }
 
 LINK_ENTITY_TO_CLASS( npc_combineguard, CNPC_CombineGuard );
@@ -286,7 +291,10 @@ void CNPC_CombineGuard::InitArmorPieces( void )
 	//Turn on all body groups
 	for ( int i = 1; i < NUM_CGUARD_BODYGROUPS; i++ )
 	{
-		SetBodygroup( i, true );
+		// The supplied leak model can lack the bodygroups present in the original
+		// scripted Guard. Preserve armor state without passing invalid indices.
+		if ( i < GetNumBodyGroups() )
+			SetBodygroup( i, true );
 
 		m_armorPieces[i].health		= CGUARD_DEFAULT_ARMOR_HEALTH;
 
@@ -320,8 +328,8 @@ void CNPC_CombineGuard::Spawn( void )
 	SetNavType(NAV_GROUND);
 	m_NPCState				= NPC_STATE_NONE;
 	SetBloodColor( BLOOD_COLOR_YELLOW );
-	m_iHealth				= 100;
-	m_iMaxHealth			= m_iHealth;
+	SetHealth( MAX( 1, sk_combineguard_health.GetInt() ) );
+	SetMaxHealth( GetHealth() );
 	m_flFieldOfView			= 0.1f;
 	
 	SetSolid( SOLID_BBOX );
@@ -341,12 +349,14 @@ void CNPC_CombineGuard::Spawn( void )
 	//DEBUG: Attach sprites to all the reference points
 	for ( int i = 1; i < NUM_CGUARD_ATTACHMENTS; i++ )
 	{
-		m_pGlowSprite[i] = CSprite::SpriteCreate( "sprites/blueflare1.vmt", GetAbsOrigin(), false );
-		
-		Assert( m_pGlowSprite[i] );
+		Vector attachmentOrigin;
+		QAngle attachmentAngles;
+		if ( !GetAttachment( i, attachmentOrigin, attachmentAngles ) )
+			continue;
+		m_pGlowSprite[i] = CSprite::SpriteCreate( "sprites/blueflare1.vmt", attachmentOrigin, false );
 
 		if ( m_pGlowSprite[i] == NULL )
-			return;
+			continue;
 
 		m_pGlowSprite[i]->TurnOff();
 		m_pGlowSprite[i]->SetTransparency( kRenderGlow, 16, 16, 16, 255, kRenderFxNoDissipation );
@@ -360,7 +370,8 @@ void CNPC_CombineGuard::Spawn( void )
 	InitArmorPieces();
 	
 	//Turn the gun on
-	SetBodygroup( 1, true );
+	if ( GetNumBodyGroups() > 1 )
+		SetBodygroup( 1, true );
 
 	m_YawControl		= LookupPoseParameter( "aim_yaw" );
 	m_PitchControl		= LookupPoseParameter( "aim_pitch" );
@@ -434,7 +445,8 @@ void CNPC_CombineGuard::PrescheduleThink( void )
 			if ( referencePoint == CGUARD_REF_INVALID )
 				continue;
 
-			GetAttachment( referencePoint, vecDamagePoint, vecDamageAngles );
+			if ( !GetAttachment( referencePoint, vecDamagePoint, vecDamageAngles ) )
+				continue;
 
 #if 0
 			if ( random->RandomInt( 0, 4 ) == 0 )
@@ -583,18 +595,20 @@ int CNPC_CombineGuard::SelectSchedule( void )
 
 		if( m_fOffBalance )
 		{
-			//Randomly destroy an armor piece
-			int iArmorPiece;
-			do 
+			// Select only surviving pieces. The original unbounded do/while
+			// could hang the game when all armor was already destroyed.
+			bool intact[NUM_CGUARD_BODYGROUPS];
+			for ( int i = 0; i < NUM_CGUARD_BODYGROUPS; ++i )
+				intact[i] = IsArmorPiece( i ) && !m_armorPieces[i].destroyed;
+
+			const int remaining = BetaGuardCountIntactArmor( intact, NUM_CGUARD_BODYGROUPS );
+			if ( remaining > 0 )
 			{
-
-				iArmorPiece = random->RandomInt( CGUARD_BGROUP_RIGHT_SHOULDER, CGUARD_BGROUP_LEFT_SHIN );
-
-			} while( m_armorPieces[ iArmorPiece ].destroyed  );
-
-			DestroyArmorPiece( iArmorPiece );
-
-			Msg("DESTROYING PIECE:%d\n", iArmorPiece );
+				const int iArmorPiece = BetaGuardPickIntactArmor( intact, NUM_CGUARD_BODYGROUPS,
+					random->RandomInt( 0, remaining - 1 ) );
+				if ( iArmorPiece >= 0 )
+					DestroyArmorPiece( iArmorPiece );
+			}
 
 			if( AllArmorDestroyed() )
 			{
@@ -859,28 +873,30 @@ void CNPC_CombineGuard::DestroyArmorPiece( int pieceID )
 {
 	int	refPoint = GetReferencePointForBodyGroup( pieceID );
 
-	if ( refPoint == CGUARD_REF_INVALID )
+	if ( pieceID <= CGUARD_BGROUP_MAIN || pieceID >= NUM_CGUARD_BODYGROUPS ||
+		 !IsArmorPiece( pieceID ) || m_armorPieces[pieceID].destroyed )
 		return;
 
 	Vector	vecDamagePoint;
 	QAngle	vecDamageAngles;
 
-	GetAttachment( refPoint, vecDamagePoint, vecDamageAngles );
+	const bool attachmentValid = GetAttachment( refPoint, vecDamagePoint, vecDamageAngles );
 
-	Vector	vecVelocity, vecSize;
+	// The 2003 leak's shipped model can lack the armor attachment and
+	// metal-gib resource. Neither should prevent the gameplay state change.
+	if ( attachmentValid && m_nGibModel > 0 )
+	{
+		Vector vecVelocity, vecSize;
+		vecVelocity.Random( -1.0, 1.0 );
+		vecVelocity *= random->RandomInt( 16, 64 );
+		vecSize = Vector( 32, 32, 32 );
+		CPVSFilter filter( vecDamagePoint );
+		te->BreakModel( filter, 0.0, vecDamagePoint, vec3_angle, vecSize, vecVelocity, m_nGibModel, 100, 0, 2.5, BREAK_METAL );
+	}
 
-	vecVelocity.Random( -1.0, 1.0 );
-	vecVelocity *= random->RandomInt( 16, 64 );
-
-	vecSize = Vector( 32, 32, 32 );
-
-	CPVSFilter filter( vecDamagePoint );
-	te->BreakModel( filter, 0.0, vecDamagePoint, vec3_angle, vecSize, vecVelocity, m_nGibModel, 100, 0, 2.5, BREAK_METAL );
-
-	//ExplosionCreate( vecDamagePoint, vecDamageAngles, this, 16.0f, 0, false );
-	
 	m_armorPieces[pieceID].destroyed = true;
-	SetBodygroup( pieceID, false );
+	if ( pieceID < GetNumBodyGroups() )
+		SetBodygroup( pieceID, false );
 
 	//For interrupting our behavior
 	SetCondition( COND_LIGHT_DAMAGE );
@@ -893,6 +909,8 @@ void CNPC_CombineGuard::DestroyArmorPiece( int pieceID )
 //-----------------------------------------------------------------------------
 void CNPC_CombineGuard::DamageArmorPiece( int pieceID, float damage, const Vector &vecOrigin, const Vector &vecDir )
 {
+	if ( pieceID <= CGUARD_BGROUP_MAIN || pieceID >= NUM_CGUARD_BODYGROUPS || !IsArmorPiece( pieceID ) )
+		return;
 	//Destroyed pieces take no damage
 	if ( m_armorPieces[pieceID].destroyed )
 	{
@@ -904,8 +922,16 @@ void CNPC_CombineGuard::DamageArmorPiece( int pieceID, float damage, const Vecto
 		return;
 	}
 
-	//Take the damage
-	m_armorPieces[pieceID].health -= damage;
+	// Fractional and negative damage cannot heal/destroy armor accidentally.
+	if ( !( damage > 0.0f ) )
+		return;
+	if ( damage >= m_armorPieces[pieceID].health )
+	{
+		DestroyArmorPiece( pieceID );
+		return;
+	}
+	// Take fractional hits as at least one point; do not truncate to zero.
+	m_armorPieces[pieceID].health -= (int)ceilf( damage );
 
 	//See if we've destroyed this piece
 	if ( m_armorPieces[pieceID].health <= 0.0f )
@@ -926,65 +952,47 @@ void CNPC_CombineGuard::DamageArmorPiece( int pieceID, float damage, const Vecto
 //			*ptr - 
 //			bitsDamageType - 
 //-----------------------------------------------------------------------------
-void CNPC_CombineGuard::TraceAttack( CBaseEntity *pAttacker, float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType )
+void CNPC_CombineGuard::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
-	Vector	vecDamagePoint = ptr->endpos;
+	if ( !ptr )
+		return;
 
-	//Approximate explosive damage
-	if ( bitsDamageType & ( DMG_BLAST ) )
+	// Preserve the beta Guard's destructible bodygroup armor, but use the
+	// current TraceAttack dispatch signature so projectile impacts reach it.
+	int piece = ptr->hitgroup;
+	if ( info.GetDamageType() & DMG_BLAST )
 	{
-		Vector	vecOrigin;
-		QAngle  vecAngles;
-		float	flNearestDist = 99999999.0f;
-		float	flDist;
-		int		nReferencePoint;
-		int		nNearestGroup = CGUARD_BGROUP_MAIN;
-		float	flAdjustedDamage = flDamage;
-
-		//Check all pieces to find the nearest one
-		for ( int i = 1; i < NUM_CGUARD_BODYGROUPS; i++ )
+		float nearest = FLT_MAX;
+		piece = CGUARD_BGROUP_INVALID;
+		for ( int i = 1; i < NUM_CGUARD_BODYGROUPS; ++i )
 		{
-			if ( m_armorPieces[i].destroyed )
-			{
-				//Lose 10% (dodgy falloff approximation)
-				flAdjustedDamage *= 0.9f;
+			if ( !IsArmorPiece( i ) || m_armorPieces[i].destroyed )
 				continue;
-			}
-
-			nReferencePoint = GetReferencePointForBodyGroup( i );
-
-			if ( nReferencePoint == CGUARD_REF_INVALID )
+			const int reference = GetReferencePointForBodyGroup( i );
+			if ( reference == CGUARD_REF_INVALID )
 				continue;
-
-			GetAttachment( nReferencePoint, vecOrigin, vecAngles );
-
-			flDist = ( vecOrigin - ptr->endpos ).Length();
-			
-			//See if found a closer piece
-			if ( flDist < flNearestDist )
+			Vector origin;
+			QAngle angles;
+			if ( !GetAttachment( reference, origin, angles ) )
+				continue;
+			const float dist = ( origin - ptr->endpos ).LengthSqr();
+			if ( dist < nearest )
 			{
-				flNearestDist = flDist;
-				nNearestGroup = i;
+				nearest = dist;
+				piece = i;
 			}
 		}
+	}
 
-		//If we found one, damage it
-		if ( nNearestGroup != CGUARD_BGROUP_MAIN )
-		{
-			DamageArmorPiece( nNearestGroup, flAdjustedDamage, vecDamagePoint, vecDir );
-			return;
-		}
-	}
-	
-	//Damage the hitgroup
-	if ( ptr->hitgroup != CGUARD_BGROUP_MAIN )
+	if ( piece > CGUARD_BGROUP_MAIN && piece < NUM_CGUARD_BODYGROUPS &&
+		 IsArmorPiece( piece ) && !m_armorPieces[piece].destroyed )
 	{
-		DamageArmorPiece( ptr->hitgroup, flDamage, vecDamagePoint, vecDir );
+		DamageArmorPiece( piece, info.GetDamage(), ptr->endpos, vecDir );
+		return;
 	}
-	else
-	{
-		//UTIL_Ricochet( vecDamagePoint, (vecDir*-1.0f) );
-	}
+
+	// Non-armor hits (and exposed parts) must reach ordinary NPC damage.
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------
@@ -1031,7 +1039,7 @@ int	CNPC_CombineGuard::OnTakeDamage( const CTakeDamageInfo &info )
 		}
 	}
 
-	return 0;
+	return BaseClass::OnTakeDamage( info );
 }
 
 //-----------------------------------------------------------------------------
@@ -1077,13 +1085,6 @@ int CNPC_CombineGuard::RangeAttack1Conditions( float flDot, float flDist )
 //-----------------------------------------------------------------------------
 void CNPC_CombineGuard::FireRangeWeapon( void )
 {
-	//FIXME: E3 HACK - For now just trigger our target
-	if ( ( GetEnemy() != NULL ) && ( GetEnemy()->Classify() == CLASS_BULLSEYE ) )
-	{
-		// DMG_GENERIC because we don't want to generate physics force
-		GetEnemy()->TakeDamage( CTakeDamageInfo( this, this, 1.0f, DMG_GENERIC ) );
-	}
-
 	Vector vecSrc, vecAiming;
 
 	GetVectors( &vecAiming, NULL, NULL );
@@ -1093,6 +1094,17 @@ void CNPC_CombineGuard::FireRangeWeapon( void )
 
 	trace_t	tr;
 	AI_TraceLine( vecSrc, impactPoint, MASK_SHOT, this, COLLISION_GROUP_NONE, &tr );
+
+	// The original 2003 code rendered a beam but only hurt scripted bullseyes.
+	// Apply the same beam to ordinary enemies without changing its visuals.
+	if ( tr.m_pEnt && tr.m_pEnt != this && sk_combineguard_beam_damage.GetFloat() > 0.0f )
+	{
+		CTakeDamageInfo damage( this, this, sk_combineguard_beam_damage.GetFloat(), DMG_ENERGYBEAM );
+		damage.SetDamagePosition( tr.endpos );
+		ClearMultiDamage();
+		tr.m_pEnt->DispatchTraceAttack( damage, vecAiming, &tr );
+		ApplyMultiDamage();
+	}
 
 	//vecDir = tr.endpos - vecTracerSrc;
 	//flTracerDist = VectorNormalize( vecDir );
@@ -1247,7 +1259,7 @@ bool CNPC_CombineGuard::AllArmorDestroyed( void )
 
 	for( i = CGUARD_BGROUP_RIGHT_SHOULDER ; i <= CGUARD_BGROUP_LEFT_SHIN ; i++ )
 	{
-		if( !m_armorPieces[ i ].destroyed )
+		if( IsArmorPiece( i ) && !m_armorPieces[ i ].destroyed )
 		{
 			// Found an intact piece of armor. It's not possible
 			// that the whole suit is destroyed.

@@ -96,6 +96,7 @@ class CNPC_Spotlight : public CAI_BaseNPC
 		void			UpdateTargets(void);
 		void			Precache(void);
 		void			Spawn(void);
+		void			UpdateOnRemove(void);
 
 	public:
 
@@ -373,6 +374,7 @@ void CNPC_Spotlight::NPCThink(void)
 //-----------------------------------------------------------------------------
 void CNPC_Spotlight::Precache(void)
 {
+	PrecacheModel( "models/player.mdl" ); // original invisible point-entity dummy
 	//
 	// Model.
 	//
@@ -944,9 +946,18 @@ void CNPC_Spotlight::SpotlightDestroy(void)
 		UTIL_Remove(m_pSpotlight);
 		m_pSpotlight = NULL;
 		
-		UTIL_Remove(m_pSpotlightTarget);
+	}
+	if ( m_pSpotlightTarget )
+	{
+		UTIL_Remove( m_pSpotlightTarget );
 		m_pSpotlightTarget = NULL;
 	}
+}
+
+void CNPC_Spotlight::UpdateOnRemove(void)
+{
+	SpotlightDestroy();
+	BaseClass::UpdateOnRemove();
 }
 
 //------------------------------------------------------------------------------
@@ -956,6 +967,7 @@ void CNPC_Spotlight::SpotlightDestroy(void)
 //------------------------------------------------------------------------------
 void CNPC_Spotlight::SpotlightCreate(void)
 {
+	if ( m_pSpotlight || !( m_fSpotlightFlags & BITS_SPOTLIGHT_LIGHT_ON ) ) return;
 
 	// If I have an enemy, start spotlight on my enemy
 	if (GetEnemy() != NULL)
@@ -984,6 +996,7 @@ void CNPC_Spotlight::SpotlightCreate(void)
 		MASK_OPAQUE, this, COLLISION_GROUP_NONE, &tr);
 
 	m_pSpotlightTarget				= (CSpotlightEnd*)CreateEntityByName( "spotlight_end" );
+	if ( !m_pSpotlightTarget ) return;
 	m_pSpotlightTarget->Spawn();
 	m_pSpotlightTarget->SetLocalOrigin( tr.endpos );
 	m_pSpotlightTarget->SetOwnerEntity( this );
@@ -996,6 +1009,11 @@ void CNPC_Spotlight::SpotlightCreate(void)
 	}
 
 	m_pSpotlight = CBeam::BeamCreate( "sprites/spotlight.vmt", 2.0 );
+	if ( !m_pSpotlight )
+	{
+		SpotlightDestroy();
+		return;
+	}
 	m_pSpotlight->SetColor( m_clrRender->r, m_clrRender->g, m_clrRender->b ); 
 	m_pSpotlight->SetHaloTexture(m_nHaloSprite);
 	m_pSpotlight->SetHaloScale(40);
@@ -1344,12 +1362,12 @@ void CNPC_Spotlight::SpotlightUpdate(void)
 	}
 	else if (m_flSpotlightCurLength > m_flSpotlightMaxLength)		
 	{
-		m_pSpotlightTarget->SetRenderColorA( (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
+		m_pSpotlightTarget->SetRenderColorA( 255 * (1-((m_flSpotlightCurLength-m_flSpotlightMaxLength)/m_flSpotlightMaxLength)) );
 		m_pSpotlight->SetFadeLength(m_flSpotlightMaxLength);
 	}
 	else
 	{
-		m_pSpotlightTarget->SetRenderColorA( 1.0 );
+		m_pSpotlightTarget->SetRenderColorA( 255 );
 		m_pSpotlight->SetFadeLength(m_flSpotlightCurLength);
 	}
 
@@ -1468,7 +1486,7 @@ void CNPC_Spotlight::Spawn(void)
 	else
 	{
 		NPCInit();
-		SetThink(CallNPCThink);
+		SetThink( &CNPC_Spotlight::CallNPCThink );
 	}
 
 	AddEffects( EF_NODRAW );
@@ -1482,11 +1500,13 @@ void CNPC_Spotlight::Spawn(void)
 void CNPC_Spotlight::InputLightOn( inputdata_t &inputdata )
 {
 	m_fSpotlightFlags |= BITS_SPOTLIGHT_LIGHT_ON;
+	if ( HasSpawnFlags( SF_SPOTLIGHT_NEVER_MOVE ) ) SpotlightCreate();
 }
 
 void CNPC_Spotlight::InputLightOff( inputdata_t &inputdata )
 {
 	m_fSpotlightFlags &= ~BITS_SPOTLIGHT_LIGHT_ON;
+	if ( HasSpawnFlags( SF_SPOTLIGHT_NEVER_MOVE ) ) SpotlightDestroy();
 }
 
 void CNPC_Spotlight::InputTrackOn( inputdata_t &inputdata )

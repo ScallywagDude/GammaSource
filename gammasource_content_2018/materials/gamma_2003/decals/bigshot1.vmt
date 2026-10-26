@@ -1,0 +1,9 @@
+"LightmappedGeneric"
+{
+	// Original shader: DecalBaseTimesLightmapAlphaBlend
+// Uncomment this if you add an alpha channel to the base texture
+//	"$translucent" 1
+	"$basetexture" "gamma_2003/decals/bigshot1"
+	"$decal" 1
+	"$modelmaterial" "gamma_2003/decals/bigshot1model"
+}

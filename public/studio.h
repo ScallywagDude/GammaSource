@@ -3078,6 +3078,9 @@ inline const mstudioflexcontroller_t *mstudioflexcontrollerui_t::pController( in
 #define STUDIO_ACTIVITY	0x1000		// Has been updated at runtime to activity index
 #define STUDIO_EVENT	0x2000		// Has been updated at runtime to event index
 #define STUDIO_WORLD	0x4000		// sequence blends in worldspace
+// Internal marker on converted 2003 animations/sequences. Preserve their
+// four-corner blendspaces and absolute-frame IK error sampling.
+#define STUDIO_GAMMA_LEGACY2003 0x40000000
 // autolayer flags
 //							0x0001
 //							0x0002

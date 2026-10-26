@@ -1,0 +1,1271 @@
+{
+  "source_counts": {
+    "models": 6260,
+    "rules": 866,
+    "static_rules_normalized": 84,
+    "wrapped_rules": 102,
+    "sequence_locks": 1276,
+    "global_locks": 624
+  },
+  "cache_counts": {},
+  "failures": [],
+  "excluded_original_layouts": [
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\Male_01.mdl",
+      "model": "models/Humans/Male_01.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\male_02.mdl",
+      "model": "models/Humans/male_02.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\male_03.mdl",
+      "model": "models/Humans/male_03.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\Male_04.mdl",
+      "model": "models/Humans/Male_04.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\Male_05.mdl",
+      "model": "models/Humans/Male_05.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\male_07.mdl",
+      "model": "models/Humans/male_07.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\male_08.mdl",
+      "model": "models/Humans/male_08.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Humans\\male_09.mdl",
+      "model": "models/Humans/male_09.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\ihvtest_noflex.mdl",
+      "model": "models/ihvtest_noflex.mdl",
+      "error": "only complete local animation/bone tables and one embedded sequence group are supported"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Junk\\W_Garb_BeerBottle.mdl",
+      "model": "models/Junk/W_Garb_BeerBottle.mdl",
+      "error": "sequence blend references an invalid local animation"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\Junk\\W_Garb_BeerBottle2.mdl",
+      "model": "models/Junk/W_Garb_BeerBottle2.mdl",
+      "error": "sequence blend references an invalid local animation"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\arch01a.mdl",
+      "model": "models/props_c17/arch01a.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\arch02a.mdl",
+      "model": "models/props_c17/arch02a.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\arch03.mdl",
+      "model": "models/props_c17/arch03.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\artpedestal01.mdl",
+      "model": "models/props_c17/artpedestal01.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\Awning003a.mdl",
+      "model": "models/props_c17/Awning003a.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\awning01.mdl",
+      "model": "models/props_c17/awning01.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_c17\\doorknob01.mdl",
+      "model": "models/props_c17/doorknob01.mdl",
+      "error": "sequence blend references an invalid local animation"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\props_combine\\suit_charger001.mdl",
+      "model": "models/props_combine/suit_charger001.mdl",
+      "error": "sequence blend references an invalid local animation"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_large.mdl",
+      "model": "models/spitball_large.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_medium.mdl",
+      "model": "models/spitball_medium.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\spitball_small.mdl",
+      "model": "models/spitball_small.mdl",
+      "error": "requires a complete IDST37 blob with the 388-byte header"
+    }
+  ],
+  "models_with_ik": [
+    {
+      "model": "models/Alyx.mdl",
+      "version": 36,
+      "rules": 74,
+      "static_rules": 0,
+      "rule_sequences": 35,
+      "locked_sequences": 44
+    },
+    {
+      "model": "models/Barney.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/breen.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_citizen_chasmworker.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/c17_female1.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female2.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female3.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female4.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female5.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female6.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_male8.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male9.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Combine_Soldier.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/Combine_Strider.mdl",
+      "version": 36,
+      "rules": 105,
+      "static_rules": 0,
+      "rule_sequences": 13,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Eli.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/ElitePolice.mdl",
+      "version": 36,
+      "rules": 44,
+      "static_rules": 40,
+      "rule_sequences": 6,
+      "locked_sequences": 4
+    },
+    {
+      "model": "models/fassassin.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/female1.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female2.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female3.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female4.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female5.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female6.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/gman.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker01.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker02.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker03.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker04.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker05.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker07.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker08.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker09.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript01.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript02.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript03.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript04.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript05.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript07.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript09.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker01.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker02.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker03.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker04.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker05.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker07.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker08.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker09.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Kleiner.mdl",
+      "version": 36,
+      "rules": 49,
+      "static_rules": 0,
+      "rule_sequences": 25,
+      "locked_sequences": 35
+    },
+    {
+      "model": "models/male8.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male9.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/monk.mdl",
+      "version": 36,
+      "rules": 41,
+      "static_rules": 2,
+      "rule_sequences": 22,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/mossman.mdl",
+      "version": 36,
+      "rules": 63,
+      "static_rules": 0,
+      "rule_sequences": 33,
+      "locked_sequences": 40
+    },
+    {
+      "model": "models/Odell.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/Player/citizen17.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Combine_Soldier.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/Player/male_03.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Male_07.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Manwich.mdl",
+      "version": 36,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/striderscale1.mdl",
+      "version": 36,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/striderscale2.mdl",
+      "version": 36,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/striderscale3.mdl",
+      "version": 36,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/Vance.mdl",
+      "version": 36,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Alyx.mdl",
+      "version": 37,
+      "rules": 74,
+      "static_rules": 0,
+      "rule_sequences": 35,
+      "locked_sequences": 44
+    },
+    {
+      "model": "models/Barney.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/breen.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_citizen_chasmworker.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/c17_female1.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female2.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female3.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female4.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female5.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_female6.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/c17_male8.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male9.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Combine_Soldier.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/Combine_Strider.mdl",
+      "version": 37,
+      "rules": 105,
+      "static_rules": 0,
+      "rule_sequences": 13,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Eli.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/ElitePolice.mdl",
+      "version": 37,
+      "rules": 44,
+      "static_rules": 40,
+      "rule_sequences": 6,
+      "locked_sequences": 4
+    },
+    {
+      "model": "models/fassassin.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/female1.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female2.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female3.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female4.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female5.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/female6.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 11
+    },
+    {
+      "model": "models/gman.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker01.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker02.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker03.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker04.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker05.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker07.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker08.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/borealisworker09.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript01.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript02.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript03.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript04.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript05.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript07.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/conscript09.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker01.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker02.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker03.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker04.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker05.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker07.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker08.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Humans/worker09.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Kleiner.mdl",
+      "version": 37,
+      "rules": 49,
+      "static_rules": 0,
+      "rule_sequences": 25,
+      "locked_sequences": 35
+    },
+    {
+      "model": "models/male8.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male9.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/monk.mdl",
+      "version": 37,
+      "rules": 41,
+      "static_rules": 2,
+      "rule_sequences": 22,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/mossman.mdl",
+      "version": 37,
+      "rules": 63,
+      "static_rules": 0,
+      "rule_sequences": 33,
+      "locked_sequences": 40
+    },
+    {
+      "model": "models/Odell.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/Player/citizen17.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Combine_Soldier.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/Player/male_03.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Male_07.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/Player/Manwich.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 2
+    },
+    {
+      "model": "models/striderscale1.mdl",
+      "version": 37,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/striderscale2.mdl",
+      "version": 37,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/striderscale3.mdl",
+      "version": 37,
+      "rules": 3,
+      "static_rules": 0,
+      "rule_sequences": 1,
+      "locked_sequences": 0
+    },
+    {
+      "model": "models/Vance.mdl",
+      "version": 37,
+      "rules": 2,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male1.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male2.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male3.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male4.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male5.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male6.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male7.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male8.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/c17_male9.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Combine_Soldier.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 3
+    },
+    {
+      "model": "models/male1.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male2.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male3.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male4.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male5.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male6.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male7.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male8.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/male9.mdl",
+      "version": 37,
+      "rules": 0,
+      "static_rules": 0,
+      "rule_sequences": 0,
+      "locked_sequences": 1
+    }
+  ],
+  "coverage_limit": "Cache comparison covers only existing outputs with matching original checksum."
+}

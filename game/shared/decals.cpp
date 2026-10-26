@@ -163,7 +163,16 @@ const char *CDecalEmitterSystem::GetDecalNameForIndex( int nIndex )
 //-----------------------------------------------------------------------------
 bool CDecalEmitterSystem::Init()
 {
+	// The 2003 groups are merged with the modern extra groups in a private file.
+	// Both DLLs must select the same script so network decal indices agree.
+#ifdef GAMMA_PORTALGUN
+	const char *filename = filesystem->FileExists( "scripts/gamma_2003_decals.txt", "GAME" )
+		? "scripts/gamma_2003_decals.txt" : DECAL_LIST_FILE;
+	LoadDecalsFromScript( filename );
+	Msg( "GAMMA_DECAL_SCRIPT file=%s groups=%d materials=%d\n", filename, m_Decals.Count(), m_AllDecals.Count() );
+#else
 	LoadDecalsFromScript( DECAL_LIST_FILE );
+#endif
 	return true;
 }
 

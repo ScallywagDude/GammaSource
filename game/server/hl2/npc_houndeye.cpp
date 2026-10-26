@@ -37,8 +37,8 @@
 
 #define HOUNDEYE_EYE_FRAMES 4 // how many different switchable maps for the eye
 
-ConVar	sk_Houndeye_health( "sk_Houndeye_health","0");
-ConVar	sk_Houndeye_dmg_blast( "sk_Houndeye_dmg_blast","0");
+ConVar	sk_Houndeye_health( "sk_Houndeye_health","80");
+ConVar	sk_Houndeye_dmg_blast( "sk_Houndeye_dmg_blast","25");
 
 //=========================================================
 // Interactions
@@ -166,7 +166,7 @@ BEGIN_DATADESC( CNPC_Houndeye )
 	DEFINE_FIELD( m_fDontBlink,				FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_flNextSecondaryAttack,	FIELD_TIME ),
 	DEFINE_FIELD( m_bLoopClockwise,			FIELD_BOOLEAN ),
-	DEFINE_FIELD( m_pEnergyWave,				FIELD_CLASSPTR ),
+	DEFINE_FIELD( m_pEnergyWave,				FIELD_EHANDLE ),
 	DEFINE_FIELD( m_flEndEnergyWaveTime,		FIELD_TIME ),	
 
 END_DATADESC()
@@ -196,7 +196,7 @@ int CNPC_Houndeye::RangeAttack1Conditions ( float flDot, float flDist )
 	if (tr.startsolid)
 	{
 		CBaseEntity *pEntity = tr.m_pEnt;
-		if (pEntity->Classify() == CLASS_HOUNDEYE)
+		if (pEntity && pEntity->Classify() == CLASS_HOUNDEYE)
 		{
 			return( COND_NONE );
 		}
@@ -457,7 +457,7 @@ void CNPC_Houndeye::Precache()
 	PrecacheScriptSound( "NPC_Houndeye.GroupFollow" );
 
 
-	UTIL_PrecacheOther("grenade_energy");
+	UTIL_PrecacheOther("energy_wave");
 	BaseClass::Precache();
 }	
 
@@ -521,7 +521,7 @@ void CNPC_Houndeye::AlertSound ( void )
 //=========================================================
 // DeathSound 
 //=========================================================
-void CNPC_Houndeye::DeathSound ( void )
+void CNPC_Houndeye::DeathSound( const CTakeDamageInfo &info )
 {
 	EmitSound( "NPC_Houndeye.Die" );
 }
@@ -685,9 +685,9 @@ void CNPC_Houndeye::SonicAttack ( void )
 		UTIL_Remove(m_pEnergyWave);
 	}
 	Vector vFacingDir = EyeDirection3D( );
-	m_pEnergyWave = (CEnergyWave*)Create( "energy_wave", EyePosition(), GetLocalAngles() );
+	m_pEnergyWave = (CEnergyWave*)Create( "energy_wave", EyePosition(), GetLocalAngles(), this );
 	m_flEndEnergyWaveTime = gpGlobals->curtime + 1; //<<TEMP>> magic
-	m_pEnergyWave->SetAbsVelocity( 100*vFacingDir );
+	if ( m_pEnergyWave ) m_pEnergyWave->SetAbsVelocity( 100*vFacingDir );
 
 	CBaseEntity *pEntity = NULL;
 	// iterate on all entities in the vicinity.
@@ -711,7 +711,7 @@ void CNPC_Houndeye::SonicAttack ( void )
 			// Adjust damage by distance
 			// --------------------------
 			float flDist = (pEntity->WorldSpaceCenter() - GetAbsOrigin()).Length();
-			float flDamageAdjuster = 1-( flDist / HOUNDEYE_MAX_ATTACK_RADIUS );
+			float flDamageAdjuster = MAX( 0.0f, 1-( flDist / HOUNDEYE_MAX_ATTACK_RADIUS ) );
 
 			// --------------------------
 			// Adjust damage by direction
@@ -802,7 +802,14 @@ void CNPC_Houndeye::StartTask( const Task_t *pTask )
 			Vector vTargetPos = GetEnemyLKP();
 			vTargetPos.z	= GetFloorZ(vTargetPos);
 
-			if (GetNavigator()->SetRadialGoal(vTargetPos, random->RandomInt(50,500), 90, 175, m_bLoopClockwise))
+			// The modern navigator also needs the destination of the arc. Keep
+			// the beta radius/quarter-circle strafing instead of routing inward
+			// to the enemy at the center of the circle.
+			float flRadius = random->RandomInt( 50, 500 );
+			float flEndAngle = DEG2RAD( UTIL_VecToYaw( GetAbsOrigin() - vTargetPos ) +
+				( m_bLoopClockwise ? -90.0f : 90.0f ) );
+			Vector vDestination = vTargetPos + Vector( flRadius * cos( flEndAngle ), flRadius * sin( flEndAngle ), 0 );
+			if (GetNavigator()->SetRadialGoal(vDestination, vTargetPos, flRadius, 90, 175, m_bLoopClockwise))
 			{
 				TaskComplete();
 				return;

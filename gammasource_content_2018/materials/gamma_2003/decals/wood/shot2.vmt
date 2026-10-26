@@ -1,0 +1,5 @@
+"DecalModulate"
+{
+	"$basetexture" "gamma_2003/decals/wood/shot2"
+	"$decalscale" 0.10
+}

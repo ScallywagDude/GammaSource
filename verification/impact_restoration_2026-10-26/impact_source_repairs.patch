@@ -1,0 +1,431 @@
+--- a/game/shared/decals.cpp
++++ b/game/shared/decals.cpp
+@@ -163,7 +163,16 @@
+ //-----------------------------------------------------------------------------
+ bool CDecalEmitterSystem::Init()
+ {
++	// The 2003 groups are merged with the modern extra groups in a private file.
++	// Both DLLs must select the same script so network decal indices agree.
++#ifdef GAMMA_PORTALGUN
++	const char *filename = filesystem->FileExists( "scripts/gamma_2003_decals.txt", "GAME" )
++		? "scripts/gamma_2003_decals.txt" : DECAL_LIST_FILE;
++	LoadDecalsFromScript( filename );
++	Msg( "GAMMA_DECAL_SCRIPT file=%s groups=%d materials=%d\n", filename, m_Decals.Count(), m_AllDecals.Count() );
++#else
+ 	LoadDecalsFromScript( DECAL_LIST_FILE );
++#endif
+ 	return true;
+ }
+ 
+--- a/game/shared/util_shared.cpp
++++ b/game/shared/util_shared.cpp
+@@ -803,8 +803,24 @@
+ 	}
+ 	else
+ 	{
++#ifdef GAMMA_PORTALGUN
++		// 2003 impact blood: an animated sprite plus the original FX_Blood puff.
++		// Preserve the original damage-to-size mapping and multiplayer tint.
++		int r = 64, g = 0, b = 0;
++		if ( color == BLOOD_COLOR_RED && g_pGameRules->IsMultiplayer() )
++		{
++			r = 255; g = 32; b = 32;
++		}
++		else if ( color == BLOOD_COLOR_YELLOW || color == BLOOD_COLOR_GREEN )
++		{
++			r = 128; g = 128;
++		}
++		CPVSFilter filter( origin );
++		te->BloodSprite( filter, 0.0f, &origin, &direction, r, g, b, 255, clamp( amount / 10, 3, 16 ) );
++#else
+ 		// Normal blood impact
+ 		UTIL_BloodImpact( origin, direction, color, amount );
++#endif
+ 	}
+ }	
+ 
+--- a/game/server/basecombatweapon.cpp
++++ b/game/server/basecombatweapon.cpp
+@@ -26,6 +26,7 @@
+ #include "collisionutils.h"
+ #include "iservervehicle.h"
+ #include "func_break.h"
++#include "gamma/gamma_impact_materials.h"
+ 
+ #ifdef HL2MP
+ 	#include "hl2mp_gamerules.h"
+@@ -68,6 +69,12 @@
+ 	g_sModelIndexBloodDrop = CBaseEntity::PrecacheModel ("sprites/blood.vmt"); // splattered blood 
+ 	g_sModelIndexLaserDot = CBaseEntity::PrecacheModel("sprites/laserdot.vmt");
+ #endif // HL1_DLL
++
++#ifdef GAMMA_PORTALGUN
++	// These were HL1-only in the 2018 base, leaving Gamma's blood sprite IDs zero.
++	g_sModelIndexBloodSpray = CBaseEntity::PrecacheModel( GAMMA_IMPACT_MATERIAL( "sprites/bloodspray.vmt" ) );
++	g_sModelIndexBloodDrop = CBaseEntity::PrecacheModel( GAMMA_IMPACT_MATERIAL( "sprites/blood.vmt" ) );
++#endif
+ 
+ #ifndef TF_DLL
+ 	g_sModelIndexFireball = CBaseEntity::PrecacheModel ("sprites/zerogxplode.vmt");// fireball
+--- a/game/client/c_world.cpp
++++ b/game/client/c_world.cpp
+@@ -13,6 +13,7 @@
+ #include "ivieweffects.h"
+ #include "shake.h"
+ #include "eventlist.h"
++#include "gamma/gamma_impact_materials.h"
+ // NVNT haptic include for notification of world precache
+ #include "haptics/haptic_utils.h"
+ // memdbgon must be the last include file in a .cpp file!!!
+@@ -152,8 +153,8 @@
+ 	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball
+ 	g_sModelIndexSmoke = modelinfo->GetModelIndex ("sprites/steam1.vmt");// smoke
+ 	g_sModelIndexBubbles = modelinfo->GetModelIndex ("sprites/bubble.vmt");//bubbles
+-	g_sModelIndexBloodSpray = modelinfo->GetModelIndex ("sprites/bloodspray.vmt"); // initial blood
+-	g_sModelIndexBloodDrop = modelinfo->GetModelIndex ("sprites/blood.vmt"); // splattered blood 
++	g_sModelIndexBloodSpray = modelinfo->GetModelIndex( GAMMA_IMPACT_MATERIAL( "sprites/bloodspray.vmt" ) );
++	g_sModelIndexBloodDrop = modelinfo->GetModelIndex( GAMMA_IMPACT_MATERIAL( "sprites/blood.vmt" ) );
+ 	g_sModelIndexLaser = modelinfo->GetModelIndex( (char *)g_pModelNameLaser );
+ 	g_sModelIndexLaserDot = modelinfo->GetModelIndex("sprites/laserdot.vmt");
+ }
+--- a/game/client/c_impact_effects.cpp
++++ b/game/client/c_impact_effects.cpp
+@@ -18,6 +18,7 @@
+ #include "engine/IStaticPropMgr.h"
+ #include "tier0/vprof.h"
+ #include "c_te_effect_dispatch.h"
++#include "gamma/gamma_impact_materials.h"
+ 
+ // memdbgon must be the last include file in a .cpp file!!!
+ #include "tier0/memdbgon.h"
+@@ -33,6 +34,11 @@
+ CLIENTEFFECT_MATERIAL( "effects/blood" )
+ CLIENTEFFECT_MATERIAL( "effects/blood2" )
+ CLIENTEFFECT_MATERIAL( "sprites/bloodspray" )
++#ifdef GAMMA_PORTALGUN
++CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood" )
++CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood2" )
++CLIENTEFFECT_MATERIAL( "gamma_2003/sprites/bloodspray" )
++#endif
+ CLIENTEFFECT_MATERIAL( "particle/particle_noisesphere" )
+ CLIENTEFFECT_REGISTER_END()
+ 
+@@ -70,8 +76,8 @@
+ 	g_Mat_DustPuff[0] = ParticleMgr()->GetPMaterial( "particle/particle_smokegrenade" );
+ 	g_Mat_DustPuff[1] = ParticleMgr()->GetPMaterial( "particle/particle_noisesphere" );
+ 
+-	g_Mat_BloodPuff[0] = ParticleMgr()->GetPMaterial( "effects/blood" );
+-	g_Mat_BloodPuff[1] = ParticleMgr()->GetPMaterial( "effects/blood2" );
++	g_Mat_BloodPuff[0] = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood" ) );
++	g_Mat_BloodPuff[1] = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood2" ) );
+ 	
+ #ifndef TF_CLIENT_DLL
+ 	g_Mat_SMG_Muzzleflash[0] = ParticleMgr()->GetPMaterial( "effects/muzzleflash1" );
+--- a/game/client/fx_blood.cpp
++++ b/game/client/fx_blood.cpp
+@@ -21,6 +21,7 @@
+ #include "effect_color_tables.h"
+ #include "particle_simple3d.h"
+ #include "particle_parse.h"
++#include "gamma/gamma_impact_materials.h"
+ 
+ // memdbgon must be the last include file in a .cpp file!!!
+ #include "tier0/memdbgon.h"
+@@ -30,12 +31,21 @@
+ CLIENTEFFECT_MATERIAL( "effects/blood_gore" )
+ CLIENTEFFECT_MATERIAL( "effects/blood_drop" )
+ CLIENTEFFECT_MATERIAL( "effects/blood_puff" )
++#ifdef GAMMA_PORTALGUN
++CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_gore" )
++CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_drop" )
++CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_puff" )
++#endif
+ CLIENTEFFECT_REGISTER_END()
+ 
+ // Cached material handles
+ PMaterialHandle g_Blood_Core = NULL;
+ PMaterialHandle g_Blood_Gore = NULL;
+ PMaterialHandle g_Blood_Drops = NULL;
++
++#ifdef GAMMA_PORTALGUN
++static ConVar cl_show_bloodspray( "cl_show_bloodspray", "1", 0, "Show original 2003 blood sprays." );
++#endif
+ 
+ //-----------------------------------------------------------------------------
+ // Purpose: 
+@@ -53,6 +63,10 @@
+ 		if( bloodcolors[i].index == bloodtype )
+ 		{
+ 			color = bloodcolors[ i ];
++#ifdef GAMMA_PORTALGUN
++			if ( bloodtype == BLOOD_COLOR_RED )
++				color.r = 64; // Original 2003 spray tint.
++#endif
+ 			return;
+ 		}
+ 	}
+@@ -75,6 +89,10 @@
+ //-----------------------------------------------------------------------------
+ void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, unsigned char r, unsigned char g, unsigned char b, int flags )
+ {
++#ifdef GAMMA_PORTALGUN
++	if ( !cl_show_bloodspray.GetBool() )
++		return;
++#endif
+ 	if ( UTIL_IsLowViolence() )
+ 		return;
+ 
+@@ -122,11 +140,16 @@
+ 		// Partial gravity on blood drops.
+ 		pTrailEmitter->SetGravity( 600.0 ); 
+ 
++#ifdef GAMMA_PORTALGUN
++		// Original droplets collide with nearby surfaces rather than passing through.
++		pTrailEmitter->Setup( origin, &normal, 1, 10, 100, 600, 0.2f, 0 );
++#else
+ 		pTrailEmitter->GetBinding().SetBBox( origin - Vector( 32, 32, 32 ), origin + Vector( 32, 32, 32 ) );
+ 		pTrailEmitter->SetFlag( bitsPARTICLE_TRAIL_VELOCITY_DAMPEN );
+ 		pTrailEmitter->SetVelocityDampen( 0.2f );
+-
+-		PMaterialHandle	hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_drop" );
++#endif
++
++		PMaterialHandle	hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_drop" ) );
+ 
+ 		//
+ 		// Long stringy drops of blood.
+@@ -204,7 +227,7 @@
+ 		//
+ 		if (flags & FX_BLOODSPRAY_GORE)
+ 		{
+-			hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_gore" );
++			hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_gore" ) );
+ 
+ 			SimpleParticle *pParticle;
+ 
+@@ -250,7 +273,7 @@
+ 		//
+ 		if (flags & FX_BLOODSPRAY_CLOUD)
+ 		{
+-			hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_puff" );
++			hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_puff" ) );
+ 
+ 			SimpleParticle *pParticle;
+ 
+@@ -501,6 +524,12 @@
+ //-----------------------------------------------------------------------------
+ void BloodImpactCallback( const CEffectData & data )
+ {
++#ifdef GAMMA_PORTALGUN
++	// Direct modern BloodImpact callers (for example zombie gibs) use the same
++	// original sprite/puff path as bullet hits, without requiring retail PCFs.
++	UTIL_BloodDrips( data.m_vOrigin, data.m_vNormal, data.m_nColor, (int)data.m_flScale );
++	return;
++#endif
+ 	bool bFoundBlood = false;
+ 
+ 	// Find which sort of blood we are
+--- a/game/client/fx_impact.cpp
++++ b/game/client/fx_impact.cpp
+@@ -16,6 +16,10 @@
+ #include "engine/IStaticPropMgr.h"
+ #include "c_impact_effects.h"
+ #include "tier0/vprof.h"
++#ifdef GAMMA_PORTALGUN
++#include "materialsystem/itexture.h"
++#include "gamma/gamma_impact_materials.h"
++#endif
+ 
+ // memdbgon must be the last include file in a .cpp file!!!
+ #include "tier0/memdbgon.h"
+@@ -24,6 +28,95 @@
+ extern ConVar r_drawmodeldecals;
+ 
+ ImpactSoundRouteFn g_pImpactSoundRouteFn = NULL;
++
++#ifdef GAMMA_PORTALGUN
++static ConVar gamma_impact_debug( "gamma_impact_debug", "0", FCVAR_CHEAT, "Report actual bullet decal selection and surface physics." );
++
++static void GammaDescribeImpactMaterial( const char *label, const char *name, const char *group )
++{
++	IMaterial *material = materials->FindMaterial( name, group, false );
++	bool foundBase = false, foundBump = false;
++	IMaterialVar *base = material->FindVar( "$basetexture", &foundBase, false );
++	IMaterialVar *bump = material->FindVar( "$bumpmap", &foundBump, false );
++	const char *baseName = foundBase && base->IsTexture() && base->GetTextureValue() ? base->GetTextureValue()->GetName() : "";
++	const char *bumpName = foundBump && bump->IsTexture() && bump->GetTextureValue() ? bump->GetTextureValue()->GetName() : "";
++	Msg( "GAMMA_IMPACT_MATERIAL label=%s material=%s error=%d shader=%s base=%s bump=%s frames=%d\n",
++		label, name, IsErrorMaterial( material ) ? 1 : 0, material->GetShaderName(), baseName, bumpName, material->GetNumAnimationFrames() );
++}
++
++static void GammaDescribeDecal( const char *group, int index )
++{
++	const char *name = decalsystem->GetDecalNameForIndex( index );
++	Msg( "GAMMA_IMPACT_DECAL group=%s index=%d material=%s\n", group, index, name );
++	if ( name[0] )
++		GammaDescribeImpactMaterial( group, name, TEXTURE_GROUP_DECAL );
++}
++
++CON_COMMAND_F( gamma_impact_info, "Print selected impact/blood materials and sprite precache indices. Use r_printdecalinfo for the actual decal pool.", FCVAR_CHEAT )
++{
++	static const char *groups[] = { "Impact.Concrete", "Impact.Metal", "Impact.Wood", "Impact.Glass", "Impact.Flesh", "Impact.BloodyFlesh", "Impact.AlienFlesh", "Blood", "YellowBlood" };
++	for ( int i = 0; i < ARRAYSIZE( groups ); ++i )
++		GammaDescribeDecal( groups[i], decalsystem->GetDecalIndexForName( groups[i] ) );
++	static const char *blood[] = { "effects/blood", "effects/blood2", "effects/blood_gore", "effects/blood_drop", "effects/blood_puff", "sprites/bloodspray", "sprites/blood" };
++	for ( int i = 0; i < ARRAYSIZE( blood ); ++i )
++	{
++		char restored[MAX_PATH];
++		Q_snprintf( restored, sizeof( restored ), "gamma_2003/%s", blood[i] );
++		GammaDescribeImpactMaterial( blood[i], Gamma2003ImpactMaterial( blood[i], restored ), TEXTURE_GROUP_CLIENT_EFFECTS );
++	}
++	extern short g_sModelIndexBloodSpray, g_sModelIndexBloodDrop;
++	Msg( "GAMMA_IMPACT_SPRITES spray=%d drop=%d lowViolence=%d\n", g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, UTIL_IsLowViolence() ? 1 : 0 );
++}
++
++CON_COMMAND_F( gamma_impact_probe, "Trace at the crosshair and add a native impact or blood/bloodspray effect: gamma_impact_probe [impact|blood|yellow|spray].", FCVAR_CHEAT )
++{
++	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
++	if ( !player )
++		return;
++	Vector direction;
++	AngleVectors( player->EyeAngles(), &direction );
++	Vector start = player->EyePosition();
++	trace_t trace;
++	UTIL_TraceLine( start, start + direction * MAX_TRACE_LENGTH, MASK_SHOT, player, COLLISION_GROUP_NONE, &trace );
++	if ( trace.fraction == 1.0f || !trace.m_pEnt || (trace.surface.flags & SURF_SKY) )
++	{
++		Msg( "GAMMA_IMPACT_PROBE no_surface=1\n" );
++		return;
++	}
++	surfacedata_t *surface = physprops->GetSurfaceData( trace.surface.surfaceProps );
++	const char *mode = args.ArgC() > 1 ? args[1] : "impact";
++	Msg( "GAMMA_IMPACT_PROBE mode=%s ent=%d hitbox=%d surface=%s prop=%d gameMaterial=%c normal=%.3f,%.3f,%.3f friction=%.3f density=%.3f\n",
++		mode, trace.m_pEnt->entindex(), trace.hitbox, trace.surface.name, trace.surface.surfaceProps, surface->game.material,
++		trace.plane.normal.x, trace.plane.normal.y, trace.plane.normal.z, surface->physics.friction, surface->physics.density );
++	GammaDescribeImpactMaterial( "surface", trace.surface.name, TEXTURE_GROUP_WORLD );
++	if ( !Q_stricmp( mode, "blood" ) || !Q_stricmp( mode, "yellow" ) )
++	{
++		int color = !Q_stricmp( mode, "yellow" ) ? BLOOD_COLOR_YELLOW : BLOOD_COLOR_RED;
++		UTIL_BloodDrips( trace.endpos + trace.plane.normal * 4.0f, trace.plane.normal, color, 30 );
++		UTIL_BloodDecalTrace( &trace, color );
++	}
++	else if ( !Q_stricmp( mode, "spray" ) )
++	{
++		CEffectData data;
++		data.m_vOrigin = trace.endpos + trace.plane.normal * 4.0f;
++		data.m_vNormal = trace.plane.normal;
++		data.m_flScale = 4.0f;
++		data.m_nColor = BLOOD_COLOR_RED;
++		data.m_fFlags = FX_BLOODSPRAY_ALL;
++		DispatchEffect( "bloodspray", data );
++	}
++	else
++	{
++		Vector origin = trace.endpos;
++		trace_t impactTrace;
++		const char *group = GetImpactDecal( trace.m_pEnt, surface->game.material, DMG_BULLET );
++		bool hit = Impact( origin, start, surface->game.material, DMG_BULLET, trace.hitbox, trace.m_pEnt, impactTrace );
++		Msg( "GAMMA_IMPACT_PROBE hit=%d group=%s fraction=%.4f\n", hit ? 1 : 0, group, impactTrace.fraction );
++		if ( hit )
++			PerformCustomEffects( origin, impactTrace, direction, surface->game.material, 1 );
++	}
++}
++#endif
+ 
+ //==========================================================================================================================
+ // RAGDOLL ENUMERATOR
+@@ -127,6 +220,13 @@
+ 	{
+ 		const char *pchDecalName = GetImpactDecal( pEntity, iMaterial, iDamageType );
+ 		int decalNumber = decalsystem->GetDecalIndexForName( pchDecalName );
++#ifdef GAMMA_PORTALGUN
++		if ( gamma_impact_debug.GetBool() )
++		{
++			GammaDescribeDecal( pchDecalName, decalNumber );
++			Msg( "GAMMA_IMPACT_TRACE ent=%d hitbox=%d gameMaterial=%c damage=%d\n", pEntity->entindex(), iHitbox, iMaterial, iDamageType );
++		}
++#endif
+ 		if ( decalNumber == -1 )
+ 			return false;
+ 
+--- a/game/client/c_te_bloodsprite.cpp
++++ b/game/client/c_te_bloodsprite.cpp
+@@ -19,6 +19,27 @@
+ 
+ extern short		g_sModelIndexBloodDrop;	
+ extern short		g_sModelIndexBloodSpray;
++
++#ifdef GAMMA_PORTALGUN
++static int s_nGammaNetworkBloodSprites = 0;
++static int s_nGammaLocalBloodSprites = 0;
++static ConVar gamma_blood_debug( "gamma_blood_debug", "0", FCVAR_CHEAT, "Report received 2003 blood sprites from actual hits." );
++
++static void GammaRecordBloodSprite( bool network, int spray, int drop, int r, int g, int b, int size )
++{
++	if ( network )
++		++s_nGammaNetworkBloodSprites;
++	else
++		++s_nGammaLocalBloodSprites;
++	if ( gamma_blood_debug.GetBool() )
++		Msg( "GAMMA_BLOOD_SPRITE network=%d spray=%d drop=%d rgb=%d,%d,%d size=%d\n", network ? 1 : 0, spray, drop, r, g, b, size );
++}
++
++CON_COMMAND_F( gamma_blood_info, "Print received/local blood sprite counts since client load.", FCVAR_CHEAT )
++{
++	Msg( "GAMMA_BLOOD_COUNTS network=%d local=%d\n", s_nGammaNetworkBloodSprites, s_nGammaLocalBloodSprites );
++}
++#endif
+ 
+ //-----------------------------------------------------------------------------
+ // Purpose: Blood sprite
+@@ -132,6 +153,9 @@
+ void TE_BloodSprite( IRecipientFilter& filter, float delay,
+ 	const Vector* org, const Vector *dir, int r, int g, int b, int a, int size )
+ {
++#ifdef GAMMA_PORTALGUN
++	GammaRecordBloodSprite( false, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, r, g, b, size );
++#endif
+ 	Vector	offset = *org + ( (*dir) * 4.0f );
+ 
+ 	tempents->BloodSprite( offset, r, g, b, a, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );	
+@@ -146,6 +170,9 @@
+ void C_TEBloodSprite::PostDataUpdate( DataUpdateType_t updateType )
+ {
+ 	VPROF( "C_TEBloodSprite::PostDataUpdate" );
++#ifdef GAMMA_PORTALGUN
++	GammaRecordBloodSprite( true, m_nSprayModel, m_nDropModel, r, g, b, m_nSize );
++#endif
+ 
+ 	Vector	offset = m_vecOrigin + ( m_vecDirection * 4.0f );
+ 
+@@ -168,4 +195,4 @@
+ //	const char *pDropModelName = pKeyValues->GetString( "dropmodel" );
+ 	int nSize = pKeyValues->GetInt( "size" );
+ 	TE_BloodSprite( filter, 0.0f, &vecOrigin, &vecDirection, c.r(), c.g(), c.b(), c.a(), nSize );
+-}+}
+--- /dev/null
++++ b/game/shared/gamma/gamma_impact_materials.h
+@@ -0,0 +1,23 @@
++// Private 2003 impact assets take priority without replacing mounted game files.
++#ifndef GAMMA_IMPACT_MATERIALS_H
++#define GAMMA_IMPACT_MATERIALS_H
++
++#include "filesystem.h"
++#include "tier1/strtools.h"
++
++inline const char *Gamma2003ImpactMaterial( const char *original, const char *restored )
++{
++#ifdef GAMMA_PORTALGUN
++	char path[MAX_PATH];
++	const int length = Q_strlen( restored );
++	const bool hasExtension = length >= 4 && !Q_stricmp( restored + length - 4, ".vmt" );
++	Q_snprintf( path, sizeof( path ), "materials/%s%s", restored, hasExtension ? "" : ".vmt" );
++	if ( filesystem->FileExists( path, "GAME" ) )
++		return restored;
++#endif
++	return original;
++}
++
++#define GAMMA_IMPACT_MATERIAL(name) Gamma2003ImpactMaterial( name, "gamma_2003/" name )
++
++#endif

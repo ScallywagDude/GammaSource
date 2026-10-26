@@ -1,0 +1,80 @@
+"NPC_Cremator.Die"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"	"npc/cremator/crem_die.wav"
+}
+
+"NPC_Cremator.SeeEnemy"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"	"npc/cremator/alert_player.wav"
+}
+
+"NPC_Cremator.LeftFootstep"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/cremator/foot1.wav"
+		"wave"	"npc/cremator/foot2.wav"
+		"wave"	"npc/cremator/foot3.wav"
+	}
+}
+
+"NPC_Cremator.RightFootstep"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/cremator/foot1.wav"
+		"wave"	"npc/cremator/foot2.wav"
+		"wave"	"npc/cremator/foot3.wav"
+	}
+}
+
+"NPC_Cremator.Breathe"
+{
+	"channel"		"CHAN_WEAPON"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"wave"	"npc/cremator/amb_loop.wav"
+}
+
+"NPC_Cremator.CloakSwish"
+{
+	"channel"		"CHAN_BODY"
+	"volume"		"VOL_NORM"
+	"pitch"			"100"
+
+	"soundlevel"	"SNDLVL_NORM"
+
+	"rndwave"
+	{
+		"wave"	"npc/cremator/amb1.wav"
+		"wave"	"npc/cremator/amb2.wav"
+		"wave"	"npc/cremator/amb3.wav"
+	}
+}

@@ -208,6 +208,7 @@ def convert(mdl, vtx6_by_suffix, name_hint=''):
     base_rot = [b_['value'][3:6] for b_ in bones]; base_pos = [b_['value'][0:3] for b_ in bones]
     euler_cache = {}
     for ai_, an in enumerate(anims):
+        delta = bool(an['flags'] & 0x0004)
         for bi_, frames in enumerate(an['frames']):
             eul = []
             prev = None
@@ -219,10 +220,10 @@ def convert(mdl, vtx6_by_suffix, name_hint=''):
                         while e[j] - prev[j] < -math.pi: e[j] += 2 * math.pi
                 eul.append(e); prev = e
                 for j in range(3):
-                    posscale[bi_][j] = max(posscale[bi_][j], abs(p[j] - base_pos[bi_][j]) / 32767.0)
+                    posscale[bi_][j] = max(posscale[bi_][j], abs(p[j] - (0.0 if delta else base_pos[bi_][j])) / 32767.0)
             for e in eul:
                 for j in range(3):
-                    rotscale[bi_][j] = max(rotscale[bi_][j], abs(e[j] - base_rot[bi_][j]) / 32767.0)
+                    rotscale[bi_][j] = max(rotscale[bi_][j], abs(e[j] - (0.0 if delta else base_rot[bi_][j])) / 32767.0)
             euler_cache[(ai_, bi_)] = eul
 
     # --- sequences
@@ -275,6 +276,16 @@ def convert(mdl, vtx6_by_suffix, name_hint=''):
     if H(260) or H(268): report.append('flex data (%d descs, %d controllers) not carried over yet' % (H(260), H(268)))
     surfaceprop = cstr(mdl, H(308))
     keyvalues = mdl[H(312):H(312) + H(316)] if H(316) else b''
+
+    # This archival helper has no full mesh-flex/eyeball serialization. Do not
+    # silently manufacture a facial model with missing iris/eyelid references.
+    # The production runtime converter preserves these fields in cache v4.
+    if H(260) or H(268) or H(276):
+        raise ConvertError('Facial flex data is unsupported by this offline helper; use the production runtime legacy model converter (cache v4).')
+    for part in table(236, 240, 16):
+        for model in [part + i32(mdl, part + 12) + 140 * k for k in range(i32(mdl, part + 4))]:
+            if i32(mdl, model + 100):
+                raise ConvertError('Eyeball/eyelid data is unsupported by this offline helper; use the production runtime legacy model converter (cache v4).')
 
     # --- bodyparts / models / meshes / vertices
     bodyparts = []
@@ -386,14 +397,14 @@ def convert(mdl, vtx6_by_suffix, name_hint=''):
                 for j in range(3):
                     sc = rotscale[bi_][j]
                     if sc > 0:
-                        vals = [int(round((e[j] - base_rot[bi_][j]) / sc)) for e in eul]
+                        vals = [int(round((e[j] - (0.0 if delta else base_rot[bi_][j])) / sc)) for e in eul]
                         if any(vals):
                             struct.pack_into('<h', w.b, vp_rot + 2 * j, len(w.b) - vp_rot)
                             w.b += rle_channel(vals)
                 for j in range(3):
                     sc = posscale[bi_][j]
                     if sc > 0:
-                        vals = [int(round((p[j] - base_pos[bi_][j]) / sc)) for p in ps]
+                        vals = [int(round((p[j] - (0.0 if delta else base_pos[bi_][j])) / sc)) for p in ps]
                         if any(vals):
                             struct.pack_into('<h', w.b, vp_pos + 2 * j, len(w.b) - vp_pos)
                             w.b += rle_channel(vals)

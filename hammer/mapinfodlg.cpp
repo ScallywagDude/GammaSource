@@ -33,7 +33,7 @@ END_MESSAGE_MAP()
 // Input  : *pobj - Object to count.
 // Output : Returns TRUE to continue enumerating.
 //-----------------------------------------------------------------------------
-static BOOL CountObject(CMapClass *pobj, unsigned int dwParam)
+static BOOL CountObject(CMapClass *pobj, uintptr_t dwParam)
 {
 	CMapInfoDlg *pdlg = (CMapInfoDlg *)dwParam;
 
@@ -202,7 +202,7 @@ BOOL CMapInfoDlg::OnInitDialog(void)
 	m_uTextureMemory = 0;
 
 	// count objects!
-	pWorld->EnumChildren(ENUMMAPCHILDRENPROC(CountObject), (DWORD)this);
+	pWorld->EnumChildren(ENUMMAPCHILDRENPROC(CountObject), (uintptr_t)this);
 
 	char szBuf[128];
 	ultoa(m_uSolidCount, szBuf, 10);

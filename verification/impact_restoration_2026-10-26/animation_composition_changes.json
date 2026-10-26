@@ -1,0 +1,12 @@
+[
+  {
+    "path": "public/studio.h",
+    "before_sha256": "6178aca0f92487b04723eebc32369044b5e0382044f27b15afc616b2616799bc",
+    "after_sha256": "642cb1e2be183436232c8410cad940886f98217b505415a4e650e6767bf6712d"
+  },
+  {
+    "path": "public/bone_setup.cpp",
+    "before_sha256": "7a3fe4cebeabbb679cd64db75e548dbc7ae469af1ce7426b4b67f2a8469314d8",
+    "after_sha256": "280955f8eb31b381fbb2e15aa72f8cd75f828e3bb68c438f4a45c6db4522001b"
+  }
+]

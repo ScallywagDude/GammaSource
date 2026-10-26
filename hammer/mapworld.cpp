@@ -587,8 +587,8 @@ void CMapWorld::UpdateChild(CMapClass *pChild)
 void CMapWorld::GetUsedTextures(CUsedTextureList &List)
 {
 	List.RemoveAll();
-	EnumChildren((ENUMMAPCHILDRENPROC)AddUsedTextures, (DWORD)&List, MAPCLASS_TYPE(CMapSolid));
-	EnumChildren((ENUMMAPCHILDRENPROC)AddOverlayTextures, (DWORD)&List, MAPCLASS_TYPE(CMapOverlay));
+	EnumChildren((ENUMMAPCHILDRENPROC)AddUsedTextures, (uintptr_t)&List, MAPCLASS_TYPE(CMapSolid));
+	EnumChildren((ENUMMAPCHILDRENPROC)AddOverlayTextures, (uintptr_t)&List, MAPCLASS_TYPE(CMapOverlay));
 }
 
 
@@ -1044,7 +1044,7 @@ ChunkFileResult_t CMapWorld::SaveSolids(CChunkFile *pFile, CSaveInfo *pSaveInfo,
 	PresaveWorld();
 
 	SaveLists_t SaveLists;
-	EnumChildrenRecurseGroupsOnly((ENUMMAPCHILDRENPROC)BuildSaveListsCallback, (DWORD)&SaveLists);
+	EnumChildrenRecurseGroupsOnly((ENUMMAPCHILDRENPROC)BuildSaveListsCallback, (uintptr_t)&SaveLists);
 
 	return SaveObjectListVMF(pFile, pSaveInfo, &SaveLists.Solids, saveFlags);
 }
@@ -1064,7 +1064,7 @@ ChunkFileResult_t CMapWorld::SaveVMF(CChunkFile *pFile, CSaveInfo *pSaveInfo, in
 	// Sort the world objects into lists for saving into different chunks.
 	//
 	SaveLists_t SaveLists;
-	EnumChildrenRecurseGroupsOnly((ENUMMAPCHILDRENPROC)BuildSaveListsCallback, (DWORD)&SaveLists);
+	EnumChildrenRecurseGroupsOnly((ENUMMAPCHILDRENPROC)BuildSaveListsCallback, (uintptr_t)&SaveLists);
 
 	//
 	// Begin the world chunk.

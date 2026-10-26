@@ -19,8 +19,6 @@
 
 #include	"cbase.h"
 
-#if 0
-
 #include	"npc_talker.h"
 #include	"ai_schedule.h"
 #include	"scripted.h"
@@ -36,11 +34,17 @@
 #include "IEffects.h"
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
+#include "ai_motor.h"
+#include "ai_memory.h"
+#include "entitylist.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar	sk_conscript_health( "sk_conscript_health","0");
+// Exact default in the supplied Mega Build skill1/2/3.cfg.
+ConVar	sk_conscript_health( "sk_conscript_health","100");
+static ConVar gamma_conscript_debug( "gamma_conscript_debug", "0", FCVAR_CHEAT,
+	"Trace original Conscript draw, reload and attack animation events." );
 
 #define CONSCRIPT_MAD 		"CONSCRIPT_MAD"
 #define CONSCRIPT_SHOT 		"CONSCRIPT_SHOT"
@@ -86,6 +90,7 @@ void CNPC_Conscript::InitCustomSchedules(void)
 	INIT_CUSTOM_AI(CNPC_Conscript);
 
 	ADD_CUSTOM_TASK(CNPC_Conscript,	TASK_CONSCRIPT_CROUCH);
+	ADD_CUSTOM_TASK(CNPC_Conscript, TASK_CONSCRIPT_HEADRESET);
 
 	ADD_CUSTOM_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_FOLLOW);
 	ADD_CUSTOM_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_DRAW);
@@ -97,7 +102,7 @@ void CNPC_Conscript::InitCustomSchedules(void)
 	ADD_CUSTOM_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_BARNACLE_CHOMP);
 	ADD_CUSTOM_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_BARNACLE_CHEW);
 
-	ADD_CUSTOM_ACTIVITY(CNPC_Combine,	ACT_CONSCRIPT_AIM);
+	ADD_CUSTOM_ACTIVITY(CNPC_Conscript,	ACT_CONSCRIPT_AIM);
 
 	AI_LOAD_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_FOLLOW);
 	AI_LOAD_SCHEDULE(CNPC_Conscript,	SCHED_CONSCRIPT_DRAW);
@@ -124,8 +129,139 @@ BEGIN_DATADESC( CNPC_Conscript )
 	DEFINE_FIELD( m_nextLineFireTime,	FIELD_TIME ),
 	DEFINE_FIELD( m_lastAttackCheck,	FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bInBarnacleMouth,	FIELD_BOOLEAN ),
+	// Follow behavior is serialized by the AI behavior host.
+	DEFINE_USEFUNC( FollowerUse ),
 
 END_DATADESC()
+
+CNPC_Conscript::CNPC_Conscript()
+{
+	m_fGunDrawn = false;
+	m_painTime = 0;
+	m_checkAttackTime = 0;
+	m_nextLineFireTime = 0;
+	m_lastAttackCheck = false;
+	m_bInBarnacleMouth = false;
+}
+
+bool CNPC_Conscript::CreateBehaviors()
+{
+	AddBehavior( &m_FollowBehavior );
+	return BaseClass::CreateBehaviors();
+}
+
+void CNPC_Conscript::StartTask( const Task_t *pTask )
+{
+	if ( pTask->iTask == TASK_CONSCRIPT_HEADRESET )
+	{
+		SetSpeechTarget( NULL );
+		TaskComplete();
+		return;
+	}
+	if ( pTask->iTask == TASK_CONSCRIPT_CROUCH )
+	{
+		Crouch();
+		TaskComplete();
+		return;
+	}
+	BaseClass::StartTask( pTask );
+}
+
+bool CNPC_Conscript::IsPlayerAlly( CBasePlayer *pPlayer )
+{
+	if ( HasMemory( bits_MEMORY_PROVOKED ) )
+		return false;
+	if ( !pPlayer )
+		pPlayer = UTIL_GetLocalPlayer();
+	return !pPlayer || ( IRelationType( pPlayer ) != D_HT && IRelationType( pPlayer ) != D_FR );
+}
+
+bool CNPC_Conscript::IsValidSpeechTarget( int flags, CBaseEntity *pEntity )
+{
+	if ( !pEntity || ( pEntity->IsPlayer() && !IsPlayerAlly( ToBasePlayer( pEntity ) ) ) )
+		return false;
+	if ( !pEntity->IsPlayer() && !FClassnameIs( pEntity, "npc_conscript" ) )
+		return false;
+	// The old talker's friend list contained Conscripts even though their
+	// default classification table was neutral. Retain that local selection.
+	return BaseClass::IsValidSpeechTarget( flags | AIST_IGNORE_RELATIONSHIP, pEntity );
+}
+
+void CNPC_Conscript::FollowerUse( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value )
+{
+	CBaseEntity *leader = pActivator && pActivator->IsPlayer() ? pActivator : pCaller;
+	if ( !leader || !leader->IsPlayer() || !IsAlive() || !IsInterruptable() )
+		return;
+	if ( HasMemory( bits_MEMORY_PROVOKED ) )
+	{
+		DeclineFollowing();
+		return;
+	}
+	if ( m_FollowBehavior.GetFollowTarget() )
+	{
+		StopFollowing();
+		if ( IsOkToCombatSpeak() ) Speak( "TLK_UNUSE" );
+	}
+	else
+	{
+		SetTarget( leader );
+		m_FollowBehavior.SetFollowTarget( leader );
+		DeferSchedulingToBehavior( &m_FollowBehavior );
+		SetSpeechTarget( leader );
+		if ( IsOkToCombatSpeak() ) Speak( TLK_USE );
+	}
+}
+
+void CNPC_Conscript::StopFollowing()
+{
+	m_FollowBehavior.SetFollowTarget( NULL );
+	DeferSchedulingToBehavior( NULL );
+	SetTarget( NULL );
+}
+
+void CNPC_Conscript::TrySmellTalk()
+{
+	if ( HasCondition( COND_SMELL ) && IsOkToSpeak() && GetExpresser()->CanSpeakConcept( TLK_SMELL ) )
+		Speak( TLK_SMELL );
+}
+
+void CNPC_Conscript::SetGunDrawn( bool drawn )
+{
+	m_fGunDrawn = drawn;
+	// The supplied Conscript has one bodypart with one model, so writing body
+	// 1/2 cannot select a gun bodygroup. Its equipped
+	// weapon supplies the draw/holster visibility used by the 2018 weapon host.
+	if ( GetActiveWeapon() )
+	{
+		if ( drawn ) GetActiveWeapon()->RemoveEffects( EF_NODRAW );
+		else GetActiveWeapon()->AddEffects( EF_NODRAW );
+	}
+}
+
+void CNPC_Conscript::Event_Killed( const CTakeDamageInfo &info )
+{
+	if ( GetActiveWeapon() ) GetActiveWeapon()->RemoveEffects( EF_NODRAW );
+	BaseClass::Event_Killed( info );
+}
+
+CON_COMMAND_F( gamma_conscript_info, "gamma_conscript_info [targetname]: original Conscript state, weapon, follow and enemy health", FCVAR_CHEAT )
+{
+	for ( CBaseEntity *entity = gEntList.FirstEnt(); entity; entity = gEntList.NextEnt(entity) )
+	{
+		CNPC_Conscript *npc = dynamic_cast<CNPC_Conscript *>(entity);
+		if ( !npc || ( args.ArgC() > 1 && Q_stricmp( args[1], STRING(npc->GetEntityName()) ) ) ) continue;
+		CBaseCombatWeapon *weapon = npc->GetActiveWeapon();
+		CBaseEntity *enemy = npc->GetEnemy();
+		CBaseEntity *leader = npc->m_FollowBehavior.GetFollowTarget();
+		const Vector position = npc->GetAbsOrigin();
+		Msg( "GAMMA_CONSCRIPT time=%.3f id=%d name=%s model=%s health=%d maxhealth=%d state=%d activity=%d sequence=%d cycle=%.3f drawn=%d barnacle=%d following=%s weapon=%s clip=%d enemy=%s enemy_health=%d origin=%.2f,%.2f,%.2f\n",
+			gpGlobals->curtime, npc->entindex(), STRING(npc->GetEntityName()), STRING(npc->GetModelName()),
+			npc->GetHealth(), npc->GetMaxHealth(), (int)npc->GetState(), (int)npc->GetActivity(), npc->GetSequence(), npc->GetCycle(),
+			npc->m_fGunDrawn, npc->m_bInBarnacleMouth, leader ? STRING(leader->GetEntityName()) : "none",
+			weapon ? weapon->GetClassname() : "none", weapon ? weapon->Clip1() : -1,
+			enemy ? STRING(enemy->GetEntityName()) : "none", enemy ? enemy->GetHealth() : -1, position.x, position.y, position.z );
+	}
+}
 
 //-----------------------------------------------------------------------------
 // Purpose:
@@ -157,7 +293,31 @@ void CNPC_Conscript::RunTask( const Task_t *pTask )
 //-----------------------------------------------------------------------------
 Activity CNPC_Conscript::NPC_TranslateActivity( Activity eNewActivity )
 {
-	return BaseClass::NPC_TranslateActivity( eNewActivity );
+	Activity translated = BaseClass::NPC_TranslateActivity( eNewActivity );
+	// Modern weapon tables request rifle idle/walk/reload variants which the
+	// original Conscript never authored. Keep its own existing base activity.
+	if ( HaveSequenceForActivity( translated ) )
+		return translated;
+	if ( HaveSequenceForActivity( eNewActivity ) )
+		return eNewActivity;
+	if ( eNewActivity == ACT_IDLE_ANGRY )
+		return (Activity)ACT_CONSCRIPT_AIM;
+	if ( eNewActivity == ACT_WALK_AIM )
+		return ACT_WALK;
+	if ( eNewActivity == ACT_RUN_AIM )
+		return ACT_RUN;
+	if ( eNewActivity == ACT_IDLE_RELAXED || eNewActivity == ACT_IDLE_STIMULATED || eNewActivity == ACT_IDLE_AGITATED )
+		return ACT_IDLE;
+	if ( eNewActivity == ACT_RANGE_ATTACK1_LOW && GetActiveWeapon() )
+	{
+		if ( FClassnameIs( GetActiveWeapon(), "weapon_smg1" ) ) return ACT_RANGE_ATTACK_SMG1;
+		if ( FClassnameIs( GetActiveWeapon(), "weapon_ar2" ) ) return ACT_RANGE_ATTACK_AR2;
+	}
+	if ( eNewActivity == ACT_RANGE_ATTACK2 && GetActiveWeapon() && FClassnameIs( GetActiveWeapon(), "weapon_ar2" ) )
+		return ACT_RANGE_ATTACK_AR2_GRENADE;
+	if ( eNewActivity == ACT_CROUCHIDLE )
+		return ACT_COVER_LOW;
+	return translated;
 }
 
 
@@ -233,12 +393,35 @@ void CNPC_Conscript::ConscriptFirePistol ( void )
 {
 	Vector vecShootOrigin;
 
-	vecShootOrigin = GetLocalOrigin() + Vector( 0, 0, 55 );
+	vecShootOrigin = Weapon_ShootPosition();
 	Vector vecShootDir = GetShootEnemyDir( vecShootOrigin );
 
 	QAngle angDir;
 	VectorAngles( vecShootDir, angDir );
 	SetPoseParameter( 0, angDir.x );
+
+	// Event 3 is also on the authored non-firing aim sequence. Only attack
+	// activities dispatch a shot, through the equipped weapon's NPC path.
+	CBaseCombatWeapon *weapon = GetActiveWeapon();
+	if ( !weapon || !m_fGunDrawn || weapon->Clip1() == 0 )
+		return;
+	const Activity attack = GetSequenceActivity( GetSequence() );
+	int weaponEvent = 0;
+	if ( attack == ACT_RANGE_ATTACK_SMG1 && FClassnameIs( weapon, "weapon_smg1" ) )
+		weaponEvent = EVENT_WEAPON_SMG1;
+	else if ( attack == ACT_RANGE_ATTACK_AR2 && FClassnameIs( weapon, "weapon_ar2" ) )
+		weaponEvent = EVENT_WEAPON_AR2;
+	else if ( attack == ACT_RANGE_ATTACK_AR2_GRENADE && FClassnameIs( weapon, "weapon_ar2" ) )
+		weaponEvent = EVENT_WEAPON_AR2_ALTFIRE;
+	if ( weaponEvent )
+	{
+		animevent_t event = {};
+		event.event = weaponEvent;
+		event.options = "";
+		weapon->Operator_HandleAnimEvent( &event, this );
+		if ( gamma_conscript_debug.GetBool() )
+			Msg( "GAMMA_CONSCRIPT_SHOT name=%s sequence=%d activity=%d event=%d clip=%d\n", STRING(GetEntityName()), GetSequence(), (int)attack, weaponEvent, weapon->Clip1() );
+	}
 }
 
 //=========================================================
@@ -249,6 +432,8 @@ void CNPC_Conscript::ConscriptFirePistol ( void )
 //=========================================================
 void CNPC_Conscript::HandleAnimEvent( animevent_t *pEvent )
 {
+	if ( gamma_conscript_debug.GetBool() && pEvent->event >= CONSCRIPT_AE_RELOAD && pEvent->event <= CONSCRIPT_AE_HOLSTER )
+		Msg( "GAMMA_CONSCRIPT_ANIM name=%s event=%d sequence=%d cycle=%.3f drawn=%d\n", STRING(GetEntityName()), pEvent->event, GetSequence(), GetCycle(), m_fGunDrawn );
 	switch( pEvent->event )
 	{
 	case CONSCRIPT_AE_RELOAD:
@@ -270,14 +455,12 @@ void CNPC_Conscript::HandleAnimEvent( animevent_t *pEvent )
 
 	case CONSCRIPT_AE_DRAW:
 		// barney's bodygroup switches here so he can pull gun from holster
-		m_nBody = CONSCRIPT_BODY_GUNDRAWN;
-		m_fGunDrawn = true;
+		SetGunDrawn( true );
 		break;
 
 	case CONSCRIPT_AE_HOLSTER:
 		// change bodygroup to replace gun in holster
-		m_nBody = CONSCRIPT_BODY_GUNHOLSTERED;
-		m_fGunDrawn = false;
+		SetGunDrawn( false );
 		break;
 
 	default:
@@ -291,6 +474,7 @@ void CNPC_Conscript::HandleAnimEvent( animevent_t *pEvent )
 void CNPC_Conscript::Spawn()
 {
 	Precache( );
+	BaseClass::Spawn();
 
 	SetModel( "models/conscript.mdl" );
 	SetHullType(HULL_HUMAN);
@@ -300,7 +484,8 @@ void CNPC_Conscript::Spawn()
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
 	SetMoveType( MOVETYPE_STEP );
 	SetBloodColor( BLOOD_COLOR_RED );
-	m_iHealth			= sk_conscript_health.GetFloat();
+	m_iHealth			= sk_conscript_health.GetInt();
+	m_iMaxHealth = m_iHealth;
 	SetViewOffset( Vector ( 0, 0, 50 ) );// position of the eyes relative to monster's origin.
 	m_flFieldOfView		= VIEW_FIELD_WIDE; // NOTE: we need a wide field of view so npc will notice player and say hello
 	m_NPCState			= NPC_STATE_NONE;
@@ -318,6 +503,7 @@ void CNPC_Conscript::Spawn()
 	CapabilitiesAdd	( bits_CAP_DUCK );			// In reloading and cover
 
 	NPCInit();
+	SetGunDrawn( false );
 	SetUse( &ThisClass::FollowerUse );
 }
 
@@ -326,7 +512,7 @@ void CNPC_Conscript::Spawn()
 //=========================================================
 void CNPC_Conscript::Precache()
 {
-	engine->PrecacheModel("models/conscript.mdl");
+	PrecacheModel("models/conscript.mdl");
 
 	enginesound->PrecacheSound("barney/ba_pain1.wav");
 	enginesound->PrecacheSound("barney/ba_pain2.wav");
@@ -350,9 +536,8 @@ void CNPC_Conscript::TalkInit()
 	
 	BaseClass::TalkInit();
 
-		// vortigaunt will try to talk to friends in this order:
-	m_szFriends[0] = "npc_conscript";
-//	m_szFriends[1] = "npc_vortigaunt"; disable for now
+	// Conscript friend filtering is local in IsValidSpeechTarget; do not
+	// overwrite the modern talker class's global friend-name array.
 
 	// get voice for head - just one barney voice for now
 	GetExpresser()->SetVoicePitch( 100 );
@@ -388,7 +573,7 @@ int	CNPC_Conscript::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 		return ret;
 	}
 
-	if ( m_NPCState != NPC_STATE_PRONE && (info.GetAttacker()->GetFlags() & FL_CLIENT) )
+	if ( m_NPCState != NPC_STATE_PRONE && info.GetAttacker() && info.GetAttacker()->IsPlayer() )
 	{
 
 		// This is a heurstic to determine if the player intended to harm me
@@ -402,6 +587,8 @@ int	CNPC_Conscript::OnTakeDamage_Alive( const CTakeDamageInfo &info )
 				Speak( CONSCRIPT_MAD );
 
 				Remember( bits_MEMORY_PROVOKED );
+				AddEntityRelationship( info.GetAttacker(), D_HT, 99 );
+				SetCondition( COND_PROVOKED );
 
 				// Allowed to hit the player now!
 				CapabilitiesRemove(bits_CAP_NO_HIT_PLAYER);
@@ -436,7 +623,7 @@ Vector CNPC_Conscript::BodyTarget( const Vector &posSrc, bool bNoisy )
 //=========================================================
 // PainSound
 //=========================================================
-void CNPC_Conscript::PainSound ( void )
+void CNPC_Conscript::PainSound ( const CTakeDamageInfo &info )
 {
 	if (gpGlobals->curtime < m_painTime)
 		return;
@@ -456,7 +643,7 @@ void CNPC_Conscript::PainSound ( void )
 //=========================================================
 // DeathSound 
 //=========================================================
-void CNPC_Conscript::DeathSound ( void )
+void CNPC_Conscript::DeathSound ( const CTakeDamageInfo &info )
 {
 	AIConcept_t concepts[] =
 	{
@@ -644,7 +831,8 @@ int CNPC_Conscript::SelectSchedule ( void )
 				Speak( CONSCRIPT_OUT_AMMO );
 				return SCHED_HIDE_AND_RELOAD;
 			}
-			else if (!HasCondition(COND_CAN_RANGE_ATTACK1) && HasCondition( COND_NO_SECONDARY_AMMO ))
+			else if ( GetActiveWeapon() && (GetActiveWeapon()->CapabilitiesGet() & bits_CAP_WEAPON_RANGE_ATTACK2) &&
+				!HasCondition(COND_CAN_RANGE_ATTACK1) && HasCondition( COND_NO_SECONDARY_AMMO ) )
 			{
 				Speak( CONSCRIPT_OUT_AMMO );
 				return SCHED_HIDE_AND_RELOAD;
@@ -718,7 +906,7 @@ bool CNPC_Conscript::HandleInteraction(int interactionType, void *data, CBaseCom
 	if (interactionType == g_interactionBarnacleVictimDangle)
 	{
 		// Force choosing of a new schedule
-		ClearSchedule();
+		ClearSchedule( "Conscript caught by barnacle" );
 		m_bInBarnacleMouth	= true;
 		return true;
 	}
@@ -727,7 +915,13 @@ bool CNPC_Conscript::HandleInteraction(int interactionType, void *data, CBaseCom
 		SetIdealState( NPC_STATE_IDLE );
 
 		CPASAttenuationFilter filter( this );
-		EmitSound( filter, entindex(), CHAN_VOICE, "barney/ba_close.wav", 1, SNDLVL_TALKING, 0, GetExpresser()->GetVoicePitch());
+		EmitSound_t sound;
+		sound.m_nChannel = CHAN_VOICE;
+		sound.m_pSoundName = "barney/ba_close.wav";
+		sound.m_flVolume = 1.0f;
+		sound.m_SoundLevel = SNDLVL_TALKING;
+		sound.m_nPitch = GetExpresser()->GetVoicePitch();
+		EmitSound( filter, entindex(), sound );
 
 		m_bInBarnacleMouth	= false;
 		SetAbsVelocity( vec3_origin );
@@ -741,10 +935,11 @@ bool CNPC_Conscript::HandleInteraction(int interactionType, void *data, CBaseCom
 			RemoveFlag( FL_ONGROUND );
 		}
 		SetIdealState( NPC_STATE_PRONE );
-		PainSound();
+		CTakeDamageInfo painInfo;
+		PainSound( painInfo );
 		return true;
 	}
-	return false;
+	return BaseClass::HandleInteraction( interactionType, data, sourceEnt );
 }
 
 void CNPC_Conscript::DeclineFollowing( void )
@@ -856,7 +1051,7 @@ AI_DEFINE_SCHEDULE
 	"		TASK_STOP_MOVING			0"
 	"		TASK_SET_ACTIVITY			ACTIVITY:ACT_IDLE "
 	"		TASK_WAIT					2"	// repick IDLESTAND every two seconds.
-	"		TASK_TALKER_HEADRESET		0"	// reset head position
+	"		TASK_CONSCRIPT_HEADRESET		0"	// reset head position
 	""
 	"	Interrupts	 "
 	"		COND_NEW_ENEMY"
@@ -922,4 +1117,3 @@ AI_DEFINE_SCHEDULE
 );
 
 
-#endif

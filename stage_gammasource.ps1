@@ -5,6 +5,7 @@ param(
     [string]$Dest = (Join-Path $env:USERPROFILE 'Documents\GammaSourceBuilds'),
     [Parameter(Mandatory=$true)][string]$Install,
     [Parameter(Mandatory=$true)][string]$Assets,
+    [string]$OriginalContent = '',
     [Parameter(Mandatory=$true)][string]$Beta2003,
     [Parameter(Mandatory=$true)][string]$SteamHL2,
     [Parameter(Mandatory=$true)][string]$SteamTF2,
@@ -31,6 +32,7 @@ $arguments = @{
     Beta2003 = $Beta2003; SteamHL2 = $SteamHL2;
     SteamTF2 = $SteamTF2; SteamPortal = $SteamPortal
 }
+if ($OriginalContent) { $arguments.OriginalContent = $OriginalContent }
 if ($Include2003) {
     if (-not $Build2003 -or -not (Test-Path -LiteralPath $Build2003 -PathType Container)) {
         throw 'Provide -Build2003 with an existing directory when using -Include2003.'

@@ -92,7 +92,7 @@ enum VisGroupSelection
 
 
 typedef const char * MAPCLASSTYPE;
-typedef BOOL (*ENUMMAPCHILDRENPROC)(CMapClass *, unsigned int dwParam);
+typedef BOOL (*ENUMMAPCHILDRENPROC)(CMapClass *, uintptr_t dwParam);
 typedef CUtlVector<CMapClass*> CMapObjectList;
 
 
@@ -333,8 +333,8 @@ public:
     
 	virtual const char* GetDescription() { return ""; }
 
-	BOOL EnumChildren(ENUMMAPCHILDRENPROC pfn, unsigned int dwParam = 0, MAPCLASSTYPE Type = NULL);
-	BOOL EnumChildrenRecurseGroupsOnly(ENUMMAPCHILDRENPROC pfn, unsigned int dwParam, MAPCLASSTYPE Type = NULL);
+	BOOL EnumChildren(ENUMMAPCHILDRENPROC pfn, uintptr_t dwParam = 0, MAPCLASSTYPE Type = NULL);
+	BOOL EnumChildrenRecurseGroupsOnly(ENUMMAPCHILDRENPROC pfn, uintptr_t dwParam, MAPCLASSTYPE Type = NULL);
 	BOOL IsChildOf(CMapAtom *pObject);
 
 	virtual bool ShouldAppearInLightingPreview(void)

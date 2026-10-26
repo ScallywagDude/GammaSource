@@ -19,6 +19,12 @@
 
 #define NO_THREAD_LOCAL 1
 
+// Current MFC explicitly rejects the obsolete DAO layer on x64; Hammer does
+// not use DAO. Keep its regular OLE/ODBC/common-control support enabled.
+#ifndef _AFX_NO_DAO_SUPPORT
+#define _AFX_NO_DAO_SUPPORT
+#endif
+
 #include "tier0/wchartypes.h"
 #include "tier0/vprof.h"
 

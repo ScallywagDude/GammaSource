@@ -1,0 +1,70 @@
+{
+  "source_counts": {
+    "models": 416,
+    "rules": 456,
+    "static_rules_normalized": 0,
+    "wrapped_rules": 66,
+    "sequence_locks": 322,
+    "global_locks": 20
+  },
+  "cache_counts": {
+    "pairs": 403,
+    "rules": 456,
+    "static_rules": 0,
+    "sequence_locks": 322,
+    "checksum_nonmatches_skipped": 13
+  },
+  "failures": [],
+  "excluded_original_layouts": [],
+  "models_with_ik": [
+    {
+      "model": "models/Alyx.mdl",
+      "version": 36,
+      "rules": 74,
+      "static_rules": 0,
+      "rule_sequences": 35,
+      "locked_sequences": 44
+    },
+    {
+      "model": "models/Combine_Strider.mdl",
+      "version": 36,
+      "rules": 105,
+      "static_rules": 0,
+      "rule_sequences": 13,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Kleiner.mdl",
+      "version": 36,
+      "rules": 49,
+      "static_rules": 0,
+      "rule_sequences": 25,
+      "locked_sequences": 35
+    },
+    {
+      "model": "models/Alyx.mdl",
+      "version": 37,
+      "rules": 74,
+      "static_rules": 0,
+      "rule_sequences": 35,
+      "locked_sequences": 44
+    },
+    {
+      "model": "models/Combine_Strider.mdl",
+      "version": 37,
+      "rules": 105,
+      "static_rules": 0,
+      "rule_sequences": 13,
+      "locked_sequences": 1
+    },
+    {
+      "model": "models/Kleiner.mdl",
+      "version": 37,
+      "rules": 49,
+      "static_rules": 0,
+      "rule_sequences": 25,
+      "locked_sequences": 35
+    }
+  ],
+  "coverage_limit": "Cache comparison covers only existing outputs with matching original checksum."
+}

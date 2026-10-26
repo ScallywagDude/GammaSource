@@ -805,7 +805,7 @@ int CSubdivMesh::AddTree( CSubdivQuad *pTree )
 	if( m_TreeCount >= m_MaxTreeCount )
 	{
 		// error message
-		_asm int 3;
+		DebuggerBreak();
 		return -1;
 	}
 

@@ -54,6 +54,28 @@ class CBaseFlex;
 static ConVar scene_forcecombined( "scene_forcecombined", "0", 0, "When playing back, force use of combined .wav files even in english." );
 static ConVar scene_maxcaptionradius( "scene_maxcaptionradius", "1200", 0, "Only show closed captions if recipient is within this many units of speaking actor (0==disabled)." );
 
+static ConVar gamma_scene_trace( "gamma_scene_trace", "0", FCVAR_CHEAT, "Trace choreography: 1=dispatch/admission, 2=layer and AI samples every 0.5s" );
+
+int GammaSceneTraceLevel() { return gamma_scene_trace.GetInt(); }
+
+void GammaTraceSceneEvent( const char *stage, CBaseFlex *actor, CChoreoScene *scene, CChoreoEvent *event, int layer, int sequence )
+{
+	if ( !GammaSceneTraceLevel() ) return;
+	CAI_BaseNPC *npc = actor ? actor->MyNPCPointer() : NULL;
+	const Task_t *task = npc ? npc->GetTask() : NULL;
+	CAnimationLayer *overlay = actor && layer >= 0 && layer < actor->GetNumAnimOverlays() ? actor->GetAnimOverlay( layer ) : NULL;
+	const Vector origin = actor ? actor->GetAbsOrigin() : vec3_origin;
+	Msg( "GAMMA_SCENE_EVENT stage=%s time=%.3f scene=%s scene_time=%.3f type=%s event=%s param=%s authored_actor=%s id=%d actor=%s class=%s model=%s seq=%d layer=%d cycle=%.3f weight=%.3f base_seq=%d base_cycle=%.3f state=%d activity=%d schedule=%s task=%d moving=%d origin=%.2f,%.2f,%.2f\n",
+		stage, gpGlobals->curtime, scene ? scene->GetFilename() : "none", scene ? scene->GetTime() : -1.0f,
+		event ? CChoreoEvent::NameForType( event->GetType() ) : "none", event ? event->GetName() : "none", event ? event->GetParameters() : "none",
+		event && event->GetActor() ? event->GetActor()->GetName() : "none", actor ? actor->entindex() : -1,
+		actor ? STRING( actor->GetEntityName() ) : "none", actor ? actor->GetClassname() : "none", actor ? STRING( actor->GetModelName() ) : "none",
+		sequence, layer, overlay ? overlay->m_flCycle.Get() : -1.0f, overlay ? overlay->m_flWeight.Get() : -1.0f,
+		actor ? actor->GetSequence() : -1, actor ? actor->GetCycle() : -1.0f, npc ? (int)npc->GetState() : -1,
+		npc ? (int)npc->GetActivity() : -1, npc && npc->GetCurSchedule() ? npc->GetCurSchedule()->GetName() : "none",
+		task ? task->iTask : -1, actor && actor->IsMoving(), origin.x, origin.y, origin.z );
+}
+
 // Assume sound system is 100 msec lagged (only used if we can't find snd_mixahead cvar!)
 #define SOUND_SYSTEM_LATENCY_DEFAULT ( 0.1f )
 
@@ -391,6 +413,7 @@ public:
 	virtual void PitchShiftPlayback( float fPitch );
 	virtual void QueueResumePlayback( void );
 
+	void GammaDebugScene( bool showEvents );
 	bool		 ValidScene() const;
 
 	// Scene load/unload
@@ -2487,11 +2510,84 @@ void CSceneEntity::OnLoaded()
 	// Nothing
 }
 
+// Inspect the authored file and real actor mappings without restarting it.
+void CSceneEntity::GammaDebugScene( bool showEvents )
+{
+	CChoreoScene *scene = m_pScene ? m_pScene : LoadScene( STRING( m_iszSceneFile ), this );
+	Msg( "GAMMA_SCENE_INFO id=%d name=%s class=%s file=%s loaded=%d playing=%d paused=%d time=%.3f waiting_actor=%d waiting_interrupt=%d target1=%s\n",
+		entindex(), STRING(GetEntityName()), GetClassname(), STRING(m_iszSceneFile), scene != NULL,
+		(int)m_bIsPlayingBack, (int)m_bPaused, m_flCurrentTime, m_bWaitingForActor, m_bWaitingForInterrupt, STRING(m_iszTarget1) );
+	if ( !scene ) return;
+	for ( int i = 0; i < scene->GetNumActors(); ++i )
+	{
+		CChoreoActor *authored = scene->GetActor( i );
+		CBaseFlex *actor = FindNamedActor( authored->GetName() );
+		Msg( "GAMMA_SCENE_ACTOR scene=%s authored=%s id=%d name=%s class=%s model=%s\n", STRING(m_iszSceneFile), authored->GetName(),
+			actor ? actor->entindex() : -1, actor ? STRING(actor->GetEntityName()) : "MISSING", actor ? actor->GetClassname() : "none", actor ? STRING(actor->GetModelName()) : "none" );
+	}
+	if ( showEvents ) for ( int i = 0; i < scene->GetNumEvents(); ++i )
+	{
+		CChoreoEvent *event = scene->GetEvent( i );
+		CBaseFlex *actor = event->GetActor() ? FindNamedActor( event->GetActor()->GetName() ) : NULL;
+		const bool animation = event->GetType() == CChoreoEvent::SEQUENCE || event->GetType() == CChoreoEvent::GESTURE;
+		Msg( "GAMMA_SCENE_AUTHORED type=%s event=%s actor=%s start=%.3f end=%.3f param=%s exact_seq=%d\n",
+			CChoreoEvent::NameForType(event->GetType()), event->GetName(), event->GetActor() ? event->GetActor()->GetName() : "none",
+			event->GetStartTime(), event->GetEndTime(), event->GetParameters(), animation && actor ? actor->LookupSequence(event->GetParameters()) : -1 );
+	}
+	if ( scene != m_pScene ) delete scene;
+}
+
+CON_COMMAND_F( gamma_scene_info, "gamma_scene_info [scene targetname or file substring]: inspect normal map scenes and authored events", FCVAR_CHEAT )
+{
+	for ( CBaseEntity *ent = gEntList.FirstEnt(); ent; ent = gEntList.NextEnt(ent) )
+	{
+		if ( !FClassnameIs(ent,"logic_choreographed_scene") && !FClassnameIs(ent,"scripted_scene") ) continue;
+		CSceneEntity *scene = dynamic_cast<CSceneEntity *>(ent);
+		if ( scene && ( args.ArgC() < 2 || !Q_stricmp(args[1],STRING(ent->GetEntityName())) || Q_stristr(STRING(scene->m_iszSceneFile),args[1]) ) )
+			scene->GammaDebugScene( true );
+	}
+}
+
+CON_COMMAND_F( gamma_scene_start, "gamma_scene_start <native scene targetname>: send the real logic_choreographed_scene Start input", FCVAR_CHEAT )
+{
+	if ( args.ArgC() < 2 ) return;
+	CBaseEntity *ent = gEntList.FindEntityByName(NULL,args[1]);
+	CSceneEntity *scene = dynamic_cast<CSceneEntity *>(ent);
+	if ( !scene || ( !FClassnameIs(ent,"logic_choreographed_scene") && !FClassnameIs(ent,"scripted_scene") ) )
+	{
+		Warning("GAMMA_SCENE_START missing normal scene: %s\n",args[1]); return;
+	}
+	scene->GammaDebugScene( false );
+	variant_t empty;
+	scene->AcceptInput("Start",UTIL_GetLocalPlayer(),scene,empty,0);
+}
+
+CON_COMMAND_F( gamma_scene_probe, "gamma_scene_probe <original.vcd> [target1 ... target8]: create a NORMAL scene, retaining original event timing", FCVAR_CHEAT )
+{
+	if ( args.ArgC() < 2 ) return;
+	CSceneEntity *scene = dynamic_cast<CSceneEntity *>(CreateEntityByName("logic_choreographed_scene"));
+	if ( !scene ) return;
+	scene->KeyValue("SceneFile",args[1]);
+	char name[64]; Q_snprintf(name,sizeof(name),"gamma_scene_probe_%d",scene->entindex());
+	scene->KeyValue("targetname",name);
+	for ( int i = 2; i < args.ArgC() && i < 10; ++i )
+	{
+		char key[16]; Q_snprintf(key,sizeof(key),"target%d",i-1);
+		scene->KeyValue(key,args[i]);
+	}
+	if ( DispatchSpawn(scene) < 0 ) { UTIL_Remove(scene); return; }
+	scene->Activate();
+	scene->GammaDebugScene( true );
+	variant_t empty;
+	scene->AcceptInput("Start",UTIL_GetLocalPlayer(),scene,empty,0);
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: Initiate scene playback
 //-----------------------------------------------------------------------------
 void CSceneEntity::StartPlayback( void )
 {
+	if ( GammaSceneTraceLevel() ) Msg("GAMMA_SCENE_START_REQUEST id=%d name=%s class=%s file=%s playing=%d paused=%d missing=%d\n",entindex(),STRING(GetEntityName()),GetClassname(),STRING(m_iszSceneFile),(int)m_bIsPlayingBack,(int)m_bPaused,m_bSceneMissing);
 	if ( !m_pScene )
 	{
 		if ( m_bSceneMissing )
@@ -2506,6 +2602,7 @@ void CSceneEntity::StartPlayback( void )
 		}
 
 		OnLoaded();
+		if ( GammaSceneTraceLevel() ) GammaDebugScene( false );
 
 		if ( ShouldNetwork() )
 		{
@@ -2522,8 +2619,10 @@ void CSceneEntity::StartPlayback( void )
 	//  we'll wait for them to show up
 	if ( !CheckActors() )
 	{
+		if ( GammaSceneTraceLevel() ) Msg("GAMMA_SCENE_WAIT name=%s file=%s actor=%d interrupt=%d\n",STRING(GetEntityName()),STRING(m_iszSceneFile),m_bWaitingForActor,m_bWaitingForInterrupt);
 		return;
 	}
+	if ( GammaSceneTraceLevel() ) Msg("GAMMA_SCENE_STARTED name=%s file=%s\n",STRING(GetEntityName()),STRING(m_iszSceneFile));
 
 	m_bCompletedEarly = false;
 	m_bWaitingForActor	= false;
@@ -2859,6 +2958,7 @@ void CSceneEntity::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEv
 
 	if ( !Q_stricmp( event->GetName(), "NULL" ) )
  	{
+		GammaTraceSceneEvent( "ignore_null_event", NULL, scene, event );
  		LocalScene_Printf( "%s : %8.2f:  ignored %s\n", STRING( m_iszSceneFile ), currenttime, event->GetDescription() );
  		return;
  	}
@@ -2871,11 +2971,13 @@ void CSceneEntity::StartEvent( float currenttime, CChoreoScene *scene, CChoreoEv
 		pActor = FindNamedActor( actor );
 		if (pActor == NULL)
 		{
+			GammaTraceSceneEvent( "reject_missing_actor", NULL, scene, event );
 			Warning( "CSceneEntity %s unable to find actor named \"%s\"\n", STRING(GetEntityName()), actor->GetName() );
 			return;
 		}
 	}
 
+	GammaTraceSceneEvent( "dispatch_start", pActor, scene, event );
 	LocalScene_Printf( "%s : %8.2f:  start %s\n", STRING( m_iszSceneFile ), currenttime, event->GetDescription() );
 
 	switch ( event->GetType() )
@@ -3178,6 +3280,7 @@ void CSceneEntity::EndEvent( float currenttime, CChoreoScene *scene, CChoreoEven
 		pActor = FindNamedActor( actor );
 	}
 
+	GammaTraceSceneEvent( "dispatch_end", pActor, scene, event );
 	LocalScene_Printf( "%s : %8.2f:  finish %s\n", STRING( m_iszSceneFile ), currenttime, event->GetDescription() );
 
 	switch ( event->GetType() )
@@ -4287,6 +4390,7 @@ void CSceneEntity::OnSceneFinished( bool canceled, bool fireoutput )
 {
 	if ( !m_pScene )
 		return;
+	if ( GammaSceneTraceLevel() ) Msg("GAMMA_SCENE_FINISHED name=%s file=%s time=%.3f canceled=%d\n",STRING(GetEntityName()),STRING(m_iszSceneFile),m_flCurrentTime,canceled);
 
 	LocalScene_Printf( "%s : %8.2f:  finished\n", STRING( m_iszSceneFile ), m_flCurrentTime );
 

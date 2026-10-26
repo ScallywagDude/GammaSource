@@ -11,7 +11,7 @@ if b"legacymdl.h" not in d:
 helper = N(b'''
 //-----------------------------------------------------------------------------
 // GammaSource: 2001-2003 models (MDL v36/v37) are converted to v48 the first time
-// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache, which sits
+// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache_v4, which sits
 // at the head of the GAME search path, so later loads (and the .vvd/.vtx reads that
 // follow) find the converted files directly. Delete that folder to reconvert.
 //-----------------------------------------------------------------------------
@@ -31,7 +31,7 @@ static void EnsureLegacyModelCachePath()
 		*pSemi = 0;
 	if ( !szMod[0] )
 		V_strncpy( szMod, ".", sizeof( szMod ) );
-	V_ComposeFileName( szMod, "legacy_models_cache", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
+	V_ComposeFileName( szMod, "legacy_models_cache_v4", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
 	V_FixSlashes( s_szLegacyCacheDir );
 	g_pFullFileSystem->CreateDirHierarchy( s_szLegacyCacheDir, NULL );
 	g_pFullFileSystem->AddSearchPath( s_szLegacyCacheDir, "GAME", PATH_ADD_TO_HEAD );

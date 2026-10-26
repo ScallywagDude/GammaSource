@@ -13,6 +13,7 @@
 #include "ivieweffects.h"
 #include "shake.h"
 #include "eventlist.h"
+#include "gamma/gamma_impact_materials.h"
 // NVNT haptic include for notification of world precache
 #include "haptics/haptic_utils.h"
 // memdbgon must be the last include file in a .cpp file!!!
@@ -152,8 +153,8 @@ void W_Precache(void)
 	g_sModelIndexWExplosion = modelinfo->GetModelIndex ("sprites/WXplo1.vmt");// underwater fireball
 	g_sModelIndexSmoke = modelinfo->GetModelIndex ("sprites/steam1.vmt");// smoke
 	g_sModelIndexBubbles = modelinfo->GetModelIndex ("sprites/bubble.vmt");//bubbles
-	g_sModelIndexBloodSpray = modelinfo->GetModelIndex ("sprites/bloodspray.vmt"); // initial blood
-	g_sModelIndexBloodDrop = modelinfo->GetModelIndex ("sprites/blood.vmt"); // splattered blood 
+	g_sModelIndexBloodSpray = modelinfo->GetModelIndex( GAMMA_IMPACT_MATERIAL( "sprites/bloodspray.vmt" ) );
+	g_sModelIndexBloodDrop = modelinfo->GetModelIndex( GAMMA_IMPACT_MATERIAL( "sprites/blood.vmt" ) );
 	g_sModelIndexLaser = modelinfo->GetModelIndex( (char *)g_pModelNameLaser );
 	g_sModelIndexLaserDot = modelinfo->GetModelIndex("sprites/laserdot.vmt");
 }

@@ -11,6 +11,7 @@ param(
     [string]$Dest = 'C:\Users\doge6\Documents\GammaSourceTest',
     [string]$Install = 'C:\Users\doge6\Downloads\source2018_install',
     [string]$Repo = 'C:\Users\doge6\Videos\GammaSource-main',
+    [string]$OriginalContent = '',
     [string]$Assets = 'C:\Users\doge6\Downloads\source2018_assets',
     [string]$Beta2003 = 'C:\Users\doge6\Documents\HL2BetaMegaCuck\hl2_2003',
     [string]$SteamHL2 = 'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2',
@@ -20,6 +21,10 @@ param(
     [switch]$Include2003
 )
 $ErrorActionPreference = 'Stop'
+if (-not $OriginalContent) { $OriginalContent = Join-Path $Repo 'gammasource_content' }
+if (-not (Test-Path -LiteralPath $OriginalContent -PathType Container)) {
+    throw "Original beta content is missing. Pass -OriginalContent with the actual gammasource_content directory: $OriginalContent"
+}
 Add-Type @"
 using System; using System.Runtime.InteropServices;
 public static class HL { [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
@@ -67,7 +72,7 @@ Put-Tree "$Assets\gmodshaders" "$content\gmodshaders"
 Put-Tree "$Install\hl2\converted" "$content\converted"
 Put-Tree "$Repo\gammasource_content_2018" "$content\gammasource_content_2018" -Copy
 Put-Tree "$Assets\gamma" "$content\gamma"
-Put-Tree "$Repo\gammasource_content" "$content\gammasource_content" -Exclude @('*.bak', '*.before-*')
+Put-Tree $OriginalContent "$content\gammasource_content" -Exclude @('*.bak', '*.before-*')
 Put-Tree $Beta2003 "$content\hl2_2003"
 foreach ($d in 'materials', 'sound', 'models', 'maps', 'scripts', 'resource') {
     if (Test-Path "$Assets\$d") { Put-Tree "$Assets\$d" "$content\assets\$d" }

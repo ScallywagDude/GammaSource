@@ -90,6 +90,10 @@ enum
 //-----------------------------------------------------------------------------
 CNPC_Assassin::CNPC_Assassin( void )
 {
+	m_nLastFlipType = -1;
+	m_flLastFootstepCycle = 0.0f;
+	m_iFootstepSequence = -1;
+	m_bStepLeft = false;
 }
 
 //-----------------------------------------------------------------------------
@@ -117,6 +121,9 @@ BEGIN_DATADESC( CNPC_Assassin )
 	DEFINE_FIELD( m_bEvade,		FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bAggressive, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_bBlinkState, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_flLastFootstepCycle, FIELD_FLOAT ),
+	DEFINE_FIELD( m_iFootstepSequence, FIELD_INTEGER ),
+	DEFINE_FIELD( m_bStepLeft, FIELD_BOOLEAN ),
 	DEFINE_FIELD( m_pEyeSprite,	FIELD_CLASSPTR ),
 	DEFINE_FIELD( m_pEyeTrail,	FIELD_CLASSPTR ),
 END_DATADESC()
@@ -130,12 +137,15 @@ void CNPC_Assassin::Precache( void )
 {
 	PrecacheModel( "models/fassassin.mdl" );
 
-	PrecacheScriptSound( "NPC_Assassin.ShootPistol" );
+	// Original pl_shoot1/2 placeholders are absent; use the mounted beta pistol.
+	PrecacheScriptSound( "Weapon_Pistol.Single" );
 	PrecacheScriptSound( "Zombie.AttackHit" );
-	PrecacheScriptSound( "Assassin.AttackMiss" );
-	PrecacheScriptSound( "NPC_Assassin.Footstep" );
+	PrecacheScriptSound( "Zombie.AttackMiss" );
+	PrecacheScriptSound( "NPC_Assassin.FootstepLeft" );
+	PrecacheScriptSound( "NPC_Assassin.FootstepRight" );
 
 	PrecacheModel( "sprites/redglow1.vmt" );
+	PrecacheModel( "sprites/bluelaser1.vmt" );
 
 	BaseClass::Precache();
 }
@@ -174,7 +184,7 @@ void CNPC_Assassin::Spawn( void )
 	int attachment = LookupAttachment( "Eye" );
 
 	// Start up the eye glow
-	m_pEyeSprite = CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false );
+	m_pEyeSprite = attachment > 0 ? CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false ) : NULL;
 
 	if ( m_pEyeSprite != NULL )
 	{
@@ -184,7 +194,7 @@ void CNPC_Assassin::Spawn( void )
 	}
 
 	// Start up the eye trail
-	m_pEyeTrail	= CSpriteTrail::SpriteTrailCreate( "sprites/bluelaser1.vmt", GetLocalOrigin(), false );
+	m_pEyeTrail	= attachment > 0 ? CSpriteTrail::SpriteTrailCreate( "sprites/bluelaser1.vmt", GetLocalOrigin(), false ) : NULL;
 
 	if ( m_pEyeTrail != NULL )
 	{
@@ -265,7 +275,9 @@ int CNPC_Assassin::RangeAttack2Conditions ( float flDot, float flDist )
 	if ( m_flNextLungeTime > gpGlobals->curtime )
 		return 0;
 
-	float lungeRange = GetSequenceMoveDist( SelectWeightedSequence( (Activity) ACT_ASSASSIN_FLIP_FORWARD ) );
+	int lungeSequence = SelectWeightedSequence( (Activity) ACT_ASSASSIN_FLIP_FORWARD );
+	if ( lungeSequence < 0 ) return COND_NONE;
+	float lungeRange = GetSequenceMoveDist( lungeSequence );
 
 	if ( flDist < lungeRange * 0.25f )
 		return COND_TOO_CLOSE_TO_ATTACK;
@@ -305,7 +317,7 @@ void CNPC_Assassin::FirePistol( int hand )
 
 	const char *handName = ( hand ) ? "LeftMuzzle" : "RightMuzzle";
 
-	GetAttachment( handName, muzzlePos, muzzleAngle );
+	if ( !GetAttachment( handName, muzzlePos, muzzleAngle ) ) return;
 
 	Vector	muzzleDir;
 	
@@ -326,7 +338,7 @@ void CNPC_Assassin::FirePistol( int hand )
 	UTIL_MuzzleFlash( muzzlePos, muzzleAngle, 0.5f, 1 );
 
 	CPASAttenuationFilter filter( this );
-	EmitSound( filter, entindex(), "NPC_Assassin.ShootPistol" );
+	EmitSound( filter, entindex(), "Weapon_Pistol.Single" );
 }
 
 //---------------------------------------------------------
@@ -334,19 +346,19 @@ void CNPC_Assassin::FirePistol( int hand )
 void CNPC_Assassin::HandleAnimEvent( animevent_t *pEvent )
 {
 	
-	if ( pEvent->event == AE_ASSASIN_FIRE_PISTOL_RIGHT )
+	if ( pEvent->event == AE_ASSASIN_FIRE_PISTOL_RIGHT || pEvent->event == ASSASSIN_AE_FIRE_PISTOL_RIGHT )
 	{
 		FirePistol( 0 );
 		return;
 	}
 
-	if ( pEvent->event == AE_ASSASIN_FIRE_PISTOL_LEFT )
+	if ( pEvent->event == AE_ASSASIN_FIRE_PISTOL_LEFT || pEvent->event == ASSASSIN_AE_FIRE_PISTOL_LEFT )
 	{
 		FirePistol( 1 );
 		return;
 	}
 	
-	if ( pEvent->event == AE_ASSASIN_KICK_HIT )
+	if ( pEvent->event == AE_ASSASIN_KICK_HIT || pEvent->event == ASSASSIN_AE_KICK_HIT )
 	{
 		Vector	attackDir = BodyDirection2D();
 		Vector	attackPos = WorldSpaceCenter() + ( attackDir * 64.0f );
@@ -376,7 +388,7 @@ void CNPC_Assassin::HandleAnimEvent( animevent_t *pEvent )
 		}
 		else
 		{
-			EmitSound( "Assassin.AttackMiss" );
+			EmitSound( "Zombie.AttackMiss" );
 			//EmitSound( "Assassin.AttackMiss" );
 		}
 
@@ -491,17 +503,19 @@ int CNPC_Assassin::SelectSchedule ( void )
 //-----------------------------------------------------------------------------
 void CNPC_Assassin::PrescheduleThink( void )
 {
-	if ( GetActivity() == ACT_RUN || GetActivity() == ACT_WALK)
+	BaseClass::PrescheduleThink();
+	float cycle = GetCycle();
+	if ( m_iFootstepSequence == GetSequence() && IsMoving() &&
+		( GetActivity() == ACT_RUN || GetActivity() == ACT_WALK ) &&
+		( cycle < m_flLastFootstepCycle || ( cycle >= 0.5f && m_flLastFootstepCycle < 0.5f ) ) )
 	{
-		CPASAttenuationFilter filter( this );
-
-		static int iStep = 0;
-		iStep = ! iStep;
-		if (iStep)
-		{
-			EmitSound( filter, entindex(), "NPC_Assassin.Footstep" );
-		}
+		// No footsteps are tagged in this beta run. Follow its half-cycle
+		// contacts instead of emitting every other think across all assassins.
+		EmitSound( m_bStepLeft ? "NPC_Assassin.FootstepLeft" : "NPC_Assassin.FootstepRight" );
+		m_bStepLeft = !m_bStepLeft;
 	}
+	m_flLastFootstepCycle = cycle;
+	m_iFootstepSequence = GetSequence();
 }
 
 //-----------------------------------------------------------------------------
@@ -556,6 +570,7 @@ bool CNPC_Assassin::CanFlip( int flipType, Activity &activity, const Vector *avo
 	}
 
 	int seq = SelectWeightedSequence( act );
+	if ( seq < 0 ) return false;
 
 	// Find out the length of this sequence
 	float	testDist = GetSequenceMoveDist( seq );
@@ -683,7 +698,10 @@ void CNPC_Assassin::StartTask( const Task_t *pTask )
 		{
 			assert( GetEnemy() != NULL );
 			if ( GetEnemy() == NULL )
+			{
+				TaskFail( FAIL_NO_ENEMY );
 				break;
+			}
 
 			Vector	goalPos;
 
@@ -708,7 +726,7 @@ void CNPC_Assassin::StartTask( const Task_t *pTask )
 	
 			hint.SetFlag( bits_HINT_NODE_NEAREST );
 
-			CAI_Hint *pHint = CAI_HintManager::FindHint( this, GetEnemy()->GetAbsOrigin(), &hint );
+			CAI_Hint *pHint = CAI_HintManager::FindHint( this, GetEnemy()->GetAbsOrigin(), hint );
 
 			if ( pHint == NULL )
 			{

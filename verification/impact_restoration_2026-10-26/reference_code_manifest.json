@@ -1,0 +1,56 @@
+[
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\c_te_bloodsprite.cpp",
+    "relative": "cl_dll/c_te_bloodsprite.cpp",
+    "sha256": "b69734e57738a8d50840043c7942b5f649d11c4a38aac5ad56e542af14ea7a9e",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\c_te_legacytempents.cpp",
+    "relative": "cl_dll/c_te_legacytempents.cpp",
+    "sha256": "0bacaf9b3706ae20f939ab9db16d665c37aec326e9c277aa921faefe24c8c375",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\c_impact_effects.cpp",
+    "relative": "cl_dll/c_impact_effects.cpp",
+    "sha256": "2bece34dd7526bf47510e23a39a6afc2c0929da27fbdc357957ee05b221dd9a1",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\fx_blood.cpp",
+    "relative": "cl_dll/fx_blood.cpp",
+    "sha256": "0888050aeaa4e124c6035c9c135b199b357a958e4f9b980d5855853d42f0dd8a",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\fx_blood.h",
+    "relative": "cl_dll/fx_blood.h",
+    "sha256": "b12e901b74c8599df5a42f35c45edde34bade8b97950b9f540df5ab9707ff7e2",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\fx_impact.cpp",
+    "relative": "cl_dll/fx_impact.cpp",
+    "sha256": "b5b5f5cb874fb0f7cc511611d654f4595ea447b5e22698cd5240cb8795b19368",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\cl_dll\\hl2_dll\\fx_hl2_impacts.cpp",
+    "relative": "cl_dll/hl2_dll/fx_hl2_impacts.cpp",
+    "sha256": "5f44b16818026902c2d49c75d524834995751543d277868fddc1f776b2588c55",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\dlls\\util.cpp",
+    "relative": "dlls/util.cpp",
+    "sha256": "d32df50cf04695a2ab84599eee2168aa8e74dc8b4ac5600e6184dd1bd5840104",
+    "same_as_unified_legacy2003": false
+  },
+  {
+    "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\modernization_v18\\game_shared\\decals.cpp",
+    "relative": "game_shared/decals.cpp",
+    "sha256": "0acf10df959a8007ac5311e20333657dc72fb07f305851a9b443d4ee386a8356",
+    "same_as_unified_legacy2003": false
+  }
+]

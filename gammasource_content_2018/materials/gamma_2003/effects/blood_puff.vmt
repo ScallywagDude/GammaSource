@@ -1,0 +1,8 @@
+"UnlitGeneric"
+{
+	// Original shader: BaseTimesVertexColorAlphaBlend
+	"$basetexture" "gamma_2003/effects/splash2"
+	"$vertexcolor" "1"
+	"$vertexalpha" "1"
+	"$translucent" "1"
+}

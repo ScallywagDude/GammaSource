@@ -1274,7 +1274,7 @@ void COP_Entity::PresentProperties()
 			MDkeyvalue &KeyValue = m_kv.GetKeyValue(i);
 			
 			int iItem = m_VarList.InsertItem( i, KeyValue.szKey );
-			m_VarList.SetItemData( iItem, (DWORD)KeyValue.szKey );
+			m_VarList.SetItemData( iItem, (DWORD_PTR)KeyValue.szKey );
 		}
 	
 		m_Angle.Enable( m_bCanEdit );
@@ -1303,7 +1303,7 @@ void COP_Entity::PresentProperties()
 			if (strcmpi(pVar->GetName(), SPAWNFLAGS_KEYNAME) != 0)
 			{
 				int iItem = m_VarList.InsertItem( i, pVar->GetLongName() );
-				m_VarList.SetItemData( iItem, (DWORD)pVar->GetName() );
+				m_VarList.SetItemData( iItem, (DWORD_PTR)pVar->GetName() );
 			}
 		}
 
@@ -1365,7 +1365,7 @@ void COP_Entity::PresentProperties()
 
 									const char *ptr = m_InstanceParmData[ InsertIndex ].m_VariableName;
 									int iItem = m_VarList.InsertItem( 0, ptr );
-									m_VarList.SetItemData( iItem, (DWORD)ptr );
+									m_VarList.SetItemData( iItem, (DWORD_PTR)ptr );
 									m_kv.SetValue( pVariable, pValue + strlen( pVariable ) + 1 );
 								}
 							}
@@ -1384,7 +1384,7 @@ void COP_Entity::PresentProperties()
 			if ( !m_pDisplayClass->VarForName( KeyValue.szKey ) && m_InstanceParmData.Find( KeyValue.szKey ) == m_InstanceParmData.InvalidIndex() )
 			{			
 				int iItem = m_VarList.InsertItem( i, KeyValue.szKey );
-				m_VarList.SetItemData( iItem, (DWORD)KeyValue.szKey );
+				m_VarList.SetItemData( iItem, (DWORD_PTR)KeyValue.szKey );
 			}
 		}
 

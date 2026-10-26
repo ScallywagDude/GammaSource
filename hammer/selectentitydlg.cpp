@@ -74,7 +74,7 @@ BOOL CSelectEntityDlg::OnInitDialog()
 		if(pEntity->IsPlaceholder())
 			continue;
 		int iIndex = m_cEntities.AddString(pEntity->GetClassName());
-		m_cEntities.SetItemData(iIndex, DWORD(pEntity));
+		m_cEntities.SetItemData(iIndex, DWORD_PTR(pEntity));
 	}
 
 	m_cEntities.SetCurSel(0);

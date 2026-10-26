@@ -803,8 +803,24 @@ void UTIL_BloodDrips( const Vector &origin, const Vector &direction, int color, 
 	}
 	else
 	{
+#ifdef GAMMA_PORTALGUN
+		// 2003 impact blood: an animated sprite plus the original FX_Blood puff.
+		// Preserve the original damage-to-size mapping and multiplayer tint.
+		int r = 64, g = 0, b = 0;
+		if ( color == BLOOD_COLOR_RED && g_pGameRules->IsMultiplayer() )
+		{
+			r = 255; g = 32; b = 32;
+		}
+		else if ( color == BLOOD_COLOR_YELLOW || color == BLOOD_COLOR_GREEN )
+		{
+			r = 128; g = 128;
+		}
+		CPVSFilter filter( origin );
+		te->BloodSprite( filter, 0.0f, &origin, &direction, r, g, b, 255, clamp( amount / 10, 3, 16 ) );
+#else
 		// Normal blood impact
 		UTIL_BloodImpact( origin, direction, color, amount );
+#endif
 	}
 }	
 

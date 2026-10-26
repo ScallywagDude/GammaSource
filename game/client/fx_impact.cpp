@@ -16,6 +16,10 @@
 #include "engine/IStaticPropMgr.h"
 #include "c_impact_effects.h"
 #include "tier0/vprof.h"
+#ifdef GAMMA_PORTALGUN
+#include "materialsystem/itexture.h"
+#include "gamma/gamma_impact_materials.h"
+#endif
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -24,6 +28,95 @@ static ConVar  r_drawflecks( "r_drawflecks", "1" );
 extern ConVar r_drawmodeldecals;
 
 ImpactSoundRouteFn g_pImpactSoundRouteFn = NULL;
+
+#ifdef GAMMA_PORTALGUN
+static ConVar gamma_impact_debug( "gamma_impact_debug", "0", FCVAR_CHEAT, "Report actual bullet decal selection and surface physics." );
+
+static void GammaDescribeImpactMaterial( const char *label, const char *name, const char *group )
+{
+	IMaterial *material = materials->FindMaterial( name, group, false );
+	bool foundBase = false, foundBump = false;
+	IMaterialVar *base = material->FindVar( "$basetexture", &foundBase, false );
+	IMaterialVar *bump = material->FindVar( "$bumpmap", &foundBump, false );
+	const char *baseName = foundBase && base->IsTexture() && base->GetTextureValue() ? base->GetTextureValue()->GetName() : "";
+	const char *bumpName = foundBump && bump->IsTexture() && bump->GetTextureValue() ? bump->GetTextureValue()->GetName() : "";
+	Msg( "GAMMA_IMPACT_MATERIAL label=%s material=%s error=%d shader=%s base=%s bump=%s frames=%d\n",
+		label, name, IsErrorMaterial( material ) ? 1 : 0, material->GetShaderName(), baseName, bumpName, material->GetNumAnimationFrames() );
+}
+
+static void GammaDescribeDecal( const char *group, int index )
+{
+	const char *name = decalsystem->GetDecalNameForIndex( index );
+	Msg( "GAMMA_IMPACT_DECAL group=%s index=%d material=%s\n", group, index, name );
+	if ( name[0] )
+		GammaDescribeImpactMaterial( group, name, TEXTURE_GROUP_DECAL );
+}
+
+CON_COMMAND_F( gamma_impact_info, "Print selected impact/blood materials and sprite precache indices. Use r_printdecalinfo for the actual decal pool.", FCVAR_CHEAT )
+{
+	static const char *groups[] = { "Impact.Concrete", "Impact.Metal", "Impact.Wood", "Impact.Glass", "Impact.Flesh", "Impact.BloodyFlesh", "Impact.AlienFlesh", "Blood", "YellowBlood" };
+	for ( int i = 0; i < ARRAYSIZE( groups ); ++i )
+		GammaDescribeDecal( groups[i], decalsystem->GetDecalIndexForName( groups[i] ) );
+	static const char *blood[] = { "effects/blood", "effects/blood2", "effects/blood_gore", "effects/blood_drop", "effects/blood_puff", "sprites/bloodspray", "sprites/blood" };
+	for ( int i = 0; i < ARRAYSIZE( blood ); ++i )
+	{
+		char restored[MAX_PATH];
+		Q_snprintf( restored, sizeof( restored ), "gamma_2003/%s", blood[i] );
+		GammaDescribeImpactMaterial( blood[i], Gamma2003ImpactMaterial( blood[i], restored ), TEXTURE_GROUP_CLIENT_EFFECTS );
+	}
+	extern short g_sModelIndexBloodSpray, g_sModelIndexBloodDrop;
+	Msg( "GAMMA_IMPACT_SPRITES spray=%d drop=%d lowViolence=%d\n", g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, UTIL_IsLowViolence() ? 1 : 0 );
+}
+
+CON_COMMAND_F( gamma_impact_probe, "Trace at the crosshair and add a native impact or blood/bloodspray effect: gamma_impact_probe [impact|blood|yellow|spray].", FCVAR_CHEAT )
+{
+	C_BasePlayer *player = C_BasePlayer::GetLocalPlayer();
+	if ( !player )
+		return;
+	Vector direction;
+	AngleVectors( player->EyeAngles(), &direction );
+	Vector start = player->EyePosition();
+	trace_t trace;
+	UTIL_TraceLine( start, start + direction * MAX_TRACE_LENGTH, MASK_SHOT, player, COLLISION_GROUP_NONE, &trace );
+	if ( trace.fraction == 1.0f || !trace.m_pEnt || (trace.surface.flags & SURF_SKY) )
+	{
+		Msg( "GAMMA_IMPACT_PROBE no_surface=1\n" );
+		return;
+	}
+	surfacedata_t *surface = physprops->GetSurfaceData( trace.surface.surfaceProps );
+	const char *mode = args.ArgC() > 1 ? args[1] : "impact";
+	Msg( "GAMMA_IMPACT_PROBE mode=%s ent=%d hitbox=%d surface=%s prop=%d gameMaterial=%c normal=%.3f,%.3f,%.3f friction=%.3f density=%.3f\n",
+		mode, trace.m_pEnt->entindex(), trace.hitbox, trace.surface.name, trace.surface.surfaceProps, surface->game.material,
+		trace.plane.normal.x, trace.plane.normal.y, trace.plane.normal.z, surface->physics.friction, surface->physics.density );
+	GammaDescribeImpactMaterial( "surface", trace.surface.name, TEXTURE_GROUP_WORLD );
+	if ( !Q_stricmp( mode, "blood" ) || !Q_stricmp( mode, "yellow" ) )
+	{
+		int color = !Q_stricmp( mode, "yellow" ) ? BLOOD_COLOR_YELLOW : BLOOD_COLOR_RED;
+		UTIL_BloodDrips( trace.endpos + trace.plane.normal * 4.0f, trace.plane.normal, color, 30 );
+		UTIL_BloodDecalTrace( &trace, color );
+	}
+	else if ( !Q_stricmp( mode, "spray" ) )
+	{
+		CEffectData data;
+		data.m_vOrigin = trace.endpos + trace.plane.normal * 4.0f;
+		data.m_vNormal = trace.plane.normal;
+		data.m_flScale = 4.0f;
+		data.m_nColor = BLOOD_COLOR_RED;
+		data.m_fFlags = FX_BLOODSPRAY_ALL;
+		DispatchEffect( "bloodspray", data );
+	}
+	else
+	{
+		Vector origin = trace.endpos;
+		trace_t impactTrace;
+		const char *group = GetImpactDecal( trace.m_pEnt, surface->game.material, DMG_BULLET );
+		bool hit = Impact( origin, start, surface->game.material, DMG_BULLET, trace.hitbox, trace.m_pEnt, impactTrace );
+		Msg( "GAMMA_IMPACT_PROBE hit=%d group=%s fraction=%.4f\n", hit ? 1 : 0, group, impactTrace.fraction );
+		if ( hit )
+			PerformCustomEffects( origin, impactTrace, direction, surface->game.material, 1 );
+	}
+}
+#endif
 
 //==========================================================================================================================
 // RAGDOLL ENUMERATOR
@@ -127,6 +220,13 @@ bool Impact( Vector &vecOrigin, Vector &vecStart, int iMaterial, int iDamageType
 	{
 		const char *pchDecalName = GetImpactDecal( pEntity, iMaterial, iDamageType );
 		int decalNumber = decalsystem->GetDecalIndexForName( pchDecalName );
+#ifdef GAMMA_PORTALGUN
+		if ( gamma_impact_debug.GetBool() )
+		{
+			GammaDescribeDecal( pchDecalName, decalNumber );
+			Msg( "GAMMA_IMPACT_TRACE ent=%d hitbox=%d gameMaterial=%c damage=%d\n", pEntity->entindex(), iHitbox, iMaterial, iDamageType );
+		}
+#endif
 		if ( decalNumber == -1 )
 			return false;
 

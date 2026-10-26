@@ -93,7 +93,7 @@ void PlayMIDISong(LPTSTR szMIDIFileName, BOOL bRestart)
 	  mciOpenParms.lpstrDeviceType = "sequencer";
 	  mciOpenParms.lpstrElementName = szMIDIFileName;
 	  if (mciSendCommand(NULL, MCI_OPEN, MCI_OPEN_TYPE | MCI_OPEN_ELEMENT,
-		(DWORD)&mciOpenParms) == 0)
+		(DWORD_PTR)&mciOpenParms) == 0)
 		// Get the ID for the MIDI player
 		m_uiMIDIPlayerID = mciOpenParms.wDeviceID;
 	  else
@@ -106,7 +106,7 @@ void PlayMIDISong(LPTSTR szMIDIFileName, BOOL bRestart)
 	{
 	  MCI_SEEK_PARMS mciSeekParms;
 	  if (mciSendCommand(m_uiMIDIPlayerID, MCI_SEEK, MCI_SEEK_TO_START,
-		(DWORD)&mciSeekParms) != 0)
+		(DWORD_PTR)&mciSeekParms) != 0)
 		// There was a problem, so close the MIDI player
 		CloseMIDIPlayer();
 	}
@@ -114,7 +114,7 @@ void PlayMIDISong(LPTSTR szMIDIFileName, BOOL bRestart)
 	// Play the MIDI song
 	MCI_PLAY_PARMS mciPlayParms;
 	if (mciSendCommand(m_uiMIDIPlayerID, MCI_PLAY, MCI_WAIT,
-	  (DWORD)&mciPlayParms) != 0)
+	  (DWORD_PTR)&mciPlayParms) != 0)
 	  // There was a problem, so close the MIDI player
 	  CloseMIDIPlayer();
 }
@@ -244,7 +244,7 @@ void CSplashWnd::HideSplashScreen()
 //-----------------------------------------------------------------------------
 // Purpose: Guarantees that the splash screen stays up long enough to see.
 //-----------------------------------------------------------------------------
-void CSplashWnd::OnTimer(UINT nIDEvent)
+void CSplashWnd::OnTimer(UINT_PTR nIDEvent)
 {
 	m_bMinTimerExpired = true;
 	KillTimer(nIDEvent);

@@ -1,5 +1,7 @@
 # GammaSource
 
+**v28:** [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete; this snapshot was frozen at the requested account-usage cutoff.
+
 GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons, NPCs, models, animations, maps, interface, HUD, physics behavior, and ground deformation.
 
 ## Project status
@@ -66,11 +68,11 @@ Compiling produces the engine/game binaries, **not** the complete set of maps, t
 
 The repository includes a staging script:
 
-```
-powershell -NoProfile -ExecutionPolicy Bypass -File ".\stage_gammasource.ps1" -Dest "C:\GammaSourceBuilds" -Install "C:\path\to\engine-install" -Assets "C:\path\to\game-assets" -Beta2003 "C:\path\to\beta-content" -SteamHL2 "C:\path\to\Half-Life 2" -SteamTF2 "C:\path\to\Team Fortress 2" -SteamPortal "C:\path\to\Portal"
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".\stage_gammasource.ps1" -Dest "C:\GammaSourceBuilds" -Install "C:\path\to\engine-install" -Assets "C:\path\to\game-assets" -OriginalContent "C:\path\to\gammasource_content" -Beta2003 "C:\path\to\beta-content" -SteamHL2 "C:\path\to\Half-Life 2" -SteamTF2 "C:\path\to\Team Fortress 2" -SteamPortal "C:\path\to\Portal"
 ```
 
-Run this command from the unified `GammaSource/` directory and adjust the paths to your local content. The wrapper always uses this same repository root for `gammasource_content_2018`; you do not need a separate `GammaSource-main` checkout. The underlying staging script can hard-link large assets when the source and destination are on the same volume. The staged folder may require substantial disk space. Verify all required asset roots before running it.
+Run this command from the unified `GammaSource/` directory and adjust the paths to your local content. `-OriginalContent` supplies the original beta `gammasource_content` assets, which are separate from the source archive. The wrapper uses this repository's `gammasource_content_2018` overlay. The underlying staging script can hard-link large assets when the source and destination are on the same volume. The staged folder may require substantial disk space. Verify all required asset roots before running it.
 
 Each staging run creates a dated output folder. Open that folder's `GammaSource_2018` directory and launch the included `play.cmd`.
 

@@ -25,8 +25,8 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
-ConVar	sk_combine_elite_health( "sk_combine_elite_health","0");
-ConVar	sk_combine_elite_kick( "sk_combine_elite_kick","0");
+ConVar	sk_combine_elite_health( "sk_combine_elite_health","100");
+ConVar	sk_combine_elite_kick( "sk_combine_elite_kick","10");
 
 LINK_ENTITY_TO_CLASS( npc_combineelite, CNPC_CombineE );
 
@@ -39,8 +39,9 @@ void CNPC_CombineE::Spawn( void )
 {
 	Precache();
 	SetModel( "models/Combine_Elite.mdl" );
-	m_iHealth = sk_combine_elite_health.GetFloat();
-	SetKickDamage( sk_combine_elite_kick.GetFloat() );
+	SetHealth( MAX( 1, sk_combine_elite_health.GetInt() ) );
+	SetMaxHealth( GetHealth() );
+	SetKickDamage( MAX( 0.0f, sk_combine_elite_kick.GetFloat() ) );
 
 	BaseClass::Spawn();
 }

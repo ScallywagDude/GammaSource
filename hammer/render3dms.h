@@ -264,6 +264,8 @@ protected:
 	
 	MatWinData_t m_WinData;				// Defines our render window parameters.
 	PickInfo_t m_Pick;					// Contains information used when rendering in pick mode.
+	// Material-system selection names are 32-bit tokens, not object addresses.
+	CUtlVector<CMapAtom *> m_PickObjects;
 	RenderStateInfo_t m_RenderState;	// Render state set via RenderEnable.
 
 	bool m_bDroppedCamera;				// Whether we have dropped the camera for debugging.

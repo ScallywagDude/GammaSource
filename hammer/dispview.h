@@ -113,7 +113,7 @@ protected:
 	afx_msg void OnRButtonUp( UINT nFlags, CPoint point );
 	afx_msg void OnSize( UINT nType, int cx, int cy );
 	afx_msg BOOL OnSetCursor(CWnd* pWnd, UINT nHitTest, UINT message);
-	afx_msg void OnTimer(UINT nIDEvent);
+	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	//}}AFX_MSG
 
 	DECLARE_MESSAGE_MAP()

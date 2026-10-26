@@ -1,0 +1,19 @@
+{
+  "asset_count": 141,
+  "material_count": 80,
+  "texture_count": 61,
+  "bytes": 510276,
+  "all_original_texture_bytes_exact": true,
+  "all_dependencies_exist": true,
+  "all_unmodified_2018_groups_preserved": true,
+  "original_groups_exact_except_namespace": true,
+  "red_blood_variants": 6,
+  "yellow_blood_variants": 6,
+  "dependency_parameters": {
+    "$basetexture": 80,
+    "$modelmaterial": 20
+  },
+  "runtime_qa": "not run; parent owns build/launch",
+  "independent_regeneration_byte_identical": true,
+  "all_original_vmt_tokens_preserved_except_dependency_values": true
+}

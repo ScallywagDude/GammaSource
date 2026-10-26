@@ -611,11 +611,11 @@ void CTextureSystem::LoadMaterials(CGameConfig *pConfig)
 	m_pActiveContext->Groups.AddToTail(pGroup);
 
 	// Add all the materials to the group.
-	CMaterial::EnumerateMaterials( this, "materials", (int)pGroup, INCLUDE_WORLD_MATERIALS );
+	CMaterial::EnumerateMaterials( this, "materials", (intp)pGroup, INCLUDE_WORLD_MATERIALS );
 	
 	// Watch the materials directory recursively...
 	CMaterialFileChangeWatcher *pWatcher = new CMaterialFileChangeWatcher;
-	pWatcher->Init( this, (int)pGroup );
+	pWatcher->Init( this, (intp)pGroup );
 	m_ChangeWatchers.AddToTail( pWatcher );
 
 	Assert( m_pCubemapTexture == NULL );
@@ -1137,7 +1137,7 @@ bool CTextureSystem::HasTexturesForConfig(CGameConfig *pConfig)
 //-----------------------------------------------------------------------------
 // Used to add all the world materials into the material list
 //-----------------------------------------------------------------------------
-bool CTextureSystem::EnumMaterial( const char *pMaterialName, int nContext )
+bool CTextureSystem::EnumMaterial( const char *pMaterialName, intp nContext )
 {
 	CTextureGroup *pGroup = (CTextureGroup *)nContext;
 	CMaterial *pMaterial = CMaterial::CreateMaterial(pMaterialName, false);

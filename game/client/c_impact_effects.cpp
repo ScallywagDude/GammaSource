@@ -18,6 +18,7 @@
 #include "engine/IStaticPropMgr.h"
 #include "tier0/vprof.h"
 #include "c_te_effect_dispatch.h"
+#include "gamma/gamma_impact_materials.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -33,6 +34,11 @@ CLIENTEFFECT_MATERIAL( "effects/fleck_wood2" )
 CLIENTEFFECT_MATERIAL( "effects/blood" )
 CLIENTEFFECT_MATERIAL( "effects/blood2" )
 CLIENTEFFECT_MATERIAL( "sprites/bloodspray" )
+#ifdef GAMMA_PORTALGUN
+CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood" )
+CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood2" )
+CLIENTEFFECT_MATERIAL( "gamma_2003/sprites/bloodspray" )
+#endif
 CLIENTEFFECT_MATERIAL( "particle/particle_noisesphere" )
 CLIENTEFFECT_REGISTER_END()
 
@@ -70,8 +76,8 @@ void FX_CacheMaterialHandles( void )
 	g_Mat_DustPuff[0] = ParticleMgr()->GetPMaterial( "particle/particle_smokegrenade" );
 	g_Mat_DustPuff[1] = ParticleMgr()->GetPMaterial( "particle/particle_noisesphere" );
 
-	g_Mat_BloodPuff[0] = ParticleMgr()->GetPMaterial( "effects/blood" );
-	g_Mat_BloodPuff[1] = ParticleMgr()->GetPMaterial( "effects/blood2" );
+	g_Mat_BloodPuff[0] = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood" ) );
+	g_Mat_BloodPuff[1] = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood2" ) );
 	
 #ifndef TF_CLIENT_DLL
 	g_Mat_SMG_Muzzleflash[0] = ParticleMgr()->GetPMaterial( "effects/muzzleflash1" );

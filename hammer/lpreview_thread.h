@@ -97,7 +97,7 @@ extern Bitmap_t *g_pLPreviewOutputBitmap;
 
 // the lighting preview thread entry point
 
-unsigned LightingPreviewThreadFN( void *thread_start_arg );
+uintp LightingPreviewThreadFN( void *thread_start_arg );
 
 // the lighting preview handler. call often
 void HandleLightingPreview( void );

@@ -115,8 +115,8 @@ C_NPC_Hydra::C_NPC_Hydra() : m_iv_vecHeadDir( "C_NPC_Hydra::m_iv_vecHeadDir" )
 
 C_NPC_Hydra::~C_NPC_Hydra()
 {
-	delete m_boneLength;
-	delete m_vecPos;
+	delete[] m_boneLength;
+	delete[] m_vecPos;
 	delete[] m_iv_vecPos;
 	m_iv_vecPos = NULL;
 }
@@ -149,7 +149,7 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 {
 	VPROF( "C_NPC_Hydra::StandardBlendingRules" );
 
-	studiohdr_t *hdr = GetModelPtr();
+	CStudioHdr *hdr = GetModelPtr();
 	if ( !hdr )
 	{
 		return;
@@ -159,17 +159,18 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 
 	// check for changing model memory requirements
 	bool bNewlyInited = false;
-	if (m_numHydraBones != hdr->numbones)
+	if (m_numHydraBones != hdr->numbones())
 	{
-		m_numHydraBones = hdr->numbones;
+		m_numHydraBones = hdr->numbones();
 
 		// build root animation
-		float	poseparam[MAXSTUDIOPOSEPARAM];
-		for (i = 0; i < hdr->GetNumPoseParameters(); i++)
-		{
-			poseparam[i] = 0;
-		}
-		CalcPose( hdr, NULL, pos, q, 0.0f, 0.0f, poseparam, BONE_USED_BY_ANYTHING );
+		float poseparam[MAXSTUDIOPOSEPARAM] = { 0 };
+		// The 2018 pose API replaces CalcPose; retain the beta sequence-zero
+		// reference pose used to measure this procedural chain's bone lengths.
+		IBoneSetup boneSetup( hdr, BONE_USED_BY_ANYTHING, poseparam );
+		boneSetup.InitPose( pos, q );
+		if ( hdr->GetNumSeq() > 0 )
+			boneSetup.AccumulatePose( pos, q, 0, 0.0f, 1.0f, currentTime, NULL );
 
 		// allocate arrays
 		if (m_boneLength)
@@ -186,7 +187,7 @@ void  C_NPC_Hydra::StandardBlendingRules( Vector pos[], Quaternion q[], float cu
 		
 		if (m_iv_vecPos)
 		{
-			delete m_iv_vecPos;
+			delete[] m_iv_vecPos;
 		}
 		m_iv_vecPos = new CInterpolatedVar< Vector >[m_numHydraBones];
 		for ( i = 0; i < m_numHydraBones; i++ )

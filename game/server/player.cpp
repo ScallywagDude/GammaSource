@@ -4,6 +4,7 @@
 //
 //===========================================================================//
 
+#include "gamma/impulse101_weapon_filter.h"
 #include "cbase.h"
 
 #ifdef HL2_DLL
@@ -6198,10 +6199,12 @@ void CBasePlayer::CheatImpulseCommands( int iImpulse )
 			UTIL_GetEntityClassnamesWithPrefix( "weapon_", weapons );
 			for ( int i = 0; i < weapons.Count(); i++ )
 			{
-				// only weapons with a script are real player weapons (skips dev and NPC-only classes)
+				// Weapon scripts alone do not distinguish player weapons from NPC props and tools.
 				char script[MAX_PATH];
 				Q_snprintf( script, sizeof( script ), "scripts/%s.txt", weapons[i] );
-				if ( filesystem->FileExists( script, "GAME" ) && !Weapon_OwnsThisType( weapons[i] ) )
+				if ( GammaImpulse101ShouldGrantWeapon( weapons[i] ) &&
+					 filesystem->FileExists( script, "GAME" ) &&
+					 !Weapon_OwnsThisType( weapons[i] ) )
 					GiveNamedItem( weapons[i] );
 			}
 			for ( int i = 1; i < GetAmmoDef()->m_nAmmoIndex; i++ )

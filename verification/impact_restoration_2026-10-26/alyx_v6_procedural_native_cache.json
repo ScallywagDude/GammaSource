@@ -1,0 +1,93 @@
+{
+  "original": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Alyx.mdl",
+  "version": 36,
+  "converted": "C:\\Users\\doge6\\Downloads\\source2018_install\\t_round3\\legacy_models_cache_v6\\models\\alyx.mdl",
+  "procedural_bones": 16,
+  "payload_mismatches": [],
+  "authored_absolute_control_poses": 1367,
+  "helper_transform_samples": 21872,
+  "max_dropped_helper_position_error_units": 11.208306741534454,
+  "max_dropped_helper_rotation_error_degrees": 171.47130288731321,
+  "max_preserved_helper_position_error_units": 0.0,
+  "max_preserved_helper_rotation_error_degrees": 3.4150945850063755e-06,
+  "normalization": {
+    "blended_quaternions": 20606,
+    "nonunit_before_normalization": 9160,
+    "min_length_before_normalization": 0.9238796263793981,
+    "max_length_before_normalization": 1.0000000271007945,
+    "max_basis_length_error_without_normalization": 0.06381506420273886
+  },
+  "worst_missing_helper_examples": [
+    {
+      "animation": "a_body_trans_fwd",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Wrist",
+      "missing_position_units": 11.20830513992716,
+      "missing_rotation_degrees": 90.00000064716646
+    },
+    {
+      "animation": "a_body_trans_fwd",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Shoulder",
+      "missing_position_units": 1.5000012560949578,
+      "missing_rotation_degrees": 90.0000020442016
+    },
+    {
+      "animation": "a_body_trans_dwn",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Wrist",
+      "missing_position_units": 11.208305741536327,
+      "missing_rotation_degrees": 89.99999969586369
+    },
+    {
+      "animation": "a_body_trans_up",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Wrist",
+      "missing_position_units": 11.208305783960796,
+      "missing_rotation_degrees": 89.99999969586369
+    },
+    {
+      "animation": "a_spine_rot_back",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Shoulder",
+      "missing_position_units": 1.4999983539854143,
+      "missing_rotation_degrees": 90.00000353050905
+    },
+    {
+      "animation": "a_head_rot_lt",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_R_Wrist",
+      "missing_position_units": 11.208306741534454,
+      "missing_rotation_degrees": 89.99999969585858
+    },
+    {
+      "animation": "@quietidle",
+      "frame": 0,
+      "bone": "ValveBiped.Bip01_L_Shoulder",
+      "missing_position_units": 1.500001448765044,
+      "missing_rotation_degrees": 102.88545397210527
+    },
+    {
+      "animation": "@sexyidle",
+      "frame": 112,
+      "bone": "ValveBiped.Bip01_L_Shoulder",
+      "missing_position_units": 1.500000249944741,
+      "missing_rotation_degrees": 158.02191528820313
+    },
+    {
+      "animation": "@sexyidle",
+      "frame": 112,
+      "bone": "ValveBiped.Bip01_R_Shoulder",
+      "missing_position_units": 1.500002608003345,
+      "missing_rotation_degrees": 168.64712972587333
+    },
+    {
+      "animation": "a_E3sewershout",
+      "frame": 180,
+      "bone": "ValveBiped.Bip01_L_Shoulder",
+      "missing_position_units": 1.5000007323294922,
+      "missing_rotation_degrees": 171.47130288731321
+    }
+  ],
+  "scope": "Same authored source control poses isolate payload conversion; solver uses modern acos clamp and normalized final quaternion. Runtime visuals and raw-channel quantization are separate checks."
+}

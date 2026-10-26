@@ -1,0 +1,131 @@
+{
+  "runs": [
+    {
+      "kind": "original_beta_v36",
+      "log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\npc_restoration_2026-10-26\\physgun_verify_runtime.log",
+      "sha256": "302e0df6fc9fb0bc5acfbdbc8f2d646b25787baeea5aa822a384bc2e21f263a6",
+      "checks": {
+        "complete": true,
+        "two_held_samples": true,
+        "controller_and_mobility": true,
+        "lifted_above_floor": true,
+        "beam_valid_and_drawn": true,
+        "beam_endpoint_not_origin": true,
+        "released_controller": true
+      },
+      "pass": true,
+      "held_samples": [
+        {
+          "active": "1",
+          "buttons": "1",
+          "held": "212",
+          "held_class": "prop_physics",
+          "controller": "1",
+          "moveable": "1",
+          "mass": "250.000",
+          "pos": "352.726,584.000,42.631",
+          "target": "333.032,584.000,23.948",
+          "world": "333.133,584.000,24.747",
+          "distance": "244.285",
+          "hit": "212",
+          "hit_class": "prop_physics",
+          "hit_fraction": "0.0597",
+          "hit_physics": "1",
+          "hit_moveable": "1",
+          "hit_movetype": "6",
+          "pellets": "0",
+          "secondary_type": "14",
+          "secondary_ammo": "16"
+        },
+        {
+          "active": "1",
+          "buttons": "1",
+          "held": "212",
+          "held_class": "prop_physics",
+          "controller": "1",
+          "moveable": "1",
+          "mass": "250.000",
+          "pos": "332.463,583.987,124.984",
+          "target": "331.965,584.000,146.242",
+          "world": "331.642,584.008,150.915",
+          "distance": "244.285",
+          "hit": "0",
+          "hit_class": "worldspawn",
+          "hit_fraction": "0.3094",
+          "hit_physics": "0",
+          "hit_moveable": "0",
+          "hit_movetype": "0",
+          "pellets": "0",
+          "secondary_type": "14",
+          "secondary_ammo": "16"
+        }
+      ]
+    },
+    {
+      "kind": "direct_modern_v44",
+      "log": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\npc_restoration_2026-10-26\\physgun_retail_verify_runtime.log",
+      "sha256": "cb35f846c9108449c006d3ccc8aadb57e81d1853813ba734dfc518f1c0a58a88",
+      "checks": {
+        "complete": true,
+        "two_held_samples": true,
+        "controller_and_mobility": true,
+        "lifted_above_floor": true,
+        "beam_valid_and_drawn": true,
+        "beam_endpoint_not_origin": true,
+        "released_controller": true
+      },
+      "pass": true,
+      "held_samples": [
+        {
+          "active": "1",
+          "buttons": "1",
+          "held": "212",
+          "held_class": "prop_physics",
+          "controller": "1",
+          "moveable": "1",
+          "mass": "30.000",
+          "pos": "352.472,584.000,40.515",
+          "target": "332.697,584.000,24.031",
+          "world": "332.980,584.000,23.683",
+          "distance": "243.939",
+          "hit": "212",
+          "hit_class": "prop_physics",
+          "hit_fraction": "0.0596",
+          "hit_physics": "1",
+          "hit_moveable": "1",
+          "hit_movetype": "6",
+          "pellets": "0",
+          "secondary_type": "14",
+          "secondary_ammo": "16"
+        },
+        {
+          "active": "1",
+          "buttons": "1",
+          "held": "212",
+          "held_class": "prop_physics",
+          "controller": "1",
+          "moveable": "1",
+          "mass": "30.000",
+          "pos": "336.964,583.857,120.829",
+          "target": "331.631,584.000,146.152",
+          "world": "332.280,583.984,146.161",
+          "distance": "243.939",
+          "hit": "212",
+          "hit_class": "prop_physics",
+          "hit_fraction": "0.0585",
+          "hit_physics": "1",
+          "hit_moveable": "1",
+          "hit_movetype": "6",
+          "pellets": "0",
+          "secondary_type": "14",
+          "secondary_ammo": "16"
+        }
+      ]
+    }
+  ],
+  "pass": true,
+  "limits": [
+    "No forced successful grab; normal +attack and physics callbacks were exercised.",
+    "Secondary-pellet welding/save-load still require separate native QA."
+  ]
+}

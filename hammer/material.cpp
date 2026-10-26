@@ -434,7 +434,7 @@ CMaterial::~CMaterial(void)
 // Finds all .VMT files in a particular directory
 //-----------------------------------------------------------------------------
 bool CMaterial::LoadMaterialsInDirectory( char const* pDirectoryName, int nDirectoryNameLen,
-						IMaterialEnumerator *pEnum, int nContext, int nFlags )
+						IMaterialEnumerator *pEnum, intp nContext, int nFlags )
 {
 	//Assert( Q_strnicmp( pDirectoryName, "materials", 9 ) == 0 );
 
@@ -489,7 +489,7 @@ bool CMaterial::LoadMaterialsInDirectory( char const* pDirectoryName, int nDirec
 // that we can load up at a later time 
 //-----------------------------------------------------------------------------
 bool CMaterial::InitDirectoryRecursive( char const* pDirectoryName, 
-						IMaterialEnumerator *pEnum, int nContext, int nFlags )
+						IMaterialEnumerator *pEnum, intp nContext, int nFlags )
 {
 	// Make sure this is an ok directory, otherwise don't bother
 	if (ShouldSkipMaterial( pDirectoryName + MATERIAL_PREFIX_LEN, nFlags ))
@@ -539,7 +539,7 @@ bool CMaterial::InitDirectoryRecursive( char const* pDirectoryName,
 // It only finds their names so we can generate shell materials for them
 // that we can load up at a later time 
 //-----------------------------------------------------------------------------
-void CMaterial::EnumerateMaterials( IMaterialEnumerator *pEnum, const char *szRoot, int nContext, int nFlags )
+void CMaterial::EnumerateMaterials( IMaterialEnumerator *pEnum, const char *szRoot, intp nContext, int nFlags )
 {
 	InitDirectoryRecursive( szRoot, pEnum, nContext, nFlags );
 }

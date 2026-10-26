@@ -58,7 +58,7 @@ bool GetPersistentEnvironmentVariable( const char *pName, char *pReturn, int siz
 void SetPersistentEnvironmentVariable( const char *pName, const char *pValue )
 {
 	HKEY hregkey; 
-	DWORD dwReturnValue = 0;
+	DWORD_PTR dwReturnValue = 0;
 
 	// Changed from HKEY_LOCAL_MACHINE to HKEY_CURRENT_USER
 	if ( RegOpenKeyEx( HKEY_CURRENT_USER, VPROJECT_REG_KEY, 0, KEY_ALL_ACCESS, &hregkey ) != ERROR_SUCCESS )

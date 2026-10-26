@@ -20,6 +20,27 @@
 extern short		g_sModelIndexBloodDrop;	
 extern short		g_sModelIndexBloodSpray;
 
+#ifdef GAMMA_PORTALGUN
+static int s_nGammaNetworkBloodSprites = 0;
+static int s_nGammaLocalBloodSprites = 0;
+static ConVar gamma_blood_debug( "gamma_blood_debug", "0", FCVAR_CHEAT, "Report received 2003 blood sprites from actual hits." );
+
+static void GammaRecordBloodSprite( bool network, int spray, int drop, int r, int g, int b, int size )
+{
+	if ( network )
+		++s_nGammaNetworkBloodSprites;
+	else
+		++s_nGammaLocalBloodSprites;
+	if ( gamma_blood_debug.GetBool() )
+		Msg( "GAMMA_BLOOD_SPRITE network=%d spray=%d drop=%d rgb=%d,%d,%d size=%d\n", network ? 1 : 0, spray, drop, r, g, b, size );
+}
+
+CON_COMMAND_F( gamma_blood_info, "Print received/local blood sprite counts since client load.", FCVAR_CHEAT )
+{
+	Msg( "GAMMA_BLOOD_COUNTS network=%d local=%d\n", s_nGammaNetworkBloodSprites, s_nGammaLocalBloodSprites );
+}
+#endif
+
 //-----------------------------------------------------------------------------
 // Purpose: Blood sprite
 //-----------------------------------------------------------------------------
@@ -132,6 +153,9 @@ static inline void RecordBloodSprite( const Vector &start, const Vector &directi
 void TE_BloodSprite( IRecipientFilter& filter, float delay,
 	const Vector* org, const Vector *dir, int r, int g, int b, int a, int size )
 {
+#ifdef GAMMA_PORTALGUN
+	GammaRecordBloodSprite( false, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, r, g, b, size );
+#endif
 	Vector	offset = *org + ( (*dir) * 4.0f );
 
 	tempents->BloodSprite( offset, r, g, b, a, g_sModelIndexBloodSpray, g_sModelIndexBloodDrop, size );	
@@ -146,6 +170,9 @@ void TE_BloodSprite( IRecipientFilter& filter, float delay,
 void C_TEBloodSprite::PostDataUpdate( DataUpdateType_t updateType )
 {
 	VPROF( "C_TEBloodSprite::PostDataUpdate" );
+#ifdef GAMMA_PORTALGUN
+	GammaRecordBloodSprite( true, m_nSprayModel, m_nDropModel, r, g, b, m_nSize );
+#endif
 
 	Vector	offset = m_vecOrigin + ( m_vecDirection * 4.0f );
 

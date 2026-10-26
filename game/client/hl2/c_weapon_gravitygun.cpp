@@ -231,10 +231,11 @@ void C_BeamQuadratic::DumpState()
 	bool attachment = GetBeamStart( start );
 	GetRenderBounds( mins, maxs );
 	IMaterial *pMat = m_BeamMaterial;
-	Msg( "GAMMA_PHYSGUN_BEAM active=%d registered=%d emitter=%d attachment=%d material=%s error=%d draw_age=%d start=(%.1f %.1f %.1f) end=(%.1f %.1f %.1f) bounds=(%.1f %.1f %.1f)/(%.1f %.1f %.1f)\n",
+	Msg( "GAMMA_PHYSGUN_BEAM active=%d registered=%d emitter=%d attachment=%d material=%s error=%d draw_age=%d start=(%.1f %.1f %.1f) end=(%.1f %.1f %.1f) target=(%.1f %.1f %.1f) bounds=(%.1f %.1f %.1f)/(%.1f %.1f %.1f)\n",
 		m_active, m_hRenderHandle != INVALID_CLIENT_RENDER_HANDLE, m_viewModelIndex, attachment,
 		pMat ? pMat->GetName() : "none", !pMat || IsErrorMaterial( pMat ), m_nLastDrawFrame < 0 ? -1 : gpGlobals->framecount - m_nLastDrawFrame,
 		start.x, start.y, start.z, m_worldPosition.x, m_worldPosition.y, m_worldPosition.z,
+		m_targetPosition.x, m_targetPosition.y, m_targetPosition.z,
 		mins.x, mins.y, mins.z, maxs.x, maxs.y, maxs.z );
 }
 

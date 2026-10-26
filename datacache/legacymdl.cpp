@@ -5,7 +5,8 @@
 // generation the 2003 content uses. This is a C++ port of
 // modernize/model_conversion/mdl36_to_48.py and model37.py in the GammaSource tree.
 //
-// Not carried over: IK rules/locks and procedural bones. Autolayers and flex mappings are translated below.
+// Procedural helper bones, IK rules/locks, autolayers and flex mappings are
+// translated below; the old and modern payloads must retain their own offsets.
 //
 //=================================//
 
@@ -155,6 +156,158 @@ Q4 QNorm( Q4 q )
 }
 
 //-----------------------------------------------------------------------------
+// The equivalent sequence/animation flag is declared in public/studio.h. Keep
+// this converter independent of the live studio structs it is constructing.
+const int LEGACY2003_ANIMATION_MARKER = 0x40000000;
+
+// Both 2003 procedural types have the same payload layout in v48. Bone records
+// moved and grew, so their procedure pointer and quaternion trigger pointer
+// still need rebasing. Preserve these weighted shoulder/wrist/elbow helpers
+// rather than replacing their authored corrective transforms with raw poses.
+bool WriteLegacyProcedure( Src &s, Out &w, int sourceBone, int destBone, int boneCount, int &control )
+{
+	control = -1;
+	int type = s.I( sourceBone + 148 );
+	if ( type == 0 ) return true;
+	int rel = s.I( sourceBone + 152 );
+	if ( rel == 0 || rel < -sourceBone || rel > s.n - sourceBone ) return false;
+	int source = sourceBone + rel;
+	if ( !s.At( source, type == 1 ? 176 : 12 ) ) return false;
+	control = s.I( source );
+	if ( control < 0 || control >= boneCount || s.I( sourceBone + 4 ) < 0 ) return false;
+	int dest;
+	if ( type == 1 ) // mstudioaxisinterpbone_t: control/axis, six positions, six quaternions
+	{
+		int axis = s.I( source + 4 );
+		if ( axis < 0 || axis > 2 ) return false;
+		for ( int k = 0; k < 42; ++k ) if ( !IsFinite( s.F( source + 8 + 4 * k ) ) ) return false;
+		dest = w.Alloc( 176 );
+		w.Copy( dest, s.At( source, 176 ), 176 );
+	}
+	else if ( type == 2 ) // mstudioquatinterpbone_t + mstudioquatinterpinfo_t[32 maximum]
+	{
+		int count = s.I( source + 4 ), triggerRel = s.I( source + 8 );
+		// Both runtime solvers have a fixed weight[32] stack array.
+		if ( count < 1 || count > 32 || triggerRel < -source || triggerRel > s.n - source ) return false;
+		int triggers = source + triggerRel;
+		if ( !s.At( triggers, 48 * count ) ) return false;
+		for ( int k = 0; k < 12 * count; ++k ) if ( !IsFinite( s.F( triggers + 4 * k ) ) ) return false;
+		for ( int k = 0; k < count; ++k ) if ( s.F( triggers + 48 * k ) < 0 ) return false;
+		dest = w.Alloc( 12 );
+		w.PutI( dest, control ); w.PutI( dest + 4, count );
+		int triggerOut = w.Alloc( 48 * count );
+		w.Copy( triggerOut, s.At( triggers, 48 * count ), 48 * count );
+		w.PutI( dest + 8, triggerOut - dest );
+	}
+	else return false; // the original format defines only axis and quaternion interpolation
+	w.PutI( destBone + 164, type );
+	w.PutI( destBone + 168, dest - destBone );
+	return !s.bad;
+}
+
+bool LegacyIKChainValid( Src &s, int chainTable, int chainCount, int chain, int boneCount )
+{
+	if ( chain < 0 || chain >= chainCount ) return false;
+	int c = chainTable + 16 * chain;
+	if ( !s.At( c, 16 ) || s.I( c + 8 ) != 3 ) return false;
+	int rel = s.I( c + 12 );
+	if ( rel <= 0 || rel > s.n - c || !s.At( c + rel, 3 * 28 ) ) return false;
+	for ( int k = 0; k < 3; ++k )
+	{
+		int bone = s.I( c + rel + 28 * k );
+		if ( bone < 0 || bone >= boneCount ) return false;
+	}
+	return true;
+}
+
+// A 2003 lock has just these three fields (12 bytes). Modern flags and reserved
+// words expand it to 32 bytes and must be initialized rather than byte-copied.
+bool WriteLegacyIKLocks( Src &s, Out &w, int source, int count, int owner, int countField, int indexField,
+	int chainTable, int chainCount, int boneCount )
+{
+	if ( count == 0 ) return true;
+	if ( count < 0 || count > 256 || !s.At( source, count * 12 ) ) return false;
+	int dest = w.Alloc( count * 32 );
+	for ( int k = 0; k < count; ++k )
+	{
+		int from = source + 12 * k;
+		float p = s.F( from + 4 ), q = s.F( from + 8 );
+		if ( !LegacyIKChainValid( s, chainTable, chainCount, s.I( from ), boneCount ) ||
+			!IsFinite( p ) || !IsFinite( q ) || p < 0 || p > 1 || q < 0 || q > 1 ) return false;
+		w.Copy( dest + 32 * k, s.At( from, 12 ), 12 );
+	}
+	w.PutI( owner + countField, count );
+	w.PutI( owner + indexField, dest - owner );
+	return !s.bad;
+}
+
+// 2003 rules are 108 bytes; modern rules are 152. Only corresponding fields are
+// copied. The original uncompressed position/quaternion errors remain 28 bytes.
+bool WriteLegacyIKRules( Src &s, Out &w, int sourceAnim, int destAnim, int frames,
+	int chainTable, int chainCount, int boneCount )
+{
+	int count = s.I( sourceAnim + 52 );
+	if ( count == 0 ) return true;
+	int rel = s.I( sourceAnim + 56 );
+	if ( count < 0 || count > 64 || frames < 1 || rel <= 0 || rel > s.n - sourceAnim ) return false;
+	int rules = sourceAnim + rel;
+	if ( !s.At( rules, 108 * count ) ) return false;
+	int dest = w.Alloc( 152 * count );
+	for ( int k = 0; k < count; ++k )
+	{
+		int from = rules + 108 * k, to = dest + 152 * k;
+		int type = s.I( from + 4 ), bone = s.I( from + 12 ), slot = s.I( from + 16 );
+		if ( type < 0 || type > 4 || bone < -1 || bone >= boneCount || slot < 0 || slot >= 12 ||
+			!LegacyIKChainValid( s, chainTable, chainCount, s.I( from + 8 ), boneCount ) ) return false;
+		for ( int field = 20; field < 60; field += 4 ) if ( !IsFinite( s.F( from + field ) ) ) return false;
+		const bool staticEnvelopeNotFinite = frames == 1 &&
+			( !IsFinite( s.F( from + 76 ) ) || !IsFinite( s.F( from + 80 ) ) ||
+			  !IsFinite( s.F( from + 84 ) ) || !IsFinite( s.F( from + 88 ) ) || !IsFinite( s.F( from + 96 ) ) );
+		if ( staticEnvelopeNotFinite )
+		{
+			// The old compiler divided the envelope by numframes-1 even for
+			// static aim/couch poses, writing NaN/Infinity (ElitePolice, monk).
+			// Those comparisons produced zero influence in the 2003 player.
+			// Keep rule positions and chain references, but encode that inactive
+			// envelope explicitly so one bad normalization cannot reject a model.
+			int errorRel = s.I( from + 72 );
+			if ( errorRel <= 0 || errorRel > s.n - from || !s.At( from + errorRel, 28 ) ) return false;
+			for ( int e = 0; e < 7; ++e ) if ( !IsFinite( s.F( from + errorRel + 4 * e ) ) ) return false;
+			w.Copy( to, s.At( from, 60 ), 60 );
+			int errorOut = w.Alloc( 28 );
+			w.Copy( errorOut, s.At( from + errorRel, 28 ), 28 );
+			w.PutI( to + 72, errorOut - to );
+			continue;
+		}
+		float start = s.F( from + 76 ), peak = s.F( from + 80 ), tail = s.F( from + 84 ), end = s.F( from + 88 );
+		if ( !IsFinite( start ) || !IsFinite( peak ) || !IsFinite( tail ) || !IsFinite( end ) ||
+			start > peak || peak > tail || tail > end || start < -1.0f || end > 3.0f ) return false;
+		int first = s.I( from + 68 );
+		double endFrame = (double)end * ( frames - 1 );
+		int last = (int)floor( endFrame + 0.5 );
+		// This is the original studiomdl allocation formula, including the two
+		// guard samples for a rule which wraps beyond the final frame.
+		int errors = last - first + 1 + ( last >= frames ? 2 : 0 );
+		int errorRel = s.I( from + 72 );
+		if ( fabs( endFrame - last ) > 0.01 || errors < 1 || errors > 3 * frames + 4 ||
+			errorRel <= 0 || errorRel > s.n - from || !s.At( from + errorRel, errors * 28 ) ) return false;
+		for ( int e = 0; e < errors * 7; ++e ) if ( !IsFinite( s.F( from + errorRel + 4 * e ) ) ) return false;
+		w.Copy( to, s.At( from, 60 ), 60 ); // index/type/chain/bone/slot, bounds, position and quaternion
+		w.PutI( to + 68, first );
+		w.Copy( to + 76, s.At( from + 76, 16 ), 16 ); // influence envelope
+		if ( !IsFinite( s.F( from + 96 ) ) ) return false;
+		w.PutF( to + 96, s.F( from + 96 ) ); // contact; old commit/pivot/release were unused
+		int errorOut = w.Alloc( errors * 28 );
+		w.Copy( errorOut, s.At( from + errorRel, errors * 28 ), errors * 28 );
+		w.PutI( to + 72, errorOut - to );
+		// compressed-error pointer, obsolete group and modern-only drop/top,
+		// attachment and reserved fields stay zero from Alloc().
+	}
+	w.PutI( destAnim + 60, count );
+	w.PutI( destAnim + 64, dest - destAnim );
+	return !s.bad;
+}
+
 // v37 -> v36 (in memory). Payload keeps its byte positions; a v36 header and an
 // expanded v36 sequence table are written in front of / after it.
 //-----------------------------------------------------------------------------
@@ -474,6 +627,12 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 	}
 	CUtlVector<CUtlString> notes;
 	const int checksum = s.I( 8 );
+	const int legacyChainCount = s.I( 284 ), legacyChainTable = s.I( 288 );
+	if ( legacyChainCount < 0 || legacyChainCount > 64 || !s.At( legacyChainTable, 16 * legacyChainCount ) )
+	{
+		report = "bad IK chain table";
+		return false;
+	}
 
 	// --- bones
 	int nb = s.I( 156 ), bi = s.I( 160 );
@@ -492,7 +651,6 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 		b.flags = s.I( o + 144 ); b.proctype = s.I( o + 148 );
 		b.surfaceprop = s.RStr( o, s.I( o + 160 ) );
 		b.contents = s.I( o + 180 );
-		if ( b.proctype ) notes.AddToTail( "procedural bones dropped" );
 	}
 
 	// --- animations, decoded per frame
@@ -509,7 +667,6 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 		int nmv = s.I( o + 16 ), mvo = o + s.I( o + 20 );
 		if ( nmv < 0 || nmv > 1024 || !s.At( mvo, 44 * nmv ) ) { report = "bad movement table"; return false; }
 		for ( int m = 0; m < nmv; m++ ) an.movements.AddToTail( s.At( mvo + 44 * m, 44 ) );
-		if ( s.I( o + 52 ) ) notes.AddToTail( "IK rules dropped" );
 		int animbase = o + s.I( o + 48 );
 		an.frames.SetCount( nb * nf );
 		for ( int b = 0; b < nb; b++ )
@@ -560,6 +717,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 	{
 		Anim_t &an = anims[k];
 		int nf = an.numframes;
+		const bool delta = ( an.flags & 0x0004 ) != 0;
 		euler[k].SetCount( nb * nf * 3 );
 		for ( int b = 0; b < nb; b++ )
 		{
@@ -580,9 +738,11 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 				{
 					prev[j] = e[j];
 					euler[k][( b * nf + fr ) * 3 + j] = e[j];
-					double dp = fabs( f.p[j] - bones[b].value[j] ) / 32767.0;
+					// v48 delta channels decode around zero, not the bind pose.
+					// Include both kinds in the shared per-bone quantization scale.
+					double dp = fabs( f.p[j] - ( delta ? 0.0 : bones[b].value[j] ) ) / 32767.0;
 					if ( dp > posscale[3 * b + j] ) posscale[3 * b + j] = dp;
-					double dr = fabs( e[j] - bones[b].value[3 + j] ) / 32767.0;
+					double dr = fabs( e[j] - ( delta ? 0.0 : bones[b].value[3 + j] ) ) / 32767.0;
 					if ( dr > rotscale[3 * b + j] ) rotscale[3 * b + j] = dr;
 				}
 				hasPrev = true;
@@ -661,7 +821,11 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 
 	// --- bone usage flags (v48 needs them to set up bones at all)
 	const int BONE_USED_BY_HITBOX = 0x100, BONE_USED_BY_ATTACHMENT = 0x200, LODMASK = 0x3fc00;
-	CUtlVector<int> boneFlags; boneFlags.SetCount( nb ); for ( int i = 0; i < nb; i++ ) boneFlags[i] = 0;
+	// Fixed quaternion alignment has the same meaning in both formats. Three
+	// antlion-guard bones rely on it; usage masks below still come from geometry.
+	// BONE_ALWAYS_PROCEDURAL (0x4) also retains its meaning in v48; without it
+	// CalcProceduralBone ignores the payload even when the pointer is preserved.
+	CUtlVector<int> boneFlags; boneFlags.SetCount( nb ); for ( int i = 0; i < nb; i++ ) boneFlags[i] = bones[i].flags & 0x00100004;
 	struct Up { static void Mark( CUtlVector<int> &fl, const CUtlVector<Bone36> &bn, int b, int f ) { int guard = 0; while ( b >= 0 && b < bn.Count() && guard++ < 256 ) { fl[b] |= f; b = bn[b].parent; } } };
 	for ( int b = 0; b < nb; b++ ) if ( vertBoneUsed[b] ) Up::Mark( boneFlags, bones, b, LODMASK );
 
@@ -689,6 +853,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 
 	// bones
 	int bo = w.Alloc( 216 * nb ); w.PutI( 156, nb ); w.PutI( 160, bo );
+	CUtlVector<int> proceduralControl; proceduralControl.SetCount( nb );
 	for ( int k = 0; k < nb; k++ )
 	{
 		int o = bo + 216 * k;
@@ -702,7 +867,20 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 		w.PutI( o + 160, boneFlags[k] ); w.PutI( o + 172, -1 );
 		const char *sp = b.surfaceprop.Length() ? b.surfaceprop.Get() : ( *surfaceprop ? surfaceprop : "default" );
 		w.String( o, o + 176, sp ); w.PutI( o + 180, b.contents );
+		if ( !WriteLegacyProcedure( s, w, bi + 196 * k, o, nb, proceduralControl[k] ) )
+		{
+			report = "bad legacy procedural bone data";
+			return false;
+		}
 	}
+	// A helper's controlling bone can have no direct vertex/attachment use.
+	// Include that dependency and its parents in every mask needing the helper,
+	// propagating through procedural dependencies without relying on bone order.
+	for ( int pass = 0; pass < nb; ++pass )
+		for ( int k = 0; k < nb; ++k )
+			if ( proceduralControl[k] >= 0 )
+				Up::Mark( boneFlags, bones, proceduralControl[k], boneFlags[k] & ( LODMASK | BONE_USED_BY_HITBOX | BONE_USED_BY_ATTACHMENT ) );
+	for ( int k = 0; k < nb; ++k ) w.PutI( bo + 216 * k + 160, boneFlags[k] );
 	// bone table by name (insertion sort on lowercase name)
 	{
 		int btn = w.Alloc( nb, 1 ); w.PutI( 364, btn );
@@ -746,12 +924,17 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 			Anim_t &an = anims[k];
 			int nf = an.numframes;
 			w.PutI( o, -o ); w.String( o, o + 4, an.name.Get() );
-			w.PutF( o + 8, an.fps ); w.PutI( o + 12, an.flags ); w.PutI( o + 16, nf );
+			w.PutF( o + 8, an.fps ); w.PutI( o + 12, an.flags | LEGACY2003_ANIMATION_MARKER ); w.PutI( o + 16, nf );
 			if ( an.movements.Count() )
 			{
 				int mv = w.Alloc( 44 * an.movements.Count() );
 				for ( int j = 0; j < an.movements.Count(); j++ ) w.Copy( mv + 44 * j, an.movements[j], 44 );
 				w.PutI( o + 20, an.movements.Count() ); w.PutI( o + 24, mv - o );
+			}
+			if ( !WriteLegacyIKRules( s, w, ai + 92 * k, o, nf, legacyChainTable, legacyChainCount, nb ) )
+			{
+				report = "bad legacy IK rule/error data";
+				return false;
 			}
 			byte_t delta = ( an.flags & 0x0004 ) ? 0x10 : 0;
 			int start = -1, prev = -1;
@@ -795,7 +978,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 						for ( int f = 0; f < nf; f++ )
 						{
 							double e = euler[k][( b * nf + f ) * 3 + j];
-							double q = floor( ( e - bones[b].value[3 + j] ) / sc + 0.5 );
+							double q = floor( ( e - ( delta ? 0.0 : bones[b].value[3 + j] ) ) / sc + 0.5 );
 							vals[f] = (short)( q < -32768 ? -32768 : ( q > 32767 ? 32767 : q ) );
 							any |= vals[f] != 0;
 						}
@@ -808,7 +991,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 						bool any = false;
 						for ( int f = 0; f < nf; f++ )
 						{
-							double q = floor( ( fr[f].p[j] - bones[b].value[j] ) / sc + 0.5 );
+							double q = floor( ( fr[f].p[j] - ( delta ? 0.0 : bones[b].value[j] ) ) / sc + 0.5 );
 							vals[f] = (short)( q < -32768 ? -32768 : ( q > 32767 ? 32767 : q ) );
 							any |= vals[f] != 0;
 						}
@@ -835,7 +1018,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 			w.PutI( o, -o );
 			w.String( o, o + 4, s.RStr( so, s.I( so ) ) );
 			w.String( o, o + 8, s.RStr( so, s.I( so + 4 ) ) );
-			w.PutI( o + 12, s.I( so + 8 ) ); w.PutI( o + 16, 0 ); w.PutI( o + 20, s.I( so + 16 ) );
+			w.PutI( o + 12, s.I( so + 8 ) | LEGACY2003_ANIMATION_MARKER ); w.PutI( o + 16, 0 ); w.PutI( o + 20, s.I( so + 16 ) );
 			// v36 stores a 32-bit sequence ID. v48 splits that word into a
 			// short sequence ID and pose ID, and changes the layer flag meanings.
 			const int nLayers = s.I( so + 4240 );
@@ -896,6 +1079,19 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 			w.PutI( o + 112, s.I( so + 4204 ) ); w.PutI( o + 116, s.I( so + 4208 ) ); w.PutI( o + 120, s.I( so + 4212 ) );
 			w.PutF( o + 124, s.F( so + 4216 ) ); w.PutF( o + 128, s.F( so + 4220 ) ); w.PutF( o + 132, s.F( so + 4224 ) );
 			w.PutI( o + 136, s.I( so + 4228 ) ); w.PutI( o + 140, s.I( so + 4232 ) );
+			int nSeqRules = s.I( so + 4236 );
+			if ( nSeqRules < 0 || nSeqRules > 64 ) { report = "bad sequence IK rule count"; return false; }
+			w.PutI( o + 144, nSeqRules );
+			int nLocks = s.I( so + 4256 ), lockRel = s.I( so + 4260 );
+			// v37 normalization appends the expanded sequence table after its
+			// existing payload. Its rebased lock pointers are therefore negative.
+			// Validate the resolved address, not the sign of the relative offset.
+			if ( nLocks && ( lockRel < -so || lockRel > s.n - so ) ) { report = "bad sequence IK lock offset"; return false; }
+			if ( !WriteLegacyIKLocks( s, w, so + lockRel, nLocks, o, 164, 168, legacyChainTable, legacyChainCount, nb ) )
+			{
+				report = "bad sequence IK locks";
+				return false;
+			}
 			int wl = w.Alloc( 4 * nb );
 			int swl = s.I( so + 4248 );
 			for ( int b = 0; b < nb; b++ ) w.PutF( wl + 4 * b, swl ? s.F( so + swl + 4 * b ) : 1.0f );
@@ -906,6 +1102,24 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 				int pko = w.Alloc( 4 * ( gx + gy ) );
 				w.Copy( pko, s.At( so + pk, 4 * ( gx + gy ) ), 4 * ( gx + gy ) );
 				w.PutI( o + 160, pko - o );
+			}
+			// Original faceposer metadata distinguishes a body posture from an
+			// arm gesture. Dropping it makes both look like gestures in the newer
+			// scene player, allowing a full-body posture to deform locomotion.
+			// Normalized v37 sequence tables follow their payload, so the owner-
+			// relative source offset can legitimately be negative.
+			int kvRel = s.I( so + 4264 ), kvSize = s.I( so + 4268 );
+			if ( kvSize < 0 || kvSize > s.n || ( kvSize &&
+				( kvRel < -so || kvRel > s.n - so || !s.At( so + kvRel, kvSize ) ) ) )
+			{
+				report = "bad legacy sequence key values";
+				return false;
+			}
+			if ( kvSize )
+			{
+				int kvOut = w.Alloc( kvSize + 1, 1 );
+				w.Copy( kvOut, s.At( so + kvRel, kvSize ), kvSize );
+				w.PutI( o + 172, kvOut - o ); w.PutI( o + 176, kvSize );
 			}
 		}
 	}
@@ -1003,7 +1217,9 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 						int se = eyi + 140 * e, de = eo + 172 * e;
 						w.Copy( de, s.At( se, 124 ), 124 );
 						w.String( de, de, s.RStr( se, s.I( se ) ) );
-						w.PutI( de + 60, 0 ); w.PutI( de + 68, 0 );	// unused1/unused2 (were iris/glint material)
+						// Only the old material slots became unused. Preserve the iris
+						// projection scale at 60 and the upper eyelid descriptor at 68.
+						w.PutI( de + 56, 0 ); w.PutI( de + 64, 0 );
 					}
 				}
 				start += nv;
@@ -1034,19 +1250,33 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 	}
 	// IK chains
 	{
-		int nik = s.I( 284 ), iki = s.I( 288 );
-		if ( nik > 0 && nik < 64 && s.At( iki, 16 * nik ) )
+		int nik = legacyChainCount, iki = legacyChainTable;
+		if ( nik > 0 )
 		{
 			int ik = w.Alloc( 16 * nik ); w.PutI( 284, nik ); w.PutI( 288, ik );
 			for ( int k = 0; k < nik; k++ )
 			{
 				int so = iki + 16 * k, o = ik + 16 * k;
 				int nl = s.I( so + 8 ), lo = so + s.I( so + 12 );
+				if ( nl < 0 || nl > 128 || !s.At( lo, 28 * nl ) ) { report = "bad IK chain links"; return false; }
 				w.String( o, o, s.RStr( so, s.I( so ) ) );
-				int lk = w.Alloc( 28 * nl ); w.Copy( lk, s.At( lo, 28 * nl ), 28 * nl );
+				int lk = w.Alloc( 28 * nl );
+				// Old contact/limit vectors were unused (old studiomdl only wrote
+				// bone IDs). They are not modern ideal knee directions.
+				for ( int link = 0; link < nl; ++link )
+				{
+					int bone = s.I( lo + 28 * link );
+					if ( bone < 0 || bone >= nb ) { report = "bad IK chain bone"; return false; }
+					w.PutI( lk + 28 * link, bone );
+				}
 				w.PutI( o + 4, s.I( so + 4 ) ); w.PutI( o + 8, nl ); w.PutI( o + 12, lk - o );
 			}
 		}
+	}
+	if ( !WriteLegacyIKLocks( s, w, s.I( 324 ), s.I( 320 ), 0, 320, 324, legacyChainTable, legacyChainCount, nb ) )
+	{
+		report = "bad autoplay IK locks";
+		return false;
 	}
 	// flex descriptors, controllers and rules (same layout in v36 and v48)
 	{

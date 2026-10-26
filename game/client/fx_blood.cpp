@@ -21,6 +21,7 @@
 #include "effect_color_tables.h"
 #include "particle_simple3d.h"
 #include "particle_parse.h"
+#include "gamma/gamma_impact_materials.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -30,12 +31,21 @@ CLIENTEFFECT_MATERIAL( "effects/blood_core" )
 CLIENTEFFECT_MATERIAL( "effects/blood_gore" )
 CLIENTEFFECT_MATERIAL( "effects/blood_drop" )
 CLIENTEFFECT_MATERIAL( "effects/blood_puff" )
+#ifdef GAMMA_PORTALGUN
+CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_gore" )
+CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_drop" )
+CLIENTEFFECT_MATERIAL( "gamma_2003/effects/blood_puff" )
+#endif
 CLIENTEFFECT_REGISTER_END()
 
 // Cached material handles
 PMaterialHandle g_Blood_Core = NULL;
 PMaterialHandle g_Blood_Gore = NULL;
 PMaterialHandle g_Blood_Drops = NULL;
+
+#ifdef GAMMA_PORTALGUN
+static ConVar cl_show_bloodspray( "cl_show_bloodspray", "1", 0, "Show original 2003 blood sprays." );
+#endif
 
 //-----------------------------------------------------------------------------
 // Purpose: 
@@ -53,6 +63,10 @@ void GetBloodColor( int bloodtype, colorentry_t &color )
 		if( bloodcolors[i].index == bloodtype )
 		{
 			color = bloodcolors[ i ];
+#ifdef GAMMA_PORTALGUN
+			if ( bloodtype == BLOOD_COLOR_RED )
+				color.r = 64; // Original 2003 spray tint.
+#endif
 			return;
 		}
 	}
@@ -75,6 +89,10 @@ void GetBloodColor( int bloodtype, colorentry_t &color )
 //-----------------------------------------------------------------------------
 void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, unsigned char r, unsigned char g, unsigned char b, int flags )
 {
+#ifdef GAMMA_PORTALGUN
+	if ( !cl_show_bloodspray.GetBool() )
+		return;
+#endif
 	if ( UTIL_IsLowViolence() )
 		return;
 
@@ -122,11 +140,16 @@ void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, uns
 		// Partial gravity on blood drops.
 		pTrailEmitter->SetGravity( 600.0 ); 
 
+#ifdef GAMMA_PORTALGUN
+		// Original droplets collide with nearby surfaces rather than passing through.
+		pTrailEmitter->Setup( origin, &normal, 1, 10, 100, 600, 0.2f, 0 );
+#else
 		pTrailEmitter->GetBinding().SetBBox( origin - Vector( 32, 32, 32 ), origin + Vector( 32, 32, 32 ) );
 		pTrailEmitter->SetFlag( bitsPARTICLE_TRAIL_VELOCITY_DAMPEN );
 		pTrailEmitter->SetVelocityDampen( 0.2f );
+#endif
 
-		PMaterialHandle	hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_drop" );
+		PMaterialHandle	hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_drop" ) );
 
 		//
 		// Long stringy drops of blood.
@@ -204,7 +227,7 @@ void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, uns
 		//
 		if (flags & FX_BLOODSPRAY_GORE)
 		{
-			hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_gore" );
+			hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_gore" ) );
 
 			SimpleParticle *pParticle;
 
@@ -250,7 +273,7 @@ void FX_BloodSpray( const Vector &origin, const Vector &normal, float scale, uns
 		//
 		if (flags & FX_BLOODSPRAY_CLOUD)
 		{
-			hMaterial = ParticleMgr()->GetPMaterial( "effects/blood_puff" );
+			hMaterial = ParticleMgr()->GetPMaterial( GAMMA_IMPACT_MATERIAL( "effects/blood_puff" ) );
 
 			SimpleParticle *pParticle;
 
@@ -501,6 +524,12 @@ DECLARE_CLIENT_EFFECT( "bloodspray", BloodSprayCallback );
 //-----------------------------------------------------------------------------
 void BloodImpactCallback( const CEffectData & data )
 {
+#ifdef GAMMA_PORTALGUN
+	// Direct modern BloodImpact callers (for example zombie gibs) use the same
+	// original sprite/puff path as bullet hits, without requiring retail PCFs.
+	UTIL_BloodDrips( data.m_vOrigin, data.m_vNormal, data.m_nColor, (int)data.m_flScale );
+	return;
+#endif
 	bool bFoundBlood = false;
 
 	// Find which sort of blood we are

@@ -1,0 +1,7 @@
+"UnlitGeneric"
+{
+	"$basetexture" "gamma_2003/effects/blood"
+	"$translucent" 1
+	"$vertexalpha" 1
+	"$vertexcolor" 1
+}

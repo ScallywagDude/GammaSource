@@ -1,0 +1,919 @@
+{
+  "limitations": [
+    "Static matching only: Windows compilation, spawn behavior, assets, AI and animations unverified.",
+    "Literal #if 0 regions are excluded from registered counts.",
+    "Classnames and differing class implementations must be audited separately for beta authenticity.",
+    "TF2/HL1 historical NPC/monster classes are inventoried in beta_npc_variant_audit.json."
+  ],
+  "classes": [
+    {
+      "classname": "npc_alyx",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_alyx.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_alyx.cpp",
+        "hl2/npc_alyx_episodic.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_antlion",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_antlion.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_antlion.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_antlion_template_maker",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_antlion.cpp"
+      ],
+      "current_source": [
+        "hl2/antlion_maker.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_antliongrub",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_antliongrub.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_antliongrub.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_antlionguard",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_antlionguard.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_antlionguard.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_antlionmaker",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_antlion.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_antlionmaker.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_assassin",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_assassin.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_assassin.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_barnacle",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_barnacle.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_barnacle.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_barnacle_tongue_tip",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_barnacle.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_barnacle.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_barney",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_barney.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_barney.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_breen",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_breen.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_breen.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_bullseye",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_bullseye.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_bullseye.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_bullsquid",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_bullsquid.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_bullsquid.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_citizen",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_citizen17.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_citizen17.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combine",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combine.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_combine.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combine_camera",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combinecamera.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_combinecamera.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combine_s",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combines.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_combines.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combinedropship",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combinedropship.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_combinedropship.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combineelite",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combinee.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_combinee.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combineguard",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combineguard.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_combineguard.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_combinegunship",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_combinegunship.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_combinegunship.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_conscript",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_conscript.cpp"
+      ],
+      "current_source": [],
+      "disabled_current_source": [
+        "gamma/npc_conscript.cpp"
+      ],
+      "direct_hl2_vpc_entry": false,
+      "status": "disabled_preprocessor"
+    },
+    {
+      "classname": "npc_crabsynth",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_crabsynth.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_crabsynth.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_cranedriver",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_cranedriver.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_cranedriver.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_crow",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_crow.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_crow.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_cscanner",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_scanner.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_scanner.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_eli",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_eli.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_eli.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_enemyfinder",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_enemyfinder.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_enemyfinder.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_fastzombie",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_fastzombie.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_fastzombie.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_grenade_bugbait",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_bugbait.cpp"
+      ],
+      "current_source": [
+        "hl2/grenade_bugbait.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_grenade_frag",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_frag.cpp"
+      ],
+      "current_source": [
+        "hl2/grenade_frag.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_grenade_hopwire",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_hopwire.cpp"
+      ],
+      "current_source": [
+        "episodic/grenade_hopwire.cpp",
+        "gamma/grenade_hopwire.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_headcrab",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_headcrab.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_headcrab.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_headcrab_black",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_headcrab.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_headcrab.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_headcrab_fast",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_headcrab.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_headcrab.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_headcrab_poison",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_headcrab.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_headcrab.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_helicopter",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_attackchopper.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_attackchopper.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_houndeye",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_houndeye.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_houndeye.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_hydra",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_hydra.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_hydra.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_ichthyosaur",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_ichthyosaur.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_ichthyosaur.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_kleiner",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_kleiner.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_kleiner.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_launcher",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_launcher.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_launcher.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_lightstalk",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_lightstalk.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_lightstalk.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_manhack",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_manhack.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_manhack.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_metropolice",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_metropolice.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_metropolice.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_miniturret",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_turret.cpp"
+      ],
+      "current_source": [],
+      "disabled_current_source": [
+        "hl2/npc_turret.cpp"
+      ],
+      "direct_hl2_vpc_entry": false,
+      "status": "disabled_preprocessor"
+    },
+    {
+      "classname": "npc_missiledefense",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_missiledefense.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_missiledefense.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_monk",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_monk.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_monk.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_mortarsynth",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_mortarsynth.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_mortarsynth.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_mossman",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_mossman.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_mossman.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_newnpc",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/monster_dummy.cpp"
+      ],
+      "current_source": [
+        "hl2/monster_dummy.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_odell",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_odell.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_odell.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_poisonzombie",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_PoisonZombie.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_PoisonZombie.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_roller",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_roller.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_roller.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_rollerbuddy",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_rollerbuddy.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_rollerbuddy.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_rollerbull",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_rollerbull.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_rollerbull.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_rollerdozer",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_rollerdozer.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_rollerdozer.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_rollermine",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_rollermine.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_rollermine.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_rollerturret",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_rollerturret.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_rollerturret.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_satchel",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_satchel.cpp"
+      ],
+      "current_source": [
+        "gamma/grenade_satchel.cpp",
+        "hl2/grenade_satchel.cpp",
+        "hl2mp/grenade_satchel.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_sentry",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_turret.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_turret.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": false,
+      "status": "source_only"
+    },
+    {
+      "classname": "npc_sniper",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/proto_sniper.cpp"
+      ],
+      "current_source": [
+        "hl2/proto_sniper.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_spotlight",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_spotlight.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_spotlight.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_sscanner",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_sscanner.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_sscanner.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_stalker",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_stalker.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_stalker.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_strider",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_strider.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_strider.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_tripmine",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_tripmine.cpp"
+      ],
+      "current_source": [
+        "gamma/grenade_tripmine.cpp",
+        "hl2/grenade_tripmine.cpp",
+        "hl2mp/grenade_tripmine.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_tripwire",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/grenade_tripwire.cpp"
+      ],
+      "current_source": [
+        "gamma/grenade_tripwire.cpp",
+        "hl2/grenade_tripwire.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_turret_ceiling",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+        "legacy2003/dlls/hl2_dll/npc_turret_ceiling.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_turret.cpp",
+        "hl2/npc_turret_ceiling.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_turret_floor",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_turret_floor.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_turret_floor.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_vehicledriver",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_vehicledriver.cpp"
+      ],
+      "current_source": [
+        "npc_vehicledriver.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_vortigaunt",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_vortigaunt.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_vortigaunt_episodic.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_wscanner",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_wscanner.cpp"
+      ],
+      "current_source": [
+        "gamma/npc_wscanner.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_zombie",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_zombie.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_zombie.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    },
+    {
+      "classname": "npc_zombie_torso",
+      "2003_source": [
+        "legacy2003/dlls/hl2_dll/npc_zombie.cpp"
+      ],
+      "current_source": [
+        "hl2/npc_zombie.cpp"
+      ],
+      "disabled_current_source": [],
+      "direct_hl2_vpc_entry": true,
+      "status": "registered_in_build_source"
+    }
+  ]
+}

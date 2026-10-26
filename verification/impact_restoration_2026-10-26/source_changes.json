@@ -1,0 +1,75 @@
+{
+  "schema": 1,
+  "authoritative_source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource",
+  "source_changes": [
+    {
+      "path": "game/shared/decals.cpp",
+      "before_sha256": "0bf921934643def5610b7166e843ae9ff3c797431c0b354448980686d44a1162",
+      "after_sha256": "649fc01133d56d106a6b21069746e94834b355bb3c25df5f73c6d3d92d21500c",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\shared\\decals.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/shared/util_shared.cpp",
+      "before_sha256": "27088f9a851ff9a2bf70fd5821863498b864e7988a3fc1bf1f890a06cf8423a2",
+      "after_sha256": "8f4d6721dec5013f85daa08968eacb4d909fa68663c623bcae586bbd233bc28f",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\shared\\util_shared.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/server/basecombatweapon.cpp",
+      "before_sha256": "b298e08c520b11395d12b2d2233cf87c130b610375184363eb90ba30bcbdd52e",
+      "after_sha256": "99b23e6b02356de2d7737f25ba528e0fb6cb5c56d7b782d14157150c1f8acae0",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\server\\basecombatweapon.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/client/c_world.cpp",
+      "before_sha256": "68886164b82b635322d29f25c9b0342bb8a0a12b22dc539c8f4895ccecd99af5",
+      "after_sha256": "0ba7cb191bebc522893244fa18e5bbe8476ab511a1b402dbe56dbc2f7f931a13",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\client\\c_world.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/client/c_impact_effects.cpp",
+      "before_sha256": "faff5e865f445d990af2f0e50971e47ac7900148f73b5f4026d3794cb0c53f8c",
+      "after_sha256": "26b9d973906ec96367425340786cda3c45d7e16d43ce4e49367c3d234502a123",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\client\\c_impact_effects.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/client/fx_blood.cpp",
+      "before_sha256": "4cede36429444f65fefc2e85ec64fe6901cf4dfad701dae9a724405243c24639",
+      "after_sha256": "f92686ba40b0948a26ac5fc6ce9ead5b934c60eee54e066397eabcfb05d366e8",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\client\\fx_blood.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/client/fx_impact.cpp",
+      "before_sha256": "298c18c635d1dff4db85e4c033f31f70d3037406f4eaf5ae2425da533eeb6367",
+      "after_sha256": "f4e687d543e4ddedd951eb1583478d9664fedc7675f5feb1f55494761cea3470",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\client\\fx_impact.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/client/c_te_bloodsprite.cpp",
+      "before_sha256": "27b7990dc14505486f28caad0a6e476b761018edf13600a18c3a8fcc0c38d00c",
+      "after_sha256": "675582c76b333098757f9204a941320877c55184fdf3cc1f1939fad8a1e74310",
+      "backup": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\impact_restoration_2026-10-26\\backups\\game\\client\\c_te_bloodsprite.cpp",
+      "new_file": false
+    },
+    {
+      "path": "game/shared/gamma/gamma_impact_materials.h",
+      "before_sha256": null,
+      "after_sha256": "0361568da0bfc631d74a311cb8f17107a5baf9944679373cf3e0b5ad2fbbf365",
+      "backup": null,
+      "new_file": true
+    }
+  ],
+  "validation": {
+    "source_review": "complete",
+    "build": "pending - parent owns",
+    "runtime": "pending - parent owns"
+  },
+  "protected_scope": "No weapon behavior, beta hands, UI/loading, ground deformation or surface physics code changed."
+}

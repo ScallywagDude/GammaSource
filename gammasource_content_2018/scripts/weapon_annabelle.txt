@@ -5,7 +5,7 @@ WeaponData
 	"bucket_position_360"	"5"
 	"bucket_360"	"2"
 	// Weapon data is loaded by both the Game and Client DLLs.
-	"printname"		"#HL2_Annabelle"
+	"printname"		"Annabelle"
 	"viewmodel"		"models/weapons/v_shotgun.mdl"
 	"playermodel"		"models/weapons/w_annabelle.mdl"
 	"anim_prefix"		"shotgun"

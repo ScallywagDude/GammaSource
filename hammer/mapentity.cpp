@@ -2004,7 +2004,7 @@ void CMapEntity::Render2D(CRender2D *pRender)
 
 			CMapObjectList FoundEntitiesTarget;
 			FoundEntitiesTarget.RemoveAll();
-			pWorld->EnumChildren((ENUMMAPCHILDRENPROC)FindKeyValue, (DWORD)&kv, MAPCLASS_TYPE(CMapEntity));
+			pWorld->EnumChildren((ENUMMAPCHILDRENPROC)FindKeyValue, (uintptr_t)&kv, MAPCLASS_TYPE(CMapEntity));
 
 			Vector vCenter1,vCenter2;
 			GetBoundsCenter( vCenter1 );

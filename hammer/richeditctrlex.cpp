@@ -390,7 +390,7 @@ void CRTFBuilder::normal()
 }
 
 
-static DWORD CALLBACK EditStreamCallBack(DWORD dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
+static DWORD CALLBACK EditStreamCallBack(DWORD_PTR dwCookie, LPBYTE pbBuff, LONG cb, LONG *pcb)
 {
 	CString *pstr = (CString *)dwCookie;
 
@@ -416,7 +416,7 @@ void CRTFBuilder::write(CRichEditCtrl &c)
 
 //	CRtfStringDlg d(m_string);
 
-	EDITSTREAM es = {(DWORD)&m_string, 0, EditStreamCallBack };
+	EDITSTREAM es = {(DWORD_PTR)&m_string, 0, EditStreamCallBack };
 
 	// richEd is the rich edit control
 	c.StreamIn(SF_RTF | SFF_SELECTION, es);

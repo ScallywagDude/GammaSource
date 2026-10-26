@@ -674,6 +674,12 @@ void CNPC_Strider::PostNPCInit()
 //---------------------------------------------------------
 void CNPC_Strider::Activate()
 {
+	// ServerActivate also visits temporary calibration entities appended during
+	// activation. UTIL_Remove has already torn down a queued helper, so it must
+	// not activate again and create another helper when its model is invalid.
+	if ( IsMarkedForDeletion() )
+		return;
+
 	BaseClass::Activate();
 
 	const char *pszBodyTargetBone = "combine_strider.neck_bone";
@@ -692,9 +698,19 @@ void CNPC_Strider::Activate()
 
 	if ( gm_zCannonDist == 0 )
 	{
+		// A missing/error model cannot supply calibration offsets. Leave the
+		// cache uninitialized and report the asset failure without spawning probes.
+		if ( gm_CannonAttachment <= 0 || LookupAttachment( "minigun" ) <= 0 )
+		{
+			Warning( "npc_strider(%s): cannot calibrate weapon offsets; required attachments are missing\n", STRING( GetModelName() ) );
+			return;
+		}
+
 		// Have to create a virgin strider to ensure proper pose
 		CNPC_Strider *pStrider = (CNPC_Strider *)CreateEntityByName( "npc_strider" );
 		Assert(pStrider);
+		if ( !pStrider )
+			return;
 		pStrider->m_bDisableBoneFollowers = true; // don't create these since we're just going to destroy him
 		DispatchSpawn( pStrider );
 

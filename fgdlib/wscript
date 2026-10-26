@@ -1,0 +1,11 @@
+#! /usr/bin/env python
+# encoding: utf-8
+
+def configure(conf):
+    return
+
+def build(bld):
+    bld.stlib(name='fgdlib', target='fgdlib',
+        source=['gamedata.cpp', 'gdclass.cpp', 'gdvar.cpp', 'inputoutput.cpp', 'wckeyvalues.cpp'],
+        includes=['.', '../public', '../public/tier0', '../public/tier1', '../utils/common'],
+        idx=bld.get_taskgen_count())

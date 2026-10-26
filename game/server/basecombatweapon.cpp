@@ -26,6 +26,7 @@
 #include "collisionutils.h"
 #include "iservervehicle.h"
 #include "func_break.h"
+#include "gamma/gamma_impact_materials.h"
 
 #ifdef HL2MP
 	#include "hl2mp_gamerules.h"
@@ -68,6 +69,12 @@ void W_Precache(void)
 	g_sModelIndexBloodDrop = CBaseEntity::PrecacheModel ("sprites/blood.vmt"); // splattered blood 
 	g_sModelIndexLaserDot = CBaseEntity::PrecacheModel("sprites/laserdot.vmt");
 #endif // HL1_DLL
+
+#ifdef GAMMA_PORTALGUN
+	// These were HL1-only in the 2018 base, leaving Gamma's blood sprite IDs zero.
+	g_sModelIndexBloodSpray = CBaseEntity::PrecacheModel( GAMMA_IMPACT_MATERIAL( "sprites/bloodspray.vmt" ) );
+	g_sModelIndexBloodDrop = CBaseEntity::PrecacheModel( GAMMA_IMPACT_MATERIAL( "sprites/blood.vmt" ) );
+#endif
 
 #ifndef TF_DLL
 	g_sModelIndexFireball = CBaseEntity::PrecacheModel ("sprites/zerogxplode.vmt");// fireball

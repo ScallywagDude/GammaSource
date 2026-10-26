@@ -301,7 +301,7 @@ void Clipper3D::SetClipObjects( const CMapObjectList *pList )
             AddToClipList( ( CMapSolid* )pObject, this );
         }
 
-        pObject->EnumChildren( ENUMMAPCHILDRENPROC( AddToClipList ), DWORD( this ), MAPCLASS_TYPE( CMapSolid ) );
+        pObject->EnumChildren( ENUMMAPCHILDRENPROC( AddToClipList ), uintptr_t( this ), MAPCLASS_TYPE( CMapSolid ) );
     }
 
     // the clipping list is not empty anymore

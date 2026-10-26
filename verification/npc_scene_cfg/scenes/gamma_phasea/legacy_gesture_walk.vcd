@@ -1,0 +1,28 @@
+// Choreo version 1
+// Isolated regression fixture; original story VCDs remain unchanged.
+actor "!target1"
+{
+ channel "movement"
+ {
+  event moveto "walk_to_test_mark"
+  {
+   time 0.000000 8.000000
+   param "!target2"
+   param2 "Walk"
+  }
+ }
+ channel "arm_layer"
+ {
+  event gesture "authored_gesture"
+  {
+   time 0.000000 8.000000
+   param "armpose06"
+   event_ramp
+   {
+    0.0000 1.0000
+    7.9000 1.0000
+    8.0000 0.0000
+   }
+  }
+ }
+}

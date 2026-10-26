@@ -1,0 +1,213 @@
+{
+  "model": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\models\\conscript.mdl",
+  "source_version": 37,
+  "sequences": [
+    {
+      "index": 0,
+      "name": "Idle01",
+      "activity": "ACT_IDLE",
+      "events": []
+    },
+    {
+      "index": 1,
+      "name": "Idle02",
+      "activity": "ACT_IDLE",
+      "events": []
+    },
+    {
+      "index": 2,
+      "name": "Walk",
+      "activity": "ACT_WALK",
+      "events": []
+    },
+    {
+      "index": 3,
+      "name": "Run",
+      "activity": "ACT_RUN",
+      "events": []
+    },
+    {
+      "index": 4,
+      "name": "Die_simple",
+      "activity": "ACT_DIESIMPLE",
+      "events": []
+    },
+    {
+      "index": 5,
+      "name": "Sm_flinch",
+      "activity": "ACT_SMALL_FLINCH",
+      "events": []
+    },
+    {
+      "index": 6,
+      "name": "shootblendSMG1",
+      "activity": "ACT_RANGE_ATTACK_SMG1",
+      "events": [
+        {
+          "cycle": 0.0,
+          "event": 3,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "name": "shootblendAR2",
+      "activity": "ACT_RANGE_ATTACK_AR2",
+      "events": [
+        {
+          "cycle": 0.0,
+          "event": 3,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 8,
+      "name": "shootblendAR2G",
+      "activity": "ACT_RANGE_ATTACK_AR2_GRENADE",
+      "events": [
+        {
+          "cycle": 0.0,
+          "event": 3,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "name": "aim",
+      "activity": "ACT_CONSCRIPT_AIM",
+      "events": [
+        {
+          "cycle": 0.0,
+          "event": 3,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 10,
+      "name": "turn_left",
+      "activity": "ACT_TURN_LEFT",
+      "events": []
+    },
+    {
+      "index": 11,
+      "name": "turn_right",
+      "activity": "ACT_TURN_RIGHT",
+      "events": []
+    },
+    {
+      "index": 12,
+      "name": "draw",
+      "activity": "ACT_ARM",
+      "events": [
+        {
+          "cycle": 0.699999988079071,
+          "event": 2,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "name": "disarm",
+      "activity": "ACT_DISARM",
+      "events": [
+        {
+          "cycle": 0.6000000238418579,
+          "event": 4,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 14,
+      "name": "reload_low",
+      "activity": "ACT_RELOAD_LOW",
+      "events": [
+        {
+          "cycle": 0.2142857164144516,
+          "event": 1,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 15,
+      "name": "reload_med",
+      "activity": "ACT_RELOAD_MED",
+      "events": [
+        {
+          "cycle": 0.2142857164144516,
+          "event": 1,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 16,
+      "name": "reload",
+      "activity": "ACT_RELOAD",
+      "events": [
+        {
+          "cycle": 0.2142857164144516,
+          "event": 1,
+          "type": 0,
+          "options": ""
+        }
+      ]
+    },
+    {
+      "index": 17,
+      "name": "cover_crouch_low",
+      "activity": "ACT_COVER_LOW",
+      "events": []
+    },
+    {
+      "index": 18,
+      "name": "cover_crouch_med",
+      "activity": "ACT_COVER_MED",
+      "events": []
+    },
+    {
+      "index": 19,
+      "name": "barnaclehit",
+      "activity": "ACT_BARNACLE_HIT",
+      "events": []
+    },
+    {
+      "index": 20,
+      "name": "barnaclepull",
+      "activity": "ACT_BARNACLE_PULL",
+      "events": []
+    },
+    {
+      "index": 21,
+      "name": "barnaclecrunch",
+      "activity": "ACT_BARNACLE_CHOMP",
+      "events": []
+    },
+    {
+      "index": 22,
+      "name": "barnaclechew",
+      "activity": "ACT_BARNACLE_CHEW",
+      "events": []
+    },
+    {
+      "index": 23,
+      "name": "ragdoll",
+      "activity": "ACT_DIERAGDOLL",
+      "events": []
+    }
+  ]
+}

@@ -2076,7 +2076,9 @@ bool CalcPoseSingle(
 			CalcAnimation( pStudioHdr, pos2, q2, seqdesc, sequence, seqdesc.anim( i0+1,i1+1  ), cycle, boneMask );
 			BlendBones( pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s0, boneMask );
 		}
-		else if ( !anim_3wayblend.GetBool() )
+		// Converted beta grids were authored for the original four-corner
+		// interpolation. Triangulation changes even exact decoded poses.
+		else if ( !anim_3wayblend.GetBool() || ( seqdesc.flags & STUDIO_GAMMA_LEGACY2003 ) )
 		{
 			CalcAnimation( pStudioHdr, pos,  q,  seqdesc, sequence, seqdesc.anim( i0  ,i1  ), cycle, boneMask );
 			CalcAnimation( pStudioHdr, pos2, q2, seqdesc, sequence, seqdesc.anim( i0+1,i1  ), cycle, boneMask );
@@ -3011,6 +3013,17 @@ bool Studio_IKAnimationError( const CStudioHdr *pStudioHdr, mstudioikrule_t *pRu
 	int iFrame;
 
 	flWeight = Studio_IKRuleWeight( *pRule, panim, flCycle, iFrame, fraq );
+	if ( ( panim->flags & STUDIO_GAMMA_LEGACY2003 ) && flWeight >= 0.0001f )
+	{
+		// 2003 error tables use absolute frames and wrap by numframes,
+		// rather than the modern start-relative numframes-1 period.
+		float flLegacyFrame = ( panim->numframes - 1 ) * flCycle;
+		iFrame = (int)flLegacyFrame;
+		fraq = flLegacyFrame - iFrame;
+		if ( pRule->end > 1.0f && flCycle < pRule->start )
+			iFrame += panim->numframes;
+	}
+	// Keep the modern safe clamping for inactive ground-rule lookups.
 	Assert( fraq >= 0.0 && fraq < 1.0 );
 	Assert( flWeight >= 0.0f && flWeight <= 1.0f );
 
@@ -4779,7 +4792,10 @@ void DoQuatInterpBone(
 				pos.z = pos.z + s * pTrigger->pos.z;
 			}
 		}
-		Assert( QuaternionNormalize( quat ) != 0);
+		// Keep procedural helper rotations normalized in release builds too.
+		const float quaternionLength = QuaternionNormalize( quat );
+		Assert( quaternionLength != 0 );
+		(void)quaternionLength;
 		QuaternionMatrix( quat, pos, bonematrix );
 	}
 

@@ -15,6 +15,8 @@
 #include "baseanimatingoverlay.h"
 #include "sceneentity.h"
 #include "entitylist.h"
+#include "ai_basenpc.h"
+#include "ai_memory.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -233,7 +235,74 @@ CON_COMMAND_F(gamma_actor_scene,"gamma_actor_scene <targetname/class> <scene.vcd
     Msg("GAMMA_ACTOR_SCENE actor=%s scene=%s duration=%.3f\n",args[1],args[2],duration);
 }
 
-CON_COMMAND_F(gamma_actor_view,"gamma_actor_view <targetname/class> [distance]: place the diagnostic camera in front of an actor",FCVAR_CHEAT)
+static Vector GammaActorEyeTarget( CBaseEntity *actor )
+{
+    Vector target=actor->EyePosition();
+    CBaseAnimating *animated=dynamic_cast<CBaseAnimating *>(actor);
+    if (animated)
+    {
+        const int eyes=animated->LookupAttachment("eyes");
+        QAngle angles;
+        Vector attachment;
+        if (eyes>0 && animated->GetAttachment(eyes,attachment,angles)) target=attachment;
+    }
+    return target;
+}
+
+// A separate view entity keeps diagnostics from firing touch triggers by
+// teleporting the real player into a scene's authored activation volume.
+class CGammaObserverCamera : public CBaseEntity
+{
+    DECLARE_CLASS(CGammaObserverCamera,CBaseEntity);
+public:
+    virtual void Spawn()
+    {
+        BaseClass::Spawn();
+        SetMoveType(MOVETYPE_NONE);
+        SetSolid(SOLID_NONE);
+        AddEffects(EF_NODRAW);
+        DispatchUpdateTransmitState();
+    }
+    virtual int UpdateTransmitState() { return SetTransmitState(FL_EDICT_ALWAYS); }
+};
+LINK_ENTITY_TO_CLASS(gamma_observer_camera,CGammaObserverCamera);
+
+CON_COMMAND_F(gamma_observe_actor,"gamma_observe_actor <targetname/class> [distance]: observe without moving the real player or touching map triggers",FCVAR_CHEAT)
+{
+    if (args.ArgC()<2) return;
+    CBaseEntity *actor=gEntList.FindEntityByName(NULL,args[1]);
+    if (!actor) actor=gEntList.FindEntityByClassname(NULL,args[1]);
+    CBasePlayer *player=UTIL_GetLocalPlayer();
+    if (!actor || !player) return;
+    CBaseEntity *camera=gEntList.FindEntityByName(NULL,"gamma_diagnostic_observer");
+    if (!camera)
+    {
+        camera=CreateEntityByName("gamma_observer_camera");
+        if (!camera) return;
+        camera->KeyValue("targetname","gamma_diagnostic_observer");
+        if (DispatchSpawn(camera)<0) { UTIL_Remove(camera); return; }
+        camera->Activate();
+    }
+    const float distance=args.ArgC()>2 ? clamp((float)atof(args[2]),32.0f,512.0f) : 120.0f;
+    Vector forward;AngleVectors(QAngle(0,actor->GetAbsAngles().y,0),&forward);
+    const Vector target=GammaActorEyeTarget(actor);
+    const Vector origin=target+forward*distance+Vector(0,0,8);
+    QAngle angles;VectorAngles(target-origin,angles);
+    camera->Teleport(&origin,&angles,NULL);
+    player->SetViewEntity(camera);
+    const Vector playerOrigin=player->GetAbsOrigin();
+    Msg("GAMMA_OBSERVER actor=%s camera=%d origin=%.2f,%.2f,%.2f player_origin=%.2f,%.2f,%.2f\n",args[1],camera->entindex(),origin.x,origin.y,origin.z,playerOrigin.x,playerOrigin.y,playerOrigin.z);
+}
+
+CON_COMMAND_F(gamma_observe_off,"Return from the diagnostic view without changing player placement",FCVAR_CHEAT)
+{
+    CBasePlayer *player=UTIL_GetLocalPlayer();
+    if (player) player->SetViewEntity(player);
+    CBaseEntity *camera=gEntList.FindEntityByName(NULL,"gamma_diagnostic_observer");
+    if (camera) UTIL_Remove(camera);
+}
+
+CON_COMMAND_F(gamma_actor_view,"gamma_actor_view <targetname/class> [distance]: teleport player in front of an actor; use gamma_observe_actor for native scene tests",FCVAR_CHEAT)
 {
     if (args.ArgC()<2) return;
     CBaseEntity *actor=gEntList.FindEntityByName(NULL,args[1]);
@@ -242,7 +311,7 @@ CON_COMMAND_F(gamma_actor_view,"gamma_actor_view <targetname/class> [distance]: 
     if (!actor || !player) return;
     const float distance=args.ArgC()>2 ? clamp((float)atof(args[2]),48.0f,256.0f) : 100.0f;
     Vector forward;AngleVectors(QAngle(0,actor->GetAbsAngles().y,0),&forward);
-    const Vector target=actor->EyePosition();
+    const Vector target=GammaActorEyeTarget(actor);
     const Vector camera=target+forward*distance+Vector(0,0,8);
     QAngle view;VectorAngles(target-camera,view);
     player->SetMoveType(MOVETYPE_NOCLIP);
@@ -250,4 +319,78 @@ CON_COMMAND_F(gamma_actor_view,"gamma_actor_view <targetname/class> [distance]: 
     player->SetAbsVelocity(vec3_origin);
     player->SnapEyeAngles(view);
     Msg("GAMMA_ACTOR_VIEW actor=%s distance=%.1f camera=%.1f,%.1f,%.1f\n",args[1],distance,camera.x,camera.y,camera.z);
+}
+
+static CBaseEntity *GammaNPCSubject( const char *name )
+{
+    return gEntList.FindEntityByName( NULL, name && *name ? name : "gamma_npc_subject" );
+}
+
+CON_COMMAND_F( gamma_npc_info, "gamma_npc_info [targetname]: native NPC health, AI, model and placement snapshot", FCVAR_CHEAT )
+{
+    CBaseEntity *entity = GammaNPCSubject( args.ArgC() > 1 ? args[1] : NULL );
+    if ( !entity ) { Warning("GAMMA_NPC_INFO missing=1\n"); return; }
+    CAI_BaseNPC *npc = entity->MyNPCPointer();
+    CBaseAnimating *anim = entity->GetBaseAnimating();
+    CStudioHdr *hdr = anim ? anim->GetModelPtr() : NULL;
+    const int sequence = anim ? anim->GetSequence() : -1;
+    const char *label = hdr && sequence >= 0 && sequence < hdr->GetNumSeq() ? hdr->pSeqdesc(sequence).pszLabel() : "<invalid>";
+    CBaseEntity *enemy = npc ? npc->GetEnemy() : NULL;
+    const Vector &origin = entity->GetAbsOrigin();
+    Msg("GAMMA_NPC_INFO time=%.3f id=%d name=%s class=%s npc=%d health=%d max_health=%d alive=%d classification=%d model=%s bones=%d sequences=%d sequence=%d label=%s cycle=%.3f state=%d activity=%d ideal_activity=%d schedule=%s enemy=%s enemy_health=%d pos=%.2f,%.2f,%.2f vel=%.2f,%.2f,%.2f capabilities=%x\n",
+        gpGlobals->curtime, entity->entindex(), STRING(entity->GetEntityName()), entity->GetClassname(), npc != NULL,
+        entity->GetHealth(), entity->GetMaxHealth(), entity->IsAlive(), entity->Classify(), STRING(entity->GetModelName()),
+        hdr ? hdr->numbones() : 0, hdr ? hdr->GetNumSeq() : 0, sequence, label, anim ? anim->GetCycle() : 0,
+        npc ? npc->GetState() : -1, npc ? npc->GetActivity() : -1, npc ? npc->GetIdealActivity() : -1,
+        npc && npc->GetCurSchedule() ? npc->GetCurSchedule()->GetName() : "<none>",
+        enemy ? enemy->GetClassname() : "<none>", enemy ? enemy->GetHealth() : -1,
+        origin.x, origin.y, origin.z, entity->GetAbsVelocity().x, entity->GetAbsVelocity().y, entity->GetAbsVelocity().z,
+        npc ? npc->CapabilitiesGet() : 0 );
+}
+
+CON_COMMAND_F( gamma_npc_spawn, "gamma_npc_spawn <classname> <x> <y> <z> [yaw] [equipment]: isolated native spawn named gamma_npc_subject", FCVAR_CHEAT )
+{
+    if ( args.ArgC() < 5 ) return;
+    const bool allowed = CBaseEntity::IsPrecacheAllowed();
+    CBaseEntity::SetAllowPrecache( true );
+    CBaseEntity *entity = CreateEntityByName( args[1] );
+    if ( entity )
+    {
+        EHANDLE handle = entity;
+        entity->KeyValue( "targetname", "gamma_npc_subject" );
+        if ( args.ArgC() > 6 ) entity->KeyValue( "additionalequipment", args[6] );
+        entity->SetAbsOrigin( Vector(atof(args[2]), atof(args[3]), atof(args[4])) );
+        entity->SetAbsAngles( QAngle(0, args.ArgC() > 5 ? atof(args[5]) : 0, 0) );
+        const int result = DispatchSpawn( entity );
+        if ( result >= 0 && handle && !handle->IsMarkedForDeletion() ) handle->Activate();
+        Msg("GAMMA_NPC_SPAWN class=%s result=%d entity=%d\n", args[1], result, handle ? handle->entindex() : -1);
+        if ( handle ) RunAsPlayer( "gamma_npc_info gamma_npc_subject" );
+    }
+    else Warning("GAMMA_NPC_SPAWN class=%s factory_missing=1\n", args[1]);
+    CBaseEntity::SetAllowPrecache( allowed );
+}
+
+CON_COMMAND_F( gamma_npc_target, "gamma_npc_target <x> <y> <z>: give the probe NPC a real damageable bullseye enemy", FCVAR_CHEAT )
+{
+    CBaseEntity *subject = GammaNPCSubject( NULL );
+    CAI_BaseNPC *npc = subject ? subject->MyNPCPointer() : NULL;
+    if ( !npc || args.ArgC() < 4 ) return;
+    const bool allowed = CBaseEntity::IsPrecacheAllowed();
+    CBaseEntity::SetAllowPrecache( true );
+    CBaseEntity *target = CreateEntityByName( "npc_bullseye" );
+    if ( target )
+    {
+        target->KeyValue( "targetname", "gamma_npc_target" );
+        target->KeyValue( "health", "100000" );
+        target->SetAbsOrigin( Vector(atof(args[1]), atof(args[2]), atof(args[3])) );
+        if ( DispatchSpawn(target) >= 0 )
+        {
+            target->Activate();
+            npc->AddEntityRelationship( target, D_HT, 99 );
+            npc->UpdateEnemyMemory( target, target->GetAbsOrigin() );
+            npc->SetEnemy( target );
+            Msg("GAMMA_NPC_TARGET npc=%d target=%d health=%d\n", npc->entindex(), target->entindex(), target->GetHealth());
+        }
+    }
+    CBaseEntity::SetAllowPrecache( allowed );
 }

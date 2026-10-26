@@ -239,7 +239,8 @@ void CRender3D::BeginRenderHitTarget(CMapAtom *pObject, unsigned int uHandle)
 	}
 
 	CMatRenderContextPtr pRenderContext( MaterialSystemInterface() );
-	pRenderContext->PushSelectionName((unsigned int)pObject);
+	const unsigned int objectToken = m_PickObjects.AddToTail( pObject );
+	pRenderContext->PushSelectionName( objectToken );
 	pRenderContext->PushSelectionName(uHandle);
 }
 
@@ -265,9 +266,9 @@ void CRender3D::EndRenderHitTarget(void)
 
 		if ((pRenderContext->SelectionMode(true) != 0) && (m_Pick.nNumHits < MAX_PICK_HITS))
 		{
-			if (m_Pick.uSelectionBuffer[0] == 2)
+			if (m_Pick.uSelectionBuffer[0] == 2 && m_Pick.uSelectionBuffer[3] < (unsigned int)m_PickObjects.Count())
 			{
-				m_Pick.Hits[m_Pick.nNumHits].pObject = (CMapClass *)m_Pick.uSelectionBuffer[3];
+				m_Pick.Hits[m_Pick.nNumHits].pObject = (CMapClass *)m_PickObjects[m_Pick.uSelectionBuffer[3]];
 				m_Pick.Hits[m_Pick.nNumHits].uData = m_Pick.uSelectionBuffer[4];
 				m_Pick.Hits[m_Pick.nNumHits].nDepth = m_Pick.uSelectionBuffer[1];
 				m_Pick.Hits[m_Pick.nNumHits].m_LocalMatrix = m_LocalMatrix.Head();
@@ -623,6 +624,7 @@ int CRender3D::ObjectsAt( float x, float y, float fWidth, float fHeight, HitInfo
 	}
 
 	m_Pick.m_nFlags = nFlags;
+	m_PickObjects.RemoveAll();
 	m_Pick.bPicking = true;
 
 	EditorRenderMode_t eOldMode = GetDefaultRenderMode();

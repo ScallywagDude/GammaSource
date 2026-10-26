@@ -16,8 +16,8 @@
 
 #define	 ENERGY_GRENADE_LIFETIME 1
 
-ConVar    sk_dmg_energy_grenade		( "sk_dmg_energy_grenade","0");
-ConVar	  sk_energy_grenade_radius	( "sk_energy_grenade_radius","0");
+ConVar    sk_dmg_energy_grenade		( "sk_dmg_energy_grenade","2");
+ConVar	  sk_energy_grenade_radius	( "sk_energy_grenade_radius","100");
 
 BEGIN_DATADESC( CGrenadeEnergy )
 
@@ -70,11 +70,13 @@ void CGrenadeEnergy::Spawn( void )
 void CGrenadeEnergy::Shoot( CBaseEntity* pOwner, const Vector &vStart, Vector vVelocity )
 {
 	CGrenadeEnergy *pEnergy = (CGrenadeEnergy *)CreateEntityByName( "grenade_energy" );
+	if ( !pEnergy ) return;
 	pEnergy->Spawn();
 	
 	UTIL_SetOrigin( pEnergy, vStart );
 	pEnergy->SetAbsVelocity( vVelocity );
 	pEnergy->SetOwnerEntity( pOwner );
+	pEnergy->SetThrower( pOwner ? pOwner->MyCombatCharacterPointer() : NULL );
 
 	pEnergy->SetThink ( &ThisClass::Animate );
 	pEnergy->SetNextThink( gpGlobals->curtime + 0.1f );
@@ -110,7 +112,7 @@ void CGrenadeEnergy::Animate( void )
 
 	StudioFrameAdvance( );
 
-	SetRenderColorA( flLifeLeft );
+	SetRenderColorA( (int)(255.0f * clamp(flLifeLeft, 0.0f, 1.0f)) );
 }
 
 void CGrenadeEnergy::Event_Killed( const CTakeDamageInfo &info )
@@ -120,6 +122,7 @@ void CGrenadeEnergy::Event_Killed( const CTakeDamageInfo &info )
 
 void CGrenadeEnergy::GrenadeEnergyTouch( CBaseEntity *pOther )
 {
+	if ( !pOther || pOther == GetOwnerEntity() ) return;
 	if ( pOther->m_takedamage )
 	{
 		float flLifeLeft = 1-(gpGlobals->curtime  - m_flLaunchTime)/ENERGY_GRENADE_LIFETIME;
@@ -128,8 +131,8 @@ void CGrenadeEnergy::GrenadeEnergyTouch( CBaseEntity *pOther )
 		{
 			CBasePlayer *pPlayer = ( CBasePlayer * )pOther;
 			float		flKick	 = 120 * flLifeLeft;
-			pPlayer->m_Local.m_vecPunchAngle.SetX( flKick * (random->RandomInt(0,1) == 1) ? -1 : 1 );
-			pPlayer->m_Local.m_vecPunchAngle.SetY( flKick * (random->RandomInt(0,1) == 1) ? -1 : 1 );
+			pPlayer->m_Local.m_vecPunchAngle.SetX( flKick * ((random->RandomInt(0,1) == 1) ? -1 : 1) );
+			pPlayer->m_Local.m_vecPunchAngle.SetY( flKick * ((random->RandomInt(0,1) == 1) ? -1 : 1) );
 		}
 		float flDamage = m_flDamage * flLifeLeft;
 		if (flDamage < 1) 
@@ -138,7 +141,7 @@ void CGrenadeEnergy::GrenadeEnergyTouch( CBaseEntity *pOther )
 		}
 
 		trace_t tr; tr = GetTouchTrace();
-		CTakeDamageInfo info( this, GetThrower(), m_flDamage * flLifeLeft, DMG_SONIC );
+		CTakeDamageInfo info( this, GetThrower(), flDamage, DMG_SONIC );
 		CalculateMeleeDamageForce( &info, (tr.endpos - tr.startpos), tr.endpos );
 		pOther->TakeDamage( info );
 	}

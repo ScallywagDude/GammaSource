@@ -1,0 +1,46 @@
+[
+  {
+    "model": "Alyx",
+    "vertices": 5018,
+    "weighted_by_procedural_helpers": 578,
+    "helper_count": 16,
+    "helper_vertex_influences": {
+      "ValveBiped.Bip01_L_Elbow": 15,
+      "ValveBiped.Bip01_L_Bicep": 25,
+      "ValveBiped.Bip01_L_Shoulder": 84,
+      "ValveBiped.Bip01_L_Trapezius": 55,
+      "ValveBiped.Bip01_L_Latt": 30,
+      "ValveBiped.Bip01_L_Pectoral": 64,
+      "ValveBiped.Bip01_R_Wrist": 50,
+      "ValveBiped.Bip01_R_Trapezius": 68,
+      "ValveBiped.Bip01_R_Bicep": 27,
+      "ValveBiped.Bip01_R_Shoulder": 96,
+      "ValveBiped.Bip01_R_Elbow": 13,
+      "ValveBiped.Bip01_R_Pectoral": 58,
+      "ValveBiped.Bip01_R_Latt": 31,
+      "ValveBiped.Bip01_L_Wrist": 54,
+      "ValveBiped.Bip01_R_Ulna": 28,
+      "ValveBiped.Bip01_L_Ulna": 18
+    }
+  },
+  {
+    "model": "kleiner",
+    "vertices": 3944,
+    "weighted_by_procedural_helpers": 424,
+    "helper_count": 12,
+    "helper_vertex_influences": {
+      "ValveBiped.Bip01_R_Wrist": 48,
+      "ValveBiped.Bip01_L_Shoulder": 88,
+      "ValveBiped.Bip01_R_Bicep": 20,
+      "ValveBiped.Bip01_R_Trapezius": 67,
+      "ValveBiped.Bip01_L_Trapezius": 85,
+      "ValveBiped.Bip01_L_Elbow": 14,
+      "ValveBiped.Bip01_L_Wrist": 48,
+      "ValveBiped.Bip01_L_Bicep": 29,
+      "ValveBiped.Bip01_R_Ulna": 23,
+      "ValveBiped.Bip01_R_Elbow": 13,
+      "ValveBiped.Bip01_L_Ulna": 23,
+      "ValveBiped.Bip01_R_Shoulder": 76
+    }
+  }
+]

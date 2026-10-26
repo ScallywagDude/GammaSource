@@ -1,0 +1,2751 @@
+{
+  "schema": 1,
+  "private_namespace": "gamma_2003/",
+  "reference": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2",
+  "original_decal_script": {
+    "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\scripts\\decals.txt",
+    "sha256": "ce8f77e1d41cd64205630f8e050254ad9321f51b995558c0eeadc212912f0942"
+  },
+  "baseline_2018_script": {
+    "path": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource\\tools\\gamma\\reference\\decals_subrect_2018.txt",
+    "sha256": "12b9418b5e0a98dd6b82882ed4102a0dbe6f978d3886d935c2bdea760a753c01"
+  },
+  "restored_groups": [
+    "Impact.Concrete",
+    "Impact.Metal",
+    "Impact.Wood",
+    "Impact.Glass",
+    "Impact.Flesh",
+    "Impact.BloodyFlesh",
+    "Impact.AlienFlesh",
+    "Blood",
+    "YellowBlood",
+    "BigShot",
+    "BulletProof",
+    "GlassBreak",
+    "ExplosiveGunshot"
+  ],
+  "blood_material_roots": [
+    "effects/blood",
+    "effects/blood2",
+    "effects/blood_gore",
+    "effects/blood_drop",
+    "effects/blood_puff",
+    "sprites/blood",
+    "sprites/bloodspray"
+  ],
+  "script": {
+    "path": "scripts/gamma_2003_decals.txt",
+    "sha256": "004ae8677de6df76dd3a32f497af370577a84af444c4ab32dc6f896cb8a3cd83",
+    "preserved_2018_groups": [
+      "TranslationData",
+      "Impact.Antlion",
+      "Impact.Sand",
+      "Scorch",
+      "SmallScorch",
+      "FadingScorch",
+      "BeerSplash",
+      "ManhackCut",
+      "RedGlowFade",
+      "CombineBallFade",
+      "CombineBallFade2",
+      "CombineBallFade3",
+      "PlasmaGlowFade",
+      "Splash",
+      "Fire",
+      "Antion.Unburrow",
+      "Extinguish",
+      "Splash.Large",
+      "Splash.Small",
+      "Rollermine.Crater",
+      "BirdPoop",
+      "PaintSplatBlue",
+      "PaintSplatGreen",
+      "PaintSplatPink",
+      "EnergyBall.Impact",
+      "Antlion.Splat",
+      "SecurityCamera.Detachment",
+      "Models"
+    ]
+  },
+  "files": [
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot1.vmt",
+      "source_relative": "materials/decals/alienflesh/shot1.vmt",
+      "source_sha256": "ad72c009b31e541e01659a95790d580ff31015ca41f8eba02a227794730232f2",
+      "source_size": 118,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/alienflesh/shot1",
+          "private": "gamma_2003/decals/alienflesh/shot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "2ff7b548c82c4080b83722da4fd4e09c16d990b3e339dd3bf0081b4b5a4a91b9",
+      "output_size": 129
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot1.vtf",
+      "source_relative": "materials/decals/alienflesh/shot1.vtf",
+      "source_sha256": "9e47008bf6d793c6f39a86878d4b7f73c469d459f07efe276f97ce1bd4b0d214",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "9e47008bf6d793c6f39a86878d4b7f73c469d459f07efe276f97ce1bd4b0d214",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot2.vmt",
+      "source_relative": "materials/decals/alienflesh/shot2.vmt",
+      "source_sha256": "b0d459a051fd6123bddcb9fc1c794bb5c1238bdca42813e6ca6e054a21cef6b7",
+      "source_size": 118,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/alienflesh/shot2",
+          "private": "gamma_2003/decals/alienflesh/shot2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "b0a097c97750db52aacbc4307ac93b9ec5539bf0950a3745de4b1b12e8a66b35",
+      "output_size": 129
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot2.vtf",
+      "source_relative": "materials/decals/alienflesh/shot2.vtf",
+      "source_sha256": "681f5bb46430e8bd7df07622073d9290d6958d6bbff8bb16e9fb4b12bbead59f",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "681f5bb46430e8bd7df07622073d9290d6958d6bbff8bb16e9fb4b12bbead59f",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot3.vmt",
+      "source_relative": "materials/decals/alienflesh/shot3.vmt",
+      "source_sha256": "c19a65a55dac8bdab1521f0827d17fda034172735c0f85a9e12fd7f98665c8c1",
+      "source_size": 118,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/alienflesh/shot3",
+          "private": "gamma_2003/decals/alienflesh/shot3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "2dbd5d139b6b9ed6951b224a2d59492044a59c844caa3dfd7157828eb69e42a9",
+      "output_size": 129
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot3.vtf",
+      "source_relative": "materials/decals/alienflesh/shot3.vtf",
+      "source_sha256": "eb09e0332b03cf715af8f12c0574d55bcfe1ab15f3331e2b004d80039d4be9e5",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "eb09e0332b03cf715af8f12c0574d55bcfe1ab15f3331e2b004d80039d4be9e5",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot4.vmt",
+      "source_relative": "materials/decals/alienflesh/shot4.vmt",
+      "source_sha256": "ad07e6bde4917e7321944977474a22b25b8606ade9568072dd26da288b8ea4e3",
+      "source_size": 118,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/alienflesh/shot4",
+          "private": "gamma_2003/decals/alienflesh/shot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "ab491326a7538181045d3040351d7242af8ddbde122015d21808c08d4543d48e",
+      "output_size": 129
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot4.vtf",
+      "source_relative": "materials/decals/alienflesh/shot4.vtf",
+      "source_sha256": "570a8217d092b2aac6ac163c7fcb858a3320f75a6eb1bc9d263eedeca7aef389",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "570a8217d092b2aac6ac163c7fcb858a3320f75a6eb1bc9d263eedeca7aef389",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot5.vmt",
+      "source_relative": "materials/decals/alienflesh/shot5.vmt",
+      "source_sha256": "43771490c4710bfdbb175435ad493d2427ba0eff1c27baf34fb2868b8cb7a50c",
+      "source_size": 118,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/alienflesh/shot5",
+          "private": "gamma_2003/decals/alienflesh/shot5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "47458a226cffb91f3f4f7e2efe970d38ac2a7aa92dd0ae87cde60aaab9d1115e",
+      "output_size": 129
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\alienflesh\\shot5.vtf",
+      "source_relative": "materials/decals/alienflesh/shot5.vtf",
+      "source_sha256": "64c6311d6d81b133316b9eb34ab34ba773302cb26027ccd7ef4fe3dfc82bf8d3",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/alienflesh/shot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "64c6311d6d81b133316b9eb34ab34ba773302cb26027ccd7ef4fe3dfc82bf8d3",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot1.vmt",
+      "source_relative": "materials/decals/bigshot1.vmt",
+      "source_sha256": "6c87f69eb5e486410cfee70253d0628d0ef1f878f2f31da053f0afa7f44ca345",
+      "source_size": 261,
+      "output_relative": "materials/gamma_2003/decals/bigshot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot1",
+          "private": "gamma_2003/decals/bigshot1",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/bigshot1model",
+          "private": "gamma_2003/decals/bigshot1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "e48816b7e7a068e54650e7743cbe8d7e3efbcb1386c8909ff67f9e67e23208c7",
+      "output_size": 283
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot1.vtf",
+      "source_relative": "materials/decals/bigshot1.vtf",
+      "source_sha256": "ecd2f7534fd188410c446e0ce7b56c0146ebe3f3346ef3806dfbef994b98b0c9",
+      "source_size": 2936,
+      "output_relative": "materials/gamma_2003/decals/bigshot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 13,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "ecd2f7534fd188410c446e0ce7b56c0146ebe3f3346ef3806dfbef994b98b0c9",
+      "output_size": 2936
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot1model.vmt",
+      "source_relative": "materials/decals/bigshot1model.vmt",
+      "source_sha256": "ffa9198aa2206f2c3f01f03d6d752665b4942dc485d8af12a3fe00b53d497fd2",
+      "source_size": 230,
+      "output_relative": "materials/gamma_2003/decals/bigshot1model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot1",
+          "private": "gamma_2003/decals/bigshot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "20c62bf4fcd3a9d6e435f49325bc7d54b048553de991a5cfebfc29c1edfee528",
+      "output_size": 241
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot2.vmt",
+      "source_relative": "materials/decals/bigshot2.vmt",
+      "source_sha256": "ef250146b51f934c00955928ab5f86bc33e36ec831e7c1c1f0ccd1a491da8568",
+      "source_size": 192,
+      "output_relative": "materials/gamma_2003/decals/bigshot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot2",
+          "private": "gamma_2003/decals/bigshot2",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/bigshot1model",
+          "private": "gamma_2003/decals/bigshot1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "16892492a2dfea01947c052158fbf4dedd24f996ea665878cc5f9cd1b5c8f901",
+      "output_size": 214
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot2.vtf",
+      "source_relative": "materials/decals/bigshot2.vtf",
+      "source_sha256": "46017f45477ba4342cf5993fafd9a4c4b2205e19ea62e4958705bd451b32a447",
+      "source_size": 560,
+      "output_relative": "materials/gamma_2003/decals/bigshot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "46017f45477ba4342cf5993fafd9a4c4b2205e19ea62e4958705bd451b32a447",
+      "output_size": 560
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot3.vmt",
+      "source_relative": "materials/decals/bigshot3.vmt",
+      "source_sha256": "119390f30f50e20c24f724b8de959c42115f5c482de768eb10417900dd67d330",
+      "source_size": 192,
+      "output_relative": "materials/gamma_2003/decals/bigshot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot3",
+          "private": "gamma_2003/decals/bigshot3",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/bigshot1model",
+          "private": "gamma_2003/decals/bigshot1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "81f823602aadbc472ffb296ca5301236664a0ea53b063872567cff6be29c1485",
+      "output_size": 214
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot3.vtf",
+      "source_relative": "materials/decals/bigshot3.vtf",
+      "source_sha256": "01ff5c91092c0d89b07fb79cd189fa7b89408b38ef40a20c87235751567acaad",
+      "source_size": 560,
+      "output_relative": "materials/gamma_2003/decals/bigshot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "01ff5c91092c0d89b07fb79cd189fa7b89408b38ef40a20c87235751567acaad",
+      "output_size": 560
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot4.vmt",
+      "source_relative": "materials/decals/bigshot4.vmt",
+      "source_sha256": "c942e6dad7bb87f76b97e863912b7424eaef5d5ecadf56132acf2d6f8400a991",
+      "source_size": 150,
+      "output_relative": "materials/gamma_2003/decals/bigshot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot4",
+          "private": "gamma_2003/decals/bigshot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "5ad9bb01f2438bd3387fbefbe4573c23f84af93b96bd706a5d89918a231166ee",
+      "output_size": 161
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot4.vtf",
+      "source_relative": "materials/decals/bigshot4.vtf",
+      "source_sha256": "006d87e5c18ac2610133d3816668ba38347bc49e10ac8a75c3cf8513f6c5a760",
+      "source_size": 560,
+      "output_relative": "materials/gamma_2003/decals/bigshot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "006d87e5c18ac2610133d3816668ba38347bc49e10ac8a75c3cf8513f6c5a760",
+      "output_size": 560
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot5.vmt",
+      "source_relative": "materials/decals/bigshot5.vmt",
+      "source_sha256": "933e8e01a6eab1b435363382791f04f9ad71cefe506ee13190246cfc18f3d93f",
+      "source_size": 192,
+      "output_relative": "materials/gamma_2003/decals/bigshot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bigshot5",
+          "private": "gamma_2003/decals/bigshot5",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/bigshot1model",
+          "private": "gamma_2003/decals/bigshot1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "330fee479f7e70570b2eb91f29f93c3036f2206420c2d3760121acb284ba3219",
+      "output_size": 214
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bigshot5.vtf",
+      "source_relative": "materials/decals/bigshot5.vtf",
+      "source_sha256": "49964896422ba7a387ff041dc6fd196c3a4299f400ba7c78e35e2b821828387a",
+      "source_size": 560,
+      "output_relative": "materials/gamma_2003/decals/bigshot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "49964896422ba7a387ff041dc6fd196c3a4299f400ba7c78e35e2b821828387a",
+      "output_size": 560
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood1.vmt",
+      "source_relative": "materials/decals/blood1.vmt",
+      "source_sha256": "6ac0763722a532825dd9df7043fb790290c8d95858b23d9bc3d4dd79851221e0",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood1",
+          "private": "gamma_2003/decals/blood1",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood1Model",
+          "private": "gamma_2003/decals/blood1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "d506d8e489af1020761fa14857bf18a54b4d62843c871c065249e84b090236d5",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood1.vtf",
+      "source_relative": "materials/decals/blood1.vtf",
+      "source_sha256": "d56c29ad77a89c72791250bdc7915416f82c8a2e1c70001a31c256775983fdcf",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/blood1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d56c29ad77a89c72791250bdc7915416f82c8a2e1c70001a31c256775983fdcf",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood1Model.vmt",
+      "source_relative": "materials/decals/blood1model.vmt",
+      "source_sha256": "969fac2fb75affb661e3315db7962b019ae49b2193c7c4a58ae070b6905244fc",
+      "source_size": 166,
+      "output_relative": "materials/gamma_2003/decals/blood1model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood1",
+          "private": "gamma_2003/decals/blood1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "712dad70ee379803d4e735dfb5811106ff1f82dbe756a7c54e58b224928947a9",
+      "output_size": 177
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood2.vmt",
+      "source_relative": "materials/decals/blood2.vmt",
+      "source_sha256": "33acb9362ab9d60f0cc0d7d5ef852ef3d6580b4cb81d3a6eaeda33758329bd52",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood2",
+          "private": "gamma_2003/decals/blood2",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood2Model",
+          "private": "gamma_2003/decals/blood2model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "6833c1d2508befdbf28f5a59e8ae7b900f5c233b4732e4d13efcd8ef8c6d794a",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood2.vtf",
+      "source_relative": "materials/decals/blood2.vtf",
+      "source_sha256": "b8c4f61f33b9ba4118fcd43a7fbe28308627ff02761b25ab32b846e6c6be5c5c",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/blood2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "b8c4f61f33b9ba4118fcd43a7fbe28308627ff02761b25ab32b846e6c6be5c5c",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood2model.vmt",
+      "source_relative": "materials/decals/blood2model.vmt",
+      "source_sha256": "6c500e20799b5e432327b1d5aa9325b922adc14f525c88d9acf906466bec0359",
+      "source_size": 180,
+      "output_relative": "materials/gamma_2003/decals/blood2model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood2",
+          "private": "gamma_2003/decals/blood2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "afd12f1bbe347c180a0e963ecd05ee4b9a7f158e51b2ea5da11004de5dff286b",
+      "output_size": 191
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood3.vmt",
+      "source_relative": "materials/decals/blood3.vmt",
+      "source_sha256": "f7433ef35d0642e47dbf8fc2463c9ac3095a566e24a1cd80a533ddf13c002156",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood3",
+          "private": "gamma_2003/decals/blood3",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood3Model",
+          "private": "gamma_2003/decals/blood3model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "f10b947d9dc6dfcc23ef6e666c57f4dfa6df3be2ee076973872746a88e584f4e",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood3.vtf",
+      "source_relative": "materials/decals/blood3.vtf",
+      "source_sha256": "6ff745ec75464f2d9303ba1b1f89e216a175c9ab15290209ac2d31af486d5fee",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/blood3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "6ff745ec75464f2d9303ba1b1f89e216a175c9ab15290209ac2d31af486d5fee",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood3model.vmt",
+      "source_relative": "materials/decals/blood3model.vmt",
+      "source_sha256": "48ab443e3e40b6dc51fd9b5620cab91a31dddef98d73219ec4140eacc08164fa",
+      "source_size": 166,
+      "output_relative": "materials/gamma_2003/decals/blood3model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood3",
+          "private": "gamma_2003/decals/blood3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "304c68b2a04a9687c44cdb2bc38a90d460af7a0a6e14a8d64ac7727e88f287b4",
+      "output_size": 177
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood4.vmt",
+      "source_relative": "materials/decals/blood4.vmt",
+      "source_sha256": "fdd36fe3e78e5133c8dfb1ca2a5de16babd71c7a9071a868844a554c4e0bbb8f",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood4",
+          "private": "gamma_2003/decals/blood4",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood4Model",
+          "private": "gamma_2003/decals/blood4model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "761b8b60121d5c44dbb71eea496589e061cf1875acaf0ee4f150ff0f59b0b32c",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood4.vtf",
+      "source_relative": "materials/decals/blood4.vtf",
+      "source_sha256": "3ffb437729ca92c93fcb83903b42686543d3e4c772c2e2c5d73412067fac9121",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/blood4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "3ffb437729ca92c93fcb83903b42686543d3e4c772c2e2c5d73412067fac9121",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood4model.vmt",
+      "source_relative": "materials/decals/blood4model.vmt",
+      "source_sha256": "65f8178c8bcb4cd405611cc381109b4cb4885c049a7e0d99672a212da331eff4",
+      "source_size": 167,
+      "output_relative": "materials/gamma_2003/decals/blood4model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood4",
+          "private": "gamma_2003/decals/blood4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "300322c2b4a5901c9804a139052bbbe751a40c5f1b501c86acf7907ef40bf342",
+      "output_size": 178
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood5.vmt",
+      "source_relative": "materials/decals/blood5.vmt",
+      "source_sha256": "9b1a5cdd1dd1ae89cfe85de7d20232eaa65db7b60a4e760544c632794d091971",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood5",
+          "private": "gamma_2003/decals/blood5",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood5Model",
+          "private": "gamma_2003/decals/blood5model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "614ea6b3c581dc3be5c14fe3540203e689988501afa1008b8504b86a2a09810d",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood5.vtf",
+      "source_relative": "materials/decals/blood5.vtf",
+      "source_sha256": "b8c4f61f33b9ba4118fcd43a7fbe28308627ff02761b25ab32b846e6c6be5c5c",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/blood5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "b8c4f61f33b9ba4118fcd43a7fbe28308627ff02761b25ab32b846e6c6be5c5c",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood5model.vmt",
+      "source_relative": "materials/decals/blood5model.vmt",
+      "source_sha256": "68af126d95a5ec0a037c1decc3b1fa889757e9103bac36ce791c1f03734b58b9",
+      "source_size": 167,
+      "output_relative": "materials/gamma_2003/decals/blood5model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood5",
+          "private": "gamma_2003/decals/blood5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "16ed8342ef82b8b86b07c2c8f2af5dc80d22951910fedfd9a946b0720967ea48",
+      "output_size": 178
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood6.vmt",
+      "source_relative": "materials/decals/blood6.vmt",
+      "source_sha256": "f45b6ae7e73b4a93015d0b431cfc449c025d2c10ab054ce8bfc29ac7d9241f89",
+      "source_size": 204,
+      "output_relative": "materials/gamma_2003/decals/blood6.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood6",
+          "private": "gamma_2003/decals/blood6",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/Blood6Model",
+          "private": "gamma_2003/decals/blood6model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "183a95f1e3c2dbe9e7c6de7e2d31c4abfd6894c881b7a6cfe6f113e9d25b0ad6",
+      "output_size": 226
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood6.vtf",
+      "source_relative": "materials/decals/blood6.vtf",
+      "source_sha256": "ec81160946ab1ccef3bc1b6043431b3857236878384659ec9a2fb020cbb379e2",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/blood6.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "ec81160946ab1ccef3bc1b6043431b3857236878384659ec9a2fb020cbb379e2",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Blood6model.vmt",
+      "source_relative": "materials/decals/blood6model.vmt",
+      "source_sha256": "ef07ba6f39cbd3bed6e48ebb211d84be2673889ce82613bdc03aa47083286670",
+      "source_size": 167,
+      "output_relative": "materials/gamma_2003/decals/blood6model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Blood6",
+          "private": "gamma_2003/decals/blood6",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "af7030f71caa9257bf07891c692664c6feaee3c605ec652bbb058c7ad277d4eb",
+      "output_size": 178
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\Blood1.vmt",
+      "source_relative": "materials/decals/bloodyflesh/blood1.vmt",
+      "source_sha256": "4eaf1c16f99e4cbe48371ea01f177501fabffaac290923fbce1e60cdce127208",
+      "source_size": 123,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bloodyflesh/Blood1",
+          "private": "gamma_2003/decals/bloodyflesh/blood1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "6a54f22c8884f7352faf815732740efe8257bdb700f506e8384b7de4fe8e17a5",
+      "output_size": 134
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\blood1.vtf",
+      "source_relative": "materials/decals/bloodyflesh/blood1.vtf",
+      "source_sha256": "02d72d5d2bd90530b3aa3a888fa36e454c1067acf4421b2f6e74e6cd7fef9f48",
+      "source_size": 1584,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "02d72d5d2bd90530b3aa3a888fa36e454c1067acf4421b2f6e74e6cd7fef9f48",
+      "output_size": 1584
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\Blood2.vmt",
+      "source_relative": "materials/decals/bloodyflesh/blood2.vmt",
+      "source_sha256": "d2aa17fe527702a9a5f31ad18d9b7464791cf1bbc19c143e4ba2baff0f55f935",
+      "source_size": 123,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bloodyflesh/Blood2",
+          "private": "gamma_2003/decals/bloodyflesh/blood2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "103f9bafa4c32036ffa9687d74c3ecfce6705ed8a691c79d4af78b223fcd47f0",
+      "output_size": 134
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\blood2.vtf",
+      "source_relative": "materials/decals/bloodyflesh/blood2.vtf",
+      "source_sha256": "3da2062f10f9971be57a3ebfe5b881b9fd68eb2a0f662a906cfaf0ddfddde5f3",
+      "source_size": 1584,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "3da2062f10f9971be57a3ebfe5b881b9fd68eb2a0f662a906cfaf0ddfddde5f3",
+      "output_size": 1584
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\Blood3.vmt",
+      "source_relative": "materials/decals/bloodyflesh/blood3.vmt",
+      "source_sha256": "642e5651734b791000652d45fd92b2388d20ed1f37a9d2752dc526a3cc82f2e0",
+      "source_size": 123,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bloodyflesh/Blood3",
+          "private": "gamma_2003/decals/bloodyflesh/blood3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "895df1d4362e1ac707cb9d4dd4a4ec553a8ef170bd7d4128a2b48d794bcbf9a6",
+      "output_size": 134
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\blood3.vtf",
+      "source_relative": "materials/decals/bloodyflesh/blood3.vtf",
+      "source_sha256": "a7a6c80649388a2929bdea13d56507f57054d36eef3e8d97bc9f96f263ca215b",
+      "source_size": 1584,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "a7a6c80649388a2929bdea13d56507f57054d36eef3e8d97bc9f96f263ca215b",
+      "output_size": 1584
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\Blood4.vmt",
+      "source_relative": "materials/decals/bloodyflesh/blood4.vmt",
+      "source_sha256": "67a1397e426986b1e88e65f1fdd503e2f33447821f538bcdf89402b6e272e1d3",
+      "source_size": 123,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bloodyflesh/Blood4",
+          "private": "gamma_2003/decals/bloodyflesh/blood4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "1c54f8ac750216e604d4527fd4135b1676dbf4751b35b6b5f7d8e69057aba0e5",
+      "output_size": 134
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\blood4.vtf",
+      "source_relative": "materials/decals/bloodyflesh/blood4.vtf",
+      "source_sha256": "2f97c53f737b7870a4af1aec8db27a5939d6ded63426e24561b7aa97350c96f0",
+      "source_size": 1584,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "2f97c53f737b7870a4af1aec8db27a5939d6ded63426e24561b7aa97350c96f0",
+      "output_size": 1584
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\Blood5.vmt",
+      "source_relative": "materials/decals/bloodyflesh/blood5.vmt",
+      "source_sha256": "8c45a1667d84c7e6aa95052e0943860e91d582dfc7e431b4d4bc53c21dc48646",
+      "source_size": 123,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bloodyflesh/Blood5",
+          "private": "gamma_2003/decals/bloodyflesh/blood5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "8470072732ef40cbd33fb9a5ea3497675868572253488628c62ef8a37e49abad",
+      "output_size": 134
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bloodyflesh\\blood5.vtf",
+      "source_relative": "materials/decals/bloodyflesh/blood5.vtf",
+      "source_sha256": "29beb51205bce80dcb7a16543e542b72f392cca373df10bfd64d4102fe2998f8",
+      "source_size": 1584,
+      "output_relative": "materials/gamma_2003/decals/bloodyflesh/blood5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        32,
+        32
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "29beb51205bce80dcb7a16543e542b72f392cca373df10bfd64d4102fe2998f8",
+      "output_size": 1584
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bproof1.vmt",
+      "source_relative": "materials/decals/bproof1.vmt",
+      "source_sha256": "9c0f152e2c18a72fad7461691895a15f220cf6b6118504c112e305ff443086e0",
+      "source_size": 190,
+      "output_relative": "materials/gamma_2003/decals/bproof1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bproof1",
+          "private": "gamma_2003/decals/bproof1",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/bproof1model",
+          "private": "gamma_2003/decals/bproof1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "3b3617417dad4528e395bbe729b6a89276b64b61c850e2ecdc79b7902db678ae",
+      "output_size": 212
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bproof1.vtf",
+      "source_relative": "materials/decals/bproof1.vtf",
+      "source_sha256": "e3cc1c3ca43831aacc45edfd7fea00061ffcbaf2aaf329d46a9e1f142c0f677c",
+      "source_size": 560,
+      "output_relative": "materials/gamma_2003/decals/bproof1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "e3cc1c3ca43831aacc45edfd7fea00061ffcbaf2aaf329d46a9e1f142c0f677c",
+      "output_size": 560
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\bproof1model.vmt",
+      "source_relative": "materials/decals/bproof1model.vmt",
+      "source_sha256": "6ee51b9651650b981b304d846e1f0a364d02f97d7a3019082047d6de5ce405c6",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/bproof1model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/bproof1",
+          "private": "gamma_2003/decals/bproof1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "3f03318680501f3bd567729d5711c1add6cf421b5a366edd4b219bd9f5bde8c1",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break1.vmt",
+      "source_relative": "materials/decals/break1.vmt",
+      "source_sha256": "b96abaa8263f193d2766d5f85a9c2090998325add7a3cca0c715c249222571a9",
+      "source_size": 188,
+      "output_relative": "materials/gamma_2003/decals/break1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break1",
+          "private": "gamma_2003/decals/break1",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/break1model",
+          "private": "gamma_2003/decals/break1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "b743a16d346818f692df7d8dd29a0f00ce9e41d08b44d67d65181992a1879baa",
+      "output_size": 210
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break1.vtf",
+      "source_relative": "materials/decals/break1.vtf",
+      "source_sha256": "554fdc5147694a19f6a325d8c6162b640fdd3d67244946dfc588d0247e8f2ffa",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/break1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "554fdc5147694a19f6a325d8c6162b640fdd3d67244946dfc588d0247e8f2ffa",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break1model.vmt",
+      "source_relative": "materials/decals/break1model.vmt",
+      "source_sha256": "e6a2906952f51d34ba44ca0be7dd2d1806aa6f75c68c6d1edca1344f1eee5799",
+      "source_size": 159,
+      "output_relative": "materials/gamma_2003/decals/break1model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break1",
+          "private": "gamma_2003/decals/break1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "7dbd5ce272960c8bdc061bd4976799137b58800821ae6be027bc73b6c9e689ef",
+      "output_size": 170
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break2.vmt",
+      "source_relative": "materials/decals/break2.vmt",
+      "source_sha256": "c1e0c1bd753cf343202e467be5629286fc0c7f8c69f9fca5d12006794e00a06a",
+      "source_size": 188,
+      "output_relative": "materials/gamma_2003/decals/break2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break2",
+          "private": "gamma_2003/decals/break2",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/break2model",
+          "private": "gamma_2003/decals/break2model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "1022b5008951f729ef8a4ec5393de3cf17fcc912b7047734a3aca1bfe9360c32",
+      "output_size": 210
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break2.vtf",
+      "source_relative": "materials/decals/break2.vtf",
+      "source_sha256": "9335f36e554aa58ef52da291c5cf784e4901f422f520329ce883e8b9d766ad62",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/break2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "9335f36e554aa58ef52da291c5cf784e4901f422f520329ce883e8b9d766ad62",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break2model.vmt",
+      "source_relative": "materials/decals/break2model.vmt",
+      "source_sha256": "506f24bb540c88548f97ec08858400f0ebf1c36bcbf8e9c17a7fae74faf593f5",
+      "source_size": 159,
+      "output_relative": "materials/gamma_2003/decals/break2model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break2",
+          "private": "gamma_2003/decals/break2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "91a471ae6515008a0a7bc6ba862d42d24278945379fc568c5d8df3f6be44f56e",
+      "output_size": 170
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break3.vmt",
+      "source_relative": "materials/decals/break3.vmt",
+      "source_sha256": "a85db1e98a7d7fba552285ab7cefb453a12dfbbbd6528f2f42584f00ba3f1e39",
+      "source_size": 188,
+      "output_relative": "materials/gamma_2003/decals/break3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break3",
+          "private": "gamma_2003/decals/break3",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/break3model",
+          "private": "gamma_2003/decals/break3model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "LightmappedGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "43996e9812de6f9b1bbf77c21193a11b52b4371f4f2a441149d71fe26992e229",
+      "output_size": 210
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break3.vtf",
+      "source_relative": "materials/decals/break3.vtf",
+      "source_sha256": "3856913946d73956e99b37501f1aab45f1b6a044fab89df18db93e9c0e5b1651",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/break3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "3856913946d73956e99b37501f1aab45f1b6a044fab89df18db93e9c0e5b1651",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\break3model.vmt",
+      "source_relative": "materials/decals/break3model.vmt",
+      "source_sha256": "57f69faa213bbcf9682d69ac3b26ebc6d7f72f656c544af78fa42379f6f3db28",
+      "source_size": 159,
+      "output_relative": "materials/gamma_2003/decals/break3model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/break3",
+          "private": "gamma_2003/decals/break3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "ffeec0b9d7c69c176db12c7de9051f75835768d086b616a7e86fcf048cbed6d9",
+      "output_size": 170
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT1.vmt",
+      "source_relative": "materials/decals/concrete/shot1.vmt",
+      "source_sha256": "8db6420eeb2222b67de6eb26019cf18528713749de9dc621a0daf87c6f200b12",
+      "source_size": 85,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/concrete/SHOT1",
+          "private": "gamma_2003/decals/concrete/shot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "675fb87f43af551134f56301e5dc059fe09c515a3fc666f31d2a31ac0fb640f6",
+      "output_size": 96
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT1.vtf",
+      "source_relative": "materials/decals/concrete/shot1.vtf",
+      "source_sha256": "fdc98b3926d571039aaa3f9aede9c66ff4ff02e69f78adc27053163a380fd1b5",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "fdc98b3926d571039aaa3f9aede9c66ff4ff02e69f78adc27053163a380fd1b5",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT2.vmt",
+      "source_relative": "materials/decals/concrete/shot2.vmt",
+      "source_sha256": "d3bd98fa0af2e3ce5657e3ef0daf4b65935d93046082cefc775cbc3d3ff2ffa4",
+      "source_size": 85,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/concrete/SHOT2",
+          "private": "gamma_2003/decals/concrete/shot2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "ca3899001a9e5f6db33f677f661ec5ad5f2b38dd8ee060b691e63ae9ff3a9c8c",
+      "output_size": 96
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT2.vtf",
+      "source_relative": "materials/decals/concrete/shot2.vtf",
+      "source_sha256": "8f778075a1c5bfc8f320d54d5cadc86c80b2049a7c36fa77c38125a279c606a8",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "8f778075a1c5bfc8f320d54d5cadc86c80b2049a7c36fa77c38125a279c606a8",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT3.vmt",
+      "source_relative": "materials/decals/concrete/shot3.vmt",
+      "source_sha256": "9e82bad7b8689fae8c3183e87ed6507a24d027a22bd2409dd32c2e66c168ae76",
+      "source_size": 85,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/concrete/SHOT3",
+          "private": "gamma_2003/decals/concrete/shot3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "61dc5e8c00434972dd338a9d636bc643f3748aae9603744192aa168ab42be523",
+      "output_size": 96
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT3.vtf",
+      "source_relative": "materials/decals/concrete/shot3.vtf",
+      "source_sha256": "7e15fa19ff1b8c2b1f25ced1dac7cab37e2eecd4e036dd29a58f64a80ed58bfa",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "7e15fa19ff1b8c2b1f25ced1dac7cab37e2eecd4e036dd29a58f64a80ed58bfa",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT4.vmt",
+      "source_relative": "materials/decals/concrete/shot4.vmt",
+      "source_sha256": "acb23b083ed224f6d5e61bfa1e606e505eb80d9d9fab11e8c88d3540acbac3fe",
+      "source_size": 85,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/concrete/SHOT4",
+          "private": "gamma_2003/decals/concrete/shot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "3ca67e97ff3877eedc5f636034dae56b5487669629624466aacab4ed8a502c6c",
+      "output_size": 96
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT4.vtf",
+      "source_relative": "materials/decals/concrete/shot4.vtf",
+      "source_sha256": "5337e56b1919eff96601ce0ce57fd38ef06f46f463762e00fc52ce51c6df7d5b",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "5337e56b1919eff96601ce0ce57fd38ef06f46f463762e00fc52ce51c6df7d5b",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT5.vmt",
+      "source_relative": "materials/decals/concrete/shot5.vmt",
+      "source_sha256": "61213cb48db5bd32524908dde59aa6408cd98f4896774283473419485797d808",
+      "source_size": 85,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/concrete/SHOT5",
+          "private": "gamma_2003/decals/concrete/shot5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "4a427e79ab48a3580905684bf3051251508b39254224af29dc1919a40a691688",
+      "output_size": 96
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\CONCRETE\\SHOT5.vtf",
+      "source_relative": "materials/decals/concrete/shot5.vtf",
+      "source_sha256": "f9ee6eb28b8c278b5d150d8dd27bcc8662e416e40188c228736987a3f2038909",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/concrete/shot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "f9ee6eb28b8c278b5d150d8dd27bcc8662e416e40188c228736987a3f2038909",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood1.vmt",
+      "source_relative": "materials/decals/flesh/blood1.vmt",
+      "source_sha256": "51438c84133a84493e334fae1e6f6db5ca4f6e1740d5c38ec97a042c1c22b106",
+      "source_size": 114,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/flesh/Blood1",
+          "private": "gamma_2003/decals/flesh/blood1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "bb72471e03dbec83d642617a7589a049f49bd22f2a49ac8148d035bd78c8ec36",
+      "output_size": 125
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood1.vtf",
+      "source_relative": "materials/decals/flesh/blood1.vtf",
+      "source_sha256": "c3599f10c6e13bd7386473b3fbe1803d9311ace8a25a934951767f26f01925d1",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "c3599f10c6e13bd7386473b3fbe1803d9311ace8a25a934951767f26f01925d1",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood2.vmt",
+      "source_relative": "materials/decals/flesh/blood2.vmt",
+      "source_sha256": "cfc0461117252f3f508c5c896631966b2aab7f2b8ef093cdd176ec753544d5c6",
+      "source_size": 114,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/flesh/Blood2",
+          "private": "gamma_2003/decals/flesh/blood2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "f45c8b9dda2dd13f37eff5bd52510a0c3b3f484acf18f8e63cc81b25d5aafa0c",
+      "output_size": 125
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood2.vtf",
+      "source_relative": "materials/decals/flesh/blood2.vtf",
+      "source_sha256": "d143e17227c3366365eb738c855049173959f1cceedc9b92e087efa7b478bf0c",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d143e17227c3366365eb738c855049173959f1cceedc9b92e087efa7b478bf0c",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood3.vmt",
+      "source_relative": "materials/decals/flesh/blood3.vmt",
+      "source_sha256": "c0eb95ec7b48cf9cc0dfbc36fab796a4c48c5b6c00653dc8940413099dc45cb5",
+      "source_size": 114,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/flesh/Blood3",
+          "private": "gamma_2003/decals/flesh/blood3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "96cada725fda80cce9d1841457ccfb3df764edb52f6e363aeb6191ec31a654c8",
+      "output_size": 125
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood3.vtf",
+      "source_relative": "materials/decals/flesh/blood3.vtf",
+      "source_sha256": "d6058f8d5f1b4dbc5c3bbec23892364ddd1cfc25c020ab2f9523c0cb451c4aac",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d6058f8d5f1b4dbc5c3bbec23892364ddd1cfc25c020ab2f9523c0cb451c4aac",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood4.vmt",
+      "source_relative": "materials/decals/flesh/blood4.vmt",
+      "source_sha256": "0f605bc0b8d4a5e2412a190abd29d3013cb3d2e57787149df0d075529a56007f",
+      "source_size": 114,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/flesh/Blood4",
+          "private": "gamma_2003/decals/flesh/blood4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "21eb9027d61c6671a6be6a1958f9ea2a2e597f8eb6dc161fcac42f915c42822a",
+      "output_size": 125
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood4.vtf",
+      "source_relative": "materials/decals/flesh/blood4.vtf",
+      "source_sha256": "81ef5546c2caaf337aa47b86792e7eec3381f85eaadb8af7c4252e044f920530",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "81ef5546c2caaf337aa47b86792e7eec3381f85eaadb8af7c4252e044f920530",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood5.vmt",
+      "source_relative": "materials/decals/flesh/blood5.vmt",
+      "source_sha256": "958e383f11b11b60a628979dc51d5d8a1ce30c89405175efd857dea78db0268e",
+      "source_size": 114,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/flesh/Blood5",
+          "private": "gamma_2003/decals/flesh/blood5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "c274b1b5293652fd666144557fcfb815becf996e4a9f728b28dad810f7e9c7b2",
+      "output_size": 125
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\flesh\\Blood5.vtf",
+      "source_relative": "materials/decals/flesh/blood5.vtf",
+      "source_sha256": "bb707e48d0d1a78f75de671914416b6321b4828e13cfc3d1e0edb3226f6531a5",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/flesh/blood5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "bb707e48d0d1a78f75de671914416b6321b4828e13cfc3d1e0edb3226f6531a5",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot1.vmt",
+      "source_relative": "materials/decals/glass/shot1.vmt",
+      "source_sha256": "2c86193e419cca7d0d2fabab9c973cd6baf3447dd526134de00d8338fbba54a4",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/glass/shot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/glass/shot1",
+          "private": "gamma_2003/decals/glass/shot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "8f611f8531717dfb071828377bcff45acf32d258c96842787488ffc7951a25f2",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot1.vtf",
+      "source_relative": "materials/decals/glass/shot1.vtf",
+      "source_sha256": "ba49845ae500261130ab6d4f0798756f374fa49b8465f9c02082de6fd146bc5e",
+      "source_size": 11128,
+      "output_relative": "materials/gamma_2003/decals/glass/shot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 13,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "ba49845ae500261130ab6d4f0798756f374fa49b8465f9c02082de6fd146bc5e",
+      "output_size": 11128
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot2.vmt",
+      "source_relative": "materials/decals/glass/shot2.vmt",
+      "source_sha256": "5c185c046359ee013a40a6d878cae2dc512c86bb92a2c1970b908ff0e7c93fb5",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/glass/shot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/glass/shot2",
+          "private": "gamma_2003/decals/glass/shot2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "f37f50889e9a0f6a5b9318850f38248f1eb313b70a45a124341bd414d775563e",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot2.vtf",
+      "source_relative": "materials/decals/glass/shot2.vtf",
+      "source_sha256": "8d1ac64d10484f71c459e7fc45ce57816791e3ac0dd1ce6e3328eb21c0c26ee1",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/glass/shot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "8d1ac64d10484f71c459e7fc45ce57816791e3ac0dd1ce6e3328eb21c0c26ee1",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot3.vmt",
+      "source_relative": "materials/decals/glass/shot3.vmt",
+      "source_sha256": "81fef074dd30ff96c9b822f98ed0e3e826ed9ee4641ae1d5cb502374bb277ffc",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/glass/shot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/glass/shot3",
+          "private": "gamma_2003/decals/glass/shot3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "d053f3826622ef47b3b9b71937909175e0aac3937612951ba28dca869423d104",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot3.vtf",
+      "source_relative": "materials/decals/glass/shot3.vtf",
+      "source_sha256": "8326834a1e34e9900e081634384d2bbb6f9b32486138cff6b89c7e4d68ba26fc",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/glass/shot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "8326834a1e34e9900e081634384d2bbb6f9b32486138cff6b89c7e4d68ba26fc",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot4.vmt",
+      "source_relative": "materials/decals/glass/shot4.vmt",
+      "source_sha256": "36e349be5df65fd9daeb5e6609ccedc24cb5295e7e85641db859e81ee3b1a536",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/glass/shot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/glass/shot4",
+          "private": "gamma_2003/decals/glass/shot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "e2fa63e9d7af5e978dd85d0c6efc950c49e9fce0466fa50bfeddfbea2e415dc1",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot4.vtf",
+      "source_relative": "materials/decals/glass/shot4.vtf",
+      "source_sha256": "0ee9b97293ae8b5e4c6577c114e87b20b309c590183481988310651c21bf079e",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/glass/shot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "0ee9b97293ae8b5e4c6577c114e87b20b309c590183481988310651c21bf079e",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot5.vmt",
+      "source_relative": "materials/decals/glass/shot5.vmt",
+      "source_sha256": "47edc691b245178b196b4576874331d0c340a577a1a0b276f251208b9a74ffb0",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/glass/shot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/glass/shot5",
+          "private": "gamma_2003/decals/glass/shot5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "708fd6069d0304d2daee83ee15182ca3948c928612bf693894735e31b2a514f1",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\GLASS\\shot5.vtf",
+      "source_relative": "materials/decals/glass/shot5.vtf",
+      "source_sha256": "5521462f67ecd859f263b008340bc4ed7e1682362b0e0f6836455a7440b7f5b6",
+      "source_size": 22064,
+      "output_relative": "materials/gamma_2003/decals/glass/shot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        128,
+        128
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "5521462f67ecd859f263b008340bc4ed7e1682362b0e0f6836455a7440b7f5b6",
+      "output_size": 22064
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot1.vmt",
+      "source_relative": "materials/decals/metal/shot1.vmt",
+      "source_sha256": "f396d21ade3b94e5a1c822d6f39ad296e6dc9de4866423cb06e6f46b558d7619",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/metal/shot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/metal/shot1",
+          "private": "gamma_2003/decals/metal/shot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "826c34b8ca5e7916558c769ef25883d58c11134662bb9fefe2c59f1146a55457",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot1.vtf",
+      "source_relative": "materials/decals/metal/shot1.vtf",
+      "source_sha256": "61cff830fa19fefcd453ecab51eb2d1166ad0721bf50ecef2ecc7598fb5871ac",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/metal/shot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "61cff830fa19fefcd453ecab51eb2d1166ad0721bf50ecef2ecc7598fb5871ac",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot2.vmt",
+      "source_relative": "materials/decals/metal/shot2.vmt",
+      "source_sha256": "2952e8e50a4ae169064f6cee7c614d5d9a83deed53969495168718c4e59c0cb1",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/metal/shot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/metal/shot2",
+          "private": "gamma_2003/decals/metal/shot2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "4cededa02da05846713033ba8ff83ce135bf4b037d375594736b97ef7de8e2f7",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot2.vtf",
+      "source_relative": "materials/decals/metal/shot2.vtf",
+      "source_sha256": "87fee8e1c6d3440c06a95c5368f9ad73b0d80dd2d114de9107e38bafe155dab8",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/metal/shot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "87fee8e1c6d3440c06a95c5368f9ad73b0d80dd2d114de9107e38bafe155dab8",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot3.vmt",
+      "source_relative": "materials/decals/metal/shot3.vmt",
+      "source_sha256": "2c77c1d0daf05237095707e00a786a9a56ccc3d130c5b2d967b9d323a6cea9a1",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/metal/shot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/metal/shot3",
+          "private": "gamma_2003/decals/metal/shot3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "54c20cdde2c1fdfe59f615266c4ac8ce4c940772763a387684b1ee42e61d72fa",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot3.vtf",
+      "source_relative": "materials/decals/metal/shot3.vtf",
+      "source_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/metal/shot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot4.vmt",
+      "source_relative": "materials/decals/metal/shot4.vmt",
+      "source_sha256": "1b2b061fc5e01ae79de97c33851636e73a0114e64b7ddfc96175d3dd5556f0f6",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/metal/shot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/metal/shot4",
+          "private": "gamma_2003/decals/metal/shot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "e255d9c63efde8c3be84cf4200bced83ed49c5e7c5dc6a9e7360d8071424258d",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot4.vtf",
+      "source_relative": "materials/decals/metal/shot4.vtf",
+      "source_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/metal/shot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot5.vmt",
+      "source_relative": "materials/decals/metal/shot5.vmt",
+      "source_sha256": "f49de08166bae96ae3d97fd7a7652c52990b821e06d2834a9e13aff5c7552c92",
+      "source_size": 82,
+      "output_relative": "materials/gamma_2003/decals/metal/shot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/metal/shot5",
+          "private": "gamma_2003/decals/metal/shot5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "6050f0b567a875abef4f74b9ef638da0bf4c194e860ace123ac9d1e0975d0387",
+      "output_size": 93
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\METAL\\shot5.vtf",
+      "source_relative": "materials/decals/metal/shot5.vtf",
+      "source_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/metal/shot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "1f80e1e19b6c45b10109f441d008f3bae7c8b849417d94be52ebe957ff010001",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot1.vmt",
+      "source_relative": "materials/decals/wood/shot1.vmt",
+      "source_sha256": "ded4c6d2e518915258f938108e360cedfb618e7c96108bc6c4672fdd2a607e4f",
+      "source_size": 81,
+      "output_relative": "materials/gamma_2003/decals/wood/shot1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/wood/shot1",
+          "private": "gamma_2003/decals/wood/shot1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "ef3eee023cb4b4563b5ef535b09671999ab4aefc2c8073092abb693f7ced750e",
+      "output_size": 92
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot1.vtf",
+      "source_relative": "materials/decals/wood/shot1.vtf",
+      "source_sha256": "a2d83da4a8e636a287c5038b9037d7a82e814de737b4f34e7fe3c0a9597d8884",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/wood/shot1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "a2d83da4a8e636a287c5038b9037d7a82e814de737b4f34e7fe3c0a9597d8884",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot2.vmt",
+      "source_relative": "materials/decals/wood/shot2.vmt",
+      "source_sha256": "fd6b520aac4674c13ac0806273ad5956f912a975a4cb8903f18dc502d46535ac",
+      "source_size": 81,
+      "output_relative": "materials/gamma_2003/decals/wood/shot2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/wood/shot2",
+          "private": "gamma_2003/decals/wood/shot2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "d5139102b816654d84c2f847ae18569051586ce67e424a89ea71e294e505406b",
+      "output_size": 92
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot2.vtf",
+      "source_relative": "materials/decals/wood/shot2.vtf",
+      "source_sha256": "51495faef77a0c97771dc5197bbe5a27e398eb2767b416ecf1d83b064a679c74",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/wood/shot2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "51495faef77a0c97771dc5197bbe5a27e398eb2767b416ecf1d83b064a679c74",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot3.vmt",
+      "source_relative": "materials/decals/wood/shot3.vmt",
+      "source_sha256": "4c56fff5689cc5b238d59002e796319c01a1d8d0e8f70dd0ef40be66e1b4e26a",
+      "source_size": 81,
+      "output_relative": "materials/gamma_2003/decals/wood/shot3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/wood/shot3",
+          "private": "gamma_2003/decals/wood/shot3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "badc0e86f6017dcdb3766269d81aaf700bc2070ba9e78b0b0279ab7d359f7a60",
+      "output_size": 92
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot3.vtf",
+      "source_relative": "materials/decals/wood/shot3.vtf",
+      "source_sha256": "f0d25444b4802ecb6d8c3e8f48f74fceeacb33eadd7fdeaaa5c22dff9c3b8ca2",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/wood/shot3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "f0d25444b4802ecb6d8c3e8f48f74fceeacb33eadd7fdeaaa5c22dff9c3b8ca2",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot4.vmt",
+      "source_relative": "materials/decals/wood/shot4.vmt",
+      "source_sha256": "81e52e34e009847503ecd1fcb32c80cb88eddd7bfe80041df0d4ac166ea02686",
+      "source_size": 81,
+      "output_relative": "materials/gamma_2003/decals/wood/shot4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/wood/shot4",
+          "private": "gamma_2003/decals/wood/shot4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "5c5a3352665d3cceb844a62e0e6ca77de6688c07d3e8374fd1913b1c2937caae",
+      "output_size": 92
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot4.vtf",
+      "source_relative": "materials/decals/wood/shot4.vtf",
+      "source_sha256": "d03a112dce80b6f72a56a44c53020d8fc4ebde755d3fbb874d3b3f3e48201f46",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/wood/shot4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d03a112dce80b6f72a56a44c53020d8fc4ebde755d3fbb874d3b3f3e48201f46",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot5.vmt",
+      "source_relative": "materials/decals/wood/shot5.vmt",
+      "source_sha256": "8df28146bd3106efc252a52558b90a1a6b6fb77c72e5c0449bdf3560c1464e0e",
+      "source_size": 81,
+      "output_relative": "materials/gamma_2003/decals/wood/shot5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/wood/shot5",
+          "private": "gamma_2003/decals/wood/shot5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "8aab9e2d18436c96ee8fbfda2a2a970eb4dff7a027ef89edb1522dfb68438f67",
+      "output_size": 92
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\WOOD\\shot5.vtf",
+      "source_relative": "materials/decals/wood/shot5.vtf",
+      "source_sha256": "d35cc1881bcfcdedcf09539e11aeb99d2f40899e68c2154bf3bf264ad8a964e3",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/wood/shot5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d35cc1881bcfcdedcf09539e11aeb99d2f40899e68c2154bf3bf264ad8a964e3",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood1.vmt",
+      "source_relative": "materials/decals/yblood1.vmt",
+      "source_sha256": "bf7246e8e0cb661074ca0c64c6126031d0564b7ca8aa9e1993618643fb0236ef",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood1.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood1",
+          "private": "gamma_2003/decals/yblood1",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood1Model",
+          "private": "gamma_2003/decals/yblood1model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "b492674f3c300ccc26dfb6bb4362d81fa2421bfaf1a9b6e1757c4dc6038dec01",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood1.vtf",
+      "source_relative": "materials/decals/yblood1.vtf",
+      "source_sha256": "def553ab0852749e356d74da622beb26deb6d49c5d48ae73ab260d943b13ac88",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood1.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "def553ab0852749e356d74da622beb26deb6d49c5d48ae73ab260d943b13ac88",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood1model.vmt",
+      "source_relative": "materials/decals/yblood1model.vmt",
+      "source_sha256": "e08d65de769b65d8b53b892e630498cf6d530149d575457b6797aa8ed1f0fb6e",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood1model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood1",
+          "private": "gamma_2003/decals/yblood1",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "0a0ac75d8955e6ad61671b6cff41834f8dc7a51cb78cc05da34afeba2ad515dc",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood2.vmt",
+      "source_relative": "materials/decals/yblood2.vmt",
+      "source_sha256": "624731108b9d3d59083f0e9c5f6d127d70fdae4c24037118d5c52210a0585a13",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood2",
+          "private": "gamma_2003/decals/yblood2",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood2Model",
+          "private": "gamma_2003/decals/yblood2model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "4769562da6cd19fb552fc589e43468b7e264421c00a8d585c8a4914018a305e0",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood2.vtf",
+      "source_relative": "materials/decals/yblood2.vtf",
+      "source_sha256": "c4c39170827c4d68c989f3047684cdd1fb5481500f01ece9c33ac102caaa74ed",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "c4c39170827c4d68c989f3047684cdd1fb5481500f01ece9c33ac102caaa74ed",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood2model.vmt",
+      "source_relative": "materials/decals/yblood2model.vmt",
+      "source_sha256": "9c9d084d84b1d06adceaea8b6fbcc11b8154116f499ef6093586f93ae2453859",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood2model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood2",
+          "private": "gamma_2003/decals/yblood2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "5eb9493354bc96fb302068a7318128643a2ca5f5b97b98bde20c44cd3b0db5b3",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood3.vmt",
+      "source_relative": "materials/decals/yblood3.vmt",
+      "source_sha256": "25c42ee9eaa9b8f63821dd7b34184ba281e921a9f8193ed769e323b84ae3fe6c",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood3.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood3",
+          "private": "gamma_2003/decals/yblood3",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood3Model",
+          "private": "gamma_2003/decals/yblood3model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "3cf6f5548d97f262e0b7ce7f9460a9685377ca1e6d41baf9a5040a7830f2c5ef",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood3.vtf",
+      "source_relative": "materials/decals/yblood3.vtf",
+      "source_sha256": "f507eccddf79831ee461ca1bb34b178c792464538b7af58fea4d250218ad3f8b",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood3.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "f507eccddf79831ee461ca1bb34b178c792464538b7af58fea4d250218ad3f8b",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood3model.vmt",
+      "source_relative": "materials/decals/yblood3model.vmt",
+      "source_sha256": "d723cb3178493069be91d05cdf4cd64279556a21f6bb7b06a7614ee2540e84a1",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood3model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood3",
+          "private": "gamma_2003/decals/yblood3",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "992e50ef6e6ada3c38c7870e3f8ddd15c02fe5746135d15be4213cc6c95c5922",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood4.vmt",
+      "source_relative": "materials/decals/yblood4.vmt",
+      "source_sha256": "cdd716140cbf294b205cc666a01dcf51d05cdd05ffb901b8e938b7955fcfbcc0",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood4.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood4",
+          "private": "gamma_2003/decals/yblood4",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood4Model",
+          "private": "gamma_2003/decals/yblood4model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "af4a93f08f8f6b209f68eadb96136ed7d46e12ae85a3a85da8ae1144fcb92600",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood4.vtf",
+      "source_relative": "materials/decals/yblood4.vtf",
+      "source_sha256": "eaa84baa5504d6f2001339589074304b363cec6106eb4ce212a12440147ce87f",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood4.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "eaa84baa5504d6f2001339589074304b363cec6106eb4ce212a12440147ce87f",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood4model.vmt",
+      "source_relative": "materials/decals/yblood4model.vmt",
+      "source_sha256": "855bb7a1df3d65c8e46b71b8346e25faa23521a6c22219bd02b85b2c25985ba1",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood4model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood4",
+          "private": "gamma_2003/decals/yblood4",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "98acba579401a58ae87c16d640965806d2019f3755ae0d15ecdcd454ec83c84a",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood5.vmt",
+      "source_relative": "materials/decals/yblood5.vmt",
+      "source_sha256": "edbcabded9589c57f18afe542763ad83b128f6999e91eac1707e66446be7a267",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood5.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood5",
+          "private": "gamma_2003/decals/yblood5",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood5Model",
+          "private": "gamma_2003/decals/yblood5model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "6ad92d1e099bb1d76d33eb19086287b570a4b0df22304f600556d0982a072eb7",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood5.vtf",
+      "source_relative": "materials/decals/yblood5.vtf",
+      "source_sha256": "5e63f9d7e088d023b3cae3b73177b87baf0fbaa761d92e33f8d6d3116889011f",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood5.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "5e63f9d7e088d023b3cae3b73177b87baf0fbaa761d92e33f8d6d3116889011f",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood5model.vmt",
+      "source_relative": "materials/decals/yblood5model.vmt",
+      "source_sha256": "800c7687f776cc64761b41552d3cac7f3de4388f7df68f0b13dd74377e38840a",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood5model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood5",
+          "private": "gamma_2003/decals/yblood5",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexLitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "a031ba9b943868e35cafb2caab14becad80b0f16305454a63075c3451ad5e352",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood6.vmt",
+      "source_relative": "materials/decals/yblood6.vmt",
+      "source_sha256": "891df1d6113754ae8ea4777e36f8cbec882fb26837f39e6df8488ce232167457",
+      "source_size": 207,
+      "output_relative": "materials/gamma_2003/decals/yblood6.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood6",
+          "private": "gamma_2003/decals/yblood6",
+          "type": "vtf"
+        },
+        {
+          "parameter": "$modelmaterial",
+          "original": "decals/YBlood6Model",
+          "private": "gamma_2003/decals/yblood6model",
+          "type": "vmt"
+        }
+      ],
+      "shader": "DecalModulate",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "956fab653cb4522fdba15ca45279f6cb24f4c12e85549bae5f95e4a37794581a",
+      "output_size": 229
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood6.vtf",
+      "source_relative": "materials/decals/yblood6.vtf",
+      "source_sha256": "06ca501cfedc1db4ccd95c00ad33a3b7efcb6af2f40d4a93d8248505e1fa5f6f",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/decals/yblood6.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "06ca501cfedc1db4ccd95c00ad33a3b7efcb6af2f40d4a93d8248505e1fa5f6f",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Decals\\Yblood6model.vmt",
+      "source_relative": "materials/decals/yblood6model.vmt",
+      "source_sha256": "5cccf9ab86c25a13463b83d5225b766b9419b62bc0e4b8ba189be791c0207e57",
+      "source_size": 160,
+      "output_relative": "materials/gamma_2003/decals/yblood6model.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "Decals/Yblood6",
+          "private": "gamma_2003/decals/yblood6",
+          "type": "vtf"
+        }
+      ],
+      "shader": "VertexlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "482c651c45315ecbbb2b5708ad680bbaf4c5faaf0cf81680fd59dde5407a8fe2",
+      "output_size": 171
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood.vmt",
+      "source_relative": "materials/effects/blood.vmt",
+      "source_sha256": "e1d19473db2bc72b76cb1a9b1fcd247b5780691d1c879fc9a512a55b024c2c7f",
+      "source_size": 112,
+      "output_relative": "materials/gamma_2003/effects/blood.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "effects/blood",
+          "private": "gamma_2003/effects/blood",
+          "type": "vtf"
+        }
+      ],
+      "shader": "UnlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "01d32c8b6b9b7f444c0247d91f2da3664b0b45317629a4004a4fa6c1b705a74b",
+      "output_size": 123
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood.vtf",
+      "source_relative": "materials/effects/blood.vtf",
+      "source_sha256": "f261cb436e4b23011888b223c2bb7cceb9d9269ba61e9c67b0bf97a60f74eb1f",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/effects/blood.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "f261cb436e4b23011888b223c2bb7cceb9d9269ba61e9c67b0bf97a60f74eb1f",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood2.vmt",
+      "source_relative": "materials/effects/blood2.vmt",
+      "source_sha256": "ac7525b9ae6473ae378d68adf33537bf3bf6d4c63bdfc94470936fa4a73f9d9a",
+      "source_size": 113,
+      "output_relative": "materials/gamma_2003/effects/blood2.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "effects/blood2",
+          "private": "gamma_2003/effects/blood2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "UnlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "02ee36f048a30a9f2b6346f13d6db7b98d17786c6af6e000dda790c006765920",
+      "output_size": 124
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood2.vtf",
+      "source_relative": "materials/effects/blood2.vtf",
+      "source_sha256": "4cbaad59d385238a5ceb3d392695006a92a434d19d4e901db2eae22ffac43f33",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/effects/blood2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "4cbaad59d385238a5ceb3d392695006a92a434d19d4e901db2eae22ffac43f33",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood_drop.vmt",
+      "source_relative": "materials/effects/blood_drop.vmt",
+      "source_sha256": "4a215ae806ec3eb48dd3a4519ebec03d181106fe3aff73925855b4c30fba86a7",
+      "source_size": 173,
+      "output_relative": "materials/gamma_2003/effects/blood_drop.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "effects/splash2",
+          "private": "gamma_2003/effects/splash2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "UnlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "254087ab5874affb76dcc00c096f96324a86c5ae0f89a9cb593dc5345a548df5",
+      "output_size": 184
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood_gore.vmt",
+      "source_relative": "materials/effects/blood_gore.vmt",
+      "source_sha256": "e1d19473db2bc72b76cb1a9b1fcd247b5780691d1c879fc9a512a55b024c2c7f",
+      "source_size": 112,
+      "output_relative": "materials/gamma_2003/effects/blood_gore.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "effects/blood",
+          "private": "gamma_2003/effects/blood",
+          "type": "vtf"
+        }
+      ],
+      "shader": "UnlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "01d32c8b6b9b7f444c0247d91f2da3664b0b45317629a4004a4fa6c1b705a74b",
+      "output_size": 123
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\blood_puff.vmt",
+      "source_relative": "materials/effects/blood_puff.vmt",
+      "source_sha256": "4a215ae806ec3eb48dd3a4519ebec03d181106fe3aff73925855b4c30fba86a7",
+      "source_size": 173,
+      "output_relative": "materials/gamma_2003/effects/blood_puff.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "effects/splash2",
+          "private": "gamma_2003/effects/splash2",
+          "type": "vtf"
+        }
+      ],
+      "shader": "UnlitGeneric",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "254087ab5874affb76dcc00c096f96324a86c5ae0f89a9cb593dc5345a548df5",
+      "output_size": 184
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Effects\\splash2.vtf",
+      "source_relative": "materials/effects/splash2.vtf",
+      "source_sha256": "d1a8db7f4d132388eafbbb786e914addd815dec68515bd0218c79c0750acb783",
+      "source_size": 5680,
+      "output_relative": "materials/gamma_2003/effects/splash2.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 1,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "d1a8db7f4d132388eafbbb786e914addd815dec68515bd0218c79c0750acb783",
+      "output_size": 5680
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Sprites\\blood.vmt",
+      "source_relative": "materials/sprites/blood.vmt",
+      "source_sha256": "2a854ec91cfa19cc6491a1ec30ad81e92461518cc78a1164dcdb4afbbcc622ff",
+      "source_size": 120,
+      "output_relative": "materials/gamma_2003/sprites/blood.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "sprites/blood",
+          "private": "gamma_2003/sprites/blood",
+          "type": "vtf"
+        }
+      ],
+      "shader": "Sprite",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "9d2eb8bbadf931315da1b89cfdd0010a229c6102fa41adbe812f20471d74e9a5",
+      "output_size": 131
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Sprites\\blood.vtf",
+      "source_relative": "materials/sprites/blood.vtf",
+      "source_sha256": "b4fa1b56cc92ba5b309502b2ad77632f24a140f88402383870254e44f4bab627",
+      "source_size": 3504,
+      "output_relative": "materials/gamma_2003/sprites/blood.vtf",
+      "dependencies": [],
+      "dimensions": [
+        16,
+        16
+      ],
+      "frames": 9,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "b4fa1b56cc92ba5b309502b2ad77632f24a140f88402383870254e44f4bab627",
+      "output_size": 3504
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Sprites\\bloodspray.vmt",
+      "source_relative": "materials/sprites/bloodspray.vmt",
+      "source_sha256": "c25ae55888ab3f4b42c2f64dce5de4a22a43556ee9435a19ca5be7e58093817a",
+      "source_size": 125,
+      "output_relative": "materials/gamma_2003/sprites/bloodspray.vmt",
+      "dependencies": [
+        {
+          "parameter": "$basetexture",
+          "original": "sprites/bloodspray",
+          "private": "gamma_2003/sprites/bloodspray",
+          "type": "vtf"
+        }
+      ],
+      "shader": "Sprite",
+      "changes": "dependency paths only; original shader and numeric parameters preserved",
+      "output_sha256": "cb9beddf8920e3c1ad9756eee9ed7a0622532841aeacdecb6f45e3f78aed2a45",
+      "output_size": 136
+    },
+    {
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\Sprites\\bloodspray.vtf",
+      "source_relative": "materials/sprites/bloodspray.vtf",
+      "source_sha256": "154b9a386d8714dbc58f844f11eddbc44baddaf52ae7176610025b20f7821f60",
+      "source_size": 55072,
+      "output_relative": "materials/gamma_2003/sprites/bloodspray.vtf",
+      "dependencies": [],
+      "dimensions": [
+        64,
+        64
+      ],
+      "frames": 10,
+      "format": 15,
+      "changes": "none; texture bytes identical to source",
+      "output_sha256": "154b9a386d8714dbc58f844f11eddbc44baddaf52ae7176610025b20f7821f60",
+      "output_size": 55072
+    }
+  ],
+  "runtime_validation": "pending; generation and provenance checks only"
+}

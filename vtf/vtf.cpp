@@ -614,13 +614,18 @@ void CVTFTexture::ImageFileInfo( int nFrame, int nFace, int nMipLevel, int *pSta
 
 	// The image data start offset
 	int nOffset = pImageDataInfo->resData;
+	// The in-memory seventh face is a legacy sphere fallback. VTF 7.0 and
+	// 7.5+ store only the six cube faces on disk.
+	int nFacesToRead = m_nFaceCount;
+	if ( IsCubeMap() && ( m_nVersion[1] < 1 || m_nVersion[1] > 4 ) )
+		nFacesToRead = 6;
 
 	// get to the right miplevel
 	for( i = m_nMipCount - 1; i > nMipLevel; --i )
 	{
 		ComputeMipLevelDimensions( i, &iMipWidth, &iMipHeight, &iMipDepth );
 		int iMipLevelSize = ImageLoader::GetMemRequired( iMipWidth, iMipHeight, iMipDepth, m_Format, false );
-		nOffset += iMipLevelSize * m_nFrameCount * m_nFaceCount;
+		nOffset += iMipLevelSize * m_nFrameCount * nFacesToRead;
 	}
 
 	// get to the right frame
@@ -629,7 +634,6 @@ void CVTFTexture::ImageFileInfo( int nFrame, int nFace, int nMipLevel, int *pSta
 
 	// For backwards compatibility, we don't read in the spheremap fallback on
 	// older format .VTF files...
-	int nFacesToRead = m_nFaceCount;
 	if ( IsCubeMap() )
 	{
 		if ((m_nVersion[0] == 7) && (m_nVersion[1] < 1 || m_nVersion[1] > 4))
@@ -667,7 +671,8 @@ int CVTFTexture::FileSize( int nMipSkipCount ) const
 	int nOffset = pImageDataInfo->resData;
 
 	int nFaceSize = ComputeFaceSize( nMipSkipCount );
-	int nImageSize = nFaceSize * m_nFaceCount * m_nFrameCount;
+	int nDiskFaces = IsCubeMap() && ( m_nVersion[1] < 1 || m_nVersion[1] > 4 ) ? 6 : m_nFaceCount;
+	int nImageSize = nFaceSize * nDiskFaces * m_nFrameCount;
 	return nOffset + nImageSize;
 }
 
@@ -723,7 +728,7 @@ bool CVTFTexture::LoadImageData( CUtlBuffer &buf, const VTFFileHeader_t &header,
 	if ( IsCubeMap() && ( header.version[0] == 7 ) && ( header.version[1] == 4 ) )
 	{
 		int nBytesRemaining = buf.TellMaxPut() - buf.TellGet();
-		int nFileSize = ComputeFaceSize( nSkipMipLevels ) * m_nFaceCount * m_nFrameCount;
+		int nFileSize = ComputeFaceSize( nSkipMipLevels ) * 6 * m_nFrameCount;
 		if ( nBytesRemaining == nFileSize )
 		{
 			bNoSkip = true;
@@ -743,18 +748,25 @@ retryCubemapLoad:
 
 		for (int iFrame = 0; iFrame < m_nFrameCount; ++iFrame)
 		{
-			for (int iFace = 0; iFace < m_nFaceCount; ++iFace)
+			// Read six cube faces, then the optional sphere stored by 7.1-7.4.
+			// m_nFaceCount includes the sphere in memory and must not be used as
+			// the disk stride for the original 7.0 assets or modern 7.5 assets.
+			int nCubeFaces = IsCubeMap() ? 6 : m_nFaceCount;
+			for (int iFace = 0; iFace < nCubeFaces; ++iFace)
 			{
 				// printf("\n tex %p mip %i frame %i face %i  size %i  buf offset %i", this, iMip, iFrame, iFace, iMipSize, buf.TellGet() );
 				unsigned char *pMipBits = ImageData( iFrame, iFace, iMip );
 				buf.Get( pMipBits, iMipSize );
 			}
 
-			// Strip out the spheremap in older versions
+			// Preserve a supplied legacy sphere. For files without one, retain
+			// ImageFileInfo's historical sphere-to-last-cube-face fallback.
 			if ( IsCubeMap() && !bNoSkip && ( header.version[0] == 7 ) && ( header.version[1] >= 1 ) && ( header.version[1] < 5 ) )
 			{
-				buf.SeekGet( CUtlBuffer::SEEK_CURRENT, iMipSize );
+				buf.Get( ImageData(iFrame,CUBEMAP_FACE_SPHEREMAP,iMip), iMipSize );
 			}
+			else if ( IsCubeMap() )
+				memcpy( ImageData(iFrame,CUBEMAP_FACE_SPHEREMAP,iMip), ImageData(iFrame,5,iMip), iMipSize );
 		}
 	}
 
@@ -1383,7 +1395,9 @@ bool CVTFTexture::WriteImageData( CUtlBuffer &buf )
 
 		for (int iFrame = 0; iFrame < m_nFrameCount; ++iFrame)
 		{
-			for (int iFace = 0; iFace < m_nFaceCount; ++iFace)
+			// Serialize writes version 7.5, which has no sphere face on disk.
+			int nDiskFaces = IsCubeMap() ? 6 : m_nFaceCount;
+			for (int iFace = 0; iFace < nDiskFaces; ++iFace)
 			{
 				unsigned char *pMipBits = ImageData( iFrame, iFace, iMip );
 				buf.Put( pMipBits, iMipSize );

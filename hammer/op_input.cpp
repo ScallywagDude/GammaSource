@@ -242,7 +242,7 @@ void COP_Input::AddEntityConnections(const char *pTargetName, CMapEntity *pTestE
 				CInputConnection *pInputConn	= new CInputConnection;
 				pInputConn->m_pConnection		= pConnection;
 				pInputConn->m_pEntity			= pTestEntity;
-				m_ListCtrl.SetItemData(nItemCount, (DWORD)pInputConn);
+				m_ListCtrl.SetItemData(nItemCount, (DWORD_PTR)pInputConn);
 
 				nItemCount++;
 			}

@@ -212,11 +212,22 @@ void CNPC_Hydra::Activate( void )
 {
 	CPASAttenuationFilter filter( this );
 	CSoundEnvelopeController &controller = CSoundEnvelopeController::GetController();
-	m_pExtendTentacleSound = controller.SoundCreate( filter, entindex(), "NPC_Hydra.ExtendTentacle" );
+	if ( !m_pExtendTentacleSound )
+		m_pExtendTentacleSound = controller.SoundCreate( filter, entindex(), "NPC_Hydra.ExtendTentacle" );
 	
-	controller.Play( m_pExtendTentacleSound, 1.0, 100 );
+	if ( m_pExtendTentacleSound ) controller.Play( m_pExtendTentacleSound, 1.0, 100 );
 
 	BaseClass::Activate();
+}
+
+void CNPC_Hydra::UpdateOnRemove( void )
+{
+	if ( m_pExtendTentacleSound )
+	{
+		CSoundEnvelopeController::GetController().SoundDestroy( m_pExtendTentacleSound );
+		m_pExtendTentacleSound = NULL;
+	}
+	BaseClass::UpdateOnRemove();
 }
 
 
@@ -410,7 +421,7 @@ void CNPC_Hydra::CalcGoalForces( )
 	//Vector right, up;
 	//VectorVectors( m_vecHeadDir, right, up );
 
-	float flGoalSegmentLength = m_idealSegmentLength * ( m_idealLength / m_flCurrentLength);
+	float flGoalSegmentLength = m_idealSegmentLength * ( m_idealLength / MAX( m_flCurrentLength, 0.001f ) );
 
 	// goal forces
 #if 1
@@ -1612,11 +1623,13 @@ public:
 public:
 	IPhysicsConstraint		*m_pConstraint;
 	CHandle<CNPC_Hydra>		m_hHydra;
+	EHANDLE					m_hTarget;
 };
 
 BEGIN_DATADESC( CHydraImpale )
 	DEFINE_PHYSPTR( m_pConstraint ),
 	DEFINE_FIELD( m_hHydra,			FIELD_EHANDLE ),
+	DEFINE_FIELD( m_hTarget,			FIELD_EHANDLE ),
 
 	DEFINE_THINKFUNC( ImpaleThink ),
 END_DATADESC()
@@ -1659,10 +1672,10 @@ void CHydraImpale::Precache( void )
 //-----------------------------------------------------------------------------
 void CHydraImpale::ImpaleThink( void )
 {
-	if ( !m_hHydra )
+	if ( !m_hHydra || !m_hTarget )
 	{
-		// Remove ourselves.
-		m_pConstraint->Deactivate();
+		// Removing the shadow physics object releases its constraints. The
+		// target's deletion may already have invalidated the stored pointer.
 		UTIL_Remove( this );
 		return;
 	}
@@ -1688,6 +1701,7 @@ IPhysicsConstraint *CHydraImpale::CreateConstraint( CNPC_Hydra *pHydra, IPhysics
 	
 	IPhysicsObject *pImpalePhysObject = VPhysicsGetObject();
 	Assert( pImpalePhysObject );
+	if ( !pImpalePhysObject || !pTargetPhys ) return NULL;
 
 	constraint_fixedparams_t fixed;
 	fixed.Defaults();
@@ -1700,7 +1714,7 @@ IPhysicsConstraint *CHydraImpale::CreateConstraint( CNPC_Hydra *pHydra, IPhysics
 		m_pConstraint->SetGameData( (void *)this );
 	}
 
-	SetThink( ImpaleThink );
+	SetThink( &CHydraImpale::ImpaleThink );
 	SetNextThink( gpGlobals->curtime );
 	return m_pConstraint;
 }
@@ -1710,6 +1724,7 @@ IPhysicsConstraint *CHydraImpale::CreateConstraint( CNPC_Hydra *pHydra, IPhysics
 //-----------------------------------------------------------------------------
 CHydraImpale *CHydraImpale::Create( CNPC_Hydra *pHydra, CBaseEntity *pTarget )
 {
+	if ( !pHydra || !pTarget ) return NULL;
 	Vector vecOrigin;
 	QAngle vecAngles;
 	pHydra->GetDesiredImpaledPosition( &vecOrigin, &vecAngles );
@@ -1718,11 +1733,13 @@ CHydraImpale *CHydraImpale::Create( CNPC_Hydra *pHydra, CBaseEntity *pTarget )
 	CHydraImpale *pImpale = (CHydraImpale *)CBaseEntity::Create( "hydra_impale", vecOrigin, vecAngles );
 	if ( !pImpale )
 		return NULL;
+	pImpale->m_hTarget = pTarget;
 
 	IPhysicsObject *pTargetPhysObject = pTarget->VPhysicsGetObject();
 	if ( !pTargetPhysObject )
 	{
 		DevMsg(" Error: Tried to hydra_impale an entity without a physics model.\n" );
+		UTIL_Remove( pImpale );
 		return NULL;
 	}
 
@@ -1735,7 +1752,10 @@ CHydraImpale *CHydraImpale::Create( CNPC_Hydra *pHydra, CBaseEntity *pTarget )
 	}
 
 	if ( !pImpale->CreateConstraint( pHydra, pTargetPhysObject, pGroup ) )
+	{
+		UTIL_Remove( pImpale );
 		return NULL;
+	}
 
 	return pImpale;
 }
@@ -1747,6 +1767,7 @@ void CNPC_Hydra::AttachStabbedEntity( CBaseAnimating *pAnimating, Vector vecForc
 	info.SetDamagePosition( tr.endpos );
 
 	CBaseEntity *pRagdoll = CreateServerRagdoll( pAnimating, 0, info, COLLISION_GROUP_INTERACTIVE_DEBRIS );
+	if ( !pRagdoll ) return;
 
 	// Create our impale entity
 	CHydraImpale::Create( this, pRagdoll );

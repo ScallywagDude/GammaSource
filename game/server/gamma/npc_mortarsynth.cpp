@@ -45,7 +45,7 @@
 
 #define MSYNTH_GIB_COUNT			5 
 
-ConVar	sk_mortarsynth_health( "sk_mortarsynth_health","0");
+ConVar	sk_mortarsynth_health( "sk_mortarsynth_health","100");
 
 extern float	GetFloorZ(const Vector &origin, float fMaxDrop);
 
@@ -714,7 +714,8 @@ void CNPC_MSynth::Spawn(void)
 	SetMoveType( MOVETYPE_STEP );
 	SetGravity(0.001);
 
-	m_iHealth			= sk_mortarsynth_health.GetFloat();
+	SetHealth( MAX( 1, sk_mortarsynth_health.GetInt() ) );
+	SetMaxHealth( GetHealth() );
 	SetViewOffset( Vector(0, 0, 10) );		// Position of the eyes relative to NPC's origin.
 	m_flFieldOfView		= 0.2;
 	m_NPCState			= NPC_STATE_NONE;

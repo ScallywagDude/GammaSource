@@ -471,7 +471,7 @@ void COP_Output::AddEntityConnections(CMapEntity *pEntity, bool bFirst)
 				pOutputConn->m_pConnList->AddToTail(pConnection);
 				pOutputConn->m_pEntityList->AddToTail(pEntity);
 				pOutputConn->m_bOwnedByAll		= true;
-				m_ListCtrl.SetItemData(nItemCount, (DWORD)pOutputConn);
+				m_ListCtrl.SetItemData(nItemCount, (DWORD_PTR)pOutputConn);
 				
 				nItemCount++;
 			}
@@ -1942,7 +1942,7 @@ void COP_Output::FillInputList(void)
 	m_ComboInput.ResetContent();
 
 	// CUtlVector<GDclass*> classCache;
-	CUtlRBTree<int,int> classCache;
+	CUtlRBTree<GDclass *,int> classCache;
 	SetDefLessFunc( classCache );
 	
 	FOR_EACH_OBJ( *m_pMapEntityList, pos )
@@ -1962,10 +1962,10 @@ void COP_Output::FillInputList(void)
 			continue;
 
 		// check if class was already added
-		if ( classCache.Find( (int)pClass ) != -1 )
+		if ( classCache.Find( pClass ) != -1 )
 			continue;
 
-		classCache.Insert( (int)pClass );
+		classCache.Insert( pClass );
 			
 		//
 		// Add this class' inputs to the list.

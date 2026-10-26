@@ -865,7 +865,7 @@ CMapClass *CMapClass::PrepareSelection(SelectMode_t eSelectMode)
 //			Type - Unless NULL, only objects of the given type will be enumerated.
 // Output : Returns FALSE if the enumeration was terminated early, TRUE if it completed.
 //-----------------------------------------------------------------------------
-BOOL CMapClass::EnumChildren(ENUMMAPCHILDRENPROC pfn, unsigned int dwParam, MAPCLASSTYPE Type)
+BOOL CMapClass::EnumChildren(ENUMMAPCHILDRENPROC pfn, uintptr_t dwParam, MAPCLASSTYPE Type)
 {
 	FOR_EACH_OBJ( m_Children, pos )
 	{
@@ -897,7 +897,7 @@ BOOL CMapClass::EnumChildren(ENUMMAPCHILDRENPROC pfn, unsigned int dwParam, MAPC
 //			Type - Unless NULL, only objects of the given type will be enumerated.
 // Output : Returns FALSE if the enumeration was terminated early, TRUE if it completed.
 //-----------------------------------------------------------------------------
-BOOL CMapClass::EnumChildrenRecurseGroupsOnly(ENUMMAPCHILDRENPROC pfn, unsigned int dwParam, MAPCLASSTYPE Type)
+BOOL CMapClass::EnumChildrenRecurseGroupsOnly(ENUMMAPCHILDRENPROC pfn, uintptr_t dwParam, MAPCLASSTYPE Type)
 {
 	FOR_EACH_OBJ( m_Children, pos )
 	{

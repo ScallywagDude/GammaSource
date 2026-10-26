@@ -384,7 +384,7 @@ void Selection3D::RenderTool2D(CRender2D *pRender)
 			CMapClass *pobj = pSelList->Element(i);
 			
 			DrawObject(pobj, pRender);
-			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObject, (DWORD)pRender);
+			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObject, (uintptr_t)pRender);
 		}
 
 		pRender->EndLocalTransfrom();
@@ -421,7 +421,7 @@ void Selection3D::RenderToolLogical( CRender2D *pRender )
 			CMapClass *pobj = pSelList->Element(i);
 			
 			DrawObjectLogical(pobj, pRender);
-			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObjectLogical, (DWORD)pRender);
+			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObjectLogical, (uintptr_t)pRender);
 		}
 
 		pRender->EndLocalTransfrom();
@@ -491,7 +491,7 @@ void Selection3D::RenderTool3D(CRender3D *pRender)
 			CMapClass *pobj = pSelList->Element(i);
 
 			DrawObject(pobj, pRender);
-			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObject, (DWORD)pRender);
+			pobj->EnumChildren((ENUMMAPCHILDRENPROC)DrawObject, (uintptr_t)pRender);
 		}
 
 		pRender->EndLocalTransfrom();

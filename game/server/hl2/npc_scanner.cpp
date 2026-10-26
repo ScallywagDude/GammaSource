@@ -185,7 +185,7 @@ BEGIN_DATADESC( CNPC_CScanner )
 END_DATADESC()
 
 
-LINK_ENTITY_TO_CLASS(npc_cscanner, CNPC_CScanner);
+LINK_ENTITY_TO_CLASS(npc_cityscanner, CNPC_CScanner);
 
 
 //-----------------------------------------------------------------------------

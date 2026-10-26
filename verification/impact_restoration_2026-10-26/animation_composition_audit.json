@@ -1,0 +1,279 @@
+{
+  "models": [
+    {
+      "original": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Alyx.mdl",
+      "version": 36,
+      "sequences": 245,
+      "grid_inventory": [
+        {
+          "grid": [
+            1,
+            1
+          ],
+          "count": 217
+        },
+        {
+          "grid": [
+            9,
+            1
+          ],
+          "count": 14
+        },
+        {
+          "grid": [
+            3,
+            1
+          ],
+          "count": 13
+        },
+        {
+          "grid": [
+            3,
+            4
+          ],
+          "count": 1
+        }
+      ],
+      "sequence_flags": {
+        "0x1": 48,
+        "0x0": 113,
+        "0x1c": 13,
+        "0x2": 1,
+        "0x14": 58,
+        "0x15": 12
+      },
+      "non_delta_fractional_weight_sequences": [],
+      "two_dimensional_sequences": [
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "grid": [
+            3,
+            4
+          ],
+          "corner_frames": [
+            1
+          ]
+        }
+      ],
+      "changed_pose_samples": 1979,
+      "max_local_rotation_difference_degrees": 11.2873110503016,
+      "max_local_position_difference_units": 0.20160178095235856,
+      "worst": [
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 16,
+          "bone_name": "ValveBiped.Bip01_L_UpperArm",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.5,
+            0.5
+          ],
+          "rotation_degrees": 11.2873110503016,
+          "position_units": 5.303121130606971e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 18,
+          "bone_name": "ValveBiped.Bip01_L_Hand",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.5,
+            0.5
+          ],
+          "rotation_degrees": 9.817006545575921,
+          "position_units": 1.1809841085607379e-06
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 63,
+          "bone_name": "ValveBiped.Bip01_L_Shoulder",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.5,
+            0.5
+          ],
+          "rotation_degrees": 9.094214472712435,
+          "position_units": 7.022416830823188e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 16,
+          "bone_name": "ValveBiped.Bip01_L_UpperArm",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.75,
+            0.75
+          ],
+          "rotation_degrees": 8.428109948975269,
+          "position_units": 3.9773408479552286e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 16,
+          "bone_name": "ValveBiped.Bip01_L_UpperArm",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.25,
+            0.25
+          ],
+          "rotation_degrees": 8.414682511774974,
+          "position_units": 3.9773408479552286e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 18,
+          "bone_name": "ValveBiped.Bip01_L_Hand",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.25,
+            0.25
+          ],
+          "rotation_degrees": 7.34276891450966,
+          "position_units": 8.857380814205534e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 18,
+          "bone_name": "ValveBiped.Bip01_L_Hand",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.75,
+            0.75
+          ],
+          "rotation_degrees": 7.311078242187152,
+          "position_units": 8.857380814205534e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 53,
+          "bone_name": "ValveBiped.Bip01_L_Trapezius",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.5,
+            0.5
+          ],
+          "rotation_degrees": 6.867413275346541,
+          "position_units": 3.1352253828328383e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 63,
+          "bone_name": "ValveBiped.Bip01_L_Shoulder",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.75,
+            0.75
+          ],
+          "rotation_degrees": 6.771045675208159,
+          "position_units": 5.266812623117391e-07
+        },
+        {
+          "sequence": 191,
+          "label": "layer_Aim_all",
+          "bone": 63,
+          "bone_name": "ValveBiped.Bip01_L_Shoulder",
+          "bone_weight": 1.0,
+          "cell": [
+            0,
+            2
+          ],
+          "local_blend": [
+            0.25,
+            0.25
+          ],
+          "rotation_degrees": 6.764989780289949,
+          "position_units": 5.266812623117391e-07
+        }
+      ],
+      "scope": "Local authored sequence poses at frame zero, before outer layer weighting; not a runtime/root-motion test."
+    },
+    {
+      "original": "C:\\Users\\doge6\\Videos\\GammaSource-main\\gammasource_content\\models\\Kleiner.mdl",
+      "version": 36,
+      "sequences": 151,
+      "grid_inventory": [
+        {
+          "grid": [
+            1,
+            1
+          ],
+          "count": 132
+        },
+        {
+          "grid": [
+            9,
+            1
+          ],
+          "count": 6
+        },
+        {
+          "grid": [
+            3,
+            1
+          ],
+          "count": 13
+        }
+      ],
+      "sequence_flags": {
+        "0x0": 72,
+        "0x1": 31,
+        "0x14": 23,
+        "0x1c": 13,
+        "0x15": 12
+      },
+      "non_delta_fractional_weight_sequences": [],
+      "two_dimensional_sequences": [],
+      "changed_pose_samples": 0,
+      "max_local_rotation_difference_degrees": 0.0,
+      "max_local_position_difference_units": 0.0,
+      "worst": [],
+      "scope": "Local authored sequence poses at frame zero, before outer layer weighting; not a runtime/root-motion test."
+    }
+  ]
+}

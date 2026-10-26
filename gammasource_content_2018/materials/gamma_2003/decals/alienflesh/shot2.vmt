@@ -1,0 +1,7 @@
+"DecalModulate"
+{
+	"$translucent" 1
+	"$basetexture" "gamma_2003/decals/alienflesh/shot2"
+	"$decal" 1
+	"$decalscale" 0.1
+}

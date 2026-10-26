@@ -1,0 +1,4398 @@
+{
+  "notes": [
+    "Classname coverage does not prove that beta NPC behavior has been retained.",
+    "Same classname can refer to distinct historic and newer implementations.",
+    "Preprocessor #if 0 is detected, but conditional configurations and function-level behavior need manual review.",
+    "Only HL2 Waf server/client VPC source lists determine compiled registration here.",
+    "Referenced models may not be present in the separate playable game installation.",
+    "Original 2003 implementation is preferred for HL2 restoration; conflicting or unbuildable source requires a safe port."
+  ],
+  "branch_totals": {
+    "hl2_dll": {
+      "npc_and_monster_names": 75,
+      "compiled_in_hl2": 75
+    },
+    "tf2_dll": {
+      "npc_and_monster_names": 3,
+      "compiled_in_hl2": 0
+    },
+    "hl1_dll": {
+      "npc_and_monster_names": 40,
+      "compiled_in_hl2": 2
+    }
+  },
+  "compiled_duplicate_registrations": {
+    "weapon_thumper": [
+      {
+        "file": "game/server/gamma/weapon_thumper.cpp",
+        "cpp_type": "CWeaponThumper"
+      },
+      {
+        "file": "game/server/gamma/weapon_thumper.cpp",
+        "cpp_type": "CWeaponThumper"
+      }
+    ],
+    "player": [
+      {
+        "file": "game/server/hl2/hl2_player.cpp",
+        "cpp_type": "CHL2_Player"
+      },
+      {
+        "file": "game/server/portal/portal_player.cpp",
+        "cpp_type": "CPortal_Player"
+      }
+    ]
+  },
+  "hydra_client_renderer_compiled": true,
+  "entities": [
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_alyx",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_alyx.cpp",
+          "cpp_type": "CNPC_Alyx",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_alyx.cpp",
+          "cpp_type": "CNPC_Alyx"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_alyx.cpp",
+          "cpp_type": "CNPC_Alyx",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2/npc_alyx_episodic.cpp",
+          "cpp_type": "CNPC_Alyx",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_alyx.cpp",
+          "new": "game/server/hl2/npc_alyx.cpp",
+          "approx_line_similarity": 0.442,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_alyx.cpp",
+          "new": "game/server/hl2/npc_alyx_episodic.cpp",
+          "approx_line_similarity": 0.05,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/alyx.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_antlion",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "cpp_type": "CNPC_Antlion",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_antlion.cpp",
+          "cpp_type": "CNPC_Antlion"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_antlion.cpp",
+          "cpp_type": "CNPC_Antlion",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "new": "game/server/hl2/npc_antlion.cpp",
+          "approx_line_similarity": 0.569,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/antlion.mdl",
+        "models/gibs/antlion_gib_large_1.mdl",
+        "models/gibs/antlion_gib_large_2.mdl",
+        "models/gibs/antlion_gib_large_3.mdl",
+        "models/gibs/antlion_gib_medium_1.mdl",
+        "models/gibs/antlion_gib_medium_2.mdl",
+        "models/gibs/antlion_gib_medium_3.mdl",
+        "models/gibs/antlion_gib_small_1.mdl",
+        "models/gibs/antlion_gib_small_2.mdl",
+        "models/gibs/antlion_gib_small_3.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_antlion_template_maker",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "cpp_type": "CAntlionTemplateMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/antlion_maker.cpp",
+          "cpp_type": "CAntlionTemplateMaker"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/antlion_maker.cpp",
+          "cpp_type": "CAntlionTemplateMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "new": "game/server/hl2/antlion_maker.cpp",
+          "approx_line_similarity": 0.394,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/antlion.mdl",
+        "models/gibs/antlion_gib_large_1.mdl",
+        "models/gibs/antlion_gib_large_2.mdl",
+        "models/gibs/antlion_gib_large_3.mdl",
+        "models/gibs/antlion_gib_medium_1.mdl",
+        "models/gibs/antlion_gib_medium_2.mdl",
+        "models/gibs/antlion_gib_medium_3.mdl",
+        "models/gibs/antlion_gib_small_1.mdl",
+        "models/gibs/antlion_gib_small_2.mdl",
+        "models/gibs/antlion_gib_small_3.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_antliongrub",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_antliongrub.cpp",
+          "cpp_type": "CNPC_AntlionGrub",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_antliongrub.cpp",
+          "cpp_type": "CNPC_AntlionGrub"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_antliongrub.cpp",
+          "cpp_type": "CNPC_AntlionGrub",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_antliongrub.cpp",
+          "new": "game/server/gamma/npc_antliongrub.cpp",
+          "approx_line_similarity": 0.977,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_antlionguard",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_antlionguard.cpp",
+          "cpp_type": "CNPC_AntlionGuard",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_antlionguard.cpp",
+          "cpp_type": "CNPC_AntlionGuard"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_antlionguard.cpp",
+          "cpp_type": "CNPC_AntlionGuard",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_antlionguard.cpp",
+          "new": "game/server/hl2/npc_antlionguard.cpp",
+          "approx_line_similarity": 0.505,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/antlion_guard.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_antlionmaker",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "cpp_type": "CAntlionMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_antlionmaker.cpp",
+          "cpp_type": "CAntlionMaker"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_antlionmaker.cpp",
+          "cpp_type": "CAntlionMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_antlion.cpp",
+          "new": "game/server/gamma/npc_antlionmaker.cpp",
+          "approx_line_similarity": 0.046,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/antlion.mdl",
+        "models/gibs/antlion_gib_large_1.mdl",
+        "models/gibs/antlion_gib_large_2.mdl",
+        "models/gibs/antlion_gib_large_3.mdl",
+        "models/gibs/antlion_gib_medium_1.mdl",
+        "models/gibs/antlion_gib_medium_2.mdl",
+        "models/gibs/antlion_gib_medium_3.mdl",
+        "models/gibs/antlion_gib_small_1.mdl",
+        "models/gibs/antlion_gib_small_2.mdl",
+        "models/gibs/antlion_gib_small_3.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_assassin",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_assassin.cpp",
+          "cpp_type": "CNPC_Assassin",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_assassin.cpp",
+          "cpp_type": "CNPC_Assassin"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_assassin.cpp",
+          "cpp_type": "CNPC_Assassin",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_assassin.cpp",
+          "new": "game/server/hl2/npc_assassin.cpp",
+          "approx_line_similarity": 0.921,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/fassassin.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_barnacle",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_barnacle.cpp",
+          "cpp_type": "CNPC_Barnacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_barnacle.cpp",
+          "cpp_type": "CNPC_Barnacle"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_barnacle.cpp",
+          "cpp_type": "CNPC_Barnacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_barnacle.cpp",
+          "new": "game/server/hl2/npc_barnacle.cpp",
+          "approx_line_similarity": 0.441,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/barnacle.mdl",
+        "models/props_junk/rock001a.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_barnacle_tongue_tip",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_barnacle.cpp",
+          "cpp_type": "CBarnacleTongueTip",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_barnacle.cpp",
+          "cpp_type": "CBarnacleTongueTip"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_barnacle.cpp",
+          "cpp_type": "CBarnacleTongueTip",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_barnacle.cpp",
+          "new": "game/server/hl2/npc_barnacle.cpp",
+          "approx_line_similarity": 0.441,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/barnacle.mdl",
+        "models/props_junk/rock001a.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_barney",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_barney.cpp",
+          "cpp_type": "CNPC_Barney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_barney.cpp",
+          "cpp_type": "CNPC_Barney"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_barney.cpp",
+          "cpp_type": "CNPC_Barney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_barney.cpp",
+          "new": "game/server/hl2/npc_barney.cpp",
+          "approx_line_similarity": 0.31,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/barney.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_breen",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_breen.cpp",
+          "cpp_type": "CNPC_Breen",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_breen.cpp",
+          "cpp_type": "CNPC_Breen"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_breen.cpp",
+          "cpp_type": "CNPC_Breen",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_breen.cpp",
+          "new": "game/server/hl2/npc_breen.cpp",
+          "approx_line_similarity": 0.784,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/breen.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_bullseye",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_bullseye.cpp",
+          "cpp_type": "CNPC_Bullseye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_bullseye.cpp",
+          "cpp_type": "CNPC_Bullseye"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_bullseye.cpp",
+          "cpp_type": "CNPC_Bullseye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_bullseye.cpp",
+          "new": "game/server/hl2/npc_bullseye.cpp",
+          "approx_line_similarity": 0.841,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/player.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_bullsquid",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_bullsquid.cpp",
+          "cpp_type": "CNPC_Bullsquid",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_bullsquid.cpp",
+          "cpp_type": "CNPC_Bullsquid"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_bullsquid.cpp",
+          "cpp_type": "CNPC_Bullsquid",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_bullsquid.cpp",
+          "new": "game/server/hl2/npc_bullsquid.cpp",
+          "approx_line_similarity": 0.864,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/bullsquid.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_citizen",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_citizen17.cpp",
+          "cpp_type": "CNPC_Citizen",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_citizen17.cpp",
+          "cpp_type": "CNPC_Citizen"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_citizen17.cpp",
+          "cpp_type": "CNPC_Citizen",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_citizen17.cpp",
+          "new": "game/server/hl2/npc_citizen17.cpp",
+          "approx_line_similarity": 0.317,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Humans/male_01.mdl",
+        "models/humans/male_01.mdl",
+        "models/humans/male_02.mdl",
+        "models/humans/male_03.mdl",
+        "models/humans/male_07.mdl",
+        "models/humans/male_08.mdl",
+        "models/humans/male_09.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combine",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combine.cpp",
+          "cpp_type": "CNPC_Combine",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_combine.cpp",
+          "cpp_type": "CNPC_Combine"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_combine.cpp",
+          "cpp_type": "CNPC_Combine",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combine.cpp",
+          "new": "game/server/hl2/npc_combine.cpp",
+          "approx_line_similarity": 0.454,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/w_grenade.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combine_camera",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combinecamera.cpp",
+          "cpp_type": "CNPC_CombineCamera",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_combinecamera.cpp",
+          "cpp_type": "CNPC_CombineCamera"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_combinecamera.cpp",
+          "cpp_type": "CNPC_CombineCamera",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combinecamera.cpp",
+          "new": "game/server/hl2/npc_combinecamera.cpp",
+          "approx_line_similarity": 0.821,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_camera/combine_camera.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combine_s",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combines.cpp",
+          "cpp_type": "CNPC_CombineS",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_combines.cpp",
+          "cpp_type": "CNPC_CombineS"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_combines.cpp",
+          "cpp_type": "CNPC_CombineS",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combines.cpp",
+          "new": "game/server/hl2/npc_combines.cpp",
+          "approx_line_similarity": 0.528,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Combine_Soldier.mdl",
+        "models/combine_soldier.mdl",
+        "models/props_c17/pipe03_connector01.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combinedropship",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combinedropship.cpp",
+          "cpp_type": "CNPC_CombineDropship",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_combinedropship.cpp",
+          "cpp_type": "CNPC_CombineDropship"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_combinedropship.cpp",
+          "cpp_type": "CNPC_CombineDropship",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combinedropship.cpp",
+          "new": "game/server/hl2/npc_combinedropship.cpp",
+          "approx_line_similarity": 0.481,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_dropship.mdl",
+        "models/props_junk/trashdumpster02.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combineelite",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combinee.cpp",
+          "cpp_type": "CNPC_CombineE",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_combinee.cpp",
+          "cpp_type": "CNPC_CombineE"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_combinee.cpp",
+          "cpp_type": "CNPC_CombineE",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combinee.cpp",
+          "new": "game/server/gamma/npc_combinee.cpp",
+          "approx_line_similarity": 0.897,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Combine_Elite.mdl",
+        "models/combine_elite.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combineguard",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combineguard.cpp",
+          "cpp_type": "CNPC_CombineGuard",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_combineguard.cpp",
+          "cpp_type": "CNPC_CombineGuard"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_combineguard.cpp",
+          "cpp_type": "CNPC_CombineGuard",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combineguard.cpp",
+          "new": "game/server/gamma/npc_combineguard.cpp",
+          "approx_line_similarity": 0.916,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_guard.mdl",
+        "models/gibs/metalgibs.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_combinegunship",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_combinegunship.cpp",
+          "cpp_type": "CNPC_CombineGunship",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_combinegunship.cpp",
+          "cpp_type": "CNPC_CombineGunship"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_combinegunship.cpp",
+          "cpp_type": "CNPC_CombineGunship",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_combinegunship.cpp",
+          "new": "game/server/hl2/npc_combinegunship.cpp",
+          "approx_line_similarity": 0.658,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/gibs/rock_gibs.mdl",
+        "models/gunship.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_conscript",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_conscript.cpp",
+          "cpp_type": "CNPC_Conscript",
+          "literal_if0_disabled": true
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_conscript.cpp",
+          "cpp_type": "CNPC_Conscript"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_conscript.cpp",
+          "cpp_type": "CNPC_Conscript",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_conscript.cpp",
+          "new": "game/server/gamma/npc_conscript.cpp",
+          "approx_line_similarity": 0.87,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/conscript.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_crabsynth",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_crabsynth.cpp",
+          "cpp_type": "CCrabSynth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_crabsynth.cpp",
+          "cpp_type": "CCrabSynth"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_crabsynth.cpp",
+          "cpp_type": "CCrabSynth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_crabsynth.cpp",
+          "new": "game/server/gamma/npc_crabsynth.cpp",
+          "approx_line_similarity": 0.974,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/synth.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_cranedriver",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_cranedriver.cpp",
+          "cpp_type": "CNPC_CraneDriver",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_cranedriver.cpp",
+          "cpp_type": "CNPC_CraneDriver"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_cranedriver.cpp",
+          "cpp_type": "CNPC_CraneDriver",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_cranedriver.cpp",
+          "new": "game/server/hl2/npc_cranedriver.cpp",
+          "approx_line_similarity": 0.96,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_crow",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_crow.cpp",
+          "cpp_type": "CNPC_Crow",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_crow.cpp",
+          "cpp_type": "CNPC_Crow"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_crow.cpp",
+          "cpp_type": "CNPC_Crow",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_crow.cpp",
+          "new": "game/server/hl2/npc_crow.cpp",
+          "approx_line_similarity": 0.711,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/crow.mdl",
+        "models/gibs/crow_gibs.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_cscanner",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_scanner.cpp",
+          "cpp_type": "CNPC_CScanner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_combot.cpp",
+          "cpp_type": "CNPC_BetaCombot"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_combot.cpp",
+          "cpp_type": "CNPC_BetaCombot",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_scanner.cpp",
+          "new": "game/server/gamma/npc_combot.cpp",
+          "approx_line_similarity": 0.958,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combot.mdl",
+        "models/gibs/combot_gibs.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_eli",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_eli.cpp",
+          "cpp_type": "CNPC_Eli",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_eli.cpp",
+          "cpp_type": "CNPC_Eli"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_eli.cpp",
+          "cpp_type": "CNPC_Eli",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_eli.cpp",
+          "new": "game/server/hl2/npc_eli.cpp",
+          "approx_line_similarity": 0.715,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/eli.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_enemyfinder",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_enemyfinder.cpp",
+          "cpp_type": "CNPC_EnemyFinder",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_enemyfinder.cpp",
+          "cpp_type": "CNPC_EnemyFinder"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_enemyfinder.cpp",
+          "cpp_type": "CNPC_EnemyFinder",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_enemyfinder.cpp",
+          "new": "game/server/hl2/npc_enemyfinder.cpp",
+          "approx_line_similarity": 0.435,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/player.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_fastzombie",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_fastzombie.cpp",
+          "cpp_type": "CFastZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_fastzombie.cpp",
+          "cpp_type": "CFastZombie"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_fastzombie.cpp",
+          "cpp_type": "CFastZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_fastzombie.cpp",
+          "new": "game/server/hl2/npc_fastzombie.cpp",
+          "approx_line_similarity": 0.77,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/zombie/classic_legs.mdl",
+        "models/zombie/classic_torso.mdl",
+        "models/zombie/fast.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_grenade_bugbait",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_bugbait.cpp",
+          "cpp_type": "CGrenadeBugBait",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/grenade_bugbait.cpp",
+          "cpp_type": "CGrenadeBugBait"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/grenade_bugbait.cpp",
+          "cpp_type": "CGrenadeBugBait",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_bugbait.cpp",
+          "new": "game/server/hl2/grenade_bugbait.cpp",
+          "approx_line_similarity": 0.637,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/spore.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_grenade_frag",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_frag.cpp",
+          "cpp_type": "CGrenadeFrag",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/grenade_frag.cpp",
+          "cpp_type": "CGrenadeFrag"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/grenade_frag.cpp",
+          "cpp_type": "CGrenadeFrag",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_frag.cpp",
+          "new": "game/server/hl2/grenade_frag.cpp",
+          "approx_line_similarity": 0.278,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/w_grenade.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_grenade_hopwire",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_hopwire.cpp",
+          "cpp_type": "CGrenadeHopWire",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/grenade_hopwire.cpp",
+          "cpp_type": "CGrenadeHopWire"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/episodic/grenade_hopwire.cpp",
+          "cpp_type": "CGrenadeHopwire",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/gamma/grenade_hopwire.cpp",
+          "cpp_type": "CGrenadeHopWire",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_hopwire.cpp",
+          "new": "game/server/gamma/grenade_hopwire.cpp",
+          "approx_line_similarity": 0.956,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_hopwire.cpp",
+          "new": "game/server/episodic/grenade_hopwire.cpp",
+          "approx_line_similarity": 0.333,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/w_hopwire.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_headcrab",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "cpp_type": "CHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CHeadcrab"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "new": "game/server/hl2/npc_headcrab.cpp",
+          "approx_line_similarity": 0.611,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/HC_squashed01.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl",
+        "models/headcrabblack.mdl",
+        "models/headcrabclassic.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_headcrab_black",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "new": "game/server/hl2/npc_headcrab.cpp",
+          "approx_line_similarity": 0.611,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/HC_squashed01.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl",
+        "models/headcrabblack.mdl",
+        "models/headcrabclassic.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_headcrab_fast",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "cpp_type": "CFastHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CFastHeadcrab"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CFastHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "new": "game/server/hl2/npc_headcrab.cpp",
+          "approx_line_similarity": 0.611,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/HC_squashed01.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl",
+        "models/headcrabblack.mdl",
+        "models/headcrabclassic.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_headcrab_poison",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_headcrab.cpp",
+          "cpp_type": "CBlackHeadcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_headcrab.cpp",
+          "new": "game/server/hl2/npc_headcrab.cpp",
+          "approx_line_similarity": 0.611,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/HC_squashed01.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl",
+        "models/headcrabblack.mdl",
+        "models/headcrabclassic.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_helicopter",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_attackchopper.cpp",
+          "cpp_type": "CNPC_AttackHelicopter",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_attackchopper.cpp",
+          "cpp_type": "CNPC_AttackHelicopter"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_attackchopper.cpp",
+          "cpp_type": "CNPC_AttackHelicopter",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_attackchopper.cpp",
+          "new": "game/server/hl2/npc_attackchopper.cpp",
+          "approx_line_similarity": 0.063,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/attack_helicopter.mdl",
+        "models/combine_soldier.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_houndeye",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_houndeye.cpp",
+          "cpp_type": "CNPC_Houndeye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_houndeye.cpp",
+          "cpp_type": "CNPC_Houndeye"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_houndeye.cpp",
+          "cpp_type": "CNPC_Houndeye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_houndeye.cpp",
+          "new": "game/server/hl2/npc_houndeye.cpp",
+          "approx_line_similarity": 0.96,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/houndeye.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_hydra",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_hydra.cpp",
+          "cpp_type": "CNPC_Hydra",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_hydra.cpp",
+          "cpp_type": "CNPC_Hydra"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_hydra.cpp",
+          "cpp_type": "CNPC_Hydra",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_hydra.cpp",
+          "new": "game/server/hl2/npc_hydra.cpp",
+          "approx_line_similarity": 0.961,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Hydra.mdl",
+        "models/props_junk/cardboard_box001a.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_ichthyosaur",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_ichthyosaur.cpp",
+          "cpp_type": "CNPC_Ichthyosaur",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_ichthyosaur.cpp",
+          "cpp_type": "CNPC_Ichthyosaur"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_ichthyosaur.cpp",
+          "cpp_type": "CNPC_Ichthyosaur",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_ichthyosaur.cpp",
+          "new": "game/server/hl2/npc_ichthyosaur.cpp",
+          "approx_line_similarity": 0.961,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/ichthyosaur.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_kleiner",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_kleiner.cpp",
+          "cpp_type": "CNPC_Kleiner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_kleiner.cpp",
+          "cpp_type": "CNPC_Kleiner"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_kleiner.cpp",
+          "cpp_type": "CNPC_Kleiner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_kleiner.cpp",
+          "new": "game/server/hl2/npc_kleiner.cpp",
+          "approx_line_similarity": 0.854,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/kleiner.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_launcher",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_launcher.cpp",
+          "cpp_type": "CNPC_Launcher",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_launcher.cpp",
+          "cpp_type": "CNPC_Launcher"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_launcher.cpp",
+          "cpp_type": "CNPC_Launcher",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_launcher.cpp",
+          "new": "game/server/hl2/npc_launcher.cpp",
+          "approx_line_similarity": 0.87,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/player.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_lightstalk",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_lightstalk.cpp",
+          "cpp_type": "CNPC_LightStalk",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_lightstalk.cpp",
+          "cpp_type": "CNPC_LightStalk"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_lightstalk.cpp",
+          "cpp_type": "CNPC_LightStalk",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_lightstalk.cpp",
+          "new": "game/server/gamma/npc_lightstalk.cpp",
+          "approx_line_similarity": 0.95,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/lightstalk.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_manhack",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_manhack.cpp",
+          "cpp_type": "CNPC_Manhack",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_manhack.cpp",
+          "cpp_type": "CNPC_Manhack"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_manhack.cpp",
+          "cpp_type": "CNPC_Manhack",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_manhack.cpp",
+          "new": "game/server/hl2/npc_manhack.cpp",
+          "approx_line_similarity": 0.681,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/manhack.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_metropolice",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_metropolice.cpp",
+          "cpp_type": "CNPC_MetroPolice",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_metropolice.cpp",
+          "cpp_type": "CNPC_MetroPolice"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_metropolice.cpp",
+          "cpp_type": "CNPC_MetroPolice",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_metropolice.cpp",
+          "new": "game/server/hl2/npc_metropolice.cpp",
+          "approx_line_similarity": 0.27,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Police.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_miniturret",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "cpp_type": "CMiniTurret",
+          "literal_if0_disabled": true
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_turret.cpp",
+          "cpp_type": "CBetaMiniTurret"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_turret.cpp",
+          "cpp_type": "CBetaMiniTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "new": "game/server/hl2/npc_turret.cpp",
+          "approx_line_similarity": 0.804,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_turrets/ceiling_turret.mdl",
+        "models/miniturret.mdl",
+        "models/sentry.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_missiledefense",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_missiledefense.cpp",
+          "cpp_type": "CNPC_MissileDefense",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_missiledefense.cpp",
+          "cpp_type": "CNPC_MissileDefense"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_missiledefense.cpp",
+          "cpp_type": "CNPC_MissileDefense",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_missiledefense.cpp",
+          "new": "game/server/hl2/npc_missiledefense.cpp",
+          "approx_line_similarity": 0.956,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/gibs/missile_defense_gibs.mdl",
+        "models/missile_defense.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_monk",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_monk.cpp",
+          "cpp_type": "CNPC_Monk",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_monk.cpp",
+          "cpp_type": "CNPC_Monk"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_monk.cpp",
+          "cpp_type": "CNPC_Monk",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_monk.cpp",
+          "new": "game/server/hl2/npc_monk.cpp",
+          "approx_line_similarity": 0.448,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/Monk.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_mortarsynth",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_mortarsynth.cpp",
+          "cpp_type": "CNPC_MSynth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_mortarsynth.cpp",
+          "cpp_type": "CNPC_MSynth"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_mortarsynth.cpp",
+          "cpp_type": "CNPC_MSynth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_mortarsynth.cpp",
+          "new": "game/server/gamma/npc_mortarsynth.cpp",
+          "approx_line_similarity": 0.988,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/gibs/mortarsynth_gibs.mdl",
+        "models/mortarsynth.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_mossman",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_mossman.cpp",
+          "cpp_type": "CNPC_Mossman",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_mossman.cpp",
+          "cpp_type": "CNPC_Mossman"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_mossman.cpp",
+          "cpp_type": "CNPC_Mossman",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_mossman.cpp",
+          "new": "game/server/hl2/npc_mossman.cpp",
+          "approx_line_similarity": 0.747,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/mossman.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_newnpc",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/monster_dummy.cpp",
+          "cpp_type": "CNewNPC",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/monster_dummy.cpp",
+          "cpp_type": "CNewNPC"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/monster_dummy.cpp",
+          "cpp_type": "CNewNPC",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/monster_dummy.cpp",
+          "new": "game/server/hl2/monster_dummy.cpp",
+          "approx_line_similarity": 0.928,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/mymodel.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_odell",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_odell.cpp",
+          "cpp_type": "CNPC_Odell",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_odell.cpp",
+          "cpp_type": "CNPC_Odell"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_odell.cpp",
+          "cpp_type": "CNPC_Odell",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_odell.cpp",
+          "new": "game/server/gamma/npc_odell.cpp",
+          "approx_line_similarity": 0.968,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/odell.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_poisonzombie",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_PoisonZombie.cpp",
+          "cpp_type": "CNPC_PoisonZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_PoisonZombie.cpp",
+          "cpp_type": "CNPC_PoisonZombie"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_PoisonZombie.cpp",
+          "cpp_type": "CNPC_PoisonZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_PoisonZombie.cpp",
+          "new": "game/server/hl2/npc_PoisonZombie.cpp",
+          "approx_line_similarity": 0.836,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/zombie/classic_legs.mdl",
+        "models/zombie/classic_torso.mdl",
+        "models/zombie/poison.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_roller",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_roller.cpp",
+          "cpp_type": "CNPC_Roller",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_roller.cpp",
+          "cpp_type": "CNPC_Roller"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_roller.cpp",
+          "cpp_type": "CNPC_Roller",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_roller.cpp",
+          "new": "game/server/gamma/npc_roller.cpp",
+          "approx_line_similarity": 0.971,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/roller.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_rollerbuddy",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_rollerbuddy.cpp",
+          "cpp_type": "CNPC_RollerBuddy",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_rollerbuddy.cpp",
+          "cpp_type": "CNPC_RollerBuddy"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_rollerbuddy.cpp",
+          "cpp_type": "CNPC_RollerBuddy",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_rollerbuddy.cpp",
+          "new": "game/server/gamma/npc_rollerbuddy.cpp",
+          "approx_line_similarity": 0.98,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_rollerbull",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_rollerbull.cpp",
+          "cpp_type": "CNPC_RollerBull",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_rollerbull.cpp",
+          "cpp_type": "CNPC_RollerBull"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_rollerbull.cpp",
+          "cpp_type": "CNPC_RollerBull",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_rollerbull.cpp",
+          "new": "game/server/gamma/npc_rollerbull.cpp",
+          "approx_line_similarity": 0.99,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/roller.mdl",
+        "models/roller_spikes.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_rollerdozer",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_rollerdozer.cpp",
+          "cpp_type": "CNPC_RollerDozer",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_rollerdozer.cpp",
+          "cpp_type": "CNPC_RollerDozer"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_rollerdozer.cpp",
+          "cpp_type": "CNPC_RollerDozer",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_rollerdozer.cpp",
+          "new": "game/server/gamma/npc_rollerdozer.cpp",
+          "approx_line_similarity": 0.986,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_rollermine",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_rollermine.cpp",
+          "cpp_type": "CNPC_RollerMine",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_rollermine.cpp",
+          "cpp_type": "CNPC_RollerMine"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_rollermine.cpp",
+          "cpp_type": "CNPC_RollerMine",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_rollermine.cpp",
+          "new": "game/server/hl2/npc_rollermine.cpp",
+          "approx_line_similarity": 0.673,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/roller.mdl",
+        "models/roller_spikes.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_rollerturret",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_rollerturret.cpp",
+          "cpp_type": "CNPC_RollerTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_rollerturret.cpp",
+          "cpp_type": "CNPC_RollerTurret"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_rollerturret.cpp",
+          "cpp_type": "CNPC_RollerTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_rollerturret.cpp",
+          "new": "game/server/gamma/npc_rollerturret.cpp",
+          "approx_line_similarity": 0.991,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/roller.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_satchel",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_satchel.cpp",
+          "cpp_type": "CSatchelCharge",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/grenade_satchel.cpp",
+          "cpp_type": "CSatchelCharge"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/grenade_satchel.cpp",
+          "cpp_type": "CSatchelCharge",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2/grenade_satchel.cpp",
+          "cpp_type": "CSatchelCharge",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2mp/grenade_satchel.cpp",
+          "cpp_type": "CSatchelCharge",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_satchel.cpp",
+          "new": "game/server/gamma/grenade_satchel.cpp",
+          "approx_line_similarity": 0.958,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_satchel.cpp",
+          "new": "game/server/hl2/grenade_satchel.cpp",
+          "approx_line_similarity": 0.907,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_satchel.cpp",
+          "new": "game/server/hl2mp/grenade_satchel.cpp",
+          "approx_line_similarity": 0.552,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/w_slam.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_sentry",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "cpp_type": "CSentry",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_turret.cpp",
+          "cpp_type": "CBetaSentry"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_turret.cpp",
+          "cpp_type": "CBetaSentry",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "new": "game/server/hl2/npc_turret.cpp",
+          "approx_line_similarity": 0.804,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_turrets/ceiling_turret.mdl",
+        "models/miniturret.mdl",
+        "models/sentry.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_sniper",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/proto_sniper.cpp",
+          "cpp_type": "CProtoSniper",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/proto_sniper.cpp",
+          "cpp_type": "CProtoSniper"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/proto_sniper.cpp",
+          "cpp_type": "CProtoSniper",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/proto_sniper.cpp",
+          "new": "game/server/hl2/proto_sniper.cpp",
+          "approx_line_similarity": 0.792,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_soldier.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_spotlight",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_spotlight.cpp",
+          "cpp_type": "CNPC_Spotlight",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_spotlight.cpp",
+          "cpp_type": "CNPC_Spotlight"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_spotlight.cpp",
+          "cpp_type": "CNPC_Spotlight",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_spotlight.cpp",
+          "new": "game/server/hl2/npc_spotlight.cpp",
+          "approx_line_similarity": 0.939,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combot.mdl",
+        "models/gibs/combot_gibs.mdl",
+        "models/player.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_sscanner",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_sscanner.cpp",
+          "cpp_type": "CNPC_SScanner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_sscanner.cpp",
+          "cpp_type": "CNPC_SScanner"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_sscanner.cpp",
+          "cpp_type": "CNPC_SScanner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_sscanner.cpp",
+          "new": "game/server/gamma/npc_sscanner.cpp",
+          "approx_line_similarity": 0.987,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/gibs/mortarsynth_gibs.mdl",
+        "models/scanner_shield.mdl",
+        "models/shield_scanner.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_stalker",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_stalker.cpp",
+          "cpp_type": "CNPC_Stalker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_stalker.cpp",
+          "cpp_type": "CNPC_Stalker"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_stalker.cpp",
+          "cpp_type": "CNPC_Stalker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_stalker.cpp",
+          "new": "game/server/hl2/npc_stalker.cpp",
+          "approx_line_similarity": 0.81,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/stalker.mdl",
+        "models/w_stalker.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_strider",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_strider.cpp",
+          "cpp_type": "CNPC_Strider",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_strider.cpp",
+          "cpp_type": "CNPC_Strider"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_strider.cpp",
+          "cpp_type": "CNPC_Strider",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_strider.cpp",
+          "new": "game/server/hl2/npc_strider.cpp",
+          "approx_line_similarity": 0.376,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_strider.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_tripmine",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/grenade_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/grenade_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2/grenade_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2mp/grenade_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_tripmine.cpp",
+          "new": "game/server/gamma/grenade_tripmine.cpp",
+          "approx_line_similarity": 0.917,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_tripmine.cpp",
+          "new": "game/server/hl2/grenade_tripmine.cpp",
+          "approx_line_similarity": 0.901,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_tripmine.cpp",
+          "new": "game/server/hl2mp/grenade_tripmine.cpp",
+          "approx_line_similarity": 0.828,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/w_slam.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_tripwire",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/grenade_tripwire.cpp",
+          "cpp_type": "CTripwireGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/grenade_tripwire.cpp",
+          "cpp_type": "CTripwireGrenade"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/grenade_tripwire.cpp",
+          "cpp_type": "CTripwireGrenade",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "game/server/hl2/grenade_tripwire.cpp",
+          "cpp_type": "CTripwireGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_tripwire.cpp",
+          "new": "game/server/gamma/grenade_tripwire.cpp",
+          "approx_line_similarity": 0.945,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/grenade_tripwire.cpp",
+          "new": "game/server/hl2/grenade_tripwire.cpp",
+          "approx_line_similarity": 0.93,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/Weapons/ar2_grenade.mdl",
+        "models/Weapons/w_grenade.mdl",
+        "models/Weapons/w_slam.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_turret_ceiling",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "cpp_type": "CCeilingTurret",
+          "literal_if0_disabled": false
+        },
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_turret_ceiling.cpp",
+          "cpp_type": "CNPC_CeilingTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_turret_ceiling.cpp",
+          "cpp_type": "CNPC_CeilingTurret"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_turret.cpp",
+          "cpp_type": "CCeilingTurret",
+          "literal_if0_disabled": true
+        },
+        {
+          "file": "game/server/hl2/npc_turret_ceiling.cpp",
+          "cpp_type": "CNPC_CeilingTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret_ceiling.cpp",
+          "new": "game/server/hl2/npc_turret_ceiling.cpp",
+          "approx_line_similarity": 0.87,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "new": "game/server/hl2/npc_turret.cpp",
+          "approx_line_similarity": 0.804,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret.cpp",
+          "new": "game/server/hl2/npc_turret_ceiling.cpp",
+          "approx_line_similarity": 0.406,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        },
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret_ceiling.cpp",
+          "new": "game/server/hl2/npc_turret.cpp",
+          "approx_line_similarity": 0.37,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_turrets/ceiling_turret.mdl",
+        "models/miniturret.mdl",
+        "models/sentry.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_turret_floor",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_turret_floor.cpp",
+          "cpp_type": "CNPC_FloorTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_turret_floor.cpp",
+          "cpp_type": "CNPC_FloorTurret"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_turret_floor.cpp",
+          "cpp_type": "CNPC_FloorTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_turret_floor.cpp",
+          "new": "game/server/hl2/npc_turret_floor.cpp",
+          "approx_line_similarity": 0.596,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/combine_turrets/floor_turret.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_vehicledriver",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_vehicledriver.cpp",
+          "cpp_type": "CNPC_VehicleDriver",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/npc_vehicledriver.cpp",
+          "cpp_type": "CNPC_VehicleDriver"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/npc_vehicledriver.cpp",
+          "cpp_type": "CNPC_VehicleDriver",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_vehicledriver.cpp",
+          "new": "game/server/npc_vehicledriver.cpp",
+          "approx_line_similarity": 0.913,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/roller.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_vortigaunt",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_vortigaunt.cpp",
+          "cpp_type": "CNPC_Vortigaunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_vortigaunt_episodic.cpp",
+          "cpp_type": "CNPC_Vortigaunt"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_vortigaunt_episodic.cpp",
+          "cpp_type": "CNPC_Vortigaunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_vortigaunt.cpp",
+          "new": "game/server/hl2/npc_vortigaunt_episodic.cpp",
+          "approx_line_similarity": 0.358,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/vortigaunt.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_wscanner",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_wscanner.cpp",
+          "cpp_type": "CNPC_WScanner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/gamma/npc_wscanner.cpp",
+          "cpp_type": "CNPC_WScanner"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/gamma/npc_wscanner.cpp",
+          "cpp_type": "CNPC_WScanner",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_wscanner.cpp",
+          "new": "game/server/gamma/npc_wscanner.cpp",
+          "approx_line_similarity": 0.983,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/wscanner_pair.mdl",
+        "models/wscanner_single.mdl",
+        "models/wscanner_tri.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_zombie",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_zombie.cpp",
+          "cpp_type": "CZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_zombie.cpp",
+          "cpp_type": "CZombie"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_zombie.cpp",
+          "cpp_type": "CZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_zombie.cpp",
+          "new": "game/server/hl2/npc_zombie.cpp",
+          "approx_line_similarity": 0.768,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/zombie/classic.mdl",
+        "models/zombie/classic_legs.mdl",
+        "models/zombie/classic_torso.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl2_dll",
+      "classname": "npc_zombie_torso",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl2_dll/npc_zombie.cpp",
+          "cpp_type": "CZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/hl2/npc_zombie.cpp",
+          "cpp_type": "CZombie"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/hl2/npc_zombie.cpp",
+          "cpp_type": "CZombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl2_dll/npc_zombie.cpp",
+          "new": "game/server/hl2/npc_zombie.cpp",
+          "approx_line_similarity": 0.768,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/zombie/classic.mdl",
+        "models/zombie/classic_legs.mdl",
+        "models/zombie/classic_torso.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "tf2_dll",
+      "classname": "npc_bug_builder",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/tf2_dll/npc_bug_builder.cpp",
+          "cpp_type": "CNPC_Bug_Builder",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [],
+      "implementation_comparison": [],
+      "referenced_models": [],
+      "status": "legacy_only"
+    },
+    {
+      "branch": "tf2_dll",
+      "classname": "npc_bug_warrior",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/tf2_dll/npc_bug_warrior.cpp",
+          "cpp_type": "CNPC_Bug_Warrior",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [],
+      "implementation_comparison": [],
+      "referenced_models": [],
+      "status": "legacy_only"
+    },
+    {
+      "branch": "tf2_dll",
+      "classname": "npc_bughole",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/tf2_dll/npc_bug_hole.cpp",
+          "cpp_type": "CMaker_BugHole",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [],
+      "implementation_comparison": [],
+      "referenced_models": [
+        "models/npcs/bugs/bug_hole.mdl"
+      ],
+      "status": "legacy_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_alien_controller",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_controller.cpp",
+          "cpp_type": "CNPC_Controller",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_controller.cpp",
+          "cpp_type": "CNPC_Controller",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_controller.cpp",
+          "new": "game/server/hl1/hl1_npc_controller.cpp",
+          "approx_line_similarity": 0.914,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/controller.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_alien_grunt",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_agrunt.cpp",
+          "cpp_type": "CNPC_AlienGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_agrunt.cpp",
+          "cpp_type": "CNPC_AlienGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_agrunt.cpp",
+          "new": "game/server/hl1/hl1_npc_agrunt.cpp",
+          "approx_line_similarity": 0.898,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/agrunt.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_alien_slave",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_vortigaunt.cpp",
+          "cpp_type": "CNPC_Vortigaunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_vortigaunt.cpp",
+          "cpp_type": "CNPC_Vortigaunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_vortigaunt.cpp",
+          "new": "game/server/hl1/hl1_npc_vortigaunt.cpp",
+          "approx_line_similarity": 0.881,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/islave.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_apache",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_apache.cpp",
+          "cpp_type": "CNPC_Apache",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_apache.cpp",
+          "cpp_type": "CNPC_Apache",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_apache.cpp",
+          "new": "game/server/hl1/hl1_npc_apache.cpp",
+          "approx_line_similarity": 0.755,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/HVR.mdl",
+        "models/apache.mdl",
+        "models/gibs/rock_gibs.mdl",
+        "models/metalplategibs_green.mdl",
+        "models/weapons/w_missile.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_babycrab",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_headcrab.cpp",
+          "cpp_type": "CNPC_BabyCrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_headcrab.cpp",
+          "cpp_type": "CNPC_BabyCrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_headcrab.cpp",
+          "new": "game/server/hl1/hl1_npc_headcrab.cpp",
+          "approx_line_similarity": 0.911,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/baby_headcrab.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_barnacle",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_barnacle.cpp",
+          "cpp_type": "CNPC_Barnacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_barnacle.cpp",
+          "cpp_type": "CNPC_Barnacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_barnacle.cpp",
+          "new": "game/server/hl1/hl1_npc_barnacle.cpp",
+          "approx_line_similarity": 0.857,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/barnacle.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_barney",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_barney.cpp",
+          "cpp_type": "CNPC_Barney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_barney.cpp",
+          "cpp_type": "CNPC_Barney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_barney.cpp",
+          "new": "game/server/hl1/hl1_npc_barney.cpp",
+          "approx_line_similarity": 0.88,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/barney.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_barney_dead",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_barney.cpp",
+          "cpp_type": "CNPC_DeadBarney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_barney.cpp",
+          "cpp_type": "CNPC_DeadBarney",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_barney.cpp",
+          "new": "game/server/hl1/hl1_npc_barney.cpp",
+          "approx_line_similarity": 0.88,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/barney.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_bigmomma",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_bigmomma.cpp",
+          "cpp_type": "CNPC_BigMomma",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_bigmomma.cpp",
+          "cpp_type": "CNPC_BigMomma",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_bigmomma.cpp",
+          "new": "game/server/hl1/hl1_npc_bigmomma.cpp",
+          "approx_line_similarity": 0.891,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/big_mom.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_bloater",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_bloater.cpp",
+          "cpp_type": "CNPC_Bloater",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_bloater.cpp",
+          "cpp_type": "CNPC_Bloater",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_bloater.cpp",
+          "new": "game/server/hl1/hl1_npc_bloater.cpp",
+          "approx_line_similarity": 0.81,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/floater.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_bullchicken",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_bullsquid.cpp",
+          "cpp_type": "CNPC_Bullsquid",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_bullsquid.cpp",
+          "cpp_type": "CNPC_Bullsquid",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_bullsquid.cpp",
+          "new": "game/server/hl1/hl1_npc_bullsquid.cpp",
+          "approx_line_similarity": 0.916,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/bullsquid.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_cockroach",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_roach.cpp",
+          "cpp_type": "CNPC_Roach",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_roach.cpp",
+          "cpp_type": "CNPC_Roach",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_roach.cpp",
+          "new": "game/server/hl1/hl1_npc_roach.cpp",
+          "approx_line_similarity": 0.905,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/roach.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_flyer",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_aflock.cpp",
+          "cpp_type": "CNPC_FlockingFlyer",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_aflock.cpp",
+          "cpp_type": "CNPC_FlockingFlyer",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_aflock.cpp",
+          "new": "game/server/hl1/hl1_npc_aflock.cpp",
+          "approx_line_similarity": 0.934,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/aflock.mdl",
+        "models/boid.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_flyer_flock",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_aflock.cpp",
+          "cpp_type": "CNPC_FlockingFlyerFlock",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_aflock.cpp",
+          "cpp_type": "CNPC_FlockingFlyerFlock",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_aflock.cpp",
+          "new": "game/server/hl1/hl1_npc_aflock.cpp",
+          "approx_line_similarity": 0.934,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/aflock.mdl",
+        "models/boid.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_furniture",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "cpp_type": "CNPC_Furniture",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/genericmonster.cpp",
+          "cpp_type": "CNPC_Furniture"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/genericmonster.cpp",
+          "cpp_type": "CNPC_Furniture",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "new": "game/server/genericmonster.cpp",
+          "approx_line_similarity": 0.2,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [
+        "models/fungus(large).mdl",
+        "models/fungus(small).mdl",
+        "models/fungus.mdl",
+        "models/hair.mdl",
+        "models/light.mdl",
+        "models/player.mdl",
+        "models/tree.mdl"
+      ],
+      "status": "compiled"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_gargantua",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_gargantua.cpp",
+          "cpp_type": "CNPC_Gargantua",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_gargantua.cpp",
+          "cpp_type": "CNPC_Gargantua",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_gargantua.cpp",
+          "new": "game/server/hl1/hl1_npc_gargantua.cpp",
+          "approx_line_similarity": 0.875,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/garg.mdl",
+        "models/metalplategibs.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_gman",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_gman.cpp",
+          "cpp_type": "CNPC_GMan",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_gman.cpp",
+          "cpp_type": "CNPC_GMan",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_gman.cpp",
+          "new": "game/server/hl1/hl1_npc_gman.cpp",
+          "approx_line_similarity": 0.801,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/gman.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_grunt_repel",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_HGruntRepel",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_HGruntRepel",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "new": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "approx_line_similarity": 0.947,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/hgrunt.mdl",
+        "models/shell.mdl",
+        "models/shotgunshell.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_headcrab",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_headcrab.cpp",
+          "cpp_type": "CNPC_Headcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_headcrab.cpp",
+          "cpp_type": "CNPC_Headcrab",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_headcrab.cpp",
+          "new": "game/server/hl1/hl1_npc_headcrab.cpp",
+          "approx_line_similarity": 0.911,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/baby_headcrab.mdl",
+        "models/gibs/hc_gibs.mdl",
+        "models/hc_squashed01.mdl",
+        "models/headcrab.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_hevsuit_dead",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "cpp_type": "CNPC_DeadHEV",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_ents.cpp",
+          "cpp_type": "CNPC_DeadHEV",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "new": "game/server/hl1/hl1_ents.cpp",
+          "approx_line_similarity": 0.885,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/fungus(large).mdl",
+        "models/fungus(small).mdl",
+        "models/fungus.mdl",
+        "models/hair.mdl",
+        "models/light.mdl",
+        "models/player.mdl",
+        "models/tree.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_hgrunt_dead",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_DeadHGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_DeadHGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "new": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "approx_line_similarity": 0.947,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/hgrunt.mdl",
+        "models/shell.mdl",
+        "models/shotgunshell.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_houndeye",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_houndeye.cpp",
+          "cpp_type": "CNPC_Houndeye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_houndeye.cpp",
+          "cpp_type": "CNPC_Houndeye",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_houndeye.cpp",
+          "new": "game/server/hl1/hl1_npc_houndeye.cpp",
+          "approx_line_similarity": 0.878,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/houndeye.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_human_assassin",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_hassassin.cpp",
+          "cpp_type": "CNPC_HAssassin",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_hassassin.cpp",
+          "cpp_type": "CNPC_HAssassin",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_hassassin.cpp",
+          "new": "game/server/hl1/hl1_npc_hassassin.cpp",
+          "approx_line_similarity": 0.935,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/hassassin.mdl",
+        "models/shell.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_human_grunt",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_HGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "cpp_type": "CNPC_HGrunt",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_hgrunt.cpp",
+          "new": "game/server/hl1/hl1_npc_hgrunt.cpp",
+          "approx_line_similarity": 0.947,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/hgrunt.mdl",
+        "models/shell.mdl",
+        "models/shotgunshell.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_leech",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_leech.cpp",
+          "cpp_type": "CNPC_Leech",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_leech.cpp",
+          "cpp_type": "CNPC_Leech",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_leech.cpp",
+          "new": "game/server/hl1/hl1_npc_leech.cpp",
+          "approx_line_similarity": 0.924,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/leech.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_miniturret",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_MiniTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_MiniTurret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "new": "game/server/hl1/hl1_npc_turret.cpp",
+          "approx_line_similarity": 0.895,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/miniturret.mdl",
+        "models/sentry.mdl",
+        "models/turret.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_mortar",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "cpp_type": "CMortar",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_ents.cpp",
+          "cpp_type": "CMortar",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_ents.cpp",
+          "new": "game/server/hl1/hl1_ents.cpp",
+          "approx_line_similarity": 0.885,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/fungus(large).mdl",
+        "models/fungus(small).mdl",
+        "models/fungus.mdl",
+        "models/hair.mdl",
+        "models/light.mdl",
+        "models/player.mdl",
+        "models/tree.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_nihilanth",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_nihilanth.cpp",
+          "cpp_type": "CNPC_Nihilanth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_nihilanth.cpp",
+          "cpp_type": "CNPC_Nihilanth",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_nihilanth.cpp",
+          "new": "game/server/hl1/hl1_npc_nihilanth.cpp",
+          "approx_line_similarity": 0.9,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/nihilanth.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_osprey",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_osprey.cpp",
+          "cpp_type": "CNPC_Osprey",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_osprey.cpp",
+          "cpp_type": "CNPC_Osprey",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_osprey.cpp",
+          "new": "game/server/hl1/hl1_npc_osprey.cpp",
+          "approx_line_similarity": 0.843,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/HVR.mdl",
+        "models/gibs/metalgibs.mdl",
+        "models/osprey.mdl",
+        "models/osprey_bodygibs.mdl",
+        "models/osprey_enginegibs.mdl",
+        "models/osprey_tailgibs.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_satchel",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_weapon_satchel.cpp",
+          "cpp_type": "CSatchelCharge",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [],
+      "implementation_comparison": [],
+      "referenced_models": [
+        "models/v_satchel.mdl",
+        "models/v_satchel_radio.mdl",
+        "models/w_satchel.mdl"
+      ],
+      "status": "legacy_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_scientist",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_Scientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_Scientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "new": "game/server/hl1/hl1_npc_scientist.cpp",
+          "approx_line_similarity": 0.899,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/scientist.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_scientist_dead",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_DeadScientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_DeadScientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "new": "game/server/hl1/hl1_npc_scientist.cpp",
+          "approx_line_similarity": 0.899,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/scientist.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_sentry",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_Sentry",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_Sentry",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "new": "game/server/hl1/hl1_npc_turret.cpp",
+          "approx_line_similarity": 0.895,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/miniturret.mdl",
+        "models/sentry.mdl",
+        "models/turret.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_sitting_scientist",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_SittingScientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_scientist.cpp",
+          "cpp_type": "CNPC_SittingScientist",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_scientist.cpp",
+          "new": "game/server/hl1/hl1_npc_scientist.cpp",
+          "approx_line_similarity": 0.899,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/scientist.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_snark",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_snark.cpp",
+          "cpp_type": "CSnark",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_snark.cpp",
+          "cpp_type": "CSnark",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_snark.cpp",
+          "new": "game/server/hl1/hl1_npc_snark.cpp",
+          "approx_line_similarity": 0.804,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/w_squeak.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_tentacle",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_tentacle.cpp",
+          "cpp_type": "CNPC_Tentacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_tentacle.cpp",
+          "cpp_type": "CNPC_Tentacle",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_tentacle.cpp",
+          "new": "game/server/hl1/hl1_npc_tentacle.cpp",
+          "approx_line_similarity": 0.881,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/tentacle2.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_tripmine",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_weapon_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_weapon_tripmine.cpp",
+          "cpp_type": "CTripmineGrenade",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_weapon_tripmine.cpp",
+          "new": "game/server/hl1/hl1_weapon_tripmine.cpp",
+          "approx_line_similarity": 0.855,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/w_tripmine.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_turret",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_Turret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_turret.cpp",
+          "cpp_type": "CNPC_Turret",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_turret.cpp",
+          "new": "game/server/hl1/hl1_npc_turret.cpp",
+          "approx_line_similarity": 0.895,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/miniturret.mdl",
+        "models/sentry.mdl",
+        "models/turret.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "monster_zombie",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_npc_zombie.cpp",
+          "cpp_type": "CNPC_Zombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [],
+      "current_sources": [
+        {
+          "file": "game/server/hl1/hl1_npc_zombie.cpp",
+          "cpp_type": "CNPC_Zombie",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_npc_zombie.cpp",
+          "new": "game/server/hl1/hl1_npc_zombie.cpp",
+          "approx_line_similarity": 0.808,
+          "same_bytes": false,
+          "newer_file_compiled": false
+        }
+      ],
+      "referenced_models": [
+        "models/zombie.mdl"
+      ],
+      "status": "source_only"
+    },
+    {
+      "branch": "hl1_dll",
+      "classname": "npc_template_maker",
+      "legacy": [
+        {
+          "file": "legacy2003/dlls/hl1_dll/hl1_monstermaker.cpp",
+          "cpp_type": "CTemplateNPCMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "compiled_implementations": [
+        {
+          "file": "game/server/monstermaker.cpp",
+          "cpp_type": "CTemplateNPCMaker"
+        }
+      ],
+      "current_sources": [
+        {
+          "file": "game/server/monstermaker.cpp",
+          "cpp_type": "CTemplateNPCMaker",
+          "literal_if0_disabled": false
+        }
+      ],
+      "implementation_comparison": [
+        {
+          "old": "legacy2003/dlls/hl1_dll/hl1_monstermaker.cpp",
+          "new": "game/server/monstermaker.cpp",
+          "approx_line_similarity": 0.472,
+          "same_bytes": false,
+          "newer_file_compiled": true
+        }
+      ],
+      "referenced_models": [],
+      "status": "compiled"
+    }
+  ]
+}

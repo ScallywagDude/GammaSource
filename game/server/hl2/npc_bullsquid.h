@@ -26,6 +26,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 	Class_T	Classify( void );
+	Activity NPC_TranslateActivity( Activity activity );
 	
 	void IdleSound( void );
 	void PainSound( const CTakeDamageInfo &info );
