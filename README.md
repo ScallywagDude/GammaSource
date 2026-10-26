@@ -1,7 +1,5 @@
 # GammaSource
 
-**v28:** [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete.
-
 GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons (plus a few fan favorites), NPCs, models, animations, maps, interface, and ground deformation.
 
 ## Project status
@@ -99,8 +97,8 @@ Use isolated test profiles when running automated gameplay checks. Do not overwr
 ## Historical source milestones
 
 The earlier source milestones are retained as historical reference:
-
-- **v27 — Full Engine Overhaul (Current Commit):** Still not quite finished, very, VERY far along the line though. Will be done in due time. x64 builds and runs, however it still needs to be looked at, there’s still a lot very wrong with the engine, but it’s almost done.
+- **v28:** (Current Commit) [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete.
+- **v27 — Full Engine Overhaul:** Still not quite finished, very, VERY far along the line though. Will be done in due time. x64 builds and runs, however it still needs to be looked at, there’s still a lot very wrong with the engine, but it’s almost done.
 - **v26 — Native toolchain and restoration:** legacy shader builds, CRT/linkage fixes, assembly compatibility, restored prototype gameplay code, HUD selector and Energy counter work. Recorded **265 tests: 262 passed, 3 skipped, 0 failures**. A later engine milestone superseded its earlier build and runtime blockers.
 - **v25 — Weapon and build repairs:** sticky launcher/hopwire ammunition safety, projectile and TF2 repair behavior fixes, HUD audits, build/linkage repairs. Recorded **217 tests: 216 passed, 1 skipped, 0 failures**.
 - **v24 — Material/model diagnostics:** layered VMT Patch lookup and VTX companion discovery. Historical validation: **184 tests: 183 passed, 1 skipped**.
