@@ -1,6 +1,6 @@
 # GammaSource
 
-**v28:** [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete; this snapshot was frozen at the requested account-usage cutoff.
+**v28:** [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete.
 
 GammaSource restores the original 2003 Half-Life 2 beta experience while improving engine stability, compatibility, and performance. The project retains its original weapons, NPCs, models, animations, maps, interface, HUD, physics behavior, and ground deformation.
 
