@@ -86,13 +86,23 @@ Each staging run creates a dated output folder. Open that folder's `GammaSource_
 
 If Windows cannot load a DLL, check **architecture**, its actual file location, and transitive dependencies rather than assuming the launcher executable is broken.
 
-## Development priorities
+## TODO
 
-1. **Finish runtime verification:** exercise normal `logic_choreographed_scene` body sequences on `e3_lab` and `e3_hydra`; prior instanced-scene tests did not exercise normal body `SEQUENCE` playback.
-2. **Complete** **`zoo_item`** **visual verification:** inspect the sky, original HEV pickup, and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
-3. **Rebuild and runtime-test friendly fire:** confirm the `gamma_friendlyfire` toggle across the intended allied-damage paths.
-4. **Measure stability and performance:** record repeatable frame times, memory use, map-loading times, and long-session crashes.
-5. **Preserve original beta features:** no removal or replacement of beta HUD, weapons, hands, animations, NPCs, interface, ground deformation, maps, or effects.
+**All unfinished work on this shared list is on hold. Do not start or resume any of it until the project owner explicitly says to continue on the TODO list.** New reports below belong to the same ongoing fixes. [TODO.md](TODO.md) mirrors this list.
+
+- [ ] **Finish current NPC, model, animation and scene restoration.** Continue the unfinished fixes and verification recorded in the [v28 known bugs](docs/V28_KNOWN_BUGS.md), including normal `logic_choreographed_scene` body sequences on `e3_lab` and `e3_hydra`.
+- [ ] **Fix barnacle pickup of newly added NPCs.** New NPCs currently cannot be picked up by barnacles.
+- [ ] **Fix intermittent hard-stop crashes when killing NPCs.** NPC deaths sometimes cause the entire game to crash.
+- [ ] **Restore the Houndeye's missing sonic shockwave.** Consider adapting the Half-Life 1 effect and polishing it to fit Half-Life 2's visual style.
+- [ ] **Complete full ports of the unfinished cut Combine enemies.** Most remain substantially unfinished and need complete behavior and presentation.
+- [ ] **Complete `zoo_item` visual verification.** Inspect the sky, original HEV pickup and physgun beam with `exec gamma_zoo_visual_check` in a dedicated test profile.
+- [ ] **Runtime-test friendly fire.** Confirm the enabled-by-default `gamma_friendlyfire` toggle across the intended allied-damage paths.
+- [ ] **Measure stability and performance.** Record repeatable frame times, memory use, map-loading times and long-session crashes.
+- [ ] **Remove every Steam dependency.** Cover the game, engine, build process, tools, launchers, content lookup and runtime services; verify independent builds and runtime operation.
+- [ ] **Replace normal Hammer with a WorldCraft-styled editor combining both feature sets.** Reverse-engineer the supplied `hammerplusplus_2013sp_build8872.zip` and combine its features with the existing editor. Match the original 2003 WorldCraft appearance and branding exactly. Start this after Steam dependency removal.
+- [ ] **Repair .357/crossbow presentation and restore ammo for every added weapon.** Fix stretching of the mandatory 2003 hands, use the Half-Life 2 crossbow logo/icon, restore ammo availability and pickups for all added weapons, and use .357 ammo models for `weapon_proto1` ammo pickups. Preserve the already repaired weapon values.
+
+Preserve original beta HUD, weapons, hands, animations, NPCs, interface, ground deformation, maps and effects throughout this work.
 
 Use isolated test profiles when running automated gameplay checks. Do not overwrite the player's normal config, forcibly activate a test window, or terminate an existing game session.
 
