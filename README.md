@@ -104,7 +104,7 @@ If Windows cannot load a DLL, check **architecture**, its actual file location, 
 - [ ] **Replace normal Hammer with a WorldCraft-styled editor combining both feature sets.** Reverse-engineer the supplied `hammerplusplus_2013sp_build8872.zip` and combine its features with the existing editor. Match the original 2003 WorldCraft appearance and branding exactly. Start this after Steam dependency removal.
 - [ ] **Repair .357/crossbow presentation and restore ammo for every added weapon.** Fix stretching of the mandatory 2003 hands, use the Half-Life 2 crossbow logo/icon, restore ammo availability and pickups for all added weapons, and use .357 ammo models for `weapon_proto1` ammo pickups. Preserve the already repaired weapon values.
 
-Preserve original beta HUD, weapons, hands, animations, NPCs, interface, ground deformation, maps and effects throughout this work.
+Preserve original beta features throughout this work.
 
 Use isolated test profiles when running automated gameplay checks. Do not overwrite the player's normal config, forcibly activate a test window, or terminate an existing game session.
 
