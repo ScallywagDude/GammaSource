@@ -1012,16 +1012,23 @@ void CBaseCombatWeapon::SetActivity( Activity act, float duration )
 #if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ))
 	SetModel( GetWorldModel() );
 #endif
-	
-	int sequence = SelectWeightedSequence( act ); 
-	
+
+	int sequence = SelectWeightedSequence( act );
+
 	// FORCE IDLE on sequences we don't have (which should be many)
 	if ( sequence == ACTIVITY_NOT_AVAILABLE )
 		sequence = SelectWeightedSequence( ACT_VM_IDLE );
 
 	//Adrian: Oh man again...
 #if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ))
-	SetModel( GetViewModel() );
+	// Only a player's weapon wears its view model on the server (see Equip).
+	// An NPC's weapon must keep its world model: that model's fire sequences
+	// carry the EVENT_WEAPON_* events that make NPCs shoot. On the view model
+	// the same sequence index plays shell ejection with no bullet or sound.
+	if ( ToBasePlayer( GetOwner() ) )
+	{
+		SetModel( GetViewModel() );
+	}
 #endif
 
 	if ( sequence != ACTIVITY_NOT_AVAILABLE )
