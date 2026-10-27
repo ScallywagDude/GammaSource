@@ -90,6 +90,10 @@ public:
 	const char *SelectModel( const char *preferred );
 	bool MuzzleTransform( Vector &position, QAngle &angles );
 	void EmitTurretSound( const char *legacy, const char *fallback );
+	bool UsesFallbackAim( void ) { return LookupPoseParameter( TURRET_BC_YAW ) < 0; }
+	float FallbackBarrelYawOffset( void );
+	Vector EyeDirection2D( void );
+	Vector EyeDirection3D( void );
 
 	// Think functions
 
@@ -266,6 +270,39 @@ bool CBetaBaseTurret::MuzzleTransform( Vector &position, QAngle &angles )
 	position = WorldSpaceCenter();
 	angles = GetAbsAngles();
 	return false;
+}
+
+//-----------------------------------------------------------------------------
+// The fallback Floor_Sentry art has no aim_yaw pose; its whole base turns. Its
+// barrel points along local -X rather than the entity's +X, and its attachment
+// axes do not follow the barrel. Measure the barrel's yaw around the base from
+// where the muzzle attachment sits, so any art with a fixed barrel aims right.
+//-----------------------------------------------------------------------------
+float CBetaBaseTurret::FallbackBarrelYawOffset( void )
+{
+	Vector muzzle; QAngle unused;
+	if ( !MuzzleTransform( muzzle, unused ) )
+		return 180.0f;
+	Vector local;
+	WorldToEntitySpace( muzzle, &local );
+	if ( local.AsVector2D().LengthSqr() < 1.0f )
+		return 180.0f;
+	return RAD2DEG( atan2( local.y, local.x ) );
+}
+
+Vector CBetaBaseTurret::EyeDirection2D( void )
+{
+	if ( !UsesFallbackAim() )
+		return BaseClass::EyeDirection2D();
+	// The view cone follows the barrel, not the entity's forward axis.
+	Vector forward;
+	AngleVectors( QAngle( 0, GetAbsAngles().y + FallbackBarrelYawOffset(), 0 ), &forward );
+	return forward;
+}
+
+Vector CBetaBaseTurret::EyeDirection3D( void )
+{
+	return UsesFallbackAim() ? EyeDirection2D() : BaseClass::EyeDirection3D();
 }
 
 Vector CBetaBaseTurret::EyePosition( void )
@@ -584,8 +621,25 @@ void CBetaBaseTurret::ActiveThink(void)
 
 	AngleVectors( vecMuzzleAng, &vecMuzzleDir );
 	
+	if ( UsesFallbackAim() )
+	{
+		// Aim by the barrel's yaw around the base (see FallbackBarrelYawOffset) and,
+		// once it lines up, fire from the muzzle at the target. The XR pitch pose only
+		// presents the aim.
+		const float flBarrelYaw = GetAbsAngles().y + FallbackBarrelYawOffset();
+		fAttack = fEnemyVisible && fabs( AngleDiff( vecAnglesToEnemy.y, flBarrelYaw ) ) <= 10.0f;
+		if ( fAttack )
+		{
+			vecMuzzleDir = vecMidEnemy - vecMuzzle;
+			VectorNormalize( vecMuzzleDir );
+		}
+		else
+		{
+			AngleVectors( QAngle( vecAnglesToEnemy.x, flBarrelYaw, 0 ), &vecMuzzleDir );
+		}
+	}
 	// Is the Gun looking at the target
-	if (DotProduct(vecLOS, vecMuzzleDir) <= 0.9848) // 10 degree slop
+	else if (DotProduct(vecLOS, vecMuzzleDir) <= 0.9848) // 10 degree slop
 	{
 		fAttack = FALSE;
 	}
@@ -931,7 +985,8 @@ int CBetaBaseTurret::MoveTurret(void)
 	{
 		QAngle angles = GetAbsAngles();
 		float oldYaw = angles.y;
-		angles.y = UTIL_ApproachAngle(m_vecGoalAngles.y,angles.y,0.1f*m_iBaseTurnRate);
+		// Turn the base so the barrel, not the entity's +X, faces the goal.
+		angles.y = UTIL_ApproachAngle(AngleNormalize(m_vecGoalAngles.y-FallbackBarrelYawOffset()),angles.y,0.1f*m_iBaseTurnRate);
 		SetAbsAngles(angles);
 		Vector muzzle; QAngle aim;
 		MuzzleTransform(muzzle,aim);
