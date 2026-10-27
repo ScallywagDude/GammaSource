@@ -1,0 +1,4633 @@
+//-------------------------------------------------------------------------
+//
+// General Game Data
+//
+//-------------------------------------------------------------------------
+
+@mapsize(-16384, 16384)
+
+
+//-------------------------------------------------------------------------
+//
+// Base Classes
+//
+//-------------------------------------------------------------------------
+
+@BaseClass = Angles
+[ 
+	angles(angle) : "Pitch Yaw Roll (Y Z X)" : "0 0 0" : "This entity's orientation in the world. Pitch is rotation around the Y axis, " +
+		"yaw is the rotation around the Z axis, roll is the rotation around the X axis."
+]
+
+
+@BaseClass = Origin
+[ 
+	origin(origin) : "Origin (X Y Z)" : : "The position of this entity's center in the world. Rotating entities typically rotate around their origin."
+]
+
+
+@BaseClass = Studiomodel
+[
+	model(studio) : "World model"
+	skin(integer) : "Skin" : 0
+	disableshadows(choices) : "Disable shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	input Skin(integer) : "Changes the model skin"
+]
+
+@BaseClass = BasePlat
+[
+ 	input Toggle(void) : "Toggles the platform's state"
+	input GoUp(void)	: "Tells the platform to go up"
+	input GoDown(void) : "Tells the platform to go down"
+]
+
+
+@BaseClass = Targetname 
+[ 
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	
+	// Inputs
+	input Kill(void) : "Removes this entity from the world"
+]
+
+
+@BaseClass = Parentname
+[ 
+	parentname(target_destination) : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+
+	// Inputs
+	input SetParent(string) : "Changes the entity's parent in the movement hierarchy"
+	input SetParentAttachment(string) : "Change this entity to attach to a specific attachment point on its parent. Entities must be parented before being sent this input. The parameter passed in should be the name of the attachment." // VXP
+	input SetParentAttachmentMaintainOffset(string) : "Change this entity to attach to a specific attachment point on it's parent. Entities must be parented before being sent this input. The parameter passed in should be the name of the attachment. The entity will maintain it's position relative to the parent at the time it is attached." // VXP
+	input ClearParent(void) : "Removes entity from the the movement hierarchy"
+
+]
+
+@BaseClass = BaseBrush
+[
+	// Inputs
+	input SetTextureIndex(integer) : "Sets the brush texture index"
+	input IncrementTextureIndex(void) : "Increments the brush texture index"	
+]
+
+@BaseClass = EnableDisable
+[
+	StartDisabled(choices) : "Start Disabled" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	// Inputs
+	input Enable(void) : "Enable this entity"
+	input Disable(void) : "Disable this entity"
+]
+
+
+@BaseClass = RenderFxChoices
+[
+	renderfx(choices) :"Render FX" : 0 =
+	[
+		0: "Normal"
+		1: "Slow Pulse"
+		2: "Fast Pulse"
+		3: "Slow Wide Pulse"
+		4: "Fast Wide Pulse"
+		9: "Slow Strobe"
+		10: "Fast Strobe"
+		11: "Faster Strobe"
+		12: "Slow Flicker"
+		13: "Fast Flicker"
+		5: "Slow Fade Away"
+		6: "Fast Fade Away"
+		7: "Slow Become Solid"
+		8: "Fast Become Solid"
+		14: "Constant Glow"
+		15: "Distort"
+		16: "Hologram (Distort + fade)"
+		23: "Cull By Distance (TEST)"
+		24: "Spotlight FX"
+		26: "Fade Near"
+	]
+]
+
+
+@BaseClass base(RenderFxChoices) = RenderFields 
+[
+	rendermode(choices) : "Render Mode" : 0 =
+	[
+		0: "Normal"
+		1: "Color"
+		2: "Texture"
+		3: "Glow"
+		4: "Solid"
+		5: "Additive"
+		7: "Additive Fractional Frame"
+		9: "World Space Glow"
+		10: "Dont Render"
+	]
+	renderamt(integer) : "FX Amount (0 - 255)" : 255
+	rendercolor(color255) : "FX Color (R G B)" : "255 255 255"
+	disableshadows(choices) : "Disable shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	disablereceiveshadows(choices) : "Disable receiving shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+]
+
+// Inherit from this to get the ability to only include an object in a range of dx levels.
+// NOTE!!: MAKE SURE THAT YOU DON'T USE THIS WITH ANYTHING THAT WILL BREAK SAVE-GAMES SWITCHING
+// BETWEEN DXLEVELS!!!!
+@BaseClass = DXLevelChoice
+[ 
+	mindxlevel(choices) : "Minimum DX Level" : 0 = 
+	[
+		0 : "default (lowest)"
+		70 : "dx7"
+	]
+	maxdxlevel(choices) : "Maximum DX Level" : 0 = 
+	[
+		0 : "default (highest)"
+		60 : "dx6"
+	]
+]
+
+@BaseClass = Inputfilter
+[
+	InputFilter(choices) : "Input filter" : 0 =
+	[
+		0 : "Allow all inputs"
+		8 : "Ignore Touch/Untouch"
+		16 : "Ignore Use"
+		32 : "Ignore All"
+	]
+]
+
+
+@BaseClass = Global 
+[ 
+	globalname(string) : "Global Entity Name" 
+]
+
+@BaseClass = DamageFilter
+[ 
+	damagefilter(target_destination) : "Damage Filter" : "" : "Name of the filter entity that controls which entities can damage us."
+	input SetDamageFilter(string) : "Sets the entity to use as damage filter. Empty string to clear"
+]
+
+@BaseClass = ResponseContext
+[
+	input AddContext(string) : "Add context (name:value)"
+	input RemoveContext(string) : "Remove named context"
+	input ClearContext(void) : "Removes all context tags"
+
+	// Pre-defined contexts at server startup time (set by mapper)
+	ResponseContext(string) : "Context" : "" : "Response system context token pair(s):  key:value,key2:value2,etc."
+]
+
+@BaseClass base(Targetname, DamageFilter) = Breakable
+[
+	ExplodeDamage(float) : "Explosion Damage" : 0 : "Explode on break does this amount of damage"
+	ExplodeRadius(float) : "Explosion Radius" : 0 : "Explode on break has this radius"
+
+	input Break(void) : "Breaks the breakable."
+	input SetHealth(integer) : "Sets a new value for health. If the breakable's health reaches zero it will break."
+	input AddHealth(integer) : "Adds health to the breakable. If the breakable's health reaches zero it will break."
+	input RemoveHealth(integer) : "Removes health from the breakable. If the breakable's health reaches zero it will break."
+	
+	output OnBreak(void) : "Fires when broken."
+	output OnHealthChanged(integer) : "Fires when the health of this breakable changes, passing the new value of health."
+]
+
+@BaseClass base(Breakable, Parentname, Global) = BreakableBrush
+[
+	spawnflags(flags) =
+	[
+		1 : "Only Break on Trigger" : 0
+		2 : "Break on Touch" : 0
+		4 : "Break on Pressure" : 0
+		512: "Break immediately on Physics" : 0
+		1024: "Don't take physics damage" : 0
+	]
+
+	propdata(choices) : "Prop Data" : 0 =
+	[
+		0	: "None"
+		1	: "Wooden.Tiny"
+		2	: "Wooden.Small"
+		3	: "Wooden.Medium"
+		4	: "Wooden.Large"
+		5	: "Wooden.Huge"
+		6	: "Metal.Small"
+		7	: "Metal.Medium"
+		8	: "Metal.Large"
+		9	: "Cardboard.Small"
+		10	: "Cardboard.Medium"
+		11	: "Cardboard.Large"
+		12	: "Stone.Small"
+		13	: "Stone.Medium"
+		14	: "Stone.Large"
+		15	: "Stone.Huge"
+		16	: "Glass.Small"
+		17	: "Plastic.Small"
+		18	: "Plastic.Medium"
+		19	: "Plastic.Large"
+		20	: "Pottery.Small"
+		21	: "Pottery.Medium"
+		22	: "Pottery.Large"
+		23	: "Pottery.Huge"
+	]
+
+	health(integer) : "Strength" : 1 : "Number of points of damage to take before breaking.  0 means don't break."
+	material(choices) :"Material type" : 0 =
+	[
+		0: "Glass"
+		1: "Wood"
+		2: "Metal"
+		3: "Flesh"
+		4: "Cinder Block"  
+		5: "Ceiling Tile"
+		6: "Computer"
+		7: "Unbreakable Glass"
+		8: "Rocks"
+	]
+	explosion(choices) : "Gibs Direction" : 0 =
+	[
+		0: "Random"
+		1: "Relative to Attack"
+	]
+	gibmodel(string) : "Gib Model" : ""
+	spawnobject(choices) : "Spawn On Break" : 0 =
+	[
+		1:	"item_battery"				
+		2:	"item_healthkit"			
+		3:	"item_box_srounds"			
+		4:	"item_large_box_srounds"	
+		5:	"item_box_mrounds"			
+		6:	"item_large_box_mrounds"	
+		7:	"item_box_lrounds"			
+		8:	"item_large_box_lrounds"	
+		9:	"item_box_buckshot"		
+		10:	"item_flare_round"			
+		11:	"item_box_flare_rounds"		
+		12:	"item_ml_grenade"		
+		13:	"item_ar2_grenade"			
+		14:	"item_box_sniper_rounds"	
+		15:	"weapon_iceaxe"			
+		16:	"weapon_stunstick"		
+		17:	"weapon_ar1"				
+		18:	"weapon_ar2"			
+		19:	"weapon_hmg1"				
+		20:	"weapon_ml"					
+		21:	"weapon_smg1"				
+		22:	"weapon_smg2"				
+		23:	"weapon_slam"				
+		24:	"weapon_shotgun"			
+		25:	"weapon_molotov"							
+	]
+	explodemagnitude(integer) : "Explode Magnitude (0=none)" : 0
+	pressuredelay(float) : "Pressure Delay" : 0 : "Delay in seconds after broken by pressure before breaking apart.\n(allows for sound before break)."
+]
+
+@BaseClass base(Breakable) = BreakableProp
+[
+	spawnflags(flags) =
+	[
+		16 : "Break on Touch" : 0
+		32 : "Break on Pressure" : 0
+		64 : "Enable motion on Physcannon grab" : 0
+	]
+	pressuredelay(float) : "Pressure Delay" : 0 : "Delay in seconds after broken by pressure before breaking apart.\n(allows for sound before break)."
+]
+
+@BaseClass base(Targetname, Angles, RenderFields, DamageFilter, ResponseContext ) color(0 200 200) = BaseNPC
+[
+	target(target_destination) : "Target path corner" : : "If set, the name of a path corner entity that this NPC will walk to after spawning."
+	squadname(String) : "Squad Name"
+	hintgroup(String) : "Hint Group"
+	hintlimiting(choices) : "Hint Limit Nav" : 0 : "Limits NPC to using specified hint group for navigation requests, does not limit local navigation." =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	spawnflags(Flags) = 
+	[
+		1 : "Wait Till Seen" : 0
+		2 : "Gag" : 0
+		4 : "Fall to ground" : 1
+		8 : "Drop Healthkit" : 0
+		16 : "Efficient" : 0
+		128: "Wait For Script" : 0
+		256: "Long Visibility/Shoot" : 0
+		512: "Fade Corpse" : 0
+		1024: "Think outside PVS" : 0
+		2048: "Template NPC (used by npc_maker, will not spawn)" : 0
+	]
+
+	physdamagescale(float) : "Physics Impact Damage Scale" : "1.0" : "Scales damage energy when this character is hit by a physics object. NOTE: 0 means this feature is disabled for backwards compatibility."
+	output OnDamaged(void) : "This NPC takes damage"
+	output OnDeath(void) : "This NPC is killed" 
+	output OnHalfHealth(void) : "This NPC reaches half of its maximum health"
+	output OnHearWorld(void) : "This NPC hears a sound (other than combat or the player)"
+	output OnHearPlayer(void) : "This NPC hears the player"
+	output OnHearCombat(void) : "This NPC hears combat sounds"
+
+	output OnFoundEnemy(string) : "Fired when establish line of sight to enemy (output's entity)"
+	output OnLostEnemyLOS(void) : "Fired when lost line of sight to enemy"
+	output OnLostEnemy(void) : "Fired when lost enemy"
+
+	output OnFoundPlayer(string) : "Fired when establish line of sight to player (output's player entity)"
+	output OnLostPlayerLOS(void) : "Fired when lost line of sight to player"
+	output OnLostPlayer(void) : "Fired when lost player"
+
+	// Inputs
+	input SetRelationship(string) : "Changes this entity's relationship with another entity or class"
+	input SetHealth(integer) : "Set this entity's health"
+	input SetBodyGroup(integer) : "HACK: Sets this NPC's body group (from 0 - n). You'd better know what you are doing!"
+	input physdamagescale(float) : "Sets the value that scales damage energy when this character is hit by a physics object. NOTE: 0 means this feature is disabled for backwards compatibility."
+	input Ignite(void) : "Ignite, burst into flames"
+]
+
+@BaseClass base(Targetname, EnableDisable, Angles) iconsprite("editor/npc_maker.vmt") color(0 0 255) = BaseNPCMaker
+[
+	StartDisabled(choices) : "Start Disabled" : 1 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	spawnflags(Flags) = 
+	[
+		// Only in npc__maker, npc_template_maker uses flag from template NPC
+		16	: "Fade Corpse"		 : 0
+		32	: "Infinite Children" : 0
+		64	: "Do Not Drop" : 0
+		128	: "Don't Spawn While Visible" : 0
+	]
+
+	MaxNPCCount(integer) : "Max Num. of NPCs" : 1
+	
+	// if delay is -1, new NPC will be made when last NPC dies.
+	// else, delay is how often (seconds) a new NPC will be dookied out.
+	SpawnFrequency(string) : "Frequency" : "5"
+
+	// maximum number of live children allowed at one time. (New ones will not be made until one dies)
+	// -1 no limit
+	MaxLiveChildren(integer) : "Max live NPCs" : 5
+	
+	// Outputs
+	output OnSpawnNPC(void) : "Fires when an NPC is spawned" 
+	output OnAllSpawned(void) : "Fires when all children have been spawned"
+	output OnAllSpawnedDead(void) : "Fires when all the children have been spawned and have died."
+
+	// Inputs
+	input Spawn(void) : "Spawns an NPC."
+	input Toggle(void) : "Toggles the spawner enabled/disabled state."
+	input Enable(void) : "Enables the spawner."
+	input Disable(void) : "Disables the spawner."
+	input SetMaxChildren(integer) : "Sets the maximum number of children for this spawner."
+]
+
+
+@PointClass base(BaseNPCMaker) = npc_template_maker : "NPC template maker"
+[
+	TemplateName(target_destination) : "Name of template NPC"
+
+	Radius(float) : "Radius" : 256
+
+
+	//Inputs
+	input SpawnNPCInRadius(void)	: "Spawn an NPC somewhere along maker's radius."
+	input SpawnNPCInLine(void)	: "Spawn an NPC somewhere in line BEHIND the maker."
+]
+
+
+@BaseClass base( BaseNPC ) = BaseHelicopter
+[
+	InitialSpeed(string) : "Initial Speed" : "0"
+	target(target_destination) : "Target path_track" : : "If set, the name of a path_track entity that this NPC will fly to after spawning."
+
+	//Inputs
+	input ChangePathCorner(string)	: "Puts helicopter on a new path"
+	input SelfDestruct(void)		: "Self Destruct"
+	input Activate(void)			: "Activate"
+	input SetTrack(string) : "Set a track for the helicopter to adhere to"
+	input FlyToPathTrack(string) : "Fly to a specified path_track"
+	input StartPatrol(void) : "Start patrolling back and forth along the current track."
+	input StartPatrolBreakable(void) : "Start patrolling back and forth along the current track, but stop patrolling if I see an enemy."
+
+	//Outputs
+	output AtPathCorner(void)		: "Fires when helicopter reaches path corner"
+	output LeavePathCorner(void)	: "Fires when helicopter leaves path corner"
+
+	spawnflags(Flags) =
+	[
+		// AWAIT INPUT will make the helicopter spawn disabled, awaiting 
+		// the "Activate" input to start acting.
+		32 : "No Rotorwash" : 0
+		64 : "Await Input" : 0
+	]
+]
+
+@BaseClass color(0 255 0) = PlayerClass []
+
+
+@BaseClass color(180 10 180) = Light
+[
+	_light(color255) : "Brightness" : "255 255 255 200"
+    style(Choices) : "Appearance" : 0 =
+	[
+		0 : "Normal"
+		10: "Fluorescent flicker"
+		2 : "Slow, strong pulse"
+		11: "Slow pulse, noblack"
+		5 : "Gentle pulse"
+		1 : "Flicker A"
+		6 : "Flicker B"
+		3 : "Candle A"
+		7 : "Candle B"
+		8 : "Candle C"
+		4 : "Fast strobe"
+		9 : "Slow strobe"
+	]
+	pattern(string) : "Custom Appearance"
+	_constant_attn(string)	: "Constant" : "0"
+	_linear_attn(string)	: "Linear" : "0"
+	_quadratic_attn(string)	: "Quadratic" : "1"
+
+	// Inputs
+	input TurnOn(void) : "Turn the light on"
+	input TurnOff(void) : "The the light off"
+	input Toggle(void) : "Turn the light on/off"
+	input SetPattern(string) : "Pattern of light brightness to display  'a' is total darkness, 'z' fully bright, can be multiple, i.e. 'agzzga'"
+	input FadeToPattern(string) : "Fades from first value in old pattern, to first value in the new given pattern"
+]
+
+
+@BaseClass = Node 
+[
+	nodeid(integer) readonly : "Node ID"
+]
+
+
+@BaseClass base(Node) = HintNode 
+[
+	hinttype(choices) : "Hint" : 0 = 
+	[
+		  0 : "None"
+
+//		  1: "World: Door"
+		  2: "World: Window"
+//		  3: "World: Button"
+//		  4: "World: Machinery"
+//		  5: "World: Ledge"
+//		  6: "World: Light Source"
+//		  7: "World: Heat Source"
+		 12: "World: Work Position"
+		 13: "World: Visually Interesting"
+
+		100: "Crouch Cover Medium"
+		101: "Crouch Cover Low"
+		102: "Waste Scanner Spawn"
+		103: "Entrance / Exit Pinch"
+//		104: "Guard Point"
+		105: "Enemy Disadvantage Point"
+		106: "Health Kit"
+		107: "Place Booby Trap"
+
+//		200: "Urban: Street Corner"
+//		201: "Urban: Street Lamp"
+//		202: "Urban: Dark Spot"
+//		203: "Urban: Poster"
+		204: "Urban: Shelter"
+
+//		300: "Assassin: Secluded"
+//		301: "Assassin: Rafters"
+//		302: "Assassin: Ground"
+//		303: "Assassin: Monkey Bars"
+
+		400: "Antlion: Burrow Point"
+
+		500: "Roller: Patrol Point"
+		501: "Roller: Cleanup Spot"
+
+//		600: "Particle Storm Rock Spawn"
+
+		700: "Crow: Fly to point"
+		701: "Crow: Perch point"
+
+		800: "TF2 Bug: Patrol point"
+
+		900: "Follower: Wait point"
+
+		1000: "HL1 World: Machinery"
+		1001: "HL1 World: Blinking Light"
+		1002: "HL1 World: Human Blood"
+		1003: "HL1 World: Alien Blood"
+	]
+
+	// Does not inherit from EnableDisable, as node itself will
+	// use that.  This is enabling/disabling of the hint only
+	StartHintDisabled(choices) : "Start Hint Disabled" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	Group(string) : "Hint Group" : "" : "If specified, gives the hint a specific group name.  Useful for hint nodes that need to be logically grouped together."
+
+	// Inputs
+	input EnableHint(void) : "Enable hint"
+	input DisableHint(void) : "Disable hint"
+]
+
+
+@BaseClass base(Targetname, Parentname, Origin, EnableDisable) = TriggerOnce
+[
+	spawnflags(flags) = 
+	[
+		1: "Clients" : 1
+		2: "NPCs" : 0
+		4: "Pushables": 0
+		8: "Physics Objects" : 0
+	]
+
+	filtername(filterclass) : "Filter Name" : : "Filter to use to see if activator triggers me. See filter_activator_name for more explanation."
+
+	// Inputs
+	input Toggle(void) : "Toggles this trigger between enabled and disabled."
+
+	// Outputs
+	output OnStartTouch(void) : "Fires when an entity starts touching this trigger."
+]
+
+
+@BaseClass base(Targetname, Parentname, Origin, EnableDisable, TriggerOnce) = Trigger
+[
+	output OnEndTouch(void) : "Fires when an entity stops touching this trigger."
+	output OnEndTouchAll(void) : "Fires when an entity stops touching this trigger, and no other entities are touching it."
+]
+
+
+@BaseClass = worldbase
+[
+	message(string) : "Map Description / Title"
+	skyname(string) : "SkyBox texture name" : "sky_wasteland02"
+	sounds(integer) : "CD track to play" : 0
+	WaveHeight(string) : "Default Wave Height"
+	chaptertitle(string) : "Chapter Title Message"
+	startdark(choices) : "Level Fade In" : 0 =
+	[	
+		0 : "No"
+		1 : "Yes"
+	]
+	gametitle(choices) : "Display game title" : 0 = 
+	[	
+		0 : "No"
+		1 : "Yes"
+	]
+	newunit(choices) : "New Level Unit" : 0 = 
+	[
+		0 : "No, keep current"
+		1 : "Yes, clear previous levels"
+	]
+	mapteams(string) : "Map Team List"
+	defaultteam(choices) : "Default Team" : 0 = 
+	[
+		0 : "Fewest Players"
+		1 : "First Team"
+	]
+]
+
+//-------------------------------------------------------------------------
+//
+// World
+//
+//-------------------------------------------------------------------------
+@SolidClass base(worldbase,ResponseContext) = worldspawn : "World entity"
+[
+]
+
+@PointClass base(Targetname) iconsprite("editor/ambient_generic.vmt") sphere() = ambient_generic : "Universal Ambient"
+[
+	message(sound) : "Path/filename.wav of WAV"
+	health(integer) : "Volume (10 = loudest)" : 10
+	preset(choices) :"Dynamic Presets" : 0 =
+	[
+		0: "None"
+		1: "Huge Machine"
+		2: "Big Machine"
+		3: "Machine"
+		4: "Slow Fade in"  
+		5: "Fade in"
+		6: "Quick Fade in"
+		7: "Slow Pulse"
+		8: "Pulse"
+		9: "Quick pulse"
+		10: "Slow Oscillator"
+		11: "Oscillator"
+		12: "Quick Oscillator"
+		13: "Grunge pitch"
+		14: "Very low pitch"
+		15: "Low pitch"
+		16: "High pitch"
+		17: "Very high pitch"
+		18: "Screaming pitch"
+		19: "Oscillate spinup/down"
+		20: "Pulse spinup/down"
+		21: "Random pitch"
+		22: "Random pitch fast"
+		23: "Incremental Spinup"
+		24: "Alien"
+		25: "Bizzare"
+		26: "Planet X"
+		27: "Haunted"
+	]
+	volstart(integer) : "Start Volume" : 0
+	fadein(integer) : "Fade in time (0-100)" : 0
+	fadeout(integer) : "Fade out time (0-100)" : 0
+	pitch(integer) : "Pitch (> 100 = higher)" : 100
+	pitchstart(integer) : "Start Pitch" : 100
+	spinup(integer) : "Spin up time (0-100)" : 0
+	spindown(integer) : "Spin down time (0-100)" : 0
+	lfotype(integer) : "LFO type 0)off 1)sqr 2)tri 3)rnd" : 0
+	lforate(integer) : "LFO rate (0-1000)" : 0
+	lfomodpitch(integer) : "LFO mod pitch (0-100)" : 0
+	lfomodvol(integer) : "LFO mod vol (0-100)" : 0
+	cspinup(integer) : "Incremental spinup count" : 0
+	radius(string) : "Max audible distance" : "1250"
+	spawnflags(flags) =
+	[
+		1: "Play everywhere" : 0
+		16:"Start Silent":0
+		32:"Is NOT Looped":0
+	]
+	SourceEntityName(target_destination) : "SourceEntityName" : : "If name of valid entity is given, sound will come from the named entity"
+
+	// Inputs
+	input Pitch(integer) : "Pitch (> 100 = higher)"
+	input PlaySound(void) : "Starts the sound"
+	input StopSound(void) : "Stops the sound if it is playing"
+	input ToggleSound(void) : "Toggles the sound between play and stop"
+	input Volume(integer) : "Volume (10 = loudest)"
+]
+
+
+@SolidClass base(Targetname) = func_lod : "Brush Model LOD"
+[
+	DisappearDist(integer)    : "Disappear Distance" : 2000
+	Solid(choices) : "Solid" : 0 =
+	[
+		0: "Solid"
+		1: "Nonsolid"
+	]
+]
+
+@PointClass base(Targetname) = env_zoom : "Zoom Controller"
+[
+	Rate(float) : "Seconds to reach target" : "1.0"
+	FOV(integer) : "Target FOV" : 75
+
+	input	Zoom(void)
+]
+
+@PointClass base(Targetname) = env_fov : "FOV Controller"
+[
+	targetfov(integer) : "Target FOV" : 75
+
+	input	ChangeFOV(void)
+]
+
+@PointClass base(Targetname) = env_screenoverlay: "Screen Overlay Controller"
+[
+	OverlayName1(string) : "Overlay Name 1" : ""
+	OverlayTime1(float) : "Overlay Duration 1" : "1.0"
+	OverlayName2(string) : "Overlay Name 2" : ""
+	OverlayTime2(float) : "Overlay Duration 2" : "1.0"
+	OverlayName3(string) : "Overlay Name 3" : ""
+	OverlayTime3(float) : "Overlay Duration 3" : "1.0"
+	OverlayName4(string) : "Overlay Name 4" : ""
+	OverlayTime4(float) : "Overlay Duration 4" : "1.0"
+	OverlayName5(string) : "Overlay Name 5" : ""
+	OverlayTime5(float) : "Overlay Duration 5" : "1.0"
+	OverlayName6(string) : "Overlay Name 6" : ""
+	OverlayTime6(float) : "Overlay Duration 6" : "1.0"
+	OverlayName7(string) : "Overlay Name 7" : ""
+	OverlayTime7(float) : "Overlay Duration 7" : "1.0"
+	OverlayName8(string) : "Overlay Name 8" : ""
+	OverlayTime8(float) : "Overlay Duration 8" : "1.0"
+	OverlayName9(string) : "Overlay Name 9" : ""
+	OverlayTime9(float) : "Overlay Duration 9" : "1.0"
+	OverlayName10(string) : "Overlay Name 10" : ""
+	OverlayTime10(float) : "Overlay Duration 10" : "1.0"
+
+
+	input	StartOverlays(void)
+]
+
+@PointClass base(Targetname) = env_texturetoggle : "Texture Frame Toggle"
+[
+
+	target(target_destination) : "Target Brush" 
+
+	input	IncrementTextureIndex(void) : "Increments the current frame by one"
+	input	SetTextureIndex(integer) : "Let's you specify which frame to display"		
+]
+
+@PointClass base(Targetname, Angles) = env_splash : "Splash"
+[
+	scale(float) : "Scale of the splash" : "8.0"
+	input	Splash(void)
+]
+
+@PointClass base(Parentname, Angles) color(180 10 180) = env_particlelight : "Particle Light"
+[
+	Color(color255)		: "Color"		: "255 0 0"
+	Intensity(integer)	: "Intensity"	: 5000
+	PSName(string)		: "Particle System Entity" : ""
+]
+
+@PointClass color(255 0 0) = env_sun : "Sun"
+[
+	target(target_destination)	: "Viewer entity" : : "Name of an entity used to determine where the sun is in the skybox. The sun should be lined up on a line from this entity to the env_sun entity."
+	rendercolor(color255)		: "Sun Color (R G B)" : "100 80 80"
+	NumLayers(integer)			: "Number of layers" : 3
+	HorzSize(integer)			: "Horizontal size of sun"	: 120
+	VertSize(integer)			: "Vertical size of sun"	: 100
+
+	input TurnOn(void)			: "Enable sun rendering"
+	input TurnOff(void)			: "Disable sun rendering"
+	input SetColor(color255)	: "Change the sun's color"
+]
+
+@PointClass color(255 128 0) = env_lightglow : "Light Glow" +
+	"The light glow effect puts an additive glow over the screen where a light source is."
+[
+	rendercolor(color255)	: "Color (R G B)"	: "200 80 80"
+	GlowSize(integer)		: "Size"			: 30
+]
+
+@PointClass base(Parentname, Angles) color(255 255 255) = env_smokestack : "Smoke stack" +
+	"The smoke stack entity spits out a constant stream of smoke. See particlezoo.vmf for" + 
+	"sample usage. You can place up to two env_particlelight entities near the smoke stack to add" +
+	"ambient light to its particles."
+[
+	targetname(string) : "Name"
+
+	InitialState(choices) : "Initial State" : 0 = 
+	[
+		0 : "Off"
+		1 : "On"
+	]
+
+	DirLightSource(choices) : "Directional Light Source" : 0 : "Sets the direction from which directional light is applied." = 
+	[
+		0 : "Bottom"
+		1 : "Top"
+	]
+
+	BaseSpread(integer)		: "Spread at the base" : 20
+	SpreadSpeed(integer)	: "Spread Speed" : 15
+	Speed(integer)			: "Speed" : 30
+	StartSize(integer)		: "Particle start size"	: 20
+	EndSize(integer)		: "Particle end size" : 30
+	Rate(integer)			: "Emission rate" : 20
+	DirLightColor(color255) : "Directional color" : "1 .5 0"
+	JetLength(integer)		: "Length of smoke trail" : 180
+	renderamt(integer)		: "Translucency" : 255
+	
+	WindAngle(integer)		: "Wind X/Y Angle" : 0 : "This specifies the wind direction. It is, " +
+		"an angle in the XY plane. WindSpeed specifies the strength of the wind."
+
+	WindSpeed(integer)		: "Wind Speed" : 0 : "The strength of the wind."
+
+	rendercolor(color255)	: "Base Color (R G B)" : "255 255 255"
+	renderamt(integer)		: "Fade Alpha" : 255
+	twist(integer)			: "Twist (degrees per second)" : 0
+	
+	// Inputs
+	input TurnOn(void)		: "Turn on"
+	input TurnOff(void)		: "Turn off"
+	input Toggle(void)		: "Toggles between on and off"
+	input JetLength(integer): "Length of steam jet"
+	input Rate(integer)		: "Particle emission rate in particles per second"
+	input Speed(integer)	: "Controls length of the smoke jet"
+	input SpreadSpeed(integer) : "Controls wideness of the smoke"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/env_fade") = env_fade : "Screen Fade"
+[
+	spawnflags(flags) =
+	[
+		1: "Fade From" : 0
+		2: "Modulate" : 0
+	]
+	duration(string) : "Duration (seconds)" : "2" : "The time that it will take to fade the screen in or out."
+	holdtime(string) : "Hold Fade (seconds)" : "0" : "The time to hold the faded out state."
+	renderamt(integer) : "Fade Alpha" : 255
+	rendercolor(color255) : "Fade Color (R G B)" : "0 0 0"
+	
+	// Inputs
+	input Fade(void) : "Starts the screen fade."
+
+	// Outputs
+	output OnBeginFade(void) : "Fires when the fade is begun."
+]
+
+
+@SolidClass = func_ladder : "Ladder"
+[
+]
+
+
+@SolidClass base(Targetname) color(0 128 255) = func_areaportalwindow : "Fading window portal" +
+	"func_areaportalwindow can be used to optimize the visibility in a map." +
+	"If you seal off an area with them, then when the viewer moves a certain distance away" +
+	"from them, they will go opaque and the parts inside the area will not be drawn." +
+	"The 'target' bmodel should enclose the func_areaportal window so no parts of it are " +
+	"culled by the window. If you use the optional foreground bmodel, then it should " +
+	"enclose the 'target' bmodel."
+[
+	target(target_destination) 	: "Rendered window" : : "The name of a brush model to render as the window."
+	FadeStartDist(integer)		: "Fade Start Distance" : 128 : "When the viewer is closer than this distance, the alpha is set to TranslucencyLimit."
+	FadeDist(integer)			: "Fade End Distance"   : 512 : "When the viewer is at this distance, the portal becomes solid and closes off."
+	TranslucencyLimit(string)	: "Translucency limit"  : "0.2" : "This value limits the translucency of the bmodel and prevents the it from becoming invisible when the viewer is right on top of it."
+	BackgroundBModel(string)	: "Foreground bmodel"   : "" : "(Optional) bmodel that is drawn " +
+		"after the fading bmodel. This model should have alpha in its textures so you can see " +
+		"through it."
+]
+
+
+@SolidClass base(Targetname, RenderFields, Global) = func_wall : "Wall" 
+[
+	_minlight(string) : "Minimum light level"
+]
+
+
+@SolidClass base(Targetname) = func_clip_vphysics : "VPhysics clip" 
+[
+	filtername(filterclass) : "Filter Name" : : "Filter to use to see if activator collides with me. See filter_activator_name for more explanation."
+]
+
+
+@PointClass sphere() base(Targetname) size(-8 -8 -8, 8 8 8) = target_cdaudio : "CD Audio Target"
+[
+	health(choices) : "Track #" : -1 =
+	[
+		-1 : "Stop"
+		1 : "Track 1"
+		2 : "Track 2"
+		3 : "Track 3"
+		4 : "Track 4"
+		5 : "Track 5"
+		6 : "Track 6"
+		7 : "Track 7"
+		8 : "Track 8"
+		9 : "Track 9"
+		10 : "Track 10"
+		11 : "Track 11"
+		12 : "Track 12"
+		13 : "Track 13"
+		14 : "Track 14"
+		15 : "Track 15"
+		16 : "Track 16"
+		17 : "Track 17"
+		18 : "Track 18"
+		19 : "Track 19"
+		20 : "Track 20"
+		21 : "Track 21"
+		22 : "Track 22"
+		23 : "Track 23"
+		24 : "Track 24"
+		25 : "Track 25"
+		26 : "Track 26"
+		27 : "Track 27"
+		28 : "Track 28"
+		29 : "Track 29"
+		30 : "Track 30"
+	]
+	radius(string) : "Player Radius"
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, RenderFields, Global, Inputfilter, EnableDisable) = func_brush : "Brush Wall" 
+[
+	_minlight(string) : "Minimum light level"
+	Solidity(choices) : "Solidity" : 0 =
+	[
+		0 : "Toggle"
+		1 : "Never Solid"
+		2 : "Always Solid"
+	]
+]
+
+
+//-------------------------------------------------------------------------
+//
+// A Vgui screen in 3D
+//
+//-------------------------------------------------------------------------
+@BaseClass base(Targetname, Parentname, Angles) = vgui_screen_base
+[
+	panelname(string) : "Panel Name"
+	overlaymaterial(string) : "Overlay Material" : "" : "Name of a material to overlay over the top of the vgui screen. NOTE: This material must write Z for the vgui screen to work"
+	width(integer) : "Panel Width in World" : 32
+	height(integer) : "Panel Height in World" : 32
+
+	input SetActive(void) : "Make the vgui screen visible"
+	input SetInactive(void) : "Make the vgui screen invisible"
+]
+
+@PointClass base(vgui_screen_base) size(-4 -4 -4, 4 4 4) = vgui_screen : "VGUI Screen" 
+[
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Cyclers
+//
+//-------------------------------------------------------------------------
+@PointClass base(Targetname, Parentname, Angles) studio() = cycler : "NPC Cycler" 
+[
+	spawnflags(flags) =
+	[
+		1: "Not Solid" : 0
+	]
+	model(studio) : "Model"
+	renderfx(choices) :"Render FX" : 0 =
+	[
+		0: "Normal"
+		1: "Slow Pulse"
+		2: "Fast Pulse"
+		3: "Slow Wide Pulse"
+		4: "Fast Wide Pulse"
+		9: "Slow Strobe"
+		10: "Fast Strobe"
+		11: "Faster Strobe"
+		12: "Slow Flicker"
+		13: "Fast Flicker"
+		5: "Slow Fade Away"
+		6: "Fast Fade Away"
+		7: "Slow Become Solid"
+		8: "Fast Become Solid"
+		14: "Constant Glow"
+		15: "Distort"
+		16: "Hologram (Distort + fade)"
+	]
+	rendermode(choices) : "Render Mode" : 0 =
+	[
+		0: "Normal"
+		1: "Color"
+		2: "Texture"
+		3: "Glow"
+		4: "Solid"
+		5: "Additive"
+	]
+	renderamt(integer) : "FX Amount (0 - 255)" : 255
+	rendercolor(color255) : "FX Color (R G B)" : "255 255 255"
+	disableshadows(choices) : "Disable shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	sequence(integer) : "Sequence" : 0
+
+	// Inputs
+	input SetSequence(integer) : "Sets the cycler's sequence."
+
+	// Inputs
+	input Alpha(integer) : "Sets alpha value"
+]
+
+
+@PointClass base(BaseNPC) studio() = cycler_weapon : "Weapon Cycler"
+[
+	model(studio) : "View model"
+]
+
+
+@PointClass base(BaseNPC) studio() = cycler_flex : "Facial Cycler"
+[
+	model(studio) : "World model"
+	Sentence(string) : "Sentence Group" : ""
+	SetBodyGroup(Integer) : "Body Group" : 0
+]
+
+//-------------------------------------------------------------------------
+//
+// Environmental effects
+//
+//-------------------------------------------------------------------------
+@BaseClass base(Targetname, Parentname) = gibshooterbase
+[
+	angles(string) : "Gib Direction (Pitch Yaw Roll)" : "0 0 0" : "The direction the gibs will fly."
+	m_iGibs(integer) : "Number of Gibs" : 3 : "Total number of gibs to shoot each time I'm activated."
+	delay(string) : "Delay between shots" : "0" : "Delay (in seconds) between shooting each gib. If 0, all gibs shoot at once."
+	gibangles(string) : "Gib Angles (Pitch Yaw Roll)" : "0 0 0" : "The orientation of the spawned gibs."
+	m_flVelocity(integer) : "Gib Velocity" : 200 : "Speed of the fired gibs"
+	m_flVariance(string) : "Course Variance" : "0.15" : "How much variance in the direction gibs are fired."
+	m_flGibLife(string) : "Gib Life" : "4" : "Time in seconds for gibs to live +/- 5%"
+
+	spawnflags(Flags) = 
+	[
+		1 : "Repeatable" 	: 0
+	]
+
+	// Inputs
+	input Shoot(void) : "Shoot"
+]
+
+
+@PointClass base(Targetname, Parentname, RenderFxChoices) size(-4 -4 -4, 4 4 4) line(255 255 255, targetname, LightningStart, targetname, LightningEnd) = env_beam : "Energy Beam Effect"
+[
+	renderamt(integer) : "Brightness (1 - 255)" : 100
+	rendercolor(color255) : "Beam Color (R G B)" : "255 255 255"
+	Radius(integer) : "Radius" : 256
+	life(string) : "Life (seconds 0 = infinite)" : "1"
+	BoltWidth(float) : "Width of beam" : 2
+	NoiseAmplitude(float) : "Amount of noise (0-255)" : 0
+	texture(sprite) : "Sprite Name" : "sprites/laserbeam.spr"
+	TextureScroll(integer) : "Texture Scroll Rate (0-100)" : 35
+	framerate(integer) : "Frames per 10 seconds" : 0
+	framestart(integer) : "Starting Frame" : 0
+	StrikeTime(string) : "Strike again time (secs)" : "1"
+	damage(string) : "Damage / second" : "0" : "How much damage this beam does per second to things it hits when it is continually on, " +
+		"or instantaneously if it strikes. For continuous damage, the value should be greater than 10 or it may not work."
+	LightningStart(target_destination) : "Start Entity" 
+	LightningEnd(target_destination) : "Ending Entity" 
+	spawnflags(flags) = 
+	[
+		1 : "Start On" : 0
+		2 : "Toggle" : 0
+		4 : "Random Strike" : 0
+		8 : "Ring" : 0
+		16: "StartSparks" : 0
+		32: "EndSparks" : 0
+		64: "Decal End" : 0
+		128: "Shade Start" : 0
+		256: "Shade End" : 0
+	]
+
+	TouchType(choices) : "Touch Type (tripwire)" : 0 =
+	[	
+		0 : "Not a tripwire"
+		1 : "Player Only"
+		2 : "NPC Only"
+		3 : "Player or NPC"
+	]
+
+
+	// Inputs
+	input TurnOn(void) : "Turns the beam on."
+	input TurnOff(void) : "Turns the beam off."
+	input Toggle(void) : "Toggles the beam between on and off."
+	input StrikeOnce(void) : "Causes the beam to strike once. It will stay on for its set Life and then turn off (it will never turn off if Life is set to zero)."
+	input Alpha(integer) : "Sets the beam's alpha (0 - 255)"
+	input Color(color255) : "Sets the beam's render color (R G B)"
+	input Amplitude(float) : "Amplitude of beam noise (0 - 255)."
+	input ScrollSpeed(float) : "Scroll speed in units per second (0 - 100)."
+	input Width(float) : "Width of the beam, in pixels."
+
+	output OnTouchedByEntity(void)			: "Fires when an entity touches the beam"
+]
+
+
+@PointClass base(Targetname, Parentname) size(-4 -4 -4, 4 4 4) = env_beverage : "Beverage Dispenser"
+[
+	health(integer) : "Capacity" : 10
+	beveragetype(choices) : "Beverage Type" : 0 = 
+	[
+		0 : "Coca-Cola"
+		1 : "Sprite"
+		2 : "Diet Coke"
+		3 : "Orange"
+		4 : "Surge"
+		5 : "Moxie"
+		6 : "Random"
+	]
+
+	input Activate(void) : "Activate"
+]
+
+
+@SolidClass base(Targetname, Parentname, Angles) = env_embers : "Embers Volume" 
+[
+	particletype(choices) : "Ember type" : 0 =
+	[
+		0 : "Normal"
+		1 : "Smooth Fade"
+		2 : "Pulled"
+	]
+
+	density(integer) : "Density (particles per second)" : 50
+	lifetime(integer) : "Particle Lifetime (seconds)" : 4
+	speed(integer) : "Particle Speed (units per second)" : 32
+	rendercolor(color255) : "Ember Color (R G B)" : "255 255 255"	
+
+	spawnflags(Flags) = 
+	[
+		1 : "Start On" 	: 0
+		2 : "Toggle"	: 0
+	]
+]
+
+
+@PointClass base(Targetname, Parentname) size(-16 -16 -16, 16 16 16) = env_funnel : "Large Portal Funnel" 
+[
+	spawnflags(flags) =
+	[
+		1: "Reverse" : 0
+	]
+]
+
+
+@PointClass base(Targetname, Parentname) size(-16 -16 -16, 16 16 16) color(255 0 0) = env_blood : "Blood Effects" 
+[
+	spraydir(angle) : "Spray Direction (Pitch Yaw Roll)" : "0 0 0" : "The general direction that the blood should spray and the direction to trace to apply the decal."
+	color(choices) : "Blood Color" : 0 =
+	[
+		0 : "Red (Human)"
+		1 : "Yellow (Alien)"
+	]
+	amount(string) : "Amount of blood (damage to simulate)" : "100"
+	spawnflags(flags) =
+	[
+		1: "Random Direction" : 0
+		2: "Blood Stream" : 0
+		4: "On Player" : 0
+		8: "Spray decals" : 0
+		// dvs: support these flags
+		//16: "Cloud" : 0
+		//32: "Drops" : 0
+		//64: "Gore" : 0
+	]
+
+	input EmitBlood(void) : "Triggers the blood effect."
+]
+
+
+@SolidClass base(Targetname, Parentname) = env_bubbles : "Bubble Volume" 
+[
+	density(integer) : "Bubble density" : 2
+	frequency(integer) : "Bubble frequency" : 2
+	current(integer) : "Speed of Current" : 0
+	spawnflags(Flags) = 
+	[
+		1 : "Start Off" 	: 0
+	]
+
+	input Activate(void) : "Activate"
+]
+
+
+@PointClass base(Targetname, Parentname) iconsprite("editor/env_explosion.vmt") = env_explosion : "Explosion" 
+[
+	iMagnitude(Integer) : "Magnitude" : 100
+	// If no radius override, magnitude will determine radius.
+	iRadiusOverride(Integer) : "Radius Override" : 0
+	fireballsprite(sprite) : "Fireball Sprite" : "sprites/zerogxplode.spr"
+	rendermode(choices) : "Render Mode" : 5 =
+	[
+		0: "Normal"
+		4: "Solid"
+		5: "Additive"
+	]
+	spawnflags(flags) =
+	[
+		1: "No Damage" : 0
+		2: "Repeatable" : 0
+		4: "No Fireball" : 0
+		8: "No Smoke" : 0
+		16: "No Decal" : 0
+		32: "No Sparks" : 0
+		64: "No Sound" : 0
+		128: "Random Orientation" : 0
+		512: "No particles" : 0
+		1024: "No DLights" : 0
+		2048: "Don't clamp Min" : 0
+		4096: "Don't clamp Max" : 0
+	]
+
+	// Inputs
+	input Explode(void) : "Triggers the explosion."
+]
+
+
+@PointClass base(Targetname, Parentname) color(200 50 0)  size(-8 -8 -8, 8 8 8) = env_smoketrail : "Smoke Trail" 
+[
+	firesprite(sprite) : "Fire Sprite" : "sprites/firetrail.spr"
+	smokesprite(sprite) : "Smoke Puff" : "sprites/whitepuff.spr"
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = env_global : "Global State"
+[
+	globalstate(choices) : "Global State to Set" =
+	[
+		"gordon_precriminal" : "Gordon pre-criminal" 
+		"antlion_allied" : "Antlions are player allies" 
+		"player_stealth" : "Player in APC is disguised as combine" 
+	]
+
+	initialstate(choices) : "Initial State" : 0 =
+	[
+		0 : "Off"
+		1 : "On"
+		2 : "Dead"
+	]
+	spawnflags(flags) =
+	[
+		1 : "Set Initial State" : 0
+	]
+
+	// Inputs
+	input TurnOn(void) : "Set state of global to ON"
+	input TurnOff(void) : "Set state of global to OFF"
+	input Toggle(void) : "Toggles state of global between ON and OFF"
+	input Remove(void) : "Set state of global to DEAD"
+]
+
+
+
+@PointClass base(Targetname, Parentname) sphere() iconsprite("editor/env_physexplosion.vmt") = env_physexplosion : "Physics Explosivo"
+[
+	magnitude(string) : "Magnitude" : "100"
+	radius(string) : "Clamp Radius (0 = auto)" : "0"
+	targetentityname(string) : "Limit to Entity" : ""
+	spawnflags(flags) =
+	[
+		1 : "No Damage - Only Force" : 1
+	]
+
+	// Inputs
+	input Explode(void) : "Trigger the explosion"
+]
+
+
+@PointClass base(Targetname, Parentname) line(255 255 255, targetname, directionentityname) iconsprite("editor/env_physexplosion.vmt") = env_physimpact :
+	"Directed physics impact that effects an object"
+[
+	angles(string) : "Pitch Yaw Roll (Y Z X)" : "0 0 0" : "Direction to project the impact."
+	magnitude(integer) : "Magnitude" : 100 : "Strength of the impact"
+	distance(integer) : "Distance" : 0 : "How far to project the impact (if 0 uses a default value)."
+	directionentityname(target_destination) : "Point to Entity" : "" : "If set distance and angle settings are ignored and the direction and distance of the given entity will be used."
+
+	spawnflags(flags) =
+	[
+		1: "No fall-off" : 0
+		2: "Infinite Length" : 0
+		4: "Ignore Mass" : 0
+	]
+
+	input Impact(void) : "Trigger the impact"
+]
+
+
+//  This has been disabled until it can be reimplemented, destroyed, or renamed - jdw
+//@PointClass base(Targetname, Parentname) size(-4 -4 -4, 4 4 4) = env_splash : 
+//	"Can be used to create either a spash effect or a stream of falling or spurting liquid." +
+//	"Will create a splash decal on the collided surface the same color as the liquid"
+//[
+//	spawnrate(float)	 : "SpawnRate"  : "10"			: "How many particles some out"
+//	startcolor(color255) : "StartColor" : "100 100 100" : "Color of particles when the are emitted"
+//	endcolor(color255)	 : "EndColor"	: "240 110 0"	: "Color that particles approach"
+//	speed(float)		 : "Speed"		: 3				: "Averate speed of an emitted particles"
+//	speedrange(float)	 : "SpeedRange"	: 1				: "Speed range of an emitted particles"
+//	widthmin(float)		 : "WidthMin"	: 2				: "Width of smallest particle emitted"
+//	widthmax(float)		 : "WidthMax"	: 8				: "Width of largest particle emitted"
+//	noise(float)		 : "Noise"		: "0.1"			: "Amount of directional noise in stream"
+//	lifetime(float)		 : "Lifetime"	: 5				: "Lifetime of particles (in secs)"
+//	numdecals(integer)	 : "Num Decals" : 1				: "Number of decals used (keep small)"
+//	startactive(choices) : "Start On" : 1 =
+//	[
+//		0 : "No"
+//		1 : "Yes"
+//	]
+//
+//	// Inputs
+//	input SetSpawnRate(float)	: "Sets how many particles come out"
+//	input SetSpeed(float)		: "Sets speed of emitted particle"
+//	input SetNoise(float)		: "Sets noise of emitted particle (0-1)"
+//	input SetLifetime(float)	: "Sets lifetime of emitted particles (in seconds)"
+//	input TurnOn(void)			: "Turns particles on"
+//	input TurnOff(void)			: "Turns particles off"
+//]
+
+
+@PointClass base(Targetname, Parentname) iconsprite("editor/env_fire") color(0 180 0) = env_fire : "Firestarter"
+[
+	health(integer) : "Duration" : 30 : "Amount of time the fire will burn."
+	firesize(integer) : "Size" : 64 : "Height (in world units) of the flame."
+	fireattack(integer) : "Attack" : 4 : "Amount of time the fire takes to grow to full strength."
+	firetype(choices) : "Type" : 0 =
+	[
+		0 : "Natural"
+		1 : "Plasma"
+	]
+	spawnflags(flags) =
+	[
+		1:	"Infinite Duration" : 0
+		2:	"Smokeless" : 0
+		4:	"Start On" : 0
+		8:	"Start Full" : 0
+		16:	"Don't drop" : 0
+		32: "No glow" : 0
+		128: "Delete when out" : 0
+		256: "Start disabled" : 0
+		512: "Emit fire sound" : 0 // VXP
+	]
+
+	ignitionpoint(float) : "Ignition Point" : 32
+	damagescale(float) : "Damage Scale" : "1.0"
+
+	// Inputs
+	input Enable(void)				: "Enables input and ignition"
+	input Disable(void)				: "Disables input and ignition"
+	input StartFire(void)			: "Start the fire"
+	input Extinguish(float)			: "Puts out the fire premanently in the number of seconds specified"
+	input ExtinguishTemporary(float): "Puts out the fire temporarily in the number of seconds specified"
+
+	// Outputs
+	output OnIgnited(void)			: "Fires when the fire is first ignited"
+	output OnExtinguished(void)		: "Fires when the fire is fully extinguished"
+]
+
+@PointClass base(Targetname, Parentname) iconsprite("editor/env_firesource") color(255 255 0) sphere(fireradius) = env_firesource : "Fire Source"
+[
+	spawnflags(flags) =
+	[
+		1:	"Start On" : 0
+	]
+
+	fireradius(float) : "Radius" : 128
+	firedamage(float) : "Intensity / Damage" : 10
+
+	// Inputs
+	input Enable(void)				: "Enable fire source"
+	input Disable(void)				: "Disable fire source"
+]
+
+@PointClass base(Targetname, Parentname) size(-4 -4 -4, 4 4 4) color(255 255 0) sphere(fireradius) = env_firesensor : "Fire Sensor"
+[
+	spawnflags(flags) =
+	[
+		1:	"Start On" : 1
+	]
+
+	fireradius(float) : "Radius" : 128
+	heatlevel(float) : "Heat level" : 32
+	heattime(float) : "Time at level" : 0
+
+	// Inputs
+	input Enable(void)				: "Enable fire source"
+	input Disable(void)				: "Disable fire source"
+	output OnHeatLevelStart(void)	: "Fires when the heat level has been detected for the given length of time"
+	output OnHeatLevelEnd(void)		: "Fires when the heat level is no longer detected."
+]
+
+
+@PointClass base(Targetname) size(-4 -4 -4, 4 4 4) color(0 180 0) = env_entity_igniter :
+	"Catches a target entity on fire. If the entity is an animating model, it will have sprite flames attached to its skeleton. Otherwise "+
+	"the entity will emit particle flame puffs."
+[
+	target(target_destination) : "Entity to ignite" : : "Name of the entity to catch on fire."
+	lifetime(float) : "Lifetime in seconds" : 10 : "Duration of flames."
+	
+	input Ignite(void) : "Ignites the target entity."
+	input IgnitePlasma(void) : "Ignites the target entity with plasma fire."
+]
+
+
+@PointClass base(Targetname, DXLevelChoice) size(-16 -16 -16, 16 16 16) color(255 255 255) = env_fog_controller : "Fog Controller"
+[
+	// Inputs
+	input SetStartDist(float) : "Sets fog start distance"
+	input SetEndDist(float) : "Sets fog end distance"
+	input TurnOn(void) : "Turns fog on"
+	input TurnOff(void) : "Turns fog off"
+	input SetColor(color255) : "Sets primary fog color."
+	input SetColorSecondary(color255) : "Sets secondary fog color."
+	
+	
+	// Starting fog parameters for the level. These are selectable per LOD.	
+	fogenable(choices) : "Fog Enable" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	fogblend(choices) : "Fog Blend" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	fogcolor(color255) : "Primary Fog Color" : "255 255 255"
+	fogcolor2(color255) : "Sec Fog Color" : "255 255 255"
+	fogdir(string) : "Primary Fog Dir" : "1 0 0"
+	fogstart(string) : "Fog Start" : "500.0"
+	fogend(string) : "Fog End" : "2000.0"
+	
+	farz(string) : "Far Z Clip Plane" : "-1"
+]
+
+
+@PointClass base(Parentname, Angles) studioprop("models/editor/spot_cone.mdl") color(255 255 255) = env_steam : "Steam jet"
+[
+	targetname(string) : "Name"
+	InitialState(choices) : "Initial State" : 0 = 
+	[
+		0 : "Off"
+		1 : "On"
+	]
+
+	//Type of particle to spew out
+	type(choices) : "Particle Type" : 0 =
+	[
+		0 : "Normal"
+		1 : "Heat Wave"
+	]
+
+	SpreadSpeed(integer) : "Spread Speed" : 15
+	Speed(integer) : "Speed" : 120
+	StartSize(integer) : "Particle start size"	: 10
+	EndSize(integer) : "Particle end size" : 25
+	Rate(integer) : "Emission rate" : 26
+	rendercolor(color255) : "Color (R G B)" : "255 255 255"
+	JetLength(integer) : "Length of steam jet" : 80
+	renderamt(integer) : "Translucency" : 255
+	
+	// Inputs
+	input TurnOn(void) : "Turns the steam jet on"
+	input TurnOff(void) : "Turns the steam jet off"
+	input Toggle(void) : "Toggles the steam jet between on and off"
+	input JetLength(integer) : "Length of steam jet"
+	input Rate(integer) : "Particle emission rate in particles per second"
+	input Speed(integer) : "Spread speed in units per second"
+	input SpreadSpeed(integer) : "Spread speed in units per second"
+]
+
+
+@PointClass base(Targetname, Parentname, RenderFxChoices) size(-4 -4 -4, 4 4 4) line(255 255 255, targetname, LaserTarget) = env_laser :
+	"This entity creates a laser beam between itself and a given target."
+[
+	LaserTarget(target_destination) : "Target of Laser" : : "Name of entity or entities to strike at, randomly chosen if there are multiple entities with the given name."
+	renderamt(integer) : "Brightness (1 - 255)" : 100
+	rendercolor(color255) : "Beam Color (R G B)" : "255 255 255"
+	width(float) : "Width of beam in pixels" : 2
+	NoiseAmplitude(integer) : "Amount of noise (0-255)" : 0
+	texture(sprite) : "Sprite Name" : "sprites/laserbeam.spr"
+	EndSprite(sprite) : "End Sprite" : ""
+	TextureScroll(integer) : "Texture Scroll Rate (0-100)" : 35
+	framestart(integer) : "Starting Frame" : 0
+	damage(string) : "Damage / second" : "100" : "How much damage this laser does per second to things it hits."
+	spawnflags(flags) = 
+	[
+		1 : "Start On" : 0
+		16: "StartSparks" : 0
+		32: "EndSparks" : 0
+		64: "Decal End" : 0
+	]
+
+	// Inputs
+	input TurnOn(void) : "Turns the laser on."
+	input TurnOff(void) : "Turns the laser off."
+	input Toggle(void) : "Toggles the laser between on and off."
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = env_message
+	: "HUD Text Message"
+[
+	message(string) : "Message Text"
+	spawnflags(flags) =
+	[
+		1: "Play Once" : 0
+		2: "All Clients" : 0
+	]
+	messagesound(sound) : "Sound effect"
+	messagevolume(string) : "Volume 0-10" : "10"
+	messageattenuation(Choices) : "Sound Radius" : 0 =
+	[
+		0 : "Small Radius"
+		1 : "Medium Radius"
+		2 : "Large  Radius"
+		3 : "Play Everywhere"
+	]
+	
+	// Inputs
+	input ShowMessage(void) : "Shows the message and/or plays the sound."
+	
+	// Outputs
+	output OnShowMessage(void) : "Fires when the message is activated"
+]
+
+
+@PointClass sphere() iconsprite("editor/env_shake.vmt") base(Targetname, Parentname) = env_shake : "Screen Shake" 
+[
+	spawnflags(flags) =
+	[
+		1: "GlobalShake" : 0
+		//2: "Disrupt player control" : 0 // doesn't work
+		4: "In Air" : 0		// shakes objects even if they are not onground
+		8: "Physics" : 0	// shakes physically as well as the camera
+	]
+
+	amplitude(float) : "Amplitude 0-16" : "4"
+	radius(float) : "Effect radius" : "500"
+	duration(float) : "Duration (seconds)" : "1"
+	frequency(float) : "0.1 = jerk, 255.0 = rumble" : "2.5"
+
+	input Amplitude(string) : "Amplitude 0-16"
+	input Frequency(string) : "0.1 = jerk, 255.0 = rumble"
+	input StartShake(void) : "Starts the shake"
+	input StopShake(void) : "Stops the shake"
+]
+
+
+@PointClass base(gibshooterbase) iconsprite("editor/gibshooter.vmt") = gibshooter : 
+	"This entity shoots out body parts.  Style of body part depends on language type."
+[
+]
+
+
+@PointClass base(gibshooterbase, RenderFields) iconsprite("editor/env_shooter.vmt") = env_shooter : "Model Shooter"
+[
+	shootmodel(studio) : "Model" : "" : "Thing to shoot out.  Can be a .mdl or a .vmt"
+	shootsounds(choices) :"Material Sound" : -1 =
+	[
+		-1: "None"
+		0: "Glass"
+		1: "Wood"
+		2: "Metal"
+		3: "Flesh"
+		4: "Concrete"  
+	]
+	simulation(choices) :"Simulate" : 0 =
+	[
+		0: "Point"
+		1: "Physics"
+		2: "Ragdoll"
+	]
+
+	scale(string) : "Gib Scale" : ""
+	skin(integer) : "Gib Skin" : 0
+
+	spawnflags(flags) =
+	[
+		2 : "On fire" : 0
+	]
+]
+
+
+@PointClass base(Parentname) sphere() size(-8 -8 -8, 8 8 8) = env_soundscape : "Soundscape assign"
+[
+	radius(integer) : "Radius" : 128
+	soundscape(choices) : "Soundscape" : "Nothing" =
+	[
+		"Nothing"				: "Nothing"
+		"GenericIndoor"			: "Indoor"
+		"GenericOutdoor"		: "Outdoor"
+	]
+	position0(target_destination) : "Sound Position 0" : ""
+	position1(target_destination) : "Sound Position 1" : ""
+	position2(target_destination) : "Sound Position 2" : ""
+	position3(target_destination) : "Sound Position 3" : ""
+]
+
+
+@PointClass base(Targetname, Parentname, Angles) iconsprite("editor/env_spark.vmt") = env_spark : "Spark" 
+[
+	MaxDelay(string) : "Max Delay" : "0" : "The longest delay between sparks (in seconds)."
+	Magnitude(choices) : "Magnitude" : 1 =
+	[
+		1 : "Small"
+		2 : "Medium"
+		5 : "Large"
+		8 : "Huge"
+	]
+
+	TrailLength(choices) : "Spark trail length" : 1 =
+	[
+		1 : "Short"
+		2 : "Medium"
+		3 : "Long"
+	]
+
+	spawnflags(flags) =
+	[
+		64: "Start ON" : 0
+		128: "Glow" : 0
+		256: "Silent" : 0
+		512: "Directional" : 0
+	]
+	
+	input StartSpark(void) : "Starts the spark effect."
+	input StopSpark(void) : "Stops the spark effect."
+	input ToggleSpark(void) : "Toggles the on/off state of the spark effect."
+	input SparkOnce(void) : "Spark one time."
+]
+
+
+@PointClass base(Targetname, Parentname, RenderFields,DXLevelChoice) size(-2 -2 -2, 2 2 2) sprite() color(20 140 20) = env_sprite :
+	"Sprite effect." 
+[
+	framerate(string) : "Framerate" : "10.0"
+	model(sprite) : "Sprite Name" : "sprites/glow01.spr"
+	scale(string) : "Scale" : ""
+	spawnflags(flags) =
+	[
+		1: "Start on" : 0
+		2: "Play Once" : 0
+	]
+	
+	input Alpha(integer) : "Sets the sprite's alpha (0 - 255)."
+	input Color(color255) : "Sets the sprite's color (R G B)."
+	input HideSprite(void) : "Hides the sprite"
+	input SetScale(float) : "Sets the sprite's scale (0 - 8.0)."
+	input ShowSprite(void) : "Shows the sprite"
+	input ToggleSprite(void) : "Toggles the sprite between hidden and shown"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/env_wind.vmt") = env_wind : "Wind Controller"
+[
+	gustsound(sound) : "Gust sound filename"
+	minwind(integer) : "Min normal speed" : 20
+	maxwind(integer) : "Max normal speed" : 50
+
+	mingust(integer) : "Min gust speed" : 100
+	maxgust(integer) : "Max gust speed" : 250
+
+	mingustdelay(integer) : "Min gust delay" : 10
+	maxgustdelay(integer) : "Max gust delay" : 20
+
+	gustdirchange(integer) : "Max gust dir change (degrees)" : 20
+]
+
+
+@PointClass size(-16 -16 -16, 16 16 16) color(0 0 255) = sky_camera : "3D Skybox"
+[
+	scale(integer) : "3D Skybox scale" : 16
+	fogenable(choices) : "Fog Enable" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	fogblend(choices) : "Fog Blend" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	fogcolor(color255) : "Primary Fog Color" : "255 255 255"
+	fogcolor2(color255) : "Sec. Fog Color" : "255 255 255"
+	fogdir(string) : "Primary Fog Dir" : "1 0 0"
+	fogstart(string) : "Fog Start" : "500.0"
+	fogend(string) : "Fog End" : "2000.0"
+]
+
+
+@BaseClass base(Targetname, ResponseContext) = BaseSpeaker
+[
+	delaymin(string) : "Min delay between announcements" : "15"
+	delaymax(string) : "Max delay between announcements" : "135"
+	spawnflags(flags) =
+	[
+		1: "Start Silent" : 0
+		2: "Play Everywhere" : 0
+	]
+	rulescript(string) : "Context rule script" : "" : "Script file containing rules for playing appropriate sounds."
+	concept(string) : "Concept name" : "" : "High level concept name used as primary search key."
+
+	input TurnOn(void) : "Turns on the random announcements."
+	input TurnOff(void) : "Turns off the random announcements."
+	input Toggle(void) : "Toggles the random announcements off and on."
+]
+
+//-------------------------------------------------------------------------
+//
+// Game Entities
+//
+//-------------------------------------------------------------------------
+@PointClass base(Targetname) = game_weapon_manager : "Weapon Quantity Manager" 
+[
+	weaponname(string) : "Weapon Classname" 
+	maxpieces(integer) : "Max Allowed in Level"	
+]
+
+@PointClass base(Targetname) iconsprite("editor/game_end.vmt") = game_end : "End this multiplayer game" 
+[
+	master(string) : "Master" 
+	input EndGame(void) : "Ends the multiplayer map"
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_player_equip : "Initial player equipment"
+[
+	spawnflags(flags) =
+	[
+		1: "Use Only" : 0
+	]
+	master(string) : "Team Master"
+]
+
+
+@PointClass base(Targetname)  size(-8 -8 -8, 8 8 8) = game_player_hurt : "Hurts player who fires"
+[
+	dmg(string) : "Damage To Apply" : "999"
+	spawnflags(flags) =
+	[
+		1: "Remove On fire" : 0
+	]
+	master(string) : "Master" 
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_player_team : "Allows player to change teams"
+[
+	spawnflags(flags) =
+	[
+		1 : "Remove On fire" : 0
+		2 : "Kill Player" : 0
+		4 : "Gib Player" : 0
+	]
+	target(string) : "game_team_master to use" 
+	master(string) : "Master"
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_score : "Award/Deduct Points" 
+[
+	spawnflags(flags) =
+	[
+		1: "Allow Negative" : 0
+		2: "Team Points" : 0
+	]
+
+	points(integer) : "Points to add (+/-)" : 1
+	master(string) : "Master" 
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_team_master : "Team based master/relay"
+[
+	spawnflags(flags) =
+	[
+		1: "Remove On fire" : 0
+	]
+	triggerstate(choices) : "Trigger State" : 0 = 
+	[
+		0: "Off"
+		1: "On"
+		2: "Toggle"
+	]
+	teamindex(integer) : "Team Index (-1 = no team)" : -1
+	master(string) : "Master" 
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_team_set : "Sets team of team_master"
+[
+	spawnflags(flags) =
+	[
+		1: "Remove On fire" : 0
+	]
+	master(string) : "Master" 
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/game_text.vmt") = game_text : "HUD Text Message" 
+[
+	spawnflags(flags) =
+	[
+		1: "All Players" : 0
+	]
+
+	message(string) : "Message Text"
+	x(string) : "X (0 - 1.0 = left to right) (-1 centers)" : "-1"
+	y(string) : "Y (0 - 1.0 = top to bottom) (-1 centers)" : "-1"
+	effect(Choices) : "Text Effect" : 0 =
+	[
+		0 : "Fade In/Out"
+		1 : "Credits"
+		2 : "Scan Out"
+	]
+	color(color255) : "Color1" : "100 100 100"
+	color2(color255) : "Color2" : "240 110 0"
+	fadein(string) : "Fade in Time (or character scan time)" : "1.5"
+	fadeout(string) : "Fade Out Time" : "0.5"
+	holdtime(string) : "Hold Time" : "1.2"
+	fxtime(string) : "Scan time (scan effect only)" : "0.25"
+	channel(choices) : "Text Channel" : 1 =
+	[
+		1 : "Channel 1"
+		2 : "Channel 2"
+		3 : "Channel 3" 
+		4 : "Channel 4"
+	]
+	master(string) : "Master" 
+
+	// Inputs
+	input Display(void) : "Displays the message text."
+]
+
+@PointClass base(Targetname, Parentname) size(-8 -8 -8, 8 8 8) = point_message : "Entity Text Message"
+[
+	message(string) : "Entity Message"
+	radius(integer) : "Show message radius" : 128
+	developeronly(choices) : "Developer Only?" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+]
+
+//@PointClass base(Targetname, Parentname, RenderFields, Angles) studio("models/editor/cone_helper.mdl") = point_spotlight : 
+@PointClass base(Targetname, Parentname, RenderFields, Angles) = point_spotlight : 
+	"An entity to draw a spotlight. Will draw a beam when the player views it side on, and a halo when it's facing towards the player. "+
+	"Unless the 'No Dynamic Light' spawnflag is checked, it will also create a dynamic light wherever the end of the spotlight rests."
+[
+	spawnflags(Flags) = 
+	[
+		1 :  "Start On" : 1
+		2 :  "No Dynamic Light" : 1
+	]
+
+	spotlightlength(integer) : "Spotlight Length" : 500 : "Length of the spotlight beam."
+	spotlightwidth(integer) : "Spotlight Width" : 50 : "Width of the spotlight beam."
+	rendercolor(color255) : "Color (R G B)" : "255 255 255"
+	brightness(integer) : "Brightness" : 64 : "Sprite brightness"
+	dynamiclightwidth(float) : "Dynamic light width multiplier" : "1.8"
+	material(material) : "Material" : "sprites/glow_test03.vmt"
+	
+	// Inputs
+	input LightOn(void) : "Turn the spotlight on."
+	input LightOff(void) : "Turn the spotlight off"
+	
+	// outputs
+	output OnLightOn(void) : "Fires when light turns on."
+	output OnLightOff(void) : "Fires when light turns off."
+
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = point_clientcommand : 
+	"An entity that issues commands to the client console, as if it was typed in by the player (if activator is a player, or the local player in single player)."
+[
+	// Inputs
+	input Command(string) : "Command to execute."
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = point_servercommand : 
+	"An entity that issues commands to the server console."
+[
+	// Inputs
+	input Command(string) : "Command to execute."
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = game_ui : "Overrides player control"
+[
+	spawnflags(flags) =
+	[
+		32 : "Freeze Player" : 1
+		64 : "Hide Weapon" : 1
+		128 : "+Use Deactivates" : 1
+		256 : "Jump Deactivates" : 1
+	]
+	
+	FieldOfView(float) : "FieldOfView" : "-1.0" : "How much tolerance before drop the player\n1.0 = straight ahead\n 0.0 = +/- 90 degrees\n -1.0 = all directions)"
+
+	// Inputs
+	input Deactivate(void) : "Return Player Control"
+	input Activate(void) : "Take Player Control"
+
+	output PlayerOn(void) : "Player gained control"
+	output PlayerOff(void) : "Player lost control"
+	output PressedMoveLeft(void) : "Player Pressed moveleft key"
+	output PressedMoveRight(void) : "Player Pressed moveright key"
+	output PressedForward(void) : "Player Pressed forward key"
+	output PressedBack(void) : "Player Pressed back key"
+	output PressedAttack(void) : "Player Pressed attack key"
+	output PressedAttack2(void) : "Player Pressed attack2 key"
+
+	// VXP
+	output UnpressedMoveLeft(void) : "Player unpressed moveleft key"
+	output UnpressedMoveRight(void) : "Player unpressed moveright key"
+	output UnpressedForward(void) : "Player unpressed forward key"
+	output UnpressedBack(void) : "Player unpressed back key"
+	output UnpressedAttack(void) : "Player unpressed attack key"
+	output UnpressedAttack2(void) : "Player unpressed attack2 key"
+
+	output XAxis(string) : "Left/right axis value [-1=left, 1=right, 0=neither]"
+	output YAxis(string) : "Forward/back axis value [-1=back, 1=forward, 0=neither]"
+	output AttackAxis(string) : "State of the attack button [0=released, 1=pressed]"
+	output Attack2Axis(string) : "State of the attack2 button [0=released, 1=pressed]"
+]
+
+
+@SolidClass base(Targetname, Parentname) = game_zone_player : "Player Zone brush"
+[
+	intarget(target_destination) : "Target for IN players"
+	outtarget(target_destination) : "Target for OUT players"
+	incount(target_destination) : "Counter for IN players"
+	outcount(target_destination) : "Counter for OUT players"
+	// master(string) : "Master" 
+]
+
+//-------------------------------------------------------------------------
+//
+// Info Entities
+//
+//-------------------------------------------------------------------------
+@PointClass base(Targetname) decal() studio("models/editor/axis_helper.mdl") = infodecal : "Decal"
+[
+	texture(decal)
+
+	input Activate(void) : "Activate"
+]
+
+// A decal to be applied to a prop or the world using specified origin and orientation and radius, uses an orientation angle and a radius to determine
+//  ray to cast for projection
+@PointClass base(Angles,Targetname) decal() studio("models/editor/axis_helper.mdl") = info_projecteddecal : "Projected Decal"
+[
+	texture(decal)
+	Distance(float) : "Distance" : 64
+	input Activate(void) : "Activate"
+]
+
+@PointClass base(PlayerClass, Angles) studio("models/editor/playerstart.mdl") = info_player_start :
+	"This entity indicates the position and facing direction at which the player will spawn. Any number of "+
+	"info_player_start entities may be placed in a map for when working in cordoned-off portions of the map. "+
+	"When multiple info_player_start entities are present in a map, set the 'Master' spawnflag on one of them "+
+	"to indicate which one should be used when running the entire map."
+[
+	spawnflags(flags) =
+	[
+		1: "Master (Has priority if multiple info_player_starts exist)" : 0
+	]
+]
+
+
+@PointClass size(-8 -8 -8, 8 8 8) overlay() = info_overlay : "Overlay" 
+[
+	material(material) : "Material"
+	sides(sidelist) : "Brush faces"
+	StartU(float) : "U Start" : "0.0"
+	EndU(float) : "U End" : "1.0"
+	StartV(float) : "V Start" : "0.0"
+	EndV(float) : "V End" : "1.0"
+	uv0(vector) readonly : "Overlay Point 1(Read-Only)"
+	uv1(vector) readonly : "Overlay Point 2(Read-Only)"
+	uv2(vector) readonly : "Overlay Point 3(Read-Only)"
+	uv3(vector) readonly : "Overlay Point 4(Read-Only)"
+]
+
+
+@PointClass size(-4 -4 -4, 4 4 4) color(0 180 0) = info_intermission :
+	"Defines an intermission spot where dead players will float until they respawn."
+[
+	target(target_destination) : "Entity to look at" : : "Name of entity that dead players will face while in intermission at this spot."
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/info_landmark") = info_landmark : "Transition Landmark"
+[
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = info_null : "Spotlight target"
+[
+]
+
+@PointClass base(Targetname, Parentname, Angles) iconsprite("editor/info_target.vmt")  = info_target : "Beam Target"
+[
+]
+
+@PointClass base(Targetname, EnableDisable, Parentname, Angles) iconsprite("editor/info_target.vmt") sphere(radius) = phys_ragdollmagnet : "Ragdoll Magnet"
+[
+	axis(vecline) : "Bar Magnet Axis"
+	radius(float) : "Effective Radius" : "512"
+	force(float) : "Force" : "5000"
+
+	target(string) : "Entity to affect"
+
+	spawnflags( Flags ) =
+	[
+		2 : "Bar Magnet (use axis helper)" : 0
+	]
+]
+
+@PointClass base(Targetname) iconsprite("editor/info_lighting.vmt")  = info_lighting : "Lighting Target"
+[
+]
+
+@PointClass base(Targetname, Parentname, Angles, PlayerClass) studio("models/editor/playerstart.mdl") = info_teleport_destination : "Teleport destination"
+[
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Nodes and Hints
+//
+//-------------------------------------------------------------------------
+@PointClass base(Targetname, Node) studio("models/editor/ground_node.mdl") color(232 219 8) = info_node :
+	"A navigation node for ground moving NPCs. Navigation nodes are baked into the nodegraph so that NPCs can move " +
+	"to them. Ground nodes fall to the ground when they spawn."
+[
+]
+
+
+@PointClass base(Targetname, Angles, HintNode) studio("models/editor/ground_node_hint.mdl") color(232 219 8) = info_node_hint :
+	"A navigation node for ground moving NPCs that includes some context information for NPCs that are interested in it. The hint might " +
+	"indicate a window that could be looked out of, or an item of interest that could be commented on. Many hint nodes are NPC-specific, " +
+	"so it's helpful to use naming conventions like 'Crow: Fly to point' in the hint choices list. The angles of a hint node indicate what direction " +
+	"the NPC should face to perform the hint behavior.\n\n" +
+	"It's important to understand the distinction between scripts, such as scripted_sequence and scripted_schedule, and info_hint entities. Scripts summon " +
+	"NPCs to specific cue points to play their parts, while hints provide context information to the AI that they use to perform their " +
+	"behaviors. Hints require code support in the NPC, while scripts are generic and may require only animations to play. Use a hint if the behavior is driven " +
+	"by the AI, use a script if the behavior is driven by the map."
+
+[
+]
+
+
+@PointClass base(Targetname, Node) studio("models/editor/air_node.mdl") color(232 171 8)  = info_node_air :
+	"A navigation node for flying NPCs. Air navigation nodes are baked into the nodegraph so that NPCs can move " +
+	"to them. Air nodes do not fall to the ground when they spawn."
+
+
+[
+	nodeheight(integer)	: "NodeHeight"  : 0
+]
+
+
+@PointClass base(Targetname, HintNode) studio("models/editor/air_node_hint.mdl") color(232 171 8) = info_node_air_hint :
+	"A navigation node for flying NPCs that includes some context information for NPCs that are interested in it. The hint might " +
+	"indicate a window that could be looked into, or an item of interest that could be commented on. Many hint nodes are NPC-specific, " +
+	"so it's helpful to use naming conventions like 'Crow: Fly to point' in the hint choices list. The angles of a hint node indicate what direction " +
+	"the NPC should face to perform the hint behavior."
+
+[
+	nodeheight(integer)	: "NodeHeight"  : 0
+]
+
+
+@PointClass base(Targetname, Angles, HintNode) studio("models/editor/node_hint.mdl") color(255 255 255) = info_hint :
+	"A hint that is not used for navigation. They don't go into the nodegraph, nor do they fall to the ground. Use these to provide " +
+	"some spatial context for NPCs, such as 'look here if you can't find the player' or 'throw rocks at this spot'."
+[
+]
+
+
+@PointClass base(Targetname) color(220 180 0) size(-8 -8 -8, 8 8 8) line(255 255 255, nodeid, StartNode, nodeid, EndNode) = info_node_link :
+	"A dynamic connection between two navigation nodes. You specify the node IDs of the start and end nodes, and then you can use entity I/O " +
+	"to turn on and off the connection. This could be used to create or destroy a connection in the nodegraph because of some event in your map " +
+	"(a bridge being created/destroyed, etc)."
+[
+    StartNode(integer) : "Start node" : : "The node ID of one end of the node connection."
+    EndNode(integer) : "End node" : : "The node ID of one end of the node connection."
+	initialstate(choices) : "Initial State" : 1 =
+	[
+		0 : "Off"
+		1 : "On"
+	]
+	AllowUse(string) : "Allow pass when off" : : "Entity or class to allow passage even when node is off"
+
+	input TurnOn(void) : "Turn the link on"
+	input TurnOff(void) : "Turn the link off"
+]
+
+@PointClass wirebox(mins, maxs) base(Targetname) = info_node_link_controller :
+	"Controls all connections between nodes that intersect the controller's volume. "+
+	"This allows for mass enabling/disabling of all node connections through a volume."
+[
+	mins(vector) : "Mins" : "-8 -32 -36"
+	maxs(vector) : "Maxs" : "8 32 36"
+
+	initialstate(choices) : "Initial State" : 1 =
+	[
+		0 : "Off"
+		1 : "On"
+	]
+	AllowUse(string) : "Allow pass when off" : : "Entity or class to allow passage even when node is off"
+
+	input TurnOn(void) : "Turn the link on"
+	input TurnOff(void) : "Turn the link off"
+]
+
+
+@PointClass base(Targetname, Angles, HintNode) studio("models/editor/climb_node.mdl") color(153 215 103) = info_node_climb : "ai climb node"
+[
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Lights
+//
+//-------------------------------------------------------------------------
+@PointClass light() iconsprite("editor/light.vmt") base(Targetname, Light) = light : "Invisible lightsource"
+[
+	target(target_destination) : "Entity to point at" : : "The name of an entity in the map that the spotlight will point at. This will override the spotlight's angles."
+	spawnflags(Flags) = [ 1 : "Initially dark" : 0 ]
+	_distance(integer) : "Maximum distance" : 0
+]
+
+
+@PointClass base(Angles) iconsprite("editor/light_env.vmt") = light_environment : "Environment" 
+[
+	pitch(integer) : "Pitch" : 0
+	_light(color255) : "Brightness" : "255 255 255 200"
+	_ambient(color255) : "Ambient" : "255 255 255 20"
+]
+
+
+@PointClass base(Targetname, Angles, Light) lightcone() size(-4 -4 -4, 4 4 4) = light_spot : "Spotlight" 
+[
+	target(target_destination) : "Entity to point at" : : "The name of an entity in the map that the spotlight will point at. This will override the spotlight's angles."
+	_inner_cone(integer) : "Inner (bright) angle" : 30
+	_cone(integer) : "Outer (fading) angle" : 45
+	_exponent(integer) : "Focus" : 1
+	_distance(integer) : "Maximum distance" : 0
+	pitch(integer) : "Pitch" : -90
+	spawnflags(Flags) = [ 1 : "Initially dark" : 0 ]
+]
+
+
+@PointClass base(Targetname, Parentname, Angles) iconsprite("editor/light.vmt") sphere(distance) lightcone() size(-4 -4 -4, 4 4 4) = light_dynamic : "Dynamic Light" 
+[
+	target(target_destination) : "Entity to point at" : : "The name of an entity in the map that the dynamic light will point at."
+	_light(color255) : "Light color" : "255 255 255 200"
+	brightness(integer) : "Light brightness" : 0
+	_inner_cone(integer) : "Inner (bright) angle" : 30
+	_cone(integer) : "Outer (fading) angle" : 45
+	pitch(integer) : "Pitch" : -90
+	distance(float) : "Maximum distance" : 120 : "This is the distance that light is allowed to cast in inches."
+	spotlight_radius(float) : "Spotlight end radius" : 80 : "This is the radius of the light in inches at the object that it is hitting."
+    style(Choices) : "Appearance" : 0 =
+	[
+		0 : "Normal"
+		10: "Fluorescent flicker"
+		2 : "Slow, strong pulse"
+		11: "Slow pulse, noblack"
+		5 : "Gentle pulse"
+		1 : "Flicker A"
+		6 : "Flicker B"
+		3 : "Candle A"
+		7 : "Candle B"
+		8 : "Candle C"
+		4 : "Fast strobe"
+		9 : "Slow strobe"
+	]
+	spawnflags(Flags) = 
+	[ 
+		1 : "No world light" : 0 
+		2 : "No model light" : 0
+		4 : "Add Displacement Alpha" : 0
+		8 : "Subtract Displacement Alpha" : 0
+	]
+
+	// Inputs
+	input Color(color255) : "Sets the light's render color (R G B)"
+	input brightness(integer) : "Sets the light brightness"
+	input distance(float) : "Sets the maximum light distance"
+	input _inner_cone(integer) : "Sets the inner (bright) angle"
+	input _cone(integer) : "Sets the outer (fading) angle"
+	input spotlight_radius(float) : "Sets the radius of the spotlight at the end point"
+	input style(integer) : "Changes the lightstyle (see Appearance field for possible values)"
+
+	input TurnOn(void) : "Turns the light off"
+	input TurnOff(void) : "Turns the light on"
+	input Toggle(void) : "Toggles the light on/off"
+]
+
+
+//-------------------------------------------------------------------------
+// Shadow control
+//-------------------------------------------------------------------------
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = shadow_control : "Shadow control entity"
+[
+	angles(string) : "Pitch Yaw Roll (Y Z X)" : "80 30 0" : "This shadow direction. Pitch is rotation around the Y axis, " +
+		"yaw is the rotation around the Z axis, roll is the rotation around the X axis."
+
+	color(color255) : "Shadow color" : "128 128 128" : "Shadow color"
+	distance(float) : "Maximum distance" : 75 : "This is the maximum distance the shadow is allowed to cast in inches."
+
+	input color(color255) : "Changes the shadow color"
+	input direction(vector) : "Changes the shadow direction"
+	input SetDistance(float) : "Changes the maximum shadow cast distance"
+	input SetAngles(string) : "Changes the shadow direction"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Movement and Keyframing Entities
+//
+//-------------------------------------------------------------------------
+@BaseClass = KeyFrame
+[
+	NextKey(target_destination) : "Next KeyFrame" : : "Name of the next keyframe along this keyframe path."
+
+//	TimeModifier(choices) : "Time Modifier" : 0 =
+//	[
+//		0 : "Linear"
+//		1 : "Accel"
+//		2 : "Deaccel"
+//		2 : "Accel/Deaccel (sine)"
+//	]
+	
+	MoveSpeed(integer) : "Speed (units per second)" : 64
+//	NextTime(string) : "Time to get to next keyframe"
+]
+
+
+@BaseClass = Mover
+[
+	PositionInterpolator(choices) : "Position Interpolator" : 0 =
+	[
+		0 : "Linear"
+		1 : "Catmull-Rom Spline"
+	]
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin) = func_movelinear :
+	"A brush entity that moves linearly along a given distance in a given direction"
+[
+	movedir(angle) : "Move Direction (Pitch Yaw Roll)" : "0 0 0" : "The direction the brushes will move when it opens."
+	spawnflags(flags) =
+	[
+		8	: "Not Solid" : 0
+	]
+
+	startposition(float)	: "Start Position" : 0 : "Postion of brush when spawned\n  Range: 0.0 - 1.0"	
+	speed(integer)			: "Speed" : 100 : "Speed of brush (inches / second)"
+	movedistance(float)		: "Move Distance" : 100 : "Range of motion of the brush (inches)"
+	blockdamage(float)		: "Block Damage" : 0 : "How much damage to do when blocked (per frame)"
+	startsound(sound)		: "Start sound WAV file"
+	stopsound(sound)		: "Stop sound WAV file"	
+
+	input Open(void) : "Moves brush to position 1.0"
+	input Close(void) : "Moves brush to position 0.0"
+	input SetPosition(string) : "Go to position (0.0 - 1.0)"
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, Angles, RenderFields) = func_rotating : "Rotating Object"
+[
+	maxspeed(integer) : "Max rotation speed in degrees per second" : 100
+	volume(integer) : "Volume (10 = loudest)" : 10
+	fanfriction(integer) : "Friction (0 - 100%)" : 20
+	message(sound) : "Rotating sound WAV" : : "Path/filename of WAV file to loop while rotating."
+	spawnflags(flags) =
+	[
+		1 : "Start ON" 		: 0
+		2 : "Reverse Direction" : 0
+		4 : "X Axis" 		: 0
+		8 : "Y Axis" 		: 0
+		16: "Acc/Dcc"		: 0
+		32: "Fan Pain"		: 0
+		64: "Not Solid"		: 0
+		128: "Small Radius" : 0
+		256: "Medium Radius" : 0
+		512: "Large Radius" : 1
+	]
+	_minlight(integer) : "_minlight"
+	dmg(integer) : "Damage inflicted when blocked" : 0
+
+	// Inputs
+	input SetSpeed(integer) : "Sets the speed as a ratio of max speed [0,1]."
+	input Start(void) : "Starts the rotator rotating."
+	input Stop(void) : "Stops the rotator from rotating."
+	input StartForward(void) : "Starts the rotator rotating forward."
+	input StartBackward(void) : "Starts the rotator rotating backward."
+	input Toggle(void) : "Toggles the rotator between rotating and not rotating."
+	input Reverse(void) : "Reverses the direction of rotation of the rotator."
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, Angles, RenderFields, BasePlat) = func_platrot : "Moving Rotating platform" 
+[
+	spawnflags(Flags) =
+	[
+		1: "Toggle" : 1
+		64: "X Axis" : 0
+		128: "Y Axis" : 0
+	]
+	noise1(sound) : "Movement Sound WAV"
+	noise2(sound) : "Stop Sound WAV"
+	speed(integer) : "Speed of rotation" : 50
+	height(integer) : "Travel altitude (can be negative)" : 0
+	rotation(integer) : "Spin amount" : 0
+	_minlight(string) : "Minimum light level"
+]
+
+
+@KeyFrameClass base(Targetname, Parentname, Angles, KeyFrame) size(-6 -6 -6, 6 6 6) color(255 200 0) keyframe() = keyframe_track : "Animation KeyFrame"
+[
+]
+
+
+@MoveClass base(Targetname, Parentname, KeyFrame, Mover) size(-8 -8 -8, 8 8 8) color(255 170 0) animator() = move_keyframed : "Keyframed Move Behavior"
+[
+]
+
+
+//@MoveClass base(Targetname, Parentname, KeyFrame, Mover) size(-8 -8 -8, 8 8 8) color(255 170 0) animator() = move_door : "Door Move Behavior"
+//[
+//	StartOpen(choices) : "Start Open" : 0 =
+//	[
+//		0 : "No"	
+//		1 : "Yes"
+//	]
+//
+//	StartLocked(choices) : "Start Locked" : 0 =
+//	[
+//		0 : "No"
+//		1 : "Yes"
+//	]
+//
+//	CloseDelay(string) : "Delay before closing" : "0"
+//	
+//	// Outputs
+//	output OnBlocked(void) : "Fires when the door is blocked"
+//	output OnFullyClosed(void) : "Fires when the door becomes fully closed"
+//	output OnFullyOpen(void) : "Fires when the door becomes fully open"
+//]
+
+
+@MoveClass base(Targetname, Parentname, Mover, KeyFrame) size(-8 -8 -8, 8 8 8) color(255 0 0) animator() = move_track : "Track Move Behavior"
+[
+	WheelBaseLength(integer) : "Distance between the wheels" : 50
+	Damage(integer) : "Damage done to blocking entities" : 0
+	NoRotate(choices) : "Turn to face down path" : 0 =
+	[
+		0 : "Yes"
+		1 : "No"
+	]
+]
+
+
+//@PointClass size(-8 -8 -8, 8 8 8) color(255 0 0) base(Targetname, Parentname) = move_rotate : "Rotate Move Behavior"
+//[
+//	RotationSpeed(string) : "Rotation Speed"
+//	RotationAxis(choices) : "Axis of Rotation" : 0 =
+//	[
+//		0 : "Y-Axis"
+//		1 : "Z-Axis"
+//		2 : "X-Axis"
+//	]
+//	SpinUpTime(string) : "Spin up/down Time"
+//	damage(integer) : "Damage done to blocking entities" : 0
+//
+//	// Outputs
+//	output OnBlocked(void) : "Fires when this entity is blocked"
+//]
+
+
+//@PointClass size(-8 -8 -8, 8 8 8) color(255 0 0) base(Targetname, Parentname) = move_wheel : "Wheel Move Behavior"
+//[
+//	RotationAxis(choices) : "Axis of Rotation" : 0 =
+//	[
+//		0 : "Y-Axis"
+//		1 : "Z-Axis"
+//		2 : "X-Axis"
+//	]
+//	ShouldTurn(choices) : "Turn to face down path" : 0 =
+//	[
+//		0 : "No"
+//		1 : "Yes"
+//	]
+//	Damage(integer) : "Damage done to blocking entities" : 0
+//	WheelRadius(integer) : "Wheel Radius" : 32
+//	MaxTurnAngle(integer) : "Max Turn Angle" : 32
+//]
+
+
+//-------------------------------------------------------------------------
+//
+// Ropes and Cables
+//
+//-------------------------------------------------------------------------
+@BaseClass base(DXLevelChoice) = RopeKeyFrame
+[
+	spawnflags(Flags) = 
+	[
+		1 :  "Auto Resize" : 0
+	]
+
+	Slack(integer) : "Slack" : 25 : "How much extra length the rope has (by default it has the length between its two endpoints in the editor)."
+
+	Type(choices) : "Type" : 0 =
+	[
+		0  : "Rope"
+		1  : "Semi-rigid"
+		2  : "Rigid"
+	]
+
+	Subdiv(integer) : "Subdivision" : 2 : "Number of subdivisions between each rope segment. Maximum value is 8. Higher values make smoother ropes, but are slower to render."
+
+	Barbed(choices) : "Barbed" : 0 : "Test effect that makes the rope look sharper and more barbed" =
+	[
+		0 : "No"
+		1 : "Yes"
+	] 
+	
+	Width(string) : "Width (1-64)" : "2"
+
+	TextureScale(string) : "Texture Scale" : "1" : "This changes the texture resolution. The default resolution is 4 pixels per inch. Larger values stretch the texture and smaller values scrunch it up."
+	
+	Collide(choices) : "Collide with world" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	Dangling(choices) : "Start Dangling" : 0 : "When set to Yes, the rope starts out detached from its target endpoint." =
+	[
+		0 : "No"
+		1 : "Yes"
+	] 
+
+	Breakable(choices) : "Breakable" : 0 : "When set to yes, the rope can be detached from either endpoint when shot." =
+	[
+		0 : "No"
+		1 : "Yes"
+	] 
+
+	RopeMaterial(material) : "Rope Material" : "cable/cable" : "Selects the to use when rendering the rope."
+
+	input SetScrollSpeed(float) : "Sets the speed at which the texture scrolls."
+	input SetForce(string)		: "Instantaneous force to apply to the rope (vector)"
+	input Break(void)			: "Breaks the rope if marked to do so."
+]
+
+
+@KeyFrameClass base(Targetname, Parentname, Angles, KeyFrame, RopeKeyFrame) studio("models/editor/axis_helper.mdl") keyframe() = keyframe_rope : "Rope KeyFrame"
+[
+]
+
+
+@MoveClass base(Targetname, Parentname, KeyFrame, RopeKeyFrame) studio("models/editor/axis_helper.mdl") animator() = move_rope : "Rope"
+[
+	PositionInterpolator(choices) : "Position Interpolator" : 2 =
+	[
+	]
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Buttons
+//
+//-------------------------------------------------------------------------
+@BaseClass = Button
+[
+	input Lock(void) : "Locks the button, preventing it from functioning."
+	input Unlock(void) : "Unlocks the button, allowing it to function."
+	input Press(void) : "Presses the button."
+
+	output OnDamaged(void) : "Fires when the button is damaged"
+	output OnPressed(void) : "Fires when the button is pressed"
+	output OnIn(void) : "Fires when the button reaches the in/pressed position"
+	output OnOut(void) : "Fires when the button reaches the out/released position"
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, RenderFields, Button) = func_button : "Button"
+[
+	movedir(angle) : "Move Direction (Pitch Yaw Roll)" : "0 0 0" : "Specifies the direction of motion when the button is pressed."
+	speed(integer) : "Speed" : 5
+	health(integer) : "Health (obselete, was: shootable if > 0)" : 0
+	lip(integer) : "Lip"
+	master(string) : "Master" 
+	sounds(choices) : "Sounds" : 0 = 
+	[
+		0: "None"
+		1: "Big zap & Warmup"
+		2: "Access Denied"
+		3: "Access Granted"
+		4: "Quick Combolock"
+		5: "Power Deadbolt 1"
+		6: "Power Deadbolt 2"
+		7: "Plunger"
+		8: "Small zap"
+		9: "Keycard Sound"
+		10: "Buzz"
+		11: "Buzz Off"
+		14: "Lightswitch"
+	]
+	wait(integer) : "delay before reset (-1 stay)" : 3
+	spawnflags(flags) =
+	[
+		1: "Don't move" : 0
+		32: "Toggle" : 0
+		64: "Sparks" : 0
+		256: "Touch Activates": 0
+		512: "Damage Activates": 0
+		1024: "Use Activates" : 1
+		2048: "Starts locked" : 0
+	]
+	locked_sound(choices) : "Locked Sound" : 0 = 
+	[
+		0: "None"
+		2: "Access Denied"
+		8: "Small zap"
+		10: "Buzz"
+		11: "Buzz Off"
+		12: "Latch Locked"
+	]
+	unlocked_sound(choices) : "Unlocked Sound" : 0 = 
+	[
+		0: "None"
+		1: "Big zap & Warmup"
+		3: "Access Granted"
+		4: "Quick Combolock"
+		5: "Power Deadbolt 1"
+		6: "Power Deadbolt 2"
+		7: "Plunger"
+		8: "Small zap"
+		9: "Keycard Sound"
+		10: "Buzz"
+		13: "Latch Unlocked"
+		14: "Lightswitch"
+	]
+	locked_sentence(choices) : "Locked Sentence" : 0 = 
+	[
+		0: "None"
+		1: "Gen. Access Denied"
+		2: "Security Lockout"
+		3: "Blast Door"
+		4: "Fire Door"
+		5: "Chemical Door"
+		6: "Radiation Door"
+		7: "Gen. Containment"
+		8: "Maintenance Door"
+		9: "Broken Shut Door"
+	]
+	unlocked_sentence(choices) : "Unlocked Sentence" : 0 = 
+	[
+		0: "None"
+		1: "Gen. Access Granted"
+		2: "Security Disengaged"
+		3: "Blast Door"
+		4: "Fire Door"
+		5: "Chemical Door"
+		6: "Radiation Door"
+		7: "Gen. Containment"
+		8: "Maintenance area"
+	]
+	_minlight(string) : "Minimum light level"
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, Angles, Global, Button) = func_rot_button : "Rotating button (lever)"
+[
+	master(string) : "Master" 
+	speed(integer) : "Speed" : 50
+	health(integer) : "Health (shootable if > 0)"
+	sounds(choices) : "Sounds" : 21 = 
+	[
+		21: "Squeaky"
+		22: "Squeaky Pneumatic"
+		23: "Ratchet Groan"
+		24: "Clean Ratchet"
+		25: "Gas Clunk"
+	]
+	wait(choices) : "Delay before reset" : 3 =
+	[
+		-1: "Stays pressed"
+	]
+	distance(integer) : "Distance (deg)" : 90
+	// TODO: move spawnflags into Button base class?
+	spawnflags(flags) =
+	[
+		1 : "Not solid" : 0
+		2 : "Reverse Dir" : 0
+		32: "Toggle" : 0
+		64: "X Axis" : 0
+		128: "Y Axis" : 0
+		256: "Touch Activates": 0
+		512: "Damage Activates": 0
+		1024: "Use Activates": 0
+		2048: "Starts locked" : 0
+	]
+	_minlight(integer) : "_minlight"
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, Angles, RenderFields) = momentary_rot_button : "Direct wheel control"
+[
+	speed(integer) : "Speed" : 50
+	master(string) : "Master" 
+	sounds(choices) : "Sounds" : 0 = 
+	[
+		0: "None"
+		1: "Big zap & Warmup"
+		2: "Access Denied"
+		3: "Access Granted"
+		4: "Quick Combolock"
+		5: "Power Deadbolt 1"
+		6: "Power Deadbolt 2"
+		7: "Plunger"
+		8: "Small zap"
+		9: "Keycard Sound"
+		21: "Squeaky"
+		22: "Squeaky Pneumatic"
+		23: "Ratchet Groan"
+		24: "Clean Ratchet"
+		25: "Gas Clunk"
+	]
+	distance(integer) : "Distance (deg)" : 90 : "How far does this thing rotate"
+	returnspeed(integer) : "Auto-return speed" : 0 : "If autoreturn flag is set, how fast is autoreturn"
+	spawnflags(flags) =
+	[
+		1: "Not Solid" : 1
+		32: "Toggle (Disable Auto Return)" : 1
+		64: "X Axis" : 0
+		128: "Y Axis" : 0
+		1024: "Use Activates" : 1
+		2048: "Starts locked" : 0
+	]
+	_minlight(integer) : "_minlight"
+	startposition(float) : "Start Position" : 0 : "Postion when spawned\n  Range: 0.0 - 1.0"
+	startdirection(choices) : "Start Direction" : "Forward" =
+	[
+		-1	: "Forward"		 // Reveres upon USE, so are
+		1	: "Backward"	 // reversed here.
+	]
+
+	// Inputs
+	input Lock(void) : "Locks the button, preventing it from functioning."
+	input Unlock(void) : "Unlocks the button, allowing it to function."
+	input SetPosition(string) : "Go to position (0 - 1)"
+
+	// Outputs
+	output Position(integer)   : "Position of button from 0 to 1"
+	output OnPressed(integer)  : "Fires when the button is first pressed"
+	output OnUnpressed(integer): "Fires when the button is first released from being pressed"
+	output OnFullyClosed(void) : "Fires when the button becomes fully closed (1)"
+	output OnFullyOpen(void)   : "Fires when the button becomes fully open (0)"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Doors
+//
+//-------------------------------------------------------------------------
+@BaseClass base(Targetname, Parentname, RenderFields, Global) = Door
+[
+	speed(integer) : "Speed" : 100
+	master(string) : "Master"
+	noise1(sound) : "Start sound WAV file"
+	noise2(sound) : "Stop sound WAV file"	
+	wait(integer) : "delay before close, -1 stay open " : 4
+	lip(integer) : "Lip"
+	dmg(integer) : "Damage inflicted when blocked" : 0
+	message(string) : "Message if triggered"
+	health(integer) : "Health (shoot open)" : 0
+	locked_sound(sound) : "Locked Sound WAV"
+	unlocked_sound(sound) : "Unlocked Sound WAV"
+
+	spawnflags(flags) =
+	[
+		1 : "Starts Open" : 0
+		4 : "Don't link" : 0
+		8: "Passable" : 0
+	    	32: "Toggle" : 0
+		256:"Use Opens" : 0
+		512: "NPCs Can't" : 0
+		1024: "Touch Opens" : 1
+		2048: "Starts locked" : 0
+		4096:	"Door Silent"	: 0
+	]
+	locked_sentence(choices) : "Locked Sentence" : 0 = 
+	[
+		0: "None"
+		1: "Gen. Access Denied"
+		2: "Security Lockout"
+		3: "Blast Door"
+		4: "Fire Door"
+		5: "Chemical Door"
+		6: "Radiation Door"
+		7: "Gen. Containment"
+		8: "Maintenance Door"
+		9: "Broken Shut Door"
+	]
+	unlocked_sentence(choices) : "Unlocked Sentence" : 0 = 
+	[
+		0: "None"
+		1: "Gen. Access Granted"
+		2: "Security Disengaged"
+		3: "Blast Door"
+		4: "Fire Door"
+		5: "Chemical Door"
+		6: "Radiation Door"
+		7: "Gen. Containment"
+		8: "Maintenance area"
+	]	
+	_minlight(string) : "Minimum light level"
+
+	// Outputs
+	output OnClose(void) : "Fires when the door is told to close"
+	output OnOpen(void) : "Fires when the door is told to open"
+	output OnFullyOpen(void) : "Fires when the door reaches the fully open position"
+	output OnFullyClosed(void) : "Fires when the door reaches the fully closed position"
+	output OnBlockedClosing(void) : "Fires when the door is blocked while closing"
+	output OnBlockedOpening(void) : "Fires when the door is blocked while opening"
+	output OnUnblockedClosing(void) : "Fires when the door is unblocked while closing"
+	output OnUnblockedOpening(void) : "Fires when the door is unblocked while opening"
+
+	// Inputs
+	input Open(void) : "Opens the door if it is not fully open"
+	input Close(void) : "Closes the door if it is not fully closed"
+	input Toggle(void) : "Toggles the door between open and closed"
+	input Lock(void) : "Locks the door"
+	input Unlock(void) : "Unlocks the door"
+]
+
+
+@SolidClass base(Door, Origin) = func_door : "Basic door"
+[
+	movedir(angle) : "Move Direction (Pitch Yaw Roll)" : "0 0 0" : "The direction the door will move when it opens."
+]
+
+
+@SolidClass base(Door, Origin, Angles) = func_door_rotating : "Rotating door" 
+[
+	spawnflags(flags) =
+	[
+		2 : "Reverse Dir" : 0
+		16: "One-way" : 0
+		64: "X Axis" : 0
+		128: "Y Axis" : 0
+	]
+	distance(integer) : "Distance (deg)" : 90
+]
+
+
+@PointClass base(Targetname, Parentname, Global, Studiomodel) studioprop() = prop_door_rotating
+[
+	hardware(choices) : "Hardware type" : 1 =
+	[
+		0 : "<None>"
+		1 : "Lever"
+	]
+	axis(axis) : "Hinge axis"
+	distance(float) : "Rotation distance (deg)" : 90
+	speed(integer) : "Speed" : 100
+	soundopen(sound) : "Fully open sound WAV file"
+	soundclose(sound) : "Fully closed sound WAV file"	
+	soundmove(sound) : "Moving sound WAV file"	
+	returndelay(integer) : "Delay before close, -1 stay open " : 4
+	dmg(integer) : "Damage inflicted when blocked" : 0
+	health(integer) : "Health (0=unbreakable)" : 0
+	soundlocked(sound) : "Locked Sound WAV"
+	soundunlocked(sound) : "Unlocked Sound WAV"
+
+	spawnflags(flags) =
+	[
+		1 : "Starts Open" : 0
+		2 : "Reverse Dir" : 0
+		//4 : "Don't link" : 0
+		//8: "Passable" : 0
+    	//32: "Toggle" : 0
+		//256:"Use Opens" : 0
+		//512: "NPCs Can't" : 0
+		//1024: "Touch Opens" : 1
+		2048: "Starts locked" : 0
+		4096: "Door silent"	: 0
+		8192: "Use closes" : 1
+	]
+
+	// Outputs
+	output OnClose(void) : "Fires when the door is told to close"
+	output OnOpen(void) : "Fires when the door is told to open"
+	output OnFullyOpen(void) : "Fires when the door reaches the fully open position"
+	output OnFullyClosed(void) : "Fires when the door reaches the fully closed position"
+	output OnBlockedClosing(void) : "Fires when the door is blocked while closing"
+	output OnBlockedOpening(void) : "Fires when the door is blocked while opening"
+	output OnUnblockedClosing(void) : "Fires when the door is unblocked while closing"
+	output OnUnblockedOpening(void) : "Fires when the door is unblocked while opening"
+
+	// Inputs
+	input Open(void) : "Opens the door if it is not fully open"
+	input Close(void) : "Closes the door if it is not fully closed"
+	input Toggle(void) : "Toggles the door between open and closed"
+	input Lock(void) : "Locks the door"
+	input Unlock(void) : "Unlocks the door"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Cube map sample
+//
+//-------------------------------------------------------------------------
+@PointClass color(0 0 255) sidelist(sides) iconsprite("editor/env_cubemap.vmt") = env_cubemap : "Cubic Environment Map sample"
+[
+	cubemapsize(choices) : "Cubemap Size" : 0 =
+	[
+		0 : "Default"
+		1 : "1x1"
+		2 : "2x2"
+		3 : "4x4"
+		4 : "8x8"
+		5 : "16x16"
+		6 : "32x32"
+		7 : "64x64"
+		8 : "128x128"
+		9 : "256x256"
+	]
+	sides(sidelist) : "Brush faces"
+]
+
+
+@BaseClass = BModelParticleSpawner
+[ 
+	StartDisabled(choices) : "Start Disabled" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	Color(color255)		: "Particle Color (R G B)"		: "255 255 255"
+
+	SpawnRate(integer)	: "Particle Per Second"			: 40
+	
+	SpeedMax(string)	: "Maximum Particle Speed"		: 13
+	
+	LifetimeMin(string)	: "Minimum Particle Lifetime"	: 3 : "Particles live for a random duration between LifetimeMin and LifetimeMax"
+	LifetimeMax(string)	: "Maximum Particle Lifetime"	: 5 : "Particles live for a random duration between LifetimeMin and LifetimeMax"
+
+	DistMax(integer)	: "Maximum visible distance"	: 1024 : "Maximum distance at which particles are visible. They fade to translucent at this distance."
+
+	Frozen(choices)		: "Frozen" : 0 :
+		"When this is set, it spawns the number of particles in SpawnRate immediately," +
+		"and remains still forever without spawning any new particles" =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	input TurnOn(void)	: "Turn on"
+	input TurnOff(void) : "Turn off"
+]
+
+
+@SolidClass base(Targetname, BModelParticleSpawner) = func_dustmotes : "Sparkling Dust Motes"
+[
+	SizeMin(string)		: "Minimum Particle Size"		: 10
+	SizeMax(string)		: "Maximum Particle Size"		: 20
+
+	Alpha(integer)		: "Alpha"						: 255
+]
+
+
+@SolidClass base( Targetname ) = func_smokevolume : "Particle Smoke Volume"
+[
+	Color1(color255) : "Particle Color1 (R G B)" : "255 255 255"
+	Color2(color255) : "Particle Color2 (R G B)" : "255 255 255"
+	material(material) : "Material" : "particle/smoke_grenade1"
+	ParticleDrawWidth(float) : "Particle Draw Width (inches)" : 120
+	ParticleSpacingDistance(float) : "Particle Spacing Distance (inches)" : 80
+	DensityRampSpeed(float) : "Density Ramp Speed (seconds)" : 1 : "Time to go from density 0 to density 1 in seconds"
+
+	RotationSpeed(float) : "Rotation Speed (degrees/sec)" : 10
+	MovementSpeed(float) : "Movement Speed (inches/sec)" : 10
+	Density(float) : "Density [0..1]" : 1
+
+	input SetRotationSpeed(float) : "Rotation Speed (degrees/sec)"
+	input SetMovementSpeed(float) : "Movement Speed (inches/sec)"
+	input SetDensity(float) : "Density [0..1]"
+]
+
+@SolidClass base( Targetname, BModelParticleSpawner ) = func_dustcloud : "Translucent Dust Cloud"
+[
+	Alpha(integer)		: "Alpha"						: 30
+
+	SizeMin(string)		: "Minimum Particle Size"		: 100
+	SizeMax(string)		: "Maximum Particle Size"		: 200
+]
+
+@PointClass base( Targetname, Parentname, Angles ) size( -8 -8 -8, 8 8 8 ) = env_dustpuff :
+	"Causes dust to be emitted when triggered."
+[
+	scale(float) : "Scale"	: 8
+	speed(float) : "Speed"	: 16
+
+	color(color255) : "Dust color" : "128 128 128"
+
+	input SpawnDust(void) : "Spawn Dust"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Logic Entities
+//
+//-------------------------------------------------------------------------
+@PointClass iconsprite("editor/logic_auto.vmt") = logic_auto :
+	"Fires outputs when a map spawns.\n" +
+	"If 'remove on fire' flag is set the logic_auto is deleted after firing.\n"+
+	"It can be set to check a global state before firing. This allows you to only fire events based on "+
+	"what took place in a previous map."
+[
+	spawnflags(Flags) =
+	[
+		1 : "Remove on fire" : 1
+	]
+	
+	globalstate(string) : "Global State to Read" : : "If set, this specifies a global state to check before firing. " +
+		"If the global state is not set, the OnMapSpawn output will not be fired."
+	
+	output OnMapSpawn(void) : "Fires when the map is loaded for any reason."
+	output OnNewGame(void) : "Fires when the map is loaded to start a new game."
+	output OnLoadGame(void) : "Fires when the map is loaded from a saved game."
+	output OnMapTransition(void) : "Fires when the map is loaded due to a level transition."
+	output OnBackgroundMap(void) : "Fires when the background map is loaded."
+]
+
+
+// dvs: rename
+@PointClass base(Targetname,Angles) size(-8 -8 -8, 8 8 8) = trigger_camera : "Trigger Camera" 
+[
+	target(target_destination) : "Entity to look at" : : "Name of the entity that the camera should point at when activated."
+	wait(integer) : "Hold time" : 10
+	moveto(string) : "Path Corner"
+	spawnflags(flags) =
+	[
+		1: "Start At Player" : 1
+		2: "Follow Player" : 1
+		4: "Freeze Player" : 0
+	]
+	speed(string) : "Initial Speed" : "0"
+	acceleration(string) : "Acceleration units/sec^2" : "500"
+	deceleration(string) : "Stop Deceleration units/sec^2" : "500"
+	
+	output OnEndFollow(void) : "Fires after following a target"
+]
+
+// VXP: Source 2007 version of TriggerCamera
+@PointClass base(Targetname,Angles,Parentname) size(-8 -8 -8, 8 8 8) = point_viewcontrol : "View Control" 
+[
+	target(target_destination) : "Entity to look at" : : "Name of the entity that the camera should point at when activated."
+	wait(integer) : "Hold time" : 10
+	moveto(string) : "Path Corner"
+	spawnflags(flags) =
+	[
+		1: "Start At Player" : 1
+		2: "Follow Player" : 1
+		4: "Freeze Player" : 0
+		8: "Infinite Hold Time" : 0
+		16:"Snap to goal angles" : 0
+	]
+	speed(string) : "Initial Speed" : "0"
+	acceleration(string) : "Acceleration units/sec^2" : "500"
+	deceleration(string) : "Stop Deceleration units/sec^2" : "500"
+	followspeed(string) : "Speed of camera rotation" : "40" // VXP: Make this float
+
+	// Inputs
+	input Enable(void) : "Enable the point_viewcontrol, and start controlling the player's view."
+	input Disable(void) : "Disable the point_viewcontrol, and stop controlling the player's view."
+	
+	output OnEndFollow(void) : "Fires after following a target"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/logic_compare.vmt") = logic_compare :
+	"Compares an input value to another value. " +
+	"If the input value is less than the compare value, the OnLessThan output is fired with the input value. " +
+	"If the input value is equal to the compare value, the OnEqualTo output is fired with the input value. " +	
+	"If the input value is greater than the compare value, the OnGreaterThan output is fired with the input value."
+[
+	// Keys
+	InitialValue(integer) : "Initial value" : : "Initial value for the input value."
+	CompareValue(integer) : "Compare value" : : "The value to compare against."
+	
+	// Inputs
+	input SetValue(float) : "Sets the value that will be compared against the compare value."
+	input SetValueCompare(float) : "Sets the value that will be compared against the compare value and performs the comparison."
+	input SetCompareValue(float) : "Sets the compare value."
+	input Compare(void) : "Forces a compare of the input value with the compare value."
+	
+	// Outputs
+	output OnLessThan(float) : "Fires when the input value is less than the compare value. Sends the input value as data." 
+	output OnEqualTo(float) : "Fires when the input value is equal to the compare value. Sends the input value as data." 
+	output OnNotEqualTo(float) : "Fires when the input value is different from the compare value. Sends the input value as data." 
+	output OnGreaterThan(float) : "Fires when the input value is greater than the compare value. Sends the input value as data."
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/logic_branch.vmt") = logic_branch :
+	"Tests a boolean value and fires an output based on whether the value is true or false. " +
+	"Use this entity to branch between two potential sets of events."
+[
+	// Keys
+	InitialValue(integer) : "Initial value" : : "Initial value for the boolean value (0 or 1)."
+	
+	// Inputs
+	input SetValue(bool) : "Sets the boolean value without performing the comparison. Use this to hold a value for a future test."
+	input SetValueTest(bool) : "Sets the boolean value and tests it, firing OnTrue or OnFalse based on the value."
+	input Test(void) : "Tests the input value and fires OnTrue or OnFalse based on the value."
+	
+	// Outputs
+	output OnTrue(bool) : "Fires when the input value is true (nonzero)." 
+	output OnFalse(bool) : "Fires when the input value is false (zero)." 
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/logic_case.vmt") = logic_case :
+	"Compares an input to up to 16 preset values. If the input value is the same as " +
+	"any of the preset values, an output corresponding to that value is fired.\n\n" +
+	"For example: if Case01 is set to 2 and Case02 is set to 5, and the input value is 5, " +
+	"the OnCase02 output will be fired.\n\n" +
+	"This entity can also be used to select from a number of random targets via the " +
+	"PickRandom input. One of the OnCase outputs that is connected to another entity will " +
+	"be picked at random and fired."
+[
+	Case01(string) : "Case 01"
+	Case02(string) : "Case 02"
+	Case03(string) : "Case 03"
+	Case04(string) : "Case 04"
+	Case05(string) : "Case 05"
+	Case06(string) : "Case 06"
+	Case07(string) : "Case 07"
+	Case08(string) : "Case 08"
+	Case09(string) : "Case 09"
+	Case10(string) : "Case 10"
+	Case11(string) : "Case 11"
+	Case12(string) : "Case 12"
+	Case13(string) : "Case 13"
+	Case14(string) : "Case 14"
+	Case15(string) : "Case 15"
+	Case16(string) : "Case 16"
+
+	// Inputs
+	input InValue(string) : "Input value to compare to the case values"
+	input PickRandom(void) : "Fires a random OnCase output with at least one connection"
+	
+	// Outputs
+	output OnCase01(void) : "Fires when the input value equals the Case01 value"
+	output OnCase02(void) : "Fires when the input value equals the Case02 value"
+	output OnCase03(void) : "Fires when the input value equals the Case03 value"
+	output OnCase04(void) : "Fires when the input value equals the Case04 value"
+	output OnCase05(void) : "Fires when the input value equals the Case05 value"
+	output OnCase06(void) : "Fires when the input value equals the Case06 value"
+	output OnCase07(void) : "Fires when the input value equals the Case07 value"
+	output OnCase08(void) : "Fires when the input value equals the Case08 value"
+	output OnCase09(void) : "Fires when the input value equals the Case09 value"
+	output OnCase10(void) : "Fires when the input value equals the Case10 value"
+	output OnCase11(void) : "Fires when the input value equals the Case11 value"
+	output OnCase12(void) : "Fires when the input value equals the Case12 value"
+	output OnCase13(void) : "Fires when the input value equals the Case13 value"
+	output OnCase14(void) : "Fires when the input value equals the Case14 value"
+	output OnCase15(void) : "Fires when the input value equals the Case15 value"
+	output OnCase16(void) : "Fires when the input value equals the Case16 value"
+	output OnDefault(void) : "Fires when the input value does not equal any of the Case values"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/logic_multicompare.vmt") = logic_multicompare :
+	"Compares a set of inputs to each other. If they are all the same, fires an OnEqual output. " +
+	"If any are different, fires the OnNotEqual output."
+[
+	// keys
+	IntegerValue(integer) : "IntegerValue (optional)"
+	ShouldComparetoValue(choices) : "Should use IntegerValue" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	// Inputs
+	input InputValue(integer) : "Input value"
+	input CompareValues(void) : "Compares the values and fires appropriate outputs"
+
+	// Outputs
+	output OnEqual(void) : "Fires if the values are equal"
+	output OnNotEqual(void) : "Fires if the values are not equal"
+]
+
+
+@PointClass base(Targetname, EnableDisable) iconsprite("editor/logic_relay.vmt") = logic_relay :
+	"A message forwarder. Fires an OnTrigger output when triggered, and " +
+	"can be disabled to prevent forwarding outputs.\n\n" +
+	"Useful as an intermediary between one entity and another for turning " +
+	"on or off an I/O connection, or as a container for holding a set of " +
+	"outputs that can be triggered from multiple places."
+[
+	spawnflags(flags) =
+	[
+		1: "Only trigger once" : 0
+		2: "Allow fast retrigger" : 0
+	]
+
+	// Inputs
+	input Trigger(void) : "Triggers the relay, causing its OnTrigger output to fire if it is enabled."
+	input Toggle(void) : "Toggles the relay between enabled and disabled."
+	input CancelPending(void) : "Cancels any events fired by this relay that are currently pending in the I/O event queue."
+	
+	// Outputs
+	output OnTrigger(void) : "Fires when the relay is triggered."
+]
+
+
+@PointClass base(Targetname, EnableDisable) iconsprite("editor/logic_timer.vmt") = logic_timer :
+	"Fires a timer event at regular or random intervals."
+[
+	// Keys
+	spawnflags(flags) =
+	[
+		1 : "Oscillator" : 0
+	]
+
+	UseRandomTime(choices) : "UseRandomTime" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	
+	LowerRandomBound(string) : "Minimum random interval"
+	UpperRandomBound(string) : "Maximum random interval"
+	RefireTime(string) : "Refire interval in seconds"
+
+	// Inputs
+	input RefireTime(integer) : "Sets a new refire interval"
+	input FireTimer(void) : "Forces the timer to fire before the interval has expired"
+	input Enable(void) : "Enable this entity"
+	input Disable(void) : "Disable this entity"
+	input Toggle(void) : "Toggle the timer on/off"
+
+	// Outputs
+	output OnTimer(void) : "Fires when the timer expires."
+	output OnTimerHigh(void) : "Fires every other time for an oscillating timer."
+	output OnTimerLow(void) : "Fires every other time for an oscillating timer."
+]
+
+
+@PointClass base(Targetname, Parentname, EnableDisable) size(-8 -8 -8, 8 8 8) color(0 0 255) = env_microphone :
+	"Measures the sound level at a point. The sound level is output as a value between 0 and 1."
+[
+	target(target_destination) : "Measure target" : : "The name of an entity where the sound level will be measured."
+	SpeakerName(target_destination) : "Speaker" : "" : "The name of a speaker entity through which to play any sounds heard by this microphone."
+
+	spawnflags(flags) =
+	[
+		1 : "Hears combat sounds" : 1
+		2 : "Hears world sounds" : 1
+		4 : "Hears player sounds" : 1
+		8 : "Hears bullet impacts" : 1
+		16: "Swallows sounds routed through speakers" : 0
+	]
+
+	Sensitivity(float) : "Sensitivity (0 - 10)" : 1 : "Microphone sensitivity, 0=deaf, 1=default, 10=extremely sensitive)"
+	SmoothFactor(float) : "Smoothing (0 - 1)" : 0 : "Smoothing factor, 0=no smoothing, 1=maximum smoothing)"
+	MaxRange(float) : "Maximum hearing range (0=infinite)" : 240 : "Sounds beyond this range won't be heard, irrelevant of attenuation. "+
+		"WARNING: setting this to zero (or a value > 1024) when the microphone is connected to a speaker entity can be very bad for performance!!"
+
+	// Outputs
+	output SoundLevel(float) : "Fires when the sound level at the point changes."
+	output OnRoutedSound(void) : "Fires whenever a heard sound is routed out through the specified speaker (if any)."
+]
+
+
+@PointClass base(Targetname) = math_remap :
+	"Remaps a range of input values to a given range of output values."
+[
+	spawnflags(flags) = 
+	[
+		1 : "Ignore out of range input values" : 1
+	]
+
+	in1(integer) : "Minimum valid input value" : 0
+	in2(integer) : "Maximum valid input value" : 1
+	out1(integer) : "Output value when input is min."
+	out2(integer) : "Output value when input is max."
+
+	input InValue(float) : "Input value."
+	output OutValue(float) : "Output value."
+]
+
+
+@PointClass base(Targetname) = math_colorblend :
+	"Used to create a blend between two colors for controlling the color of another entity."
+[
+	spawnflags(flags) = 
+	[
+		1 : "Ignore out of range input values" : 1
+	]
+
+	inmin(integer) : "Minimum valid input value" : 0
+	inmax(integer) : "Maximum valid input value" : 1
+	colormin(color255) : "Output RGB color when input is min." : "0 0 0"
+	colormax(color255) : "Output RGB color when input is max." : "255 255 255"
+
+	input InValue(float) : "Input value."
+	output OutColor(color255) : "Output RGB color."
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/math_counter.vmt") = math_counter :
+	"Holds a numeric value and performs arithmetic operations upon it. If either the minimum or maximum " +
+	"legal value is nonzero, OutValue will be clamped to the legal range, and the OnHitMin/OnHitMax " +
+	"outputs will be fired at the appropriate times. If both min and max are set to zero, no clamping is " +
+	"performed and only the OutValue output will be fired."
+[
+	// Keys
+	startvalue(integer) : "Initial value" : 0 : "Starting value for the counter."
+	min(integer) : "Minimum legal value" : 0 : "Minimum legal value for the counter. If min=0 and max=0, no clamping is performed."
+	max(integer) : "Maximum legal value" : 0 : "Maximum legal value for the counter. If min=0 and max=0, no clamping is performed."
+
+	// Inputs
+	input Add(integer) : "Adds an amount to the counter and fires the OutValue output with the result."
+	input Divide(integer): "Divides the counter by an amount and fires the OutValue output with the result."
+	input Multiply(integer): "Multiplies the counter by an amount and fires the OutValue output with the result."
+	input SetValue(integer): "Sets the counter to a new value and fires the OutValue output with the result."
+	input Subtract(integer): "Subtracts an amount from the counter and fires the OutValue output with the result."
+
+	// Outputs
+	output OutValue(integer) : "Fires when the counter value changes."
+	output OnHitMin(void) : "Fires when the counter value meets or goes below the min value. The counter must go back above the min value before the output will fire again."
+	output OnHitMax(void) : "Fires when the counter value meets or exceeds the max value. The counter must go below the max value before the output will fire again."
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = logic_lineto : 
+	"Generates a vector from one entity to another" 
+[
+	source(target_destination) : "Start entity" : : "Name of the entity the line should start from"
+	target(target_destination) : "End entity" : : "Name of the entity that line should end at"
+	
+	output Line(vector) : "A line from the start entity to the end entity"
+]
+
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = logic_navigation : 
+	"Sets a navigation property for an entity" 
+[
+	target(target_destination) : "Navigation entity" : "Name of the entity to set the property on"
+	spawnflags(flags) =
+	[
+		1 : "Start On" : 1
+	]
+	navprop(choices) : "Nav Property" : "Ignore" =
+	[
+		"Ignore"				: "NPCs Ignore this when navigating (they'll bump into it)"
+	]
+	
+	input TurnOn(void)	: "Turn on"
+	input TurnOff(void) : "Turn off"
+	input Toggle(void)	: "Toggle on/off"
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = logic_autosave
+[
+	input Save(void) : "Save"
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = point_template : 
+	"Turns an entity, or set of entities, into a single template that can be instanced elsewhere." 
+[
+	spawnflags(flags) =
+	[
+		1 : "Don't remove template entities" : 0
+	]
+
+	Template01(target_destination) : "Template 1"
+	Template02(target_destination) : "Template 2"
+	Template03(target_destination) : "Template 3"
+	Template04(target_destination) : "Template 4"
+	Template05(target_destination) : "Template 5"
+	Template06(target_destination) : "Template 6"
+	Template07(target_destination) : "Template 7"
+	Template08(target_destination) : "Template 8"
+	Template09(target_destination) : "Template 9"
+	Template10(target_destination) : "Template 10"
+	Template11(target_destination) : "Template 11"
+	Template12(target_destination) : "Template 12"
+	Template13(target_destination) : "Template 13"
+	Template14(target_destination) : "Template 14"
+	Template15(target_destination) : "Template 15"
+	Template16(target_destination) : "Template 16"
+
+	// inputs
+	input ForceSpawn(void)		: "Force spawn"
+
+	// outputs
+	output OnEntitySpawned(void) : "Fired after spawning an instance of this template."
+]
+
+@PointClass base(Targetname,Parentname,Angles) = env_entity_maker : 
+	"Spawns the specified entity template at it's origin. If set to auto-spawn, it will spawn the template whenever there's room and the player is looking elsewhere." 
+[
+	spawnflags(Flags) =
+	[
+		1 : "Automatically spawn whenever there's room" : 0
+		2 : "AutoSpawn: Wait for entity destruction" : 0
+		4 : "AutoSpawn: Ignore player facing" : 0
+	]
+
+	EntityTemplate(target_destination) : "point_template to spawn" : "" : "Name of the point_template to spawn here."
+
+	// inputs
+	input ForceSpawn(void)				: "Force spawn"
+
+	// outputs
+	output OnEntitySpawned(void) : "Fired when an instance of the entity template has been spawned."
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Activator Filters
+//
+//-------------------------------------------------------------------------
+@BaseClass base(Targetname) = BaseFilter
+[
+	Negated(choices) : "Negate filter" : "No" =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+
+	// Inputs
+	input TestActivator(void) : "Tests the activator against the filter and fires OnPass or OnFail output."
+
+	// Outputs
+	output OnPass(void) : "Fires in response to Test input if activator passes the filter."
+	output OnFail(void) : "Fires in response to Test input if activator fails to pass the filter."
+]
+
+@FilterClass base(BaseFilter) size(-8 -8 -8, 8 8 8) = filter_multi :
+	"A filter that tests the activator against multiple filters"
+[
+	filtertype(choices) : "Logic Type" : 0 =
+	[
+		0 : "And (all filters must pass)"
+		1 : "Or (any filter must pass)"
+	]
+
+	Filter01(filterclass) : "Filter 1" : : "Activator filter to test."
+	Filter02(filterclass) : "Filter 2" : : "Activator filter to test."
+	Filter03(filterclass) : "Filter 3" : : "Activator filter to test."
+	Filter04(filterclass) : "Filter 4" : : "Activator filter to test."
+	Filter05(filterclass) : "Filter 5" : : "Activator filter to test."
+]
+
+@FilterClass base(BaseFilter) size(-8 -8 -8, 8 8 8) = filter_activator_name :
+	"A filter that filters by the name of the activator."
+[
+	filtername(target_destination) : "Filter Name" : : "The name to filter by. Only entities whose name "+
+		"matches the given string will activate the trigger, unless the Negate flag is set, in which case "+
+		"only entities whose name does NOT match the given string will activate the trigger."
+]
+
+@FilterClass base(BaseFilter) size(-8 -8 -8, 8 8 8) = filter_activator_class :
+	"A filter that filters by the class of the activator."
+[
+	filterclass(string) : "Filter Classname" : : "The class name to filter by. Only entities whose class name "+
+		"matches the given string will activate the trigger, unless the Negate flag is set, in which case "+
+		"only entities whose class name does NOT match the given string will activate the trigger."
+]
+
+@FilterClass base(BaseFilter) size(-8 -8 -8, 8 8 8) = filter_activator_team :
+	"A filter that filters by the team of the activator."
+[
+	filterteam(choices) : "Filter Team Number" : 1 : "The team number to filter by. Only entities whose team number "+
+		"matches the given team will activate the trigger, unless the Negate flag is set, in which case "+
+		"only entities whose team number does NOT match the given team will activate the trigger." =
+	[
+		1 : "Team 1 (blue)"
+		2 : "Team 2 (red)"
+	]
+]
+
+//-------------------------------------------------------------------------
+//
+// Point Entities
+//
+//-------------------------------------------------------------------------
+@PointClass base(Targetname, Parentname, EnableDisable) = point_anglesensor :
+	"Detects if an entity points in a given direction for a period of time."
+[
+	target(target_destination) : "Target entity name" : : "Name of the entity whose angles will be sensed."
+	lookatname(target_destination) : "Look at entity"
+	duration(float) : "Duration in seconds"
+	tolerance(integer) : "Tolerance in degrees"
+
+	// Inputs
+	input Toggle(void) : "Toggles the sensor between enabled and disabled."
+	input Test(void) : "Checks to see if the target entity is facing the lookat entity within the specified tolerance, " +
+		"firing either the OnFacingLookat or OnNotFacingLookat output based on the result."
+	
+	// Outputs
+	output TargetDir(vector) : "Fired when the forward direction of the target entity changes. Passes the new forward direction as a parameter."
+	output OnFacingLookat(void) : "Fired when the target entity points at the lookat entity for more than the " +
+		"specified duration."
+	output OnNotFacingLookat(void) : "Fires in response to a CheckFacing input when the target entity is not " +
+		"pointing at the lookat entity."
+]
+
+
+@PointClass base(Targetname) = point_angularvelocitysensor :
+	"Detects if an entity's angular velocity meets or exceeds a threshold value."
+[
+	target(target_destination) : "Target entity name" : : "Name of the entity whose angular velocity will be sensed."
+	threshold(float) : "Threshold velocity" : 0 : "The threshold velocity to compare against in degrees per second."
+
+	// Inputs
+	input Test(void) : "Checks to see if the target entity's angular velocity meets or exceeds the threshold velocity, " +
+		"firing either the OnGreaterThanOrEqualTo or OnLessThan output based on the result."
+	
+	// Outputs
+	output OnGreaterThan(void) : "Fired when the target entity goes from slower than the threshold angular velocity to faster than the threshold angular velocity."
+	output OnGreaterThanOrEqualTo(void) : "Fired when the target entity goes from slower than the threshold angular velocity to faster than the threshold angular velocity."
+	output OnLessThan(void) : "Fired when the target entity goes from faster than the threshold angular velocity to slower than the threshold angular velocity."
+	output OnLessThanOrEqualTo(void) : "Fired when the target entity goes from faster than the threshold angular velocity to slower than the threshold angular velocity."
+	output OnEqualTo(void) : "Fired when the target entity reaches the threshold angular velocity from a different velocity."
+]
+
+
+@PointClass base(Targetname) = point_teleport :
+	"Teleport targeted object to this position and angles." +
+	"If 'Teleport Home' spawn flag is set, teleports object to its spawn position instead." +
+	"If object is physically simulated, simulation is turned off when teleported."
+[
+	target(target_destination) : "Entity to teleport" : : "Name of the entity that will be teleported."
+	spawnflags(flags) =
+	[
+		1 : "Teleport Home" : 0
+	]
+
+	// Inputs
+	input Teleport(void) : "Teleports the object."
+]
+
+
+@PointClass base(Targetname) sphere(DamageRadius) = point_hurt :
+	"Do damage in a radius around a point with a specified delay." +
+	"The 'Hurt' input will only deal damage once." +
+	"If 'Target Entity' is specified, the damage is only done to that entity."
+[
+	DamageTarget(string) : "Entity to damage" : "" : "Name of the entity that will be damaged."
+	
+	DamageRadius(float) : "Radius" : 256 : "Radius to do damage in."
+	Damage(integer) : "Damage" : 5 : "Damage per go."
+	DamageDelay(float) : "Delay" : 1 : "Delay between damages in miliseconds."
+	
+	DamageType(choices) : "Damage Type" : 0 : "Type of damage to inflict on the victim." =
+	[
+		0 : "GENERIC"
+		1 : "CRUSH"
+		2 : "BULLET"
+		4 : "SLASH"
+		8 : "BURN"
+		16 : "FREEZE"
+		32 : "FALL"
+		64 : "BLAST"
+		128 : "CLUB"
+		256 : "SHOCK"
+		512 : "SONIC"
+		1024 : "ENERGYBEAM"
+		16384: "DROWN"
+		32768 : "PARALYSE"
+		65536 : "NERVEGAS"
+		131072 : "POISON"
+		262144 : "RADIATION"
+		524288 : "DROWNRECOVER"
+		1048576 : "CHEMICAL"
+		2097152 : "SLOWBURN"
+		4194304 : "SLOWFREEZE"
+	]
+
+	// Inputs
+	input Hurt(void) : "Do damage"
+	input TurnOn(void) : "Enable"
+	input TurnOff(void) : "Disable"
+	input Toggle(void) : "Toggle"
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) = point_playermoveconstraint : "Player Movement Constraint"
+[
+	radius(float) : "Radius" : 256 : "Radius to constrain players to."
+	width(float) : "Constraint Width" : "75.0" : "Width of the constraint edge (i.e. distance in which to slow the player near the radius edge.)"
+	speedfactor(float) : "Speed Factor" : "0.15" : "Factor applied to the player's max speed as they approach the radius edge."
+
+	input TurnOn(void) : "Constraint any players within the radius."
+	input TurnOff(void) : "Release any players previously constrained."
+
+	output OnConstraintBroken(void) : "Fired when a player breaks through the constraint."
+]
+
+//-------------------------------------------------------------------------
+//
+//	Physics entities
+//
+//-------------------------------------------------------------------------
+@SolidClass base(BreakableBrush,Targetname, Origin, RenderFields) = func_physbox : "Physics Box"
+[
+	_minlight(string) : "Minimum light level"
+	spawnflags(flags) =
+	[
+		4096  : "Start Asleep" : 0
+		8192  : "Ignore +USE" : 0
+		16384 : "Debris" : 0
+		32768 : "Motion Disabled" : 0
+		65536 : "Use Preferred Carry Angles" : 0
+	]
+	
+	// Inputs
+	input Wake(void) : "Wakes up the physics object if it is sleeping."
+	input Sleep(void) : "Puts the physics object back to sleep."
+	input EnableMotion(void) : "Enable physics motion/collision response."
+	input DisableMotion(void) : "Disable physics motion/collision response."
+	input ForceDrop(void) : "Force the object to be dropped by the player carrying it."
+	
+	// Outputs
+	output OnDamaged(void) : "Fires when this entity is damaged"
+
+	output OnPhysGunPickup(void) : "Picked up with physgun"
+	output OnPhysGunDrop(void) : "Released by physgun"
+
+	Damagetype(choices) : "Impact damage type" : 0 =
+	[
+		0: "Blunt"
+		1: "Sharp"
+	]
+	
+	massScale(float) : "Mass Scale" : "0"
+	overridescript(string) : "Override parameters" : ""
+	damagetoenablemotion(integer) : "Health Level to Override Motion" : 0
+	health(integer) : "Strength" : 0 : "Number of points of damage to take before breaking.  0 means don't break."
+	preferredcarryangles(vector) : "Preferred Player-carry Angles" : "0 0 0"
+]
+
+
+@BaseClass base(Targetname) = TwoObjectPhysics
+[
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 0
+		4: "Start inactive" : 0
+	]
+	attach1(target_destination) : "Attachment 1" : ""
+	attach2(target_destination) : "Attachment 2" : ""
+	constraintsystem(target_destination) : "Constraint system manager" : ""
+
+	forcelimit(float) : "Force limit to break (lbs)" : "0"
+	torquelimit(float) : "Torque limit to break (lbs * distance)" : "0"
+	breaksound(sound) : "Play Sound on break" : ""
+	
+	// Outputs
+	output OnBreak(void) : "Fires when the constraint breaks"
+
+	// Inputs
+	input Break(void) : "Causes the constraint to break"
+	input TurnOn(void) : "Enable the constraint.  Do this when the objects don't exist when the constraint spawns - or when you have deactivated the constraint.  Broken constraints can NOT be turned on.  They have been deleted."
+	input TurnOff(void) : "Disable this constraint, but don't kill the entity." 
+]
+	
+@PointClass base(Targetname) = phys_constraintsystem : "Used to manage a group of interacting constraints and keep them stable."
+[
+]
+
+@PointClass base(Targetname,Angles) = phys_keepupright : "Keep Upright controller"
+[
+	spawnflags(flags) =
+	[
+		1: "Start inactive" : 0
+	]
+
+	attach1(target_destination) : "Attachment 1" : ""
+	angularlimit(float) : "Angular Limit" : "15"
+
+	// Inputs
+	input TurnOn(void) : "Enable the controller."
+	input TurnOff(void) : "Disable the controller." 
+]
+
+
+@PointClass base(Targetname) sphere(expradius) studioprop() = physics_cannister : "Physics Cannister"
+[
+	model(studio) : "World model" : "models/fire_equipment/w_weldtank.mdl" : "Model to use for render/physics"
+	spawnflags(flags) = 
+	[
+		1 : "Start Asleep" : 0
+		2 : "Explodes" : 1
+	]
+
+	expdamage(string) : "Explosion Damage" : "200.0" : "Magnitude of radius damage to do upon explosion"
+	expradius(string) : "Explosion Radius" : "250.0" : "Radius of the explosion damage"
+	health(integer) : "Health" : 25 : "How much damage the cannister takes before exploding."
+
+	thrust(string) : "Thrust" : "3000.0" : "Amount of thrust"
+	fuel(string) : "Fuel Seconds" : "12.0" : "Time that thrust lasts"
+	rendercolor(color255) : "Smoke Color (R G B)" : "255 255 255"
+	renderamt(integer) : "Smoke Alpha (0 - 255)" : 128
+	gassound(sound) : "Thruster Sound" : "ambient/objects/cannister_loop.wav"
+
+	// input
+	input Activate(string) : "Starts the thruster."
+	input Deactivate(string) : "Stops the thruster."
+	input Explode(string) : "Triggers the explosion."
+	input Wake(void) : "Wakes up the cannister if it is sleeping."
+
+	// outputs
+	output OnActivate(void) : "Fired when the cannister is activated."
+]
+
+@PointClass base(Targetname, Parentname) size(-4 -4 -4, 4 4 4) = info_constraint_anchor : "Constraint anchor"
+[
+]
+
+
+@PointClass halfgridsnap base(Targetname) = phys_spring : "A Physically simulated spring\n"+
+	"LENGTH is what's known as the 'natural spring length'.  This is how long the spring would "+
+	"be if it was at rest (nothing hanging on it or attached).  When you attach something to the "+
+	"spring, it will stretch longer than its 'natural length'.  The amount of stretch is "+
+	"determined by the SPRING CONSTANT.  The larger the spring constant the less stretch the spring."
+[
+	spawnflags(flags) =
+	[
+		1 : "Force only on stretch" : 0
+	]
+
+	attach1(target_destination) : "Attachment 1" : ""
+	attach2(target_destination) : "Attachment 2" : ""
+
+	springaxis(vecline) : "Spring Axis" : ""
+	length(string) : "Spring Length" : "0" : "How long the spring would be if it was at rest (nothing hanging on it or attached). 0 means the length of the brush."
+	constant(string) : "Spring Constant" : "50" : "Stiffness of the spring.  The larger the number the less the spring will stretch."
+	damping(string) : "Damping constant" : "2.0" : "How much energy the spring looses.  The larger the number, the less bouncy the spring."
+	relativedamping(string) : "Relative Damping constant" : "0.1"
+	// UNDONE: add max tension and what event to fire when it breaks
+	breaklength(string) : "Break on Length" : "0"
+
+	// Inputs
+	input SetSpringConstant(float) : "Set spring constant"
+	input SetSpringLength(float)	: "Set spring length"
+	input SetSpringDamping(float) : "Set spring damping"
+]
+
+
+@PointClass halfgridsnap size(-8 -8 -8, 8 8 8) base(TwoObjectPhysics) = phys_hinge : "Physics Hinge : Use the helper to define the axis of rotation."
+[
+	hingefriction(float) : "Friction" : "0" : "Resistance/friction in the hinge"
+	hingeaxis(vecline) : "Hinge Axis"
+]
+
+@PointClass base(TwoObjectPhysics) iconsprite("editor/phys_ballsocket.vmt") = phys_ballsocket : "Physics Ball & Socket"
+[
+	spawnflags(flags) =
+	[
+	]
+]
+
+
+@PointClass base(TwoObjectPhysics) studio("models/editor/axis_helper.mdl") = phys_constraint : "Fixed Constraint"
+[
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+	]
+]
+
+
+@PointClass base(TwoObjectPhysics) studio("models/editor/axis_helper.mdl") = phys_pulleyconstraint : "Pulley Constraint"
+[
+	addlength(float) : "Additional Length" : "0" : "Add (or subtract) this amount to the rest length of the pulley rope."
+	gearratio(float) : "Pulley Gear Ratio" : "1" : "Add (or subtract) this amount to the rest length of the pulley rope."
+	position2(vecline) : "Pulley Position 2" : "The position of the pulley for attachment 2.  The pulley for attachment 1 is the origin of the point entity."
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+		2: "Keep Rigid" : 0
+	]
+]
+
+
+@PointClass halfgridsnap base(TwoObjectPhysics) studio("models/editor/axis_helper.mdl") = phys_slideconstraint : "Sliding Constraint"
+[
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+		2: "Limit Endpoints" : 0
+	]
+	slideaxis(vecline) : "Sliding Axis"
+	slidefriction(float) : "Friction" : "0" : "Resistance/friction in the constraint"
+]
+
+@PointClass base(TwoObjectPhysics) studio("models/editor/axis_helper.mdl") = phys_lengthconstraint : "Length Constraint"
+[
+	addlength(float) : "Additional Length" : "0" : "Add (or subtract) this amount to the rest length of the rope."
+	attachpoint(vecline) : "Attached object 2 point" : "The position the rope attaches to object 2"
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+		2: "Keep Rigid" : 0
+	]
+]
+
+@PointClass base(TwoObjectPhysics) studio("models/editor/axis_helper.mdl") = phys_ragdollconstraint : "Ragdoll / limited ballsocket Constraint"
+[
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+		2: "Only limit rotation (free movement)" : 0
+	]
+
+	xmin(float) : "X axis min limit" : "-90"
+	xmax(float) : "X axis max limit" : "90"
+	ymin(float) : "Y axis min limit" : "0"
+	ymax(float) : "Y axis max limit" : "0"
+	zmin(float) : "Z axis min limit" : "0"
+	zmax(float) : "Z axis max limit" : "0"
+]
+
+@PointClass base(Targetname) size(-8 -8 -8, 8 8 8) color(0 0 255) = phys_convert : "Physics Brush Converter"
+[
+	spawnflags(flags) =
+	[
+		1: "Convert Asleep" : 0
+	]
+	target(target_destination) : "Entity to convert" : : "Name of the entity that will be converted to a physics object when the ConvertTarget input is fired."
+	swapmodel(string) : "Model Swap Entity"
+
+	// Outputs
+	output OnConvert(void) : "Fires after the conversion has taken place."
+
+	// Inputs
+	input ConvertTarget(void) : "Converts this entity's target to a physically simulated object." 
+]
+
+
+@BaseClass base(Targetname) = ForceController
+[
+	spawnflags(flags) =
+	[
+		// Thrust is on by default (will turn off in forcetime)
+		1: "Start On" : 0
+		// Apply linear force (if off, torque only)
+		2: "Apply Force" : 1
+		// Apply rotational force (torque - if off, linear only)
+		4: "Apply Torque" : 1
+		// Maintain local relationship with the attached object
+		8: "Orient Locally" : 1
+		// Impulse is independent of object's mass (impulse is acceleration NOT force)
+		16: "Ignore Mass" : 0
+	]
+	attach1(target_destination) : "Attached Object" : "" : "Object to apply the force to"
+
+	forcetime(string) : "Time of Force (0=inf)" : "0" : "Automatic shut-off after this time has passed (0 = stay on forever or until deactivated)"
+
+	input Activate(void) : "Turn the force on"
+	input Deactivate(void) : "Turn the force off"
+	input Scale(string) : "Set Force Scale"
+]
+
+@PointClass base(Angles, ForceController) = phys_thruster : "Physics Thruster\nA way to apply constant acceleration to a physics object.  "+
+	"The force and torque is calculated using the position and direction of the thruster as an impulse.  So moving those off the object's center "+
+	"will cause torque as well.  Torque can be removed by unchecking the 'apply torque' flag.  Force can be removed by unchecking the 'apply force' "+
+	"flag.  The position of the thruster can be forced to be at the object's center by checking to 'ignore pos' flag."
+[
+	spawnflags(flags) =
+	[
+		// Put the thrust at the object center
+		32: "Ignore Pos" : 0
+	]
+	force(string) : "Force" : "0" : "Force (will be integrated, units are force kg*in/s^2)"
+]
+
+@PointClass halfgridsnap base(ForceController) = phys_torque : "Physics Torque"
+[
+	// Angular acceleration (units are degress/s^2)
+	force(string) : "Angular Acceleration" : "0"
+	axis(vecline) : "Rotation Axis" : ""
+]
+
+
+@PointClass base(Targetname) halfgridsnap size(-8 -8 -8, 8 8 8) = phys_motor : "Physics Motor"
+[
+	speed(string) : "Rotation Speed" : "0" : "Angular speed (units are degress/second)"
+	spinup(string) : "Spin up time" : "1" : "spin up time in seconds (also affects the rate at which speed changes happen)"
+	inertiafactor(float) : "System Interia Scale" : "1.0" : "Make this larger if the object being driven is constrained to a set of heavier objects."
+	axis(vecline) : "Rotation Axis" : ""
+
+	spawnflags(flags) =
+	[
+		// starts on by default
+		1: "Start On" : 1
+		// Disable world collisions on hinges
+		2: "No world collision" : 0
+		// motor also acts as a hinge constraining the object to this axis
+		4: "Hinge Object" : 1
+		// Maintain local relationship with the attached object (NOT WORKING YET)
+//		8: "Orient Locally" : 1
+	]
+	attach1(target_destination) : "Attached Object" : "" : "Object to apply the force to"
+
+	input SetSpeed(float) : "Sets target speed"
+	input TurnOn(void) : "Turns motor on"
+	input TurnOff(void) : "Turns motor off"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Props
+//
+//-------------------------------------------------------------------------
+@BaseClass = prop_detail_base
+[
+	model(studio) : "World model"
+]
+
+
+@BaseClass base(Angles, DXLevelChoice) = prop_static_base
+[
+	model(studio) : "World model"
+	skin(integer) : "Skin" : 0
+	solid(choices) : "Collisions" : 6 =
+	[
+		0: "Not Solid"
+		2: "Use Bounding Box"
+		6: "Use VPhysics"
+	]
+	disableshadows(choices) : "Disable shadows" : 0 =
+	[
+		0 : "No"
+		1 : "Yes"
+	]
+	fademindist(float) : "Start Fade Dist" : -1 : "Distance at which the prop starts to fade (<0 = use fademaxdist)"
+	fademaxdist(float) : "End Fade Dist" : 0 : "Max fade distance at which the prop is visible (0 = don't fade out)"
+	lightingorigin(target_destination) : "Lighting Origin" : "" : "Select a info_lighting to specify a location to sample lighting from"
+]
+
+
+@BaseClass base(Parentname, Global, Angles, Studiomodel, BreakableProp, DXLevelChoice) = prop_dynamic_base
+[
+	solid(choices) : "Collisions" : 6 =
+	[
+		0: "Not Solid"
+		2: "Use Bounding Box"
+		6: "Use VPhysics"
+	]
+
+	RandomAnimation(choices) : "Random Animate" : 0 =
+	[
+		0: "No"
+		1: "Yes"
+	]
+	MinAnimTime(float) : "Min Random Anim Time" : "5" : "Minimum time between random animations."
+	MaxAnimTime(float) : "Max Random Anim Time" : "10" : "Maximum time between random animations."
+	SetBodyGroup(Integer) : "Body Group" : 0
+
+	// input
+	input SetAnimation(string)	: "Name of animation I should play"
+	input TurnOn(void)	: "Make Visible"
+	input TurnOff(void)	: "Make Invisible"
+
+	// outputs
+	output OnAnimationBegun(void) : "Fired when an animation has begun"
+	output OnAnimationDone(void) : "Fired when animation is complete"
+]
+
+
+@PointClass base(prop_detail_base) studioprop() = prop_detail : "Detail Prop"
+[
+	model(studio) : "World model"
+]
+
+
+@PointClass base(prop_static_base) studioprop() = prop_static :
+	"A prop that doesn't move and doesn't animate."
+[
+]
+
+
+@PointClass base(prop_dynamic_base) studioprop() = prop_dynamic :
+	"A prop that can be placed in hierarchy and can play animations."
+[
+]
+
+@PointClass base(prop_dynamic_base) studioprop() = prop_dynamic_override :
+	"A prop that can be placed in hierarchy and can play animations. It can also be configured to break when it takes enough damage."
+[
+	health(integer) : "Health" : 0 : "Number of points of damage to take before breaking.  0 means don't break."	
+]
+
+@BaseClass base(Targetname, Global, Angles, Studiomodel, BreakableProp, DXLevelChoice) = BasePropPhysics
+[ 
+	spawnflags(flags) = 
+	[
+		1 : "Start Asleep" : 0
+		2 : "Don't take physics damage" : 0
+		4 : "Debris" : 0
+		8 : "Motion Disabled" : 0
+	]
+	
+	minhealthdmg(integer) : "Min req'd damage for hurting breakable" : 0
+
+	input Wake(void) : "Wakes up the physics prop if it is sleeping."
+	input Sleep(void) : "Puts the physics prop to sleep if it's awake."
+	input EnableMotion(void) : "Enable physics motion/collision response."
+	input DisableMotion(void) : "Disable physics motion/collision response."
+	input SetBodyGroup(integer) : "Sets this prop's body group (from 0 - n)."
+
+	output OnMotionEnabled(void) : "Fires motion is enabled via 'Health Level to Override Motion'."
+
+	physdamagescale(float) : "Physics Impact Damage Scale" : "0.1" : "Scales damage energy when this object is hit by a physics object. NOTE: 0 means this feature is disabled for backwards compatibility.\nSet to 1.0 for materials as strong as flesh, smaller numbers indicate stronger materials."
+	input physdamagescale(float) : "Sets the value that scales damage energy when this character is hit by a physics object. NOTE: 0 means this feature is disabled for backwards compatibility."
+	Damagetype(choices) : "Impact damage type" : 0 =
+	[
+		0: "Blunt"
+		1: "Sharp"
+	]
+
+	inertiaScale(float) : "Scale factor for inertia" : "1.0" : "Use ONLY as directed by a physician"
+	massScale(float) : "Mass Scale" : "0"
+	overridescript(string) : "Override parameters" : ""
+	damagetoenablemotion(integer) : "Health Level to Override Motion" : 0
+	forcetoenablemotion(float) : "Physics Impact Force to Override Motion" : 0 : "Impacts that impart a force greater than this value on the physics prop will enable the prop's motion."
+	fademindist(float) : "Start Fade Dist" : -1 : "Distance at which the prop starts to fade (<0 = use fademaxdist)"
+	fademaxdist(float) : "End Fade Dist" : 0 : "Max fade distance at which the prop is visible (0 = don't fade out)"
+]
+
+@PointClass base(BasePropPhysics) studioprop() = prop_physics_override :
+	"A prop that physically simulates as a single rigid body. It can be constrained to other physics objects using hinges "+
+	"or other constraints. It can also be configured to break when it takes enough damage. Health can be overridden on this version."
+[
+	health(integer) : "Health" : 0 : "Number of points of damage to take before breaking.  0 means don't break."
+]
+
+
+@PointClass base(BasePropPhysics) studioprop() = prop_physics :
+	"A prop that physically simulates as a single rigid body. It can be constrained to other physics objects using hinges "+
+	"or other constraints. It can also be configured to break when it takes enough damage."
+[
+	health(integer) : "Health" : 0 : "Number of points of damage to take before breaking.  0 means don't break." // VXP
+]
+
+
+@PointClass base(Angles, Targetname, Studiomodel, DXLevelChoice) studioprop() = prop_ragdoll :
+	"A prop that physically simulates and can be articulated with internal joints. The joint constraints are part of the physics model."
+[
+	spawnflags(flags) = 
+	[
+		4 : "Debris" : 0
+	]
+]
+
+
+@PointClass base(prop_dynamic_base) studioprop() = prop_dynamic_ornament :
+	"A way to attach one studio model to another as an ornament. It will render in the way that player/NPC weapons render."
+[
+	solid(choices) : "Collisions" : 0 =
+	[
+		0: "Not Solid"
+	]
+
+	InitialOwner(string) : "Name of the entity to attach to at startup"
+	
+	// input
+	input SetAttached(string)	: "Name of entity to attach to"
+	input Detach(string)	: "Detach / become invisible (can be reattached later)"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Solid Entities
+//
+//-------------------------------------------------------------------------
+@SolidClass base(Targetname) color(0 255 255) = func_areaportal :
+	"A portal brush used to manage visibility in maps. Portals define areas, which are spaces " +
+	"that are connected in the map. Both sides of a portal cannot touch the same area, for example, a " +
+	"doughnut shaped map would require at least two portals to divide the map into two areas. A linear map " +
+	"could be divided into two areas with a single area portal."
+[
+	target(target_destination) : "Name of linked door" : : "(Optional) The name of a door whose open/closed state controls the on/off state of this area portal."
+	StartOpen(choices) : "Initial State" : 0 =
+	[
+		0 : "Closed"
+		1 : "Open"
+	]
+
+	// Inputs
+	input Open(void) : "Opens the portal. When the portal is open is can be seen through."
+	input Close(void) : "Closes the portal. When the portal is closed it cannot be seen through."
+	input Toggle(void) : "Toggles state of the portal"
+]
+
+@SolidClass base(Targetname) color(0 255 255) = func_occluder :
+	"A occluder brush used to manage dynamic visibility in maps. Occluders are used to dynamically " +
+	"determine what things are behind them to prevent trying to draw them at all."
+[
+	StartActive(choices) : "Initial State" : 1 =
+	[
+		0 : "Inactive"
+		1 : "Active"
+	]
+
+	// Inputs
+	input Deactivate(void) : "Deactivates the occluder, When inactive, it can be seen through."
+	input Activate(void) : "Activates the occluder. When active, it cannot be seen through."
+	input Toggle(void) : "Toggles state of the occluder"
+]
+
+@SolidClass base(BreakableBrush, Origin, RenderFields) = func_breakable : "Breakable Brush Object" 
+[
+	minhealthdmg(integer) : "Min req'd damage for hurting breakable" : 0
+
+	_minlight(string) : "Minimum light level"
+	physdamagescale(float) : "Physics Impact Damage Scale" : "1.0" : "Scales damage energy when this object is hit by a physics object. NOTE: 0 means this feature is disabled for backwards compatibility.\nSet to 1.0 for materials as strong as flesh, smaller numbers indicate stronger materials."
+]
+
+
+@SolidClass quadbounds() base(BreakableBrush, RenderFields) = func_breakable_surf : 
+	"Breakable Surface.  All faces but one must be marked as NODRAW and that" +
+	"face must be 4 sided.  Also the chosen texture must be set up to be breakable." 
+[
+	health(integer) : "Health" : 5 : "How much damage the surface takes before breaking."
+	fragility(integer) : "Fragility" : 100 : "If glass how fragile the suface is after breaking"
+	surfacetype(choices) : "Surface Type" : 0 = 
+	[
+		0 : "Glass"
+		1 : "Tile"
+	]
+
+	input Shatter(vector) : "Shatters the window. Input a vector. First two coordinates are the center of the shattering (go from 0-1). The third coordinate is the radius of the shatter in world space"
+]
+
+
+@SolidClass base(Targetname, Parentname, RenderFields) = func_conveyor : "Conveyor Belt" 
+[
+	movedir(angle) : "Move Direction (Pitch Yaw Roll)" : "0 0 0" : "The direction conveyor moves."
+	spawnflags(flags) =
+	[
+		1 : "No Push" : 0
+		2 : "Not Solid" : 0
+	]
+	speed(string) : "Conveyor Speed" : "100"
+	_minlight(string) : "Minimum light level"
+
+	input ToggleDirection(void) : "ToggleDirection"
+	input SetSpeed(void) : "SetSpeed"
+]
+
+
+@SolidClass base(DXLevelChoice) color(0 180 0) = func_detail : "Detail World Brush" 
+[
+]
+
+
+@SolidClass base(Targetname, Parentname, Origin, RenderFields) = func_illusionary : "Fake Wall/Light" 
+[
+	_minlight(string) : "Minimum light level"
+]
+
+
+@SolidClass base(Targetname, Parentname) = func_precipitation : "Precipitation Field"
+[
+	renderamt(integer) : "Density (0-100%)" : 5	
+	rendercolor(color255) : "Color (R G B)" : "100 100 100"
+	renderfx(choices) : "Precipitation Type" : 22 =	
+	[
+		21: "Rain"
+		22: "Snow"
+	//	20: "Rain"
+	//	21: "Snow"
+	]
+]
+
+@SolidClass base(func_wall) = func_wall_toggle : "Toggleable geometry" 
+[
+	spawnflags(flags) =
+	[
+		1 : "Starts Invisible" : 0
+	]
+
+	input  Toggle(void) : "Toggles it."
+]
+
+
+@SolidClass base(Door) = func_water : "Liquid" 
+[
+	spawnflags(flags) =
+	[
+		1 : "Starts Open" : 0
+		256:"Use Only" : 0
+	]
+	movedir(angle) : "Move Direction (Pitch Yaw Roll)" : "0 0 0" : "The direction the water will move when it is told to 'Open'."
+	WaveHeight(string) : "Wave Height" : "3.0"
+]
+
+
+@SolidClass base(Targetname, Parentname, RenderFields, Global) = func_guntarget :
+	"This is a moving target that moves along a path of path_tracks and can be shot and killed."
+[
+	speed(integer) : "Speed (units per second)" : 100
+	target(target_destination) : "First stop target"
+	health(integer) : "Damage to Take" : 0
+	_minlight(string) : "Minimum light level"
+	
+	// Inputs
+	input Start(void) : "Starts the target moving."
+	input Stop(void) : "Stops the target from moving."
+	input Toggle(void) : "Toggles the target between moving and stopped."
+	
+	// Outputs
+	output OnDeath(void) : "Fires when the target is killed."
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Trains and Tracks
+//
+//-------------------------------------------------------------------------
+@BaseClass = PlatSounds 
+[
+	movesnd(choices) : "Move Sound" : 0 = 
+	[
+		0: "No Sound"
+		1: "big elev 1"
+		2: "big elev 2"
+		3: "tech elev 1"
+		4: "tech elev 2"
+		5: "tech elev 3"
+		6: "freight elev 1"
+		7: "freight elev 2"
+		8: "heavy elev"
+		9: "rack elev"
+		10: "rail elev"
+		11: "squeek elev"
+		12: "odd elev 1"
+		13: "odd elev 2"
+	]
+	stopsnd(choices) : "Stop Sound" : 0 = 
+	[
+		0: "No Sound"
+		1: "big elev stop1"
+		2: "big elev stop2"
+		3: "freight elev stop"
+		4: "heavy elev stop"
+		5: "rack stop"
+		6: "rail stop"
+		7: "squeek stop"
+		8: "quick stop"
+	]
+	volume(string) : "Sound Volume 0.0 - 1.0" : "0.85"
+]
+
+
+@BaseClass base(Targetname, Parentname, RenderFields, Global, PlatSounds) = Trackchange
+[
+	height(integer) : "Travel altitude" : 0
+	spawnflags(flags) =
+	[
+		1: "Auto Activate train" : 0
+		2: "Relink track" : 0
+		8: "Start at Bottom" : 0
+		16: "Rotate Only" : 0
+		64: "X Axis" : 0
+		128: "Y Axis" : 0
+	]
+	rotation(integer) : "Spin amount" : 0
+	train(target_destination) : "Train to switch"
+	toptrack(target_destination) : "Top track"
+	bottomtrack(target_destination) : "Bottom track"
+	speed(integer) : "Move/Rotate speed" : 0
+]
+
+
+@BaseClass base(Targetname, Parentname, Origin, RenderFields, Global) = BaseTrain
+[
+	spawnflags(flags) =
+	[
+		1 : "No Pitch (X-rot)" : 0
+		2 : "No User Control" : 0
+		8 : "Passable" : 0
+		16 : "Fixed Orientation" : 0
+		128 : "HL1 Train" : 0
+	]
+	
+	MoveSound(sound) : "Move Sound WAV" : "" : "Path/filename of the WAV file looped while the train is moving."
+	StartSound(sound) : "Start Sound WAV" : "" : "Path/filename of the WAV file played when the train starts moving."
+	StopSound(sound) : "Stop Sound WAV" : "" : "Path/filename of the WAV file played when the train stops moving."
+	
+	target(target_destination) : "First stop target" : "" : "The name of the first path_track in the train's path. The train " +
+		"will spawn at this path_track and turn to face the next path_track in the path."
+	
+	wheels(integer) : "Distance between the wheels" : 50
+	height(integer) : "Height above track" : 4
+	
+	startspeed(integer) : "Max speed (units / second)" : 100 : "The maximum speed that this train CAN go. Used for " +
+		"ramping sound effects as the train changes speeds, so choose a value that makes sense for this train. Any " +
+		"speeds applied to this train, such as by path_tracks or SetSpeed inputs, will be clipped to this maximum value."
+	
+	speed(integer) : "Initial speed (units / second)" : 0 : "The speed that the train will move at after it spawns, 0 = stopped."
+	dmg(integer) : "Damage on crush" : 0
+	volume(integer) : "Volume (10 = loudest)" : 10
+	bank(string) : "Bank angle on turns" : "0"
+	_minlight(string) : "Minimum light level"
+
+	// Inputs
+	input SetSpeed(float) : "Sets speed of the train as a ratio of max speed [0, 1]"
+	input SetSpeedDir(float) : "Sets speed of the train as a ratio of max speed. Negative values reverse the direction [-1, 1]"
+	input Stop(void) : "Stops the train."
+	input StartForward(void) : "Starts the train moving forward."
+	input StartBackward(void) : "Starts the train moving backward."
+	input Resume(void) : "Resumes the train moving in the current direction after it was stopped via the 'Stop' or 'Toggle' input."
+	input Reverse(void) : "Reverses the direction of the train."
+	input Toggle(void) : "Toggles the train between start and stop."
+]
+
+
+@SolidClass base(Trackchange) = func_trackautochange : "Automatic track changing platform"
+[
+	_minlight(string) : "Minimum light level"
+	input Trigger(void) : "Trigger the track change."
+]
+
+
+@SolidClass base(Trackchange) = func_trackchange : "Train track changing platform"
+[
+	_minlight(string) : "Minimum light level"
+]
+
+
+// VXP: W.I.P.
+@SolidClass base(BaseTrain) = func_train
+[
+//	dmg(float) : "Block Damage" : 2 // VXP: Already in BaseTrain
+
+	// Inputs
+//	input Toggle(void) : "Toggles the train's state" // VXP: Already in BaseTrain
+	input Start(void) : "Tells the train to start"
+//	input Stop(void) : "Tells the train to stop" // VXP: Already in BaseTrain
+]
+
+
+@SolidClass base(BaseTrain) = func_tracktrain :
+	"A moving platform that the player can ride. It follows a path of path_track entities.\n\n" +
+	"NOTE: Build your train so that the front of the train is facing down the X axis. " +
+	"When it spawns it will automatically rotate to face the next path_track on the path."
+[
+]
+
+
+@SolidClass base(BaseTrain) = func_tanktrain :
+	"A moving train that follows a path of path_track entities, shoots at the player, and can be killed.\n\n" + 
+	"NOTE: Build your train so that the front of the train is facing down the X axis. " +
+	"When it spawns it will automatically rotate to face the next path_track on the path."
+[
+	health(integer) : "Health" : 100
+	
+	// Outputs
+	output OnDeath(void) : "Fires when the tank is killed"
+]
+
+
+@SolidClass = func_traincontrols :
+	"When used by the player, this entity overrides the player's controls to let them drive a train."
+[
+	target(target_destination) : "Train Name"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/tanktrain_aitarget.vmt") = tanktrain_aitarget : "Tank Target"
+[
+	target(target_destination) : "Tank AI Entity"
+	newtarget(target_destination) : "New Target Entity"
+]
+
+
+@PointClass base(Targetname) iconsprite("editor/tanktrain_ai.vmt") = tanktrain_ai : "Train chase AI"
+[
+	target(target_destination) : "Train Name"
+	startsound(sound) : "Start moving sound" : "vehicles/diesel_start1.wav"
+	enginesound(sound) : "Engine loop sound" : "vehicles/diesel_turbo_loop1.wav"
+	movementsound(sound) : "Vehicle movement sound" : "vehicles/tank_treads_loop1.wav"
+]
+
+
+@PointClass base(Targetname,Parentname) line(255 255 255, targetname, target) color(255 70 0) size(16 16 16) = path_track : "Train Track Path"
+[
+	spawnflags(Flags) =
+	[
+		1:  "Disabled" : 0
+		2:  "Fire once" : 0
+		4:  "Branch Reverse" : 0
+		8:  "Disable train" : 0
+		16: "Teleport to" : 0
+	]
+	
+	target(target_destination) : "Next stop target"
+	altpath(target_destination) : "Branch Path"
+	speed(float) : "New Train Speed" : 0
+	
+	// Inputs
+	input ToggleAlternatePath(void) : "Causes the track to toggle to or from its alternate path"
+	input EnableAlternatePath(void) : "Enable the alternate path of the track"
+	input DisableAlternatePath(void) : "Disable the alternate path of the track"
+
+	input TogglePath(void) : "Causes the track to toggle on or off"
+	input EnablePath(void) : "Enable the track"
+	input DisablePath(void) : "Disable the track"
+
+	// Outputs
+	output OnPass(void) : "Fired when the train passes this track"
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Test Entities
+//
+//-------------------------------------------------------------------------
+@PointClass base(Angles) size(-16 -16 -16, 16 16 16) color(255 255 255) = test_traceline : "Traceline Tester"
+[
+]
+
+
+//-------------------------------------------------------------------------
+//
+// Triggers
+//
+//-------------------------------------------------------------------------
+@SolidClass base(Targetname) = trigger_autosave : "AutoSave Trigger"
+[
+	master(string) : "Master" 
+]
+
+
+@SolidClass base(Targetname) = trigger_cdaudio : "Trigger CD Audio"
+[
+	health(choices) : "Track #" : -1 =
+	[
+		-1 : "Stop"
+		1 : "Track 1"
+	]
+]
+
+
+@SolidClass = trigger_changelevel : "Triggers a level change.\n\n" +
+	"Place a landmark in both maps that marks the 'same' location in each map.\n"+
+	"TIPS & TRICKS: To fire events in the next level, use the OnLevelChange output to turn on "+
+	"an env_global in the current level.  Create an auto_trigger in the next level that checks "+
+	"for the state set by the env_global.\n\n"+
+	"To control which entities go through the level transition, create one or more trigger_transitions and "+
+	"give them the same name as the landmark. Any entities within the trigger_transition(s) will go to the next map."
+[
+	targetname(string) : "Name"
+	map(string) : "New map name"
+	landmark(string) : "Landmark name"
+	spawnflags(flags) =
+	[
+		2: "Disable Touch" : 0
+	]
+
+	input ChangeLevel(void) : "Causes the level change. Use this when triggering the level change with a button, etc."	
+	output OnChangeLevel(void) : "Fires when the level changes"
+]
+
+
+@SolidClass base(Trigger) = trigger_gravity : "Trigger Gravity"
+[
+	gravity(integer) : "Gravity (0-1)" : 1
+]
+
+
+@SolidClass base(Trigger) = trigger_playermovement : "Player Movement Trigger"
+[
+	spawnflags(flags) = 
+	[
+		16: "Disable auto player movement" : 1
+	]
+]
+
+
+@SolidClass base(Trigger, Targetname) = trigger_hurt : "Trigger player hurt" 
+[
+	master(string) : "Master" 
+	damage(integer) : "Damage" : 10
+	damagetype(choices) : "Damage Type" : 0 =
+	[
+		0 : "GENERIC"
+		1 : "CRUSH"
+		2 : "BULLET"
+		4 : "SLASH"
+		8 : "BURN"
+		16 : "FREEZE"
+		32 : "FALL"
+		64 : "BLAST"
+		128 : "CLUB"
+		256 : "SHOCK"
+		512 : "SONIC"
+		1024 : "ENERGYBEAM"
+		16384: "DROWN"
+		32768 : "PARALYSE"
+		65536 : "NERVEGAS"
+		131072 : "POISON"
+		262144 : "RADIATION"
+		524288 : "DROWNRECOVER"
+		1048576 : "CHEMICAL"
+		2097152 : "SLOWBURN"
+		4194304 : "SLOWFREEZE"
+	]
+	
+	input SetDamage(float) : "Sets a new value for damage per second."
+	
+	output OnHurt(void) : "Fires when this trigger hurts something other than the player"
+	output OnHurtPlayer(void) : "Fires when this trigger hurts the player"
+]
+
+
+@SolidClass base(Trigger) = trigger_multiple :
+	"A volumetric trigger that can trigger multiple times."
+[
+	message(string) : "Message text"
+	wait(integer) : "Delay before reset" : 1
+	 
+	// Outputs
+	output OnTrigger(void) : "Fires while the trigger is activated"
+]
+
+
+@SolidClass base(TriggerOnce) = trigger_once :
+	"A volumetric trigger that removes itself after it is triggered once."
+[
+	output OnTrigger(void) : "Fires when the trigger is activated"
+]
+
+
+//@SolidClass base(Trigger) = trigger_fog : "Trigger: Draw fog ripples"
+//[
+//]
+
+
+@SolidClass base(Trigger) = trigger_look :
+	"Fires 'OnTrigger' when the player looks at a target entity while within the trigger volume for " +
+	"the given amount of time.  If the player leaves the trigger or looks away from the target " +
+	"entity the clock resets.\n\n" +
+	"NOTE: Only designed for single-player game. "
+
+[
+	spawnflags(flags) = 
+	[ 
+		128: "Fire Once" : 1 
+		256: "Use Velocity instead of facing" : 0
+	]
+	
+	target(target_destination)				: "Look target" : : "The name of the entity to be looked at."
+	LookTime(string)					: "LookTime (in sec.)"	: "0.5" : "How long the player must look a the target before firing output. Resets if player leaves trigger or looks away."
+	FieldOfView(string)					: "FieldOfView"		: "0.9" : "1.0 = straight ahead\n 0.0 = +/- 90 degrees\n -1.0 = all directions)"
+
+	// Output
+	output OnTrigger(void) : "Fires when the trigger is activated"
+]
+
+@SolidClass base(Trigger) = trigger_push : "Trigger player push"
+[
+	pushdir(angle) : "Push Direction (Pitch Yaw Roll)" : "0 0 0" : "Angles indicating the direction of the push."
+
+	spawnflags(flags) = 
+	[ 
+		128: "Once Only" : 0 
+	]
+	speed(integer) : "Speed of push" : 40
+]
+
+
+@SolidClass base(Trigger) = trigger_wind : 
+	"Wind that pushes physics objects that are inside of it"
+[
+	Speed(integer)			: "Speed"			: 200   : "base line for how hard the wind blows"
+	SpeedNoise(integer)		: "Speed Noise"		: 0		: "noise added to wind speed +/-"
+	DirectionNoise(integer) : "Direction Noise" : 10	: "noise added to wind direction"
+	HoldTime(integer)		: "Hold Time"		: 0		: "base line for how long to wait before changing wind"
+	HoldNoise(integer)		: "Hold Noise"		: 0		: "noise added to how long to wait before changing wind"
+
+	// input
+	input SetSpeed(integer)	: "Set base speed for strength of wind"
+]
+
+
+@SolidClass base(Targetname, Angles) = trigger_impact : 
+	"An impact that pushes all physics objects that are inside of it in the direction specified by this trigger's angles.\n"+
+	"Also outputs the force at the time of impact for anyone else that wants to use it."
+[
+	Magnitude(float)		: "Magnitude"	: 200    : "Size of the impact.\nNegative values reverse the direction."
+	noise(float)			: "Noise"		: "0.1"	 : "Amount of directional noise (0-1)\n  0 = no noise\n  1 = random direction."
+	viewkick(float)			: "Viewkick"	: "0.05" : "Amount to kick player's view if in trigger.  Proportional to magnitude. (0-1)."
+
+	// input
+	input Impact(float) : "Fire the impact."
+	input SetMagnitude(float)	: "Set the magnitude of the impact"
+
+	// output
+	output ImpactForce(string)		: "Outputs force of trigger when impact happens"
+]
+
+
+@SolidClass base(Trigger) = trigger_proximity :
+	"Measures the distance of the player within the trigger volume from a given point (and within " +
+	"a given radius. The NearestPlayerDistance output will be 0 when the player is at the center point, " +
+	"and 1 when the player is at the radius."
+[
+	measuretarget(target_destination) : "Point to measure from"
+	radius(string) : "Radius to measure within" : 256
+	
+	output NearestEntityDistance(integer) : "Distance to the nearest eligible entity that is within the radius, " +
+		"expressed as a number from 0 to 1. Eligible entities are entities that can activate this trigger per the spawnflags."
+]
+
+
+@SolidClass base(Trigger) = trigger_teleport : "Trigger teleport"
+[
+	target(target_destination) : "Remote destination (target)"
+	landmark(target_destination) : "Local destination"
+]
+
+
+@SolidClass base(Targetname) = trigger_transition : "Trigger: Select Transition Area"
+[
+]
+
+@SolidClass base(Trigger) = trigger_waterydeath: "Trigger: For killing entities entering deep water."
+[
+]
+
+@SolidClass base(Trigger) = trigger_fog : "Creates fog billows when collided with."
+[
+	message(string) : "Message text"
+	wait(integer) : "Delay before reset" : 1
+	 
+	// Outputs
+	output OnTrigger(void) : "Fires while the trigger is activated"
+]
+
+@SolidClass base(Targetname) = trigger_serverragdoll : 
+	"A volume that forces any NPC inside it to create a server side ragdoll instead of a client one."
+[
+]
+
+
+@PointClass base(Targetname) = phys_pulleysystem : "4 Pulley System"
+[
+	slide(vecline) : "Slide Direction" : ""
+	slidelength(float) : "Movement length" : "0" : "Add (or subtract) this amount to the movement distance."
+
+	spawnflags(flags) =
+	[
+		1: "No Collision until break" : 1
+		2: "Keep Rigid" : 0
+	]
+	attach1(target_destination) : "Rope attach point 1"
+	attach2(target_destination) : "Rope attach point 2"
+	attach3(target_destination) : "Rope attach point 3"
+	attach4(target_destination) : "Rope attach point 4"
+]
+
+@PointClass base(Targetname, Parentname, Angles, Studiomodel) studio() = phys_magnet : "Physics Magnet"
+[
+	spawnflags(flags) =
+	[
+		1 : "Start Asleep" : 0
+		2 : "Motion Disabled" : 0
+		4 : "Suck On Touch" : 0
+		8 : "Allow Attached Rotation" : 0
+	]
+
+	forcelimit(float) : "Force limit to break (lbs)" : "0"
+	torquelimit(float) : "Torque limit to break (lbs * distance)" : "0"
+
+	massScale(float) : "Mass Scale" : "0"
+	overridescript(string) : "Override parameters" : ""
+	maxobjects(integer) : "Maximum attached objects at one time. Zero is no limit." : 0
+
+	// Inputs
+	input TurnOn(void) : "Turn the magnet on."
+	input TurnOff(void) : "The the magnet off. This will detach anything current stuck to the magnet."
+
+	// Outputs
+	output OnAttach(void)	: "Fired when an entity is grabbed by the magnet."
+	output OnDetach(void)	: "Fired when an entity is released by the magnet."
+]
+
