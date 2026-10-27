@@ -75,6 +75,7 @@ public:
     void InputEnable(inputdata_t &data);
     void InputDisable(inputdata_t &data);
     void InputSetCleanupTarget(inputdata_t &data);
+    bool WantsCorpses() { return m_bEnabled && m_bCleanupCorpses && IsAlive(); }
 
 private:
     bool IsCorpse(CBaseEntity *entity) const;
@@ -112,6 +113,29 @@ private:
 };
 
 LINK_ENTITY_TO_CLASS(npc_cremator, CNPC_Cremator);
+
+// Client-side ragdolls are invisible to the server, so while a Cremator that
+// cleans up corpses is alive, other NPCs die as server ragdolls it can find.
+// They still use the normal ragdoll LRU limit.
+extern bool (*g_pfnGammaWantsServerRagdoll)(CBaseCombatCharacter *victim);
+
+static bool CrematorWantsServerRagdoll(CBaseCombatCharacter *victim)
+{
+    if (!victim || FClassnameIs(victim, "npc_cremator")) return false;
+    vcollide_t *collide = modelinfo->GetVCollide(victim->GetModelIndex());
+    if (!collide || collide->solidCount <= 0) return false;
+    for (CBaseEntity *entity = gEntList.FindEntityByClassname(NULL, "npc_cremator"); entity;
+        entity = gEntList.FindEntityByClassname(entity, "npc_cremator"))
+    {
+        if (static_cast<CNPC_Cremator *>(entity)->WantsCorpses()) return true;
+    }
+    return false;
+}
+
+static struct CCrematorRagdollHook
+{
+    CCrematorRagdollHook() { g_pfnGammaWantsServerRagdoll = CrematorWantsServerRagdoll; }
+} s_CrematorRagdollHook;
 
 BEGIN_DATADESC(CNPC_Cremator)
     DEFINE_FIELD(m_hBeam, FIELD_EHANDLE),

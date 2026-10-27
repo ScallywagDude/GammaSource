@@ -66,6 +66,10 @@ extern ConVar weapon_showproficiency;
 ConVar ai_show_hull_attacks( "ai_show_hull_attacks", "0" );
 ConVar ai_force_serverside_ragdoll( "ai_force_serverside_ragdoll", "0" );
 
+// GammaSource: set by npc_cremator. While it returns true, NPC deaths leave
+// server-side ragdolls, which a Cremator can find and clean up.
+bool (*g_pfnGammaWantsServerRagdoll)( CBaseCombatCharacter *pVictim ) = NULL;
+
 ConVar nb_last_area_update_tolerance( "nb_last_area_update_tolerance", "4.0", FCVAR_CHEAT, "Distance a character needs to travel in order to invalidate cached area" ); // 4.0 tested as sweet spot (for wanderers, at least). More resulted in little benefit, less quickly diminished benefit [7/31/2008 tom]
 
 #ifndef _RETAIL
@@ -1550,8 +1554,12 @@ bool CBaseCombatCharacter::BecomeRagdoll( const CTakeDamageInfo &info, const Vec
 	bMegaPhyscannonActive = HL2GameRules()->MegaPhyscannonActive();
 #endif // !HL2MP
 
+	// GammaSource: corpses a Cremator can clean up must exist on the server.
+	bool bCorpseCleanup = g_pfnGammaWantsServerRagdoll && !IsPlayer() && Classify() != CLASS_PLAYER_ALLY_VITAL &&
+		g_pfnGammaWantsServerRagdoll( this );
+
 	// Mega physgun requires everything to be a server-side ragdoll
-	if ( m_bForceServerRagdoll == true || ( ( bMegaPhyscannonActive == true ) && !IsPlayer() && Classify() != CLASS_PLAYER_ALLY_VITAL && Classify() != CLASS_PLAYER_ALLY ) )
+	if ( m_bForceServerRagdoll == true || bCorpseCleanup || ( ( bMegaPhyscannonActive == true ) && !IsPlayer() && Classify() != CLASS_PLAYER_ALLY_VITAL && Classify() != CLASS_PLAYER_ALLY ) )
 	{
 		if ( CanBecomeServerRagdoll() == false )
 			return false;
