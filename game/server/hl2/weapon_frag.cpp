@@ -57,6 +57,7 @@ public:
 
 private:
 	void	ThrowGrenade( CBasePlayer *pPlayer );
+	void	FragThrowSound( const char *pszSound2003, WeaponSound_t sound );
 	void	RollGrenade( CBasePlayer *pPlayer );
 	void	LobGrenade( CBasePlayer *pPlayer );
 	// check a throw from vecSrc.  If not valid, move the position back along the line to vecEye
@@ -380,6 +381,22 @@ void CWeaponFrag::CheckThrowPosition( CBasePlayer *pPlayer, const Vector &vecEye
 	}
 }
 
+extern ConVar gamma_grenade_2003;
+
+//-----------------------------------------------------------------------------
+// GammaSource: in 2003 mode a throw makes only the canister throw/roll sound
+// the 2003 code used; otherwise the weapon script's sound as in HL2.
+//-----------------------------------------------------------------------------
+void CWeaponFrag::FragThrowSound( const char *pszSound2003, WeaponSound_t sound )
+{
+	if ( gamma_grenade_2003.GetBool() )
+	{
+		EmitSound( pszSound2003 );
+		return;
+	}
+	WeaponSound( sound );
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: 
 // Input  : *pPlayer - 
@@ -402,7 +419,7 @@ void CWeaponFrag::ThrowGrenade( CBasePlayer *pPlayer )
 
 	m_bRedraw = true;
 
-	WeaponSound( SINGLE );
+	FragThrowSound( "WeaponFrag.Throw", SINGLE );
 
 	m_iPrimaryAttacks++;
 	gamestats->Event_WeaponFired( pPlayer, true, GetClassname() );
@@ -426,7 +443,7 @@ void CWeaponFrag::LobGrenade( CBasePlayer *pPlayer )
 	vecThrow += vForward * 350 + Vector( 0, 0, 50 );
 	Fraggrenade_Create( vecSrc, vec3_angle, vecThrow, AngularImpulse(200,random->RandomInt(-600,600),0), pPlayer, GRENADE_TIMER, false );
 
-	WeaponSound( WPN_DOUBLE );
+	FragThrowSound( "WeaponFrag.Throw", WPN_DOUBLE );
 
 	m_bRedraw = true;
 
@@ -470,7 +487,7 @@ void CWeaponFrag::RollGrenade( CBasePlayer *pPlayer )
 	AngularImpulse rotSpeed(0,0,720);
 	Fraggrenade_Create( vecSrc, orientation, vecThrow, rotSpeed, pPlayer, GRENADE_TIMER, false );
 
-	WeaponSound( SPECIAL1 );
+	FragThrowSound( "WeaponFrag.Roll", SPECIAL1 );
 
 	m_bRedraw = true;
 
