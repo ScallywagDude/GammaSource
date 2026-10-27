@@ -185,6 +185,18 @@ void CNPC_Combine2003::Precache()
 //-----------------------------------------------------------------------------
 void CNPC_Combine2003::Spawn( void )
 {
+	// GammaSource: a bare npc_combine has no model of its own; give it the
+	// soldier rather than spawning a model-less NPC.
+	if ( !GetModelPtr() )
+	{
+		if ( !GetModelName() )
+		{
+			SetModelName( MAKE_STRING( "models/combine_soldier.mdl" ) );
+		}
+		PrecacheModel( STRING( GetModelName() ) );
+		SetModel( STRING( GetModelName() ) );
+	}
+
 	SetHullType(HULL_HUMAN);
 	SetHullSizeNormal();
 
