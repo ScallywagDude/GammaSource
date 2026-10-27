@@ -3,11 +3,12 @@ and at beta-style ammo / crosshair sprites, replacing the retail font-glyph Text
 
 usage: set_icons.py <repo>"""
 import os, re, shutil, sys
+RETAIL_ROOT = os.environ.get('GAMMA_RETAIL_ROOT', r'C:\GammaSource\retail')  # copies of the retail game folders
 
 REPO = sys.argv[1]
 C18 = os.path.join(REPO, 'gammasource_overlay', 'scripts')
 BETA = os.path.join(REPO, 'gammasource_content', 'scripts')
-RETAIL = r'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\scripts'
+RETAIL = os.path.join(RETAIL_ROOT, r'Half-Life 2\hl2\scripts')
 
 CELLS = {  # script -> (atlas x, y, ammo icon donor script or None)
     'weapon_357': (0, 0, 'weapon_pistol'),

@@ -9,6 +9,8 @@ import hashlib
 import json
 import re
 import struct
+import os
+RETAIL_ROOT = os.environ.get('GAMMA_RETAIL_ROOT', r'C:\GammaSource\retail')  # copies of the retail game folders
 
 from vpkshaders import entries, read_entry
 
@@ -51,8 +53,8 @@ def main():
         match = re.search(r'"donor"\s*"([^\"]+)"', block)
         if match:
             donors[alias.lower()] = match.group(1)
-    vpk_paths = [Path(r'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\hl2_misc_dir.vpk'),
-                 Path(r'C:\Program Files (x86)\Steam\steamapps\common\Portal\portal\portal_pak_dir.vpk')]
+    vpk_paths = [Path(os.path.join(RETAIL_ROOT, r'Half-Life 2\hl2\hl2_misc_dir.vpk')),
+                 Path(os.path.join(RETAIL_ROOT, r'Portal\portal\portal_pak_dir.vpk'))]
     wanted = {model.lower() for model in roster.values()}
     packed = {}
     for vpk in vpk_paths:

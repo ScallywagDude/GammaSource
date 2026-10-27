@@ -77,7 +77,7 @@ echo "usage: buildshaders <shaderProjectName> [-x360 or -dx10 or -game] [gameDir
 echo "       gameDir is where gameinfo.txt is (where it will store the compiled shaders)."
 echo "       sourceDir is where the source code is (where it will find scripts and compilers)."
 echo "ex   : buildshaders myshaders"
-echo "ex   : buildshaders myshaders -game c:\steam\steamapps\sourcemods\mymod -source c:\mymod\src"
+echo "ex   : buildshaders myshaders -game c:\mymod\game -source c:\mymod\src"
 goto :end
 
 REM ****************

@@ -7,6 +7,8 @@ removes hands from unrelated retail weapons. Run after mounting local HL2 and Po
 from pathlib import Path
 import argparse
 import struct
+import os
+RETAIL_ROOT = os.environ.get('GAMMA_RETAIL_ROOT', r'C:\GammaSource\retail')  # copies of the retail game folders
 
 from vpkshaders import entries, read_entry
 
@@ -47,8 +49,8 @@ def alias_model(data, alias, hide_hands=False):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--hl2', type=Path, default=Path(r'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\hl2_misc_dir.vpk'))
-    parser.add_argument('--portal', type=Path, default=Path(r'C:\Program Files (x86)\Steam\steamapps\common\Portal\portal\portal_pak_dir.vpk'))
+    parser.add_argument('--hl2', type=Path, default=Path(os.path.join(RETAIL_ROOT, r'Half-Life 2\hl2\hl2_misc_dir.vpk')))
+    parser.add_argument('--portal', type=Path, default=Path(os.path.join(RETAIL_ROOT, r'Portal\portal\portal_pak_dir.vpk')))
     parser.add_argument('--output', type=Path, default=Path(__file__).resolve().parents[2] / 'gammasource_overlay')
     parser.add_argument('--beta-content', type=Path, default=Path(__file__).resolve().parents[2] / 'gammasource_content')
     args = parser.parse_args()

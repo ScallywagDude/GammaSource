@@ -851,7 +851,7 @@ static eSteamInfoInit Sys_TryInitSteamInfo( void *pvAPI, SteamInfVersionInfo_t& 
 	if ( initState == eSteamInfo_Initialized && VerInfo.ServerAppID == k_uAppIdInvalid )
 		VerInfo.ServerAppID = VerInfo.AppID;
 
-#if !defined(_X360)
+#if !defined(_X360) && 0 // GammaSource: no Steam client, so never write steam_appid.txt
 	if ( VerInfo.AppID )
 	{
 		// steamclient.dll doesn't know about steam.inf files in mod folder,
