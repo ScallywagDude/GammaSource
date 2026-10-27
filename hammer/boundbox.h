@@ -36,7 +36,7 @@ class BoundBox
 		bool ContainsPoint(const Vector& pt) const;
 		bool IsValidBox(void) const;
 		void GetBoundsSize(Vector& size);
-		void SnapToGrid(int iGridSize);
+		void SnapToGrid(float iGridSize);
 		void Rotate90(int axis);
 
 		Vector bmins;

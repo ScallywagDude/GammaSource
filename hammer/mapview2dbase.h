@@ -103,6 +103,7 @@ protected:
 
 	void DrawGridLogical( CRender2D *pRender );
 	void DrawGrid( CRender2D *pRender, int xAxis, int yAxis, float depth, bool bNoSmallGrid = false );
+	void DrawGridFractional( CRender2D *pRender, int xAxis, int yAxis, float depth, bool bNoSmallGrid, float flGridSpacing );
 	CRender2D *GetRender();
 	CTitleWnd *GetTitleWnd();
 	bool HasTitleWnd() const;

@@ -288,7 +288,7 @@ void CStudioFileChangeWatcher::Init()
 	}
 	else
 	{
-		Warning( "Error in GetSearchPath. Hammer will not automatically reload modified models." );
+		Warning( "Error in GetSearchPath. Worldcraft will not automatically reload modified models." );
 	}
 }
 

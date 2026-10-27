@@ -66,6 +66,11 @@ BEGIN_MESSAGE_MAP(CMainFrame, CMDIFrameWnd)
 	ON_COMMAND(ID_TOOLS_PREFABFACTORY, OnToolsPrefabfactory)
 	ON_COMMAND_EX(ID_HELP_TOPICS, OnHelpOpenURL)
 	ON_COMMAND_EX(ID_HELP_EDITINGSITE, OnHelpOpenURL)
+	ON_COMMAND_EX(ID_HELP_HANDY_VANDALS, OnHelpOpenURL)
+	ON_COMMAND_EX(ID_HELP_EDITING_FORUM, OnHelpOpenURL)
+	ON_COMMAND_EX(ID_HELP_TFC_FORUM, OnHelpOpenURL)
+	ON_COMMAND_EX(ID_HELP_OPFOR_FORUM, OnHelpOpenURL)
+	ON_COMMAND_EX(ID_HELP_WORLDCRAFT_FORUM, OnHelpOpenURL)
 	ON_COMMAND_EX(ID_HELP_WORLDCRAFT_SUPPORT_MAIL, OnHelpOpenURL)
 	ON_COMMAND(ID_EDIT_UNDOREDOACTIVE, OnEditUndoredoactive)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_UNDOREDOACTIVE, OnUpdateEditUndoredoactive)
@@ -583,6 +588,13 @@ void CMainFrame::OnUpdateToolUI(CCmdUI *pUI)
 	{
 		pUI->Enable(FALSE);
 	}
+	else if (pUI->m_nID == ID_TOOLS_PATH)
+	{
+		// The Worldcraft 2003 path tool button is shown for the classic toolbar
+		// layout, but this editor has no path tool behind it.
+		pUI->Enable(FALSE);
+		pUI->SetCheck(0);
+	}
 	else
 	{
 		//
@@ -817,7 +829,7 @@ void SetStatusText(int nIndex, LPCTSTR pszText)
 //-----------------------------------------------------------------------------
 void CMainFrame::Configure(void)
 {
-	COptionProperties dlg("Configure Hammer", NULL, 0);
+	COptionProperties dlg("Configure Worldcraft", NULL, 0);
 	if (dlg.DoModal() == IDOK)
 	{
 		Options.Write( TRUE, TRUE );

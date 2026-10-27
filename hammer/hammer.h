@@ -130,6 +130,7 @@ public:
 	void BeginImportWCSettings();
 	void BeginImportVHESettings();
 	void EndImportSettings();
+	void SetHammerRegistryKey();
 
 	void BeginClosing();
 	bool IsClosing();

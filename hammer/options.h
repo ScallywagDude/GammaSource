@@ -44,6 +44,9 @@ public:
 	BOOL bShowCollisionModels;
 	BOOL bShowDetailObjects;
 	BOOL bShowNoDrawBrushes;
+	BOOL bShowToolTextures;		// Hammer++: Ctrl+Shift+F2 hides tools/ faces in 3D
+	BOOL bShowEditorObjects;	// Hammer++: Alt+O hides entity icon sprites and models/editor/ models
+	BOOL bMicrogrid;			// Hammer++: allow grid sizes down to 0.125 units
 	BOOL bEnableAutosave;
 	BOOL bShowHiddenTargetsAsBroken;
 	BOOL bRadiusCulling;

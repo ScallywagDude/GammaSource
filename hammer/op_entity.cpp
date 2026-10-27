@@ -336,6 +336,7 @@ BEGIN_MESSAGE_MAP(COP_Entity, CObjectPage)
 	//{{AFX_MSG_MAP(COP_Entity)
 	ON_NOTIFY(LVN_ITEMCHANGED, IDC_KEYVALUES, OnItemChangedKeyValues)
 	ON_NOTIFY(NM_DBLCLK, IDC_KEYVALUES, OnDblClickKeyValues)
+	ON_NOTIFY(NM_RCLICK, IDC_KEYVALUES, OnRClickKeyValues)
 
 	ON_BN_CLICKED(IDC_ADDKEYVALUE, OnAddkeyvalue)
 	ON_BN_CLICKED(IDC_REMOVEKEYVALUE, OnRemovekeyvalue)
@@ -1684,6 +1685,42 @@ void COP_Entity::OnDblClickKeyValues(NMHDR* pNMHDR, LRESULT* pResult)
 			m_pSmartControl->SetFocus();
 		}
 	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ "right click reset": right-clicking a keyvalue in SmartEdit
+//			mode sets it back to the default value from the FGD.
+//-----------------------------------------------------------------------------
+void COP_Entity::OnRClickKeyValues(NMHDR* pNMHDR, LRESULT* pResult)
+{
+	*pResult = 0;
+
+	if ( !m_bSmartedit )
+		return;
+
+	NMITEMACTIVATE *pItem = (NMITEMACTIVATE *)pNMHDR;
+	if ( pItem->iItem < 0 )
+		return;
+
+	GDinputvariable *pVar = GetVariableAt( pItem->iItem );
+	if ( pVar == NULL )
+		return;
+
+	char szDefault[KEYVALUE_MAX_VALUE_LENGTH];
+	pVar->GetDefault( szDefault );
+
+	SetCurVarListSelection( pItem->iItem );
+	UpdateKeyValue( pVar->GetName(), szDefault );
+
+	if ( !stricmp( pVar->GetName(), "angles" ) )
+	{
+		m_Angle.SetDifferent( false );
+		m_Angle.SetAngles( szDefault, true );
+	}
+
+	// Rebuild the smart control so it shows the default value.
+	OnSelchangeKeyvalues();
 }
 
 

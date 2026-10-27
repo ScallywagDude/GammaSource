@@ -167,6 +167,8 @@ BEGIN
     SEPARATOR
     BUTTON      ID_TOOLS_CLIPPER
     BUTTON      ID_TOOLS_MORPH
+    SEPARATOR
+    BUTTON      ID_TOOLS_PATH
 END
 
 IDR_SELECTIONTOOLS TOOLBAR  24, 24
@@ -194,9 +196,7 @@ BEGIN
     SEPARATOR
     BUTTON      ID_VIEW_HIDESELECTEDOBJECTS
     BUTTON      ID_VIEW_HIDENONSELECTEDOBJECTS
-    BUTTON      ID_VIEW_QUICKHIDE
-    BUTTON      ID_VIEW_QUICKHIDEUNSELECTED
-    BUTTON      ID_VIEW_QUICKUNHIDE
+    BUTTON      ID_VIEW_SHOWHIDDENOBJECTS
     SEPARATOR
     BUTTON      ID_EDIT_CUTWC
     BUTTON      ID_EDIT_COPYWC
@@ -204,26 +204,19 @@ BEGIN
     SEPARATOR
     BUTTON      ID_TOGGLE_CORDON
     BUTTON      ID_TOOLS_EDITCORDON
-	BUTTON		ID_TOGGLE_RADIUSCULLING
-	SEPARATOR
+    SEPARATOR
     BUTTON      ID_TOGGLE_SELECTBYHANDLE
     BUTTON      ID_TOGGLE_INFINITESELECT
     BUTTON      ID_TOOLS_TOGGLETEXLOCK
-    BUTTON      ID_TOOLS_TOGGLETEXLOCKSCALE
+    SEPARATOR
     BUTTON      ID_TOOLS_TEXTUREALIGN
     SEPARATOR
     BUTTON      ID_TOOLS_DISP_SOLIDDRAW
-    BUTTON      ID_TOOLS_DISP_DRAW3D
     BUTTON      ID_TOOLS_DISP_DRAWWALKABLE
-    BUTTON      ID_TOOLS_DISP_DRAWREMOVEDVERTS
+    BUTTON      ID_TOOLS_DISP_DRAWBUILDABLE
     SEPARATOR
     BUTTON      ID_FILE_RUNMAP
     BUTTON      ID_VIEW_SHOW_HELPERS
-    BUTTON      ID_VIEW_SHOWMODELSIN2D
-    BUTTON      ID_VIEW_PREVIEW_MODEL_FADE
-    BUTTON      ID_COLLISION_WIREFRAME
-    BUTTON      ID_SHOW_DETAIL_OBJECTS
-    BUTTON      ID_SHOW_NODRAW_BRUSHES
 END
 
 IDR_DISPEDIT_TOOLBAR TOOLBAR  16, 15
@@ -265,7 +258,7 @@ END
 // Menu
 //
 
-IDR_MAINFRAME MENU 
+IDR_MAINFRAME MENU
 BEGIN
     POPUP "&File"
     BEGIN
@@ -284,12 +277,24 @@ BEGIN
     POPUP "&Help"
     BEGIN
         MENUITEM "&Help Topics",                ID_HELP_TOPICS
+        POPUP "Web &Resources"
+        BEGIN
+            MENUITEM "Half-Life Editing Resource Center", ID_HELP_EDITINGSITE
+            MENUITEM "The Handy Vandal's Almanac",  ID_HELP_HANDY_VANDALS
+            MENUITEM SEPARATOR
+            MENUITEM "Half-Life Editing Discussion Forum", ID_HELP_EDITING_FORUM
+            MENUITEM "TFC Discussion Forum",        ID_HELP_TFC_FORUM
+            MENUITEM "Opposing Force Discussion Forum", ID_HELP_OPFOR_FORUM
+            MENUITEM "Worldcraft Discussion Forum", ID_HELP_WORLDCRAFT_FORUM
+            MENUITEM SEPARATOR
+            MENUITEM "Worldcraft Support Mail",     ID_HELP_WORLDCRAFT_SUPPORT_MAIL
+        END
         MENUITEM SEPARATOR
         MENUITEM "&About...",                   ID_APP_ABOUT
     END
 END
 
-IDR_FORGEMAPTYPE MENU 
+IDR_FORGEMAPTYPE MENU
 BEGIN
     POPUP "&File"
     BEGIN
@@ -303,11 +308,10 @@ BEGIN
         MENUITEM "Export Again\tAlt-B",         ID_FILE_EXPORTAGAIN
         MENUITEM "Export to .&DXF",             ID_FILE_EXPORTTODXF
         MENUITEM SEPARATOR
-        MENUITEM "R&un Map...\tF9",             ID_FILE_RUNMAP
-        MENUITEM SEPARATOR
-        MENUITEM "Convert &WAD to VMT...",      ID_FILE_CONVERT_WAD
-        MENUITEM SEPARATOR
+        MENUITEM "Convert &WAD -> VMT",         ID_FILE_CONVERT_WAD
         MENUITEM "&Reload Sounds",              ID_FILE_RELOAD_SOUNDS
+        MENUITEM SEPARATOR
+        MENUITEM "R&un\tF9",                    ID_FILE_RUNMAP
         MENUITEM SEPARATOR
         MENUITEM "Recent File",                 ID_FILE_MRU_FILE1, GRAYED
         MENUITEM SEPARATOR
@@ -341,6 +345,9 @@ BEGIN
         BEGIN
             MENUITEM "&Smaller grid\t[",            ID_MAP_GRIDLOWER
             MENUITEM "&Bigger grid\t]",             ID_MAP_GRIDHIGHER
+            MENUITEM SEPARATOR
+            MENUITEM "Set Grid Si&ze...",           ID_MAP_SETGRIDSIZE
+            MENUITEM "Enable &Microgrid",           ID_MAP_TOGGLEMICROGRID
         END
         POPUP "U&nits"
         BEGIN
@@ -349,16 +356,28 @@ BEGIN
             MENUITEM "&Feet + Inches",              ID_MAP_UNITS_FEET_INCHES
         END
         MENUITEM SEPARATOR
+        MENUITEM "G&o to Brush Number...\tCtrl+Shift+G", ID_GOTO_BRUSH
+        MENUITEM "Go to Coordinates...",        ID_GOTO_COORDS
         MENUITEM "Show Selected Brush Number",  ID_SHOW_SELECTED_BRUSH_NUMBER
         MENUITEM "&Entity Report...",           ID_MAP_ENTITYREPORT
         MENUITEM "Entity G&allery",             ID_MAP_ENTITY_GALLERY
         MENUITEM "&Check for Problems\tAlt+P",  ID_MAP_CHECK
-        MENUITEM "Diff Map File",               ID_MAP_DIFFMAPFILE
+        MENUITEM "Diff Map File...",            ID_MAP_DIFFMAPFILE
         MENUITEM SEPARATOR
         MENUITEM "&Load Pointfile",             ID_MAP_LOADPOINTFILE
         MENUITEM "&Unload Pointfile",           ID_MAP_UNLOADPOINTFILE
-        MENUITEM "&Load Portal File",           ID_MAP_LOADPORTALFILE
-        MENUITEM "&Unload Portal File",         ID_MAP_UNLOADPORTALFILE
+        MENUITEM "Load Portal File",            ID_MAP_LOADPORTALFILE
+        MENUITEM "Unload Portal File",          ID_MAP_UNLOADPORTALFILE
+        MENUITEM SEPARATOR
+        POPUP "Light &Preview"
+        BEGIN
+            MENUITEM "&Enable Light Preview",       ID_MAP_ENABLELIGHTPREVIEW
+            MENUITEM "    ... With Custom BSP Filename", ID_ENABLE_LIGHT_PREVIEW_CUSTOM_FILENAME
+            MENUITEM "&Disable Light Preview",      ID_MAP_DISABLELIGHTPREVIEW
+            MENUITEM "&Update Light Preview",       ID_MAP_UPDATELIGHTPREVIEW
+            MENUITEM "&Abort Light Calculation",    ID_MAP_ABORTLIGHTCALCULATION
+            MENUITEM "&Toggle Light Preview",       ID_MAP_TOGGLELIGHTPREVIEW
+        END
         MENUITEM SEPARATOR
         MENUITEM "Show &Information",           ID_MAP_INFORMATION
         MENUITEM "&Map Properties...",          ID_EDIT_MAPPROPERTIES
@@ -375,10 +394,10 @@ BEGIN
             MENUITEM "Map&view Bar",                ID_VIEW_MAPVIEWBAR
             MENUITEM "&Filter Control",             ID_VIEW_FILTERCONTROL
             MENUITEM "Te&xture Bar",                ID_VIEW_TEXTUREBAR
+            MENUITEM "&Animation Bar",              ID_VIEW_ANIMATIONBAR
             MENUITEM SEPARATOR
             MENUITEM "&Status Bar",                 ID_VIEW_STATUS_BAR
         END
-        MENUITEM "&Autosize 4 Views\tCtrl+A",   ID_VIEW_AUTOSIZE4
         MENUITEM SEPARATOR
         MENUITEM "2D &X/Y",                     ID_VIEW_2DXY
         MENUITEM "2D &Y/Z",                     ID_VIEW_2DYZ
@@ -387,35 +406,46 @@ BEGIN
         MENUITEM "3D &Wireframe",               ID_VIEW_3DWIREFRAME
         MENUITEM "3D &Filled Polygons",         ID_VIEW_3DPOLYGON
         MENUITEM "3D &Textured Polygons",       ID_VIEW_3DTEXTURED
-        MENUITEM "3D &Shaded Textured Polygons", ID_VIEW_3DTEXTURED_SHADED
-        MENUITEM "3D &Lighting Preview",        ID_VIEW_LIGHTINGPREVIEW
-        MENUITEM "3D &Ray-traced Preview",      ID_VIEW_LIGHTINGPREVIEW_RAYTRACED
+        MENUITEM "3D Shaded Textured Polygons", ID_VIEW_3DTEXTURED_SHADED
+        MENUITEM "3D Lighting Preview",         ID_VIEW_LIGHTINGPREVIEW
+        MENUITEM "3D Ray-traced Preview",       ID_VIEW_LIGHTINGPREVIEW_RAYTRACED
         MENUITEM SEPARATOR
+        MENUITEM "&Autosize 4 Views\tCtrl+A",   ID_VIEW_AUTOSIZE4
         MENUITEM "&Center Views on Selection\tCtrl+E", ID_VIEW_CENTERONSELECTION
         MENUITEM "Center &3D Views on Selection", ID_VIEW_CENTER3DVIEWSONSELECTION
-        MENUITEM "Go to Coordinates...",        ID_GOTO_COORDS
-        MENUITEM "G&o to Brush Number...\tCtrl+Shift+G", ID_GOTO_BRUSH
         MENUITEM SEPARATOR
         MENUITEM "Show C&onnections",           ID_VIEW_SHOWCONNECTIONS
         MENUITEM "Show Helpers",                ID_VIEW_SHOW_HELPERS
         MENUITEM "Show Models in 2D",           ID_VIEW_SHOWMODELSIN2D
+        MENUITEM "Show Detail Objects",         ID_SHOW_DETAIL_OBJECTS
+        MENUITEM "Show Nodraw Brushes",         ID_SHOW_NODRAW_BRUSHES
+        MENUITEM "Show Tool Textures\tCtrl+Shift+F2", ID_VIEW_TOGGLE_TOOLTEXTURES
+        MENUITEM "Show Editor Objects\tAlt+O",  ID_VIEW_TOGGLE_EDITOROBJECTS
+        MENUITEM "Show Collision Wireframe",    ID_COLLISION_WIREFRAME
+        MENUITEM "Preview Model Fade",          ID_VIEW_PREVIEW_MODEL_FADE
         MENUITEM "&Hide Items",                 ID_TOOLS_HIDEITEMS
+        MENUITEM "Hide &Paths",                 ID_VIEW_HIDEPATHS
         MENUITEM "Hide Entity &Names",          ID_TOOLS_HIDE_ENTITY_NAMES
         MENUITEM "Use Radius Culling",          ID_TOGGLE_RADIUSCULLING
-		MENUITEM SEPARATOR
+        MENUITEM SEPARATOR
+        MENUITEM "H&ide Selected Objects",      ID_VIEW_HIDESELECTEDOBJECTS
+        MENUITEM "&Show Hidden Objects",        ID_VIEW_SHOWHIDDENOBJECTS
+        MENUITEM "&Draw Materials Opaque",      ID_VIEW_OPAQUE_MATERIALS
+        MENUITEM SEPARATOR
         MENUITEM "QuickHide Objects\tH",        ID_VIEW_QUICKHIDE
         MENUITEM "QuickHide Unselected Objects\tCtrl+H", ID_VIEW_QUICKHIDEUNSELECTED
         MENUITEM "Unhide QuickHide Objects\tU", ID_VIEW_QUICKUNHIDE
-        MENUITEM "Convert QuickHide Objects to Visgroup" ID_VIEW_QUICKHIDEVISGROUP								
+        MENUITEM "Convert QuickHide Objects to Visgroup", ID_VIEW_QUICKHIDEVISGROUP
         MENUITEM SEPARATOR
-        MENUITEM "Move Selection To V&isgroup", ID_VIEW_HIDESELECTEDOBJECTS
-        MENUITEM "&Draw Materials Opaque",      ID_VIEW_OPAQUE_MATERIALS
+        MENUITEM "Draw Displacements in 3D",    ID_TOOLS_DISP_DRAW3D
+        MENUITEM "Show Removed Displacement Vertices", ID_TOOLS_DISP_DRAWREMOVEDVERTS
         MENUITEM "HDR",                         ID_HDR
     END
     POPUP "&Tools"
     BEGIN
         MENUITEM "&Carve\tCtrl+Shift+C",        ID_TOOLS_SUBTRACTSELECTION
         MENUITEM "Make Hollow",                 ID_TOOLS_HOLLOW
+        MENUITEM "Merge Solids\tCtrl+Shift+M",  ID_TOOLS_MERGESOLIDS
         MENUITEM SEPARATOR
         MENUITEM "&Group\tCtrl+G",              ID_TOOLS_GROUP
         MENUITEM "&Ungroup\tCtrl+U",            ID_TOOLS_UNGROUP
@@ -424,15 +454,16 @@ BEGIN
         MENUITEM "&Move to World\tCtrl+Shift+W", ID_EDIT_TOWORLD
         MENUITEM SEPARATOR
         MENUITEM "Te&xture Application\tShift+A", ID_MODE_APPLICATOR
-        MENUITEM "R&eplace Textures...",        ID_EDIT_REPLACETEX
+        MENUITEM "R&eplace Textures",           ID_EDIT_REPLACETEX
         MENUITEM "Texture &Lock\tShift+L",      ID_TOOLS_TOGGLETEXLOCK
+        MENUITEM "Texture Lock When Scaling",   ID_TOOLS_TOGGLETEXLOCKSCALE
         MENUITEM SEPARATOR
-        MENUITEM "&Sound Browser...\tCtrl+Shift+S", ID_TOOLS_SOUND_BROWSER
-        MENUITEM SEPARATOR
-        MENUITEM "Transform\tCtrl+M",           ID_TOOLS_TRANSFORM
         MENUITEM "Snap Selected to Grid\tCtrl+B", ID_TOOLS_SNAPSELECTEDTOGRID
         MENUITEM "Snap Selected to Grid Individually\tCtrl+Shift+B", ID_TOOLS_SNAP_SELECTED_TO_GRID_INDIVIDUALLY
-        MENUITEM "Center &Origins",             ID_TOOLS_CENTER_ORIGINS
+        MENUITEM "Transform\tCtrl+M",           ID_TOOLS_TRANSFORM
+        MENUITEM "Center Origins",              ID_TOOLS_CENTER_ORIGINS
+        MENUITEM "Move to Floor",               ID_TOOLS_MOVE_TO_FLOOR
+        MENUITEM "Move to Ceiling",             ID_TOOLS_MOVE_TO_CEILING
         POPUP "&Align objects"
         BEGIN
             MENUITEM "To &Left",                    ID_TOOLS_ALIGNLEFT
@@ -445,44 +476,48 @@ BEGIN
             MENUITEM "&Horizontally\tCtrl+L",       ID_FLIP_HORIZONTAL
             MENUITEM "&Vertically\tCtrl+I",         ID_FLIP_VERTICAL
         END
+        MENUITEM SEPARATOR
+        MENUITEM "Sound Browser...\tCtrl+Shift+S", ID_TOOLS_SOUND_BROWSER
+        POPUP "&Instancing"
+        BEGIN
+            POPUP "Collapse"
+            BEGIN
+                MENUITEM "Selection",                   ID_INSTANCES_COLLAPSESELECTION
+                MENUITEM "All",                         ID_INSTANCES_COLLAPSEALL
+            END
+            POPUP "View Instances"
+            BEGIN
+                MENUITEM "Hide",                        ID_TOOLS_INSTANCES_HIDE
+                MENUITEM "Show Tinted",                 ID_TOOLS_INSTANCES_SHOWTINTED
+                MENUITEM "Show Normal",                 ID_TOOLS_INSTANCES_SHOWNORMAL
+            END
+            POPUP "Windows"
+            BEGIN
+                MENUITEM "Hide All Instances",          ID_INSTANCES_HIDEALL
+                MENUITEM "Show All Instances",          ID_INSTANCES_SHOWALL
+            END
+            MENUITEM SEPARATOR
+            MENUITEM "Create Manifest...",          ID_INSTANCING_CREATEMANIFEST
+            POPUP "Version Control"
+            BEGIN
+                MENUITEM "Add Manifest",                ID_VERSIONCONTROL_ADDMANIFEST
+                MENUITEM "Check Out Manifest",          ID_VERSIONCONTROL_CHECKOUTMANIFEST
+                MENUITEM SEPARATOR
+                MENUITEM "Check In All...",             ID_VERSIONCONTROL_CHECKINALL
+                MENUITEM "Check Out All",               ID_VERSIONCONTROL_CHECKOUTALL
+            END
+            POPUP "View Manifests"
+            BEGIN
+                MENUITEM "Hide Except Current",         ID_VIEWMANIFESTS_HIDEEXCEPTCURRENT
+                MENUITEM "Tinted",                      ID_VIEWMANIFESTS_TINTED
+                MENUITEM "Show Normal",                 ID_VIEWMANIFESTS_SHOWNORMAL
+            END
+        END
+        MENUITEM SEPARATOR
+        MENUITEM "&Prefab Factory...",          ID_TOOLS_PREFABFACTORY
         MENUITEM "C&reate Prefab\tCtrl+R",      ID_TOOLS_CREATEPREFAB
         MENUITEM SEPARATOR
         MENUITEM "&Options...",                 ID_TOOLS_OPTIONS
-    END
-    POPUP "&Instancing"
-    BEGIN
-        POPUP "Collapse"
-        BEGIN
-            MENUITEM "Selection",                   ID_INSTANCES_COLLAPSESELECTION
-            MENUITEM "All",                         ID_INSTANCES_COLLAPSEALL
-        END
-        POPUP "View Instances"
-        BEGIN
-            MENUITEM "Hide",                        ID_TOOLS_INSTANCES_HIDE
-            MENUITEM "Show Tinted",                 ID_TOOLS_INSTANCES_SHOWTINTED
-            MENUITEM "Show Normal",                 ID_TOOLS_INSTANCES_SHOWNORMAL
-        END
-        POPUP "Windows"
-        BEGIN
-            MENUITEM "Hide All Instances",          ID_INSTANCES_HIDEALL
-            MENUITEM "Show All Instances",          ID_INSTANCES_SHOWALL
-        END
-        MENUITEM SEPARATOR
-        MENUITEM "Create Manifest...",          ID_INSTANCING_CREATEMANIFEST
-        POPUP "Version Control"
-        BEGIN
-            MENUITEM "Add Manifest",                ID_VERSIONCONTROL_ADDMANIFEST
-            MENUITEM "Check Out Manifest",          ID_VERSIONCONTROL_CHECKOUTMANIFEST
-            MENUITEM SEPARATOR
-            MENUITEM "Check In All...",             ID_VERSIONCONTROL_CHECKINALL
-            MENUITEM "Check Out All",               ID_VERSIONCONTROL_CHECKOUTALL
-        END
-        POPUP "View Manifests"
-        BEGIN
-            MENUITEM "Hide Except Current",         ID_VIEWMANIFESTS_HIDEEXCEPTCURRENT
-            MENUITEM "Tinted",                      ID_VIEWMANIFESTS_TINTED
-            MENUITEM "Show Normal",                 ID_VIEWMANIFESTS_SHOWNORMAL
-        END
     END
     POPUP "&Window"
     BEGIN
@@ -496,6 +531,18 @@ BEGIN
     POPUP "&Help"
     BEGIN
         MENUITEM "&Help Topics",                ID_HELP_TOPICS
+        POPUP "Web &Resources"
+        BEGIN
+            MENUITEM "Half-Life Editing Resource Center", ID_HELP_EDITINGSITE
+            MENUITEM "The Handy Vandal's Almanac",  ID_HELP_HANDY_VANDALS
+            MENUITEM SEPARATOR
+            MENUITEM "Half-Life Editing Discussion Forum", ID_HELP_EDITING_FORUM
+            MENUITEM "TFC Discussion Forum",        ID_HELP_TFC_FORUM
+            MENUITEM "Opposing Force Discussion Forum", ID_HELP_OPFOR_FORUM
+            MENUITEM "Worldcraft Discussion Forum", ID_HELP_WORLDCRAFT_FORUM
+            MENUITEM SEPARATOR
+            MENUITEM "Worldcraft Support Mail",     ID_HELP_WORLDCRAFT_SUPPORT_MAIL
+        END
         MENUITEM SEPARATOR
         MENUITEM "&About...",                   ID_APP_ABOUT
     END
@@ -515,6 +562,7 @@ BEGIN
         MENUITEM SEPARATOR
         MENUITEM "&Carve\tCtrl+Shift+C",        ID_TOOLS_SUBTRACTSELECTION
         MENUITEM "Make Hollow",                 ID_TOOLS_HOLLOW
+        MENUITEM "Merge Solids\tCtrl+Shift+M",  ID_TOOLS_MERGESOLIDS
         MENUITEM SEPARATOR
         MENUITEM "&Group\tCtrl+G",              ID_TOOLS_GROUP
         MENUITEM "&Ungroup\tCtrl+U",            ID_TOOLS_UNGROUP
@@ -729,6 +777,9 @@ IDR_FORGEMAPTYPE ACCELERATORS
 BEGIN
     VK_F1,          ID_CONTEXT_HELP,        VIRTKEY, SHIFT, NOINVERT
     "C",            ID_CREATEOBJECT,        VIRTKEY, ALT, NOINVERT
+    "M",            ID_TOOLS_MERGESOLIDS,   VIRTKEY, SHIFT, CONTROL, NOINVERT
+    VK_F2,          ID_VIEW_TOGGLE_TOOLTEXTURES, VIRTKEY, SHIFT, CONTROL, NOINVERT
+    "O",            ID_VIEW_TOGGLE_EDITOROBJECTS, VIRTKEY, ALT, NOINVERT
     "T",            ID_EDIT_APPLYTEXTURE,   VIRTKEY, SHIFT, NOINVERT
     "Q",            ID_EDIT_CLEARSELECTION, VIRTKEY, SHIFT, NOINVERT
     "C",            ID_EDIT_COPYWC,         VIRTKEY, CONTROL, NOINVERT
@@ -812,18 +863,18 @@ END
 // Dialog
 //
 
-IDD_ABOUTBOX DIALOGEX 0, 0, 246, 70
+IDD_ABOUTBOX DIALOGEX 0, 0, 195, 70
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Hammer 4.1"
+CAPTION "Worldcraft 3.40"
 FONT 8, "MS Sans Serif", 0, 0, 0x0
 BEGIN
     PUSHBUTTON      "(disabled in this version)",IDC_ORDER,7,49,88,14
-    PUSHBUTTON      "Close",IDOK,189,49,50,14,WS_GROUP
+    PUSHBUTTON      "Close",IDOK,138,49,50,14,WS_GROUP
     ICON            IDR_MAINFRAME,IDC_STATIC,7,7,20,20
-    LTEXT           "Valve Hammer Editor is a trademark of Valve Corporation",IDC_STATIC,38,19,186,8
-    LTEXT           "Copyright © 1996-2006, Valve Corporation, All rights reserved.",IDC_STATIC,38,31,201,10
-    LTEXT           " ",IDC_REDHERRING,13,47,156,8
-    LTEXT           "Build %d",IDC_BUILD_NUMBER,38,7,69,8
+    LTEXT           "Worldcraft is a trademark of Valve, L.L.C.",IDC_STATIC,36,18,136,8
+    LTEXT           "Copyright 1996-2000, All rights reserved.",IDC_STATIC,36,28,135,8
+    LTEXT           " ",IDC_REDHERRING,13,38,156,8
+    LTEXT           "Build %d",IDC_BUILD_NUMBER,36,7,133,8
 END
 
 CG_IDD_PROGRESS DIALOG  0, 0, 168, 28
@@ -1149,7 +1200,7 @@ END
 
 IDD_LOADINGTEXTURES DIALOG  0, 0, 132, 47
 STYLE DS_SETFONT | DS_MODALFRAME | WS_POPUP | WS_CAPTION
-CAPTION "Hammer"
+CAPTION "Worldcraft"
 FONT 8, "MS Sans Serif"
 BEGIN
     CTEXT           "Please wait, loading textures...",IDC_STATIC,7,19,118,8
@@ -1710,7 +1761,7 @@ BEGIN
     LTEXT           "Game Directory (where GameInfo.txt is, ex: c:\\Half-Life\\cstrike):",IDC_STATIC,8,191,212,8
     EDITTEXT        IDC_MODDIR,8,202,171,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Browse...",IDC_BROWSEMODDIR,184,202,50,14
-    LTEXT           "Hammer VMF Directory (ex: C:\\Half-Life\\maps):",IDC_STATIC,8,220,169,8
+    LTEXT           "Worldcraft VMF Directory (ex: C:\\Half-Life\\maps):",IDC_STATIC,8,220,169,8
     EDITTEXT        IDC_MAPDIR,8,230,172,14,ES_AUTOHSCROLL
     PUSHBUTTON      "Browse...",IDC_BROWSEMAPDIR,184,230,50,14
 END
@@ -2304,14 +2355,14 @@ BEGIN
     BEGIN
         BLOCK "040904b0"
         BEGIN
-            VALUE "CompanyName", "Valve Corporation"
-            VALUE "FileDescription", "Hammer"
-            VALUE "FileVersion", "4.0.0"
-            VALUE "InternalName", "Hammer"
-            VALUE "LegalCopyright", "Copyright © 1996-2004 Valve Corporation"
+            VALUE "CompanyName", "Valve, L.L.C."
+            VALUE "FileDescription", "Worldcraft"
+            VALUE "FileVersion", "3.4.0"
+            VALUE "InternalName", "Worldcraft"
+            VALUE "LegalCopyright", "Copyright © 1996-99 Valve, L.L.C."
             VALUE "OriginalFilename", "WC.EXE"
-            VALUE "ProductName", "Valve Hammer Editor (tm)"
-            VALUE "ProductVersion", "4.0.0"
+            VALUE "ProductName", "Worldcraft (tm)"
+            VALUE "ProductVersion", "3.4.0"
         END
     END
     BLOCK "VarFileInfo"
@@ -2986,16 +3037,16 @@ IDC_CROSSHAIR           CURSOR                  "res\\crosshair.cur"
 
 STRINGTABLE 
 BEGIN
-    IDR_MAINFRAME           "Hammer"
-    IDR_FORGEMAPTYPE        "\nvmf\nValve Map Files\nValve Map Files (*.vmf)\n.vmf"
+    IDR_MAINFRAME           "Worldcraft"
+    IDR_FORGEMAPTYPE        "\nvmf\nWorldcraft Map\nWorldcraft map files (*.vmf)\n.vmf"
     IDR_FORGEPAKTYPE        "\npak\nQuake PAK archive\nQuake PAK archive (*.pak)\n.pak\nWorldcraft.Pak\nQuake PAK archive"
     IDS_NONE                "(none)"
-    IDR_MANIFESTDOC         "\nvmm\nValve Manifest Map Files\nValve Manifest Map Files (*.manifest_vmf)\n.vmm"
+    IDR_MANIFESTDOC         "\nvmm\nWorldcraft Manifest\nWorldcraft manifest files (*.manifest_vmf)\n.vmm"
 END
 
 STRINGTABLE 
 BEGIN
-    AFX_IDS_APP_TITLE       "Hammer"
+    AFX_IDS_APP_TITLE       "Worldcraft"
     AFX_IDS_IDLEMESSAGE     "For Help, press F1"
     AFX_IDS_HELPMODEMESSAGE "Select an object on which to get Help"
 END
@@ -3036,7 +3087,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    ID_HELP_EDITINGSITE     "http://halflife.gamedesign.net"
+    ID_HELP_EDITINGSITE     "https://web.archive.org/web/2003/http://halflife.gamedesign.net/"
     ID_HELP_ORDERNOW        "Order Worldcraft Online using your credit card"
     ID_TOOLS_SNAPSELECTEDTOGRID 
                             "Snap the selected objects to the grid (without altering size/relativity)"
@@ -3172,7 +3223,7 @@ BEGIN
     IDS_CREATINGMESH        "Creating Mesh"
     IDS_ERRLOADGRAPHIC      "There is not enough memory to load the graphic ""%s""."
     IDS_NO_CONFIGS_AVAILABLE 
-                            "No game configurations are available. You must set them up in the Game Configurations tab of the Options dialog box before creating or loading a map.\n\nDo you wish to open the new user's guide to assist you in configuring Hammer?"
+                            "No game configurations are available. You must set them up in the Game Configurations tab of the Options dialog box before creating or loading a map.\n\nDo you wish to open the new user's guide to assist you in configuring Worldcraft?"
     IDS_NO_TEXTURES_AVAILABLE 
                             "No textures are available for use with that game. You must set them up in the Textures tab of the Options dialog box before you can edit maps for this game."
 END
@@ -3306,7 +3357,7 @@ BEGIN
     ID_TOOLS_HOLLOW         "Make each of the selected solids a group of hollow objects\nHollow Solids"
     ID_EDIT_PASTESPECIAL    "Paste objects with special options"
     ID_VIEW_HIDESELECTEDOBJECTS 
-                            "Creates a new visgroup containing the selected objects\nNew Visgroup"
+                            "Hides the selected objects temporarily\nHide Selected Objects"
 END
 
 STRINGTABLE 
@@ -3376,9 +3427,9 @@ BEGIN
     IDS_HIDDEN_GROUP_HIDDEN_CHILDREN_DESC 
                             "A hidden object group was found, which is an invalid condition. The grouped objects are NOT in the map compile, so this problem is benign. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the objects in a visgroup called ""_hidden by Check for Problems""."
     IDS_HIDDEN_GROUP_VISIBLE_CHILDREN_DESC 
-                            "A hidden object group was found, which is an invalid condition. The grouped objects ARE in the map compile, so this means there are objects in the compiled map that cannot be seen in Hammer. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the objects in a visgroup called ""found by Check for Problems"", after which you should inspect the objects and hide or delete any that are undesired."
+                            "A hidden object group was found, which is an invalid condition. The grouped objects ARE in the map compile, so this means there are objects in the compiled map that cannot be seen in Worldcraft. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the objects in a visgroup called ""found by Check for Problems"", after which you should inspect the objects and hide or delete any that are undesired."
     IDS_HIDDEN_GROUP_MIXED_CHILDREN_DESC 
-                            "A hidden object group was found, which is an invalid condition. SOME of the grouped objects ARE in the map compile, so this means there are objects in the compiled map that cannot be seen in Hammer. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the objects in a visgroup called ""found by Check for Problems"", after which you should inspect the objects and hide or delete any that are undesired."
+                            "A hidden object group was found, which is an invalid condition. SOME of the grouped objects ARE in the map compile, so this means there are objects in the compiled map that cannot be seen in Worldcraft. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the objects in a visgroup called ""found by Check for Problems"", after which you should inspect the objects and hide or delete any that are undesired."
     IDS_HIDDEN_NO_VISGROUP_DESC 
                             "A hidden object was found that does not belong to any visgroups, which is an invalid condition. The object is NOT in the map compile, so this problem is benign. To see the objects, press ""Go To Error"" and toggle the ""Show"" button in the Visgroups dialog. Fixing this problem will hide the object in a visgroup called ""_hidden by Check for Problems""."
     IDS_HIDDEN_CHILD_OF_ENTITY_DESC 
@@ -3404,6 +3455,20 @@ BEGIN
                             "Hide UNselected objects\nHide Unselected objects"
     ID_TOGGLE_GROUPIGNORE   "Toggle group ignore\nToggle group ignore [Ctrl+W]"
     ID_TOOLS_PATH           "Path tool\nPath tool [Shift+P]"
+    ID_VIEW_SHOWHIDDENOBJECTS "Show all Visgroups\nShow all visgroups"
+    ID_VIEW_HIDEPATHS       "Hide all paths\nHide paths"
+    ID_HELP_HANDY_VANDALS   "https://web.archive.org/web/2003/http://www.karljones.com/halflife/almanac.htm"
+    ID_HELP_EDITING_FORUM   "https://web.archive.org/web/2003/http://forums.gamedesign.net/forums/wwwthreads.pl?action=list&Board=HL_LevelEditing"
+    ID_HELP_TFC_FORUM       "https://web.archive.org/web/2003/http://forums.gamedesign.net/forums/wwwthreads.pl?action=list&Board=tfc"
+    ID_HELP_OPFOR_FORUM     "https://web.archive.org/web/2003/http://forums.gamedesign.net/forums/wwwthreads.pl?action=list&Board=OpFor"
+    ID_MAP_SETGRIDSIZE      "Set the grid to any size from 1 to 8192 units\nSet Grid Size"
+    ID_VIEW_TOGGLE_TOOLTEXTURES "Show or hide tool textures (tools/) in the 3D view\nShow Tool Textures"
+    ID_VIEW_TOGGLE_EDITOROBJECTS "Show or hide entity icons and editor-only models in the 3D view\nShow Editor Objects"
+    ID_TOOLS_MOVE_TO_FLOOR  "Drop the selection onto the nearest floor below it\nMove to Floor"
+    ID_TOOLS_MOVE_TO_CEILING "Raise the selection to the nearest ceiling above it\nMove to Ceiling"
+    ID_MAP_TOGGLEMICROGRID  "Allow grid sizes down to 0.125 units\nEnable Microgrid"
+    ID_TOOLS_MERGESOLIDS    "Merge the selected solids into one, if together they are convex\nMerge Solids"
+    ID_HELP_WORLDCRAFT_FORUM "https://web.archive.org/web/2003/http://forums.gamedesign.net/forums/wwwthreads.pl?action=list&Board=Worldcraft2"
 END
 
 STRINGTABLE 

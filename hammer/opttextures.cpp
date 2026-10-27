@@ -185,7 +185,7 @@ BOOL COPTTextures::OnApply()
 		MessageBox("You have removed some texture files from the list. "
 			"These texture files will continue to be used during this "
 			"session, but will not be loaded the next time you run "
-			"Hammer.", "A Quick Note");
+			"Worldcraft.", "A Quick Note");
 	}
 
 	Options.PerformChanges(COptions::secTextures);

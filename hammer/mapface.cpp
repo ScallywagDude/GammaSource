@@ -2397,6 +2397,11 @@ void CMapFace::Render3D( CRender3D *pRender )
 	if ( !Options.general.bShowNoDrawBrushes && eSolidSelectionState == SELECT_NONE && m_pTexture == g_Textures.GetNoDrawTexture() )
 		return;
 
+	// Hammer++ "toggle tool textures": hide unselected tools/ faces in the 3D view.
+	if ( !Options.general.bShowToolTextures && eSolidSelectionState == SELECT_NONE && m_pTexture &&
+		 !V_strnicmp( m_pTexture->GetName(), "tools/", 6 ) )
+		return;
+
 	//
 	// Draw the face.
 	//

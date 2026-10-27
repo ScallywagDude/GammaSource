@@ -697,7 +697,7 @@ BOOL COPTConfigs::OnApply(void)
 	if ( pConfig != NULL && ConfigChanged( pConfig ) )
 	{
 		SetPersistentEnvironmentVariable("vproject", pConfig->m_szModDir);
-		AfxMessageBox("Your changes to the active configuration will not take effect until the next time you run Hammer.");
+		AfxMessageBox("Your changes to the active configuration will not take effect until the next time you run Worldcraft.");
 	}
 
 	Options.PerformChanges(COptions::secConfigs);

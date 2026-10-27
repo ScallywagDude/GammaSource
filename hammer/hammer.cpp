@@ -147,31 +147,121 @@ struct MinidumpWrapperHelper_t
 	int m_iRetVal;
 };
 
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ crash recovery. Saves every modified map to
+//			"<map>_crash.vmf" (in the autosave folder, or next to the map if
+//			there is no autosave folder) and tells the user where they went.
+//-----------------------------------------------------------------------------
+static void CrashRecovery_SaveOpenMaps( DWORD dwCode, void *pAddress )
+{
+	CString strSaved;
+
+	// Don't use VerifyAutosaveDirectory here: it shows message boxes and writes
+	// test files. Just check that the folder exists.
+	char szAutosaveDir[MAX_PATH] = { 0 };
+	APP()->GetDirectory( DIR_AUTOSAVE, szAutosaveDir );
+	CString strAutosaveDir( szAutosaveDir );
+	EditorUtil_ConvertPath( strAutosaveDir, true );
+	DWORD dwAttribs = strAutosaveDir.IsEmpty() ? INVALID_FILE_ATTRIBUTES : GetFileAttributes( strAutosaveDir );
+	bool bHaveAutosaveDir = ( dwAttribs != INVALID_FILE_ATTRIBUTES ) && ( dwAttribs & FILE_ATTRIBUTE_DIRECTORY );
+
+	for ( int i = 0; i < CMapDoc::GetDocumentCount(); i++ )
+	{
+		CMapDoc *pDoc = CMapDoc::GetDocument( i );
+		if ( !pDoc || !pDoc->IsModified() )
+			continue;
+
+		CString strMapFilename = pDoc->GetPathName();
+		CString strTitle = strMapFilename.IsEmpty() ? CString( "untitled" ) : strMapFilename.Mid( strMapFilename.ReverseFind( '\\' ) + 1 );
+		int nDot = strTitle.ReverseFind( '.' );
+		if ( nDot > 0 )
+		{
+			strTitle = strTitle.Left( nDot );
+		}
+
+		CString strSaveName;
+		if ( bHaveAutosaveDir )
+		{
+			strSaveName = strAutosaveDir + strTitle + "_crash.vmf";
+		}
+		else if ( !strMapFilename.IsEmpty() )
+		{
+			strSaveName = strMapFilename.Left( strMapFilename.ReverseFind( '\\' ) + 1 ) + strTitle + "_crash.vmf";
+		}
+		else
+		{
+			continue;
+		}
+
+		if ( pDoc->SaveVMF( strSaveName, SAVEFLAGS_AUTOSAVE ) )
+		{
+			strSaved += "\n" + strSaveName;
+		}
+	}
+
+	CString strMsg;
+	strMsg.Format( "Worldcraft has crashed (exception 0x%08lX at address %p).", dwCode, pAddress );
+	if ( strSaved.IsEmpty() )
+	{
+		strMsg += "\n\nThere were no unsaved maps to recover.";
+	}
+	else
+	{
+		strMsg += "\n\nYour unsaved maps were saved to:" + strSaved;
+	}
+	::MessageBox( NULL, strMsg, "Worldcraft", MB_OK | MB_ICONERROR | MB_TASKMODAL );
+}
+
+
+static LONG CrashRecovery_Filter( EXCEPTION_POINTERS *pExceptionInfo )
+{
+	// Only try once; if saving crashes too, let the minidump handler take over.
+	static bool s_bInCrashRecovery = false;
+	if ( !s_bInCrashRecovery )
+	{
+		s_bInCrashRecovery = true;
+		__try
+		{
+			CrashRecovery_SaveOpenMaps( pExceptionInfo->ExceptionRecord->ExceptionCode, pExceptionInfo->ExceptionRecord->ExceptionAddress );
+		}
+		__except ( EXCEPTION_EXECUTE_HANDLER )
+		{
+		}
+	}
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+
 static void MinidumpWrapperHelper( void *arg )
 {
 	MinidumpWrapperHelper_t *info = (MinidumpWrapperHelper_t *)arg;
-	info->m_iRetVal = info->m_pfn( info->m_pParam );
+	__try
+	{
+		info->m_iRetVal = info->m_pfn( info->m_pParam );
+	}
+	__except ( CrashRecovery_Filter( GetExceptionInformation() ) )
+	{
+	}
 }
 
 static int WrapFunctionWithMinidumpHandler( int (*pfn)(void *pParam), void *pParam )
 {
-	int nRetVal;
+	MinidumpWrapperHelper_t info;
+	info.m_pfn = pfn;
+	info.m_pParam = pParam;
+	info.m_iRetVal = 0;
 
 	if ( !Plat_IsInDebugSession() && !CommandLine()->FindParm( "-nominidumps") )
 	{
-		MinidumpWrapperHelper_t info;
-		info.m_pfn = pfn;
-		info.m_pParam = pParam;
-		info.m_iRetVal = 0;
 		CatchAndWriteMiniDumpForVoidPtrFn( MinidumpWrapperHelper, &info, true );
-		nRetVal = info.m_iRetVal;
 	}
 	else
 	{
-		nRetVal = pfn( pParam );
+		MinidumpWrapperHelper( &info );
 	}
 
-	return nRetVal;
+	return info.m_iRetVal;
 }
 
 
@@ -491,7 +581,7 @@ bool CHammer::Connect( CreateInterfaceFn factory )
 	// Load the options
 	// NOTE: Have to do this now, because we need it before Inits() are called 
 	// NOTE: SetRegistryKey will cause hammer to look into the registry for its values
-	SetRegistryKey("Valve");
+	SetHammerRegistryKey();
 	Options.Init();
 	return true;
 }
@@ -592,7 +682,22 @@ void CHammer::BeginImportVHESettings(void)
 void CHammer::EndImportSettings(void)
 {
 	m_pszAppName = s_pszOldAppName;
+	SetHammerRegistryKey();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: The window title is "Worldcraft", but settings stay under
+//			HKCU\Software\Valve\Hammer so existing options and game configs
+//			are still found. SetRegistryKey copies m_pszAppName into the
+//			profile name, so swap it just for that call.
+//-----------------------------------------------------------------------------
+void CHammer::SetHammerRegistryKey(void)
+{
+	const char *pszDisplayName = m_pszAppName;
+	m_pszAppName = "Hammer";
 	SetRegistryKey("Valve");
+	m_pszAppName = pszDisplayName;
 }
 
 
@@ -991,7 +1096,7 @@ bool CHammer::Check16BitColor()
 		int bpp = GetDeviceCaps(hDC, BITSPIXEL);
 		if (bpp < 15)
 		{
-			AfxMessageBox("Your screen must be in 16-bit color or higher to run Hammer.");
+			AfxMessageBox("Your screen must be in 16-bit color or higher to run Worldcraft.");
 			return false;
 		}
 		::DeleteDC(hDC);
@@ -1049,7 +1154,7 @@ InitReturnVal_t CHammer::HammerInternalInit()
     // Register it, exit if it fails    
 	if(!AfxRegisterClass(&wndcls))
 	{
-		AfxMessageBox("Could not register Hammer's main window class");
+		AfxMessageBox("Could not register Worldcraft's main window class");
 		return INIT_FAILED;
 	}
 
@@ -1203,7 +1308,7 @@ InitReturnVal_t CHammer::HammerInternalInit()
 		if ( strLastGoodSave.GetLength() != 0 )
 		{
 			char msg[1024];
-			V_snprintf( msg, sizeof( msg ), "Hammer did not shut down correctly the last time it was used.\nWould you like to load the last saved file?\n(%s)", (const char*)strLastGoodSave );
+			V_snprintf( msg, sizeof( msg ), "Worldcraft did not shut down correctly the last time it was used.\nWould you like to load the last saved file?\n(%s)", (const char*)strLastGoodSave );
 			if ( AfxMessageBox( msg, MB_YESNO ) == IDYES )
 			{
 				LoadLastGoodSave();

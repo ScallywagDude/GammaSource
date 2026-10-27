@@ -1952,7 +1952,7 @@ bool Morph3D::OnLMouseUp3D(CMapView3D *pView, UINT nFlags, const Vector2D &vPoin
 // Purpose: Snap the selected handles to the grid
 // Input  : 
 //-----------------------------------------------------------------------------
-void Morph3D::SnapSelectedToGrid( int nGridSpacing )
+void Morph3D::SnapSelectedToGrid( float nGridSpacing )
 {
 	CUtlVector<MORPHHANDLE> vecHandles;
 	

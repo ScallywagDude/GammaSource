@@ -304,6 +304,7 @@ class COP_Entity : public CObjectPage, CFilteredComboBox::ICallbacks, public CCo
 		afx_msg void OnCameraDistance(void);
 		afx_msg void OnItemChangedKeyValues(NMHDR* pNMHDR, LRESULT* pResult);
 		afx_msg void OnDblClickKeyValues(NMHDR* pNMHDR, LRESULT* pResult);
+		afx_msg void OnRClickKeyValues(NMHDR* pNMHDR, LRESULT* pResult);
 		//}}AFX_MSG
 
 		void BrowseTextures( const char *szFilter, bool bIsSprite = false ); 

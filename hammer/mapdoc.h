@@ -350,7 +350,8 @@ class CMapDoc : public CDocument
 		inline MAPFORMAT GetMapFormat(void);
 		inline CMapWorld *GetMapWorld(void);
 		inline CGameConfig *GetGame(void);
-		inline int GetGridSpacing(void) { return(max(m_nGridSpacing, 1)); }
+		// Float so the Hammer++ microgrid (0.125, 0.25, 0.5) works.
+		inline float GetGridSpacing(void) { return( (m_flGridSpacing > 0) ? m_flGridSpacing : 1.0f ); }
 
 		inline CHistory *GetDocHistory(void);
 
@@ -538,7 +539,7 @@ class CMapDoc : public CDocument
 		// Tools:
 		CToolManager *m_pToolManager;
 
-		int m_nGridSpacing;
+		float m_flGridSpacing;
 
 		bool m_bDispSolidDrawMask;
 		bool m_bDispDrawWalkable;
@@ -696,6 +697,9 @@ class CMapDoc : public CDocument
 		afx_msg void OnFileSave();
 		afx_msg void OnMapGridlower();
 		afx_msg void OnMapGridhigher();
+		afx_msg void OnMapSetGridSize();
+		afx_msg void OnMapToggleMicrogrid();
+		afx_msg void OnUpdateMapToggleMicrogrid(CCmdUI *pCmdUI);
 		afx_msg void OnEditToworld();
 		afx_msg void OnEditToWorld();
 		afx_msg void OnFileExport();
@@ -721,6 +725,7 @@ class CMapDoc : public CDocument
 		afx_msg void OnViewCenterOnSelection();
 		afx_msg void OnViewCenter3DViewsOnSelection();
 		afx_msg BOOL OnViewHideObjects(UINT nID);
+		afx_msg void OnViewShowHiddenObjects();
 		afx_msg void OnQuickHide_HideObjects();
 		afx_msg void OnQuickHide_HideUnselectedObjects();
 		afx_msg void OnQuickHide_Unhide();
@@ -736,6 +741,12 @@ class CMapDoc : public CDocument
 		afx_msg void OnCollisionWireframe();
 		afx_msg void OnShowDetailObjects();
 		afx_msg void OnShowNoDrawBrushes();
+		afx_msg BOOL OnToolsMoveToSurface(UINT nID);
+		afx_msg void OnToolsMergeSolids();
+		afx_msg void OnToggleToolTextures();
+		afx_msg void OnUpdateToggleToolTextures(CCmdUI *pCmdUI);
+		afx_msg void OnToggleEditorObjects();
+		afx_msg void OnUpdateToggleEditorObjects(CCmdUI *pCmdUI);
 		afx_msg void OnRadiusCulling();
 		afx_msg void OnUpdateRadiusCulling(CCmdUI *pCmdUI);
 

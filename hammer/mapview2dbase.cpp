@@ -380,6 +380,64 @@ bool CMapView2DBase::HighlightGridLine( CRender2D *pRender, int nGridLine )
 
 
 //-----------------------------------------------------------------------------
+// Purpose: Hammer++ microgrid: draws a grid whose spacing isn't a whole number.
+//			Always lines (no dots). Lines on whole-number coordinates still get
+//			the usual axis / 64 / 1024 highlights.
+//-----------------------------------------------------------------------------
+void CMapView2DBase::DrawGridFractional( CRender2D *pRender, int xAxis, int yAxis, float depth, bool bNoSmallGrid, float flGridSpacing )
+{
+	s_bGridDots = false;
+	s_iCustomGridSpacing = max( (int)( flGridSpacing * Options.view2d.iGridHighSpec ), 1 );
+
+	float flXMin = max( g_MIN_MAP_COORD, m_ViewMin[xAxis] - flGridSpacing );
+	float flXMax = min( g_MAX_MAP_COORD, m_ViewMax[xAxis] + flGridSpacing );
+	float flYMin = max( g_MIN_MAP_COORD, m_ViewMin[yAxis] - flGridSpacing );
+	float flYMax = min( g_MAX_MAP_COORD, m_ViewMax[yAxis] + flGridSpacing );
+
+	// Work in whole grid steps so float error doesn't build up along the view.
+	int nXFirst = (int)ceil( flXMin / flGridSpacing );
+	int nXLast = (int)floor( flXMax / flGridSpacing );
+	int nYFirst = (int)ceil( flYMin / flGridSpacing );
+	int nYLast = (int)floor( flYMax / flGridSpacing );
+
+	Vector vPointMin( depth, depth, depth );
+	Vector vPointMax( depth, depth, depth );
+
+	vPointMin[xAxis] = nXFirst * flGridSpacing;
+	vPointMax[xAxis] = nXLast * flGridSpacing;
+
+	for ( int nY = nYFirst; nY <= nYLast; nY++ )
+	{
+		float y = nY * flGridSpacing;
+		pRender->SetDrawColor( m_clrGrid );
+
+		bool bHighlight = ( y == (int)y ) && HighlightGridLine( pRender, (int)y );
+		if ( !bHighlight && bNoSmallGrid )
+			continue;
+
+		vPointMin[yAxis] = vPointMax[yAxis] = y;
+		pRender->DrawLine( vPointMin, vPointMax );
+	}
+
+	vPointMin[yAxis] = nYFirst * flGridSpacing;
+	vPointMax[yAxis] = nYLast * flGridSpacing;
+
+	for ( int nX = nXFirst; nX <= nXLast; nX++ )
+	{
+		float x = nX * flGridSpacing;
+		pRender->SetDrawColor( m_clrGrid );
+
+		bool bHighlight = ( x == (int)x ) && HighlightGridLine( pRender, (int)x );
+		if ( !bHighlight && bNoSmallGrid )
+			continue;
+
+		vPointMin[xAxis] = vPointMax[xAxis] = x;
+		pRender->DrawLine( vPointMin, vPointMax );
+	}
+}
+
+
+//-----------------------------------------------------------------------------
 // Purpose: Draws the grid, using dots or lines depending on the user setting.
 // Input  : pDC - Device context to draw in.
 //-----------------------------------------------------------------------------
@@ -391,18 +449,27 @@ void CMapView2DBase::DrawGrid(CRender2D *pRender, int xAxis, int yAxis, float de
 		return;
 	
 	// Check for too small grid.
-	int nGridSpacing = pDoc->GetGridSpacing();
+	float flGridSpacing = pDoc->GetGridSpacing();
 
 	// never allow a grid spacing samller then 2 pixel
-	while ( ((float)nGridSpacing * m_fZoom) < 2.0f )
+	while ( (flGridSpacing * m_fZoom) < 2.0f )
 	{
-		nGridSpacing*=2;
+		flGridSpacing*=2;
 	}
 
-	if ((((float)nGridSpacing * m_fZoom) < 4.0f) && Options.view2d.bHideSmallGrid)
+	if (((flGridSpacing * m_fZoom) < 4.0f) && Options.view2d.bHideSmallGrid)
 	{
 		bNoSmallGrid = true;
 	}
+
+	// Hammer++ microgrid: fractional grids (0.125, 1.5...) use a float path.
+	if ( flGridSpacing != (int)flGridSpacing )
+	{
+		DrawGridFractional( pRender, xAxis, yAxis, depth, bNoSmallGrid, flGridSpacing );
+		return;
+	}
+
+	int nGridSpacing = (int)flGridSpacing;
 
 	// No dots if too close together.
 	s_bGridDots = Options.view2d.bGridDots;

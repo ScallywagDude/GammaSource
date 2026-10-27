@@ -156,6 +156,120 @@ LPCTSTR GetErrorString()
 	return szBuf;
 }
 
+//-----------------------------------------------------------------------------
+// Purpose: Makes a command line safe to put in a .bat file.
+//-----------------------------------------------------------------------------
+static CString BatchEscape(const char *pszText)
+{
+	CString str(pszText);
+	str.Replace("%", "%%");
+	return str;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ style compile: adds one compile step to a batch file that
+//			runs in its own console window, so the editor doesn't freeze.
+//-----------------------------------------------------------------------------
+static void AppendCommandToBatch(CString &strBatch, CCOMMAND &cmd, const char *pszRun, const char *pszParms)
+{
+	CString strRun = BatchEscape(pszRun);
+	CString strParms = BatchEscape(pszParms);
+
+	CString strLine;
+	strLine.Format("echo.\r\necho ** Executing...\r\necho ** Command: %s\r\necho ** Parameters: %s\r\necho.\r\n",
+		(const char *)strRun, (const char *)strParms);
+	strBatch += strLine;
+
+	if (cmd.iSpecialCmd == CCCopyFile)
+	{
+		strLine.Format("copy /y %s\r\n", (const char *)strParms);
+	}
+	else if (cmd.iSpecialCmd == CCDelFile)
+	{
+		strLine.Format("del %s\r\n", (const char *)strParms);
+	}
+	else if (cmd.iSpecialCmd == CCRenameFile)
+	{
+		strLine.Format("move /y %s\r\n", (const char *)strParms);
+	}
+	else if (cmd.iSpecialCmd == CCChangeDir)
+	{
+		strLine.Format("cd /d %s\r\n", (const char *)strParms);
+	}
+	else if (!cmd.bUseProcessWnd)
+	{
+		// The game: start it without waiting, from its own folder (Steam needs that).
+		char szDir[MAX_PATH];
+		Q_strncpy(szDir, pszRun, sizeof(szDir));
+		RemoveQuotes(szDir);
+		Q_StripFilename(szDir);
+		strLine.Format("start \"\" /d \"%s\" %s %s\r\n", (const char *)BatchEscape(szDir), (const char *)strRun, (const char *)strParms);
+	}
+	else
+	{
+		strLine.Format("%s %s\r\n", (const char *)strRun, (const char *)strParms);
+	}
+	strBatch += strLine;
+
+	if (cmd.bEnsureCheck)
+	{
+		char szFile[MAX_PATH];
+		FixGameVars(cmd.szEnsureFn, szFile, FALSE);
+		CString strFile = BatchEscape(szFile);
+		strLine.Format("if not exist \"%s\" (\r\n  echo.\r\n  echo ** The file '%s' was not built. Stopping.\r\n  pause\r\n  exit /b 1\r\n)\r\n",
+			(const char *)strFile, (const char *)strFile);
+		strBatch += strLine;
+	}
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Writes the batch file and starts it in a new console window.
+//-----------------------------------------------------------------------------
+static bool LaunchBatchInConsole(const CString &strBatch, const char *pszDocName)
+{
+	char szTempDir[MAX_PATH];
+	if (!GetTempPath(sizeof(szTempDir), szTempDir))
+	{
+		return false;
+	}
+
+	char szBatchFile[MAX_PATH];
+	Q_snprintf(szBatchFile, sizeof(szBatchFile), "%sworldcraft_compile_%s.bat", szTempDir, pszDocName);
+
+	FILE *fp = fopen(szBatchFile, "wb");
+	if (!fp)
+	{
+		return false;
+	}
+
+	CString strFull;
+	strFull.Format("@echo off\r\ntitle Worldcraft - compiling %s\r\n%s\r\necho.\r\necho ** Compile finished.\r\npause\r\n",
+		(const char *)BatchEscape(pszDocName), (const char *)strBatch);
+	fwrite((const char *)strFull, 1, strFull.GetLength(), fp);
+	fclose(fp);
+
+	char szCmdLine[MAX_PATH * 2];
+	Q_snprintf(szCmdLine, sizeof(szCmdLine), "cmd.exe /c \"\"%s\"\"", szBatchFile);
+
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+	memset(&si, 0, sizeof(si));
+	si.cb = sizeof(si);
+	memset(&pi, 0, sizeof(pi));
+
+	if (!CreateProcess(NULL, szCmdLine, NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi))
+	{
+		return false;
+	}
+
+	CloseHandle(pi.hThread);
+	CloseHandle(pi.hProcess);
+	return true;
+}
+
+
 bool RunCommands(CCommandArray& Commands, LPCTSTR pszOrigDocName)
 {
 	s_bRunsCommands = true;
@@ -163,7 +277,18 @@ bool RunCommands(CCommandArray& Commands, LPCTSTR pszOrigDocName)
 	char szCurDir[MAX_PATH];
 	_getcwd(szCurDir, MAX_PATH);
 
-	procWnd.GetReady();
+	// Hammer++ compiles in its own console window. Set General\CompileInSeparateWindow
+	// to 0 in the registry to get the old built-in process window back.
+	bool bConsole = APP()->GetProfileInt("General", "CompileInSeparateWindow", 1) != 0;
+	CString strBatch;
+	if (bConsole)
+	{
+		strBatch.Format("cd /d \"%s\"\r\n", (const char *)BatchEscape(szCurDir));
+	}
+	else
+	{
+		procWnd.GetReady();
+	}
 
 	// cut up document name into file and extension components.
 	//  create two sets of buffers - one set with the long filename
@@ -240,6 +365,12 @@ bool RunCommands(CCommandArray& Commands, LPCTSTR pszOrigDocName)
 
 		FixGameVars(cmd.szRun, szNewRun, TRUE);
 		FixGameVars(cmd.szParms, szNewParms, TRUE);
+
+		if (bConsole)
+		{
+			AppendCommandToBatch(strBatch, cmd, szNewRun, szNewParms);
+			continue;
+		}
 
 		CString strTmp;
 		strTmp.Format("\r\n"
@@ -407,6 +538,11 @@ bool RunCommands(CCommandArray& Commands, LPCTSTR pszOrigDocName)
 					break;	// outta here
 			}
 		}
+	}
+
+	if (bConsole && !LaunchBatchInConsole(strBatch, szDocLongName))
+	{
+		AfxMessageBox("Worldcraft couldn't start the compile window.");
 	}
 
 	mychdir(szCurDir);

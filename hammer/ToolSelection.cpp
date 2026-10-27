@@ -1761,6 +1761,15 @@ bool Selection3D::OnLMouseDown3D(CMapView3D *pView, UINT nFlags, const Vector2D 
 
 	if (nFlags & MK_CONTROL)
 	{
+		m_CtrlDragPicked.RemoveAll();
+
+		HitInfo_t HitData;
+		pView->ObjectsAt( vPoint, &HitData, 1 );
+		if ( HitData.pObject )
+		{
+			m_CtrlDragPicked.AddToTail( HitData.pObject );
+		}
+
 		m_bSelected = pView->SelectAt(vPoint, false, false);;
 		UpdateHandleState();
 	}
@@ -1872,6 +1881,24 @@ bool Selection3D::OnMouseMove3D(CMapView3D *pView, UINT nFlags, const Vector2D &
 	if ( m_bEyedropper )
 	{
 		SetEyedropperCursor();
+	}
+	//
+	// Hammer++ Ctrl+drag select: while Ctrl and the left button are held, add
+	// everything that passes under the cursor to the selection. Each object is
+	// only picked once per drag so it doesn't toggle back off.
+	//
+	else if ( ( nFlags & MK_CONTROL ) && ( nFlags & MK_LBUTTON ) && !IsTranslating() )
+	{
+		HitInfo_t HitData;
+		pView->ObjectsAt( vPoint, &HitData, 1 );
+		if ( HitData.pObject && !HitData.pObject->IsSelected() && ( m_CtrlDragPicked.Find( HitData.pObject ) == m_CtrlDragPicked.InvalidIndex() ) )
+		{
+			m_CtrlDragPicked.AddToTail( HitData.pObject );
+			if ( pView->SelectAt( vPoint, false, false ) )
+			{
+				UpdateHandleState();
+			}
+		}
 	}
 	//
 	// If we are currently dragging the selection (moving, scaling, rotating, or shearing)

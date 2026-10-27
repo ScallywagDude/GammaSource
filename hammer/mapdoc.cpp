@@ -145,6 +145,10 @@ BEGIN_MESSAGE_MAP(CMapDoc, CDocument)
 	ON_COMMAND(ID_FILE_SAVE, OnFileSave)
 	ON_COMMAND(ID_MAP_GRIDLOWER, OnMapGridlower)
 	ON_COMMAND(ID_MAP_GRIDHIGHER, OnMapGridhigher)
+	ON_COMMAND(ID_MAP_SETGRIDSIZE, OnMapSetGridSize)
+	ON_COMMAND(ID_MAP_TOGGLEMICROGRID, OnMapToggleMicrogrid)
+	ON_UPDATE_COMMAND_UI(ID_MAP_TOGGLEMICROGRID, OnUpdateMapToggleMicrogrid)
+	ON_COMMAND(ID_TOOLS_MERGESOLIDS, OnToolsMergeSolids)
 	ON_COMMAND(ID_EDIT_TOWORLD, OnEditToWorld)
 	ON_UPDATE_COMMAND_UI(ID_EDIT_TOWORLD, OnUpdateEditSelection)
 	ON_COMMAND(ID_FILE_EXPORT, OnFileExport)
@@ -174,6 +178,7 @@ BEGIN_MESSAGE_MAP(CMapDoc, CDocument)
 	ON_COMMAND(ID_LOGICALOBJECT_SELECTALLCASCADING, OnLogicalSelectAllCascading)	
 	ON_COMMAND(ID_LOGICALOBJECT_SELECTALLCONNECTED, OnLogicalSelectAllConnected)	
 	ON_COMMAND_EX(ID_VIEW_HIDESELECTEDOBJECTS, OnViewHideObjects)
+	ON_COMMAND(ID_VIEW_SHOWHIDDENOBJECTS, OnViewShowHiddenObjects)
 	ON_COMMAND(ID_MAP_CHECK, OnMapCheck)
 	ON_COMMAND(ID_VIEW_SHOWCONNECTIONS, OnViewShowconnections)
 	ON_UPDATE_COMMAND_UI(ID_VIEW_SHOWCONNECTIONS, OnUpdateViewShowconnections)
@@ -215,6 +220,12 @@ BEGIN_MESSAGE_MAP(CMapDoc, CDocument)
 	ON_UPDATE_COMMAND_UI(ID_SHOW_DETAIL_OBJECTS, OnUpdateShowDetailObjects)
 	ON_COMMAND(ID_SHOW_NODRAW_BRUSHES, OnShowNoDrawBrushes)
 	ON_UPDATE_COMMAND_UI(ID_SHOW_NODRAW_BRUSHES, OnUpdateShowNoDrawBrushes)
+	ON_COMMAND_EX(ID_TOOLS_MOVE_TO_FLOOR, OnToolsMoveToSurface)
+	ON_COMMAND_EX(ID_TOOLS_MOVE_TO_CEILING, OnToolsMoveToSurface)
+	ON_COMMAND(ID_VIEW_TOGGLE_TOOLTEXTURES, OnToggleToolTextures)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_TOGGLE_TOOLTEXTURES, OnUpdateToggleToolTextures)
+	ON_COMMAND(ID_VIEW_TOGGLE_EDITOROBJECTS, OnToggleEditorObjects)
+	ON_UPDATE_COMMAND_UI(ID_VIEW_TOGGLE_EDITOROBJECTS, OnUpdateToggleEditorObjects)
 	ON_COMMAND(ID_TOGGLE_GROUPIGNORE, OnToggleGroupignore)
 	ON_UPDATE_COMMAND_UI(ID_TOGGLE_GROUPIGNORE, OnUpdateToggleGroupignore)
 	ON_COMMAND(ID_VSCALE_TOGGLE, OnVscaleToggle)
@@ -445,7 +456,7 @@ CMapDoc::CMapDoc(void)
 	m_bSnapToGrid = true;
 	m_bShowGrid = true;
 	m_bShowLogicalGrid = false;
-	m_nGridSpacing = Options.view2d.iDefaultGrid;
+	m_flGridSpacing = Options.view2d.iDefaultGrid;
 	m_bShow3DGrid = false;
 
 	m_tShowInstance = INSTANCES_SHOW_TINTED;
@@ -1688,7 +1699,11 @@ ChunkFileResult_t CMapDoc::LoadViewSettingsKeyCallback(const char *szKey, const 
 	KeyBool( "bSnapToGrid", pDoc->m_bSnapToGrid);
 	KeyBool( "bShowGrid", pDoc->m_bShowGrid);
 	KeyBool( "bShowLogicalGrid", pDoc->m_bShowLogicalGrid);
-	KeyInt( "nGridSpacing", pDoc->m_nGridSpacing);
+	if ( !stricmp( szKey, "nGridSpacing" ) )
+	{
+		// Read as float: microgrid maps store e.g. "0.25".
+		CChunkFile::ReadKeyValueFloat( szValue, pDoc->m_flGridSpacing );
+	}
 	KeyBool( "bShow3DGrid", pDoc->m_bShow3DGrid);
 
 	return(ChunkFile_Ok);
@@ -2355,7 +2370,7 @@ BOOL CMapDoc::SelectDocType(void)
 	//		APP()->OpenURL(ID_HELP_FIRST_TIME_SETUP, GetMainWnd()->GetSafeHwnd());
 	//	}
 	//
-	//	COptionProperties dlg("Configure Hammer", NULL, 0);
+	//	COptionProperties dlg("Configure Worldcraft", NULL, 0);
 	//	dlg.DoModal();
 	//	if (Options.configs.nConfigs == 0)
 	//	{
@@ -2381,7 +2396,7 @@ BOOL CMapDoc::SelectDocType(void)
 	{
 		AfxMessageBox(IDS_NO_TEXTURES_AVAILABLE);
 
-		COptionProperties dlg("Configure Hammer", NULL, 0);
+		COptionProperties dlg("Configure Worldcraft", NULL, 0);
 		dlg.DoModal();
 
 		if (!g_Textures.HasTexturesForConfig(pGame))
@@ -3233,7 +3248,7 @@ BOOL CMapDoc::OnSaveDocument(LPCTSTR lpszPathName)
 			DWORD dwError = GetLastError();
 
 			char szError[_MAX_PATH];
-			wsprintf(szError, "Hammer was unable to backup the existing file \"%s\" (Error: 0x%lX). Please verify that the there is space on the hard drive and that the path still exists.", lpszPathName, dwError);
+			wsprintf(szError, "Worldcraft was unable to backup the existing file \"%s\" (Error: 0x%lX). Please verify that the there is space on the hard drive and that the path still exists.", lpszPathName, dwError);
 			AfxMessageBox(szError);
 			return(FALSE);
 		}
@@ -3278,7 +3293,7 @@ BOOL CMapDoc::OnSaveDocument(LPCTSTR lpszPathName)
 	if (!file.is_open())
 	{
 		char szError[_MAX_PATH];
-		wsprintf(szError, "Hammer was unable to open the file \"%s\" for writing. Please verify that the file is writable and that the path exists.", lpszPathName);
+		wsprintf(szError, "Worldcraft was unable to open the file \"%s\" for writing. Please verify that the file is writable and that the path exists.", lpszPathName);
 		AfxMessageBox(szError);
 		return(FALSE);
 	}
@@ -4024,7 +4039,7 @@ void CMapDoc::OnMapSnaptogrid(void)
 void CMapDoc::UpdateStatusBarSnap(void)
 {
 	CString strSnap;
-	strSnap.Format(" Snap: %s Grid: %d ", m_bSnapToGrid ? "On" : "Off", m_nGridSpacing);
+	strSnap.Format(" Snap: %s Grid: %g ", m_bSnapToGrid ? "On" : "Off", m_flGridSpacing);
 	SetStatusText(SBI_SNAP, strSnap);
 }
 
@@ -5546,30 +5561,140 @@ void CMapDoc::OnUpdateFileSave(CCmdUI *pCmdUI)
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+// Hammer++ microgrid: with it on, the grid can go down to 1/8 unit.
+#define MICROGRID_MIN_SPACING	0.125f
+
+static float GetMinGridSpacing(void)
+{
+	return Options.general.bMicrogrid ? MICROGRID_MIN_SPACING : 1.0f;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose:
+//-----------------------------------------------------------------------------
 void CMapDoc::OnMapGridlower(void)
 {
-	if (m_nGridSpacing <= 1)
+	if (m_flGridSpacing <= GetMinGridSpacing())
 	{
 		return;
 	}
 
-	m_nGridSpacing = m_nGridSpacing / 2;
+	if (Options.general.bMicrogrid)
+	{
+		m_flGridSpacing = max(m_flGridSpacing / 2, MICROGRID_MIN_SPACING);
+	}
+	else
+	{
+		// Without the microgrid, stay on whole units (e.g. 5 -> 2, like before).
+		m_flGridSpacing = max((float)(int)(m_flGridSpacing / 2), 1.0f);
+	}
+
 	UpdateAllViews( MAPVIEW_OPTIONS_CHANGED );
 	UpdateStatusBarSnap();
 }
 
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose:
 //-----------------------------------------------------------------------------
 void CMapDoc::OnMapGridhigher(void)
 {
-	if(m_nGridSpacing >= 512)
+	if(m_flGridSpacing >= 512)
 		return;
 
-	m_nGridSpacing = m_nGridSpacing * 2;
+	m_flGridSpacing = m_flGridSpacing * 2;
 	UpdateAllViews( MAPVIEW_OPTIONS_CHANGED );
 	UpdateStatusBarSnap();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ "Set Grid Size": lets the grid be any size, not just a
+//			power of two (e.g. 80 units). Decimals need the microgrid.
+//-----------------------------------------------------------------------------
+void CMapDoc::OnMapSetGridSize(void)
+{
+	char szBuf[32];
+	V_snprintf(szBuf, sizeof(szBuf), "%g", m_flGridSpacing);
+
+	// The spin control only does whole numbers, so drop it when decimals are allowed.
+	CStrDlg dlg(Options.general.bMicrogrid ? 0 : CStrDlg::Spin, szBuf, "Grid size (in units):", "Set Grid Size");
+	dlg.SetRange(1, 8192, 1);
+	if (dlg.DoModal() == IDCANCEL)
+	{
+		return;
+	}
+
+	float flGridSpacing = atof(dlg.m_string);
+	if (flGridSpacing < GetMinGridSpacing())
+	{
+		if (Options.general.bMicrogrid)
+		{
+			AfxMessageBox("The smallest grid size is 0.125 units.");
+		}
+		else
+		{
+			AfxMessageBox("You can't set a grid size lower than 1 unit unless you have the microgrid enabled (Map > Grid Settings).");
+		}
+		return;
+	}
+
+	if (flGridSpacing > 8192)
+	{
+		AfxMessageBox("Invalid grid size specified! Maximum size is 8192");
+		return;
+	}
+
+	if (!Options.general.bMicrogrid)
+	{
+		flGridSpacing = (float)(int)flGridSpacing;
+	}
+
+	m_flGridSpacing = flGridSpacing;
+	UpdateAllViews( MAPVIEW_OPTIONS_CHANGED );
+	UpdateStatusBarSnap();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ microgrid toggle (Map > Grid Settings > Enable Microgrid).
+//			Turning it off snaps any open map's sub-unit grid back to 1.
+//-----------------------------------------------------------------------------
+void CMapDoc::OnMapToggleMicrogrid(void)
+{
+	if (!Options.general.bMicrogrid)
+	{
+		if (AfxMessageBox("Enabling the microgrid might not be a good idea. Only use the microgrid if you know what you are doing!\n\n"
+						  "Grid sizes under 1 unit can put brush vertices off the integer grid, which can cause compile errors.\n\n"
+						  "Enable the microgrid?", MB_YESNO | MB_ICONWARNING) != IDYES)
+		{
+			return;
+		}
+	}
+
+	Options.general.bMicrogrid = !Options.general.bMicrogrid;
+	APP()->WriteProfileInt("General", "Microgrid", Options.general.bMicrogrid);
+
+	if (!Options.general.bMicrogrid)
+	{
+		for (int i = 0; i < GetDocumentCount(); i++)
+		{
+			CMapDoc *pDoc = GetDocument(i);
+			if (pDoc->m_flGridSpacing != (int)pDoc->m_flGridSpacing)
+			{
+				pDoc->m_flGridSpacing = max((float)(int)pDoc->m_flGridSpacing, 1.0f);
+				pDoc->UpdateAllViews( MAPVIEW_OPTIONS_CHANGED );
+				pDoc->UpdateStatusBarSnap();
+			}
+		}
+	}
+}
+
+
+void CMapDoc::OnUpdateMapToggleMicrogrid(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck(Options.general.bMicrogrid ? 1 : 0);
 }
 
 
@@ -6589,7 +6714,7 @@ void CMapDoc::OnToolsHollow(void)
 	static int iWallWidth = 32;
 	char szBuf[128];
 	itoa(iWallWidth, szBuf, 10);
-	CStrDlg dlg(CStrDlg::Spin, szBuf, "How thick do you want the walls? Use a negative number to hollow outward.", "Hammer");
+	CStrDlg dlg(CStrDlg::Spin, szBuf, "How thick do you want the walls? Use a negative number to hollow outward.", "Worldcraft");
 	dlg.SetRange(-1024, 1024, 4);
 	if (dlg.DoModal() == IDCANCEL)
 	{
@@ -6742,7 +6867,209 @@ void CMapDoc::OnToolsHollow(void)
 
 
 //-----------------------------------------------------------------------------
-// Purpose: 
+// Purpose: Returns true if two planes are the same plane facing the same way
+//			(bOpposite = false) or the same plane facing the other way (true).
+//-----------------------------------------------------------------------------
+static bool MergePlanesMatch(const PLANE &a, const PLANE &b, bool bOpposite)
+{
+	const float flNormalEpsilon = 0.001f;
+	const float flDistEpsilon = 0.01f;
+	float flSign = bOpposite ? -1.0f : 1.0f;
+
+	return (fabs(a.normal.x - flSign * b.normal.x) < flNormalEpsilon) &&
+		   (fabs(a.normal.y - flSign * b.normal.y) < flNormalEpsilon) &&
+		   (fabs(a.normal.z - flSign * b.normal.z) < flNormalEpsilon) &&
+		   (fabs(a.dist - flSign * b.dist) < flDistEpsilon);
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ merge tool (Ctrl+Shift+M): replaces the selected solids
+//			with one solid, if together they form a convex shape.
+//
+//			Faces two solids share (same plane, facing each other) are inside
+//			the result and are dropped. The rest are rebuilt into one solid.
+//			Every vertex of the original solids must lie inside that solid,
+//			otherwise the shape wasn't convex and nothing is changed.
+//-----------------------------------------------------------------------------
+void CMapDoc::OnToolsMergeSolids(void)
+{
+	if (m_pSelection->IsEmpty())
+		return;
+
+	//
+	// Gather the solids: selected solids, plus the solids inside selected
+	// brush entities and groups.
+	//
+	CUtlVector<CMapSolid *> Solids;
+	const CMapObjectList *pSelList = m_pSelection->GetList();
+	for (int i = 0; i < pSelList->Count(); i++)
+	{
+		CMapClass *pObject = pSelList->Element(i);
+
+		CMapSolid *pSolid = dynamic_cast<CMapSolid *>(pObject);
+		if (pSolid != NULL)
+		{
+			Solids.AddToTail(pSolid);
+			continue;
+		}
+
+		EnumChildrenPos_t pos;
+		CMapClass *pChild = pObject->GetFirstDescendent(pos);
+		while (pChild != NULL)
+		{
+			pSolid = dynamic_cast<CMapSolid *>(pChild);
+			if (pSolid != NULL)
+			{
+				Solids.AddToTail(pSolid);
+			}
+			pChild = pObject->GetNextDescendent(pos);
+		}
+	}
+
+	if (Solids.Count() < 2)
+	{
+		AfxMessageBox("You must select two or more solids to merge.");
+		return;
+	}
+
+	CMapClass *pParent = Solids[0]->GetParent();
+	for (int i = 0; i < Solids.Count(); i++)
+	{
+		if (Solids[i]->GetParent() != pParent)
+		{
+			AfxMessageBox("All the solids must be in the same entity or group to merge them.");
+			return;
+		}
+
+		for (int nFace = 0; nFace < Solids[i]->GetFaceCount(); nFace++)
+		{
+			if (Solids[i]->GetFace(nFace)->HasDisp())
+			{
+				AfxMessageBox("Solids with displacements can't be merged.");
+				return;
+			}
+		}
+	}
+
+	//
+	// Build the merged solid from every face that isn't shared with another
+	// selected solid. Keep the first face found on each plane (and its texture).
+	//
+	CMapSolid *pMerged = new CMapSolid;
+	pMerged->CopyFrom(Solids[0], false);	// color, visgroups etc. from the first solid
+	pMerged->SetParent(NULL);
+	pMerged->SetFaceCount(0);
+
+	bool bFoundShared = false;
+	for (int i = 0; i < Solids.Count(); i++)
+	{
+		for (int nFace = 0; nFace < Solids[i]->GetFaceCount(); nFace++)
+		{
+			CMapFace *pFace = Solids[i]->GetFace(nFace);
+
+			bool bInternal = false;
+			for (int j = 0; (j < Solids.Count()) && !bInternal; j++)
+			{
+				if (j == i)
+					continue;
+
+				for (int nOther = 0; nOther < Solids[j]->GetFaceCount(); nOther++)
+				{
+					if (MergePlanesMatch(pFace->plane, Solids[j]->GetFace(nOther)->plane, true))
+					{
+						bInternal = true;
+						break;
+					}
+				}
+			}
+
+			if (bInternal)
+			{
+				bFoundShared = true;
+				continue;
+			}
+
+			bool bDuplicate = false;
+			for (int nKept = 0; nKept < pMerged->GetFaceCount(); nKept++)
+			{
+				if (MergePlanesMatch(pFace->plane, pMerged->GetFace(nKept)->plane, false))
+				{
+					bDuplicate = true;
+					break;
+				}
+			}
+
+			if (!bDuplicate)
+			{
+				if (pMerged->GetFaceCount() >= MAPSOLID_MAX_FACES)
+				{
+					delete pMerged;
+					AfxMessageBox("The merged solid would have too many faces.");
+					return;
+				}
+
+				pMerged->AddFace(pFace);
+			}
+		}
+	}
+
+	if (!bFoundShared || !pMerged->CreateFromPlanes())
+	{
+		delete pMerged;
+		AfxMessageBox("Cannot create merged brush from concave shape");
+		return;
+	}
+
+	//
+	// The merge is only exact if the original solids fill the new solid, which
+	// is true when none of their vertices stick out of it.
+	//
+	for (int i = 0; i < Solids.Count(); i++)
+	{
+		for (int nFace = 0; nFace < Solids[i]->GetFaceCount(); nFace++)
+		{
+			CMapFace *pFace = Solids[i]->GetFace(nFace);
+			for (int nPoint = 0; nPoint < pFace->nPoints; nPoint++)
+			{
+				for (int nKept = 0; nKept < pMerged->GetFaceCount(); nKept++)
+				{
+					const PLANE &plane = pMerged->GetFace(nKept)->plane;
+					if (plane.normal.Dot(pFace->Points[nPoint]) - plane.dist > 0.1f)
+					{
+						delete pMerged;
+						AfxMessageBox("Cannot create merged brush from concave shape");
+						return;
+					}
+				}
+			}
+		}
+	}
+
+	pMerged->CalcBounds(TRUE);
+
+	//
+	// Swap the solids for the merged one. Add it first so a brush entity or
+	// group never ends up empty (DeleteObject would delete it).
+	//
+	GetHistory()->MarkUndoPosition(pSelList, "Create Merged Solid");
+
+	AddObjectToWorld(pMerged, pParent);
+	GetHistory()->KeepNew(pMerged);
+
+	for (int i = 0; i < Solids.Count(); i++)
+	{
+		GetHistory()->Keep(Solids[i]);
+		DeleteObject(Solids[i]);
+	}
+
+	SelectObject(pMerged, scClear | scSelect);
+	SetModifiedFlag();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose:
 //-----------------------------------------------------------------------------
 void CMapDoc::OnEditPastespecial(void)
 {
@@ -7449,6 +7776,41 @@ BOOL CMapDoc::OnViewHideObjects(UINT nID)
 
 
 //-----------------------------------------------------------------------------
+// Purpose: Worldcraft 2003 "Show Hidden Objects": shows every hidden visgroup
+//			and restores any quick-hidden objects.
+//-----------------------------------------------------------------------------
+void CMapDoc::OnViewShowHiddenObjects(void)
+{
+	bool bShowedAny = false;
+
+	int nRootCount = VisGroups_GetRootCount();
+	for (int i = 0; i < nRootCount; i++)
+	{
+		CVisGroup *pGroup = VisGroups_GetRootVisGroup(i);
+		if (pGroup->GetVisible() != VISGROUP_SHOWN)
+		{
+			VisGroups_ShowVisGroup(pGroup, true);
+			bShowedAny = true;
+		}
+	}
+
+	if (m_QuickHideGroup.Count() > 0)
+	{
+		QuickHide_Unhide();
+		bShowedAny = true;
+	}
+
+	if (!bShowedAny)
+	{
+		AfxMessageBox("There are no hidden objects.");
+		return;
+	}
+
+	GetMainWnd()->UpdateAllDocViews(MAPVIEW_UPDATE_VISGROUP_STATE | MAPVIEW_UPDATE_OBJECTS);
+}
+
+
+//-----------------------------------------------------------------------------
 // Purpose: Fills out a list with all the children of this object that:
 //
 //			A) Are visible
@@ -7611,9 +7973,37 @@ void CMapDoc::OnShowNoDrawBrushes(void)
 	UpdateAllViews( MAPVIEW_UPDATE_TOOL );
 }
 
-void CMapDoc::OnUpdateShowNoDrawBrushes(CCmdUI *pCmdUI) 
+void CMapDoc::OnUpdateShowNoDrawBrushes(CCmdUI *pCmdUI)
 {
 	pCmdUI->SetCheck( Options.general.bShowNoDrawBrushes ? 1 : 0 );
+	pCmdUI->Enable(!GetMainWnd()->IsShellSessionActive());
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ "toggle editor objects": tool textures (Ctrl+Shift+F2) and
+//			editor-only sprites/models (Alt+O) in the 3D view.
+//-----------------------------------------------------------------------------
+void CMapDoc::OnToggleToolTextures(void)
+{
+	Options.general.bShowToolTextures = !Options.general.bShowToolTextures;
+	UpdateAllViews( MAPVIEW_UPDATE_TOOL );
+}
+
+void CMapDoc::OnUpdateToggleToolTextures(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck( Options.general.bShowToolTextures ? 1 : 0 );
+	pCmdUI->Enable(!GetMainWnd()->IsShellSessionActive());
+}
+
+void CMapDoc::OnToggleEditorObjects(void)
+{
+	Options.general.bShowEditorObjects = !Options.general.bShowEditorObjects;
+	UpdateAllViews( MAPVIEW_UPDATE_TOOL );
+}
+
+void CMapDoc::OnUpdateToggleEditorObjects(CCmdUI *pCmdUI)
+{
+	pCmdUI->SetCheck( Options.general.bShowEditorObjects ? 1 : 0 );
 	pCmdUI->Enable(!GetMainWnd()->IsShellSessionActive());
 }
 
@@ -7893,7 +8283,7 @@ void CMapDoc::OnInsertprefabOriginal(void)
 	}
 
 	// create object
-	box.SnapToGrid(m_nGridSpacing);	// snap to grid first
+	box.SnapToGrid(m_flGridSpacing);	// snap to grid first
 	CMapClass *pObject = GetMainWnd()->m_ObjectBar.CreateInBox(&box);
 	if (pObject == NULL)
 	{
@@ -8302,7 +8692,7 @@ void CMapDoc::OnToolsSnapselectedtogrid(void)
 	if ( m_pToolManager->GetActiveToolID() == TOOL_MORPH )
 	{
 		Morph3D *pMorphTool = assert_cast< Morph3D* >( m_pToolManager->GetActiveTool() );
-		pMorphTool->SnapSelectedToGrid( m_nGridSpacing );
+		pMorphTool->SnapSelectedToGrid( m_flGridSpacing );
 	}
 	if (m_pSelection->IsEmpty())
 		return;
@@ -8337,7 +8727,7 @@ void CMapDoc::OnToolsSnapselectedtogrid(void)
 		// Something other than a single point entity is selected.
 		// Just snap the bmins of the selection bounding box.
 		Vector vOldMins = NewObjectBox.bmins;
-		NewObjectBox.SnapToGrid(m_nGridSpacing);
+		NewObjectBox.SnapToGrid(m_flGridSpacing);
 
 		// Calculate the amount to move.
 		vecMove = NewObjectBox.bmins - vOldMins;
@@ -8354,6 +8744,121 @@ void CMapDoc::OnToolsSnapselectedtogrid(void)
 	}
 
 	SetModifiedFlag();
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Casts a vertical ray against every visible, unselected solid and
+//			returns the distance to the nearest surface facing the ray.
+//			Tool-textured faces (triggers, clips...) are ignored.
+// Input  : flDir - -1 to look down for a floor, +1 to look up for a ceiling.
+//-----------------------------------------------------------------------------
+static bool FindSurfaceAlongZ(CMapWorld *pWorld, const Vector &vecStart, float flDir, float &flBestDist)
+{
+	const float flMaxDist = ( g_MAX_MAP_COORD - g_MIN_MAP_COORD ) * 2;
+	Vector vecEnd = vecStart;
+	vecEnd.z += flDir * flMaxDist;
+
+	bool bFound = false;
+	EnumChildrenPos_t pos;
+	CMapClass *pChild = pWorld->GetFirstDescendent(pos);
+	while (pChild)
+	{
+		CMapSolid *pSolid = dynamic_cast<CMapSolid *>(pChild);
+		if (pSolid && pSolid->IsVisible() && (pSolid->GetSelectionState() == SELECT_NONE))
+		{
+			for (int nFace = 0; nFace < pSolid->GetFaceCount(); nFace++)
+			{
+				CMapFace *pFace = pSolid->GetFace(nFace);
+
+				// Only faces that face the ray (floors when looking down, ceilings when looking up).
+				if (pFace->plane.normal.z * flDir >= 0)
+					continue;
+
+				IEditorTexture *pTexture = pFace->GetTexture();
+				if (pTexture && !V_strnicmp(pTexture->GetName(), "tools/", 6))
+					continue;
+
+				Vector vecHit, vecNormal;
+				if (!pFace->TraceLineInside(vecHit, vecNormal, vecStart, vecEnd))
+					continue;
+
+				float flDist = (vecHit.z - vecStart.z) * flDir;
+				if ((flDist >= -0.01f) && (flDist <= flMaxDist) && (!bFound || (flDist < flBestDist)))
+				{
+					flBestDist = flDist;
+					bFound = true;
+				}
+			}
+		}
+
+		pChild = pWorld->GetNextDescendent(pos);
+	}
+
+	return bFound;
+}
+
+
+//-----------------------------------------------------------------------------
+// Purpose: Hammer++ "move objects": drops the selection onto the nearest floor
+//			below it, or raises it to the nearest ceiling above it. Rays are
+//			cast from the middle and the four corners of the selection.
+//-----------------------------------------------------------------------------
+BOOL CMapDoc::OnToolsMoveToSurface(UINT nID)
+{
+	if (m_pSelection->IsEmpty())
+		return TRUE;
+
+	bool bCeiling = (nID == ID_TOOLS_MOVE_TO_CEILING);
+	float flDir = bCeiling ? 1.0f : -1.0f;
+
+	Vector vecMins, vecMaxs;
+	m_pSelection->GetBounds(vecMins, vecMaxs);
+
+	float flZ = bCeiling ? vecMaxs.z : vecMins.z;
+	Vector vecMid = (vecMins + vecMaxs) * 0.5f;
+	Vector vecStarts[5] =
+	{
+		Vector(vecMid.x, vecMid.y, flZ),
+		Vector(vecMins.x, vecMins.y, flZ),
+		Vector(vecMins.x, vecMaxs.y, flZ),
+		Vector(vecMaxs.x, vecMins.y, flZ),
+		Vector(vecMaxs.x, vecMaxs.y, flZ),
+	};
+
+	bool bFound = false;
+	float flBestDist = 0;
+	for (int i = 0; i < ARRAYSIZE(vecStarts); i++)
+	{
+		float flDist;
+		if (FindSurfaceAlongZ(m_pWorld, vecStarts[i], flDir, flDist) && (!bFound || (flDist < flBestDist)))
+		{
+			flBestDist = flDist;
+			bFound = true;
+		}
+	}
+
+	if (!bFound)
+	{
+		AfxMessageBox(bCeiling ? "There is no ceiling above the selection." : "There is no floor below the selection.");
+		return TRUE;
+	}
+
+	Vector vecMove(0, 0, flDir * flBestDist);
+	if (vecMove.z == 0)
+		return TRUE;
+
+	const CMapObjectList *pSelList = m_pSelection->GetList();
+	GetHistory()->MarkUndoPosition(pSelList, bCeiling ? "Move to Ceiling" : "Move to Floor");
+	GetHistory()->Keep(pSelList);
+
+	for (int i = 0; i < pSelList->Count(); i++)
+	{
+		pSelList->Element(i)->TransMove(vecMove);
+	}
+
+	SetModifiedFlag();
+	return TRUE;
 }
 
 
@@ -8531,7 +9036,7 @@ void CMapDoc::Snap(Vector &pt, int nFlags)
 	}
 	else if (nFlags & constrainSnap )
 	{
-		float flGridSpacing = m_nGridSpacing;
+		float flGridSpacing = m_flGridSpacing;
 
 		if ( nFlags & constrainHalfSnap )
 			flGridSpacing *= 0.5f;
@@ -10799,7 +11304,15 @@ ChunkFileResult_t CMapDoc::SaveViewSettingsVMF(CChunkFile *pFile, CSaveInfo *pSa
 		return eResult;
 #endif // SDK_BUILD
 
-	eResult = pFile->WriteKeyValueInt("nGridSpacing", m_nGridSpacing);
+	// Whole-number grids are written as ints so other Hammers can still read them.
+	if (m_flGridSpacing == (int)m_flGridSpacing)
+	{
+		eResult = pFile->WriteKeyValueInt("nGridSpacing", (int)m_flGridSpacing);
+	}
+	else
+	{
+		eResult = pFile->WriteKeyValueFloat("nGridSpacing", m_flGridSpacing);
+	}
 	if (eResult != ChunkFile_Ok)
 		return eResult;
 

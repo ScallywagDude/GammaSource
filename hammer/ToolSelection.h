@@ -129,6 +129,8 @@ protected:
 	bool m_bSelected;			// Did we select an object on left button down?
 	bool m_b3DEditMode;			// editing mode in 3D on/off
 
+	CUtlVector<CMapClass *> m_CtrlDragPicked;	// Hammer++ Ctrl+drag select: objects already picked during this drag
+
 	bool m_bDrawAsSolidBox;		// sometimes we want to render the tool bbox solid
 
 	// These are fields related to manipulation in logical views

@@ -1306,8 +1306,41 @@ bool CMaterial::LoadMaterialImage( void )
 	}
 	
 	PreviewImageRetVal_t retVal;
+
+	//
+	// Hammer++ texture browser alpha: for translucent and alpha-tested materials,
+	// fetch the alpha channel too and draw the texture over a checkerboard so the
+	// transparent parts are visible. Opaque materials skip this because their
+	// alpha channel is usually a specular or blend mask, not transparency.
+	//
+	if ( m_pMaterial->IsTranslucent() || m_pMaterial->IsAlphaTested() )
+	{
+		unsigned char *pBGRA = (unsigned char *)malloc( m_nWidth * m_nHeight * 4 );
+		retVal = m_pMaterial->GetPreviewImage( pBGRA, m_nWidth, m_nHeight, IMAGE_FORMAT_BGRA8888 );
+		if ( retVal != MATERIAL_PREVIEW_IMAGE_BAD )
+		{
+			unsigned char *pDst = (unsigned char *)m_pData;
+			for ( int y = 0; y < m_nHeight; y++ )
+			{
+				for ( int x = 0; x < m_nWidth; x++ )
+				{
+					const unsigned char *pSrc = pBGRA + ( y * m_nWidth + x ) * 4;
+					unsigned char *pOut = pDst + ( y * m_nWidth + x ) * 3;
+					int nChecker = ( ( ( x >> 3 ) + ( y >> 3 ) ) & 1 ) ? 0xCC : 0x99;
+					int nAlpha = pSrc[3];
+					for ( int c = 0; c < 3; c++ )
+					{
+						pOut[c] = (unsigned char)( ( pSrc[c] * nAlpha + nChecker * ( 255 - nAlpha ) ) / 255 );
+					}
+				}
+			}
+		}
+		free( pBGRA );
+		return (retVal != MATERIAL_PREVIEW_IMAGE_BAD);
+	}
+
 	retVal = m_pMaterial->GetPreviewImage( (unsigned char *)m_pData, m_nWidth, m_nHeight, imageFormat );
-	return (retVal != MATERIAL_PREVIEW_IMAGE_BAD); 
+	return (retVal != MATERIAL_PREVIEW_IMAGE_BAD);
 }
 
 

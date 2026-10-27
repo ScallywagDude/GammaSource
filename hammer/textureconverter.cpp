@@ -86,7 +86,7 @@ void CTextureConverter::ConvertWorldTextures( CMapWorld * pWorld )
 		m_pProgDlg = NULL;
 	}
 
-	AfxMessageBox( "Conversion complete.  Check the Hammer \"Messages\" window for complete details." );
+	AfxMessageBox( "Conversion complete.  Check the Worldcraft \"Messages\" window for complete details." );
 }
 
 

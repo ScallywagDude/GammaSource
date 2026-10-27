@@ -575,6 +575,14 @@ inline float CMapStudioModel::ComputeFade( CRender3D *pRender ) const
 //-----------------------------------------------------------------------------
 void CMapStudioModel::Render3D(CRender3D *pRender)
 {
+	// Hammer++ "toggle editor objects": hide unselected models/editor/ models.
+	if ( !Options.general.bShowEditorObjects && m_pStudioModel && GetSelectionState() == SELECT_NONE )
+	{
+		const char *pszModel = m_pStudioModel->GetModelName();
+		if ( pszModel && ( V_stristr( pszModel, "models/editor/" ) || V_stristr( pszModel, "models\\editor\\" ) ) )
+			return;
+	}
+
 	Color CurrentColor;
 	CurrentColor.SetColor( r, g, b );
 

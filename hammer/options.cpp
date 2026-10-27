@@ -656,6 +656,7 @@ bool COptions::Read(void)
 	general.bUseVGUIModelBrowser = APP()->GetProfileInt(pszGeneral, "VGUI Model Browser", TRUE);	
 	general.bShowHiddenTargetsAsBroken = APP()->GetProfileInt(pszGeneral, "Show Hidden Targets As Broken", TRUE);	
 	general.bRadiusCulling = APP()->GetProfileInt(pszGeneral, "Use Radius Culling", FALSE);
+	general.bMicrogrid = APP()->GetProfileInt(pszGeneral, "Microgrid", FALSE);
 
 	char szDefaultAutosavePath[MAX_PATH];
 	V_strcpy_safe( szDefaultAutosavePath, APP()->GetProfileString( pszGeneral, "Directory", "C:" ) );
@@ -742,7 +743,7 @@ bool COptions::RunConfigurationDialog()
 		APP()->OpenURL(ID_HELP_FIRST_TIME_SETUP, GetMainWnd()->GetSafeHwnd());
 	}
 
-	COptionProperties dlg("Configure Hammer");
+	COptionProperties dlg("Configure Worldcraft");
 
 	do
 	{
@@ -753,7 +754,7 @@ bool COptions::RunConfigurationDialog()
 
 		if (configs.nConfigs == 0)
 		{
-			MessageBox(NULL, "You must create at least one game configuration before using Hammer.", "First Time Setup", MB_ICONEXCLAMATION | MB_OK);
+			MessageBox(NULL, "You must create at least one game configuration before using Worldcraft.", "First Time Setup", MB_ICONEXCLAMATION | MB_OK);
 		}
 
 	} while (configs.nConfigs == 0);
@@ -889,6 +890,7 @@ void COptions::Write( BOOL fOverwrite, BOOL fSaveConfigs )
 	APP()->WriteProfileInt(pszGeneral, "VGUI Model Browser", general.bUseVGUIModelBrowser );
 	APP()->WriteProfileInt(pszGeneral, "Show Hidden Targets As Broken", general.bShowHiddenTargetsAsBroken);
 	APP()->WriteProfileInt(pszGeneral, "Use Radius Culling", general.bRadiusCulling);
+	APP()->WriteProfileInt(pszGeneral, "Microgrid", general.bMicrogrid);
 
 
 	
@@ -989,7 +991,10 @@ void COptions::SetDefaults(void)
 	general.bShowCollisionModels = FALSE;
 	general.bShowDetailObjects = TRUE;
 	general.bShowNoDrawBrushes = TRUE;
-	
+	general.bShowToolTextures = TRUE;
+	general.bShowEditorObjects = TRUE;
+	general.bMicrogrid = FALSE;
+
 	// view2d
 	view2d.bCrosshairs = FALSE;
 	view2d.bGroupCarve = TRUE;

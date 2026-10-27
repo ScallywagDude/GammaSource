@@ -323,6 +323,10 @@ int CMapSprite::GetNextSpriteFrame( CRender3D* pRender )
 //-----------------------------------------------------------------------------
 void CMapSprite::Render3D(CRender3D *pRender)
 {
+	// Hammer++ "toggle editor objects": hide unselected entity icon sprites.
+	if ( m_bIsIcon && !Options.general.bShowEditorObjects && GetSelectionState() == SELECT_NONE )
+		return;
+
 	int nPasses;
 	if ((GetSelectionState() != SELECT_NONE) && (!m_bIsIcon))
 	{

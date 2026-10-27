@@ -101,6 +101,7 @@ public:
 	void					GetOrigin( Vector &v );
 	void					SetAngles( QAngle& pfAngles );
 	bool					IsTranslucent();
+	const char				*GetModelName() const { return m_pModelName; }
 
 private:
 	CStudioHdr				*m_pStudioHdr;

@@ -50,7 +50,7 @@ bool CShellMessageWnd::Create(void)
 
 	if (!AfxRegisterClass(&wndcls))
 	{
-		AfxMessageBox("Could not register the Hammer shell message window class.");
+		AfxMessageBox("Could not register the Worldcraft shell message window class.");
 		return(false);
 	}
 

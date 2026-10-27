@@ -235,7 +235,8 @@ bool CToolMaterial::OnKeyDown3D( CMapView3D *pView, UINT nChar, UINT nRepCnt, UI
 				return false;
 			}
 
-			int nGridSize = m_pDocument->GetGridSpacing();
+			// Texture shifts stay whole numbers, so a microgrid nudges by 1.
+			int nGridSize = max( (int)m_pDocument->GetGridSpacing(), 1 );
 			bool bCtrlDown = ( ( GetAsyncKeyState( VK_CONTROL ) & 0x8000 ) != 0 );
 
 			if ( bCtrlDown )
