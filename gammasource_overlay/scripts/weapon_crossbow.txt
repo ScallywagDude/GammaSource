@@ -32,21 +32,16 @@ WeaponData
 	// Weapon Sprite data is loaded by the Client DLL.
 	TextureData
 	{
+		// The Half-Life 2 crossbow icon (no 2003 sprite exists for it).
 		"weapon"
 		{
-				"file"		"sprites/640hud2"
-				"x"		"0"
-				"y"		"0"
-				"width"		"170"
-				"height"	"45"
+				"font"		"WeaponIcons"
+				"character"	"g"
 		}
 		"weapon_s"
 		{
-				"file"		"sprites/640hud2"
-				"x"		"0"
-				"y"		"0"
-				"width"		"170"
-				"height"	"45"
+				"font"		"WeaponIconsSelected"
+				"character"	"g"
 		}
 		"weapon_small"
 		{

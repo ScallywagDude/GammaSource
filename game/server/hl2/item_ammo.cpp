@@ -275,6 +275,68 @@ public:
 };
 LINK_ENTITY_TO_CLASS(item_ammo_357, CItem_Box357Rounds);
 
+// ========================================================================
+//	>> CItem_GammaAmmo
+//	GammaSource: pickups for added weapons whose ammo had none. Proto1
+//	rounds use the .357 box, as Proto1 uses the .357 revolver models.
+// ========================================================================
+struct GammaAmmoPickup_t
+{
+	const char *pszClassname;
+	const char *pszModel;
+	const char *pszAmmo;
+	int nAmount;
+};
+
+static const GammaAmmoPickup_t s_GammaAmmoPickups[] =
+{
+	{ "item_ammo_proto1",	"models/items/357ammo.mdl",			"ammo_proto1",	6 },
+	{ "item_ammo_gasoline",	"models/props_junk/gascan001a.mdl",	"Gasoline",		100 },
+	{ "item_ammo_gauss",	"models/items/battery.mdl",			"GaussEnergy",	50 },
+};
+
+class CItem_GammaAmmo : public CItem
+{
+public:
+	DECLARE_CLASS( CItem_GammaAmmo, CItem );
+
+	const GammaAmmoPickup_t &Data( void )
+	{
+		for ( int i = 0; i < ARRAYSIZE( s_GammaAmmoPickups ); i++ )
+		{
+			if ( FClassnameIs( this, s_GammaAmmoPickups[i].pszClassname ) )
+				return s_GammaAmmoPickups[i];
+		}
+		return s_GammaAmmoPickups[0];
+	}
+	void Precache( void )
+	{
+		PrecacheModel( Data().pszModel );
+	}
+	void Spawn( void )
+	{ 
+		Precache( );
+		SetModel( Data().pszModel );
+		BaseClass::Spawn( );
+	}
+
+	bool MyTouch( CBasePlayer *pPlayer )
+	{
+		if ( ITEM_GiveAmmo( pPlayer, Data().nAmount, Data().pszAmmo ) )
+		{
+			if ( g_pGameRules->ItemShouldRespawn( this ) == GR_ITEM_RESPAWN_NO )
+			{
+				UTIL_Remove(this);	
+			}	
+			return true;
+		}
+		return false;
+	}
+};
+LINK_ENTITY_TO_CLASS(item_ammo_proto1, CItem_GammaAmmo);
+LINK_ENTITY_TO_CLASS(item_ammo_gasoline, CItem_GammaAmmo);
+LINK_ENTITY_TO_CLASS(item_ammo_gauss, CItem_GammaAmmo);
+
 
 // ========================================================================
 //	>> CItem_LargeBox357Rounds

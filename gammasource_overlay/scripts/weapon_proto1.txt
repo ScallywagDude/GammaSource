@@ -16,6 +16,7 @@ WeaponData
 	"bucket_position_360"	"6"
 
 	"clip_size"		"-1"
+	"default_clip"		"6"	// rounds given with the gun (it had none)
 	"primary_ammo"		"ammo_proto1"
 	"secondary_ammo"	"None"
 
