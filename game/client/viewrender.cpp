@@ -2255,6 +2255,14 @@ void CViewRender::RenderView( const CViewSetup &view, int nClearFlags, int whatT
 			pRenderContext->ClearColor4ub( 0, 0, 0, 0 );
 			pRenderContext->ClearBuffers( true, false );
 		}
+		else
+		{
+			// GammaSource: VGUI draws file-based HUD sprites with their material's own
+			// depth test, and the 2003 HUD sprites lack $ignorez, so the view model
+			// (drawn nearest the camera) hid parts of the HUD. Nothing 3D is drawn
+			// after this point, so clear depth and let the HUD always draw on top.
+			pRenderContext->ClearBuffers( false, true, false );
+		}
 		pRenderContext.SafeRelease();
 
 		tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "VGui_DrawHud", __FUNCTION__ );
