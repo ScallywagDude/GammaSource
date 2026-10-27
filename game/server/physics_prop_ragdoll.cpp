@@ -1412,7 +1412,11 @@ CBaseEntity *CreateServerRagdoll( CBaseAnimating *pAnimating, int forceBone, con
 		for ( int i = 0; i < count; i++ )
 		{
 			int physBone = pAnimating->GetPhysicsBone( pAnimating->GetHitboxBone( boxList[i] ) );
+			if ( physBone < 0 || physBone >= pRagInfo->listCount )
+				continue;
 			IPhysicsObject *pPhysics = pRagInfo->list[physBone].pObject;
+			if ( !pPhysics )
+				continue;
 			pPhysics->ApplyForceCenter( info.GetDamageForce() * pPhysics->GetMass() * massScale );
 		}
 	}
@@ -1506,7 +1510,9 @@ void CRagdollPropAttached::InitRagdollAttached(
 	}
 
 	InitRagdoll( forceVector, forceBone, vec3_origin, pPrevBones, pBoneToWorld, dt, collisionGroup, false );
-	
+
+	if ( ragdollAttachedIndex < 0 || ragdollAttachedIndex >= m_ragdoll.listCount )
+		ragdollAttachedIndex = 0;
 	IPhysicsObject *pRefObject = m_ragdoll.list[ragdollAttachedIndex].pObject;
 
 	Vector attachmentPointRagdollSpace;

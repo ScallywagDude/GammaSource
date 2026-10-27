@@ -73,7 +73,10 @@ BEGIN_SIMPLE_DATADESC( CRagdoll )
 END_DATADESC()
 
 IPhysicsObject *CRagdoll::GetElement( int elementNum )
-{ 
+{
+	// Trace physics bone indices come from model data; a bad one must not read outside the list.
+	if ( elementNum < 0 || elementNum >= m_ragdoll.listCount )
+		return NULL;
 	return m_ragdoll.list[elementNum].pObject;
 }
 

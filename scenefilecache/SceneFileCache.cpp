@@ -156,7 +156,9 @@ size_t CSceneFileCache::GetLooseSceneSize( const char *pFilename )
 	V_SetExtension( fn, ".vcd", sizeof( fn ) );
 	if ( !filesystem->FileExists( fn, "GAME" ) )
 		return 0;
-	return (size_t)filesystem->Size( fn, "GAME" );
+	// One extra byte for a terminator: callers hand text scenes straight to the
+	// tokenizer, which reads until NUL.
+	return (size_t)filesystem->Size( fn, "GAME" ) + 1;
 }
 
 bool CSceneFileCache::GetLooseSceneData( const char *pFilename, byte *buf, size_t bufsize )
@@ -165,9 +167,11 @@ bool CSceneFileCache::GetLooseSceneData( const char *pFilename, byte *buf, size_
 	V_strncpy( fn, pFilename, sizeof( fn ) );
 	V_SetExtension( fn, ".vcd", sizeof( fn ) );
 	CUtlBuffer file;
-	if ( !filesystem->ReadFile( fn, "GAME", file ) )
+	if ( !filesystem->ReadFile( fn, "GAME", file ) || !bufsize )
 		return false;
-	V_memcpy( buf, file.Base(), MIN( bufsize, (size_t)file.TellMaxPut() ) );
+	size_t nCopy = MIN( bufsize - 1, (size_t)file.TellMaxPut() );
+	V_memcpy( buf, file.Base(), nCopy );
+	memset( buf + nCopy, 0, bufsize - nCopy );
 	return true;
 }
 

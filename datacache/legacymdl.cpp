@@ -384,7 +384,7 @@ struct Bone36
 	int parent;
 	int ctrl[6];
 	float value[6], scale[6], poseToBone[12], qAlign[4], quat[4];
-	int flags, proctype, contents;
+	int flags, proctype, physicsbone, contents;
 	CUtlString surfaceprop;
 };
 
@@ -602,7 +602,8 @@ bool LegacyMDL_IsLegacy( const void *pData, int nSize )
 }
 
 bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *pVtx, int nVtx,
-	CUtlBuffer &mdlOut, CUtlBuffer &vvdOut, CUtlVector<LegacyVtxOutput_t> &vtxOut, CUtlString &report )
+	CUtlBuffer &mdlOut, CUtlBuffer &vvdOut, CUtlVector<LegacyVtxOutput_t> &vtxOut, CUtlString &report,
+	const CUtlVector<CUtlString> *pPhysicsSolidNames )
 {
 	CUtlVector<byte_t> v36buf;
 	const byte_t *pSrc = (const byte_t *)pMdl;
@@ -649,8 +650,35 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 		for ( int j = 0; j < 12; j++ ) b.poseToBone[j] = s.F( o + 80 + 4 * j );
 		for ( int j = 0; j < 4; j++ ) { b.qAlign[j] = s.F( o + 128 + 4 * j ); b.quat[j] = s.F( o + 164 + 4 * j ); }
 		b.flags = s.I( o + 144 ); b.proctype = s.I( o + 148 );
+		b.physicsbone = s.I( o + 156 );
 		b.surfaceprop = s.RStr( o, s.I( o + 160 ) );
 		b.contents = s.I( o + 180 );
+	}
+
+	// --- physics bone: the ragdoll element each bone drives. Traces copy it into
+	// trace_t::physicsbone and the game indexes ragdoll lists with it, so it must be
+	// a valid element. With the .phy at hand, rebuild it exactly as studiomdl does
+	// (solid order, else the nearest parent's element, else the root). Otherwise
+	// keep the 2003 studiomdl value when it is in range.
+	CUtlVector<int> physicsBone; physicsBone.SetCount( nb );
+	if ( pPhysicsSolidNames && pPhysicsSolidNames->Count() )
+	{
+		for ( int k = 0; k < nb; k++ ) physicsBone[k] = -1;
+		for ( int i = 0; i < pPhysicsSolidNames->Count(); i++ )
+			for ( int k = 0; k < nb; k++ )
+				if ( !V_stricmp( bones[k].name.Get(), ( *pPhysicsSolidNames )[i].Get() ) ) { physicsBone[k] = i; break; }
+		for ( int k = 0; k < nb; k++ )
+		{
+			if ( physicsBone[k] >= 0 ) continue;
+			int bone = -1, guard = 0;
+			for ( int p = bones[k].parent; p >= 0 && p < nb && guard++ < 256; p = bones[p].parent )
+				if ( physicsBone[p] >= 0 ) { bone = physicsBone[p]; break; }
+			physicsBone[k] = bone >= 0 ? bone : 0;
+		}
+	}
+	else
+	{
+		for ( int k = 0; k < nb; k++ ) physicsBone[k] = ( bones[k].physicsbone >= 0 && bones[k].physicsbone < nb ) ? bones[k].physicsbone : 0;
 	}
 
 	// --- animations, decoded per frame
@@ -864,7 +892,7 @@ bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *
 		w.PutFv( o + 32, b.value, 3 ); w.PutFv( o + 44, b.quat, 4 ); w.PutFv( o + 60, b.value + 3, 3 );
 		for ( int j = 0; j < 3; j++ ) { w.PutF( o + 72 + 4 * j, (float)posscale[3 * k + j] ); w.PutF( o + 84 + 4 * j, (float)rotscale[3 * k + j] ); }
 		w.PutFv( o + 96, b.poseToBone, 12 ); w.PutFv( o + 144, b.qAlign, 4 );
-		w.PutI( o + 160, boneFlags[k] ); w.PutI( o + 172, -1 );
+		w.PutI( o + 160, boneFlags[k] ); w.PutI( o + 172, physicsBone[k] );
 		const char *sp = b.surfaceprop.Length() ? b.surfaceprop.Get() : ( *surfaceprop ? surfaceprop : "default" );
 		w.String( o, o + 176, sp ); w.PutI( o + 180, b.contents );
 		if ( !WriteLegacyProcedure( s, w, bi + 196 * k, o, nb, proceduralControl[k] ) )
