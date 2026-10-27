@@ -448,24 +448,27 @@ void CNPC_CombineGuard::PrescheduleThink( void )
 			if ( !GetAttachment( referencePoint, vecDamagePoint, vecDamageAngles ) )
 				continue;
 
-#if 0
+			// GammaSource: the 2003 damage smoke was disabled when the smoke
+			// call changed ("changed under our nose"); restored with the 2018
+			// effects. The head is the human operator, which should not smoke.
+			if ( i == CGUARD_BGROUP_HEAD )
+				continue;
+
 			if ( random->RandomInt( 0, 4 ) == 0 )
 			{
 				if ( random->RandomInt( 0, 800 ) == 0 )
 				{
-					ExplosionCreate( vecDamagePoint, vecDamageAngles, this, 0.5f, 0, false );
+					ExplosionCreate( vecDamagePoint, vecDamageAngles, this, 0, 0, false );
 				}
 				else
 				{
-					/*//FIXME: Smoke function was changed under our nose so it doesn't work
 					float	scale = random->RandomInt( 4, 12 );
 
+					g_pEffects->Sparks( vecDamagePoint, 1, 1 );
 					vecDamagePoint[2] -= random->RandomFloat( 24, 32 );
-					g_pEffects->Smoke( vecDamagePoint, random->RandomInt( 15, 30 ), scale, 10);
-					*/
+					UTIL_Smoke( vecDamagePoint, scale, 10 );
 				}
 			}
-#endif
 		}
 	}
 }
@@ -739,8 +742,8 @@ Activity CNPC_CombineGuard::NPC_TranslateActivity( Activity baseAct )
 
 		if ( legDamage > 0.75f )
 		{
-			//TODO: LIMP
-			return (Activity) ACT_WALK;
+			// GammaSource: the 2003 TODO; limp when the model has the clip.
+			return HaveSequenceForActivity( ACT_WALK_HURT ) ? ACT_WALK_HURT : ACT_WALK;
 		}
 		else if ( legDamage > 0.5f )
 		{

@@ -126,7 +126,12 @@ enum PathfindingVariant_T
 #define bits_MEMORY_PAIN_HEAVY_SOUND		bits_MEMORY_CUSTOM2
 #define bits_MEMORY_PLAYER_HURT				bits_MEMORY_CUSTOM3
 
+#ifdef GAMMA_PORTALGUN
+// GammaSource: npc_combine is registered in gamma/npc_combines2003.cpp, which
+// picks the 2003 or HL2 soldier AI (gamma_combine_ai2003).
+#else
 LINK_ENTITY_TO_CLASS( npc_combine, CNPC_Combine );
+#endif
 
 //---------------------------------------------------------
 // Save/Restore

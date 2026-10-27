@@ -708,12 +708,58 @@ int CHudTexture::EffectiveHeight( float flScale ) const
 //-----------------------------------------------------------------------------
 // Purpose: Gets texture handles for the hud icon
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// GammaSource: the 2003 ClientScheme predates HL2's font-based weapon icons.
+// Build those fonts from the retail HL2 icon font, with HL2's blur/scanline
+// settings, so weapons that use HL2 icons (such as the crossbow) still draw
+// them. Sizes are fixed pixels to fit the beta HUD's 128x64 icon cells and
+// its small ammo icons; font glyphs draw at font size, not the cell size.
+//-----------------------------------------------------------------------------
+static vgui::HFont GammaFallbackIconFont( const char *pszName )
+{
+	struct FallbackIconFont_t
+	{
+		const char *pszName;
+		int tall, blur, scanlines;
+		vgui::HFont font;
+	};
+	static FallbackIconFont_t s_Fonts[] =
+	{
+		{ "WeaponIcons",			56, 0, 0, vgui::INVALID_FONT },
+		{ "WeaponIconsSelected",	56, 5, 2, vgui::INVALID_FONT },
+		{ "WeaponIconsSmall",		24, 0, 0, vgui::INVALID_FONT },
+	};
+	static bool s_bFontFileAdded = false;
+
+	for ( int i = 0; i < ARRAYSIZE( s_Fonts ); i++ )
+	{
+		FallbackIconFont_t &f = s_Fonts[i];
+		if ( Q_stricmp( pszName, f.pszName ) )
+			continue;
+		if ( f.font == vgui::INVALID_FONT )
+		{
+			if ( !s_bFontFileAdded )
+			{
+				vgui::surface()->AddCustomFontFile( "HalfLife2", "resource/HALFLIFE2.ttf" );
+				s_bFontFileAdded = true;
+			}
+			f.font = vgui::surface()->CreateFont();
+			vgui::surface()->SetFontGlyphSet( f.font, "HalfLife2", f.tall, 0, f.blur, f.scanlines,
+				vgui::ISurface::FONTFLAG_ANTIALIAS | vgui::ISurface::FONTFLAG_ADDITIVE | vgui::ISurface::FONTFLAG_CUSTOM );
+		}
+		return f.font;
+	}
+	return vgui::INVALID_FONT;
+}
+
 void CHud::SetupNewHudTexture( CHudTexture *t )
 {
 	if ( t->bRenderUsingFont )
 	{
 		vgui::HScheme scheme = vgui::scheme()->GetScheme( "ClientScheme" );
 		t->hFont = vgui::scheme()->GetIScheme(scheme)->GetFont( t->szTextureFile, true );
+		if ( t->hFont == vgui::INVALID_FONT )
+			t->hFont = GammaFallbackIconFont( t->szTextureFile );
 		t->rc.top = 0;
 		t->rc.left = 0;
 		t->rc.right = vgui::surface()->GetCharacterWidth( t->hFont, t->cCharacterInFont );

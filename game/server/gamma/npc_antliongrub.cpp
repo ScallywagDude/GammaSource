@@ -688,7 +688,7 @@ void CNPC_AntlionGrub::BroadcastAlert( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-void CNPC_AntlionGrub::PainSound( void )
+void CNPC_AntlionGrub::PainSound( const CTakeDamageInfo &info )
 {
 	BroadcastAlert();
 }

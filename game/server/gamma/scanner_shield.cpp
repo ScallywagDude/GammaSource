@@ -59,7 +59,9 @@ void CScannerShield::Spawn( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CScannerShield::TraceAttack( CBaseEntity *pAttacker, float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType)
+// GammaSource: 2018 signature; the 2003 one was never called, so hits on the
+// shield made no glow or sound.
+void CScannerShield::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	EmitSound( "ScannerShield.MetalDebris" );
 

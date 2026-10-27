@@ -229,10 +229,12 @@ void CTripwireGrenade::RopeBreakThink( void  )
 
 //------------------------------------------------------------------------------
 // Purpose : Die if I take any damage
+//			 GammaSource: 2018 grenades are not combat characters, so the 2003
+//			 OnTakeDamage_Alive hook was never called and shots did nothing.
 // Input   :
 // Output  :
 //------------------------------------------------------------------------------
-int CTripwireGrenade::OnTakeDamage_Alive( const CTakeDamageInfo &info )
+int CTripwireGrenade::OnTakeDamage( const CTakeDamageInfo &info )
 {
 	// Killed upon any damage
 	Event_Killed( info );

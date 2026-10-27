@@ -63,6 +63,10 @@
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
 
+// GammaSource: A/B switch for diagnosing leg/foot poses of converted 2003
+// models (e.g. Alyx): 0 renders every model without inverse kinematics.
+static ConVar gamma_ik( "gamma_ik", "1", 0, "Use inverse kinematics (foot placement, IK locks) on animated models. 0 = off, for comparing 2003 model poses." );
+
 static ConVar cl_SetupAllBones( "cl_SetupAllBones", "0" );
 ConVar r_sequence_debug( "r_sequence_debug", "" );
 
@@ -2853,9 +2857,14 @@ bool C_BaseAnimating::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMaxBones, i
 			if ( !IsModelScaled() )
 			{
 				// only allocate an ik block if the npc can use it
-				if ( !m_pIk && hdr->numikchains() > 0 && !(m_EntClientFlags & ENTCLIENTFLAG_DONTUSEIK) )
+				if ( !m_pIk && hdr->numikchains() > 0 && !(m_EntClientFlags & ENTCLIENTFLAG_DONTUSEIK) && gamma_ik.GetBool() )
 				{
 					m_pIk = new CIKContext;
+				}
+				else if ( m_pIk && !gamma_ik.GetBool() )
+				{
+					delete m_pIk;
+					m_pIk = NULL;
 				}
 			}
 			else

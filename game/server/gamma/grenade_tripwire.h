@@ -53,7 +53,7 @@ public:
 	void Spawn( void );
 	void Precache( void );
 
-	int OnTakeDamage_Alive( const CTakeDamageInfo &info );
+	int OnTakeDamage( const CTakeDamageInfo &info );	// 2003: OnTakeDamage_Alive
 	
 	void WarningThink( void );
 	void PowerupThink( void );

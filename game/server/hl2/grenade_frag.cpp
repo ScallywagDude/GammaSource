@@ -27,6 +27,15 @@ ConVar sk_plr_dmg_fraggrenade	( "sk_plr_dmg_fraggrenade","0");
 ConVar sk_npc_dmg_fraggrenade	( "sk_npc_dmg_fraggrenade","0");
 ConVar sk_fraggrenade_radius	( "sk_fraggrenade_radius", "0");
 
+// GammaSource: the 2003 frag grenade had no timer beeps and no blinking light
+// or trail; throwing it just sounded like a thrown canister. NPCs still get
+// the (silent) danger warning before it goes off.
+#ifdef GAMMA_PORTALGUN
+ConVar gamma_grenade_2003( "gamma_grenade_2003", "1", FCVAR_ARCHIVE, "Frag grenades behave as in 2003: no timer beeps or blinking light, only the throw sound." );
+#else
+ConVar gamma_grenade_2003( "gamma_grenade_2003", "0", FCVAR_ARCHIVE, "Frag grenades behave as in 2003: no timer beeps or blinking light, only the throw sound." );
+#endif
+
 #define GRENADE_MODEL "models/Weapons/w_grenade.mdl"
 
 class CGrenadeFrag : public CBaseGrenade
@@ -48,7 +57,7 @@ public:
 	void	SetTimer( float detonateDelay, float warnDelay );
 	void	SetVelocity( const Vector &velocity, const AngularImpulse &angVelocity );
 	int		OnTakeDamage( const CTakeDamageInfo &inputInfo );
-	void	BlipSound() { EmitSound( "Grenade.Blip" ); }
+	void	BlipSound() { if ( !gamma_grenade_2003.GetBool() ) EmitSound( "Grenade.Blip" ); }
 	void	DelayThink();
 	void	VPhysicsUpdate( IPhysicsObject *pPhysics );
 	void	OnPhysGunPickup( CBasePlayer *pPhysGunUser, PhysGunPickup_t reason );
@@ -154,6 +163,9 @@ void CGrenadeFrag::OnRestore( void )
 //-----------------------------------------------------------------------------
 void CGrenadeFrag::CreateEffects( void )
 {
+	if ( gamma_grenade_2003.GetBool() )
+		return;
+
 	// Start up the eye glow
 	if( !m_pMainGlow )
 		m_pMainGlow = CSprite::SpriteCreate( "sprites/redglow1.vmt", GetLocalOrigin(), false );

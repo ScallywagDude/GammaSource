@@ -62,7 +62,7 @@ public:
 
 	float		MaxYawSpeed( void );
 
-	const Vector &GetViewOffset( void );
+	const Vector &GetViewOffset( void ) const;
 
 private:
 

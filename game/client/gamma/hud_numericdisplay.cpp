@@ -150,6 +150,30 @@ bool CHudNumericDisplay::IsBetaCounter()
         !Q_stricmp(name,"HudSuitPower"));
 }
 
+// The beta counters sit at fixed beta positions. HUD animation scripts written
+// for the retail layout (WeaponUsesClips, WeaponUsesSecondaryAmmo, ...) move
+// and resize HudAmmo/HudAmmoSecondary for a moment on every weapon switch, so
+// restore the beta bounds before the panel is drawn each frame. Colour and
+// alpha animations are unaffected.
+void CHudNumericDisplay::ApplyBetaCounterBounds()
+{
+    const char *name=GetName();
+    const int kind=!Q_stricmp(name,"HudHealth")?0:!Q_stricmp(name,"HudSuit")?1:
+        !Q_stricmp(name,"HudAmmoSecondary")?3:!Q_stricmp(name,"HudSuitPower")?4:2;
+    const GammaBetaHud::Rect box=GammaBetaHud::CounterRect(ScreenWidth(),ScreenHeight(),kind);
+    int x,y,w,h;
+    GetBounds(x,y,w,h);
+    if(x!=box.x||y!=box.y||w!=box.w||h!=box.h) SetBounds(box.x,box.y,box.w,box.h);
+}
+
+void CHudNumericDisplay::PaintTraverse(bool Repaint, bool allowForce)
+{
+#ifdef HL2_CLIENT_DLL
+    if(IsBetaCounter()) ApplyBetaCounterBounds();
+#endif
+    BaseClass::PaintTraverse(Repaint,allowForce);
+}
+
 // 2002 bitmap HUD assets are defined by scripts/mod_textures.txt and drawn
 // through the engine's existing CHudTexture atlas loader. No substitute art is
 // generated; install the original sprites/hud1.vtf for authentic glyphs.
@@ -237,9 +261,6 @@ void CHudNumericDisplay::Paint()
         const bool isSuit=!Q_stricmp(name,"HudSuit");
         const bool isSecondary=!Q_stricmp(name,"HudAmmoSecondary");
         const bool isEnergy=!Q_stricmp(name,"HudSuitPower");
-        const int kind=isHealth?0:isSuit?1:isSecondary?3:isEnergy?4:2;
-        const GammaBetaHud::Rect box=GammaBetaHud::CounterRect(ScreenWidth(),ScreenHeight(),kind);
-        SetBounds(box.x,box.y,box.w,box.h);
         const int alpha=GammaBetaHud::Clamp((int)m_flAlphaOverride,0,255);
         Color tint=HL2ModernHudColor(isSecondary?Color(211,61,46,alpha):Color(233,208,111,alpha));
         if(!isSecondary)

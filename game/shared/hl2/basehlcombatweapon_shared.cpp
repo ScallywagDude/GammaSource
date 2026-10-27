@@ -229,7 +229,9 @@ void CBaseHLCombatWeapon::WeaponIdle( void )
 float	g_lateralBob;
 float	g_verticalBob;
 
-#if defined( CLIENT_DLL ) && ( !defined( HL2MP ) && !defined( PORTAL ) )
+// GammaSource builds HL2 with PORTAL defined; its HL2 weapons still need the HL2
+// client viewmodel bob rather than the server stubs below.
+#if defined( CLIENT_DLL ) && ( !defined( HL2MP ) && ( !defined( PORTAL ) || defined( HL2_CLIENT_DLL ) ) )
 
 #define	HL2_BOB_CYCLE_MIN	1.0f
 #define	HL2_BOB_CYCLE_MAX	0.45f

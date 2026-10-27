@@ -1232,7 +1232,8 @@ ConVar  alyx_darkness_force( "alyx_darkness_force", "0", FCVAR_CHEAT | FCVAR_REP
 		// Appended class IDs preserve existing save/network class numbers.
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_ANTLION, CLASS_BULLSQUID, D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_ANTLION, CLASS_HOUNDEYE, D_HT, 0);
-		CBaseCombatCharacter::SetDefaultRelationship(CLASS_BARNACLE, CLASS_BULLSQUID, D_NU, 0);
+		// Barnacles eat Bullsquids too (the 2003 table ignored them); the squid still fears barnacles.
+		CBaseCombatCharacter::SetDefaultRelationship(CLASS_BARNACLE, CLASS_BULLSQUID, D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_BARNACLE, CLASS_HOUNDEYE, D_HT, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_BULLSEYE, CLASS_BULLSQUID, D_NU, 0);
 		CBaseCombatCharacter::SetDefaultRelationship(CLASS_BULLSEYE, CLASS_HOUNDEYE, D_NU, 0);

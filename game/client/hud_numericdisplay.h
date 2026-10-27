@@ -35,10 +35,12 @@ protected:
 	virtual void ApplySchemeSettings(vgui::IScheme *scheme); // HL2MODERN_2002_FONTS
 	virtual void Paint();
 	virtual void PaintLabel();
+	virtual void PaintTraverse( bool Repaint, bool allowForce = true );
 
 private:
 	void PaintNumbers(vgui::HFont font, int xpos, int ypos, int value);
 	bool IsBetaCounter();
+	void ApplyBetaCounterBounds();
 	void PaintBetaLabel(const char *sprite, const wchar_t *fallback, int x, int y, Color tint);
 	void PaintBetaValue(int x, int y, int value, int digits, int glyphWidth, int glyphHeight, Color tint);
 

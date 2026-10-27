@@ -41,7 +41,7 @@ void CNPC_CombineE::Spawn( void )
 	SetModel( "models/Combine_Elite.mdl" );
 	SetHealth( MAX( 1, sk_combine_elite_health.GetInt() ) );
 	SetMaxHealth( GetHealth() );
-	SetKickDamage( MAX( 0.0f, sk_combine_elite_kick.GetFloat() ) );
+	m_nKickDamage = MAX( 0, sk_combine_elite_kick.GetInt() );
 
 	BaseClass::Spawn();
 }
@@ -54,7 +54,7 @@ void CNPC_CombineE::Spawn( void )
 //-----------------------------------------------------------------------------
 void CNPC_CombineE::Precache()
 {
-	engine->PrecacheModel("models/combine_elite.mdl");
+	PrecacheModel( "models/Combine_Elite.mdl" );
 
 	BaseClass::Precache();
 }
