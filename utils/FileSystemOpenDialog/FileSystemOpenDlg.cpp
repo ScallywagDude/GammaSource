@@ -666,7 +666,7 @@ void CFileSystemOpenDlg::PopulateListControl()
 		m_FileList.InsertItem( &item );
 	}
 
-	m_FileList.SortItems( FileListSortCallback, (DWORD)this );
+	m_FileList.SortItems( FileListSortCallback, reinterpret_cast<DWORD_PTR>(this) );
 }
 
 void CFileSystemOpenDlg::AddFileMask( const char *pMask )

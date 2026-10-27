@@ -264,3 +264,21 @@ def build(bld):
         lib=mfc_crt_libraries + ['comdlg32', 'comctl32', 'oleaut32', 'uuid', 'version'],
         install_path=bld.env.LIBDIR, subsystem=bld.env.MSVC_SUBSYSTEM,
         idx=bld.get_taskgen_count())
+
+    # Hammer loads this file browser dynamically for entity model/file fields.
+    # Build it with the same architecture and static MFC runtime as the editor.
+    bld.shlib(
+        name='filesystemopendialog', target='FileSystemOpenDialog',
+        source=['../utils/FileSystemOpenDialog/FileDialogApp.cpp',
+            '../utils/FileSystemOpenDialog/FileSystemOpenDlg.cpp',
+            '../utils/FileSystemOpenDialog/StdAfx.cpp',
+            '../utils/FileSystemOpenDialog/FileSystemOpenDialog.rc',
+            '../public/tier0/afxmem_override.cpp',
+            '../public/tier0/memoverride.cpp'],
+        includes=['../utils/FileSystemOpenDialog', '../public',
+            '../public/tier0', '../public/tier1', '../common', '../utils/common'],
+        use=['tier0', 'tier1', 'vstdlib', 'JPEG', 'USER32', 'GDI32',
+            'SHELL32', 'ADVAPI32', 'OLE32'],
+        lib=mfc_crt_libraries + ['comdlg32', 'comctl32', 'oleaut32', 'uuid'],
+        install_path=bld.env.LIBDIR, subsystem=bld.env.MSVC_SUBSYSTEM,
+        idx=bld.get_taskgen_count())
