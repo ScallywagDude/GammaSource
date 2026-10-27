@@ -4,7 +4,7 @@ This file mirrors the shared [README TODO list](README.md#todo). All unfinished 
 
 - [ ] **Finish current NPC, model, scripting, animation and puppeteering restoration.** Continue the unfinished fixes and verification in [v28 known bugs](docs/V28_KNOWN_BUGS.md), including normal choreographed body sequences on `e3_lab` and `e3_hydra`. **Alyx's legs are still messed up:** fix the remaining leg deformation and incorrect poses as part of this scripting, animation and puppeteering work.
 - [ ] **Fix barnacle pickup of newly added NPCs.** New NPCs currently cannot be picked up by barnacles.
-- [ ] **Fix intermittent hard-stop crashes when killing NPCs.** NPC deaths sometimes cause the entire game to crash.
+- [ ] **Fix intermittent hard-stop crashes when killing NPCs.** NPC deaths sometimes cause the entire game to crash, and interacting with ragdolls always does. **Source fix awaiting a native rebuild and in-game test:** converted 2003 models no longer write an invalid physics bone index (rebuilt in `legacy_models_cache_v8`), ragdoll element lookups are bounds-checked, and loose 2003 `.vcd` scenes are NUL-terminated.
 - [ ] **Restore the Houndeye's missing sonic shockwave.** Consider adapting the Half-Life 1 effect and polishing it to fit Half-Life 2's visual style.
 - [ ] **Complete full ports of the unfinished cut Combine enemies.** Most remain substantially unfinished and need complete behavior and presentation.
 - [ ] **Complete `zoo_item` visual verification.** Inspect the sky, original HEV pickup and physgun beam in an isolated test profile.

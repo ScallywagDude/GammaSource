@@ -34,7 +34,10 @@ struct LegacyVtxOutput_t
 bool LegacyMDL_IsLegacy( const void *pData, int nSize );
 
 // Converts a v36/v37 model and its VTX6 files. 'report' receives what was dropped (or why it failed).
+// pPhysicsSolidNames, when given, lists the model's .phy solid names by solid index; it is
+// used to rebuild each bone's physics (ragdoll element) index.
 bool LegacyMDL_Convert( const void *pMdl, int nMdlSize, const LegacyVtxInput_t *pVtx, int nVtx,
-	CUtlBuffer &mdlOut, CUtlBuffer &vvdOut, CUtlVector<LegacyVtxOutput_t> &vtxOut, CUtlString &report );
+	CUtlBuffer &mdlOut, CUtlBuffer &vvdOut, CUtlVector<LegacyVtxOutput_t> &vtxOut, CUtlString &report,
+	const CUtlVector<CUtlString> *pPhysicsSolidNames = NULL );
 
 #endif // LEGACYMDL_H

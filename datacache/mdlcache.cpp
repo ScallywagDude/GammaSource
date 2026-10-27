@@ -28,6 +28,7 @@
 #include "datacache_common.h"
 #include "mempool.h"
 #include "vphysics_interface.h"
+#include "vcollide_parse.h"
 #include "phyfile.h"
 #include "studiobyteswap.h"
 #include "tier2/fileutils.h"
@@ -2075,11 +2076,11 @@ studiohdr_t *CMDLCache::UnserializeMDL( MDLHandle_t handle, void *pData, int nDa
 
 //-----------------------------------------------------------------------------
 // GammaSource: 2001-2003 models (MDL v36/v37) are converted to v48 the first time
-// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache_v7, which sits
+// they load. The .mdl/.vvd/.vtx results go to <mod>/legacy_models_cache_v8, which sits
 // at the head of the GAME search path, so later loads (and the .vvd/.vtx reads that
 // follow) find the converted files directly. The revisioned folder prevents old
 // conversions missing beta scene metadata, procedural helpers, IK, blend
-// semantics or repaired eye/delta data from shadowing the fixed data.
+// semantics, repaired eye/delta data or bone physics indices from shadowing the fixed data.
 //-----------------------------------------------------------------------------
 static ConVar mdl_legacy_convert( "mdl_legacy_convert", "1", 0, "Convert MDL v36/v37 models to v48 at load time" );
 static char s_szLegacyCacheDir[MAX_PATH];
@@ -2097,7 +2098,7 @@ static void EnsureLegacyModelCachePath()
 		*pSemi = 0;
 	if ( !szMod[0] )
 		V_strncpy( szMod, ".", sizeof( szMod ) );
-	V_ComposeFileName( szMod, "legacy_models_cache_v7", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
+	V_ComposeFileName( szMod, "legacy_models_cache_v8", s_szLegacyCacheDir, sizeof( s_szLegacyCacheDir ) );
 	V_FixSlashes( s_szLegacyCacheDir );
 	g_pFullFileSystem->CreateDirHierarchy( s_szLegacyCacheDir, NULL );
 	g_pFullFileSystem->AddSearchPath( s_szLegacyCacheDir, "GAME", PATH_ADD_TO_HEAD );
@@ -2133,10 +2134,56 @@ static bool ConvertLegacyModel( const char *pFileName, CUtlBuffer &buf )
 	if ( !g_pFullFileSystem->ReadFile( pFileName, "GAME", raw ) || !LegacyMDL_IsLegacy( raw.Base(), raw.TellMaxPut() ) )
 		return false;
 
+	// The .phy solid names (by solid index) give each bone its ragdoll element.
+	CUtlVector<CUtlString> solidNames;
+	char szPhy[MAX_PATH];
+	V_snprintf( szPhy, sizeof( szPhy ), "%s.phy", szBase );
+	CUtlBuffer phyBuf;
+	if ( g_pPhysicsCollision && g_pFullFileSystem->ReadFile( szPhy, "GAME", phyBuf ) && phyBuf.TellMaxPut() > (int)sizeof( phyheader_t ) )
+	{
+		const phyheader_t *pPhyHdr = (const phyheader_t *)phyBuf.Base();
+		const int nPhySize = phyBuf.TellMaxPut();
+		int pos = pPhyHdr->size;
+		bool bPhyOk = pPhyHdr->size == sizeof( phyheader_t ) && pPhyHdr->solidCount > 0 && pPhyHdr->solidCount <= 1024;
+		for ( int i = 0; bPhyOk && i < pPhyHdr->solidCount; i++ )
+		{
+			int solidSize;
+			if ( pos < 0 || pos + (int)sizeof( int ) > nPhySize ) { bPhyOk = false; break; }
+			memcpy( &solidSize, (const byte *)phyBuf.Base() + pos, sizeof( int ) );
+			if ( solidSize < 0 || solidSize > nPhySize - pos - (int)sizeof( int ) ) { bPhyOk = false; break; }
+			pos += sizeof( int ) + solidSize;
+		}
+		if ( bPhyOk && pos < nPhySize )
+		{
+			CUtlString text;
+			text.SetDirect( (const char *)phyBuf.Base() + pos, nPhySize - pos );
+			IVPhysicsKeyParser *pParse = g_pPhysicsCollision->VPhysicsKeyParserCreate( text.Get() );
+			while ( !pParse->Finished() )
+			{
+				if ( !V_stricmp( pParse->GetCurrentBlockName(), "solid" ) )
+				{
+					solid_t solid;
+					pParse->ParseSolid( &solid, NULL );
+					if ( solid.index >= 0 && solid.index < pPhyHdr->solidCount )
+					{
+						if ( solidNames.Count() <= solid.index )
+							solidNames.SetCount( solid.index + 1 );
+						solidNames[solid.index] = solid.name;
+					}
+				}
+				else
+				{
+					pParse->SkipBlock();
+				}
+			}
+			g_pPhysicsCollision->VPhysicsKeyParserDestroy( pParse );
+		}
+	}
+
 	CUtlBuffer mdl48, vvd;
 	CUtlVector<LegacyVtxOutput_t> vtxOut;
 	CUtlString report;
-	if ( !LegacyMDL_Convert( raw.Base(), raw.TellMaxPut(), vtxIn, nVtx, mdl48, vvd, vtxOut, report ) )
+	if ( !LegacyMDL_Convert( raw.Base(), raw.TellMaxPut(), vtxIn, nVtx, mdl48, vvd, vtxOut, report, &solidNames ) )
 	{
 		Warning( "Model %s (MDL v%d) could not be converted: %s\n", pFileName, ((studiohdr_t *)buf.Base())->version, report.Get() );
 		return false;

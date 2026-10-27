@@ -220,6 +220,16 @@ static void RagdollAddConstraint( IPhysicsEnvironment *pPhysEnv, ragdoll_t &ragd
 		constraint.childIndex = -1;
 		constraint.parentIndex = -1;
 	}
+	// A solid whose bone could not be found was skipped, so its index (and every later
+	// one) no longer matches the element list. Never constrain a missing element.
+	if ( constraint.childIndex >= ragdoll.listCount || constraint.parentIndex >= ragdoll.listCount ||
+		( constraint.childIndex >= 0 && !ragdoll.list[constraint.childIndex].pObject ) ||
+		( constraint.parentIndex >= 0 && !ragdoll.list[constraint.parentIndex].pObject ) )
+	{
+		DevMsg( 1, "Ragdoll %s: constraint references a missing element\n", params.pStudioHdr->pszName() );
+		constraint.childIndex = -1;
+		constraint.parentIndex = -1;
+	}
 	if ( constraint.childIndex >= 0 && constraint.parentIndex >= 0 )
 	{
 		Assert(constraint.childIndex<ragdoll.listCount);

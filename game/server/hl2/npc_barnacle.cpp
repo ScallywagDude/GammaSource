@@ -751,6 +751,8 @@ bool CNPC_Barnacle::WaitForRagdollToSettle( float flBiteZOffset )
 	mstudiobone_t *pBone = pStudioHdr->pBone( m_iGrabbedBoneIndex );
 	int iBoneIndex = pBone->physicsbone;
 	ragdoll_t *pRagdoll = m_hRagdoll->GetRagdoll();
+	if ( iBoneIndex < 0 || iBoneIndex >= pRagdoll->listCount )
+		iBoneIndex = 0;
 	IPhysicsObject *pRagdollPhys = pRagdoll->list[iBoneIndex].pObject;
 	pRagdollPhys->GetVelocity( &vecVelocity, &angVel );
 	return ( vecVelocity.LengthSqr() < 20 );
