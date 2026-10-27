@@ -1046,3 +1046,128 @@ void StriderBloodCallback( const CEffectData &data )
 
 DECLARE_CLIENT_EFFECT( "StriderBlood", StriderBloodCallback );
 
+
+#ifdef GAMMA_PORTALGUN
+//-----------------------------------------------------------------------------
+// GammaSource: client half of the 2003 strider (gamma/npc_strider2003.cpp).
+// Same cannon effect messages as the HL2 strider, but the 2003 model solves
+// its leg IK on the client and only the stomp target comes from the server.
+//-----------------------------------------------------------------------------
+class C_Strider2003 : public C_AI_BaseNPC
+{
+	DECLARE_CLASS( C_Strider2003, C_AI_BaseNPC );
+public:
+	DECLARE_CLIENTCLASS();
+	DECLARE_INTERPOLATION();
+
+					C_Strider2003();
+
+	virtual void	ReceiveMessage( int classID, bf_read &msg );
+	virtual void	CalculateIKLocks( float currentTime )
+	{
+		BaseClass::CalculateIKLocks( currentTime );
+		if ( m_pIk && m_pIk->m_target.Count() > STOMP_IK_SLOT )
+		{
+			// HACKHACK: Hardcoded 11???  Not a cleaner way to do this
+			CIKTarget &target = m_pIk->m_target[STOMP_IK_SLOT];
+			target.SetPos( m_vecHitPos );
+		}
+	}
+
+	virtual void OnDataChanged( DataUpdateType_t updateType );
+	virtual void GetRenderBounds( Vector& theMins, Vector& theMaxs );
+	virtual void ClientThink();
+
+private:
+	C_Strider2003( const C_Strider2003 & );
+	C_StriderFX	m_cannonFX;
+	Vector		m_vecHitPos;
+	CInterpolatedVar< Vector >		m_iv_vecHitPos;
+	Vector		m_vecRenderMins;
+	Vector		m_vecRenderMaxs;
+};
+
+IMPLEMENT_CLIENTCLASS_DT( C_Strider2003, DT_NPC_Strider2003, CNPC_Strider2003 )
+	RecvPropVector( RECVINFO( m_vecHitPos ) ),
+END_RECV_TABLE()
+
+C_Strider2003::C_Strider2003() :
+		m_iv_vecHitPos( "C_Strider2003::m_iv_vecHitPos" )
+{
+	AddVar( &m_vecHitPos, &m_iv_vecHitPos, LATCH_ANIMATION_VAR );
+	m_vecHitPos.Init();
+	m_vecRenderMins.Init();
+	m_vecRenderMaxs.Init();
+}
+
+void C_Strider2003::ReceiveMessage( int classID, bf_read &msg )
+{
+	if ( classID != GetClientClass()->m_ClassID )
+	{
+		// message is for subclass
+		BaseClass::ReceiveMessage( classID, msg );
+		return;
+	}
+
+	int messageType = msg.ReadByte();
+	switch( messageType )
+	{
+	case STRIDER_MSG_STREAKS:
+		{
+			Vector	pos;
+			msg.ReadBitVec3Coord( pos );
+			m_cannonFX.SetRenderOrigin( pos );
+			m_cannonFX.EffectInit( entindex(), LookupAttachment( "BigGun" ) );
+			m_cannonFX.LimitTime( STRIDERFX_BIG_SHOT_TIME );
+		}
+		break;
+
+	case STRIDER_MSG_BIG_SHOT:
+		{
+			Vector tmp;
+			msg.ReadBitVec3Coord( tmp );
+			m_cannonFX.SetTime( STRIDERFX_BIG_SHOT_TIME );
+			m_cannonFX.LimitTime( STRIDERFX_END_ALL_TIME );
+		}
+		break;
+
+	case STRIDER_MSG_DEAD:
+		{
+			m_cannonFX.EffectShutdown();
+		}
+		break;
+	}
+}
+
+void C_Strider2003::OnDataChanged( DataUpdateType_t updateType )
+{
+	if ( updateType == DATA_UPDATE_CREATED )
+	{
+		// We need to have our render bounds defined or shadow creation won't work correctly
+		ClientThink();
+		ClientThinkList()->SetNextClientThink( GetClientHandle(), CLIENT_THINK_ALWAYS );
+	}
+
+	BaseClass::OnDataChanged( updateType );
+
+	m_cannonFX.Update( this, m_vecHitPos );
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: Recompute my rendering box
+//-----------------------------------------------------------------------------
+void C_Strider2003::ClientThink()
+{
+	// The legs IK every frame, so the render box follows the hitboxes
+	ComputeEntitySpaceHitboxSurroundingBox( &m_vecRenderMins, &m_vecRenderMaxs );
+
+	// True argument because the origin may have stayed the same, but the size is expected to always change
+	g_pClientShadowMgr->AddToDirtyShadowList( this, true );
+}
+
+void C_Strider2003::GetRenderBounds( Vector& theMins, Vector& theMaxs )
+{
+	theMins = m_vecRenderMins;
+	theMaxs = m_vecRenderMaxs;
+}
+#endif // GAMMA_PORTALGUN

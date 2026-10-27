@@ -289,7 +289,16 @@ END_SEND_TABLE()
 
 //-------------------------------------
 
+#ifdef GAMMA_PORTALGUN
+// GammaSource: npc_strider is registered in gamma/npc_strider2003.cpp, which
+// picks the 2003 or HL2 strider AI (gamma_strider_ai2003). npc_strider_hl2 is
+// always this class; the helper striders below are created through it.
+LINK_ENTITY_TO_CLASS( npc_strider_hl2, CNPC_Strider );
+#define STRIDER_HL2_CLASSNAME "npc_strider_hl2"
+#else
 LINK_ENTITY_TO_CLASS( npc_strider, CNPC_Strider );
+#define STRIDER_HL2_CLASSNAME "npc_strider"
+#endif
 
 //-------------------------------------
 
@@ -707,7 +716,7 @@ void CNPC_Strider::Activate()
 		}
 
 		// Have to create a virgin strider to ensure proper pose
-		CNPC_Strider *pStrider = (CNPC_Strider *)CreateEntityByName( "npc_strider" );
+		CNPC_Strider *pStrider = (CNPC_Strider *)CreateEntityByName( STRIDER_HL2_CLASSNAME );
 		Assert(pStrider);
 		if ( !pStrider )
 			return;
@@ -4475,13 +4484,14 @@ void AdjustStriderNodePosition( CAI_Network *pNetwork, CAI_Node *pNode )
 {
 	if ( pNode->GetHint() && pNode->GetHint()->HintType() == HINT_STRIDER_NODE )
 	{
-		CNPC_Strider *pStrider = (CNPC_Strider *)gEntList.FindEntityByClassname( NULL, "npc_strider" );
+		// GammaSource: npc_strider may be the 2003 strider, which isn't a CNPC_Strider
+		CNPC_Strider *pStrider = dynamic_cast<CNPC_Strider *>( gEntList.FindEntityByClassname( NULL, "npc_strider" ) );
 		bool bCreated = false;
 		if ( !pStrider )
 		{
 			bool allowPrecache = CBaseEntity::IsPrecacheAllowed();
 			CBaseEntity::SetAllowPrecache( true );
-			pStrider = (CNPC_Strider *)CreateEntityByName( "npc_strider" );
+			pStrider = (CNPC_Strider *)CreateEntityByName( STRIDER_HL2_CLASSNAME );
 			pStrider->m_bDisableBoneFollowers = true; // don't create these since we're just going to destroy him
 			DispatchSpawn( pStrider );
 			CBaseEntity::SetAllowPrecache( allowPrecache );
