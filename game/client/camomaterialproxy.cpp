@@ -105,6 +105,7 @@ private:
 
 	CCamoTextureRegen m_TextureRegen;
 	C_BaseEntity *m_pEnt;
+	bool m_bPatternLoadAttempted;	// GammaSource: the pattern loads on first bind
 };
 
 
@@ -134,6 +135,9 @@ CCamoMaterialProxy::CCamoMaterialProxy() : m_TextureRegen(this)
 	m_pCamoPatternTextureVar = NULL;
 	m_pointsInNormalizedBox = NULL;
 	m_pEnt = NULL;
+	m_bPatternLoadAttempted = false;
+	m_CamoPatternNumColors = 0;
+	m_CamoPatternWidth = m_CamoPatternHeight = 0;
 }
 
 #pragma warning (default:4355)
@@ -160,8 +164,8 @@ CCamoMaterialProxy::~CCamoMaterialProxy()
 			pCamoTexture->SetTextureRegenerator( NULL );
 	}
 
-	delete m_pCamoPatternImage;
-	delete m_pointsInNormalizedBox;
+	delete [] m_pCamoPatternImage;
+	delete [] m_pointsInNormalizedBox;
 }
 
 
@@ -202,8 +206,10 @@ void *CCamoMaterialProxy::AllocateInstanceData( C_BaseEntity *pEntity )
 
 bool CCamoMaterialProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 {
-	return false; // hack!  Need to make sure that the TGA loader has a valid filesystem before trying
-			// to load the camo pattern.
+	// GammaSource: the 2018 code switched the camouflage off here ("hack! Need to
+	// make sure that the TGA loader has a valid filesystem before trying to load
+	// the camo pattern"). The pattern now loads on the first bind instead, by
+	// which time the filesystem is up, so the camo Combine Elite works again.
 
 #if 0
 	// set how big our instance data is.
@@ -219,10 +225,6 @@ bool CCamoMaterialProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 		m_pCamoTextureVar = NULL;
 		return false;
 	}
-	ITexture *pCamoTexture = m_pCamoTextureVar->GetTextureValue();
-	if (pCamoTexture)
-		pCamoTexture->SetTextureRegenerator( &m_TextureRegen );
-	
 	// Need to get the palettized texture to create the procedural texture from
 	// somewhere.
 	m_pCamoPatternTextureVar = m_pMaterial->FindVar( "$camoPatternTexture", &found );
@@ -254,9 +256,6 @@ bool CCamoMaterialProxy::Init( IMaterial *pMaterial, KeyValues *pKeyValues )
 		subBoundingBoxMaxVar->GetVecValue( m_SubBoundingBoxMax.Base(), 3 );
 	}
 	
-	LoadCamoPattern();
-	GenerateRandomPointsInNormalizedCube();
-
 	return true;
 }
 
@@ -339,7 +338,7 @@ void CCamoMaterialProxy::GetColors( Vector &diffuseColor, Vector &baseColor, int
 //-----------------------------------------------------------------------------
 void CCamoMaterialProxy::GenerateCamoTexture( ITexture* pTexture, IVTFTexture *pVTFTexture )
 {
-	if (!m_pEnt)
+	if (!m_pEnt || !m_pCamoPatternImage || !m_pointsInNormalizedBox || m_CamoPatternNumColors <= 0)
 		return;
 
 #if 0
@@ -449,14 +448,40 @@ void CCamoMaterialProxy::GenerateCamoTexture( ITexture* pTexture, IVTFTexture *p
 //-----------------------------------------------------------------------------
 void CCamoMaterialProxy::OnBind( C_BaseEntity *pEntity )
 {
-	if( !m_pCamoTextureVar )
+	if ( !m_bPatternLoadAttempted && m_pCamoTextureVar && m_pCamoPatternTextureVar )
+	{
+		m_bPatternLoadAttempted = true;
+		LoadCamoPattern();
+		if ( m_pCamoTextureVar && m_pCamoPatternImage && m_CamoPatternNumColors > 0 )
+		{
+			GenerateRandomPointsInNormalizedCube();
+		}
+		else
+		{
+			// No usable pattern: keep the material's own texture.
+			m_pCamoTextureVar = NULL;
+		}
+
+		ITexture *pTexture = m_pCamoTextureVar ? m_pCamoTextureVar->GetTextureValue() : NULL;
+		if ( pTexture )
+		{
+			pTexture->SetTextureRegenerator( &m_TextureRegen );
+		}
+		else
+		{
+			m_pCamoTextureVar = NULL;
+		}
+	}
+
+	if( !m_pCamoTextureVar || !pEntity )
 	{
 		return;
 	}
 	
 	m_pEnt = pEntity;	
 	ITexture *pCamoTexture = m_pCamoTextureVar->GetTextureValue();
-	pCamoTexture->Download();
+	if ( pCamoTexture )
+		pCamoTexture->Download();
 
 	// Mark it so it doesn't get regenerated on task switch
 	m_pEnt = NULL;

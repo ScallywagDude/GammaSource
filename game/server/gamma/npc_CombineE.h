@@ -19,14 +19,16 @@
 #ifndef	NPC_COMBINE_E_H
 #define	NPC_COMBINE_E_H
 
-#include "npc_combine.h"
+// GammaSource: built on the ported 2003 soldier, as in 2003. Its 2003 model
+// has the 2003 soldier's animation set, not the HL2 soldier's.
+#include "npc_combine2003.h"
 
 //=========================================================
 //	>> CNPC_CombineE
 //=========================================================
-class CNPC_CombineE : public CNPC_Combine
+class CNPC_CombineE : public CNPC_Combine2003
 {
-	DECLARE_CLASS( CNPC_CombineE, CNPC_Combine );
+	DECLARE_CLASS( CNPC_CombineE, CNPC_Combine2003 );
 
 public:
 	void		Spawn( void );

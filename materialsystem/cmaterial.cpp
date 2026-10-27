@@ -1089,7 +1089,7 @@ int CMaterial::FindMaterialVarFlag( char const* pFlagName ) const
 //-----------------------------------------------------------------------------
 // GammaSource: 2002-2003 shader names -> 2018 shader names. Returns NULL if no mapping.
 //-----------------------------------------------------------------------------
-static const char *GammaLegacyShaderName( const char *pName, char *pBuf, int nBufLen )
+static const char *GammaLegacyShaderName( const char *pName, char *pBuf, int nBufLen, bool bModel )
 {
 	static const char *s_Aliases[][2] =
 	{
@@ -1099,6 +1099,10 @@ static const char *GammaLegacyShaderName( const char *pName, char *pBuf, int nBu
 		{ "unlittexture", "UnlitGeneric" },
 		{ "skin", "VertexLitGeneric" },
 		{ "basetimesvertexcoloralphablendnooverbright", "UnlitGeneric" },
+		// Base x 2 modulate + envmap, used by the camouflage Combine Elite
+		// (models/combine_elite/camo*). "MODEL_OR_WORLD" picks by $model below.
+		{ "basetimesmod2xenvmap", "MODEL_OR_WORLD" },
+		{ "camo", "MODEL_OR_WORLD" },
 	};
 	V_strncpy( pBuf, pName, nBufLen );
 	// strip a trailing _DX6/_DX7/_DX8/_DX80/_DX9/_DX90 level suffix
@@ -1109,7 +1113,10 @@ static const char *GammaLegacyShaderName( const char *pName, char *pBuf, int nBu
 	{
 		if ( !V_stricmp( pBuf, s_Aliases[i][0] ) )
 		{
-			V_strncpy( pBuf, s_Aliases[i][1], nBufLen );
+			const char *pTarget = s_Aliases[i][1];
+			if ( !V_strcmp( pTarget, "MODEL_OR_WORLD" ) )
+				pTarget = bModel ? "VertexLitGeneric" : "LightmappedGeneric";
+			V_strncpy( pBuf, pTarget, nBufLen );
 			break;
 		}
 	}
@@ -1516,7 +1523,8 @@ KeyValues* CMaterial::InitializeShader( KeyValues &keyValues, KeyValues &patchKe
 		if ( !pShader )
 		{
 			// GammaSource: 2002-2003 materials name per-DX-level and retired shaders.
-			const char *pLegacy = GammaLegacyShaderName( pShaderName, pFallbackShaderNameBuf, sizeof( pFallbackShaderNameBuf ) );
+			const char *pLegacy = GammaLegacyShaderName( pShaderName, pFallbackShaderNameBuf, sizeof( pFallbackShaderNameBuf ),
+				keyValues.GetInt( "$model", 0 ) != 0 );
 			if ( pLegacy )
 			{
 				pShader = ShaderSystem()->FindShader( pLegacy );
