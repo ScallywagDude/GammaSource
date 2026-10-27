@@ -294,7 +294,7 @@ public:
 
 	void Spawn(void);
 	void Precache( void );
-	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );
+	void TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 };
 
 //-----------------------------------------------------------------------------
@@ -302,13 +302,13 @@ public:
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CGrenadeCrematorHead::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CGrenadeCrematorHead::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	if ( info.GetDamageType() & DMG_BULLET)
 	{
 		g_pEffects->Ricochet(ptr->endpos,ptr->plane.normal);
 	}
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 void CGrenadeCrematorHead::Spawn(void)

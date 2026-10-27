@@ -842,14 +842,18 @@ bool CNPC_Assassin::FValidateHintType ( CAI_Hint *pHint )
 // Purpose: 
 // Output : const Vector
 //-----------------------------------------------------------------------------
-const Vector &CNPC_Assassin::GetViewOffset( void )
+const Vector &CNPC_Assassin::GetViewOffset( void ) const
 {
 	static Vector eyeOffset;
 
+	// GammaSource: const, so it overrides the 2018 virtual; the non-const
+	// 2003 version was never called and the perched eye height was lost.
+	const Activity activity = const_cast<CNPC_Assassin *>( this )->GetActivity();
+
 	//FIXME: Use eye attachment?
 	// If we're crouching, offset appropriately
-	if ( ( GetActivity() == ACT_ASSASSIN_PERCH ) ||
-		 ( GetActivity() == ACT_RANGE_ATTACK1 ) )
+	if ( ( activity == ACT_ASSASSIN_PERCH ) ||
+		 ( activity == ACT_RANGE_ATTACK1 ) )
 	{
 		eyeOffset = Vector( 0, 0, 24.0f );
 	}

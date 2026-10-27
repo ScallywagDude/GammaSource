@@ -112,7 +112,7 @@ void CWeaponBrickbat::Spawn( void )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-const char *CWeaponBrickbat::GetViewModel( int viewmodelindex /*=0*/ )
+const char *CWeaponBrickbat::GetViewModel( int viewmodelindex /*=0*/ ) const
 {
 	return BrickBatAmmoArray[ValidAmmoType()].m_sViewModel;
 }
@@ -120,7 +120,7 @@ const char *CWeaponBrickbat::GetViewModel( int viewmodelindex /*=0*/ )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
-const char *CWeaponBrickbat::GetWorldModel( void )
+const char *CWeaponBrickbat::GetWorldModel( void ) const
 {
 	return BrickBatAmmoArray[ValidAmmoType()].m_sWorldModel;
 }
@@ -578,7 +578,7 @@ void CWeaponBrickbat::ItemPostFrame( void )
 // Input  :
 // Output :
 //-----------------------------------------------------------------------------
-void CWeaponBrickbat::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr )
+void CWeaponBrickbat::TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator )
 {
 	if ( info.GetDamageType() & DMG_BULLET)
 	{
@@ -588,7 +588,7 @@ void CWeaponBrickbat::TraceAttack( const CTakeDamageInfo &info, const Vector &ve
 			g_pEffects->Ricochet(ptr->endpos,ptr->plane.normal);
 		}	
 	}
-	BaseClass::TraceAttack( info, vecDir, ptr );
+	BaseClass::TraceAttack( info, vecDir, ptr, pAccumulator );
 }
 
 //-----------------------------------------------------------------------------

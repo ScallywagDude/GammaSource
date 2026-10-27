@@ -36,7 +36,7 @@ public:
 	virtual int		TranslateSchedule( int type );
 	int				MeleeAttack1Conditions( float flDot, float flDist );
 
-	bool			IsLightDamage( float flDamage, int bitsDamageType ) { return ( flDamage > 0.0f ); }
+	bool			IsLightDamage( const CTakeDamageInfo &info ) { return ( info.GetDamage() > 0.0f ); }
 	bool			HandleInteraction( int interactionType, void *data, CBaseCombatCharacter *sourceEnt );
 
 	void			Precache( void );
@@ -46,7 +46,7 @@ public:
 	void			GrubTouch( CBaseEntity *pOther );
 	void			EndTouch(  CBaseEntity *pOther );
 	void			StickyTouch( CBaseEntity *pOther );
-	void			PainSound( void );
+	void			PainSound( const CTakeDamageInfo &info );
 	void			PrescheduleThink( void );
 	void			HandleAnimEvent( animevent_t *pEvent );
 	void			Event_Killed( const CTakeDamageInfo &info );

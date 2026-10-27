@@ -27,7 +27,7 @@ public:
 	void				Precache( void );
 	void				SetTarget( CBaseEntity *pTarget );
 	bool				IsShieldOn( void );
-	void				TraceAttack( CBaseEntity *pAttacker, float flDamage, const Vector &vecDir, trace_t *ptr, int bitsDamageType);
+	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 
 private:
 	CBeam*				m_pCageBeam[NUM_CAGE_BEAMS];

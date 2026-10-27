@@ -54,8 +54,8 @@ public:
 	void				Spawn( void );
 	bool				Deploy( void );
 
-	virtual const char *GetViewModel( int viewmodelindex =0 );
-	virtual const char *GetWorldModel( void );
+	virtual const char *GetViewModel( int viewmodelindex =0 ) const;
+	virtual const char *GetWorldModel( void ) const;
 
 	void				DrawAmmo( void );
 
@@ -64,7 +64,7 @@ public:
 
 	void				SetPickupTouch( void );
 	void 				BrickbatTouch( CBaseEntity *pOther );	// default weapon touch
-	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr );	
+	void				TraceAttack( const CTakeDamageInfo &info, const Vector &vecDir, trace_t *ptr, CDmgAccumulator *pAccumulator );
 	int					CapabilitiesGet( void ) { return bits_CAP_WEAPON_RANGE_ATTACK1; }
 
 	bool				ObjectInWay( void );
