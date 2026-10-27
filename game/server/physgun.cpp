@@ -29,6 +29,13 @@ ConVar phys_gunvel("phys_gunvel", "400");
 ConVar phys_gunforce("phys_gunforce", "5e5" );
 ConVar phys_guntorque("phys_guntorque", "100" );
 ConVar phys_gunglueradius("phys_gunglueradius", "128" );
+// GammaSource: 2003 bonded two pellets only when their centres were within 3
+// units. Each pellet sits 1 unit off its surface and physics keeps surfaces a
+// little apart, so pressed-together pellets usually stopped just short and
+// nothing ever welded.
+ConVar phys_gunglue_bonddist( "phys_gunglue_bonddist", "6", 0, "Distance between two glue pellets at which releasing the held object welds it." );
+ConVar phys_gunglue_single( "phys_gunglue_single", "1", 0, "Objects without a pellet of their own weld to a free pellet they are pressed against." );
+ConVar phys_gunglue_singledist( "phys_gunglue_singledist", "4", 0, "How close (to its bounds) a held object must be to a free pellet to weld to it." );
 
 static int g_physgunBeam;
 #define PHYSGUN_BEAM_SPRITE		"sprites/gamma_physbeam.vmt"
@@ -547,6 +554,7 @@ public:
 	void SortPelletsForObject( CBaseEntity *pObject );
 	void SetObjectPelletsColor( int r, int g, int b );
 	void CreatePelletAttraction( float radius, CBaseEntity *pObject );
+	int FindStickPellet( CBaseEntity *pObject );
 	IPhysicsObject *GetPelletPhysObject( int pelletIndex );
 	void GetPelletWorldCoords( int pelletIndex, Vector *worldPos, Vector *worldNormal )
 	{
@@ -603,6 +611,7 @@ private:
 	
 	int			m_pelletHeld;
 	int			m_pelletAttract;
+	int			m_pelletStick;	// GammaSource: free pellet the held object is pressed against
 	float		m_glueTime;
 	CNetworkVar( bool, m_glueTouching );
 };
@@ -651,6 +660,7 @@ BEGIN_DATADESC( CWeaponGravityGun )
 	DEFINE_FIELD( m_objectPelletCount,	FIELD_INTEGER ),
 	DEFINE_FIELD( m_pelletHeld,			FIELD_INTEGER ),
 	DEFINE_FIELD( m_pelletAttract,		FIELD_INTEGER ),
+	DEFINE_FIELD( m_pelletStick,		FIELD_INTEGER ),
 	DEFINE_FIELD( m_glueTime,			FIELD_TIME ),
 	DEFINE_FIELD( m_glueTouching,		FIELD_BOOLEAN ),
 
@@ -670,6 +680,7 @@ CWeaponGravityGun::CWeaponGravityGun()
 	m_bFiresUnderwater = true;
 	m_pelletAttract = -1;
 	m_pelletHeld = -1;
+	m_pelletStick = -1;
 	m_beamTargetPosition.Init();
 	m_beamWorldPosition.Init();
 }
@@ -845,6 +856,21 @@ void CWeaponGravityGun::EffectUpdate( void )
 		}
 
 		CreatePelletAttraction( phys_gunglueradius.GetFloat(), pObject );
+
+		// No pellet pair: a free pellet the object is pressed against will hold it.
+		int stick = ( m_pelletHeld < 0 && phys_gunglue_single.GetBool() ) ? FindStickPellet( pObject ) : -1;
+		if ( stick != m_pelletStick )
+		{
+			if ( m_pelletStick >= 0 && m_activePellets[m_pelletStick].pellet && !m_activePellets[m_pelletStick].pellet->IsInert() )
+				m_activePellets[m_pelletStick].pellet->SetRenderColor( 255, 0, 0 );
+			if ( stick >= 0 )
+				m_activePellets[stick].pellet->SetRenderColor( 192, 255, 192 );
+			m_pelletStick = stick;
+		}
+		if ( m_pelletStick >= 0 )
+		{
+			m_glueTouching = true;
+		}
 			
 		// If I'm looking more than 20 degrees away from the glue point, then give up
 		// This lets the player "gesture" for the glue to let go.
@@ -1140,6 +1166,7 @@ void CWeaponGravityGun::DeleteActivePellets()
 		UTIL_Remove( pPellet );
 	}
 	m_pelletCount = 0;
+	m_pelletStick = -1;
 }
 
 void CWeaponGravityGun::CreatePelletAttraction( float radius, CBaseEntity *pObject )
@@ -1213,7 +1240,8 @@ void CWeaponGravityGun::CreatePelletAttraction( float radius, CBaseEntity *pObje
 	}
 
 	// check for bonding
-	if ( best < 3*3 )
+	const float bondDist = MAX( 3.0f, phys_gunglue_bonddist.GetFloat() );
+	if ( best < bondDist*bondDist )
 				{
 					// This makes the pull towards the pellet stop getting stronger since some part of 
 					// the object is touching
@@ -1221,6 +1249,34 @@ void CWeaponGravityGun::CreatePelletAttraction( float radius, CBaseEntity *pObje
 		}
 	}
 
+
+//-----------------------------------------------------------------------------
+// GammaSource: the nearest free pellet (not on the held object) within
+// phys_gunglue_singledist of the held object's bounds, or -1.
+//-----------------------------------------------------------------------------
+int CWeaponGravityGun::FindStickPellet( CBaseEntity *pObject )
+{
+	if ( !pObject )
+		return -1;
+
+	const float maxDist = MAX( 0.f, phys_gunglue_singledist.GetFloat() );
+	float best = maxDist + 0.001f;
+	int found = -1;
+	for ( int i = 0; i < m_pelletCount; i++ )
+	{
+		CGravityPellet *pPellet = m_activePellets[i].pellet;
+		if ( !pPellet || pPellet->IsInert() || m_activePellets[i].parent == pObject )
+			continue;
+
+		float dist = pObject->CollisionProp()->CalcDistanceFromPoint( pPellet->GetAbsOrigin() );
+		if ( dist < best )
+		{
+			best = dist;
+			found = i;
+		}
+	}
+	return found;
+}
 
 IPhysicsObject *CWeaponGravityGun::GetPelletPhysObject( int pelletIndex )
 {
@@ -1248,6 +1304,9 @@ void CWeaponGravityGun::DetachObject( void )
 	m_pelletHeld = -1;
 	m_pelletAttract = -1;
 	m_glueTouching = false;
+	if ( m_pelletStick >= 0 && m_activePellets[m_pelletStick].pellet && !m_activePellets[m_pelletStick].pellet->IsInert() )
+		m_activePellets[m_pelletStick].pellet->SetRenderColor( 255, 0, 0 );
+	m_pelletStick = -1;
 	SetObjectPelletsColor( 255, 0, 0 );
 	m_objectPelletCount = 0;
 
@@ -1300,6 +1359,7 @@ void CWeaponGravityGun::AttachObject( CBaseEntity *pObject, const Vector& start,
 
 		m_pelletAttract = -1;
 		m_pelletHeld = -1;
+		m_pelletStick = -1;	// the sort below reorders the pellet list
 
 		pPhysics->Wake();
 		SortPelletsForObject( pObject );
@@ -1414,14 +1474,25 @@ void CWeaponGravityGun::WeaponIdle( void )
 		{
 			CBaseEntity *pObject = m_hObject;
 			// pellet is touching object, so glue it
-			if ( pObject && m_glueTouching )
+			if ( pObject && m_glueTouching && m_pelletAttract >= 0 && m_pelletHeld >= 0 )
 			{
 				CGravityPellet *pPellet = m_activePellets[m_pelletAttract].pellet;
-				if ( pPellet->MakeConstraint( pObject ) )
+				if ( pPellet && pPellet->MakeConstraint( pObject ) )
 				{
 					WeaponSound( SPECIAL1 );
 					m_flNextPrimaryAttack = gpGlobals->curtime + 0.75;
-					m_activePellets[m_pelletHeld].pellet->MakeInert();
+					if ( m_activePellets[m_pelletHeld].pellet )
+						m_activePellets[m_pelletHeld].pellet->MakeInert();
+				}
+			}
+			// GammaSource: pressed against a single free pellet
+			else if ( pObject && m_pelletStick >= 0 )
+			{
+				CGravityPellet *pPellet = m_activePellets[m_pelletStick].pellet;
+				if ( pPellet && !pPellet->IsInert() && pPellet->MakeConstraint( pObject ) )
+				{
+					WeaponSound( SPECIAL1 );
+					m_flNextPrimaryAttack = gpGlobals->curtime + 0.75;
 				}
 			}
 

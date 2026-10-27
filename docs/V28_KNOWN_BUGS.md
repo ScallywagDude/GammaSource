@@ -14,7 +14,7 @@ This is the frozen build's disclosure list, not a claim that all NPC work is fin
 ## Verification gaps
 
 - Conscript, Sentry, Combine Assassin, Combot, Combine Guard/Elite, Crab/Mortar Synth, rollers, live Hydra attacks and Spotlight require a broader per-class gameplay matrix. Enabled classes and build registration do not prove every behavior works.
-- Physgun basic grab/lift/release and beam are verified. Standalone pellet welding and held-object save/load are not certified; the short reload/holster probe is not a full welding test.
+- Physgun basic grab/lift/release and beam are verified. Pellet welding was reworked on 27 October 2026 (pellet pairs bond within `phys_gunglue_bonddist` 6 units instead of 3, and an object pressed against a single free pellet welds to it on release); it awaits an in-game test, as does held-object save/load.
 - Broad NPC navigation, squad tactics, grenades, deaths, ragdolls, interruption, multiplayer and long-session stability have not all been exercised. The lab is a limited test arena.
 - Targeted HEV/skybox coverage, friendly-fire toggles and all renderer/UI regressions have not been repeated on this final snapshot. Prior fixes are preserved.
 - Old map sound entries such as `eli_lab.eli_labcoat`, `Hud.Hint` and optional later Strider/Scanner sounds remain missing in supplied scripts. Debug shaders and optional VGUI materials can also warn. Original tested lab/Hydra dialogue WAVs are present.
