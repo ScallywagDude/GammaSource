@@ -125,9 +125,9 @@ bool CWeaponVortexHopwire::Deploy( void )
 //-----------------------------------------------------------------------------
 bool CWeaponVortexHopwire::Holster( CBaseCombatWeapon *pSwitchingTo )
 {
-	if ( m_hActiveHopWire != NULL )
-		return false;
-
+	// A thrown hopwire no longer locks the player to this weapon. The handle
+	// survives the holster, so trap mode can still be sprung after switching
+	// back, and a second throw stays blocked until the first one is gone.
 	m_bRedraw = false;
 	m_fDrawbackFinished = false;
 
@@ -216,7 +216,8 @@ void CWeaponVortexHopwire::Operator_HandleAnimEvent( animevent_t *pEvent, CBaseC
 //-----------------------------------------------------------------------------
 bool CWeaponVortexHopwire::HasAnyAmmo( void )
 {
-	if ( m_hActiveHopWire != NULL )
+	// Only a trap still waiting to be sprung keeps an empty hopwire selectable.
+	if ( hopwire_trap.GetBool() && m_hActiveHopWire != NULL )
 		return true;
 
 	return BaseClass::HasAnyAmmo();
@@ -256,7 +257,8 @@ void CWeaponVortexHopwire::SecondaryAttack( void )
 	if ( m_bRedraw )
 		return;
 
-	if ( !HasPrimaryAmmo() || ( hopwire_trap.GetBool() && m_hActiveHopWire != NULL ) )
+	// One live hopwire at a time.
+	if ( !HasPrimaryAmmo() || m_hActiveHopWire != NULL )
 		return;
 
 	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
@@ -315,7 +317,8 @@ void CWeaponVortexHopwire::PrimaryAttack( void )
 		return;
 	}
 
-	if ( !HasPrimaryAmmo() )
+	// One live hopwire at a time.
+	if ( !HasPrimaryAmmo() || m_hActiveHopWire != NULL )
 		return;
 
 	// The beta hopwire model has a direct throw and its projectile event,
