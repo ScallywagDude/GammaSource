@@ -1195,7 +1195,8 @@ bool CNPC_Houndeye::HandleInteraction(int interactionType, void *data, CBaseComb
 		return true;
 	}
 
-	return false;
+	// Barnacle grabs and the other shared NPC interactions live in the base class.
+	return BaseClass::HandleInteraction( interactionType, data, sourceEnt );
 }
 
 

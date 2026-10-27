@@ -2531,6 +2531,15 @@ CBaseEntity *CNPC_Barnacle::TongueTouchEnt ( float *pflLength )
 		if ( !pVictim )
 			continue;
 
+		// NPCs are lifted as a ragdoll; one whose model has no physics solids
+		// (some 2003 models ship without a .phy) cannot be, so leave it alone.
+		if ( !pVictim->IsPlayer() )
+		{
+			vcollide_t *pCollide = modelinfo->GetVCollide( pVictim->GetModelIndex() );
+			if ( !pCollide || pCollide->solidCount <= 0 )
+				continue;
+		}
+
 		// only clients and monsters
 		if ( pTest != this && 
 			 IRelationType( pTest ) == D_HT && 
