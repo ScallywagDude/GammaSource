@@ -47,6 +47,8 @@ ConVar sk_bullsquid_dmg_bite( "sk_bullsquid_dmg_bite", "15" );
 ConVar sk_bullsquid_dmg_whip( "sk_bullsquid_dmg_whip", "25" );
 ConVar sk_dmg_spit_grenade( "sk_dmg_spit_grenade", "5" );
 ConVar sk_spit_grenade_radius( "sk_spit_grenade_radius", "50" );
+// The recovered 2003 loogie was a point hull, which made it hard to land and to shoot down.
+ConVar sk_bullsquid_spit_size( "sk_bullsquid_spit_size", "4", 0, "Half-width of the Bullsquid spit collision box (0-16)" );
 
 // The shared modern grenade_spit implements antlion-worker poison/PCF behavior.
 // Keep the recovered 2003 additive, half-gravity blast loogie separate so beta
@@ -63,7 +65,8 @@ public:
 		SetSolid( SOLID_BBOX );
 		AddSolidFlags( FSOLID_NOT_STANDABLE );
 		SetMoveType( MOVETYPE_FLYGRAVITY );
-		UTIL_SetSize( this, vec3_origin, vec3_origin );
+		const float flSize = clamp( sk_bullsquid_spit_size.GetFloat(), 0.0f, 16.0f );
+		UTIL_SetSize( this, Vector( -flSize, -flSize, -flSize ), Vector( flSize, flSize, flSize ) );
 		SetRenderMode( kRenderTransAdd );
 		SetRenderColor( 255, 255, 255, 255 );
 		SetGravity( 0.5f );
