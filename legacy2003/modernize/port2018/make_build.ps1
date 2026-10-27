@@ -3,8 +3,11 @@
 #   GammaSource FULL BUILD\   the 64-bit build (engine + gammasource game dir + every content layer it mounts)
 #   GammaSource_2003\   (with -Include2003) a copy of the current 2003 build
 #
-# Nothing in the result points at the Steam folder: the retail HL2/TF2 VPKs and loose files the
+# Nothing in the result refers to Steam: the retail HL2/TF2/Portal VPKs and loose files the
 # GammaSource build mounts are staged under content\, and gameinfo.txt only uses |gameinfo_path| paths.
+# The retail content comes from plain folders under -RetailRoot (or the GAMMA_RETAIL_ROOT environment
+# variable): <RetailRoot>\Half-Life 2, <RetailRoot>\Team Fortress 2 and <RetailRoot>\Portal, each a
+# copy of that game's install folder. Pass -RetailHL2 / -RetailTF2 / -RetailPortal to use other folders.
 # Large content files are NTFS hard links (no extra disk space) when source and destination are
 # on the same volume, otherwise copies. Binaries are always real copies.
 param(
@@ -14,13 +17,19 @@ param(
     [string]$OriginalContent = '',
     [string]$Assets = 'C:\Users\doge6\Downloads\source2018_assets',
     [string]$Beta2003 = 'C:\Users\doge6\Documents\HL2BetaMegaCuck\hl2_2003',
-    [string]$SteamHL2 = 'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2',
-    [string]$SteamTF2 = 'C:\Program Files (x86)\Steam\steamapps\common\Team Fortress 2',
-    [string]$SteamPortal = 'C:\Program Files (x86)\Steam\steamapps\common\Portal',
+    [string]$RetailRoot = $(if ($env:GAMMA_RETAIL_ROOT) { $env:GAMMA_RETAIL_ROOT } else { 'C:\GammaSource\retail' }),
+    [string]$RetailHL2 = (Join-Path $RetailRoot 'Half-Life 2'),
+    [string]$RetailTF2 = (Join-Path $RetailRoot 'Team Fortress 2'),
+    [string]$RetailPortal = (Join-Path $RetailRoot 'Portal'),
     [string]$Build2003 = 'C:\Users\doge6\Videos\GammaSource_Build',
     [switch]$Include2003
 )
 $ErrorActionPreference = 'Stop'
+foreach ($retailDir in @($RetailHL2, $RetailTF2, $RetailPortal)) {
+    if (-not (Test-Path -LiteralPath $retailDir -PathType Container)) {
+        throw "Retail content folder is missing: $retailDir. Copy that game's install folder there, or pass -RetailRoot / -RetailHL2 / -RetailTF2 / -RetailPortal."
+    }
+}
 if (-not $OriginalContent) { $OriginalContent = Join-Path $Repo 'gammasource_content' }
 if (-not (Test-Path -LiteralPath $OriginalContent -PathType Container)) {
     throw "Original beta content is missing. Pass -OriginalContent with the actual gammasource_content directory: $OriginalContent"
@@ -58,8 +67,8 @@ Write-Host "staging $out"
 Put-File "$Install\hl2_launcher.exe" "$buildRoot\hl2_launcher.exe" -Copy
 Put-Tree "$Install\bin" "$buildRoot\bin" -Exclude @('*.lib', '*.exp') -Copy
 Put-Tree "$Install\platform" "$buildRoot\platform" -Copy
-Put-File "$SteamHL2\platform\platform_misc_dir.vpk" "$buildRoot\platform\platform_misc_dir.vpk"
-Get-ChildItem "$SteamHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$buildRoot\platform\$($_.Name)" }
+Put-File "$RetailHL2\platform\platform_misc_dir.vpk" "$buildRoot\platform\platform_misc_dir.vpk"
+Get-ChildItem "$RetailHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$buildRoot\platform\$($_.Name)" }
 
 # the game directory
 $game = Join-Path $buildRoot 'gammasource'
@@ -77,16 +86,16 @@ Put-Tree $Beta2003 "$content\hl2_2003"
 foreach ($d in 'materials', 'sound', 'models', 'maps', 'scripts', 'resource') {
     if (Test-Path "$Assets\$d") { Put-Tree "$Assets\$d" "$content\assets\$d" }
 }
-# retail HL2 (and TF2's hl2_misc, whose shaders match this engine) that used to come from Steam
+# retail HL2 (and TF2's hl2_misc, whose shaders match this engine), staged from the retail folders
 foreach ($v in 'hl2_misc', 'hl2_textures', 'hl2_sound_misc', 'hl2_sound_vo_english', 'hl2_pak') {
-    Get-ChildItem "$SteamHL2\hl2" -Filter "${v}_*.vpk" | ForEach-Object { Put-File $_.FullName "$content\retail_hl2\$($_.Name)" }
+    Get-ChildItem "$RetailHL2\hl2" -Filter "${v}_*.vpk" | ForEach-Object { Put-File $_.FullName "$content\retail_hl2\$($_.Name)" }
 }
-Get-ChildItem "$SteamTF2\hl2" -Filter 'hl2_misc_*.vpk' | ForEach-Object { Put-File $_.FullName "$content\retail_tf2\$($_.Name)" }
+Get-ChildItem "$RetailTF2\hl2" -Filter 'hl2_misc_*.vpk' | ForEach-Object { Put-File $_.FullName "$content\retail_tf2\$($_.Name)" }
 foreach ($d in 'resource', 'scripts', 'media', 'maps', 'cfg', 'gamepadui') {
-    if (Test-Path "$SteamHL2\hl2\$d") { Put-Tree "$SteamHL2\hl2\$d" "$content\retail_hl2_loose\$d" }
+    if (Test-Path "$RetailHL2\hl2\$d") { Put-Tree "$RetailHL2\hl2\$d" "$content\retail_hl2_loose\$d" }
 }
 # Portal's content, for the portal gun (models, particles, sounds)
-Get-ChildItem "$SteamPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object { Put-File $_.FullName "$content\retail_portal\$($_.Name)" }
+Get-ChildItem "$RetailPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object { Put-File $_.FullName "$content\retail_portal\$($_.Name)" }
 
 @"
 "GameInfo"
@@ -95,7 +104,6 @@ Get-ChildItem "$SteamPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object 
 	type	singleplayer_only
 	FileSystem
 	{
-		SteamAppId	220
 		SearchPaths
 		{
 			game+mod+mod_write+default_write_path	|gameinfo_path|.

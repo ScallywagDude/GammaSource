@@ -97,7 +97,8 @@ void CL_NameCvarChanged( IConVar *pConVar, const char *pOldString, float flOldVa
 		if ( 0 != Q_stricmp( var.GetString(), var.GetDefault()  ) 
 			&& 0 != Q_stricmp( var.GetString(), "player" ) )
 		{
-			Sys_SetRegKeyValue( "Software\\Valve\\Steam", "LastGameNameUsed", var.GetString() );
+			// GammaSource: no Steam registry writes
+			// Sys_SetRegKeyValue( "Software\\Valve\\Steam", "LastGameNameUsed", var.GetString() );
 		}
 
 		bPreventRent = false;

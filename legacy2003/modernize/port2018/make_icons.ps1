@@ -5,7 +5,7 @@
 #
 #   make_icons.ps1 -Out <content dir> [-Preview <png>]
 param([string]$Out, [string]$Preview,
-      [string]$HL2Font = 'C:\Program Files (x86)\Steam\steamapps\common\Half-Life 2\hl2\resource\halflife2.ttf',
+      [string]$HL2Font = (Join-Path $(if ($env:GAMMA_RETAIL_ROOT) { $env:GAMMA_RETAIL_ROOT } else { 'C:\GammaSource\retail' }) 'Half-Life 2\hl2\resource\halflife2.ttf'),
       [string]$PortalFont = 'C:\Users\doge6\Downloads\source2018_assets\portalbase_res\RealBeta''s Weapon Icons.ttf')
 Add-Type -AssemblyName System.Drawing
 $here = Split-Path $MyInvocation.MyCommand.Path

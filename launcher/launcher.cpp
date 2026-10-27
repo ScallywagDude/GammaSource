@@ -590,7 +590,8 @@ void TryToLoadSteamOverlayDLL()
 		return;
 	}
 
-	if ( 0 == GetEnvironmentVariableA( "SteamGameId", NULL, 0 ) )
+	// GammaSource: no Steam overlay; never look for a Steam install or load its DLLs
+	if ( false )
 	{
 		// Initializing the Steam client API has the side effect of setting up the AppId
 		// which is immediately queried in GameOverlayRenderer.dll's DllMain entry point
