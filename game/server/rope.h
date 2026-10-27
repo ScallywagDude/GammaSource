@@ -110,6 +110,9 @@ public:
 	CBaseEntity*	GetEndPoint() { return m_hEndPoint.Get(); }
 	int				GetEndAttachment() { return m_iStartAttachment; };
 
+	// GammaSource: world positions of both ends, for NPCs that run along ropes.
+	bool			GetEndPointPositions( Vector &vStart, Vector &vEnd ) { return GetEndPointPos( 0, vStart ) && GetEndPointPos( 1, vEnd ); }
+
 	void			SetStartPoint( CBaseEntity *pStartPoint, int attachment = 0 );
 	void			SetEndPoint( CBaseEntity *pEndPoint, int attachment = 0 );
 
