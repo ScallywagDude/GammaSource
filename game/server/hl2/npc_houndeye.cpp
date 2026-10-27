@@ -28,6 +28,8 @@
 #include "vstdlib/random.h"
 #include "engine/IEngineSound.h"
 #include "movevars_shared.h"
+#include "filesystem.h"
+#include "beam_flags.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -457,7 +459,10 @@ void CNPC_Houndeye::Precache()
 	PrecacheScriptSound( "NPC_Houndeye.GroupFollow" );
 
 
-	UTIL_PrecacheOther("energy_wave");
+	// Half-Life 1 blast ring sprite when HL:Source content is mounted, else the
+	// texture HL2's own shockwave rings use.
+	m_iSpriteTexture = PrecacheModel( filesystem->FileExists( "materials/sprites/shockwave.vmt", "GAME" ) ?
+		"sprites/shockwave.vmt" : "sprites/lgtning.vmt" );
 	BaseClass::Precache();
 }	
 
@@ -535,10 +540,10 @@ void CNPC_Houndeye::PainSound ( const CTakeDamageInfo &info )
 }
 
 //=========================================================
-// WriteBeamColor - writes a color vector to the network 
-// based on the size of the group. 
+// GetBeamColor - the blast ring color, based on the size of
+// the group (Half-Life 1 houndeye colors).
 //=========================================================
-void CNPC_Houndeye::WriteBeamColor ( void )
+color32 CNPC_Houndeye::GetBeamColor( void )
 {
 	BYTE	bRed, bGreen, bBlue;
 
@@ -578,9 +583,8 @@ void CNPC_Houndeye::WriteBeamColor ( void )
 		bBlue	= 255;
 	}
 	
-	WRITE_BYTE( bRed   );
-	WRITE_BYTE( bGreen );
-	WRITE_BYTE( bBlue  );
+	color32 color = { bRed, bGreen, bBlue, 192 };
+	return color;
 }
 
 //-----------------------------------------------------------------------------
@@ -680,14 +684,30 @@ void CNPC_Houndeye::SonicAttack ( void )
 {
 	EmitSound( "NPC_Houndeye.SonicAttack" );
 
-	if (m_pEnergyWave)
+	// The 2003 energy_wave entity has no model, so the client never drew it.
+	// Use the Half-Life 1 blast: two rings racing out to the full and half
+	// damage radius in 0.2 seconds, tinted by squad size, fading as they go.
+	const color32 color = GetBeamColor();
+	const Vector vecRingOrigin = GetAbsOrigin() + Vector( 0, 0, 16 );
+	const float flRingRadius[] = { HOUNDEYE_MAX_ATTACK_RADIUS, HOUNDEYE_MAX_ATTACK_RADIUS / 2 };
+	for ( int i = 0; i < ARRAYSIZE( flRingRadius ); i++ )
 	{
-		UTIL_Remove(m_pEnergyWave);
+		CBroadcastRecipientFilter filter;
+		te->BeamRingPoint( filter, 0.0f, vecRingOrigin,
+			16,						// start radius
+			flRingRadius[i],		// end radius
+			m_iSpriteTexture,		// texture
+			0,						// halo index
+			0,						// start frame
+			0,						// framerate
+			0.2f,					// life
+			24,						// width
+			16,						// spread
+			0,						// amplitude
+			color.r, color.g, color.b, color.a,
+			0,						// speed
+			FBEAM_FADEOUT );
 	}
-	Vector vFacingDir = EyeDirection3D( );
-	m_pEnergyWave = (CEnergyWave*)Create( "energy_wave", EyePosition(), GetLocalAngles(), this );
-	m_flEndEnergyWaveTime = gpGlobals->curtime + 1; //<<TEMP>> magic
-	if ( m_pEnergyWave ) m_pEnergyWave->SetAbsVelocity( 100*vFacingDir );
 
 	CBaseEntity *pEntity = NULL;
 	// iterate on all entities in the vicinity.

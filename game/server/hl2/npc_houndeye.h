@@ -41,7 +41,7 @@ public:
 	int				GetSoundInterests( void );
 	void			SonicAttack( void );
 	void			PrescheduleThink( void );
-	void			WriteBeamColor ( void );
+	color32			GetBeamColor( void );
 	int				RangeAttack1Conditions ( float flDot, float flDist );
 	bool			FCanActiveIdle ( void );
 	virtual int		TranslateSchedule( int scheduleType );
@@ -59,6 +59,8 @@ public:
 
 	CHandle<CEnergyWave> m_pEnergyWave;
 	float			m_flEndEnergyWaveTime;
+
+	int				m_iSpriteTexture;	// precache index, set again by Precache on restore
 
 	bool			m_fAsleep;// some houndeyes sleep in idle mode if this is set, the houndeye is lying down
 	bool			m_fDontBlink;// don't try to open/close eye if this bit is set!
