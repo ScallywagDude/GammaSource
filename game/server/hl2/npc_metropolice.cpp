@@ -160,7 +160,12 @@ int ACT_MELEE_ATTACK_THRUST;
 int ACT_ACTIVATE_BATON;
 int ACT_DEACTIVATE_BATON;
  
+#ifdef GAMMA_PORTALGUN
+// GammaSource: npc_metropolice is registered in gamma/npc_metropolice2003.cpp,
+// which picks the 2003 or HL2 metrocop AI (gamma_metropolice_ai2003).
+#else
 LINK_ENTITY_TO_CLASS( npc_metropolice, CNPC_MetroPolice );
+#endif
 
 BEGIN_DATADESC( CNPC_MetroPolice )
 
