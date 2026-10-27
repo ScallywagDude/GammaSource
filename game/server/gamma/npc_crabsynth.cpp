@@ -6,6 +6,15 @@
 #include "AI_Memory.h"
 #include "crabsynth_charge_policy.h"
 #include "IEffects.h"
+#include "npcevent.h"
+#include "SoundEmitterSystem/isoundemittersystembase.h"
+
+extern ISoundEmitterSystemBase *soundemitterbase;
+
+static bool HasScriptSound( const char *pszName )
+{
+	return soundemitterbase->IsValidIndex( soundemitterbase->GetSoundIndex( pszName ) );
+}
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -28,6 +37,15 @@ public:
 	virtual void RunTask( const Task_t *pTask );
 	virtual float MaxYawSpeed( void );
 
+	// GammaSource: the 2003 Crab Synth left melee and its voice unwritten
+	// (see the #if 0 below); these finish it.
+	virtual int MeleeAttack1Conditions( float flDot, float flDist );
+	virtual void HandleAnimEvent( animevent_t *pEvent );
+	virtual void IdleSound( void );
+	virtual void AlertSound( void );
+	virtual void PainSound( const CTakeDamageInfo &info );
+	virtual void DeathSound( const CTakeDamageInfo &info );
+
 #if 0
 	void HandleAnimEvent( animevent_t *pEvent );
 
@@ -46,11 +64,22 @@ protected:
 #endif
 
 	float		m_nextCharge;
+
+private:
+	void		MeleeHit( void );
+	void		Voice( const char *pszCrabSound, const char *pszFallback );
+
+	bool		m_bMeleeHit;
+	float		m_flNextPainSound;
 };
 
 
 ConVar sk_crabsynth_charge_dmg( "sk_crabsynth_charge_dmg", "35", FCVAR_NONE,
     "Damage from a Crab Synth charge impact (0 disables damage)." );
+ConVar sk_crabsynth_health( "sk_crabsynth_health", "251", FCVAR_NONE,
+    "Crab Synth health (251 in the 2003 code)." );
+ConVar sk_crabsynth_melee_dmg( "sk_crabsynth_melee_dmg", "25", FCVAR_NONE,
+    "Damage from a Crab Synth claw swipe." );
 
 LINK_ENTITY_TO_CLASS( npc_crabsynth, CCrabSynth );
 IMPLEMENT_CUSTOM_AI( npc_crabsynth, CCrabSynth );
@@ -62,6 +91,8 @@ IMPLEMENT_CUSTOM_AI( npc_crabsynth, CCrabSynth );
 BEGIN_DATADESC( CCrabSynth )
 
 	DEFINE_FIELD( m_nextCharge,	FIELD_TIME ),
+	DEFINE_FIELD( m_bMeleeHit, FIELD_BOOLEAN ),
+	DEFINE_FIELD( m_flNextPainSound, FIELD_TIME ),
 
 END_DATADESC()
 
@@ -114,6 +145,16 @@ END_DATADESC()
 void CCrabSynth::Precache( void )
 {
 	engine->PrecacheModel( "models/synth.mdl" );
+	static const char *const s_ppszVoice[] =
+	{
+		"NPC_CrabSynth.Charge", "NPC_CrabSynth.Idle", "NPC_CrabSynth.Alert", "NPC_CrabSynth.Pain", "NPC_CrabSynth.Die",
+		"NPC_Strider.Alert", "NPC_Strider.Hunt", "NPC_Strider.Pain", "NPC_Strider.Death",
+	};
+	for ( int i = 0; i < ARRAYSIZE( s_ppszVoice ); ++i )
+	{
+		if ( HasScriptSound( s_ppszVoice[i] ) )
+			PrecacheScriptSound( s_ppszVoice[i] );
+	}
 	BaseClass::Precache();
 }
 
@@ -132,11 +173,13 @@ void CCrabSynth::Spawn( void )
 	AddSolidFlags( FSOLID_NOT_STANDABLE );
 	SetMoveType( MOVETYPE_STEP );
 	SetBloodColor( BLOOD_COLOR_GREEN );
-	m_iHealth			= 251;
+	m_iHealth			= MAX( 1, sk_crabsynth_health.GetInt() );
 	m_flFieldOfView		= 0.5f;
 	m_NPCState			= NPC_STATE_NONE;
 	
 	m_nextCharge = 0.f;
+	m_bMeleeHit = false;
+	m_flNextPainSound = 0.f;
 
 	CapabilitiesClear();
 	CapabilitiesAdd( bits_CAP_MOVE_GROUND | bits_CAP_INNATE_MELEE_ATTACK1 );
@@ -225,6 +268,7 @@ int CCrabSynth::SelectSchedule( void )
 			if ( m_nextCharge < gpGlobals->curtime )
 			{
 				m_nextCharge = gpGlobals->curtime + 20.f;
+				Voice( "NPC_CrabSynth.Charge", "NPC_Strider.Alert" );
 				return SCHED_CRAB_CHARGE;
 			}
 		}
@@ -292,6 +336,11 @@ void CCrabSynth::StartTask( const Task_t *pTask )
 	case TASK_CHARGE_HITRIGHT:
 		GetNavigator()->SetMovementActivity( (Activity)ACT_CHARGE_HITRIGHT );
 		SetIdealActivity( (Activity)ACT_CHARGE_HITRIGHT );
+		break;
+
+	case TASK_MELEE_ATTACK1:
+		m_bMeleeHit = false;
+		BaseClass::StartTask( pTask );
 		break;
 
 	default:
@@ -373,12 +422,108 @@ void CCrabSynth::RunTask( const Task_t *pTask )
 		}
 		break;
 
+	case TASK_MELEE_ATTACK1:
+		// The swipe's model events are undocumented; strike mid-swing if no
+		// event has done it yet.
+		if ( !m_bMeleeHit && GetCycle() >= 0.4f )
+		{
+			MeleeHit();
+		}
+		BaseClass::RunTask( pTask );
+		break;
+
 	default:
 		BaseClass::RunTask( pTask );
 	}
 }
 
 
+
+//-----------------------------------------------------------------------------
+// GammaSource: melee and voice, which the 2003 Crab Synth never got.
+//-----------------------------------------------------------------------------
+#define CRAB_MELEE_REACH	112.f
+
+int CCrabSynth::MeleeAttack1Conditions( float flDot, float flDist )
+{
+	if ( !HaveSequenceForActivity( ACT_MELEE_ATTACK1 ) )
+		return COND_NONE;
+	if ( flDist > CRAB_MELEE_REACH )
+		return COND_TOO_FAR_TO_ATTACK;
+	if ( flDot < 0.7f )
+		return COND_NOT_FACING_ATTACK;
+	return COND_CAN_MELEE_ATTACK1;
+}
+
+void CCrabSynth::HandleAnimEvent( animevent_t *pEvent )
+{
+	// Any old-style event in the swipe is its strike.
+	if ( !( pEvent->type & AE_TYPE_NEWEVENTSYSTEM ) && pEvent->event >= 1 && pEvent->event <= 9 &&
+		GetActivity() == ACT_MELEE_ATTACK1 )
+	{
+		if ( !m_bMeleeHit )
+		{
+			MeleeHit();
+		}
+		return;
+	}
+	BaseClass::HandleAnimEvent( pEvent );
+}
+
+void CCrabSynth::MeleeHit( void )
+{
+	m_bMeleeHit = true;
+	const float damage = sk_crabsynth_melee_dmg.GetFloat();
+	CBaseEntity *pHurt = CheckTraceHullAttack( CRAB_MELEE_REACH, Vector( -24, -24, -24 ), Vector( 24, 24, 24 ),
+		MAX( 0.f, damage ), DMG_SLASH, 1.0f, true );
+	if ( pHurt && pHurt->IsPlayer() )
+	{
+		pHurt->ViewPunch( QAngle( random->RandomFloat( -8, -4 ), random->RandomFloat( -12, 12 ), 0 ) );
+	}
+	UTIL_ScreenShake( GetAbsOrigin(), 4.0f, 60.0f, 0.4f, 300.0f, SHAKE_START );
+}
+
+// Plays the Crab Synth's own sound if a sound script defines it, otherwise the
+// Strider's (also a synth) pitched up for the smaller body.
+void CCrabSynth::Voice( const char *pszCrabSound, const char *pszFallback )
+{
+	if ( HasScriptSound( pszCrabSound ) )
+	{
+		EmitSound( pszCrabSound );
+		return;
+	}
+
+	CPASAttenuationFilter filter( this, pszFallback );
+	EmitSound_t ep;
+	ep.m_pSoundName = pszFallback;
+	ep.m_nPitch = random->RandomInt( 125, 140 );
+	ep.m_nFlags = SND_CHANGE_PITCH;
+	EmitSound( filter, entindex(), ep );
+}
+
+void CCrabSynth::IdleSound( void )
+{
+	Voice( "NPC_CrabSynth.Idle", "NPC_Strider.Hunt" );
+}
+
+void CCrabSynth::AlertSound( void )
+{
+	Voice( "NPC_CrabSynth.Alert", "NPC_Strider.Alert" );
+}
+
+void CCrabSynth::PainSound( const CTakeDamageInfo &info )
+{
+	// Most hits are shrugged off by the shell; only voice real damage.
+	if ( info.GetDamage() < 1.0f || gpGlobals->curtime < m_flNextPainSound )
+		return;
+	m_flNextPainSound = gpGlobals->curtime + 1.5f;
+	Voice( "NPC_CrabSynth.Pain", "NPC_Strider.Pain" );
+}
+
+void CCrabSynth::DeathSound( const CTakeDamageInfo &info )
+{
+	Voice( "NPC_CrabSynth.Die", "NPC_Strider.Death" );
+}
 
 //-----------------------------------------------------------------------------
 //
