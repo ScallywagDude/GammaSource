@@ -2018,6 +2018,32 @@ studiohdr_t *CMDLCache::UnserializeMDL( MDLHandle_t handle, void *pData, int nDa
 		}
 	}
 
+	// GammaSource: the queued (async) loader hands over the raw file, without the studiohdr2
+	// that ReadFileNative appends to models built without one. SetVirtualModel then had nowhere
+	// to store the cache back link ("go fuck urself!"), so the model's vertex data was cached
+	// under handle 0 and later loads wrote through a missing dictionary entry and crashed.
+	CUtlBuffer withHdr2;
+	if ( nDataSize >= (int)sizeof( studiohdr_t ) && ( (studiohdr_t *)pData )->studiohdr2index == 0 )
+	{
+		int nLength = ( (studiohdr_t *)pData )->length;
+		if ( nLength <= 0 || nLength > nDataSize )
+			nLength = nDataSize;
+		int maskBits = VALIGNOF( studiohdr2_t ) - 1;
+		int offsetStudiohdr2 = ( nLength + maskBits ) & ~maskBits;
+		withHdr2.EnsureCapacity( offsetStudiohdr2 + sizeof( studiohdr2_t ) );
+		withHdr2.Put( pData, nLength );
+		withHdr2.SeekPut( CUtlBuffer::SEEK_HEAD, offsetStudiohdr2 + sizeof( studiohdr2_t ) );
+		studiohdr_t *pPatched = (studiohdr_t *)withHdr2.Base();
+		studiohdr2_t *pStudioHdr2 = (studiohdr2_t *)( (byte *)pPatched + offsetStudiohdr2 );
+		memset( (byte *)pPatched + nLength, 0, offsetStudiohdr2 - nLength );
+		memset( pStudioHdr2, 0, sizeof( studiohdr2_t ) );
+		pStudioHdr2->flMaxEyeDeflection = 0.866f; // Matches studio.h.
+		pPatched->studiohdr2index = offsetStudiohdr2;
+		pPatched->length = offsetStudiohdr2 + sizeof( studiohdr2_t );
+		pData = pPatched;
+		nDataSize = pPatched->length;
+	}
+
 	studiohdr_t	*pStudioHdrIn = (studiohdr_t *)pData;
 
 	if ( r_rootlod.GetInt() > 0 )

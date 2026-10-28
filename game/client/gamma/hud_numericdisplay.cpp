@@ -35,8 +35,33 @@ using namespace vgui;
 //-----------------------------------------------------------------------------
 // Purpose: Constructor
 //-----------------------------------------------------------------------------
+static CUtlVector<CHudNumericDisplay *> s_NumericDisplays;
+
+void GammaPinBetaHudCounters()
+{
+	CHudNumericDisplay::PinBetaCounters();
+}
+
+CHudNumericDisplay::~CHudNumericDisplay()
+{
+	s_NumericDisplays.FindAndRemove( this );
+}
+
+void CHudNumericDisplay::PinBetaCounters()
+{
+#ifdef HL2_CLIENT_DLL
+	for ( int i = 0; i < s_NumericDisplays.Count(); i++ )
+	{
+		if ( s_NumericDisplays[i]->IsBetaCounter() )
+			s_NumericDisplays[i]->ApplyBetaCounterBounds();
+	}
+#endif
+}
+
 CHudNumericDisplay::CHudNumericDisplay(vgui::Panel *parent, const char *name) : BaseClass(parent, name)
 {
+	s_NumericDisplays.AddToTail( this );
+
 	vgui::Panel *pParent = g_pClientMode->GetViewport();
 	SetParent( pParent );
 

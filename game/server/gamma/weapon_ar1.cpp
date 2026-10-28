@@ -11,6 +11,7 @@
 #include "ai_basenpc.h"
 #include "player.h"
 #include "in_buttons.h"
+#include "ammodef.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -140,8 +141,13 @@ bool CWeaponAR1::Deploy( void )
 //=========================================================
 void CWeaponAR1::FireBullets( const FireBulletsInfo_t &info )
 {
+	// The 2003 table (2..20) keeps damage per second constant across fire rates, but as raw
+	// damage it left the fastest setting at 2 per bullet, which skill and hitgroup scaling
+	// cut to 1. Keep the ratios and scale them from the ammo's skill damage instead.
 	FireBulletsInfo_t shot = info;
-	shot.m_flDamage = Damage[ clamp( m_ROF, 0, MAX_SETTINGS - 1 ) ];
+	CBaseCombatCharacter *pOwner = GetOwner() ? GetOwner()->MyCombatCharacterPointer() : NULL;
+	float flBase = ( pOwner && pOwner->IsPlayer() ) ? GetAmmoDef()->PlrDamage( m_iPrimaryAmmoType ) : GetAmmoDef()->NPCDamage( m_iPrimaryAmmoType );
+	shot.m_flDamage = flBase * Damage[ clamp( m_ROF, 0, MAX_SETTINGS - 1 ) ] / Damage[ 0 ];
 	BaseClass::FireBullets( shot );
 }
 

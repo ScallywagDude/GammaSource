@@ -22,6 +22,11 @@ class CHudNumericDisplay : public vgui::Panel
 
 public:
 	CHudNumericDisplay(vgui::Panel *parent, const char *name);
+	~CHudNumericDisplay();
+
+	// GammaSource: put the beta counters back at their beta bounds. Called right after the
+	// HUD animations update, before the frame is laid out and drawn.
+	static void PinBetaCounters();
 
 	void SetDisplayValue(int value);
 	void SetSecondaryValue(int value);

@@ -151,7 +151,7 @@ projects={
 
 # The original Windows editor ships with the regular game build. These tools
 # use the same selected architecture and CRT as the engine.
-hammer_projects = ['fgdlib', 'raytrace', 'hammer', 'hammer_launcher']
+hammer_projects = ['fgdlib', 'raytrace', 'worldcraft', 'worldcraft_launcher']
 
 @Configure.conf
 def check_pkg(conf, package, uselib_store, fragment, *k, **kw):

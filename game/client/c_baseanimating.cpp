@@ -3392,7 +3392,9 @@ void C_BaseAnimating::DoAnimationEvents( CStudioHdr *pStudioHdr )
 	if ( nSeqNum >= nStudioNumSeq )
 	{
 		// This can happen e.g. while reloading Heavy's shotgun, switch to the minigun.
-		Warning( "%s[%d]: Playing sequence %d but there's only %d in total?\n", GetDebugName(), entindex(), nSeqNum, nStudioNumSeq );
+		// GammaSource: the beta weapons' world models have one sequence and hit this every
+		// frame (11k console lines a session, hitches), so only show it with developer on.
+		DevWarning( "%s[%d]: Playing sequence %d but there's only %d in total?\n", GetDebugName(), entindex(), nSeqNum, nStudioNumSeq );
 		return;
 	}
 

@@ -746,7 +746,7 @@ bool CSourceAppSystemGroup::Create()
 #if defined( _WIN32 ) && defined( STAGING_ONLY )
 	if ( m_bEditMode )
 	{
-		AppModule_t hammerModule = LoadModule( "hammer_dll" DLL_EXT_STRING );
+		AppModule_t hammerModule = LoadModule( "worldcraft_dll" DLL_EXT_STRING );
 		g_pHammer = (IHammer*)AddSystem( hammerModule, INTERFACEVERSION_HAMMER );
 		if ( !g_pHammer )
 		{

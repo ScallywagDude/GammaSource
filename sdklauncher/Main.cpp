@@ -507,7 +507,7 @@ bool RunQuickLaunch()
 
 	if ( CommandLine()->FindParm( "-runhammer" ) )
 	{
-		Q_snprintf( cmdLine, sizeof( cmdLine ), "\"%s\\%s\\bin\\hammer.exe\"", GetSDKLauncherBinDirectory(), g_engineDir );
+		Q_snprintf( cmdLine, sizeof( cmdLine ), "\"%s\\%s\\bin\\worldcraft.exe\"", GetSDKLauncherBinDirectory(), g_engineDir );
 		QuickLaunchCommandLine( cmdLine );
 		return true;
 	}

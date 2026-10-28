@@ -811,7 +811,7 @@ InitReturnVal_t CMaterialSystem::Init()
     {
 		char szRight[20];
 		Q_StrRight( szExeName, 11, szRight, sizeof( szRight ) );
-		if ( !Q_stricmp( szRight, "\\hammer.exe" ) )
+		if ( !Q_stricmp( szRight, "\\hammer.exe" ) || !Q_stricmp( szRight, "\\worldcraft.exe" ) )
 		{
 			m_bRequestedEditorMaterials = true;
 		}

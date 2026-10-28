@@ -28,6 +28,7 @@
 #include "bone_setup.h"
 #include "filesystem.h"
 #include "KeyValues.h"
+#include "igamesystem.h"
 
 // memdbgon must be the last include file in a .cpp file!!!
 #include "tier0/memdbgon.h"
@@ -78,7 +79,18 @@ class C_GammaBetaHands : public C_BaseAnimating
 	DECLARE_CLASS( C_GammaBetaHands, C_BaseAnimating );
 
 public:
-	C_GammaBetaHands() : m_pRule( NULL ), m_iRuleModelIndex( -1 ), m_iVMRefModel( -1 ), m_nMappedBones( 0 ) {}
+	C_GammaBetaHands() : m_pRule( NULL ), m_iRuleModelIndex( -1 ), m_iVMRefModel( -1 ), m_nMappedBones( 0 ), m_bRetired( false ) {}
+
+	// Hands are swapped from inside the viewmodel's DrawModel, while the view renderer is
+	// still walking a list that holds these hands. Deleting them there left a dangling
+	// pointer in that list (the crash on killing NPCs). Retired hands stop drawing, leave the
+	// leaf system, and are deleted after the frame (GammaBetaHands_FlushRetired).
+	void Retire()
+	{
+		m_bRetired = true;
+		m_hViewModel = NULL;
+		RemoveFromLeafSystem();
+	}
 
 	bool Init( C_BaseViewModel *pViewModel, KeyValues *pRule )
 	{
@@ -111,7 +123,7 @@ public:
 	virtual bool ShouldDraw()
 	{
 		C_BaseViewModel *pVM = m_hViewModel.Get();
-		return cl_betahands.GetBool() && pVM && pVM->ShouldDraw() &&
+		return !m_bRetired && cl_betahands.GetBool() && pVM && pVM->ShouldDraw() &&
 			!pVM->IsEffectActive( EF_NODRAW ) && pVM->GetModelIndex() == m_iRuleModelIndex;
 	}
 
@@ -120,6 +132,8 @@ public:
 		if ( !ShouldDraw() )
 			return 0;
 		C_BaseViewModel *pVM = m_hViewModel.Get();
+		if ( !pVM )
+			return 0;
 		if ( !m_Map.Count() && m_pRule )
 			BuildMap( m_pRule );
 		// Dynamic models may not be ready yet. Never draw an unretargeted bind pose.
@@ -410,6 +424,7 @@ private:
 	CUtlVector< matrix3x4_t > m_DonorRef, m_VMRef;
 	int m_iVMRefModel;
 	int m_nMappedBones;
+	bool m_bRetired;
 
 	// model-space bone matrices of the model's ACT_VM_IDLE sequence at cycle 0 (bind pose if it has none)
 	static void ComputeIdlePose( CStudioHdr *pHdr, CUtlVector< matrix3x4_t > &out )
@@ -460,6 +475,40 @@ private:
 // One set of hands per viewmodel (the player has two viewmodel slots)
 //-----------------------------------------------------------------------------
 static CUtlMap< C_BaseViewModel *, C_GammaBetaHands * > s_Hands( DefLessFunc( C_BaseViewModel * ) );
+static CUtlVector< C_GammaBetaHands * > s_RetiredHands;
+
+static void GammaBetaHands_Retire( C_GammaBetaHands *pHands )
+{
+	pHands->Retire();
+	s_RetiredHands.AddToTail( pHands );
+}
+
+static void GammaBetaHands_FlushRetired()
+{
+	for ( int i = 0; i < s_RetiredHands.Count(); i++ )
+		s_RetiredHands[i]->Release();
+	s_RetiredHands.RemoveAll();
+}
+
+// Deletes retired hands once no render list can still point at them
+class CGammaBetaHandsSystem : public CAutoGameSystemPerFrame
+{
+public:
+	CGammaBetaHandsSystem() : CAutoGameSystemPerFrame( "CGammaBetaHandsSystem" ) {}
+	virtual void PostRender() { GammaBetaHands_FlushRetired(); }
+	// Before the entity list releases every client entity: drop the hands here, so the
+	// viewmodels' UpdateOnRemove never reaches hands the list already deleted
+	virtual void LevelShutdownPreEntity()
+	{
+		for ( unsigned short i = s_Hands.FirstInorder(); i != s_Hands.InvalidIndex(); i = s_Hands.NextInorder( i ) )
+			GammaBetaHands_Retire( s_Hands[i] );
+		s_Hands.RemoveAll();
+		s_Checked.RemoveAll();
+		GammaBetaHands_FlushRetired();
+	}
+	virtual void Shutdown() { GammaBetaHands_FlushRetired(); }
+};
+static CGammaBetaHandsSystem s_GammaBetaHandsSystem;
 
 void GammaBetaHands_Update( C_BaseViewModel *pViewModel )
 {
@@ -471,7 +520,7 @@ void GammaBetaHands_Update( C_BaseViewModel *pViewModel )
 
 	if ( pHands )
 	{
-		pHands->Release();
+		GammaBetaHands_Retire( pHands );
 		s_Hands.RemoveAt( idx );
 		pHands = NULL;
 		s_Checked.Remove( pViewModel );
@@ -509,7 +558,7 @@ void GammaBetaHands_Remove( C_BaseViewModel *pViewModel )
 	unsigned short idx = s_Hands.Find( pViewModel );
 	if ( idx == s_Hands.InvalidIndex() )
 		return;
-	s_Hands[idx]->Release();
+	GammaBetaHands_Retire( s_Hands[idx] );
 	s_Hands.RemoveAt( idx );
 }
 
@@ -540,7 +589,7 @@ CON_COMMAND( gamma_viewmodelinfo, "Print the local viewmodel, sequence and beta 
 CON_COMMAND( cl_betahands_reload, "Reload scripts/gamma_betahands.txt" )
 {
 	for ( unsigned short i = s_Hands.FirstInorder(); i != s_Hands.InvalidIndex(); i = s_Hands.NextInorder( i ) )
-		s_Hands[i]->Release();
+		GammaBetaHands_Retire( s_Hands[i] );
 	s_Hands.RemoveAll();
 	s_Checked.RemoveAll();
 	if ( s_pRulesFile )

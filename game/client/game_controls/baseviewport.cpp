@@ -626,6 +626,14 @@ void CBaseViewport::OnThink()
 #if !defined( TF_CLIENT_DLL )
 	m_pAnimController->UpdateAnimations( gpGlobals->curtime );
 #endif
+#ifdef HL2_CLIENT_DLL
+	// GammaSource: the retail HUD animations move HudAmmo & co. on weapon switches; undo
+	// that before the frame is laid out (pinning while painting only took effect a frame late)
+	{
+		extern void GammaPinBetaHudCounters();
+		GammaPinBetaHudCounters();
+	}
+#endif
 
 	int count = m_Panels.Count();
 

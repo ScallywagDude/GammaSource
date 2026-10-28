@@ -2577,7 +2577,9 @@ bool CMeshDX8::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 	Assert( !m_IsVBLocked );
 
 	// Just give the app crap buffers to fill up while we're suppressed...
-	if ( g_pShaderDeviceDx8->IsDeactivated() || (nVertexCount == 0))
+	// GammaSource: also when a dynamic mesh has no buffer bound (the device was lost when its
+	// format was set): the static-buffer path below would build one for a size-0 format.
+	if ( g_pShaderDeviceDx8->IsDeactivated() || (nVertexCount == 0) || ( !m_pVertexBuffer && ( IsDynamic() || g_MeshMgr.VertexFormatSize( m_VertexFormat ) == 0 ) ) )
 	{
 		// Set up the vertex descriptor
 		CVertexBufferBase::ComputeVertexDescription( 0, 0, desc );
@@ -2671,7 +2673,7 @@ int CMeshDX8::Lock( bool bReadOnly, int nFirstIndex, int nIndexCount, IndexDesc_
 	Assert( !m_IsIBLocked );
 
 	// Just give the app crap buffers to fill up while we're suppressed...
-	if ( g_pShaderDeviceDx8->IsDeactivated() || (nIndexCount == 0))
+	if ( g_pShaderDeviceDx8->IsDeactivated() || (nIndexCount == 0) || ( !m_pIndexBuffer && IsDynamic() ) )
 	{
 		// Set up a bogus index descriptor
 		desc.m_pIndices = g_nScratchIndexBuffer;
@@ -3557,7 +3559,13 @@ void CDynamicMeshDX8::Reset()
 void CDynamicMeshDX8::SetVertexFormat( VertexFormat_t format )
 {
 	if ( g_pShaderDeviceDx8->IsDeactivated())
+	{
+		// GammaSource: remember the format if no buffer is bound, so LockMesh can bind one
+		// if the device comes back before the mesh is locked
+		if ( !m_pVertexBuffer )
+			m_VertexFormat = format;
 		return;
+	}
 
 	if ( CompressionType( format ) != VERTEX_COMPRESSION_NONE )
 	{
@@ -3567,7 +3575,13 @@ void CDynamicMeshDX8::SetVertexFormat( VertexFormat_t format )
 		format &= ~VERTEX_FORMAT_COMPRESSED;
 	}
 
-	if ((format != m_VertexFormat) || m_VertexOverride || m_IndexOverride)
+	// GammaSource: a format with no vertex data (nothing to draw) must not size the shared dynamic
+	// buffer: FindOrCreateVertexBuffer divides by the vertex size
+	bool bNeedsBuffer = !m_pVertexBuffer || ( m_nBufferId == 0 && !m_pIndexBuffer );
+	if ( g_MeshMgr.VertexFormatSize( format ) == 0 )
+		return;
+
+	if ((format != m_VertexFormat) || m_VertexOverride || m_IndexOverride || bNeedsBuffer)
 	{
 		m_VertexFormat = format;
 		UseVertexBuffer( g_MeshMgr.FindOrCreateVertexBuffer( m_nBufferId, format ) );
@@ -3612,7 +3626,11 @@ bool CDynamicMeshDX8::HasEnoughRoom( int nVertexCount, int nIndexCount ) const
 	if ( g_pShaderDeviceDx8->IsDeactivated() )
 		return false;
 
-	Assert( m_pVertexBuffer != NULL );
+	// GammaSource: the mesh can be handed out while the device is lost (minimised editor,
+	// another D3D app taking the device) and locked after it is back, with no buffer bound
+	// yet. Worldcraft crashed here (CRender3D::RenderWorldAxes).
+	if ( !m_pVertexBuffer || !m_pIndexBuffer )
+		return false;
 
 	// We need space in both the vertex and index buffer
 	return m_pVertexBuffer->HasEnoughRoom( nVertexCount ) && 
@@ -3660,6 +3678,12 @@ void CDynamicMeshDX8::LockMesh( int nVertexCount, int nIndexCount, MeshDesc_t& d
 	{
 		tmZoneFiltered( TELEMETRY_LEVEL0, 50, TMZF_NONE, "PreLock" );
 		PreLock();
+	}
+
+	// bind the buffers now if the device was lost when the format was set (see HasEnoughRoom)
+	if ( ( !m_pVertexBuffer || ( m_nBufferId == 0 && !m_pIndexBuffer ) ) && !g_pShaderDeviceDx8->IsDeactivated() && g_MeshMgr.VertexFormatSize( m_VertexFormat ) != 0 )
+	{
+		SetVertexFormat( m_VertexFormat );
 	}
 
 	if (m_VertexOverride)
@@ -3745,6 +3769,10 @@ void CDynamicMeshDX8::Draw( int nFirstIndex, int nIndexCount )
 	VPROF( "CDynamicMeshDX8::Draw" );
 
 	m_HasDrawn = true;
+
+	// nothing was bound while the device was lost (see LockMesh); the vertices went to scratch
+	if ( !m_pVertexBuffer )
+		return;
 
 	if (m_IndexOverride || m_VertexOverride || 
 		( ( m_TotalVertices > 0 ) && ( m_TotalIndices > 0 || m_Type == MATERIAL_POINTS || m_Type == MATERIAL_INSTANCED_QUADS ) ) )

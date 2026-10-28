@@ -2450,6 +2450,16 @@ IMaterial* GetModelSpecificDecalMaterial( IMaterial* pDecalMaterial )
 		IMaterial* pModelMaterial = g_pMaterialSystem->FindMaterial( pModelMaterialVar->GetStringValue(), TEXTURE_GROUP_DECAL, false );
 		if ( !IsErrorMaterial( pModelMaterial ) )
 		{
+			// GammaSource: nothing else holds a reference to the model variant (the 2003 blood
+			// decals' "...model" materials), so binding it hit "bad reference count 0", drew
+			// the error checkerboard and spammed the console thousands of times (lag spikes).
+			// Keep each one referenced for the rest of the session.
+			static CUtlVector<IMaterial *> s_ReferencedModelDecals;
+			if ( s_ReferencedModelDecals.Find( pModelMaterial ) == s_ReferencedModelDecals.InvalidIndex() )
+			{
+				pModelMaterial->IncrementReferenceCount();
+				s_ReferencedModelDecals.AddToTail( pModelMaterial );
+			}
 			return pModelMaterial;
 		}
 	}
