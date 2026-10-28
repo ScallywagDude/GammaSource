@@ -116,7 +116,7 @@ Use isolated test profiles when running automated gameplay checks. Do not overwr
 
 The earlier source milestones are retained as historical reference:
 
-- **v29**(Current Commit): Got a WHOLE LOT DONE. Game no longer crashes during play sessions, hammer (WorldCraft) actually has use, and yeah.
+- **v29**(Current Commit): Got a WHOLE LOT DONE. Game only sometimes crashes during play sessions, still happens, nowhere NEAR as frequent. Hammer (WorldCraft) actually has use, and yeah.
 - **v28:** [Changelog](docs/V28_CHANGELOG.md) · [Known bugs and unfinished work](docs/V28_KNOWN_BUGS.md). NPC restoration remains incomplete.
 - **v27 — Full Engine Overhaul:** Still not quite finished, very, VERY far along the line though. Will be done in due time. x64 builds and runs, however it still needs to be looked at, there’s still a lot very wrong with the engine, but it’s almost done.
 - **v26 — Native toolchain and restoration:** legacy shader builds, CRT/linkage fixes, assembly compatibility, restored prototype gameplay code, HUD selector and Energy counter work. Recorded **265 tests: 262 passed, 3 skipped, 0 failures**. A later engine milestone superseded its earlier build and runtime blockers.
