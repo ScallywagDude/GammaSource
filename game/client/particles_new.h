@@ -27,6 +27,9 @@ class CNewParticleEffect : public IParticleEffect, public CParticleCollection, p
 {
 public:
 	DECLARE_CLASS_NOBASE( CNewParticleEffect );
+
+	// GammaSource: 1 or 2 for the portal_1_* / portal_2_* effects, recoloured to that portal's colour
+	int m_nGammaPortalTint;
 	DECLARE_REFERENCED_CLASS( CNewParticleEffect );
 
 public:

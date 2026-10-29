@@ -46,6 +46,15 @@ void CNewParticleEffect::Construct()
 {
 	m_vSortOrigin.Init();
 
+	m_nGammaPortalTint = 0;
+	if ( IsValid() && GetName() )
+	{
+		if ( !Q_strnicmp( GetName(), "portal_1_", 9 ) )
+			m_nGammaPortalTint = 1;
+		else if ( !Q_strnicmp( GetName(), "portal_2_", 9 ) )
+			m_nGammaPortalTint = 2;
+	}
+
 	m_bDontRemove = false;
 	m_bRemove = false;
 	m_bDrawn = false;

@@ -113,6 +113,8 @@ private:
 	CNetworkVar( bool,	m_bCanFirePortal1 );	// Is able to use primary fire
 	CNetworkVar( bool,	m_bCanFirePortal2 );	// Is able to use secondary fire
 	CNetworkVar( int,	m_iLastFiredPortal );	// Which portal was placed last
+	int m_nPortalColor1;	// GammaSource: 0x00RRGGBB, 0 = default (see c_gamma_portal_colors.cpp)
+	int m_nPortalColor2;
 	CNetworkVar( bool,	m_bOpenProngs );		// Which portal was placed last
 	CNetworkVar( float,	m_fCanPlacePortal1OnThisSurface );	// Tells the gun if it can place on the surface it's pointing at
 	CNetworkVar( float,	m_fCanPlacePortal2OnThisSurface );	// Tells the gun if it can place on the surface it's pointing at
@@ -140,6 +142,7 @@ public:
 	float GetPortal1Placablity( void ) { return m_fCanPlacePortal1OnThisSurface; }
 	float GetPortal2Placablity( void ) { return m_fCanPlacePortal2OnThisSurface; }
 	int GetLastFiredPortal( void ) { return m_iLastFiredPortal; }
+	int GetPortalColor( int iPortal ) const { return iPortal == 2 ? m_nPortalColor2 : m_nPortalColor1; }	// GammaSource: 0x00RRGGBB, 0 = default
 	bool IsHoldingObject( void ) { return m_bOpenProngs; }
 
 	bool Reload( void );

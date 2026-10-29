@@ -698,7 +698,7 @@
 	"volume"		"1.0"
 	"soundlevel"	"SNDLVL_NORM"
 
-	"wave"		"weapons/smg2/smg2_reload.wav"
+	"wave"		"weapons/pistol/gamma_pistol_reload.wav"	// smg2_reload.wav without its 0.6 s of leading silence
 }
 
 "Weapon_Pistol.NPC_Reload"

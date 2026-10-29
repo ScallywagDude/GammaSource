@@ -30,6 +30,11 @@ private:
 	CNetworkVar( bool,	m_bCanFirePortal1 );	// Is able to use primary fire
 	CNetworkVar( bool,	m_bCanFirePortal2 );	// Is able to use secondary fire
 	CNetworkVar( int,	m_iLastFiredPortal );	// Which portal was placed last
+	// GammaSource: colour of each portal (0x00RRGGBB; 0 = default). Picked from the owner's
+	// cl_portal_color1/2 or at random (cl_portal_color_random) every time a portal is fired.
+	CNetworkVar( int,	m_nPortalColor1 );
+	CNetworkVar( int,	m_nPortalColor2 );
+	void ChoosePortalColor( bool bPortal2 );
 	CNetworkVar( bool,	m_bOpenProngs );		// Which portal was placed last
 	CNetworkVar( float,	m_fCanPlacePortal1OnThisSurface );	// Tells the gun if it can place on the surface it's pointing at
 	CNetworkVar( float,	m_fCanPlacePortal2OnThisSurface );	// Tells the gun if it can place on the surface it's pointing at

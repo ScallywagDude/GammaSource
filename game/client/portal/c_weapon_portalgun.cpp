@@ -172,6 +172,8 @@ BEGIN_NETWORK_TABLE( C_WeaponPortalgun, DT_WeaponPortalgun )
 	RecvPropBool( RECVINFO( m_bCanFirePortal1 ) ),
 	RecvPropBool( RECVINFO( m_bCanFirePortal2 ) ),
 	RecvPropInt( RECVINFO( m_iLastFiredPortal ) ),
+	RecvPropInt( RECVINFO( m_nPortalColor1 ) ),
+	RecvPropInt( RECVINFO( m_nPortalColor2 ) ),
 	RecvPropBool( RECVINFO( m_bOpenProngs ) ),
 	RecvPropFloat( RECVINFO( m_fCanPlacePortal1OnThisSurface ) ),
 	RecvPropFloat( RECVINFO( m_fCanPlacePortal2OnThisSurface ) ),
@@ -266,7 +268,8 @@ void C_WeaponPortalgun::StartEffects( void )
 		m_Parameters[PORTALGUN_PORTAL1LIGHT].SetAttachment( pModelView->LookupAttachment( "Body_light" ) );
 		m_Parameters[PORTALGUN_PORTAL1LIGHT].SetVisible( false );
 
-		if ( m_Parameters[PORTALGUN_PORTAL1LIGHT].SetMaterial( PORTALGUN_PORTAL1_FIRED_LAST_GLOW ) == false )
+		// GammaSource: a neutral glow, tinted with the portal colour in ClientThink
+		if ( m_Parameters[PORTALGUN_PORTAL1LIGHT].SetMaterial( PORTALGUN_GLOW_SPRITE ) == false )
 		{
 			// This means the texture was not found
 			Assert( 0 );
@@ -280,7 +283,8 @@ void C_WeaponPortalgun::StartEffects( void )
 		m_Parameters[PORTALGUN_PORTAL1LIGHT_WORLD].SetAttachment( pModelWorld->LookupAttachment( "Body_light" ) );
 		m_Parameters[PORTALGUN_PORTAL1LIGHT_WORLD].SetVisible( false );
 
-		if ( m_Parameters[PORTALGUN_PORTAL1LIGHT_WORLD].SetMaterial( PORTALGUN_PORTAL1_FIRED_LAST_GLOW ) == false )
+		// GammaSource: a neutral glow, tinted with the portal colour in ClientThink
+		if ( m_Parameters[PORTALGUN_PORTAL1LIGHT_WORLD].SetMaterial( PORTALGUN_GLOW_SPRITE ) == false )
 		{
 			// This means the texture was not found
 			Assert( 0 );
@@ -294,7 +298,8 @@ void C_WeaponPortalgun::StartEffects( void )
 		m_Parameters[PORTALGUN_PORTAL2LIGHT].SetAttachment( pModelView->LookupAttachment( "Body_light" ) );
 		m_Parameters[PORTALGUN_PORTAL2LIGHT].SetVisible( false );
 
-		if ( m_Parameters[PORTALGUN_PORTAL2LIGHT].SetMaterial( PORTALGUN_PORTAL2_FIRED_LAST_GLOW ) == false )
+		// GammaSource: a neutral glow, tinted with the portal colour in ClientThink
+		if ( m_Parameters[PORTALGUN_PORTAL2LIGHT].SetMaterial( PORTALGUN_GLOW_SPRITE ) == false )
 		{
 			// This means the texture was not found
 			Assert( 0 );
@@ -308,7 +313,8 @@ void C_WeaponPortalgun::StartEffects( void )
 		m_Parameters[PORTALGUN_PORTAL2LIGHT_WORLD].SetAttachment( pModelWorld->LookupAttachment( "Body_light" ) );
 		m_Parameters[PORTALGUN_PORTAL2LIGHT_WORLD].SetVisible( false );
 
-		if ( m_Parameters[PORTALGUN_PORTAL2LIGHT_WORLD].SetMaterial( PORTALGUN_PORTAL2_FIRED_LAST_GLOW ) == false )
+		// GammaSource: a neutral glow, tinted with the portal colour in ClientThink
+		if ( m_Parameters[PORTALGUN_PORTAL2LIGHT_WORLD].SetMaterial( PORTALGUN_GLOW_SPRITE ) == false )
 		{
 			// This means the texture was not found
 			Assert( 0 );
@@ -821,6 +827,15 @@ void C_WeaponPortalgun::ClientThink( void )
 				m_Parameters[PORTALGUN_PORTAL1LIGHT_WORLD].SetVisible3rdPerson( m_iLastFiredPortal == 1 );
 				m_Parameters[PORTALGUN_PORTAL2LIGHT].SetVisibleViewModel( m_iLastFiredPortal == 2 );
 				m_Parameters[PORTALGUN_PORTAL2LIGHT_WORLD].SetVisible3rdPerson( m_iLastFiredPortal == 2 );
+
+				// GammaSource: the lights take the (possibly custom) portal colours
+				for ( int iPortal = 1; iPortal <= 2; ++iPortal )
+				{
+					Color c = UTIL_Portal_Color( iPortal );
+					Vector vColor( c.r(), c.g(), c.b() );
+					m_Parameters[iPortal == 1 ? PORTALGUN_PORTAL1LIGHT : PORTALGUN_PORTAL2LIGHT].SetColor( vColor );
+					m_Parameters[iPortal == 1 ? PORTALGUN_PORTAL1LIGHT_WORLD : PORTALGUN_PORTAL2LIGHT_WORLD].SetColor( vColor );
+				}
 			}
 		}
 	}

@@ -1539,6 +1539,8 @@ static ConVar r_threaded_particles( "r_threaded_particles", "1" );
 
 static float s_flThreadedPSystemTimeStep;
 
+extern void GammaRecolorPortalParticles( CNewParticleEffect *pEffect );	// gamma/c_gamma_portal_colors.cpp
+
 static void ProcessPSystem( CNewParticleEffect *&pNewEffect )
 {
 	// Enable FP exceptions here when FP_EXCEPTIONS_ENABLED is defined,
@@ -1570,6 +1572,9 @@ static void ProcessPSystem( CNewParticleEffect *&pNewEffect )
 	{
 		pNewEffect->Simulate( s_flThreadedPSystemTimeStep );
 	}
+
+	if ( pNewEffect->m_nGammaPortalTint )
+		GammaRecolorPortalParticles( pNewEffect );
 
 	if ( pNewEffect->IsFinished() )
 	{

@@ -34,6 +34,8 @@ BEGIN_NETWORK_TABLE( CWeaponPortalgun, DT_WeaponPortalgun )
 	SendPropBool( SENDINFO( m_bCanFirePortal1 ) ),
 	SendPropBool( SENDINFO( m_bCanFirePortal2 ) ),
 	SendPropInt( SENDINFO( m_iLastFiredPortal ) ),
+	SendPropInt( SENDINFO( m_nPortalColor1 ), 24, SPROP_UNSIGNED ),
+	SendPropInt( SENDINFO( m_nPortalColor2 ), 24, SPROP_UNSIGNED ),
 	SendPropBool( SENDINFO( m_bOpenProngs ) ),
 	SendPropFloat( SENDINFO( m_fCanPlacePortal1OnThisSurface ) ),
 	SendPropFloat( SENDINFO( m_fCanPlacePortal2OnThisSurface ) ),
@@ -46,6 +48,8 @@ END_NETWORK_TABLE()
 BEGIN_DATADESC( CWeaponPortalgun )
 
 	DEFINE_KEYFIELD( m_bCanFirePortal1, FIELD_BOOLEAN, "CanFirePortal1" ),
+	DEFINE_FIELD( m_nPortalColor1, FIELD_INTEGER ),
+	DEFINE_FIELD( m_nPortalColor2, FIELD_INTEGER ),
 	DEFINE_KEYFIELD( m_bCanFirePortal2, FIELD_BOOLEAN, "CanFirePortal2" ),
 	DEFINE_FIELD( m_iLastFiredPortal, FIELD_INTEGER ),
 	DEFINE_FIELD( m_bOpenProngs, FIELD_BOOLEAN ),
@@ -356,8 +360,43 @@ void CWeaponPortalgun::InputChargePortal2( inputdata_t &inputdata )
 	DispatchParticleEffect( "portal_2_charge", PATTACH_POINT_FOLLOW, this, "muzzle" );
 }
 
+//-----------------------------------------------------------------------------
+// GammaSource: pick the colour of the portal about to be fired
+//-----------------------------------------------------------------------------
+void CWeaponPortalgun::ChoosePortalColor( bool bPortal2 )
+{
+	CBasePlayer *pPlayer = ToBasePlayer( GetOwner() );
+	if ( !pPlayer )
+		return;
+
+	int nColor = 0;
+	const char *pszRandom = engine->GetClientConVarValue( pPlayer->entindex(), "cl_portal_color_random" );
+	if ( pszRandom && atoi( pszRandom ) )
+	{
+		// a saturated, bright colour from anywhere on the hue wheel
+		Vector rgb;
+		HSVtoRGB( Vector( random->RandomFloat( 0.0f, 360.0f ), random->RandomFloat( 0.65f, 1.0f ), 1.0f ), rgb );
+		nColor = ( (int)( rgb.x * 255.0f ) << 16 ) | ( (int)( rgb.y * 255.0f ) << 8 ) | (int)( rgb.z * 255.0f );
+	}
+	else
+	{
+		const char *pszColor = engine->GetClientConVarValue( pPlayer->entindex(), bPortal2 ? "cl_portal_color2" : "cl_portal_color1" );
+		int r = 0, g = 0, b = 0;
+		if ( pszColor && sscanf( pszColor, "%d %d %d", &r, &g, &b ) == 3 )
+			nColor = ( clamp( r, 0, 255 ) << 16 ) | ( clamp( g, 0, 255 ) << 8 ) | clamp( b, 0, 255 );
+	}
+	if ( nColor == 0 )
+		nColor = 1;	// pure black would read as "default"
+
+	if ( bPortal2 )
+		m_nPortalColor2 = nColor;
+	else
+		m_nPortalColor1 = nColor;
+}
+
 void CWeaponPortalgun::FirePortal1( inputdata_t &inputdata )
 {
+	ChoosePortalColor( false );
 	FirePortal( false );
 	m_iLastFiredPortal = 1;
 
@@ -375,6 +414,7 @@ void CWeaponPortalgun::FirePortal1( inputdata_t &inputdata )
 
 void CWeaponPortalgun::FirePortal2( inputdata_t &inputdata )
 {
+	ChoosePortalColor( true );
 	FirePortal( true );
 	m_iLastFiredPortal = 2;
 

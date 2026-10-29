@@ -143,8 +143,17 @@ const matrix3x4_t* CTransformedCollideable::GetRootParentToWorldTransform() cons
 	return &m_ReferencedVars.m_matRootParentToWorldTransform;
 }
 
+#ifdef CLIENT_DLL
+extern bool GammaPortalColor( int iPortal, Color &color );	// gamma/c_gamma_portal_colors.cpp
+#endif
+
 Color UTIL_Portal_Color( int iPortal )
 {
+#ifdef CLIENT_DLL
+	Color custom;
+	if ( ( iPortal == 1 || iPortal == 2 ) && GammaPortalColor( iPortal, custom ) )
+		return custom;
+#endif
 	switch ( iPortal )
 	{
 		case 0:
