@@ -49,7 +49,8 @@ public:
 		m_pHint = new vgui::Label( this, "Hint", "Changes are saved when you press Apply or OK." );
 
 		// Portal gun colours
-		m_pPortalTitle = new vgui::Label( this, "PortalColorsLabel", "Portal colors" );
+		m_pPortalCustom = new vgui::CheckButton( this, "PortalColorCustom", "Custom portal colors" );
+		m_pPortalCustom->AddActionSignalTarget( this );
 		m_pPortalRandom = new vgui::CheckButton( this, "PortalColorRandom", "Random" );
 		m_pPortalRandom->AddActionSignalTarget( this );
 		for ( int p = 0; p < 2; ++p )
@@ -101,6 +102,8 @@ public:
 		}
 		ConVarRef random( "cl_portal_color_random", true );
 		m_pPortalRandom->SetSelected( random.IsValid() && random.GetBool() );
+		ConVarRef customPortal( "cl_portal_color_custom", true );
+		m_pPortalCustom->SetSelected( customPortal.IsValid() && customPortal.GetBool() );
 		UpdatePreview();
 	}
 
@@ -130,6 +133,9 @@ public:
 		ConVarRef random( "cl_portal_color_random", true );
 		if ( random.IsValid() )
 			random.SetValue( m_pPortalRandom->IsSelected() ? 1 : 0 );
+		ConVarRef customPortal( "cl_portal_color_custom", true );
+		if ( customPortal.IsValid() )
+			customPortal.SetValue( m_pPortalCustom->IsSelected() ? 1 : 0 );
 	}
 
 	virtual void OnCommand( const char *command )
@@ -140,6 +146,7 @@ public:
 			for ( int i = 0; i < 3; ++i )
 				m_pRGB[i]->SetValue( s_Defaults[i], false );
 			m_pPortalRandom->SetSelected( false );
+			m_pPortalCustom->SetSelected( false );
 			for ( int p = 0; p < 2; ++p )
 				for ( int c = 0; c < 3; ++c )
 					m_pPortalRGB[p][c]->SetValue( s_PortalDefaults[p][c], false );
@@ -170,8 +177,8 @@ private:
 		m_pPreview->SetBounds( 12, 132, 220, 24 );
 		m_pDefaults->SetBounds( 12, 164, 170, 26 );
 
-		m_pPortalTitle->SetBounds( 250, 8, 100, 24 );
-		m_pPortalRandom->SetBounds( 356, 8, 110, 24 );
+		m_pPortalCustom->SetBounds( 250, 8, 150, 24 );
+		m_pPortalRandom->SetBounds( 400, 8, 76, 24 );
 		for ( int p = 0; p < 2; ++p )
 		{
 			int y = 36 + p * 90;
@@ -199,11 +206,14 @@ private:
 		}
 		m_pPreview->SetFgColor( Color( rgb[0], rgb[1], rgb[2], 255 ) );
 
+		bool bCustom = m_pPortalCustom->IsSelected();
 		bool bRandom = m_pPortalRandom->IsSelected();
+		m_pPortalRandom->SetEnabled( bCustom );
 		for ( int p = 0; p < 2; ++p )
 		{
+			m_pPortalLabel[p]->SetEnabled( bCustom );
 			for ( int c = 0; c < 3; ++c )
-				m_pPortalRGB[p][c]->SetEnabled( !bRandom );
+				m_pPortalRGB[p][c]->SetEnabled( bCustom && !bRandom );
 			m_pPortalSwatch[p]->SetBgColor( Color( ColorByte( m_pPortalRGB[p][0]->GetValue() ),
 				ColorByte( m_pPortalRGB[p][1]->GetValue() ), ColorByte( m_pPortalRGB[p][2]->GetValue() ), 255 ) );
 			m_pPortalSwatch[p]->SetVisible( !bRandom );
@@ -224,7 +234,7 @@ private:
 	vgui::Button *m_pDefaults;
 	vgui::Label *m_pHint;
 
-	vgui::Label *m_pPortalTitle;
+	vgui::CheckButton *m_pPortalCustom;
 	vgui::CheckButton *m_pPortalRandom;
 	vgui::Label *m_pPortalLabel[2];
 	vgui::Slider *m_pPortalRGB[2][3];

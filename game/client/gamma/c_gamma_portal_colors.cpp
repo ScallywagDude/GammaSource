@@ -27,6 +27,7 @@
 ConVar cl_portal_color1( "cl_portal_color1", "64 160 255", FCVAR_ARCHIVE | FCVAR_USERINFO, "Colour of portal 1 (r g b)" );
 ConVar cl_portal_color2( "cl_portal_color2", "255 160 32", FCVAR_ARCHIVE | FCVAR_USERINFO, "Colour of portal 2 (r g b)" );
 ConVar cl_portal_color_random( "cl_portal_color_random", "0", FCVAR_ARCHIVE | FCVAR_USERINFO, "Give every portal you fire a random colour" );
+ConVar cl_portal_color_custom( "cl_portal_color_custom", "0", FCVAR_ARCHIVE | FCVAR_USERINFO, "Use your own portal colours (cl_portal_color1/2, cl_portal_color_random) instead of blue and orange" );
 
 static const Color s_DefaultColors[2] = { Color( 64, 160, 255, 255 ), Color( 255, 160, 32, 255 ) };
 
@@ -70,7 +71,7 @@ bool GammaPortalColor( int iPortal, Color &color )
 		color.SetColor( ( nPacked >> 16 ) & 0xFF, ( nPacked >> 8 ) & 0xFF, nPacked & 0xFF, 255 );
 		return true;
 	}
-	if ( !cl_portal_color_random.GetBool() && ParseColor( ( iPortal == 1 ? cl_portal_color1 : cl_portal_color2 ).GetString(), color ) )
+	if ( cl_portal_color_custom.GetBool() && !cl_portal_color_random.GetBool() && ParseColor( ( iPortal == 1 ? cl_portal_color1 : cl_portal_color2 ).GetString(), color ) )
 		return true;
 	color = s_DefaultColors[iPortal - 1];
 	return true;

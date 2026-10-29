@@ -370,6 +370,16 @@ void CWeaponPortalgun::ChoosePortalColor( bool bPortal2 )
 		return;
 
 	int nColor = 0;
+	const char *pszCustom = engine->GetClientConVarValue( pPlayer->entindex(), "cl_portal_color_custom" );
+	if ( !pszCustom || !atoi( pszCustom ) )
+	{
+		// custom colours turned off: Portal's blue and orange
+		if ( bPortal2 )
+			m_nPortalColor2 = 0;
+		else
+			m_nPortalColor1 = 0;
+		return;
+	}
 	const char *pszRandom = engine->GetClientConVarValue( pPlayer->entindex(), "cl_portal_color_random" );
 	if ( pszRandom && atoi( pszRandom ) )
 	{
