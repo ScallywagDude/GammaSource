@@ -1349,6 +1349,12 @@ static void InitMaterialSystemConfig(MaterialSystem_Config_t *pConfig)
 	pConfig->bEditMode = true;
 	pConfig->m_nAASamples = 0;
 	pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_DISABLE_BUMPMAP, true);
+	// GammaSource: the video card config can come back at DX8, but the 2018 shader DLL has
+	// no *_DX8 fallback shaders, so every material lost its shader and the views stayed black.
+	if ( pConfig->dxSupportLevel < 95 )
+	{
+		pConfig->dxSupportLevel = 95;
+	}
 	// Each map viewport presents a subrectangle to its own child HWND.
 	// D3D9 requires the COPY swap effect selected by this flag for that path.
 	pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS, true );
