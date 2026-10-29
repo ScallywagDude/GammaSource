@@ -264,6 +264,9 @@ public:
 	virtual void			AbortReload( void );
 	virtual bool			Reload( void );
 	bool					DefaultReload( int iClipSize1, int iClipSize2, int iActivity );
+#ifdef CLIENT_DLL
+	bool					ViewModelAnimationPlaysSound( int iActivity, const char *pszSound );
+#endif
 	bool					ReloadsSingly( void ) const;
 
 	virtual bool			AutoFiresFullClip( void ) { return false; }

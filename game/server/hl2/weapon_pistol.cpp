@@ -347,7 +347,8 @@ bool CWeaponPistol::Reload( void )
 	bool fRet = DefaultReload( GetMaxClip1(), GetMaxClip2(), ACT_VM_RELOAD );
 	if ( fRet )
 	{
-		WeaponSound( RELOAD );
+		// GammaSource: the 2003 v_pistol reload animation plays Weapon_Pistol.Reload
+		// itself at the right frame; playing it here too sounded early and doubled.
 		m_flAccuracyPenalty = 0.0f;
 	}
 	return fRet;

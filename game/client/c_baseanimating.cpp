@@ -4140,7 +4140,17 @@ void C_BaseAnimating::FireObsoleteEvent( const Vector& origin, const QAngle& ang
 				break;
 			}
 
-			if ( iAttachment != -1 && m_Attachments.Count() > iAttachment )
+			int iFlashType = atoi( options );
+			bool bAttachedFlash = iFlashType == MUZZLEFLASH_SHOTGUN || iFlashType == MUZZLEFLASH_SMG1 ||
+				iFlashType == MUZZLEFLASH_PISTOL || iFlashType == MUZZLEFLASH_COMBINE || iFlashType == MUZZLEFLASH_357;
+			if ( iAttachment != -1 && m_Attachments.Count() > iAttachment && bFirstPerson && bAttachedFlash && IsViewModel() )
+			{
+				// GammaSource: the 2003 view models use these events. A flash placed at the
+				// attachment's position when the event fired stayed behind while the gun
+				// recoiled and the view moved; this one follows the muzzle every frame.
+				tempents->MuzzleFlash( atoi( options ), GetRefEHandle(), iAttachment+1, true );
+			}
+			else if ( iAttachment != -1 && m_Attachments.Count() > iAttachment )
 			{
 				GetAttachment( iAttachment+1, attachOrigin, attachAngles );
 				int entId = render->GetViewEntity();

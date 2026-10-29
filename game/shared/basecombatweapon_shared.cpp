@@ -1964,6 +1964,32 @@ void CBaseCombatWeapon::StopWeaponSound( WeaponSound_t sound_type )
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#ifdef CLIENT_DLL
+//-----------------------------------------------------------------------------
+// Purpose: Does the view model's animation for this activity have an event playing this sound?
+//-----------------------------------------------------------------------------
+bool CBaseCombatWeapon::ViewModelAnimationPlaysSound( int iActivity, const char *pszSound )
+{
+	CBasePlayer *pOwner = ToBasePlayer( GetOwner() );
+	CBaseViewModel *pViewModel = pOwner ? pOwner->GetViewModel( m_nViewModelIndex ) : NULL;
+	if ( !pszSound || !pszSound[0] || !pViewModel )
+		return false;
+	CStudioHdr *pStudioHdr = pViewModel->GetModelPtr();
+	if ( !pStudioHdr )
+		return false;
+	int iSequence = pViewModel->SelectWeightedSequence( (Activity)iActivity );
+	if ( iSequence < 0 || iSequence >= pStudioHdr->GetNumSeq() )
+		return false;
+	mstudioseqdesc_t &seqdesc = pStudioHdr->pSeqdesc( iSequence );
+	for ( int i = 0; i < seqdesc.numevents; i++ )
+	{
+		if ( !Q_stricmp( seqdesc.pEvent( i )->pszOptions(), pszSound ) )
+			return true;
+	}
+	return false;
+}
+#endif
+
 bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActivity )
 {
 	CBaseCombatCharacter *pOwner = GetOwner();
@@ -2001,8 +2027,10 @@ bool CBaseCombatWeapon::DefaultReload( int iClipSize1, int iClipSize2, int iActi
 		return false;
 
 #ifdef CLIENT_DLL
-	// Play reload
-	WeaponSound( RELOAD );
+	// Play reload, unless the view model's reload animation plays that sound itself
+	// (GammaSource: the 2003 view models do, at the right frame; both together doubled it)
+	if ( !ViewModelAnimationPlaysSound( iActivity, GetShootSound( RELOAD ) ) )
+		WeaponSound( RELOAD );
 #endif
 	SendWeaponAnim( iActivity );
 
