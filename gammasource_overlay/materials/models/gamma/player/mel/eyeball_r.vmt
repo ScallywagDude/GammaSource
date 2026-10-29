@@ -1,0 +1,8 @@
+"Eyes"
+{
+		"$basetexture" "models/gamma/player/mel/textures/eyeball_r_dx8"
+		"$iris" "models/gamma/player/mel/textures/pupil_r"
+	
+	"$halflambert" "1"
+	"$nodecal" "1"
+}

@@ -1,0 +1,8 @@
+"VertexLitGeneric"
+{
+
+	"$basetexture" "models/Citizen_17/torso"
+	"$envmapmask" "models/Citizen_17/torsomask"
+	"$envmap" "models/cremator/cremsuitenvmap"
+	"$envmapsphere" 1
+}

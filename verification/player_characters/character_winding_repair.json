@@ -1,0 +1,38 @@
+[
+  {
+    "alias": "chell",
+    "previous_mesh_sha256": "fd4f9dc30c45000ef27a5a6651eaee7cdae406e35b44a2a793f4c5cee8c0871d",
+    "mesh_sha256": "fd4f9dc30c45000ef27a5a6651eaee7cdae406e35b44a2a793f4c5cee8c0871d",
+    "preserved_files": {
+      "model.qc": "919808d28cd9a65c6c6684a667260df7aece8215004f5d4433c5405e9d04fdf7",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\winding_compile.log",
+    "fix": "Anatomical joint-direction alignment and VTX-to-SMD winding"
+  },
+  {
+    "alias": "chell_2010",
+    "previous_mesh_sha256": "7b2b8dc3175afa25e09f2a6908d1322680a2abb7f5c65efedecd64f19f6304a2",
+    "mesh_sha256": "7b2b8dc3175afa25e09f2a6908d1322680a2abb7f5c65efedecd64f19f6304a2",
+    "preserved_files": {
+      "model.qc": "a6de77572a36d4b7cf5004efaccadf28f662e761c2d7fcfd7e14b08ed90585fc",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell_2010\\winding_compile.log",
+    "fix": "Anatomical joint-direction alignment and VTX-to-SMD winding"
+  },
+  {
+    "alias": "mel",
+    "previous_mesh_sha256": "10e469df49c929b9d62131793f40aec3c4ac2520bb30dec8d518580cc2f74a7f",
+    "mesh_sha256": "0c1d54590f985eaa4c04f9b9776cccac0ff5b534177d23c8fbc1e78e37cc303f",
+    "preserved_files": {
+      "model.qc": "15295d6f5f4210866c232201a7713ccdea506c467f2e406ba9b5372cccb11a32",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\winding_compile.log",
+    "fix": "Anatomical joint-direction alignment and VTX-to-SMD winding"
+  }
+]

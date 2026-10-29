@@ -1,0 +1,193 @@
+{
+  "method": "Modern studiomdl round-trip replaces legacy converted hardware skinning batches",
+  "source_project": "source/gasmask_citizen/model.qc",
+  "original_import": "source/gasmask_citizen/original_import/gasmask_citizen.mdl",
+  "compiled_validation": {
+    "path": "models/gamma/player/gasmask_citizen.mdl",
+    "version": 48,
+    "bones": 53,
+    "local_sequences": 1,
+    "local_activities": [
+      "",
+      "ACT_DIERAGDOLL",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+      "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+      "ACT_HL2MP_GESTURE_RELOAD_AR2",
+      "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+      "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+      "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+      "ACT_HL2MP_IDLE_AR2",
+      "ACT_HL2MP_IDLE_CROSSBOW",
+      "ACT_HL2MP_IDLE_CROUCH_AR2",
+      "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+      "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+      "ACT_HL2MP_IDLE_CROUCH_MELEE",
+      "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+      "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+      "ACT_HL2MP_IDLE_CROUCH_RPG",
+      "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+      "ACT_HL2MP_IDLE_CROUCH_SLAM",
+      "ACT_HL2MP_IDLE_CROUCH_SMG1",
+      "ACT_HL2MP_IDLE_GRENADE",
+      "ACT_HL2MP_IDLE_MELEE",
+      "ACT_HL2MP_IDLE_PHYSGUN",
+      "ACT_HL2MP_IDLE_PISTOL",
+      "ACT_HL2MP_IDLE_RPG",
+      "ACT_HL2MP_IDLE_SHOTGUN",
+      "ACT_HL2MP_IDLE_SLAM",
+      "ACT_HL2MP_IDLE_SMG1",
+      "ACT_HL2MP_JUMP_AR2",
+      "ACT_HL2MP_JUMP_CROSSBOW",
+      "ACT_HL2MP_JUMP_GRENADE",
+      "ACT_HL2MP_JUMP_MELEE",
+      "ACT_HL2MP_JUMP_PHYSGUN",
+      "ACT_HL2MP_JUMP_PISTOL",
+      "ACT_HL2MP_JUMP_RPG",
+      "ACT_HL2MP_JUMP_SHOTGUN",
+      "ACT_HL2MP_JUMP_SLAM",
+      "ACT_HL2MP_JUMP_SMG1",
+      "ACT_HL2MP_RUN_AR2",
+      "ACT_HL2MP_RUN_CROSSBOW",
+      "ACT_HL2MP_RUN_GRENADE",
+      "ACT_HL2MP_RUN_MELEE",
+      "ACT_HL2MP_RUN_PHYSGUN",
+      "ACT_HL2MP_RUN_PISTOL",
+      "ACT_HL2MP_RUN_RPG",
+      "ACT_HL2MP_RUN_SHOTGUN",
+      "ACT_HL2MP_RUN_SLAM",
+      "ACT_HL2MP_RUN_SMG1",
+      "ACT_HL2MP_WALK_CROUCH_AR2",
+      "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+      "ACT_HL2MP_WALK_CROUCH_GRENADE",
+      "ACT_HL2MP_WALK_CROUCH_MELEE",
+      "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+      "ACT_HL2MP_WALK_CROUCH_PISTOL",
+      "ACT_HL2MP_WALK_CROUCH_RPG",
+      "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+      "ACT_HL2MP_WALK_CROUCH_SLAM",
+      "ACT_HL2MP_WALK_CROUCH_SMG1"
+    ],
+    "includes": [
+      "models/gamma/player/male_anims.mdl"
+    ],
+    "sha256": "f3faa1127affc4af43b97af59b6c2104537a36bef2cb02ff471702649552a967",
+    "materials": [
+      "materials/models/gamma/player/gasmask_citizen/palm.vmt",
+      "materials/models/gamma/player/gasmask_citizen/hand.vmt",
+      "materials/models/gamma/player/gasmask_citizen/rarm.vmt",
+      "materials/models/gamma/player/gasmask_citizen/arm.vmt",
+      "materials/models/gamma/player/gasmask_citizen/leg.vmt",
+      "materials/models/gamma/player/gasmask_citizen/face.vmt",
+      "materials/models/gamma/player/gasmask_citizen/eyeball_r.vmt",
+      "materials/models/gamma/player/gasmask_citizen/eyeball_l.vmt",
+      "materials/models/gamma/player/gasmask_citizen/glass.vmt",
+      "materials/models/gamma/player/gasmask_citizen/mouthpiece.vmt",
+      "materials/models/gamma/player/gasmask_citizen/valve.vmt",
+      "materials/models/gamma/player/gasmask_citizen/torso.vmt",
+      "materials/models/gamma/player/gasmask_citizen/hood.vmt"
+    ],
+    "ik_chains": [
+      {
+        "name": "rhand",
+        "bones": [
+          "ValveBiped.Bip01_R_UpperArm",
+          "ValveBiped.Bip01_R_Forearm",
+          "ValveBiped.Bip01_R_Hand"
+        ]
+      },
+      {
+        "name": "lhand",
+        "bones": [
+          "ValveBiped.Bip01_L_UpperArm",
+          "ValveBiped.Bip01_L_Forearm",
+          "ValveBiped.Bip01_L_Hand"
+        ]
+      },
+      {
+        "name": "rfoot",
+        "bones": [
+          "ValveBiped.Bip01_R_Thigh",
+          "ValveBiped.Bip01_R_Calf",
+          "ValveBiped.Bip01_R_Foot"
+        ]
+      },
+      {
+        "name": "lfoot",
+        "bones": [
+          "ValveBiped.Bip01_L_Thigh",
+          "ValveBiped.Bip01_L_Calf",
+          "ValveBiped.Bip01_L_Foot"
+        ]
+      }
+    ],
+    "local_ik_reference_count": 4,
+    "attachments": [
+      "anim_attachment_RH",
+      "anim_attachment_LH",
+      "eyes"
+    ],
+    "required_bones": {
+      "ValveBiped.Bip01_R_Hand": true,
+      "ValveBiped.Bip01_L_Hand": true,
+      "ValveBiped.Bip01_Head1": true
+    },
+    "vertices_lod0": 2594,
+    "geometry_checksum": -522051078,
+    "companions": {
+      ".vvd": true,
+      ".dx90.vtx": true,
+      ".phy": true
+    },
+    "physics_solid_count": 15,
+    "triangles_lod0": 3971,
+    "eyeball_count": 2,
+    "eye_projection_records": [
+      {
+        "bone": "ValveBiped.Bip01_Head1",
+        "iris_scale": 1.5873016119003296,
+        "radius": 0.5,
+        "up": [
+          0.9851090908050537,
+          0.17193035781383514,
+          8.770846307015745e-07
+        ],
+        "forward": [
+          -0.17193035781383514,
+          0.9851090908050537,
+          1.8231590956929722e-06
+        ]
+      },
+      {
+        "bone": "ValveBiped.Bip01_Head1",
+        "iris_scale": 1.5873016119003296,
+        "radius": 0.5,
+        "up": [
+          0.9851090908050537,
+          0.17193035781383514,
+          8.770846307015745e-07
+        ],
+        "forward": [
+          -0.17193035781383514,
+          0.9851090908050537,
+          1.8231590956929722e-06
+        ]
+      }
+    ],
+    "local_pose_parameters": [],
+    "local_flex_descriptors": 1,
+    "alias": "gasmask_citizen",
+    "name": "Gasmask Citizen"
+  },
+  "material_diagnostic": "Flat and fullbright material tests left same mask-only result; original modernized materials restored",
+  "original_geometry": "3971 triangles, 2594 weighted vertices; male rig transforms within 1.5e-5 of identity",
+  "compiled_mdl_sha256": "f3faa1127affc4af43b97af59b6c2104537a36bef2cb02ff471702649552a967",
+  "eye_rebuild_report": "character_eye_rebuild.json"
+}

@@ -1,0 +1,144 @@
+{
+  "alias": "gasmask_citizen",
+  "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\gasmask_citizen\\original_import\\gasmask_citizen.mdl",
+  "triangles": 3971,
+  "vertices": 2594,
+  "source_bones": 53,
+  "target_bones": 56,
+  "ancestor_remaps": [],
+  "alignment": {
+    "method": "anatomical body axes and joint directions; ancestor helpers share transforms",
+    "global_rotation": [
+      [
+        0.9999999999997707,
+        1.4555832326030576e-07,
+        -6.613271822090696e-07
+      ],
+      [
+        -1.4555769729176698e-07,
+        0.9999999999995414,
+        9.465337613082188e-07
+      ],
+      [
+        6.613273199846337e-07,
+        -9.465336650431808e-07,
+        0.9999999999993333
+      ]
+    ],
+    "axial_scale_range": [
+      0.9999855200037385,
+      1.0000132149734136
+    ]
+  },
+  "vtx_layouts": [
+    {
+      "body": 0,
+      "mesh": 0,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 3,
+      "source_indices": 1572
+    },
+    {
+      "body": 0,
+      "mesh": 1,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 3,
+      "source_indices": 1536
+    },
+    {
+      "body": 0,
+      "mesh": 2,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 219
+    },
+    {
+      "body": 0,
+      "mesh": 3,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 309
+    },
+    {
+      "body": 0,
+      "mesh": 4,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 1026
+    },
+    {
+      "body": 0,
+      "mesh": 5,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 3648
+    },
+    {
+      "body": 0,
+      "mesh": 6,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 39
+    },
+    {
+      "body": 0,
+      "mesh": 7,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 42
+    },
+    {
+      "body": 0,
+      "mesh": 8,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 228
+    },
+    {
+      "body": 0,
+      "mesh": 9,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 732
+    },
+    {
+      "body": 0,
+      "mesh": 10,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 36
+    },
+    {
+      "body": 0,
+      "mesh": 11,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 912
+    },
+    {
+      "body": 0,
+      "mesh": 12,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 1614
+    }
+  ],
+  "source_sha256": {
+    ".mdl": "392937c33bc5e4061febd99890a1d7f5e25ade8de272ce613699c0b23fefd243",
+    ".vvd": "d6ab5264011656df2de7b5d7c106c6b0674f7c5ccf85847ff3519b11d9e51e31",
+    ".dx90.vtx": "89bc657fbd4f7547b05f555551dcfd3ad4d3b5146b77ee06d1e114eead98c16b"
+  }
+}

@@ -1,0 +1,146 @@
+[
+  {
+    "alias": "gordon",
+    "model": "models/gamma/player/gordon.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "chell",
+    "model": "models/gamma/player/chell.mdl",
+    "include_order": [
+      "female_anims.mdl",
+      "female_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "chell_2010",
+    "model": "models/gamma/player/chell_2010.mdl",
+    "include_order": [
+      "female_anims.mdl",
+      "female_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "mel",
+    "model": "models/gamma/player/mel.mdl",
+    "include_order": [
+      "female_anims.mdl",
+      "female_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "gasmask_citizen",
+    "model": "models/gamma/player/gasmask_citizen.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "hl2dm_rebel",
+    "model": "models/gamma/player/hl2dm_rebel.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "hl2dm_female",
+    "model": "models/gamma/player/hl2dm_female.mdl",
+    "include_order": [
+      "female_anims.mdl",
+      "female_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "hl2dm_combine",
+    "model": "models/gamma/player/hl2dm_combine.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_urban",
+    "model": "models/gamma/player/css_urban.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_gign",
+    "model": "models/gamma/player/css_gign.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_gsg9",
+    "model": "models/gamma/player/css_gsg9.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_sas",
+    "model": "models/gamma/player/css_sas.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_phoenix",
+    "model": "models/gamma/player/css_phoenix.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_leet",
+    "model": "models/gamma/player/css_leet.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_guerilla",
+    "model": "models/gamma/player/css_guerilla.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  },
+  {
+    "alias": "css_arctic",
+    "model": "models/gamma/player/css_arctic.mdl",
+    "include_order": [
+      "male_anims.mdl",
+      "male_neutral.mdl"
+    ],
+    "geometry_checksum_unchanged": true
+  }
+]

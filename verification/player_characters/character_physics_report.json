@@ -1,0 +1,857 @@
+[
+  {
+    "alias": "chell",
+    "mesh_sha256": "fd4f9dc30c45000ef27a5a6651eaee7cdae406e35b44a2a793f4c5cee8c0871d",
+    "reference_sha256": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+    "collision_bodies": [
+      "ValveBiped.Bip01_Pelvis",
+      "ValveBiped.Bip01_Spine2",
+      "ValveBiped.Bip01_Head1",
+      "ValveBiped.Bip01_L_UpperArm",
+      "ValveBiped.Bip01_L_Forearm",
+      "ValveBiped.Bip01_L_Hand",
+      "ValveBiped.Bip01_L_Thigh",
+      "ValveBiped.Bip01_L_Calf",
+      "ValveBiped.Bip01_L_Foot",
+      "ValveBiped.Bip01_R_UpperArm",
+      "ValveBiped.Bip01_R_Forearm",
+      "ValveBiped.Bip01_R_Hand",
+      "ValveBiped.Bip01_R_Thigh",
+      "ValveBiped.Bip01_R_Calf",
+      "ValveBiped.Bip01_R_Foot"
+    ],
+    "constraint_source": "models/gamma/player/hl2dm_female.phy",
+    "joint_limits": {
+      "ValveBiped.Bip01_Spine2": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -48.0,
+          48.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -25.0,
+          50.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_Head1": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -20.0,
+          20.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -13.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -30.0,
+          30.0,
+          0.0
+        ],
+        "y": [
+          -95.0,
+          84.0,
+          0.0
+        ],
+        "z": [
+          -86.0,
+          26.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Forearm": {
+        "parent": "ValveBiped.Bip01_L_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Hand": {
+        "parent": "ValveBiped.Bip01_L_Forearm",
+        "x": [
+          -37.0,
+          37.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          59.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -73.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Calf": {
+        "parent": "ValveBiped.Bip01_L_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -8.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Foot": {
+        "parent": "ValveBiped.Bip01_L_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -19.0,
+          19.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -39.0,
+          39.0,
+          0.0
+        ],
+        "y": [
+          -79.0,
+          95.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          23.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Forearm": {
+        "parent": "ValveBiped.Bip01_R_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Hand": {
+        "parent": "ValveBiped.Bip01_R_Forearm",
+        "x": [
+          -60.0,
+          60.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          70.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -8.0,
+          75.0,
+          0.0
+        ],
+        "z": [
+          -97.0,
+          32.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Calf": {
+        "parent": "ValveBiped.Bip01_R_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -12.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Foot": {
+        "parent": "ValveBiped.Bip01_R_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      }
+    },
+    "collision_triangles": 180,
+    "limits": "New simple convex collision geometry; facial flexes are not restored by this tool.",
+    "compile_exit_code": 0,
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\physics_compile.log",
+    "compiled_solid_count": 15,
+    "phy_sha256": "1364b3feaa74b807fce2c00b5bafddce0310d83a7b6d2ae1dc39f8f939615b1f",
+    "compiled_joint_count": 14,
+    "stock_joint_limits_verified": true
+  },
+  {
+    "alias": "chell_2010",
+    "mesh_sha256": "7b2b8dc3175afa25e09f2a6908d1322680a2abb7f5c65efedecd64f19f6304a2",
+    "reference_sha256": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+    "collision_bodies": [
+      "ValveBiped.Bip01_Pelvis",
+      "ValveBiped.Bip01_Spine2",
+      "ValveBiped.Bip01_Head1",
+      "ValveBiped.Bip01_L_UpperArm",
+      "ValveBiped.Bip01_L_Forearm",
+      "ValveBiped.Bip01_L_Hand",
+      "ValveBiped.Bip01_L_Thigh",
+      "ValveBiped.Bip01_L_Calf",
+      "ValveBiped.Bip01_L_Foot",
+      "ValveBiped.Bip01_R_UpperArm",
+      "ValveBiped.Bip01_R_Forearm",
+      "ValveBiped.Bip01_R_Hand",
+      "ValveBiped.Bip01_R_Thigh",
+      "ValveBiped.Bip01_R_Calf",
+      "ValveBiped.Bip01_R_Foot"
+    ],
+    "constraint_source": "models/gamma/player/hl2dm_female.phy",
+    "joint_limits": {
+      "ValveBiped.Bip01_Spine2": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -48.0,
+          48.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -25.0,
+          50.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_Head1": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -20.0,
+          20.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -13.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -30.0,
+          30.0,
+          0.0
+        ],
+        "y": [
+          -95.0,
+          84.0,
+          0.0
+        ],
+        "z": [
+          -86.0,
+          26.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Forearm": {
+        "parent": "ValveBiped.Bip01_L_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Hand": {
+        "parent": "ValveBiped.Bip01_L_Forearm",
+        "x": [
+          -37.0,
+          37.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          59.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -73.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Calf": {
+        "parent": "ValveBiped.Bip01_L_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -8.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Foot": {
+        "parent": "ValveBiped.Bip01_L_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -19.0,
+          19.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -39.0,
+          39.0,
+          0.0
+        ],
+        "y": [
+          -79.0,
+          95.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          23.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Forearm": {
+        "parent": "ValveBiped.Bip01_R_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Hand": {
+        "parent": "ValveBiped.Bip01_R_Forearm",
+        "x": [
+          -60.0,
+          60.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          70.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -8.0,
+          75.0,
+          0.0
+        ],
+        "z": [
+          -97.0,
+          32.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Calf": {
+        "parent": "ValveBiped.Bip01_R_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -12.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Foot": {
+        "parent": "ValveBiped.Bip01_R_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      }
+    },
+    "collision_triangles": 180,
+    "limits": "New simple convex collision geometry; facial flexes are not restored by this tool.",
+    "compile_exit_code": 0,
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell_2010\\physics_compile.log",
+    "compiled_solid_count": 15,
+    "phy_sha256": "c318706265bf8712559d7c1830c2a77321519e82c55e1a6b48da926a07747d2b",
+    "compiled_joint_count": 14,
+    "stock_joint_limits_verified": true
+  },
+  {
+    "alias": "mel",
+    "mesh_sha256": "0c1d54590f985eaa4c04f9b9776cccac0ff5b534177d23c8fbc1e78e37cc303f",
+    "reference_sha256": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+    "collision_bodies": [
+      "ValveBiped.Bip01_Pelvis",
+      "ValveBiped.Bip01_Spine2",
+      "ValveBiped.Bip01_Head1",
+      "ValveBiped.Bip01_L_UpperArm",
+      "ValveBiped.Bip01_L_Forearm",
+      "ValveBiped.Bip01_L_Hand",
+      "ValveBiped.Bip01_L_Thigh",
+      "ValveBiped.Bip01_L_Calf",
+      "ValveBiped.Bip01_L_Foot",
+      "ValveBiped.Bip01_R_UpperArm",
+      "ValveBiped.Bip01_R_Forearm",
+      "ValveBiped.Bip01_R_Hand",
+      "ValveBiped.Bip01_R_Thigh",
+      "ValveBiped.Bip01_R_Calf",
+      "ValveBiped.Bip01_R_Foot"
+    ],
+    "constraint_source": "models/gamma/player/hl2dm_female.phy",
+    "joint_limits": {
+      "ValveBiped.Bip01_Spine2": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -48.0,
+          48.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -25.0,
+          50.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_Head1": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -20.0,
+          20.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          25.0,
+          0.0
+        ],
+        "z": [
+          -13.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -30.0,
+          30.0,
+          0.0
+        ],
+        "y": [
+          -95.0,
+          84.0,
+          0.0
+        ],
+        "z": [
+          -86.0,
+          26.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Forearm": {
+        "parent": "ValveBiped.Bip01_L_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Hand": {
+        "parent": "ValveBiped.Bip01_L_Forearm",
+        "x": [
+          -37.0,
+          37.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          59.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -73.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          30.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Calf": {
+        "parent": "ValveBiped.Bip01_L_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -8.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_L_Foot": {
+        "parent": "ValveBiped.Bip01_L_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -19.0,
+          19.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_UpperArm": {
+        "parent": "ValveBiped.Bip01_Spine2",
+        "x": [
+          -39.0,
+          39.0,
+          0.0
+        ],
+        "y": [
+          -79.0,
+          95.0,
+          0.0
+        ],
+        "z": [
+          -93.0,
+          23.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Forearm": {
+        "parent": "ValveBiped.Bip01_R_UpperArm",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -149.0,
+          4.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Hand": {
+        "parent": "ValveBiped.Bip01_R_Forearm",
+        "x": [
+          -60.0,
+          60.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -57.0,
+          70.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Thigh": {
+        "parent": "ValveBiped.Bip01_Pelvis",
+        "x": [
+          -12.0,
+          12.0,
+          0.0
+        ],
+        "y": [
+          -8.0,
+          75.0,
+          0.0
+        ],
+        "z": [
+          -97.0,
+          32.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Calf": {
+        "parent": "ValveBiped.Bip01_R_Thigh",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "z": [
+          -12.0,
+          126.0,
+          0.0
+        ]
+      },
+      "ValveBiped.Bip01_R_Foot": {
+        "parent": "ValveBiped.Bip01_R_Calf",
+        "x": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "y": [
+          -25.0,
+          6.0,
+          0.0
+        ],
+        "z": [
+          -15.0,
+          35.0,
+          0.0
+        ]
+      }
+    },
+    "collision_triangles": 180,
+    "limits": "New simple convex collision geometry; facial flexes are not restored by this tool.",
+    "compile_exit_code": 0,
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\physics_compile.log",
+    "compiled_solid_count": 15,
+    "phy_sha256": "ebec31d237c9d573d48833acc5384003a4e3ebc5f7b9b0792638958202d9fbe3",
+    "compiled_joint_count": 14,
+    "stock_joint_limits_verified": true
+  }
+]

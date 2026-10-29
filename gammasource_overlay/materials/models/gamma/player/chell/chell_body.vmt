@@ -1,0 +1,20 @@
+"VertexLitGeneric"
+{
+	"$baseTexture" "models/gamma/player/chell/textures/chell_body"
+	"$bumpmap" "models/gamma/player/chell/textures/chell_body_normal"
+	"$halflambert" "1"
+	"$nodecal" "1"
+	"$model" "1"
+	
+	"$phong" "1"
+	"$phongexponenttexture" "models/gamma/player/chell/textures/chell_body_exponent"
+
+	"$phongboost" "6 "	
+	"$lightwarptexture" "models/gamma/player/chell/textures/chell_body_lightwarp"
+	"$phongfresnelranges"	"[0.04 0.4 1]"
+
+
+}
+
+
+

@@ -1,0 +1,23 @@
+{
+  "model": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\models\\gamma\\player\\gasmask_citizen.mdl",
+  "repair": "Invalid legacy eye meshes rendered as ordinary textured meshes; private materials select supported generic skinning shaders; original NPC materials untouched.",
+  "modified_meshes": [
+    {
+      "body": 0,
+      "model": 0,
+      "mesh": 6,
+      "eyeballs": 0,
+      "invalid_eye": 0
+    },
+    {
+      "body": 0,
+      "model": 0,
+      "mesh": 7,
+      "eyeballs": 0,
+      "invalid_eye": 1
+    }
+  ],
+  "private_materials": 16,
+  "sha256": "392937c33bc5e4061febd99890a1d7f5e25ade8de272ce613699c0b23fefd243",
+  "scope": "Historical repair of archived converted source, preceding modern skinning and iris rebuilds"
+}

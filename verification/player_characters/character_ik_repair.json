@@ -1,0 +1,41 @@
+[
+  {
+    "alias": "chell",
+    "ik_chains": 4,
+    "compiled_mdl_sha256": "1113ff8f45f2c0434d87d7e93ae7d0709acbe3ef72f3afa63b4751d30ab073a9",
+    "source_geometry_unchanged": {
+      "mesh.smd": "fd4f9dc30c45000ef27a5a6651eaee7cdae406e35b44a2a793f4c5cee8c0871d",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\ik_compile.log",
+    "contract_source": "models/gamma/player/female_anims.mdl",
+    "later_winding_repair": "character_winding_repair.json"
+  },
+  {
+    "alias": "chell_2010",
+    "ik_chains": 4,
+    "compiled_mdl_sha256": "019f522c367fa6471afe83a2568cf120f00b642745c1bfb274f8c4904688227c",
+    "source_geometry_unchanged": {
+      "mesh.smd": "7b2b8dc3175afa25e09f2a6908d1322680a2abb7f5c65efedecd64f19f6304a2",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell_2010\\ik_compile.log",
+    "contract_source": "models/gamma/player/female_anims.mdl",
+    "later_winding_repair": "character_winding_repair.json"
+  },
+  {
+    "alias": "mel",
+    "ik_chains": 4,
+    "compiled_mdl_sha256": "cc90000214fd8bcb0de4727415dbfdba51aa3b3d135814276eeea56411c99fc9",
+    "source_geometry_unchanged": {
+      "mesh.smd": "0c1d54590f985eaa4c04f9b9776cccac0ff5b534177d23c8fbc1e78e37cc303f",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\ik_compile.log",
+    "contract_source": "models/gamma/player/female_anims.mdl",
+    "later_winding_repair": "character_winding_repair.json"
+  }
+]

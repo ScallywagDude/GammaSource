@@ -1,0 +1,1658 @@
+{
+  "scope": "16 selectable player characters and their animation/material dependencies",
+  "files": [
+    {
+      "path": "materials/engine/eye-cornea.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-27_17-54-49\\GammaSource FULL BUILD\\content\\retail_hl2\\hl2_textures_dir.vpk:materials/engine/eye-cornea.vtf",
+      "sha256": "67be204fb1e31708bb70ae947117f9e74c604138e051acf1bac64a4d54ae9ca0",
+      "bytes": 87588
+    },
+    {
+      "path": "materials/engine/eye-reflection-cubemap-.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-27_17-54-49\\GammaSource FULL BUILD\\content\\retail_hl2\\hl2_textures_dir.vpk:materials/engine/eye-reflection-cubemap-.vtf",
+      "sha256": "1bc1f0f541c623b0999bfad738b04882a6b7da9dbbc7e8379ae0ee488fb6a0a4",
+      "bytes": 306008
+    },
+    {
+      "path": "materials/models/citizen_17/arm.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\arm.vtf",
+      "sha256": "b3d842c10aaa13d0a6b1e7c95fbfda70520bd975142c0302116551d11fd6d8e9",
+      "bytes": 43896
+    },
+    {
+      "path": "materials/models/citizen_17/armmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\armmask.vtf",
+      "sha256": "e14b5f1c81fef6c42df301bc1af8dd3d24f26005833cd8b56af34999d1a86274",
+      "bytes": 43896
+    },
+    {
+      "path": "materials/models/citizen_17/eyeball_l.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\eyeball_l.vtf",
+      "sha256": "b552d08506d31fc8291e4282b709ffd4347eb83d5aa86de24dfe80c2e186c794",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/citizen_17/eyeball_r.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\eyeball_r.vtf",
+      "sha256": "acc0eb80d50e760db1482680a810c69685376706f74fdc083254fe0baa85c218",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/citizen_17/face.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\face.vtf",
+      "sha256": "6f9ab89278436a19f5734e66121129d36745f2febc3f72b4c06b2e8a92b48075",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/glass.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-27_17-54-49\\GammaSource FULL BUILD\\content\\gammasource_content\\materials\\models\\citizen_17\\glass.vtf",
+      "sha256": "2f16667ab80773dc840ee02f100366e7bfc3ea803a40e543c85ebe38fd71fbd2",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/glint.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\glint.vtf",
+      "sha256": "01d425d807e3a5f6e349fc9c5375d96fde0f07a1ab4617b5eafb6899f1756e64",
+      "bytes": 960
+    },
+    {
+      "path": "materials/models/citizen_17/hand.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\hand.vtf",
+      "sha256": "8876f610672d5c9f225ed2dd1375e9ec3c2607ee61607cec1ae766a99769e505",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/handmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\handmask.vtf",
+      "sha256": "a6a75f8a04c01925fe25bc9c33bc0422568ac4219c54e09e6a37dd6b2c9ae4e1",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/hood.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\hood.vtf",
+      "sha256": "dd21587da97359ea54bfb8638ab31540a0c1b6cf9b1a20163d5a1bbce51c0d8d",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/hoodmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\hoodmask.vtf",
+      "sha256": "cd7f82d8fdf97191671c59d460c49ebadf8a5d4cab849d9c4418c32996b3fd7f",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/leg.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\leg.vtf",
+      "sha256": "e8e579a2c7bc698f89803665316fbfc3a17b951e6c3ce7712c5f229c13340758",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/legmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\legmask.vtf",
+      "sha256": "d48af83c3787c91c7d824692fcbcff6ec2a9019a780c153650ace91282e80273",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/mouthpiece.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\mouthpiece.vtf",
+      "sha256": "ab7effc67e282211f1f8d55dbf1e94e2971399921f098ea13dd3767ad24155e2",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/citizen_17/palm.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\palm.vtf",
+      "sha256": "67f7f89067b55d8214208225264adfc415176e32d1c17a717df0947184bad77f",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/palmmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\palmmask.vtf",
+      "sha256": "f59f01882bd723567d8792be44db2275fc1b9e792dd3c3437ff91f64b680b1a9",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/citizen_17/pupil_l.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\pupil_l.vtf",
+      "sha256": "cb0be8724b73992616674cf9c247a56df53958bf3084db9fc797ee7f6df3ed45",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/citizen_17/pupil_r.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\pupil_r.vtf",
+      "sha256": "cb0be8724b73992616674cf9c247a56df53958bf3084db9fc797ee7f6df3ed45",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/citizen_17/rarm.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\rarm.vtf",
+      "sha256": "1815d92d4a8da25ed0e7de700e1fa3a66c1ff60e12ce529d349b94ff0cf696b7",
+      "bytes": 43896
+    },
+    {
+      "path": "materials/models/citizen_17/rarmmask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\rarmmask.vtf",
+      "sha256": "4a278b5eefbc678eac0042f57743efb11a5b14a72cb15568c87826fc6a7d5cd3",
+      "bytes": 43896
+    },
+    {
+      "path": "materials/models/citizen_17/torso.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\torso.vtf",
+      "sha256": "6b468bf2ba5f256e129d30e92fbe7f39ef3a98e8a1f4aadb4e59c6511ac71123",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/torsomask.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\torsomask.vtf",
+      "sha256": "34c2827b812038e388529d5c1807e0e46c579aa827cd7ea816cfe12c2784d0a4",
+      "bytes": 174968
+    },
+    {
+      "path": "materials/models/citizen_17/valve.vtf",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\materials\\models\\citizen_17\\valve.vtf",
+      "sha256": "3b6caf61a8714256193cd22c69a599db5aacfeb099e7de86312a10da442c7d4e",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldier_phong.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_textures_dir.vpk:materials/models/combine_soldier/combinesoldier_phong.vtf",
+      "sha256": "7d2606479729483e610814915a20442183a1512db790453c9f20623ab435c7a8",
+      "bytes": 699304
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_normal.vtf",
+      "sha256": "dc84bc36e6fa075ea7fda5847a5ce5823caf161fbf898b76f7e9721c260cc7a0",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player.vmt",
+      "sha256": "64a9959394379bfb86c54f7ecc3237fb7057117126e02812cdcd0b9f0274c446",
+      "bytes": 502
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player.vtf",
+      "sha256": "0e246af3722a8673919b1fcede0978062787c2ada3ceeeafed44029bfa57e55d",
+      "bytes": 1398352
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_new.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player_new.vmt",
+      "sha256": "a8585a460eb7e5d6c664ac29e71b042b37b2349f189f2220e90a71a43677b375",
+      "bytes": 521
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_new.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player_new.vtf",
+      "sha256": "8044d3b7fda83d22f51b24e20c866ee16fc058a06f5940ba7b4b9a3f773bdcdd",
+      "bytes": 1398352
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vmt",
+      "sha256": "d0250a793f136b65cd804f65937485a3674fe522b7b88336c0f4a0e00d0ce0c6",
+      "bytes": 525
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vtf",
+      "sha256": "9dd8abf94e4fb906132367f822e6da9d00edc154a2835e0f6ed745a02fe8bba0",
+      "bytes": 1398352
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/combine_soldier/combinesoldiersheet_player_shotgun_normal.vtf",
+      "sha256": "4cc9be3a99513cf45a5a749c3e19dcc8151515ec189a6adfda2a5f0fc0447d00",
+      "bytes": 1398368
+    },
+    {
+      "path": "materials/models/cremator/cremsuitenvmap.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-27_17-54-49\\GammaSource FULL BUILD\\content\\gammasource_content\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+      "sha256": "f42d568a83299270837b1437851219975ecbda755f590bba426e7eb7f6fca3b1",
+      "bytes": 11128
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign.vmt",
+      "sha256": "b217749d06997dc007a7003203a4897a2a88ea98b94024e65ca52bbc9f9237b1",
+      "bytes": 353
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign.vtf",
+      "sha256": "530b4b7540a15159c338086c52eb663617fd1dff05e139757faf84a63ece0e0b",
+      "bytes": 699272
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign_glass.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign_glass.vmt",
+      "sha256": "be9f2b5ba22e1ed78ad3d9dab917deab67da86b685c32816e72c476e30f8f80d",
+      "bytes": 181
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign_glass.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign_glass.vtf",
+      "sha256": "18c6364773466f7acf47a53f402bb25d2167df5dfc2f61d9361c429bdc4f02ea",
+      "bytes": 22080
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign_glass_spec.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign_glass_spec.vtf",
+      "sha256": "f8aacbbf48a5d6beeb66cfd27ad83bac108a0fda5e6673e0f261ac06994aaef0",
+      "bytes": 11144
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gign_normal.vtf",
+      "sha256": "c28496734ca274833abe9907d2a09846a67e3b0fd13b7ff446c317892cd43515",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/ct_gsg9.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gsg9.vmt",
+      "sha256": "4413365d6062216ffdbcc523d15c5e0bbbbc91f406b5874785a852e4e4457b18",
+      "bytes": 353
+    },
+    {
+      "path": "materials/models/cstrike/ct_gsg9.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gsg9.vtf",
+      "sha256": "8b25276cad9f43f170af23ffbe0596e55c754c1ddd330c8bec2cc895f9f7697c",
+      "bytes": 699272
+    },
+    {
+      "path": "materials/models/cstrike/ct_gsg9_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_gsg9_normal.vtf",
+      "sha256": "015aef3b890d374dd62e6eabb8e7514615a4e9ccf13f31febfc1b5ac428ffbd6",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas.vmt",
+      "sha256": "ab646158bc42d4c3406d6b512e21d16802956b816eb5bb82abcf81fcf3017acd",
+      "bytes": 350
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas.vtf",
+      "sha256": "97e23c00dea971860416c6f33d28af7aa17d2014432f27536d8c3421ef879698",
+      "bytes": 699272
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas_glass.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas_glass.vmt",
+      "sha256": "1f498e95c6996f6d3937931bb5734fceaed579923d01390f560941f27e97fe6b",
+      "bytes": 168
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas_glass.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas_glass.vtf",
+      "sha256": "afa3aba00749f578a46c54072c5b9fe324e427657932621910e2236adeab9fb6",
+      "bytes": 43856
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas_glass_spec.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas_glass_spec.vtf",
+      "sha256": "eed016d7a2158dc8274a3b116791b1940d846fb2d160028a0f908802e1816a8c",
+      "bytes": 808
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_sas_normal.vtf",
+      "sha256": "c76ef60d20bc86cbd63a7fe22cb1e070af5ac82f565d99ad338485428c74040a",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban.vmt",
+      "sha256": "61ea2c8daaac7fe3f830e1ab905559eac428b8c96cf3a3e73432ca52b8859a70",
+      "bytes": 355
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban.vtf",
+      "sha256": "a1590fea9e59a46e68bea993b38f7540965f5b40086993270d2270f0e7d111bc",
+      "bytes": 699272
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban_glass.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban_glass.vmt",
+      "sha256": "cff356ef47275a3c4c200d3801bd137f10e4ab435271f2adae163b853c6fb6c2",
+      "bytes": 169
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban_glass.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban_glass.vtf",
+      "sha256": "36209446ec9b21969b4e129d73293301a29284861f64e19e6824dd03f44f12af",
+      "bytes": 43856
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban_glass_spec.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban_glass_spec.vtf",
+      "sha256": "f0c0ca81d88cd55c0f5508be2b41b8fdf57531d768f55884d1081905cdf9e946",
+      "bytes": 808
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/ct_urban_normal.vtf",
+      "sha256": "0d0ce97fcd2cf1923afa9d3aa8561feba8215a51723ca3e9e58c8ce8ad121857",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_arctic.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_arctic.vmt",
+      "sha256": "332869e2d3d10d0b1d067edbc9a084406689e88c4b96104baa0bb69cd7de2b78",
+      "bytes": 597
+    },
+    {
+      "path": "materials/models/cstrike/t_arctic.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_arctic.vtf",
+      "sha256": "970fea82297eb0b371f88b106956fba8be0a966f443ee958c2a8193bb15d6505",
+      "bytes": 1398352
+    },
+    {
+      "path": "materials/models/cstrike/t_arctic_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_arctic_normal.vtf",
+      "sha256": "d500f3b7e5df6fb6eaf77f83b1d49db85e9a33710347d8187ce3e7dca3ec3709",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_guerilla.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_guerilla.vmt",
+      "sha256": "fd9f61192a000d1ba4fe852931cfd5c35e6dcf5409681cc26c6a50d95aad0302",
+      "bytes": 443
+    },
+    {
+      "path": "materials/models/cstrike/t_guerilla.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_guerilla.vtf",
+      "sha256": "b5820a37ea6ef57d8ee7fc7aac051932dc5043cc69591cf226319bc38e6623af",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_guerilla_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_guerilla_normal.vtf",
+      "sha256": "40b37eca9507b562a172ae058f827de9abb5a717758079722560e35fd8b94219",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_leet.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet.vmt",
+      "sha256": "186e05ca54fd2332de65adc63665192ce28ce3402644951941c5f71e0351f449",
+      "bytes": 593
+    },
+    {
+      "path": "materials/models/cstrike/t_leet.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet.vtf",
+      "sha256": "40c92c85603a1364ecfb7ee295d67e64067f386bd27db2909107bfc377e0cec6",
+      "bytes": 1398216
+    },
+    {
+      "path": "materials/models/cstrike/t_leet_glass.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet_glass.vmt",
+      "sha256": "6deb71c76730414989c1b821def064790feec51641f860632d23a6d07231ac86",
+      "bytes": 179
+    },
+    {
+      "path": "materials/models/cstrike/t_leet_glass.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet_glass.vtf",
+      "sha256": "5f67ab9f719e9669bed967894b32e4f25e40101ad776af6a2de1535a10b957ff",
+      "bytes": 11088
+    },
+    {
+      "path": "materials/models/cstrike/t_leet_glass_spec.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet_glass_spec.vtf",
+      "sha256": "bd7b62a32f5d6b15f397675813e0ac77c20d2ab71bbb94a7980eeee13bd0691c",
+      "bytes": 1512
+    },
+    {
+      "path": "materials/models/cstrike/t_leet_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_leet_normal.vtf",
+      "sha256": "d43fd6f2f7529fd0c580635d888df197a490a7ca3a564762b0e4eddd137092ff",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_phoenix.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_phoenix.vmt",
+      "sha256": "15c9fbda5369ad96aedbc505c7d5a6f1526946609daeda6c18be0fdbf21021a9",
+      "bytes": 603
+    },
+    {
+      "path": "materials/models/cstrike/t_phoenix.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_phoenix.vtf",
+      "sha256": "83e8a2fd08d9e08ea0fe5d49d059fa500922680ac308538da2f28618882c40c7",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/cstrike/t_phoenix_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/cstrike/t_phoenix_normal.vtf",
+      "sha256": "ed5485fedf75a1b46a24b3b42e69d974df16238dfe4e957f52f1c3457cf766b4",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_body.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_body.vmt",
+      "sha256": "ff2f8c9839dbd4cdce7ea528966ec4f8d8123378178e4db8e62a1a7f477fa8b7",
+      "bytes": 465
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_face.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_face.vmt",
+      "sha256": "773cde049a78bbb3ad1b4b16e97a10e0b0f0afafd44eb00f89948909336eea11",
+      "bytes": 505
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_hair.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_hair.vmt",
+      "sha256": "686e47f2bc26a09abb9cdddf3a1176778d3ad1213da6fefe93b60d1ab3760b27",
+      "bytes": 397
+    },
+    {
+      "path": "materials/models/gamma/player/chell/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\eye_materials_original\\eyeball_l.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+      "sha256": "1801e6a38e5fe5bcb817803de0178f08394a7fce072cfe6b3f1f7a82e81398fe",
+      "bytes": 180
+    },
+    {
+      "path": "materials/models/gamma/player/chell/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\eye_materials_original\\eyeball_r.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+      "sha256": "bb00e213fdaacc24e2490ec318b4cc7ae3a8eaf542ec7d0851881724ef666ca2",
+      "bytes": 180
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_body.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_body.vtf",
+      "sha256": "698660cf38d42e7848a169c4dac7a2d062af87bdf4715cf92f6ea135dffc681b",
+      "bytes": 2796448
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_body_exponent.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_body_exponent.vtf",
+      "sha256": "c695a7f14043cff1cf13668c2a11fa802d3288218395befe7f6153ec55d0b478",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_body_lightwarp.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_body_lightwarp.vtf",
+      "sha256": "d704a2852b221cb2784027d42c0c2208d74c5675a2b683d383332f526bae3445",
+      "bytes": 65701
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_body_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_body_normal.vtf",
+      "sha256": "6dea4144e200d3f5a6aa13e1081a6694f2f6c50155aefd6f965d913dcf827fde",
+      "bytes": 1398360
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_face.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_face.vtf",
+      "sha256": "936c42f7e001e29b4489727586fce4f592cb4dcbe5f98f1e85d38543f96a4c6f",
+      "bytes": 4194535
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_face_exponent.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_face_exponent.vtf",
+      "sha256": "b592bdbd269fde489f7fbb75a610b54f0b477a8b0f6b51e1660d9f21fbe7e165",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_face_lightwarp.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_face_lightwarp.vtf",
+      "sha256": "d704a2852b221cb2784027d42c0c2208d74c5675a2b683d383332f526bae3445",
+      "bytes": 65701
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_face_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_face_normal.vtf",
+      "sha256": "3bdbe386c71fd4608c4acca8d3a3b00dd0c01f96c2aff66d694b4003d873e277",
+      "bytes": 5592636
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_hair.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_hair.vtf",
+      "sha256": "36d1f293d0477abc9055635d2ffb3ffe410f496451b43185ce9a5860319fbfd7",
+      "bytes": 1398296
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_hair_exponent.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_hair_exponent.vtf",
+      "sha256": "b7f87f7a37af3de3dcdde9df7d1e0313180f506abb12631b981a56905e5d0ead",
+      "bytes": 43856
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/chell_hair_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/chell_hair_normal.vtf",
+      "sha256": "6bb3360bd71914cbac18b9223dc99f0140e8fb6ba5e50c3717073dbd7c087425",
+      "bytes": 87576
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_l.vtf",
+      "sha256": "4ab7fe306593ea4a08de5e35fdcf30ce8e4c09cfdf2b0c0adfeb2e8b5816c900",
+      "bytes": 87640
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_l_ambient.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_l_ambient.vtf",
+      "sha256": "d486e051859e5cd938337819baf726cc41fe538598a19944a96e87c50ac1f489",
+      "bytes": 11168
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_l_dx8.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_l_dx8.vtf",
+      "sha256": "8b493f27bbb4b5b89bb46e9ec0f31e9fff8a1a93018b12d4f43b4d5764a159b9",
+      "bytes": 2976
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_r.vtf",
+      "sha256": "94568657b3caf8307db351954c77c1ff241e0368607279bab23e4bfda701eb99",
+      "bytes": 87640
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_r_ambient.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_r_ambient.vtf",
+      "sha256": "a0bcf601e87c4685ff2035d0f36da0d962fcc6edd927cfd2bdef5ecd9ba1aa5e",
+      "bytes": 11168
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/eyeball_r_dx8.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/eyeball_r_dx8.vtf",
+      "sha256": "035e0956120f8c7457965b5426a654c2635c3926d24be73e29814ca17ff13510",
+      "bytes": 2976
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/pupil_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/pupil_l.vtf",
+      "sha256": "097ce987400b0d9c3a132d2d4b760c8c8853e7fb9ef8c6eb9c6aedae266fb583",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/gamma/player/chell/textures/pupil_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Portal\\portal\\portal_pak_dir.vpk:materials/models/player/pupil_r.vtf",
+      "sha256": "a042d4a3f2b6f99bdaece4a1ac587269b6de5e4f8a278db25b999eb025fc9597",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_head.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_rev2_head.vmt",
+      "sha256": "52907c9b9937e9d53a1ebaf336b7071ebf9dfcd6edefbba831b47e89b955e57f",
+      "bytes": 508
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_legs.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_rev2_legs.vmt",
+      "sha256": "e8c19d76071ee717b2b42da8c2e0d5f8300c0d265e9cbf7c8368173e1c4a923e",
+      "bytes": 509
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_torso.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_rev2_torso.vmt",
+      "sha256": "c1a2699480bbb90b54c6229e9528ebe7d38f8b48bbf13c206383db62b1cc0b73",
+      "bytes": 510
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/gambler_eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\gambler_eyeball_l.vmt",
+      "sha256": "665c6efb025ba2bcb6964366584b0f1541694ab762c1f25e4161792fd81b627f",
+      "bytes": 1022
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/gambler_eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\gambler_eyeball_r.vmt",
+      "sha256": "eb4afa861b0be46c970a617cadfed94243c916d9b16ea74c1394cb7e10810802",
+      "bytes": 1023
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/lambert1.vmt",
+      "source": "Fallback for missing material in original July 2010 build",
+      "sha256": "8bd50b34fe1c98d06e46ac7433e191da6b8e403220f71e475b3a63614cf12e55",
+      "bytes": 99
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_head_diffuse.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_head_diffuse.vtf",
+      "sha256": "267a2cc3371aa7a36248df9f478cb24e48c4c3ee69e597c6b4a9fb56980f0eba",
+      "bytes": 2796456
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_head_normals.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_head_normals.vtf",
+      "sha256": "174cb7076daefbaaa0f5bc4da459f1d5ed4319be84a621fbbd76ae7530afec60",
+      "bytes": 5592672
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_legs_diffuse.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_legs_diffuse.vtf",
+      "sha256": "b3b4a8f3498ece04280ca038c7aab285551f75cf5f3c6ff3b8a7654c312079ff",
+      "bytes": 2796456
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_legs_normals.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_legs_normals.vtf",
+      "sha256": "6d05f412bf9888bfe3b695c0117b6ba619dbb601a8f4607737bc30fa8d12fc4c",
+      "bytes": 5592672
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_torso_diffuse.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_torso_diffuse.vtf",
+      "sha256": "96c7439c23293695b84a0abc1466328dea126f1b9f841a7825c2cb3909f7b58d",
+      "bytes": 2796456
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/chell_torso_normals.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\chell_torso_normals.vtf",
+      "sha256": "2e04cb7441511338a0fbde38826aa40a5dc92822b598df2afc32b3f04b6b51ca",
+      "bytes": 5592672
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/gambler_eye_ao.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\gambler_eye_ao.vtf",
+      "sha256": "a38988c9d3fd36a2ecc5f9be0af2a533f1a6fea021a36dcf43c3a90d3d2bb396",
+      "bytes": 5720
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/gambler_eyes.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\gambler_eyes.vtf",
+      "sha256": "a6e9b0a86871cc1ecfd6f632cfb518c59f74d25f64467c78c60b47c7c2b6d84e",
+      "bytes": 22104
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/textures/skin_warp.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\materials\\models\\player\\chell\\skin_warp.vtf",
+      "sha256": "c8c3c798f91c298472f8c8fee50846d89c563316c98fd5ab1c4162da248e75df",
+      "bytes": 16549
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/arm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\arm.vmt (private player material; eye metadata repair)",
+      "sha256": "c59bbb82ad5672d0d01174b621943cfb1db7717b31e6583deafe0483cf47c0a1",
+      "bytes": 177
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\eyeball_l.vmt (private player material; eye metadata repair)",
+      "sha256": "8dda3ac53689737b0d0c9da6cd6c8230822f6e7e641b624538379f3ad97eea73",
+      "bytes": 99
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\eyeball_r.vmt (private player material; eye metadata repair)",
+      "sha256": "7a01abcdf16ff89d2ca0e16ed19fadcc4c1c3e3ed39273d3499ac89d01dfe850",
+      "bytes": 99
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/face.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\face.vmt (private player material; eye metadata repair)",
+      "sha256": "e1df3776862c7c7420ca9a9b5202900c27f01054944340f1ba5f6f67c54ef4e3",
+      "bytes": 69
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\glass.vmt (private player material; eye metadata repair)",
+      "sha256": "8e6acf99b7330db3136e663f6c45c4280c198f5bf4c7bb97c253ccb93b6bfea8",
+      "bytes": 110
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/glint.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\glint.vmt (private player material; eye metadata repair)",
+      "sha256": "4a8e7d231fef23daf64cdabc52345b47397d61f1e9b3f7aeeb8ff1bcc53a40ef",
+      "bytes": 95
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/hand.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\hand.vmt (private player material; eye metadata repair)",
+      "sha256": "560da03cfedf03497a90ac95d87a0392aef05e3b0d8b8a447710524c71bafe8e",
+      "bytes": 179
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/hood.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\hood.vmt (private player material; eye metadata repair)",
+      "sha256": "a2ad41b01f1d81acc806d1c88e1d3295985f2487fc625552740445da5f6fbc45",
+      "bytes": 179
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/leg.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\leg.vmt (private player material; eye metadata repair)",
+      "sha256": "c593d8bb7a9c32b72d6a808a2e163c9a3fcf8de17b27d01eec562e7f97ae8dc2",
+      "bytes": 177
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/mouthpiece.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\mouthpiece.vmt (private player material; eye metadata repair)",
+      "sha256": "1270a999422df47ac2a843eeda9612e9006dba2d6641c9beefbeb3910feeb60f",
+      "bytes": 75
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/palm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\palm.vmt (private player material; eye metadata repair)",
+      "sha256": "5232f7b7d55f1673130417fe4632ca4d4fe37c17b3d71454f2c2d53e79f0923a",
+      "bytes": 179
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/pupil_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\pupil_l.vmt (private player material; eye metadata repair)",
+      "sha256": "538d97985c36b146c52ec33d29a6bbaae9f20f685ff10d54b1984d572ffdac8c",
+      "bytes": 62
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/pupil_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\pupil_r.vmt (private player material; eye metadata repair)",
+      "sha256": "382f9cb6f9c92beb3bdf74bf5c5a9b3b091f713fd2c2c55719548cf73209dccd",
+      "bytes": 62
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/rarm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\rarm.vmt (private player material; eye metadata repair)",
+      "sha256": "fedaeb2df3bfc97c25971c33afb09ee2a5246ace26b81d685f25f0078b1bfaf1",
+      "bytes": 179
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/torso.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\torso.vmt (private player material; eye metadata repair)",
+      "sha256": "eaabcc4af581adf7e04dc56a8a288459a50699f720268bd8eb0f41d110ff9eae",
+      "bytes": 181
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/valve.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\valve.vmt (private player material; eye metadata repair)",
+      "sha256": "2e1bcdb290db464c69d4a20047c0a7e4baedff21ed3ff93af56916f36788d336",
+      "bytes": 70
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_body.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_body.vmt",
+      "sha256": "0d13a5507789b63793832175e018cfc57595be609603523559c9222aea03193f",
+      "bytes": 457
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_body_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_body_mp01.vmt",
+      "sha256": "a2575b0f993146554dbf71e62bb45e1c13ea6c861f438bbeae1f2a23776c64f7",
+      "bytes": 117
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_face.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_face.vmt",
+      "sha256": "4f7dbcc6b5e56686fbca63380dbaa7d1da1427ddad244715b8134928f96739a5",
+      "bytes": 497
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_face_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_face_mp01.vmt",
+      "sha256": "2512aed1abaf45a855306472ee51c421cbd4fa8212cdd55102216e61c7aeef67",
+      "bytes": 117
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_hair.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_hair.vmt",
+      "sha256": "fc0ec252dc987039163ac21f14f864297bb3484c29beaef6ba5df121eea1acd8",
+      "bytes": 391
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_hair_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_hair_mp01.vmt",
+      "sha256": "132f0850db203e1190f8c3eb139369a388a5aadc0a392446197427f95ea043a9",
+      "bytes": 392
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_nodraw.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_nodraw.vmt",
+      "sha256": "96f0501890396db82d4fcb72b6ae5f6bd042257e573bf46f78622bebe9924b16",
+      "bytes": 85
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_silhoutte.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_silhoutte.vmt",
+      "sha256": "04f59454785c49828d83740970c0c4381e0dbf5ae92b3fdf23622eef30367d0e",
+      "bytes": 64
+    },
+    {
+      "path": "materials/models/gamma/player/mel/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\eye_materials_original\\eyeball_l.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+      "sha256": "6e565f7f30a91ccff4972a64fceff4b7eb5c74b92cd79ec92397b9dc662bdd2b",
+      "bytes": 176
+    },
+    {
+      "path": "materials/models/gamma/player/mel/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\eye_materials_original\\eyeball_r.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+      "sha256": "b38e060359a40c18802db16dd3e23b322f129cda7602fee37dd333abaf7c2cd5",
+      "bytes": 176
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_body.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_body.vtf",
+      "sha256": "0bb22addb36157c6de99feb59df7f3a79aac42fe09002d3cc4471f6752cff0b4",
+      "bytes": 2796448
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_body_exponent.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_body_exponent.vtf",
+      "sha256": "c695a7f14043cff1cf13668c2a11fa802d3288218395befe7f6153ec55d0b478",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_body_lightwarp.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_body_lightwarp.vtf",
+      "sha256": "d704a2852b221cb2784027d42c0c2208d74c5675a2b683d383332f526bae3445",
+      "bytes": 65701
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_body_mp01.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_body_mp01.vtf",
+      "sha256": "283a796833023e5591931fc430a78c2dd1c73431b79ac0ff42061cc754b1a4c6",
+      "bytes": 2796448
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_body_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_body_normal.vtf",
+      "sha256": "6dea4144e200d3f5a6aa13e1081a6694f2f6c50155aefd6f965d913dcf827fde",
+      "bytes": 1398360
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_face.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_face.vtf",
+      "sha256": "55653b3f7265a9fb633e6d7f7e773063a6b8bd5d768bfe8dc662e084c860bc11",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_face_exponent.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_face_exponent.vtf",
+      "sha256": "b592bdbd269fde489f7fbb75a610b54f0b477a8b0f6b51e1660d9f21fbe7e165",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_face_lightwarp.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_face_lightwarp.vtf",
+      "sha256": "d704a2852b221cb2784027d42c0c2208d74c5675a2b683d383332f526bae3445",
+      "bytes": 65701
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_face_mp01.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_face_mp01.vtf",
+      "sha256": "03018f04613c118df571e044da7518c3de816ae2f154bd0f8a9183cc208696d0",
+      "bytes": 699296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_face_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_face_normal.vtf",
+      "sha256": "3bdbe386c71fd4608c4acca8d3a3b00dd0c01f96c2aff66d694b4003d873e277",
+      "bytes": 5592636
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_hair.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_hair.vtf",
+      "sha256": "15d56d322567b4926bc006eedf691bb5372cfc98203b4f2216adf4c45dc0984c",
+      "bytes": 1398296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_hair_exponent.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_hair_exponent.vtf",
+      "sha256": "b7f87f7a37af3de3dcdde9df7d1e0313180f506abb12631b981a56905e5d0ead",
+      "bytes": 43856
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_hair_mp01.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\materials\\models\\player\\chell_hair_mp01.vtf",
+      "sha256": "7359ded14b6dae68a2d761fe7fa02f6c663446312a474054252ccdfe3772546f",
+      "bytes": 1398296
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/chell_hair_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\chell_hair_normal.vtf",
+      "sha256": "6bb3360bd71914cbac18b9223dc99f0140e8fb6ba5e50c3717073dbd7c087425",
+      "bytes": 87576
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_l.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_l.vtf",
+      "sha256": "4ab7fe306593ea4a08de5e35fdcf30ce8e4c09cfdf2b0c0adfeb2e8b5816c900",
+      "bytes": 87640
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_l_ambient.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_l_ambient.vtf",
+      "sha256": "d486e051859e5cd938337819baf726cc41fe538598a19944a96e87c50ac1f489",
+      "bytes": 11168
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_l_dx8.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_l_dx8.vtf",
+      "sha256": "8b493f27bbb4b5b89bb46e9ec0f31e9fff8a1a93018b12d4f43b4d5764a159b9",
+      "bytes": 2976
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_r.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_r.vtf",
+      "sha256": "94568657b3caf8307db351954c77c1ff241e0368607279bab23e4bfda701eb99",
+      "bytes": 87640
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_r_ambient.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_r_ambient.vtf",
+      "sha256": "a0bcf601e87c4685ff2035d0f36da0d962fcc6edd927cfd2bdef5ecd9ba1aa5e",
+      "bytes": 11168
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/eyeball_r_dx8.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\eyeball_r_dx8.vtf",
+      "sha256": "035e0956120f8c7457965b5426a654c2635c3926d24be73e29814ca17ff13510",
+      "bytes": 2976
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/pupil_l.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\pupil_l.vtf",
+      "sha256": "097ce987400b0d9c3a132d2d4b760c8c8853e7fb9ef8c6eb9c6aedae266fb583",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/gamma/player/mel/textures/pupil_r.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal\\materials\\models\\player\\pupil_r.vtf",
+      "sha256": "a042d4a3f2b6f99bdaece4a1ac587269b6de5e4f8a278db25b999eb025fc9597",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/gordon/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\eyeball_l.vmt",
+      "sha256": "cfc1e73d5e5cce0db2c7c5834ca0e12dd37cf55f1588c925ea68c73a4cb83fc6",
+      "bytes": 120
+    },
+    {
+      "path": "materials/models/gordon/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\eyeball_r.vmt",
+      "sha256": "a7e664f7f6d862d7b987d911babf8512b1aa0015746ba6d22b818a21f21f5db9",
+      "bytes": 120
+    },
+    {
+      "path": "materials/models/gordon/gordon_cylmap2.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\gordon_cylmap2.vmt",
+      "sha256": "c220217990ee40accaa77e071e0e62cf0e78741d94e27c23c8f1355f79cfde03",
+      "bytes": 93
+    },
+    {
+      "path": "materials/models/gordon/gordon_cylmap2.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\gordon_cylmap2.vtf",
+      "sha256": "7db8e1d891137cad048b921b472009a9a3a3277a30cbc6a4fd5c7a4afb971d47",
+      "bytes": 87528
+    },
+    {
+      "path": "materials/models/gordon/gordon_sheet.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\gordon_sheet.vtf",
+      "sha256": "b6b18176ebf11052fa4044b57e3dd1f1d2366716a18416ea37d92c410ba44107",
+      "bytes": 349688
+    },
+    {
+      "path": "materials/models/gordon/gordon_sheet_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\gordon_sheet_normal.vtf",
+      "sha256": "a9659802708264744ddc249c85a49d4f789367cbe0e8b08dad6dd0f14e0a8a85",
+      "bytes": 699232
+    },
+    {
+      "path": "materials/models/gordon/mouth.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\mouth.vmt",
+      "sha256": "fc61575304c0a7c13dcd1001d1caa9ec657d9167f3d86136de200bbcc71d3d23",
+      "bytes": 123
+    },
+    {
+      "path": "materials/models/gordon/plyr_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\plyr_sheet.vmt",
+      "sha256": "69253bfb47a728fea95f50d2d94e52fa8f1df4a965b64e3efc2e905d4922b335",
+      "bytes": 330
+    },
+    {
+      "path": "materials/models/gordon/rense.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\rense.vmt",
+      "sha256": "e18c599c28eae957abe1a5f63b81f08544ab10411663dc47782ae748da3d452f",
+      "bytes": 117
+    },
+    {
+      "path": "materials/models/gordon/rense.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\materials\\models\\gordon\\rense.vtf",
+      "sha256": "59bef289f7bce5e0120e1cc74a4583e6e48b35237fddcf6d82642cf0ac35d3bb",
+      "bytes": 22064
+    },
+    {
+      "path": "materials/models/humans/facemap_phong.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/facemap_phong.vtf",
+      "sha256": "2ad5854ed780527adddf01e191a0487f3d5f96ce006d8d4a34ca86fdcd77faa1",
+      "bytes": 174944
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_l.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/eyeball_l.vmt",
+      "sha256": "4eef9c7a424190ea36c69a5ff5cd6ae3089038864b9b47b9f3255d3d3f2c000d",
+      "bytes": 118
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/eyeball_l.vtf",
+      "sha256": "c45de8c2f4355d7ff7a654271cf73d098ebcc52e29959822e6c932be7d1ed04e",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_r.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/eyeball_r.vmt",
+      "sha256": "9f0e8e9533547e242452117f9939ced3b9f6efe236a4b48f5b3271fe56240934",
+      "bytes": 118
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/eyeball_r.vtf",
+      "sha256": "c63cc2da231a3e57ee49d788bbc4c46d3b2ed6def33b11a397e6e593bc001c1f",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/humans/female/fmouth.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/fmouth.vmt",
+      "sha256": "636421d09dbdde8409c532e117b37d722403cdd26346309182afb5a7e08c2292",
+      "bytes": 119
+    },
+    {
+      "path": "materials/models/humans/female/fmouth.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/fmouth.vtf",
+      "sha256": "71777892b91693bbcc97f6e0b16ca2436e90ad9a6ddaed7eb61da52cf7eff067",
+      "bytes": 21992
+    },
+    {
+      "path": "materials/models/humans/female/group03/citizen_sheet_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/group03/citizen_sheet_normal.vtf",
+      "sha256": "714faa62a74719873a4494dee082f9aa8adf40ee684b21ea35c9d69bf68c6281",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/humans/female/group03/kanisha_cylmap.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/group03/kanisha_cylmap.vmt",
+      "sha256": "52596ec42c16f6880908adeea591668d49d61afca92a73995f7b7dd789a7c020",
+      "bytes": 411
+    },
+    {
+      "path": "materials/models/humans/female/group03/kanisha_cylmap.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/group03/kanisha_cylmap.vtf",
+      "sha256": "af124614b37f75a18b39673d4a4c92299b36d609b660419f34fcc95ab47b50f0",
+      "bytes": 174944
+    },
+    {
+      "path": "materials/models/humans/female/group03/players_sheet.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/group03/players_sheet.vmt",
+      "sha256": "ee21bc0008061c4b75994b55f0a8140e61f9dcb7bbf2e7fa919e615f8caba8f3",
+      "bytes": 548
+    },
+    {
+      "path": "materials/models/humans/female/group03/players_sheet.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/group03/players_sheet.vtf",
+      "sha256": "5cdf23f325f600bcc1a961afbfbc83ee35c7cb00b493a08daef25baa088c33e2",
+      "bytes": 5592640
+    },
+    {
+      "path": "materials/models/humans/female/pupil_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/pupil_l.vtf",
+      "sha256": "7f050a2c68f3e8c508f20f78eab0364e643f7c4d065ba3c808ca16f76110d1fa",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/humans/female/pupil_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/female/pupil_r.vtf",
+      "sha256": "8e88e4c2107e474a04b502762ec6af1471f9b86b7abaec8f422f80df9fe191a9",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_l.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/eyeball_l.vmt",
+      "sha256": "6649f47134eb2d0e306896f63117e60f825f72d6f5a688eddff0a6a91cc1fc7e",
+      "bytes": 114
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/eyeball_l.vtf",
+      "sha256": "dd3b706998d261a1d6f41aa62c2bfafa7d5e2b252170dffbfc8f6d7e35eb98a5",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_r.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/eyeball_r.vmt",
+      "sha256": "2e4befc7bb673791f96d5dfb95c88d87182b66878d6592c80c63c8b3fda4261c",
+      "bytes": 114
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/eyeball_r.vtf",
+      "sha256": "a598ec1b2f751b56a0b5d06e7f9f080d5fb276b2bbb4105b9f7c2d676177a46a",
+      "bytes": 2936
+    },
+    {
+      "path": "materials/models/humans/male/group03/citizen_sheet_normal.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/group03/citizen_sheet_normal.vtf",
+      "sha256": "0b6251fec0ca659e9587a2fa324a428a18955cd29804d9b2425dc29bf49af0b8",
+      "bytes": 1398336
+    },
+    {
+      "path": "materials/models/humans/male/group03/mike_facemap.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/group03/mike_facemap.vmt",
+      "sha256": "432ebc913fc51714ea459704671238b4aa5502eb6fb2e4bb3e748b11dce38700",
+      "bytes": 407
+    },
+    {
+      "path": "materials/models/humans/male/group03/mike_facemap.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/group03/mike_facemap.vtf",
+      "sha256": "5694c8d6173adb7a17c6c88d7cfb71e0f015fe71a23e11f61c4fb4dbd897007a",
+      "bytes": 174944
+    },
+    {
+      "path": "materials/models/humans/male/group03/players_sheet.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/group03/players_sheet.vmt",
+      "sha256": "4bad72bf0f653cf5d539455667545be2d27b5a7cb5b9b7592c1985cc3225bd15",
+      "bytes": 541
+    },
+    {
+      "path": "materials/models/humans/male/group03/players_sheet.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/group03/players_sheet.vtf",
+      "sha256": "2a8c6ee0101e2b2a4543fc8353896e47208f39532567f69d38b696b5a9f9899a",
+      "bytes": 5592656
+    },
+    {
+      "path": "materials/models/humans/male/mouth.vmt",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/mouth.vmt",
+      "sha256": "de2ee4d63fbe512f3061f875243b635649f7aee540b38cab2aa24c76540c4d9c",
+      "bytes": 116
+    },
+    {
+      "path": "materials/models/humans/male/mouth.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/mouth.vtf",
+      "sha256": "60646ce360b9a604e9b0eceed489a0b51692e5dce2d2e7587dd6c503d401a0e6",
+      "bytes": 21992
+    },
+    {
+      "path": "materials/models/humans/male/pupil_l.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/pupil_l.vtf",
+      "sha256": "1b6bd9f5aa7d8e737c0bd0c22bf4c5073c2999be4075b944b66f7b1260b3c58d",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/models/humans/male/pupil_r.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/models/humans/male/pupil_r.vtf",
+      "sha256": "5df6f6084e2d0c9e7ad21aaffb1ba2a83a14945a8c2afd288d50af74b07f1d6b",
+      "bytes": 5680
+    },
+    {
+      "path": "materials/null-bumpmap.vtf",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:materials/null-bumpmap.vtf",
+      "sha256": "ca128b3b43b461dbc9ee25ec1e9f224b1bd3b3d817fcc2e24f230a440e39c1c6",
+      "bytes": 1231
+    },
+    {
+      "path": "models/gamma/player/chell.dx80.vtx",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "d981525b53f198c2d289b4e13b65b066b71dc0e96221eccf7de0563149f79f8b",
+      "bytes": 188947
+    },
+    {
+      "path": "models/gamma/player/chell.dx90.vtx",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "68345e894706e83d697fc57a273422954061e10ba79dc6bb9d8c4742b938558d",
+      "bytes": 184661
+    },
+    {
+      "path": "models/gamma/player/chell.mdl",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "d3017dac31d873dbf648e82f584600fd7d8b6c6a194dd20082878b0c38bda869",
+      "bytes": 26128
+    },
+    {
+      "path": "models/gamma/player/chell.phy",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "1364b3feaa74b807fce2c00b5bafddce0310d83a7b6d2ae1dc39f8f939615b1f",
+      "bytes": 13265
+    },
+    {
+      "path": "models/gamma/player/chell.sw.vtx",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "f1eaf680921ae132d0dd8b35c1bb3a7c691e77d015dd56c2c780c697298b39e7",
+      "bytes": 184205
+    },
+    {
+      "path": "models/gamma/player/chell.vvd",
+      "source": "Generated from source/chell/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "885f4821d648d76c2c1a4292fc28b896933002b56ca554fb31b0c33f8bd802d6",
+      "bytes": 687680
+    },
+    {
+      "path": "models/gamma/player/chell_2010.dx80.vtx",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "20e9980ee2020f7fe2e69ce8f88ed1934a3ed275fa5a5aa3cc907b73e000d9f6",
+      "bytes": 184794
+    },
+    {
+      "path": "models/gamma/player/chell_2010.dx90.vtx",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "dcdb3fc45fa90d57e3ee65575962e77ca8d92e997b926a6e51a3ffe733f89c79",
+      "bytes": 183869
+    },
+    {
+      "path": "models/gamma/player/chell_2010.mdl",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "630b9d99f6f856a2691255dd207062ae5e4f214d0b247d605a0f352d7664dd1b",
+      "bytes": 26840
+    },
+    {
+      "path": "models/gamma/player/chell_2010.phy",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "c318706265bf8712559d7c1830c2a77321519e82c55e1a6b48da926a07747d2b",
+      "bytes": 13265
+    },
+    {
+      "path": "models/gamma/player/chell_2010.sw.vtx",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "d14f6445349dcdccb5888972c2d0b404a9539daae233fc6f7b827973fb99c4e2",
+      "bytes": 183381
+    },
+    {
+      "path": "models/gamma/player/chell_2010.vvd",
+      "source": "Generated from source/chell_2010/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "0acbe74cc8be8d9131b5cac98fca17a11f14b9da737ec077e7a88a4d27c4b249",
+      "bytes": 609792
+    },
+    {
+      "path": "models/gamma/player/css_arctic.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/arctic.dx90.vtx",
+      "sha256": "8fe846a73faaa7fe727b45f44834d69e38203db74b2026618ca5ead42d97631c",
+      "bytes": 153162
+    },
+    {
+      "path": "models/gamma/player/css_arctic.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/arctic.mdl",
+      "sha256": "0bbc0bff70f271285894313197be0b3bdcd2acb7028806d1d5c0304e8d6cb703",
+      "bytes": 28380
+    },
+    {
+      "path": "models/gamma/player/css_arctic.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/arctic.phy",
+      "sha256": "c3fac57cad918b0420b5e3d4b5fa4971276f43d14e54ad4c10ffa55b15b38fd4",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_arctic.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/arctic.vvd",
+      "sha256": "c68719a289300ae5f4ec8786ce1e4fe5187eed113e4763ca41f4fa8d2f47a0d5",
+      "bytes": 335808
+    },
+    {
+      "path": "models/gamma/player/css_gign.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/riot.dx90.vtx",
+      "sha256": "64e1ad4dd8e0a2422c04ca276d6a269e9b3f364f515b1c5b3e6633d8bb903765",
+      "bytes": 151695
+    },
+    {
+      "path": "models/gamma/player/css_gign.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/riot.mdl",
+      "sha256": "fdabc59edc066488e82e90791d3a6eb4d48c4a6eb07337f5e4ca729c97720a30",
+      "bytes": 28376
+    },
+    {
+      "path": "models/gamma/player/css_gign.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/riot.phy",
+      "sha256": "5542b05f986098ab80cfecc6a68b03dba024d9f90c4b184c7b2865962f9459b7",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_gign.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/riot.vvd",
+      "sha256": "dffd7d947d7f64ef687e34c8a98289b7e868c556c35156e3f587bda26e297c19",
+      "bytes": 301824
+    },
+    {
+      "path": "models/gamma/player/css_gsg9.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/swat.dx90.vtx",
+      "sha256": "2adb877a503bf4b6d896ed0a5e681dd19ad9f8d0420701444e784bc3d6a24a4c",
+      "bytes": 156705
+    },
+    {
+      "path": "models/gamma/player/css_gsg9.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/swat.mdl",
+      "sha256": "31ba03bfcc042dcd6553e5311237ccc1f7097d919282800a61576aa2b6a34734",
+      "bytes": 28572
+    },
+    {
+      "path": "models/gamma/player/css_gsg9.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/swat.phy",
+      "sha256": "ca8a1ebf6337fc8d0a72219c0586bab5b1133431685b7ecda804848e37da487d",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_gsg9.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/swat.vvd",
+      "sha256": "93fc8d592899c699fe319d380e752dce581b2c92f1e15d9ec6510952ed415eb6",
+      "bytes": 312016
+    },
+    {
+      "path": "models/gamma/player/css_guerilla.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/guerilla.dx90.vtx",
+      "sha256": "8930b448b909381b309f7ab646c1f4ea07de84e9a87c8133ced9c9882bd50afe",
+      "bytes": 163108
+    },
+    {
+      "path": "models/gamma/player/css_guerilla.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/guerilla.mdl",
+      "sha256": "b12b8709e19376d5d28dcd7fdeaaf268ea67054445d1356497f2a87037d6039e",
+      "bytes": 28384
+    },
+    {
+      "path": "models/gamma/player/css_guerilla.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/guerilla.phy",
+      "sha256": "8fb07d0b190ac306a09157294ee22a47abf07ca626137d0c183e81b196712606",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_guerilla.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/guerilla.vvd",
+      "sha256": "9c01a1f2ed4c0810468f0401621bac2adf2320d2ffd9b42ba41da22f0266d891",
+      "bytes": 305152
+    },
+    {
+      "path": "models/gamma/player/css_leet.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/leet.dx90.vtx",
+      "sha256": "834dc42031bd96ec847338bd0188ffc7a230eeca6e7f0136acdc89ec37e726c0",
+      "bytes": 148692
+    },
+    {
+      "path": "models/gamma/player/css_leet.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/leet.mdl",
+      "sha256": "cc2f0dd5e85a9d6c6a1b6c2fc2e74f6eb9e56602e58fc926a44ef0eb9b013b2d",
+      "bytes": 28568
+    },
+    {
+      "path": "models/gamma/player/css_leet.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/leet.phy",
+      "sha256": "9d6f34d67ba094812661526d000ac29b8f2696e52c806a5e40c0c328e5b10c3d",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_leet.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/leet.vvd",
+      "sha256": "0923e3a54499663661bd594ad9be203730c1e03fac9d7613b6917832b22888ca",
+      "bytes": 301424
+    },
+    {
+      "path": "models/gamma/player/css_phoenix.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/phoenix.dx90.vtx",
+      "sha256": "c4ccbaae52685c879834c7cb5e5ae745754ed6ab70c79c79e45f27aa4e30242a",
+      "bytes": 158524
+    },
+    {
+      "path": "models/gamma/player/css_phoenix.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/phoenix.mdl",
+      "sha256": "07c12bcdbadbc73e98a97144579bf3c0abcdf7246649a0e36f092c1ea778fdd0",
+      "bytes": 28384
+    },
+    {
+      "path": "models/gamma/player/css_phoenix.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/phoenix.phy",
+      "sha256": "bac081784d0e32a0e2aebf4615f362d6961274db493433add8f44acdc1cea792",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_phoenix.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/phoenix.vvd",
+      "sha256": "afbc494c7ce422214bc9d69e0a714fc5c9ec6b28ac1cf51866707a48fa62c573",
+      "bytes": 400832
+    },
+    {
+      "path": "models/gamma/player/css_sas.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/gasmask.dx90.vtx",
+      "sha256": "4fe73df334c466e92c8a4ea9753fe2b2010172a7d5d0015851a55a59527a149b",
+      "bytes": 160984
+    },
+    {
+      "path": "models/gamma/player/css_sas.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/gasmask.mdl",
+      "sha256": "2262d1c6f6b5a46c0efd56393a71d32bd4738f0d14e1f518b4548cc9647cae4f",
+      "bytes": 28572
+    },
+    {
+      "path": "models/gamma/player/css_sas.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/gasmask.phy",
+      "sha256": "01247a01b94d30d3fd2b44115447c58a718482b196e336c7f2925213461fc9ad",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_sas.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/gasmask.vvd",
+      "sha256": "4ed8ab4f98deb392364a3e1166311ef04bc191780b1f79c4b3bb3627e050dbb2",
+      "bytes": 306432
+    },
+    {
+      "path": "models/gamma/player/css_urban.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/urban.dx90.vtx",
+      "sha256": "9da48ee831c6b5f5234d1a919ab95a4774caecd36b1fccd04b965d269c5438b9",
+      "bytes": 164865
+    },
+    {
+      "path": "models/gamma/player/css_urban.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/urban.mdl",
+      "sha256": "884ae2f931d75170eb9e5812216345952a8d7a04b346dba4bbb9ae93ec3fc490",
+      "bytes": 28576
+    },
+    {
+      "path": "models/gamma/player/css_urban.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/urban.phy",
+      "sha256": "3edbb4bd7abc9ad7a979481e8725de3a2653cf9f481a22f3a08668d1aa660d7f",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/css_urban.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/urban.vvd",
+      "sha256": "14c4d31ac04688a89aa66001274257919558c19b95c8a50050369b368c0c1bef",
+      "bytes": 422448
+    },
+    {
+      "path": "models/gamma/player/female_anims.mdl",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\extracted\\hl2mp\\hl2mp_pak_dir\\models\\player\\female_anims.mdl",
+      "sha256": "013d3ea8a4da282a283e3a9bf2c910354c9db6459021ec00c8b8778c88e6e1ab",
+      "bytes": 428940
+    },
+    {
+      "path": "models/gamma/player/female_neutral.ani",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/female_shared.ani",
+      "sha256": "4c8b0306c9d722da3be0e4cd03c38a1fedad4682c167e197e35a0d74b6f68613",
+      "bytes": 1398248
+    },
+    {
+      "path": "models/gamma/player/female_neutral.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/female_shared.mdl",
+      "sha256": "f84032ced7b2e675f9aeb2bec04ded3e96fc80b54b40c5092f4a89fcb808b8a6",
+      "bytes": 343493
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.dx80.vtx",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "dfe65a8a21cc1be540d54f3c907aba3eee4a7f630401eb0c5753ff7fb934628d",
+      "bytes": 49620
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.dx90.vtx",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "b23b6ae7eeefd5daf88aa41621bc136c2888912bc2690b022107cb18c7600e34",
+      "bytes": 48933
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.mdl",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "75c42e3666057f0b2d03c7794ad732da6d0a23201e369847523aa158f5e6a5dd",
+      "bytes": 28444
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.phy",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "9542dd898532601fd9b88118fb692bd400c64c1023eaf91337a1c394f7f748f3",
+      "bytes": 13265
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.sw.vtx",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "480c1f07df3b6a1f7a01fb3a9ac4540524956e5f445e4b545169377952333516",
+      "bytes": 48037
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.vvd",
+      "source": "Generated from source/gasmask_citizen/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "97ba8d97885e9cd58ba98017089025b6eaebe9b926a0d46e1616a567e9851b43",
+      "bytes": 166080
+    },
+    {
+      "path": "models/gamma/player/gordon.dx90.vtx",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\models\\gordon\\gordon_plyr.dx90.vtx",
+      "sha256": "948576e3fe13c448db1b84c6ecc21fde583bbda8f2013818e819370a528e5aed",
+      "bytes": 304830
+    },
+    {
+      "path": "models/gamma/player/gordon.mdl",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\models\\gordon\\gordon_plyr.mdl",
+      "sha256": "13a3c71ed617078033120946c12c02a1ea3fab68bf02e519c47e18d4c277ea8b",
+      "bytes": 125780
+    },
+    {
+      "path": "models/gamma/player/gordon.phy",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\models\\gordon\\gordon_plyr.phy",
+      "sha256": "8a218330cb231d6cfdf31e16311bbe4acf710945861f73e1186beef88cb5ca41",
+      "bytes": 27803
+    },
+    {
+      "path": "models/gamma/player/gordon.vvd",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\downloads\\gordon\\Gordon Freeman\\models\\gordon\\gordon_plyr.vvd",
+      "sha256": "062e8fa547ed16ad2d9cd53d16f8d411f6a06c438b861c136b5415c961e27c45",
+      "bytes": 364400
+    },
+    {
+      "path": "models/gamma/player/hl2dm_combine.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/combine_soldier.dx90.vtx",
+      "sha256": "bcb28f1afe4bb9554ff596ceb974074a46b03f3b02c08fce043733d16cfc2ec3",
+      "bytes": 167306
+    },
+    {
+      "path": "models/gamma/player/hl2dm_combine.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/combine_soldier.mdl",
+      "sha256": "0f07109cf76cc8d00f65b661a4773bb902328725417da7a85e76017dd63d88b8",
+      "bytes": 21744
+    },
+    {
+      "path": "models/gamma/player/hl2dm_combine.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/combine_soldier.phy",
+      "sha256": "c40f5f51e4cb165f58c82448cbd50e116a6fa420d64fd5c800ef1f9b178856a7",
+      "bytes": 29714
+    },
+    {
+      "path": "models/gamma/player/hl2dm_combine.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/combine_soldier.vvd",
+      "sha256": "7bbe87ff36f8e46826e6fe5594d8cc99830b969e936510e69b8d43090d35a951",
+      "bytes": 396992
+    },
+    {
+      "path": "models/gamma/player/hl2dm_female.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/female_02.dx90.vtx",
+      "sha256": "1955e25aaff5f12d55850cb4edcfe59814192aa679f83822439e64ba3828239c",
+      "bytes": 175288
+    },
+    {
+      "path": "models/gamma/player/hl2dm_female.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/female_02.mdl",
+      "sha256": "f83d04092ebde975bb323fab6111ab2392628f1da51d5d0f2da9b4eabd346c7a",
+      "bytes": 150856
+    },
+    {
+      "path": "models/gamma/player/hl2dm_female.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/female_02.phy",
+      "sha256": "fd67c9e53eea309ec8e7397f346d5eceb03e8eec9009d5d7931413d7935d68bf",
+      "bytes": 27647
+    },
+    {
+      "path": "models/gamma/player/hl2dm_female.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/female_02.vvd",
+      "sha256": "b7b5348725782678a2c7e8069441330281a6a784be45a8d0b27982cc4c70c532",
+      "bytes": 394480
+    },
+    {
+      "path": "models/gamma/player/hl2dm_rebel.dx90.vtx",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/male_07.dx90.vtx",
+      "sha256": "07c40d12f7dbfbae6409a3a7ec2d10f18e69e37c56cf84a64470cfe41f50dce6",
+      "bytes": 209049
+    },
+    {
+      "path": "models/gamma/player/hl2dm_rebel.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/male_07.mdl",
+      "sha256": "ff1564b5b2e06deda8d962c316ee52931a8f3f2d4c297226244794482df7f109",
+      "bytes": 137580
+    },
+    {
+      "path": "models/gamma/player/hl2dm_rebel.phy",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/male_07.phy",
+      "sha256": "d49bbf5b5e54d7e7089cef188fc28c4454356f9c8921c25aceddf5ac2fa3523c",
+      "bytes": 27937
+    },
+    {
+      "path": "models/gamma/player/hl2dm_rebel.vvd",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\garrysmod\\garrysmod_dir.vpk:models/player/group03/male_07.vvd",
+      "sha256": "2c1ad6c7b99be69fb8eccb80eb5cf3691bf6b472a7aabf83f041104059215b75",
+      "bytes": 401264
+    },
+    {
+      "path": "models/gamma/player/male_anims.mdl",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\extracted\\hl2mp\\hl2mp_pak_dir\\models\\player\\male_anims.mdl",
+      "sha256": "517d88e478125755d056d03c1baf298fe7776e8290091700e2041781fc11a4d8",
+      "bytes": 392788
+    },
+    {
+      "path": "models/gamma/player/male_neutral.ani",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/male_shared.ani",
+      "sha256": "51710b0ba8e42d0d83ba66be98f1e995354106a0fa9d9c83d224cc181402cd35",
+      "bytes": 1827692
+    },
+    {
+      "path": "models/gamma/player/male_neutral.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/male_shared.mdl",
+      "sha256": "37be93b086cf8ac57321c1f62e71b7bdd0e24e172cf87bdd008c3b51d4cf2e6f",
+      "bytes": 393017
+    },
+    {
+      "path": "models/gamma/player/mel.dx80.vtx",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "583b4b45deda29e778a54ba70e9d0a587e21f45982f6c52c94464607f7ee39e3",
+      "bytes": 181943
+    },
+    {
+      "path": "models/gamma/player/mel.dx90.vtx",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "59daa6c60d1f86f16064347da8f4423091b2f578e2d103ed8d5f5eb356370309",
+      "bytes": 177964
+    },
+    {
+      "path": "models/gamma/player/mel.mdl",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "a06fbe2b02f40852eda8b884b2f80df459557903e165245e95933d0a18ff1d8f",
+      "bytes": 26748
+    },
+    {
+      "path": "models/gamma/player/mel.phy",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "ebec31d237c9d573d48833acc5384003a4e3ebc5f7b9b0792638958202d9fbe3",
+      "bytes": 13265
+    },
+    {
+      "path": "models/gamma/player/mel.sw.vtx",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "505fcf46ea462f43f5b1cadd873f100d80a345cc3182e68097f97f349b327a76",
+      "bytes": 177500
+    },
+    {
+      "path": "models/gamma/player/mel.vvd",
+      "source": "Generated from source/mel/model.qc; see retarget_report.json and character_physics_report.json",
+      "sha256": "b8dc9f318cba00477f9764fe5a3150f312fc5e6f61f5d46444fa824eb7d168dc",
+      "bytes": 640256
+    }
+  ],
+  "excluded": [
+    "gameinfo.txt (compiler-only)",
+    "weapon assets and weapon scripts"
+  ],
+  "facial_flex_limitations": [
+    "chell",
+    "chell_2010",
+    "mel"
+  ]
+}

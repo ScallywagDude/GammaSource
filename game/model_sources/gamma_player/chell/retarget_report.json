@@ -1,0 +1,157 @@
+{
+  "alias": "chell",
+  "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\extracted\\portal\\portal_pak_dir\\models\\player\\chell.mdl",
+  "triangles": 14522,
+  "vertices": 24625,
+  "source_bones": 68,
+  "target_bones": 56,
+  "ancestor_remaps": [
+    [
+      "thigh_twist_L",
+      "ValveBiped.Bip01_L_Thigh"
+    ],
+    [
+      "spring_base_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "spring_end_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "spring_1_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "thigh_twist_R",
+      "ValveBiped.Bip01_R_Thigh"
+    ],
+    [
+      "spring_base_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "spring_end_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "spring_1_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "bicep_twist_L",
+      "ValveBiped.Bip01_L_UpperArm"
+    ],
+    [
+      "wrist_twist_L",
+      "ValveBiped.Bip01_L_Forearm"
+    ],
+    [
+      "bicep_twist_R",
+      "ValveBiped.Bip01_R_UpperArm"
+    ],
+    [
+      "wrist_twist_R",
+      "ValveBiped.Bip01_R_Forearm"
+    ],
+    [
+      "weapon_bone",
+      "ValveBiped.Bip01_R_Hand"
+    ],
+    [
+      "forward",
+      "ValveBiped.Bip01_Head1"
+    ],
+    [
+      "ponytail",
+      "ValveBiped.Bip01_Head1"
+    ]
+  ],
+  "alignment": {
+    "method": "anatomical body axes and joint directions; ancestor helpers share transforms",
+    "global_rotation": [
+      [
+        0.9999999999966042,
+        2.2924185182528727e-06,
+        1.239715154495374e-06
+      ],
+      [
+        1.1730506918229812e-06,
+        0.02885522274930009,
+        -0.9995836013654448
+      ],
+      [
+        -2.3272362152406896e-06,
+        0.9995836013635043,
+        0.02885522274651299
+      ]
+    ],
+    "axial_scale_range": [
+      0.8237329602756449,
+      1.4471550133624789
+    ]
+  },
+  "vtx_layouts": [
+    {
+      "body": 0,
+      "mesh": 0,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 2,
+      "source_indices": 31518
+    },
+    {
+      "body": 0,
+      "mesh": 1,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 5142
+    },
+    {
+      "body": 0,
+      "mesh": 1,
+      "group": 1,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 4932
+    },
+    {
+      "body": 0,
+      "mesh": 2,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 312
+    },
+    {
+      "body": 0,
+      "mesh": 2,
+      "group": 1,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 1566
+    },
+    {
+      "body": 0,
+      "mesh": 3,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 48
+    },
+    {
+      "body": 0,
+      "mesh": 4,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 48
+    }
+  ],
+  "source_sha256": {
+    ".mdl": "d651b4a96ebc6caf809b1309486ea61e09946c436cf28dcaa803418ccabbb7fe",
+    ".vvd": "8393184b678d9bc38bc031973f56ad79530949db2a8083d926333d62becdaca7",
+    ".dx90.vtx": "ad64fa339313168ccc2bf20c4d00a0f7f54668f497160dc894acecdb7217c61b"
+  }
+}

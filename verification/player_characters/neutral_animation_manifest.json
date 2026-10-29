@@ -1,0 +1,220 @@
+{
+  "scope": "Neutral player locomotion from the locally owned HL2 human animation libraries",
+  "files": [
+    {
+      "path": "models/gamma/player/male_neutral.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/male_shared.mdl",
+      "sha256": "37be93b086cf8ac57321c1f62e71b7bdd0e24e172cf87bdd008c3b51d4cf2e6f",
+      "bytes": 393017
+    },
+    {
+      "path": "models/gamma/player/male_neutral.ani",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/male_shared.ani",
+      "sha256": "51710b0ba8e42d0d83ba66be98f1e995354106a0fa9d9c83d224cc181402cd35",
+      "bytes": 1827692
+    },
+    {
+      "path": "models/gamma/player/female_neutral.mdl",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/female_shared.mdl",
+      "sha256": "f84032ced7b2e675f9aeb2bec04ded3e96fc80b54b40c5092f4a89fcb808b8a6",
+      "bytes": 343493
+    },
+    {
+      "path": "models/gamma/player/female_neutral.ani",
+      "source": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\GarrysMod\\sourceengine\\hl2_misc_dir.vpk:models/humans/female_shared.ani",
+      "sha256": "4c8b0306c9d722da3be0e4cd03c38a1fedad4682c167e197e35a0d74b6f68613",
+      "bytes": 1398248
+    }
+  ],
+  "libraries": [
+    {
+      "gender": "male",
+      "includes": [],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "ik_validation": {
+        "external_blocks": 61,
+        "animation_rules_checked": 1171,
+        "all_rule_and_lock_chain_indices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "neutral_activities": [
+        {
+          "activity": "ACT_IDLE",
+          "sequence": "gamma_neutral_idle_subtle"
+        },
+        {
+          "activity": "ACT_COVER_LOW",
+          "sequence": "gamma_neutral_Crouch_idleD"
+        },
+        {
+          "activity": "ACT_WALK",
+          "sequence": "gamma_neutral_walk_all"
+        },
+        {
+          "activity": "ACT_RUN",
+          "sequence": "gamma_neutral_run_all"
+        },
+        {
+          "activity": "ACT_WALK_CROUCH",
+          "sequence": "gamma_neutral_Crouch_walk_all"
+        },
+        {
+          "activity": "ACT_JUMP",
+          "sequence": "gamma_neutral_jump_holding_jump"
+        },
+        {
+          "activity": "ACT_GLIDE",
+          "sequence": "gamma_neutral_jump_holding_glide"
+        },
+        {
+          "activity": "ACT_LAND",
+          "sequence": "gamma_neutral_jump_holding_land"
+        }
+      ],
+      "maximum_bind_matrix_difference_from_multiplayer_rig": 3.814697265625e-06,
+      "disabled_npc_autoplay_sequences": [
+        "body_rot_z",
+        "spine_rot_z",
+        "neck_trans_x",
+        "head_rot_z",
+        "head_rot_y",
+        "head_rot_x"
+      ],
+      "disabled_extra_npc_autoplay_ik_locks": 4,
+      "original_mdl_sha256": "04d3209721d9768362084c090331aee8aa0f8167835dc4e55c8a1dfe54c0f29b",
+      "unchanged_ani_sha256": "51710b0ba8e42d0d83ba66be98f1e995354106a0fa9d9c83d224cc181402cd35"
+    },
+    {
+      "gender": "female",
+      "includes": [],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "ik_validation": {
+        "external_blocks": 46,
+        "animation_rules_checked": 1001,
+        "all_rule_and_lock_chain_indices": [
+          0,
+          1,
+          2,
+          3
+        ]
+      },
+      "neutral_activities": [
+        {
+          "activity": "ACT_IDLE",
+          "sequence": "gamma_neutral_idle_subtle"
+        },
+        {
+          "activity": "ACT_COVER_LOW",
+          "sequence": "gamma_neutral_Crouch_idleD"
+        },
+        {
+          "activity": "ACT_WALK",
+          "sequence": "gamma_neutral_walk_all"
+        },
+        {
+          "activity": "ACT_RUN",
+          "sequence": "gamma_neutral_run_all"
+        },
+        {
+          "activity": "ACT_WALK_CROUCH",
+          "sequence": "gamma_neutral_Crouch_walk_all"
+        },
+        {
+          "activity": "ACT_JUMP",
+          "sequence": "gamma_neutral_jump_holding_jump"
+        },
+        {
+          "activity": "ACT_GLIDE",
+          "sequence": "gamma_neutral_jump_holding_glide"
+        },
+        {
+          "activity": "ACT_LAND",
+          "sequence": "gamma_neutral_jump_holding_land"
+        }
+      ],
+      "maximum_bind_matrix_difference_from_multiplayer_rig": 3.814697265625e-06,
+      "disabled_npc_autoplay_sequences": [
+        "body_rot_z",
+        "spine_rot_z",
+        "neck_trans_x",
+        "head_rot_z",
+        "head_rot_y",
+        "head_rot_x"
+      ],
+      "disabled_extra_npc_autoplay_ik_locks": 4,
+      "original_mdl_sha256": "6774272370033024412d141e671053490a43fb38b5861910daac9393423bbd51",
+      "unchanged_ani_sha256": "4c8b0306c9d722da3be0e4cd03c38a1fedad4682c167e197e35a0d74b6f68613"
+    }
+  ],
+  "integration": "Append the matching models/gamma/player/{gender}_neutral.mdl after the HL2DM animation include."
+}

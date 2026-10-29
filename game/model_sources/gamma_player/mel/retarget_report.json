@@ -1,0 +1,117 @@
+{
+  "alias": "mel",
+  "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\models\\player.mdl",
+  "triangles": 14516,
+  "vertices": 24747,
+  "source_bones": 66,
+  "target_bones": 56,
+  "ancestor_remaps": [
+    [
+      "ponytail",
+      "ValveBiped.Bip01_Head1"
+    ],
+    [
+      "spring_base_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "spring_end_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "spring_L",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "spring_base_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "spring_end_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "spring_R",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "weapon_bone",
+      "ValveBiped.Bip01_R_Hand"
+    ],
+    [
+      "forward",
+      "ValveBiped.Bip01_Head1"
+    ]
+  ],
+  "alignment": {
+    "method": "anatomical body axes and joint directions; ancestor helpers share transforms",
+    "global_rotation": [
+      [
+        0.9999999999984399,
+        1.4342237767162841e-06,
+        1.0312702724923397e-06
+      ],
+      [
+        9.849086674849097e-07,
+        0.03195794667331753,
+        -0.9994892143707483
+      ],
+      [
+        -1.4664484761960938e-06,
+        0.9994892143702044,
+        0.0319579466718551
+      ]
+    ],
+    "axial_scale_range": [
+      0.7006616636698679,
+      1.6838480670217983
+    ]
+  },
+  "vtx_layouts": [
+    {
+      "body": 0,
+      "mesh": 0,
+      "group": 0,
+      "strip_header_bytes": 35,
+      "strips": 2,
+      "source_indices": 31518
+    },
+    {
+      "body": 0,
+      "mesh": 1,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 10056
+    },
+    {
+      "body": 0,
+      "mesh": 2,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 1878
+    },
+    {
+      "body": 0,
+      "mesh": 3,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 48
+    },
+    {
+      "body": 0,
+      "mesh": 4,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 48
+    }
+  ],
+  "source_sha256": {
+    ".mdl": "b8f88bf157eae933e8e1eae4af33052543563a78a8a589fedd90672ca15d3740",
+    ".vvd": "5bdbaa8db3eb08b1505ef6be16d28e9a4b97cefeb7912e6b94ae5752f218aeba",
+    ".dx90.vtx": "631933df04acbfbf2100e4e31cc0a13348403e24f8277af2965a2707141b26ac"
+  }
+}

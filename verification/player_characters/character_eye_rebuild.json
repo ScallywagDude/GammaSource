@@ -1,0 +1,238 @@
+[
+  {
+    "alias": "chell",
+    "source_eyes": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\extracted\\portal\\portal_pak_dir\\models\\player\\chell.mdl",
+    "eyes": [
+      {
+        "name": "eyeball_r",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_r",
+        "origin": [
+          -1.306980617334407,
+          -2.9872935693533176,
+          66.62862062255095
+        ],
+        "up": [
+          2.292418446113794e-06,
+          0.028855280915110047,
+          0.999583599684416
+        ],
+        "forward": [
+          1.1960038996047071e-06,
+          -0.9995835996864069,
+          0.028855280912424643
+        ],
+        "radius": 0.9017800092697144,
+        "zoffset": 0.0,
+        "iris_scale": 1.4285714626312256
+      },
+      {
+        "name": "eyeball_l",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_l",
+        "origin": [
+          1.3070194646727074,
+          -2.9872905029987127,
+          66.6286145391553
+        ],
+        "up": [
+          2.292418446113794e-06,
+          0.028855280915110047,
+          0.999583599684416
+        ],
+        "forward": [
+          1.1960038996047071e-06,
+          -0.9995835996864069,
+          0.028855280912424643
+        ],
+        "radius": 0.9017800092697144,
+        "zoffset": 0.0,
+        "iris_scale": 1.4285714626312256
+      }
+    ],
+    "compiled_mdl_sha256": "1113ff8f45f2c0434d87d7e93ae7d0709acbe3ef72f3afa63b4751d30ab073a9",
+    "unchanged_geometry": {
+      "mesh.smd": "fd4f9dc30c45000ef27a5a6651eaee7cdae406e35b44a2a793f4c5cee8c0871d",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\eye_compile.log"
+  },
+  {
+    "alias": "chell_2010",
+    "source_eyes": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\models\\player\\chell\\player.mdl",
+    "eyes": [
+      {
+        "name": "gambler_eyeball_l",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "gambler_eyeball_l",
+        "origin": [
+          1.2750114815096927,
+          -2.5949892668794554,
+          66.05817398107843
+        ],
+        "up": [
+          1.0148356355414976e-06,
+          0.0516030143950858,
+          0.9986676769097469
+        ],
+        "forward": [
+          1.0042776579244727e-06,
+          -0.9986676769098101,
+          0.05160301439407036
+        ],
+        "radius": 0.5,
+        "zoffset": 0.034920770674943924,
+        "iris_scale": 1.886792540550232
+      },
+      {
+        "name": "gambler_eyeball_r",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "gambler_eyeball_r",
+        "origin": [
+          -1.2749423368089565,
+          -2.594991558241322,
+          66.05817680258558
+        ],
+        "up": [
+          1.0148356355414976e-06,
+          0.0516030143950858,
+          0.9986676769097469
+        ],
+        "forward": [
+          1.0042776579244727e-06,
+          -0.9986676769098101,
+          0.05160301439407036
+        ],
+        "radius": 0.5,
+        "zoffset": 0.034920770674943924,
+        "iris_scale": 1.886792540550232
+      }
+    ],
+    "compiled_mdl_sha256": "019f522c367fa6471afe83a2568cf120f00b642745c1bfb274f8c4904688227c",
+    "unchanged_geometry": {
+      "mesh.smd": "7b2b8dc3175afa25e09f2a6908d1322680a2abb7f5c65efedecd64f19f6304a2",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell_2010\\eye_compile.log"
+  },
+  {
+    "alias": "mel",
+    "source_eyes": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2009\\Portal_2\\game\\portal2\\models\\player.mdl",
+    "eyes": [
+      {
+        "name": "eyeball_r",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_r",
+        "origin": [
+          -1.3069842863111127,
+          -2.8211223137843997,
+          66.79959627401162
+        ],
+        "up": [
+          1.3887578461097208e-06,
+          0.07471897354604766,
+          0.9972046304496867
+        ],
+        "forward": [
+          1.048015622823285e-06,
+          -0.9972046304502095,
+          0.07471897354462732
+        ],
+        "radius": 0.9017800092697144,
+        "zoffset": 0.0,
+        "iris_scale": 1.6666666269302368
+      },
+      {
+        "name": "eyeball_l",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_l",
+        "origin": [
+          1.3070157957008004,
+          -2.8211197392330623,
+          66.79959244071517
+        ],
+        "up": [
+          1.3887578461097208e-06,
+          0.07471897354604766,
+          0.9972046304496867
+        ],
+        "forward": [
+          1.048015622823285e-06,
+          -0.9972046304502095,
+          0.07471897354462732
+        ],
+        "radius": 0.9017800092697144,
+        "zoffset": 0.0,
+        "iris_scale": 1.6666666269302368
+      }
+    ],
+    "compiled_mdl_sha256": "cc90000214fd8bcb0de4727415dbfdba51aa3b3d135814276eeea56411c99fc9",
+    "unchanged_geometry": {
+      "mesh.smd": "0c1d54590f985eaa4c04f9b9776cccac0ff5b534177d23c8fbc1e78e37cc303f",
+      "reference.smd": "8db356b24ac343b04ff71c16437389e19cf62ebf703c347383f843a1bbd6b135",
+      "collision.smd": "ea9be00732e2fbaf88d802ce574c5aaf0c887e229d1d84fed5dc56765f9d07af"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\eye_compile.log"
+  },
+  {
+    "alias": "gasmask_citizen",
+    "source_eyes": "C:\\Users\\doge6\\Downloads\\source2018_assets\\hl2\\models\\Player\\citizen17.mdl",
+    "eyes": [
+      {
+        "name": "eyeball_r",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_r",
+        "origin": [
+          -1.240186299846159,
+          -3.5123835013015827,
+          68.53471183971233
+        ],
+        "up": [
+          -1.8239003895184963e-07,
+          1.2606131281408214e-06,
+          0.9999999999991888
+        ],
+        "forward": [
+          7.821115186417295e-07,
+          0.9999999999988995,
+          -1.2606152044820684e-06
+        ],
+        "radius": 0.5,
+        "zoffset": 0.06992681324481964,
+        "iris_scale": 1.5873016119003296
+      },
+      {
+        "name": "eyeball_l",
+        "bone": "ValveBiped.Bip01_Head1",
+        "material": "eyeball_l",
+        "origin": [
+          1.3441137176241675,
+          -3.521055709882937,
+          68.53471259775431
+        ],
+        "up": [
+          -1.8239003895184963e-07,
+          1.2606131281408214e-06,
+          0.9999999999991888
+        ],
+        "forward": [
+          7.821115186417295e-07,
+          0.9999999999988995,
+          -1.2606152044820684e-06
+        ],
+        "radius": 0.5,
+        "zoffset": -0.06992681324481964,
+        "iris_scale": 1.5873016119003296
+      }
+    ],
+    "compiled_mdl_sha256": "f3faa1127affc4af43b97af59b6c2104537a36bef2cb02ff471702649552a967",
+    "unchanged_geometry": {
+      "mesh.smd": "6846c79106816c67654c5cc4f1a826521ff9f4bda8ea7202efe9bba308d0b33d",
+      "reference.smd": "fbcdbf4f5f1ae06133a9faeac995e85e2a90b8102f1d16bcb2223b7c289d0ef5",
+      "collision.smd": "181a7056657ef2b4331dd3ee8ffeb95d23267afae20ccd0aa0e7053779d48d0d"
+    },
+    "compile_log": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\gasmask_citizen\\eye_compile.log"
+  }
+]

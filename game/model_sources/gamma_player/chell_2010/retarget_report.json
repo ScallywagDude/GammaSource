@@ -1,0 +1,121 @@
+{
+  "alias": "chell_2010",
+  "source": "C:\\Users\\doge6\\Documents\\Portal 2 Betas\\jul2010\\852_2\\portal2\\models\\player\\chell\\player.mdl",
+  "triangles": 16200,
+  "vertices": 9527,
+  "source_bones": 62,
+  "target_bones": 56,
+  "ancestor_remaps": [
+    [
+      "L_spring_joint_0",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "L_spring_joint_1",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "L_spring_joint_2",
+      "ValveBiped.Bip01_L_Calf"
+    ],
+    [
+      "R_spring_joint_0",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "R_spring_joint_1",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "R_spring_joint_2",
+      "ValveBiped.Bip01_R_Calf"
+    ],
+    [
+      "weapon_bone",
+      "ValveBiped.Bip01_R_Hand"
+    ],
+    [
+      "forward",
+      "ValveBiped.Bip01_Head1"
+    ]
+  ],
+  "alignment": {
+    "method": "anatomical body axes and joint directions; ancestor helpers share transforms",
+    "global_rotation": [
+      [
+        0.9999999999989022,
+        1.0515035516123005e-06,
+        1.0441010863791212e-06
+      ],
+      [
+        9.884490047037358e-07,
+        0.051603239443033105,
+        -0.9986676652811026
+      ],
+      [
+        -1.1039815952865957e-06,
+        0.9986676652810381,
+        0.05160323944193709
+      ]
+    ],
+    "axial_scale_range": [
+      0.7762421768733654,
+      1.7809819011294101
+    ]
+  },
+  "vtx_layouts": [
+    {
+      "body": 0,
+      "mesh": 0,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 13719
+    },
+    {
+      "body": 0,
+      "mesh": 1,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 174
+    },
+    {
+      "body": 0,
+      "mesh": 2,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 20691
+    },
+    {
+      "body": 0,
+      "mesh": 3,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 13758
+    },
+    {
+      "body": 0,
+      "mesh": 4,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 129
+    },
+    {
+      "body": 0,
+      "mesh": 5,
+      "group": 0,
+      "strip_header_bytes": 27,
+      "strips": 1,
+      "source_indices": 129
+    }
+  ],
+  "source_sha256": {
+    ".mdl": "b4b089a5ac2810a0e7d2c3a82b13d89eb26a001b1325249bb84f57baca18b387",
+    ".vvd": "6e4b073a9506eaf55308cb25d8b6fc9c10dd175425ed9e3e616abacd885f6d54",
+    ".dx90.vtx": "d452fcdb5d7f6177ddc4602db8d0ff3962481135ebf6b173bac5ddf57f8508f4"
+  }
+}

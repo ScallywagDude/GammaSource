@@ -1,0 +1,22 @@
+[
+  {
+    "path": "materials/models/gamma/player/chell/eyeball_l.vmt",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\eye_materials_original\\eyeball_l.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+    "sha256": "1801e6a38e5fe5bcb817803de0178f08394a7fce072cfe6b3f1f7a82e81398fe"
+  },
+  {
+    "path": "materials/models/gamma/player/chell/eyeball_r.vmt",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\chell\\eye_materials_original\\eyeball_r.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+    "sha256": "bb00e213fdaacc24e2490ec318b4cc7ae3a8eaf542ec7d0851881724ef666ca2"
+  },
+  {
+    "path": "materials/models/gamma/player/mel/eyeball_l.vmt",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\eye_materials_original\\eyeball_l.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+    "sha256": "6e565f7f30a91ccff4972a64fceff4b7eb5c74b92cd79ec92397b9dc662bdd2b"
+  },
+  {
+    "path": "materials/models/gamma/player/mel/eyeball_r.vmt",
+    "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\source\\mel\\eye_materials_original\\eyeball_r.vmt (source-authored Eyes_dx8 maps, animated Eyes shader)",
+    "sha256": "b38e060359a40c18802db16dd3e23b322f129cda7602fee37dd333abaf7c2cd5"
+  }
+]

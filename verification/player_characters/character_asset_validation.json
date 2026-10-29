@@ -1,0 +1,4440 @@
+{
+  "roster_count": 16,
+  "validated_models": 16,
+  "models": [
+    {
+      "path": "models/gamma/player/gordon.mdl",
+      "version": 48,
+      "bones": 67,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "13a3c71ed617078033120946c12c02a1ea3fab68bf02e519c47e18d4c277ea8b",
+      "materials": [
+        "materials/models/gordon/rense.vmt",
+        "materials/models/gordon/eyeball_r.vmt",
+        "materials/models/gordon/mouth.vmt",
+        "materials/models/gordon/gordon_cylmap2.vmt",
+        "materials/models/gordon/plyr_sheet.vmt",
+        "materials/models/gordon/eyeball_l.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 6,
+      "attachments": [
+        "leftHand",
+        "RightHand",
+        "LeftMuzzle",
+        "RightMuzzle",
+        "Eye",
+        "eyes",
+        "mouth",
+        "wansyo",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 5688,
+      "geometry_checksum": -850964469,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5026,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.7857142686843872,
+          "radius": 0.5,
+          "up": [
+            0.9851093888282776,
+            0.17192921042442322,
+            6.897658977322862e-07
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851093888282776,
+            -2.562419695095741e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.7857142686843872,
+          "radius": 0.5,
+          "up": [
+            0.9851093888282776,
+            0.17192921042442322,
+            6.897658977322862e-07
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851093888282776,
+            -2.562419695095741e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 71,
+      "alias": "gordon",
+      "name": "Gordon Freeman (Survivor)"
+    },
+    {
+      "path": "models/gamma/player/chell.mdl",
+      "version": 48,
+      "bones": 53,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/female_anims.mdl",
+        "models/gamma/player/female_neutral.mdl"
+      ],
+      "sha256": "d3017dac31d873dbf648e82f584600fd7d8b6c6a194dd20082878b0c38bda869",
+      "materials": [
+        "materials/models/gamma/player/chell/chell_body.vmt",
+        "materials/models/gamma/player/chell/chell_face.vmt",
+        "materials/models/gamma/player/chell/chell_hair.vmt",
+        "materials/models/gamma/player/chell/eyeball_l.vmt",
+        "materials/models/gamma/player/chell/eyeball_r.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 4,
+      "attachments": [
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "eyes"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 10744,
+      "geometry_checksum": -2007272200,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 14522,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.4285714626312256,
+          "radius": 0.9017800092697144,
+          "up": [
+            0.9797380566596985,
+            0.2002832591533661,
+            -1.1837356623800588e-06
+          ],
+          "forward": [
+            0.2002832591533661,
+            -0.9797380566596985,
+            -3.91350931749912e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.4285714626312256,
+          "radius": 0.9017800092697144,
+          "up": [
+            0.9797380566596985,
+            0.2002832591533661,
+            -1.1837356623800588e-06
+          ],
+          "forward": [
+            0.2002832591533661,
+            -0.9797380566596985,
+            -3.91350931749912e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 1,
+      "alias": "chell",
+      "name": "Chell (Portal)"
+    },
+    {
+      "path": "models/gamma/player/chell_2010.mdl",
+      "version": 48,
+      "bones": 53,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/female_anims.mdl",
+        "models/gamma/player/female_neutral.mdl"
+      ],
+      "sha256": "630b9d99f6f856a2691255dd207062ae5e4f214d0b247d605a0f352d7664dd1b",
+      "materials": [
+        "materials/models/gamma/player/chell_2010/chell_rev2_legs.vmt",
+        "materials/models/gamma/player/chell_2010/lambert1.vmt",
+        "materials/models/gamma/player/chell_2010/chell_rev2_torso.vmt",
+        "materials/models/gamma/player/chell_2010/chell_rev2_head.vmt",
+        "materials/models/gamma/player/chell_2010/gambler_eyeball_l.vmt",
+        "materials/models/gamma/player/chell_2010/gambler_eyeball_r.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 4,
+      "attachments": [
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "eyes"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 9527,
+      "geometry_checksum": 1712390564,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 16200,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.886792540550232,
+          "radius": 0.5,
+          "up": [
+            0.9749247431755066,
+            0.22253479063510895,
+            1.5542278219982109e-07
+          ],
+          "forward": [
+            0.22253479063510895,
+            -0.9749247431755066,
+            -3.695839950523805e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.886792540550232,
+          "radius": 0.5,
+          "up": [
+            0.9749247431755066,
+            0.22253479063510895,
+            1.5542278219982109e-07
+          ],
+          "forward": [
+            0.22253479063510895,
+            -0.9749247431755066,
+            -3.695839950523805e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 1,
+      "alias": "chell_2010",
+      "name": "chell_2010"
+    },
+    {
+      "path": "models/gamma/player/mel.mdl",
+      "version": 48,
+      "bones": 53,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/female_anims.mdl",
+        "models/gamma/player/female_neutral.mdl"
+      ],
+      "sha256": "a06fbe2b02f40852eda8b884b2f80df459557903e165245e95933d0a18ff1d8f",
+      "materials": [
+        "materials/models/gamma/player/mel/chell_body_mp01.vmt",
+        "materials/models/gamma/player/mel/chell_face_mp01.vmt",
+        "materials/models/gamma/player/mel/chell_hair_mp01.vmt",
+        "materials/models/gamma/player/mel/eyeball_r.vmt",
+        "materials/models/gamma/player/mel/eyeball_l.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 4,
+      "attachments": [
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "eyes"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 10003,
+      "geometry_checksum": 818190257,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 14516,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.6666666269302368,
+          "radius": 0.9017800092697144,
+          "up": [
+            0.9695091843605042,
+            0.24505499005317688,
+            -1.564749254612252e-07
+          ],
+          "forward": [
+            0.24505499005317688,
+            -0.9695091843605042,
+            -3.711752015078673e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.6666666269302368,
+          "radius": 0.9017800092697144,
+          "up": [
+            0.9695091843605042,
+            0.24505499005317688,
+            -1.564749254612252e-07
+          ],
+          "forward": [
+            0.24505499005317688,
+            -0.9695091843605042,
+            -3.711752015078673e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 1,
+      "alias": "mel",
+      "name": "mel"
+    },
+    {
+      "path": "models/gamma/player/gasmask_citizen.mdl",
+      "version": 48,
+      "bones": 53,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "75c42e3666057f0b2d03c7794ad732da6d0a23201e369847523aa158f5e6a5dd",
+      "materials": [
+        "materials/models/gamma/player/gasmask_citizen/palm.vmt",
+        "materials/models/gamma/player/gasmask_citizen/hand.vmt",
+        "materials/models/gamma/player/gasmask_citizen/rarm.vmt",
+        "materials/models/gamma/player/gasmask_citizen/arm.vmt",
+        "materials/models/gamma/player/gasmask_citizen/leg.vmt",
+        "materials/models/gamma/player/gasmask_citizen/face.vmt",
+        "materials/models/gamma/player/gasmask_citizen/eyeball_r.vmt",
+        "materials/models/gamma/player/gasmask_citizen/eyeball_l.vmt",
+        "materials/models/gamma/player/gasmask_citizen/glass.vmt",
+        "materials/models/gamma/player/gasmask_citizen/mouthpiece.vmt",
+        "materials/models/gamma/player/gasmask_citizen/valve.vmt",
+        "materials/models/gamma/player/gasmask_citizen/torso.vmt",
+        "materials/models/gamma/player/gasmask_citizen/hood.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 4,
+      "attachments": [
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "eyes"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 2594,
+      "geometry_checksum": -522051078,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 3971,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5873016119003296,
+          "radius": 0.5,
+          "up": [
+            0.9851090908050537,
+            0.17193035781383514,
+            8.770846307015745e-07
+          ],
+          "forward": [
+            -0.17193035781383514,
+            0.9851090908050537,
+            1.8231590956929722e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5873016119003296,
+          "radius": 0.5,
+          "up": [
+            0.9851090908050537,
+            0.17193035781383514,
+            8.770846307015745e-07
+          ],
+          "forward": [
+            -0.17193035781383514,
+            0.9851090908050537,
+            1.8231590956929722e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 1,
+      "alias": "gasmask_citizen",
+      "name": "Gasmask Citizen"
+    },
+    {
+      "path": "models/gamma/player/hl2dm_rebel.mdl",
+      "version": 48,
+      "bones": 68,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "ff1564b5b2e06deda8d962c316ee52931a8f3f2d4c297226244794482df7f109",
+      "materials": [
+        "materials/models/humans/male/mouth.vmt",
+        "materials/models/humans/male/eyeball_l.vmt",
+        "materials/models/humans/male/group03/mike_facemap.vmt",
+        "materials/models/humans/male/group03/players_sheet.vmt",
+        "materials/models/humans/male/eyeball_r.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 6,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 6265,
+      "geometry_checksum": 1273367634,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5039,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5873016119003296,
+          "radius": 0.5,
+          "up": [
+            0.9851093888282776,
+            0.17192921042442322,
+            6.897658977322862e-07
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851093888282776,
+            -2.562419695095741e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5873016119003296,
+          "radius": 0.5,
+          "up": [
+            0.9851093888282776,
+            0.17192921042442322,
+            6.897658977322862e-07
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851093888282776,
+            -2.562419695095741e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 71,
+      "alias": "hl2dm_rebel",
+      "name": "HL2DM Rebel"
+    },
+    {
+      "path": "models/gamma/player/hl2dm_female.mdl",
+      "version": 48,
+      "bones": 72,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/female_anims.mdl",
+        "models/gamma/player/female_neutral.mdl"
+      ],
+      "sha256": "f83d04092ebde975bb323fab6111ab2392628f1da51d5d0f2da9b4eabd346c7a",
+      "materials": [
+        "materials/models/humans/female/eyeball_r.vmt",
+        "materials/models/humans/female/fmouth.vmt",
+        "materials/models/humans/female/group03/players_sheet.vmt",
+        "materials/models/humans/female/eyeball_l.vmt",
+        "materials/models/humans/female/group03/kanisha_cylmap.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 6,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 6159,
+      "geometry_checksum": 2128589785,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 4669,
+      "eyeball_count": 2,
+      "eye_projection_records": [
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5151515007019043,
+          "radius": 0.5,
+          "up": [
+            0.9851094484329224,
+            0.17192921042442322,
+            1.0298067536496092e-06
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851094484329224,
+            -2.7046551167586586e-06
+          ]
+        },
+        {
+          "bone": "ValveBiped.Bip01_Head1",
+          "iris_scale": 1.5151515007019043,
+          "radius": 0.5,
+          "up": [
+            0.9851094484329224,
+            0.17192921042442322,
+            1.0298067536496092e-06
+          ],
+          "forward": [
+            0.17192921042442322,
+            -0.9851094484329224,
+            -2.7046551167586586e-06
+          ]
+        }
+      ],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 71,
+      "alias": "hl2dm_female",
+      "name": "HL2DM Female Rebel"
+    },
+    {
+      "path": "models/gamma/player/hl2dm_combine.mdl",
+      "version": 48,
+      "bones": 44,
+      "local_sequences": 1,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "0f07109cf76cc8d00f65b661a4773bb902328725417da7a85e76017dd63d88b8",
+      "materials": [
+        "materials/models/combine_soldier/combinesoldiersheet_player.vmt",
+        "materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vmt",
+        "materials/models/combine_soldier/combinesoldiersheet_player_new.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 6,
+      "attachments": [
+        "lefthand",
+        "zipline",
+        "eyes",
+        "beam_damage",
+        "anim_attachment_RH",
+        "anim_attachment_LH"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 6202,
+      "geometry_checksum": 1729589500,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 4682,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "hl2dm_combine",
+      "name": "HL2DM Combine Soldier"
+    },
+    {
+      "path": "models/gamma/player/css_urban.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "884ae2f931d75170eb9e5812216345952a8d7a04b346dba4bbb9ae93ec3fc490",
+      "materials": [
+        "materials/models/cstrike/ct_urban.vmt",
+        "materials/models/cstrike/ct_urban_glass.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 6598,
+      "geometry_checksum": 1352785223,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5024,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_urban",
+      "name": "CSS Urban"
+    },
+    {
+      "path": "models/gamma/player/css_gign.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "fdabc59edc066488e82e90791d3a6eb4d48c4a6eb07337f5e4ca729c97720a30",
+      "materials": [
+        "materials/models/cstrike/ct_gsg9.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 4715,
+      "geometry_checksum": -1971949314,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 4872,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_gign",
+      "name": "CSS GIGN"
+    },
+    {
+      "path": "models/gamma/player/css_gsg9.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "31ba03bfcc042dcd6553e5311237ccc1f7097d919282800a61576aa2b6a34734",
+      "materials": [
+        "materials/models/cstrike/ct_gign.vmt",
+        "materials/models/cstrike/ct_gign_glass.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 4872,
+      "geometry_checksum": 590645150,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5053,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_gsg9",
+      "name": "CSS GSG9"
+    },
+    {
+      "path": "models/gamma/player/css_sas.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "2262d1c6f6b5a46c0efd56393a71d32bd4738f0d14e1f518b4548cc9647cae4f",
+      "materials": [
+        "materials/models/cstrike/ct_sas.vmt",
+        "materials/models/cstrike/ct_sas_glass.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 4785,
+      "geometry_checksum": -653888638,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5050,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_sas",
+      "name": "CSS SAS"
+    },
+    {
+      "path": "models/gamma/player/css_phoenix.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "07c12bcdbadbc73e98a97144579bf3c0abcdf7246649a0e36f092c1ea778fdd0",
+      "materials": [
+        "materials/models/cstrike/t_phoenix.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 6262,
+      "geometry_checksum": 1620927688,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5015,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_phoenix",
+      "name": "CSS Phoenix"
+    },
+    {
+      "path": "models/gamma/player/css_leet.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "cc2f0dd5e85a9d6c6a1b6c2fc2e74f6eb9e56602e58fc926a44ef0eb9b013b2d",
+      "materials": [
+        "materials/models/cstrike/t_leet.vmt",
+        "materials/models/cstrike/t_leet_glass.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 4707,
+      "geometry_checksum": 83550470,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 4977,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_leet",
+      "name": "CSS Leet"
+    },
+    {
+      "path": "models/gamma/player/css_guerilla.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "b12b8709e19376d5d28dcd7fdeaaf268ea67054445d1356497f2a87037d6039e",
+      "materials": [
+        "materials/models/cstrike/t_guerilla.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 4767,
+      "geometry_checksum": 429207062,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 5066,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_guerilla",
+      "name": "CSS Guerilla"
+    },
+    {
+      "path": "models/gamma/player/css_arctic.mdl",
+      "version": 48,
+      "bones": 56,
+      "local_sequences": 2,
+      "local_activities": [
+        "",
+        "ACT_COVER_LOW",
+        "ACT_DIERAGDOLL",
+        "ACT_GLIDE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_AR2",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_CROSSBOW",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_GRENADE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_MELEE",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PHYSGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_PISTOL",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_RPG",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SLAM",
+        "ACT_HL2MP_GESTURE_RANGE_ATTACK_SMG1",
+        "ACT_HL2MP_GESTURE_RELOAD_AR2",
+        "ACT_HL2MP_GESTURE_RELOAD_PISTOL",
+        "ACT_HL2MP_GESTURE_RELOAD_SHOTGUN",
+        "ACT_HL2MP_GESTURE_RELOAD_SMG1",
+        "ACT_HL2MP_IDLE_AR2",
+        "ACT_HL2MP_IDLE_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_AR2",
+        "ACT_HL2MP_IDLE_CROUCH_CROSSBOW",
+        "ACT_HL2MP_IDLE_CROUCH_GRENADE",
+        "ACT_HL2MP_IDLE_CROUCH_MELEE",
+        "ACT_HL2MP_IDLE_CROUCH_PHYSGUN",
+        "ACT_HL2MP_IDLE_CROUCH_PISTOL",
+        "ACT_HL2MP_IDLE_CROUCH_RPG",
+        "ACT_HL2MP_IDLE_CROUCH_SHOTGUN",
+        "ACT_HL2MP_IDLE_CROUCH_SLAM",
+        "ACT_HL2MP_IDLE_CROUCH_SMG1",
+        "ACT_HL2MP_IDLE_GRENADE",
+        "ACT_HL2MP_IDLE_MELEE",
+        "ACT_HL2MP_IDLE_PHYSGUN",
+        "ACT_HL2MP_IDLE_PISTOL",
+        "ACT_HL2MP_IDLE_RPG",
+        "ACT_HL2MP_IDLE_SHOTGUN",
+        "ACT_HL2MP_IDLE_SLAM",
+        "ACT_HL2MP_IDLE_SMG1",
+        "ACT_HL2MP_JUMP_AR2",
+        "ACT_HL2MP_JUMP_CROSSBOW",
+        "ACT_HL2MP_JUMP_GRENADE",
+        "ACT_HL2MP_JUMP_MELEE",
+        "ACT_HL2MP_JUMP_PHYSGUN",
+        "ACT_HL2MP_JUMP_PISTOL",
+        "ACT_HL2MP_JUMP_RPG",
+        "ACT_HL2MP_JUMP_SHOTGUN",
+        "ACT_HL2MP_JUMP_SLAM",
+        "ACT_HL2MP_JUMP_SMG1",
+        "ACT_HL2MP_RUN_AR2",
+        "ACT_HL2MP_RUN_CROSSBOW",
+        "ACT_HL2MP_RUN_GRENADE",
+        "ACT_HL2MP_RUN_MELEE",
+        "ACT_HL2MP_RUN_PHYSGUN",
+        "ACT_HL2MP_RUN_PISTOL",
+        "ACT_HL2MP_RUN_RPG",
+        "ACT_HL2MP_RUN_SHOTGUN",
+        "ACT_HL2MP_RUN_SLAM",
+        "ACT_HL2MP_RUN_SMG1",
+        "ACT_HL2MP_WALK_CROUCH_AR2",
+        "ACT_HL2MP_WALK_CROUCH_CROSSBOW",
+        "ACT_HL2MP_WALK_CROUCH_GRENADE",
+        "ACT_HL2MP_WALK_CROUCH_MELEE",
+        "ACT_HL2MP_WALK_CROUCH_PHYSGUN",
+        "ACT_HL2MP_WALK_CROUCH_PISTOL",
+        "ACT_HL2MP_WALK_CROUCH_RPG",
+        "ACT_HL2MP_WALK_CROUCH_SHOTGUN",
+        "ACT_HL2MP_WALK_CROUCH_SLAM",
+        "ACT_HL2MP_WALK_CROUCH_SMG1",
+        "ACT_IDLE",
+        "ACT_JUMP",
+        "ACT_LAND",
+        "ACT_RUN",
+        "ACT_WALK",
+        "ACT_WALK_CROUCH"
+      ],
+      "includes": [
+        "models/gamma/player/male_anims.mdl",
+        "models/gamma/player/male_neutral.mdl"
+      ],
+      "sha256": "0bbc0bff70f271285894313197be0b3bdcd2acb7028806d1d5c0304e8d6cb703",
+      "materials": [
+        "materials/models/cstrike/t_arctic.vmt"
+      ],
+      "ik_chains": [
+        {
+          "name": "rhand",
+          "bones": [
+            "ValveBiped.Bip01_R_UpperArm",
+            "ValveBiped.Bip01_R_Forearm",
+            "ValveBiped.Bip01_R_Hand"
+          ]
+        },
+        {
+          "name": "lhand",
+          "bones": [
+            "ValveBiped.Bip01_L_UpperArm",
+            "ValveBiped.Bip01_L_Forearm",
+            "ValveBiped.Bip01_L_Hand"
+          ]
+        },
+        {
+          "name": "rfoot",
+          "bones": [
+            "ValveBiped.Bip01_R_Thigh",
+            "ValveBiped.Bip01_R_Calf",
+            "ValveBiped.Bip01_R_Foot"
+          ]
+        },
+        {
+          "name": "lfoot",
+          "bones": [
+            "ValveBiped.Bip01_L_Thigh",
+            "ValveBiped.Bip01_L_Calf",
+            "ValveBiped.Bip01_L_Foot"
+          ]
+        }
+      ],
+      "local_ik_reference_count": 10,
+      "attachments": [
+        "eyes",
+        "mouth",
+        "chest",
+        "forward",
+        "anim_attachment_RH",
+        "anim_attachment_LH",
+        "anim_attachment_head"
+      ],
+      "required_bones": {
+        "ValveBiped.Bip01_R_Hand": true,
+        "ValveBiped.Bip01_L_Hand": true,
+        "ValveBiped.Bip01_Head1": true
+      },
+      "vertices_lod0": 5246,
+      "geometry_checksum": -1522429395,
+      "companions": {
+        ".vvd": true,
+        ".dx90.vtx": true,
+        ".phy": true
+      },
+      "physics_solid_count": 15,
+      "triangles_lod0": 4503,
+      "eyeball_count": 0,
+      "eye_projection_records": [],
+      "local_pose_parameters": [],
+      "local_flex_descriptors": 0,
+      "alias": "css_arctic",
+      "name": "CSS Arctic"
+    }
+  ],
+  "materials": [
+    {
+      "path": "materials/models/gordon/rense.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\rense.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gordon/rense.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\rense.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 22064
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gordon/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/eyeball_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/male/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\pupil_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/gordon/mouth.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\mouth.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/mouth.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\mouth.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 21992
+        }
+      ],
+      "shader": "Teeth"
+    },
+    {
+      "path": "materials/models/gordon/gordon_cylmap2.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\gordon_cylmap2.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gordon/gordon_cylmap2.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\gordon_cylmap2.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 87528
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gordon/plyr_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\plyr_sheet.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gordon/gordon_sheet.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\gordon_sheet.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 349688
+        },
+        {
+          "path": "materials/models/gordon/gordon_sheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\gordon_sheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 699232
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gordon/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gordon\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/eyeball_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/male/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\pupil_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_body.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\chell_body.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_body.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_body.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 2796448
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_body_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_body_normal.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398360
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_body_exponent.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_body_exponent.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 699296
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_body_lightwarp.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_body_lightwarp.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 65701
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_face.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\chell_face.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_face.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_face.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 4194535
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_face_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_face_normal.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 5592636
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_face_exponent.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_face_exponent.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 699296
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_face_lightwarp.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_face_lightwarp.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 65701
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell/chell_hair.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\chell_hair.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_hair.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_hair.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398296
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_hair_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_hair_normal.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 87576
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/chell_hair_exponent.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\chell_hair_exponent.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 43856
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell/textures/eyeball_l_dx8.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\eyeball_l_dx8.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 2976
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\pupil_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "Eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/chell/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell/textures/eyeball_r_dx8.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\eyeball_r_dx8.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 2976
+        },
+        {
+          "path": "materials/models/gamma/player/chell/textures/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell\\textures\\pupil_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "Eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_legs.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\chell_rev2_legs.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_legs_diffuse.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_legs_diffuse.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 2796456
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_legs_normals.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_legs_normals.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 5592672
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/skin_warp.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\skin_warp.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 16549
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/lambert1.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\lambert1.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_torso_diffuse.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_torso_diffuse.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 2796456
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_torso.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\chell_rev2_torso.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_torso_diffuse.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_torso_diffuse.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 2796456
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_torso_normals.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_torso_normals.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 5592672
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/skin_warp.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\skin_warp.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 16549
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/chell_rev2_head.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\chell_rev2_head.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_head_diffuse.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_head_diffuse.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 2796456
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/chell_head_normals.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\chell_head_normals.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 5592672
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/skin_warp.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\skin_warp.vtf",
+          "version": [
+            7,
+            5
+          ],
+          "size": 16549
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/gambler_eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\gambler_eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/gambler_eyes.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\gambler_eyes.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 22104
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/gambler_eye_ao.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\gambler_eye_ao.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 5720
+        },
+        {
+          "path": "materials/engine/eye-reflection-cubemap-.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\engine\\eye-reflection-cubemap-.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 306008
+        },
+        {
+          "path": "materials/engine/eye-cornea.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\engine\\eye-cornea.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 87588
+        }
+      ],
+      "shader": "EyeRefract"
+    },
+    {
+      "path": "materials/models/gamma/player/chell_2010/gambler_eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\gambler_eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/gambler_eyes.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\gambler_eyes.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 22104
+        },
+        {
+          "path": "materials/models/gamma/player/chell_2010/textures/gambler_eye_ao.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\chell_2010\\textures\\gambler_eye_ao.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 5720
+        },
+        {
+          "path": "materials/engine/eye-reflection-cubemap-.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\engine\\eye-reflection-cubemap-.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 306008
+        },
+        {
+          "path": "materials/engine/eye-cornea.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\engine\\eye-cornea.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 87588
+        }
+      ],
+      "shader": "EyeRefract"
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_body_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\chell_body_mp01.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/mel/textures/chell_body_mp01.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\chell_body_mp01.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 2796448
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_face_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\chell_face_mp01.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/mel/textures/chell_face_mp01.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\chell_face_mp01.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 699296
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/mel/chell_hair_mp01.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\chell_hair_mp01.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/mel/textures/chell_hair_mp01.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\chell_hair_mp01.vtf",
+          "version": [
+            7,
+            4
+          ],
+          "size": 1398296
+        },
+        {
+          "path": "materials/models/gamma/player/mel/textures/chell_hair_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\chell_hair_normal.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 87576
+        },
+        {
+          "path": "materials/models/gamma/player/mel/textures/chell_hair_exponent.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\chell_hair_exponent.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 43856
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/mel/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/mel/textures/eyeball_r_dx8.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\eyeball_r_dx8.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 2976
+        },
+        {
+          "path": "materials/models/gamma/player/mel/textures/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\pupil_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "Eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/mel/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/gamma/player/mel/textures/eyeball_l_dx8.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\eyeball_l_dx8.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 2976
+        },
+        {
+          "path": "materials/models/gamma/player/mel/textures/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\mel\\textures\\pupil_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "Eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/palm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\palm.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/palm.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\palm.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        },
+        {
+          "path": "materials/models/citizen_17/palmmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\palmmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/hand.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\hand.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/hand.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\hand.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        },
+        {
+          "path": "materials/models/citizen_17/handmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\handmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/rarm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\rarm.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/rarm.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\rarm.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 43896
+        },
+        {
+          "path": "materials/models/citizen_17/rarmmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\rarmmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 43896
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/arm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\arm.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/arm.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\arm.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 43896
+        },
+        {
+          "path": "materials/models/citizen_17/armmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\armmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 43896
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/leg.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\leg.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/leg.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\leg.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/citizen_17/legmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\legmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/face.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\face.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/face.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\face.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/eyeball_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\eyeball_r.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/citizen_17/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\pupil_r.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/eyeball_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\eyeball_l.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/citizen_17/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\pupil_l.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\glass.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/glass.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\glass.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "UnlitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/mouthpiece.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\mouthpiece.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/mouthpiece.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\mouthpiece.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 2936
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/valve.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\valve.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/valve.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\valve.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 2936
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/torso.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\torso.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/torso.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\torso.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/citizen_17/torsomask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\torsomask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/gamma/player/gasmask_citizen/hood.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\gamma\\player\\gasmask_citizen\\hood.vmt",
+      "textures": [
+        {
+          "path": "materials/models/citizen_17/hood.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\hood.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/citizen_17/hoodmask.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\citizen_17\\hoodmask.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 174968
+        },
+        {
+          "path": "materials/models/cremator/cremsuitenvmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cremator\\cremsuitenvmap.vtf",
+          "version": [
+            7,
+            0
+          ],
+          "size": 11128
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/humans/male/mouth.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\mouth.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/mouth.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\mouth.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 21992
+        }
+      ],
+      "shader": "Teeth"
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/eyeball_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/male/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\pupil_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/humans/male/group03/mike_facemap.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\mike_facemap.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/group03/mike_facemap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\mike_facemap.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 174944
+        },
+        {
+          "path": "materials/null-bumpmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\null-bumpmap.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1231
+        },
+        {
+          "path": "materials/models/humans/facemap_phong.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\facemap_phong.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 174944
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/humans/male/group03/players_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\players_sheet.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/group03/players_sheet.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\players_sheet.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 5592656
+        },
+        {
+          "path": "materials/models/humans/male/group03/citizen_sheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\citizen_sheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/humans/male/group03/citizen_sheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\group03\\citizen_sheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/humans/male/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/male/eyeball_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\eyeball_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/male/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\male\\pupil_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_r.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\eyeball_r.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/female/eyeball_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\eyeball_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/female/pupil_r.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\pupil_r.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/humans/female/fmouth.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\fmouth.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/female/fmouth.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\fmouth.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 21992
+        }
+      ],
+      "shader": "Teeth"
+    },
+    {
+      "path": "materials/models/humans/female/group03/players_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\players_sheet.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/female/group03/players_sheet.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\players_sheet.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 5592640
+        },
+        {
+          "path": "materials/models/humans/female/group03/citizen_sheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\citizen_sheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/humans/female/group03/citizen_sheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\citizen_sheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/humans/female/eyeball_l.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\eyeball_l.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/female/eyeball_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\eyeball_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 2936
+        },
+        {
+          "path": "materials/models/humans/female/pupil_l.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\pupil_l.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 5680
+        }
+      ],
+      "shader": "eyes"
+    },
+    {
+      "path": "materials/models/humans/female/group03/kanisha_cylmap.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\kanisha_cylmap.vmt",
+      "textures": [
+        {
+          "path": "materials/models/humans/female/group03/kanisha_cylmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\female\\group03\\kanisha_cylmap.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 174944
+        },
+        {
+          "path": "materials/null-bumpmap.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\null-bumpmap.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1231
+        },
+        {
+          "path": "materials/models/humans/facemap_phong.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\humans\\facemap_phong.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 174944
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player.vmt",
+      "textures": [
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_player.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398352
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldier_phong.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldier_phong.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 699304
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_shotgun.vmt",
+      "textures": [
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_shotgun.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398352
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_shotgun_normal.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398368
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldier_phong.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldier_phong.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 699304
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/combine_soldier/combinesoldiersheet_player_new.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_new.vmt",
+      "textures": [
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_player_new.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_new.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398352
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldiersheet_player_shotgun_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldiersheet_player_shotgun_normal.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398368
+        },
+        {
+          "path": "materials/models/combine_soldier/combinesoldier_phong.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\combine_soldier\\combinesoldier_phong.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 699304
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_urban.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 699272
+        },
+        {
+          "path": "materials/models/cstrike/ct_urban_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/ct_urban_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_urban_glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban_glass.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_urban_glass.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban_glass.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 43856
+        },
+        {
+          "path": "materials/models/cstrike/ct_urban_glass_spec.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_urban_glass_spec.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 808
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_gsg9.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gsg9.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_gsg9.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gsg9.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 699272
+        },
+        {
+          "path": "materials/models/cstrike/ct_gsg9_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gsg9_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/ct_gsg9_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gsg9_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_gign.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 699272
+        },
+        {
+          "path": "materials/models/cstrike/ct_gign_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/ct_gign_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_gign_glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign_glass.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_gign_glass.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign_glass.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 22080
+        },
+        {
+          "path": "materials/models/cstrike/ct_gign_glass_spec.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_gign_glass_spec.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 11144
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_sas.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 699272
+        },
+        {
+          "path": "materials/models/cstrike/ct_sas_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/ct_sas_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/ct_sas_glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas_glass.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/ct_sas_glass.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas_glass.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 43856
+        },
+        {
+          "path": "materials/models/cstrike/ct_sas_glass_spec.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\ct_sas_glass_spec.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 808
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/t_phoenix.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_phoenix.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/t_phoenix.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_phoenix.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_phoenix_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_phoenix_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_phoenix_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_phoenix_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/t_leet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/t_leet.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398216
+        },
+        {
+          "path": "materials/models/cstrike/t_leet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_leet_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/t_leet_glass.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet_glass.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/t_leet_glass.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet_glass.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 11088
+        },
+        {
+          "path": "materials/models/cstrike/t_leet_glass_spec.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_leet_glass_spec.vtf",
+          "version": [
+            7,
+            1
+          ],
+          "size": 1512
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/t_guerilla.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_guerilla.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/t_guerilla.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_guerilla.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_guerilla_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_guerilla_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_guerilla_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_guerilla_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "vertexlitgeneric"
+    },
+    {
+      "path": "materials/models/cstrike/t_arctic.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_arctic.vmt",
+      "textures": [
+        {
+          "path": "materials/models/cstrike/t_arctic.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_arctic.vtf",
+          "version": [
+            7,
+            3
+          ],
+          "size": 1398352
+        },
+        {
+          "path": "materials/models/cstrike/t_arctic_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_arctic_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        },
+        {
+          "path": "materials/models/cstrike/t_arctic_normal.vtf",
+          "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\player_character_work\\assets\\materials\\models\\cstrike\\t_arctic_normal.vtf",
+          "version": [
+            7,
+            2
+          ],
+          "size": 1398336
+        }
+      ],
+      "shader": "VertexLitGeneric"
+    }
+  ],
+  "errors": [],
+  "warnings": [],
+  "facial_flex_limitations": [
+    "chell",
+    "chell_2010",
+    "mel"
+  ],
+  "scope": "Structural validation. Native appearance and motion checks are recorded separately.",
+  "native_verification": {
+    "status": "passed",
+    "report": "native_character_verification.json"
+  }
+}

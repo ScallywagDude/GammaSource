@@ -1,0 +1,81 @@
+{
+  "status": "passed",
+  "native_roster_neutral_idle": [
+    "gordon",
+    "chell",
+    "chell_2010",
+    "mel",
+    "gasmask_citizen",
+    "hl2dm_rebel",
+    "hl2dm_female",
+    "hl2dm_combine",
+    "css_urban",
+    "css_gign",
+    "css_gsg9",
+    "css_sas",
+    "css_phoenix",
+    "css_leet",
+    "css_guerilla",
+    "css_arctic"
+  ],
+  "motion_exercised": {
+    "model": "chell",
+    "activities": [
+      "run",
+      "crouch",
+      "jump"
+    ]
+  },
+  "visible_pupils_confirmed": [
+    "chell",
+    "chell_2010",
+    "mel",
+    "gasmask_citizen"
+  ],
+  "complete_gasmask_body_confirmed": true,
+  "native_ragdolls_confirmed": [
+    "chell",
+    "chell_2010",
+    "mel"
+  ],
+  "native_log_sha256": "52aad03b95a6dfae4f26aa53452cda1faf29525bcac58c40202234a54534496c",
+  "evidence": [
+    {
+      "file": "images/eyes_chell_final.jpg",
+      "sha256": "59bdbe147e94700de374e58054da92be5ec4a2d6c9dba340f0fd908b66f7298c"
+    },
+    {
+      "file": "images/eyes_chell_2010_close.jpg",
+      "sha256": "cb04894aad9a3933470595e467ef0ed269916b85404a5cfd5083bce5e5a2fc38"
+    },
+    {
+      "file": "images/eyes_mel_final.jpg",
+      "sha256": "76386b9915946dc594cb8cff05e62d6a9e25821d650e83175a84d56f6175c211"
+    },
+    {
+      "file": "images/eyes_gasmask_final.jpg",
+      "sha256": "560c837ed77cbdb000d1656575997c53671b5fe1d7cd9459aec113f8606f6446"
+    },
+    {
+      "file": "images/neutral_gasmask_citizen.jpg",
+      "sha256": "f55e57f883f31c1274ff80df882a7e935727eefed98efb159388c1716f45f950"
+    },
+    {
+      "file": "images/neutral_run.jpg",
+      "sha256": "bb17a3888dddc0c678a345e5070f1ec8140bd25ccec73b4ef94b5e4cd783fd06"
+    },
+    {
+      "file": "images/neutral_crouch.jpg",
+      "sha256": "0ab9f4381b57a2c5b9c1ae36c10d77ec5b8a5d093a5122a1af2752273ae90b5e"
+    },
+    {
+      "file": "images/neutral_jump.jpg",
+      "sha256": "9757bac19b8cfeb898e1efffd37a9f4b2848bd183ad9bd88701c9e1a9e8a39c6"
+    },
+    {
+      "file": "images/portal_character_ragdolls.jpg",
+      "sha256": "5531d08fe544ddc7204383af118049514c39089cfb09ce0739db6ff996a15977"
+    }
+  ],
+  "scope": "Native screenshot inspection and recorded activity diagnostics; facial expression flexes are not rebuilt"
+}

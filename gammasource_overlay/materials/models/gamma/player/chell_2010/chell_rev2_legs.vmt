@@ -1,0 +1,19 @@
+"vertexlitgeneric"
+{
+	"$basetexture"	"models/gamma/player/chell_2010/textures/chell_legs_diffuse"
+
+	"$bumpmap" "models/gamma/player/chell_2010/textures/chell_legs_normals"
+	"$phong" "1"
+	"$phongboost" "3.5"
+
+	"$phongexponent" "5"
+	"$phongtint" "[.85 .85 1]"
+	"$phongfresnelranges" "[.2 .5 5]"
+	"$nodecal" "1"
+	"$ambientocclusion" "1"
+	"$halflambert" "0"
+	"$diffuseexp" "1.5"
+	"$lightwarptexture" "models/gamma/player/chell_2010/textures/skin_warp"
+	"$rimlight" "1"	
+	"$surfaceprop"	"flesh"
+}
