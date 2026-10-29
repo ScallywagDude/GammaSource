@@ -69,6 +69,7 @@ projects={
 #		'materialsystem/shaderapiempty',
 		'materialsystem/shaderapidx9',
 		'materialsystem/shaderapidx11',	# GammaSource: native Direct3D 11 renderer
+		'materialsystem/shaderapivk',	# GammaSource: native Vulkan renderer
 		'materialsystem/shaderlib',
 		'materialsystem/stdshaders',
 		'mathlib',
