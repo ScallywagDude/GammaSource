@@ -17,7 +17,7 @@ class IGameList;
 //-----------------------------------------------------------------------------
 // Purpose: Dialog which lets the user add a server by IP address
 //-----------------------------------------------------------------------------
-class CDialogAddServer : public vgui::Frame //, public ISteamMatchmakingPingResponse
+class CDialogAddServer : public vgui::Frame, public IServerListResponse //, public ISteamMatchmakingPingResponse
 {
 	DECLARE_CLASS_SIMPLE( CDialogAddServer, vgui::Frame );
 	friend class CAddServerGameList;
@@ -28,6 +28,7 @@ public:
 
 	void ServerResponded( newgameserver_t &server );
 	void ServerFailedToRespond();
+	void RefreshComplete( NServerResponse response );
 
 	void ApplySchemeSettings( vgui::IScheme *pScheme );
 

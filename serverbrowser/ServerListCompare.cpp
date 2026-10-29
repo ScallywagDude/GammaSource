@@ -209,6 +209,13 @@ int __cdecl PlayersCompare(ListPanel *pPanel, const ListPanelItem &p1, const Lis
 //-----------------------------------------------------------------------------
 int __cdecl LastPlayedCompare(ListPanel *pPanel, const ListPanelItem &p1, const ListPanelItem &p2)
 {
+	// newest first
+	int t1 = p1.kv->GetInt( "LastPlayedTime" );
+	int t2 = p2.kv->GetInt( "LastPlayedTime" );
+	if ( t1 > t2 )
+		return -1;
+	if ( t1 < t2 )
+		return 1;
 	return 0;
 }
 

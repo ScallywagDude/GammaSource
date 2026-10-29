@@ -91,6 +91,11 @@ public:
 	virtual void RequestLANServerList( const char *gamedir, IServerListResponse *response ) = 0;
 	virtual void StopRefresh() = 0;
 
+	// GammaSource: query a fixed set of addresses (favorites, history, add server, game info)
+	virtual void RequestServersInfo( const netadr_t *adr, int count, IServerListResponse *response ) = 0;
+	// GammaSource: drop the request owned by this response object, without calling it back
+	virtual void CancelRequest( IServerListResponse *response ) = 0;
+
 	//virtual HServerQuery PingServer( uint32 unIP, uint16 usPort, ISteamMatchmakingPingResponse *pRequestServersResponse ) = 0; 
 	//virtual HServerQuery PlayerDetails( uint32 unIP, uint16 usPort, ISteamMatchmakingPlayersResponse *pRequestServersResponse ) = 0;
 

@@ -27,6 +27,51 @@ extern ConVar sv_lan;
 #define RETRY_INFO_REQUEST_TIME 0.4 // seconds
 #define MASTER_RESPONSE_TIMEOUT 1.5 // seconds
 #define INFO_REQUEST_TIMEOUT 5.0 // seconds
+#define MASTER_QUERY_TIMEOUT 3.0 // seconds without any master reply before the masters count as down
+#define LAN_SCAN_TIME 1.5 // seconds
+#define ADDRESS_QUERY_TIMEOUT 2.5 // seconds
+#define LAN_SCAN_RETRIES 3
+
+// GammaSource: LAN servers are found by broadcasting info requests to these ports
+static const int g_LanScanPorts[][2] =
+{
+	{ 27015, 27020 },
+	{ 26900, 26905 },
+};
+
+enum EServerListRequestType
+{
+	eRequestInternet = 0,
+	eRequestLAN,
+	eRequestAddresses,
+};
+
+// GammaSource: one in-flight server list query. Several can run at once (the browser
+// page, the add server dialog and every game info dialog each own one).
+struct ServerListRequest_t
+{
+	ServerListRequest_t()
+	{
+		SetDefLessFunc( m_Addresses );
+		SetDefLessFunc( m_RequestTimes );
+	}
+
+	IServerListResponse *m_pResponse;
+	EServerListRequestType m_eType;
+	char m_szGameDir[256];
+
+	bool m_bMasterResponded;
+	int m_iServersResponded;
+	int m_iServersListed; // addresses that came from a master
+	int m_iLanScans;
+
+	double m_flStartTime;
+	double m_flRetryTime;
+	double m_flLastMasterReply;
+
+	CUtlMap<netadr_t, bool> m_Addresses;	// address -> responded
+	CUtlMap<uint, double> m_RequestTimes;	// sequence -> send time
+};
 
 static char g_MasterServers[][64] =
 {
@@ -87,7 +132,6 @@ public:
 	void Heartbeat_f( void );
 
 	void RunFrame();
-	void RetryServersInfoRequest();
 
 	void ReplyInfo( const netadr_t &adr, uint sequence );
 	newgameserver_t &ProcessInfo( bf_read &buf );
@@ -95,33 +139,30 @@ public:
 	// SeversInfo
 	void RequestInternetServerList( const char *gamedir, IServerListResponse *response );
 	void RequestLANServerList( const char *gamedir, IServerListResponse *response );
-	void AddServerAddresses( netadr_t **adr, int count );
-	void RequestServerInfo( const netadr_t &adr );
+	void RequestServersInfo( const netadr_t *adr, int count, IServerListResponse *response );
+	void CancelRequest( IServerListResponse *response );
 	void StopRefresh();
 
 private:
+	ServerListRequest_t *StartRequest( EServerListRequestType type, const char *gamedir, IServerListResponse *response );
+	void FinishRequest( int iRequest, NServerResponse response );
+	bool CheckRequestDone( ServerListRequest_t *req, NServerResponse *pResponse );
+	void SendMasterQuery( ServerListRequest_t *req );
+	void SendLanScan( ServerListRequest_t *req );
+	void RequestServerInfo( ServerListRequest_t *req, const netadr_t &adr );
+	void RetryServersInfoRequest( ServerListRequest_t *req );
+
 	// List of known master servers
 	adrlist_t *m_pMasterAddresses;
 
 	bool m_bInitialized;
-	bool m_bRefreshing;
-
-	int m_iServersResponded;
-
-	double m_flStartRequestTime;
-	double m_flRetryRequestTime;
-	double m_flMasterRequestTime;
 
 	uint m_iInfoSequence;
-	char m_szGameDir[256];
 
 	// If nomaster is true, the server will not send heartbeats to the master server
 	bool	m_bNoMasters;
 
-	CUtlMap<netadr_t, bool> m_serverAddresses;
-	CUtlMap<uint, double> m_serversRequestTime;
-
-	IServerListResponse *m_serverListResponse;
+	CUtlVector<ServerListRequest_t *> m_Requests;
 };
 
 static CMaster s_MasterServer;
@@ -141,12 +182,6 @@ CMaster::CMaster( void )
 	m_pMasterAddresses	= NULL;
 	m_bNoMasters		= false;
 	m_bInitialized = false;
-	m_iServersResponded = 0;
-
-	m_serverListResponse = NULL;
-	SetDefLessFunc( m_serverAddresses );
-	SetDefLessFunc( m_serversRequestTime );
-	m_bRefreshing = false;
 	m_iInfoSequence = 1;
 
 	Init();
@@ -154,56 +189,148 @@ CMaster::CMaster( void )
 
 CMaster::~CMaster( void )
 {
+	m_Requests.PurgeAndDeleteElements();
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: decides whether a request is finished and with which result
+//-----------------------------------------------------------------------------
+bool CMaster::CheckRequestDone( ServerListRequest_t *req, NServerResponse *pResponse )
+{
+	double now = Plat_FloatTime();
+	bool bAllResponded = req->m_iServersResponded >= req->m_Addresses.Count();
+
+	switch( req->m_eType )
+	{
+	case eRequestLAN:
+		if( now - req->m_flStartTime < LAN_SCAN_TIME )
+			return false;
+		*pResponse = req->m_iServersResponded ? nServerResponded : nNoServersListedOnMasterServer;
+		return true;
+
+	case eRequestAddresses:
+		if( !bAllResponded && now - req->m_flStartTime < ADDRESS_QUERY_TIMEOUT )
+			return false;
+		*pResponse = req->m_iServersResponded ? nServerResponded : nServerFailedToRespond;
+		return true;
+
+	case eRequestInternet:
+	default:
+		// the internet list also scans the LAN, give that time to answer
+		if( now - req->m_flStartTime < LAN_SCAN_TIME )
+			return false;
+
+		if( !req->m_bMasterResponded )
+		{
+			if( now - req->m_flStartTime < MASTER_QUERY_TIMEOUT )
+				return false;
+
+			// no master answered at all: LAN servers may still have been found
+			*pResponse = nServerFailedToRespond;
+			return true;
+		}
+
+		if( ( !bAllResponded || now - req->m_flLastMasterReply < MASTER_RESPONSE_TIMEOUT ) &&
+			now - req->m_flStartTime < INFO_REQUEST_TIMEOUT )
+			return false;
+
+		if( req->m_iServersListed == 0 && req->m_iServersResponded == 0 )
+			*pResponse = nNoServersListedOnMasterServer;
+		else
+			*pResponse = nServerResponded;
+		return true;
+	}
 }
 
 void CMaster::RunFrame()
 {
 	CheckHeartbeat();
 
-	if( !m_bRefreshing )
-		return;
-
-	if( m_serverListResponse &&
-		m_flStartRequestTime < Plat_FloatTime()-INFO_REQUEST_TIMEOUT )
+	for( int i = m_Requests.Count() - 1; i >= 0; i-- )
 	{
-		StopRefresh();
-		m_serverListResponse->RefreshComplete( NServerResponse::nServerFailedToRespond );
-		return;
-	}
+		// a callback may have cancelled or started requests
+		if( i >= m_Requests.Count() )
+			continue;
 
-	if( m_iServersResponded > 0 &&
-			m_iServersResponded >= m_serverAddresses.Count() &&
-			m_flMasterRequestTime < Plat_FloatTime() - MASTER_RESPONSE_TIMEOUT )
-	{
-		StopRefresh();
-		m_serverListResponse->RefreshComplete( NServerResponse::nServerResponded );
-		return;
-	}
+		ServerListRequest_t *req = m_Requests[i];
 
-	if( m_flRetryRequestTime < Plat_FloatTime() - RETRY_INFO_REQUEST_TIME )
-	{
-		m_flRetryRequestTime = Plat_FloatTime();
-
-		if( m_serverAddresses.Count() == 0 ) // Retry masterserver request
+		NServerResponse response;
+		if( CheckRequestDone( req, &response ) )
 		{
-			g_pServersInfo->RequestInternetServerList(m_szGameDir, NULL);
-			return;
+			FinishRequest( i, response );
+			continue;
 		}
 
-		if( m_iServersResponded < m_serverAddresses.Count() )
-			RetryServersInfoRequest();
+		if( req->m_flRetryTime < Plat_FloatTime() - RETRY_INFO_REQUEST_TIME )
+		{
+			req->m_flRetryTime = Plat_FloatTime();
+
+			if( req->m_eType == eRequestInternet && !req->m_bMasterResponded )
+				SendMasterQuery( req );
+
+			if( req->m_eType != eRequestAddresses && req->m_iLanScans < LAN_SCAN_RETRIES )
+				SendLanScan( req );
+
+			RetryServersInfoRequest( req );
+		}
+	}
+}
+
+void CMaster::FinishRequest( int iRequest, NServerResponse response )
+{
+	ServerListRequest_t *req = m_Requests[iRequest];
+	m_Requests.Remove( iRequest );
+
+	DevMsg( 2, "Server list request (type %d) finished: result %d, %d of %d servers answered\n",
+		req->m_eType, response, req->m_iServersResponded, req->m_Addresses.Count() );
+
+	IServerListResponse *pResponse = req->m_pResponse;
+	delete req;
+
+	if( pResponse )
+		pResponse->RefreshComplete( response );
+}
+
+ServerListRequest_t *CMaster::StartRequest( EServerListRequestType type, const char *gamedir, IServerListResponse *response )
+{
+	CancelRequest( response );
+
+	// GammaSource: at the main menu the engine is in single player mode and has no UDP
+	// sockets, so every query went into the loopback buffer. Open them, unless a local
+	// game is running (it would lose its loopback connection).
+	if( !NET_IsMultiplayer() && !sv.IsActive() )
+		NET_SetMutiplayer( true );
+
+	ServerListRequest_t *req = new ServerListRequest_t;
+	req->m_pResponse = response;
+	req->m_eType = type;
+	Q_strncpy( req->m_szGameDir, gamedir ? gamedir : "", sizeof( req->m_szGameDir ) );
+	req->m_bMasterResponded = false;
+	req->m_iServersResponded = 0;
+	req->m_iServersListed = 0;
+	req->m_iLanScans = 0;
+	req->m_flStartTime = req->m_flRetryTime = req->m_flLastMasterReply = Plat_FloatTime();
+
+	m_Requests.AddToTail( req );
+	return req;
+}
+
+void CMaster::CancelRequest( IServerListResponse *response )
+{
+	for( int i = m_Requests.Count() - 1; i >= 0; i-- )
+	{
+		if( m_Requests[i]->m_pResponse == response )
+		{
+			DevMsg( 2, "Server list request (type %d) cancelled\n", m_Requests[i]->m_eType );
+			delete m_Requests[i];
+			m_Requests.Remove( i );
+		}
 	}
 }
 
 void CMaster::StopRefresh()
 {
-	if( !m_bRefreshing )
-		return;
-
-	m_iServersResponded = 0;
-	m_bRefreshing = false;
-	m_serverAddresses.RemoveAll();
-	m_serversRequestTime.RemoveAll();
+	m_Requests.PurgeAndDeleteElements();
 }
 
 void CMaster::ReplyInfo( const netadr_t &adr, uint sequence )
@@ -298,69 +425,101 @@ void CMaster::ProcessConnectionlessPacket( netpacket_t *packet )
 		}
 		case M2C_QUERY:
 		{
-			if( !m_bRefreshing )
-				break;
+			CUtlVector<netadr_t> listed;
 
 			ip = msg.ReadLong();
 			port = msg.ReadShort();
 
-			while( ip != 0 && port != 0 )
+			while( ip != 0 && port != 0 && !msg.IsOverflowed() )
 			{
-				netadr_t adr(ip, port);
-
-				unsigned short index = m_serverAddresses.Find(adr);
-				if( index != m_serverAddresses.InvalidIndex() )
-				{
-					ip = msg.ReadLong();
-					port = msg.ReadShort();
-					continue;
-				}
-
-				m_serverAddresses.Insert(adr, false);
-				RequestServerInfo(adr);
-
+				listed.AddToTail( netadr_t( ip, port ) );
 				ip = msg.ReadLong();
 				port = msg.ReadShort();
+			}
+
+			FOR_EACH_VEC( m_Requests, iReq )
+			{
+				ServerListRequest_t *req = m_Requests[iReq];
+				if( req->m_eType != eRequestInternet )
+					continue;
+
+				req->m_bMasterResponded = true;
+				req->m_flLastMasterReply = Plat_FloatTime();
+
+				FOR_EACH_VEC( listed, i )
+				{
+					if( req->m_Addresses.Find( listed[i] ) != req->m_Addresses.InvalidIndex() )
+						continue;
+
+					req->m_Addresses.Insert( listed[i], false );
+					req->m_iServersListed++;
+					RequestServerInfo( req, listed[i] );
+				}
 			}
 			break;
 		}
 		case C2S_INFOREQUEST:
 		{
+			// only a running multiplayer server answers, and only on its own socket
+			if( packet->source != NS_SERVER || !sv.IsActive() || !sv.IsMultiplayer() )
+				break;
+
 			ReplyInfo(packet->from, msg.ReadLong());
 			break;
 		}
 		case S2C_INFOREPLY:
 		{
-			if( !m_bRefreshing )
+			uint sequence = msg.ReadLong();
+
+			ServerListRequest_t *req = NULL;
+			unsigned short rindex = 0;
+			FOR_EACH_VEC( m_Requests, iReq )
+			{
+				rindex = m_Requests[iReq]->m_RequestTimes.Find( sequence );
+				if( rindex != m_Requests[iReq]->m_RequestTimes.InvalidIndex() )
+				{
+					req = m_Requests[iReq];
+					break;
+				}
+			}
+
+			if( !req )
 				break;
 
-			uint sequence = msg.ReadLong();
 			newgameserver_t &s = ProcessInfo( msg );
 
-			unsigned short index = m_serverAddresses.Find(packet->from);
-			unsigned short rindex = m_serversRequestTime.Find(sequence);
+			unsigned short index = req->m_Addresses.Find(packet->from);
+			if( index == req->m_Addresses.InvalidIndex() )
+			{
+				// LAN broadcast replies come from addresses we did not know about
+				if( req->m_eType == eRequestAddresses )
+					break;
 
-			if( index == m_serverAddresses.InvalidIndex() ||
-				rindex == m_serversRequestTime.InvalidIndex() )
+				index = req->m_Addresses.Insert( packet->from, false );
+			}
+
+			if( req->m_Addresses[index] ) // shit happens
 				break;
 
-			double requestTime = m_serversRequestTime[rindex];
+			double requestTime = req->m_RequestTimes[rindex];
 
-			if( m_serverAddresses[index] ) // shit happens
-				return;
+			req->m_Addresses[index] = true;
+			req->m_iServersResponded++;
 
-			m_serverAddresses[index] = true;
 			s.m_nPing = (Plat_FloatTime()-requestTime)*1000.0;
 			s.m_NetAdr = packet->from;
-			m_serverListResponse->ServerResponded( s );
+			s.m_bHadSuccessfulResponse = true;
 
-			m_iServersResponded++;
+			DevMsg( 2, "Server list: %s answered (%s, %s)\n", packet->from.ToString(), s.m_szServerName, s.m_szMap );
+
+			if( req->m_pResponse )
+				req->m_pResponse->ServerResponded( s );
 			break;
 		}
 	}
 }
 
-void CMaster::RequestServerInfo( const netadr_t &adr )
+void CMaster::RequestServerInfo( ServerListRequest_t *req, const netadr_t &adr )
 {
 	static ALIGN4 char string[256] ALIGN4_POST;    // Buffer for sending heartbeat
 	bf_write msg( string, sizeof(string) );
@@ -368,22 +527,41 @@ void CMaster::RequestServerInfo( const netadr_t &adr )
 	msg.WriteLong( CONNECTIONLESS_HEADER );
 	msg.WriteByte( C2S_INFOREQUEST );
 	msg.WriteLong( m_iInfoSequence );
-	m_serversRequestTime.Insert(m_iInfoSequence, Plat_FloatTime());
+	req->m_RequestTimes.Insert(m_iInfoSequence, Plat_FloatTime());
 
 	m_iInfoSequence++;
 	NET_SendPacket( NULL, NS_CLIENT, adr, msg.GetData(), msg.GetNumBytesWritten() );
 }
 
-void CMaster::RetryServersInfoRequest()
+void CMaster::RetryServersInfoRequest( ServerListRequest_t *req )
 {
-	FOR_EACH_MAP_FAST( m_serverAddresses, i )
+	FOR_EACH_MAP_FAST( req->m_Addresses, i )
 	{
-		bool bResponded = m_serverAddresses.Element(i);
+		bool bResponded = req->m_Addresses.Element(i);
 		if( bResponded )
 			continue;
 
-		const netadr_t adr = m_serverAddresses.Key(i);
-		RequestServerInfo( adr );
+		const netadr_t adr = req->m_Addresses.Key(i);
+		RequestServerInfo( req, adr );
+	}
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: broadcasts an info request to the usual server ports on the LAN
+//-----------------------------------------------------------------------------
+void CMaster::SendLanScan( ServerListRequest_t *req )
+{
+	req->m_iLanScans++;
+
+	for( int r = 0; r < ARRAYSIZE( g_LanScanPorts ); r++ )
+	{
+		for( int port = g_LanScanPorts[r][0]; port <= g_LanScanPorts[r][1]; port++ )
+		{
+			netadr_t adr;
+			adr.SetType( NA_BROADCAST );
+			adr.SetPort( port );
+			RequestServerInfo( req, adr );
+		}
 	}
 }
 
@@ -682,24 +860,13 @@ void CMaster::Shutdown(void)
 }
 
 // ServersInfo
-void CMaster::RequestInternetServerList(const char *gamedir, IServerListResponse *response)
+void CMaster::SendMasterQuery( ServerListRequest_t *req )
 {
-	if( m_bNoMasters ) return;
-	strncpy( m_szGameDir, gamedir, sizeof(m_szGameDir) );
-
-	if( response )
-	{
-		StopRefresh();
-		m_bRefreshing = true;
-		m_serverListResponse = response;
-		m_flRetryRequestTime = m_flStartRequestTime = m_flMasterRequestTime = Plat_FloatTime();
-	}
-
 	ALIGN4 char buf[256] ALIGN4_POST;
 	bf_write msg(buf, sizeof(buf));
 
 	msg.WriteByte( C2M_CLIENTQUERY );
-	msg.WriteString(gamedir);
+	msg.WriteString( req->m_szGameDir );
 
 	adrlist_t *p;
 
@@ -711,12 +878,34 @@ void CMaster::RequestInternetServerList(const char *gamedir, IServerListResponse
 	}
 }
 
-void CMaster::RequestLANServerList(const char *gamedir, IServerListResponse *response)
+void CMaster::RequestInternetServerList(const char *gamedir, IServerListResponse *response)
 {
+	ServerListRequest_t *req = StartRequest( eRequestInternet, gamedir, response );
 
+	// GammaSource: Steam's masters are gone and the community ones may be down too,
+	// so the internet list also picks up servers on the local network.
+	if( !m_bNoMasters )
+		SendMasterQuery( req );
+
+	SendLanScan( req );
 }
 
-void CMaster::AddServerAddresses( netadr_t **adr, int count )
+void CMaster::RequestLANServerList(const char *gamedir, IServerListResponse *response)
 {
+	ServerListRequest_t *req = StartRequest( eRequestLAN, gamedir, response );
+	SendLanScan( req );
+}
 
+void CMaster::RequestServersInfo( const netadr_t *adr, int count, IServerListResponse *response )
+{
+	ServerListRequest_t *req = StartRequest( eRequestAddresses, "", response );
+
+	for( int i = 0; i < count; i++ )
+	{
+		if( req->m_Addresses.Find( adr[i] ) != req->m_Addresses.InvalidIndex() )
+			continue;
+
+		req->m_Addresses.Insert( adr[i], false );
+		RequestServerInfo( req, adr[i] );
+	}
 }

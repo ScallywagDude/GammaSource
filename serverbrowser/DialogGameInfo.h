@@ -20,7 +20,7 @@ struct challenge_s
 //-----------------------------------------------------------------------------
 // Purpose: Dialog for displaying information about a game server
 //-----------------------------------------------------------------------------
-class CDialogGameInfo : public vgui::Frame, public ISteamMatchmakingPlayersResponse, public ISteamMatchmakingPingResponse
+class CDialogGameInfo : public vgui::Frame, public ISteamMatchmakingPlayersResponse, public ISteamMatchmakingPingResponse, public IServerListResponse
 {
 	DECLARE_CLASS_SIMPLE( CDialogGameInfo, vgui::Frame ); 
 
@@ -50,6 +50,11 @@ public:
 
 	// called when the current refresh list is complete
 	virtual void RefreshComplete( EMatchMakingServerResponse response );
+
+	// GammaSource: answers from the engine's own server query
+	virtual void ServerResponded( newgameserver_t &server );
+	virtual void RefreshComplete( NServerResponse response );
+	void SetServerInfo( const newgameserver_t &server );
 
 	// player list received
 	virtual void ClearPlayerList();

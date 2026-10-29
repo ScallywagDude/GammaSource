@@ -124,6 +124,7 @@ CBaseGamesPage::CBaseGamesPage( vgui::Panel *parent, const char *name, EPageType
 	: PropertyPage(parent, name),
 	  m_CallbackFavoritesMsg( this, &CBaseGamesPage::OnFavoritesMsg ),
 	  m_hRequest( NULL ),
+	  m_bRequestActive( false ),
 	  m_pCustomResFilename( pCustomResFilename )
 {
 	SetSize( 624, 278 );
@@ -246,11 +247,8 @@ CBaseGamesPage::CBaseGamesPage( vgui::Panel *parent, const char *name, EPageType
 //-----------------------------------------------------------------------------
 CBaseGamesPage::~CBaseGamesPage()
 {
-	if ( m_hRequest )
-	{
-		steamapicontext->SteamMatchmakingServers()->ReleaseRequest( m_hRequest );
-		m_hRequest = NULL;
-	}
+	if ( g_pServersInfo )
+		g_pServersInfo->CancelRequest( this );
 }
 
 //-----------------------------------------------------------------------------
@@ -313,6 +311,22 @@ void CBaseGamesPage::PerformLayout()
 
 	m_pRefreshQuick->SetVisible( false );
 	m_pFilter->SetVisible(false);
+
+	// GammaSource: the .res gives the filter summary a fixed 90px, which cut "GammaSource; ..." off.
+	// Let it run up to the first button on its right.
+	int fx, fy;
+	m_pFilterString->GetPos( fx, fy );
+	int right = GetWide() - 8;
+	vgui::Button *buttons[] = { m_pAddServer, m_pAddCurrentServer, m_pRefreshAll, m_pConnect };
+	for ( int i = 0; i < ARRAYSIZE( buttons ); i++ )
+	{
+		int bx, by;
+		buttons[i]->GetPos( bx, by );
+		if ( buttons[i]->IsVisible() && bx > fx && bx - 6 < right )
+			right = bx - 6;
+	}
+	if ( right - fx > m_pFilterString->GetWide() )
+		m_pFilterString->SetWide( right - fx );
 
 	Repaint();
 }
@@ -979,12 +993,27 @@ void CBaseGamesPage::UpdateDerivedLayouts( void )
 		pPathID = "MOD";
 	}
 
+	// GammaSource: the .res positions are for a 624x278 page. Only the Internet page's .res
+	// resizes the page itself, so the other tabs kept their controls at those positions inside
+	// a taller page (a blank strip at the bottom). Load at the design size, then grow back so
+	// the auto-resizing controls stretch.
+	int wide, tall;
+	GetSize( wide, tall );
+	SetSize( 624, 278 );
+
 	LoadControlSettings( rgchControlSettings, pPathID );
 
 	if ( !GameSupportsReplay() )
 	{
 		HideReplayFilter();
 	}
+
+	if ( wide > 0 && tall > 0 )
+		SetSize( wide, tall );
+
+	// and have the tab sheet place the page again (the Internet .res moves it)
+	if ( GetParent() )
+		GetParent()->InvalidateLayout();
 }
 
 //-----------------------------------------------------------------------------
@@ -1629,6 +1658,16 @@ int CBaseGamesPage::GetSelectedItemsCount()
 //-----------------------------------------------------------------------------
 void CBaseGamesPage::OnAddToFavorites()
 {
+	// loop through all the selected servers
+	for (int i = 0; i < m_pGameList->GetSelectedItemsCount(); i++)
+	{
+		int serverID = m_pGameList->GetItemUserData(m_pGameList->GetSelectedItem(i));
+
+		newgameserver_t *pServer = GetServer( serverID );
+		if ( pServer )
+			ServerBrowserDialog().AddServerToFavorites( *pServer );
+	}
+
 /*	if ( !steamapicontext->SteamMatchmakingServers() )
 		return;
 
@@ -1680,8 +1719,12 @@ void CBaseGamesPage::RemoveServer( serverdisplay_t &server )
 //-----------------------------------------------------------------------------
 void CBaseGamesPage::OnRefreshServer( int serverID )
 {
+	// GammaSource: no per-server refresh without Steam, re-query the list instead
 	if ( !steamapicontext->SteamMatchmakingServers() )
+	{
+		StartRefresh();
 		return;
+	}
 
 	// walk the list of selected servers refreshing them
 	for (int i = 0; i < m_pGameList->GetSelectedItemsCount(); i++)
@@ -1712,30 +1755,34 @@ void CBaseGamesPage::StartRefresh()
 		steamapicontext->SteamMatchmakingServers()->ReleaseRequest( m_hRequest );
 		m_hRequest = NULL;
 	}*/
+	if ( !g_pServersInfo )
+		return;
+
+	m_bRequestActive = true;
+
+	// GammaSource: everything goes through the engine's own UDP queries now that Steam is gone
 	switch ( m_eMatchMakingType )
 	{
-/*	case eFavoritesServer:
-		m_hRequest = steamapicontext->SteamMatchmakingServers()->RequestFavoritesServerList( GetFilterAppID().AppID(), &pFilters, nFilters, this );
-		break;
+	case eFavoritesServer:
 	case eHistoryServer:
-		m_hRequest = steamapicontext->SteamMatchmakingServers()->RequestHistoryServerList( GetFilterAppID().AppID(), &pFilters, nFilters, this );
-		break;*/
+		{
+			CUtlVector<netadr_t> addresses;
+			ServerBrowserDialog().GetServerListAddresses( m_eMatchMakingType == eFavoritesServer ? "favorites" : "history", addresses );
+			g_pServersInfo->RequestServersInfo( addresses.Base(), addresses.Count(), this );
+		}
+		break;
 	case eInternetServer:
 		g_pServersInfo->RequestInternetServerList(COM_GetModDirectory(), this);
-		//m_hRequest = steamapicontext->SteamMatchmakingServers()->RequestInternetServerList( GetFilterAppID().AppID(), &pFilters, nFilters, this );
-		break;
-/*	case eSpectatorServer:
-		m_hRequest = steamapicontext->SteamMatchmakingServers()->RequestSpectatorServerList( GetFilterAppID().AppID(), &pFilters, nFilters, this );
 		break;
 	case eLANServer:
-		m_hRequest = steamapicontext->SteamMatchmakingServers()->RequestLANServerList( GetFilterAppID().AppID(), this );
+		g_pServersInfo->RequestLANServerList(COM_GetModDirectory(), this);
 		break;
 	default:
-		Assert( !"Unknown server type" );
-		break;*/
+		m_bRequestActive = false;
+		break;
 	}
 
-	SetRefreshing( true );
+	SetRefreshing( m_bRequestActive );
 
 	m_iServerRefreshCount = 0;
 }
@@ -1780,7 +1827,9 @@ void CBaseGamesPage::StopRefresh()
 	m_iServerRefreshCount = 0;
 
 	// Stop the server list refreshing
-	g_pServersInfo->StopRefresh();
+	if ( g_pServersInfo )
+		g_pServersInfo->CancelRequest( this );
+	m_bRequestActive = false;
 
 	// update UI
 	RefreshComplete( nServerResponded );
@@ -1794,6 +1843,8 @@ void CBaseGamesPage::StopRefresh()
 //-----------------------------------------------------------------------------
 void CBaseGamesPage::RefreshComplete( NServerResponse response )
 {
+	m_bRequestActive = false;
+
 	//Force the connect button to recalculate its state.
 	OnItemSelected();
 }
@@ -1803,7 +1854,7 @@ void CBaseGamesPage::RefreshComplete( NServerResponse response )
 //-----------------------------------------------------------------------------
 bool CBaseGamesPage::IsRefreshing()
 {
-	return steamapicontext->SteamMatchmakingServers() && steamapicontext->SteamMatchmakingServers()->IsRefreshing( m_hRequest );
+	return m_bRequestActive;
 }
 
 //-----------------------------------------------------------------------------
@@ -2110,6 +2161,17 @@ void CBaseGamesPage::ServerResponded( newgameserver_t &server )
 	kv->SetString("Tags", pServerItem->m_szGameTags);
 
 	kv->SetInt("Replay", 0);
+
+	if ( m_eMatchMakingType == eHistoryServer )
+	{
+		time_t lastPlayed = (time_t)ServerBrowserDialog().GetServerListTime( "history", pServerItem->m_NetAdr );
+		struct tm *pTime = localtime( &lastPlayed );
+		char szLastPlayed[64] = "";
+		if ( lastPlayed && pTime )
+			strftime( szLastPlayed, sizeof( szLastPlayed ), "%Y-%m-%d %H:%M", pTime );
+		kv->SetString( "LastPlayed", szLastPlayed );
+		kv->SetInt( "LastPlayedTime", (int)lastPlayed );
+	}
 
 	int iServerIndex = m_serversInfo.AddToTail( server );
 

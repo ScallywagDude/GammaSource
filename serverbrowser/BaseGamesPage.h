@@ -245,6 +245,7 @@ protected:
 
 	EPageType m_eMatchMakingType;
 	HServerListRequest m_hRequest;
+	bool m_bRequestActive; // GammaSource: an engine server list query is running for this page
 
 	int	GetSelectedServerID( KeyValues **pKV = NULL );
 

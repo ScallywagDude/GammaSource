@@ -82,6 +82,12 @@ if ($profileLauncher -and $profileLauncherUI) {
 Put-Tree "$Install\bin" "$buildRoot\bin" -Exclude @('*.lib', '*.exp') -Copy
 if ($profileLauncher) { Put-File $profileLauncherUI "$buildRoot\bin\gamma_launcher_ui.dll" -Copy }
 Put-Tree "$Install\platform" "$buildRoot\platform" -Copy
+# The 2003 server browser layouts override the newer ones in platform_misc_dir.vpk and squash the
+# 2018 dialog; drop them and add the repo's platform files (server browser strings).
+foreach ($old in 'DialogAddServer.res', 'DialogGameInfo.res', 'DialogServerBrowser.res', 'DialogServerPage.res', 'DialogServerPassword.res', 'icon_password.tga') {
+    Remove-Item -LiteralPath "$buildRoot\platform\Servers\$old" -Force -ErrorAction SilentlyContinue
+}
+if (Test-Path -LiteralPath "$Repo\gammasource_platform") { Put-Tree "$Repo\gammasource_platform" "$buildRoot\platform" -Copy }
 Put-File "$RetailHL2\platform\platform_misc_dir.vpk" "$buildRoot\platform\platform_misc_dir.vpk"
 Get-ChildItem "$RetailHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$buildRoot\platform\$($_.Name)" }
 

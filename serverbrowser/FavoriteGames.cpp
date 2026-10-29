@@ -30,7 +30,7 @@ CFavoriteGames::~CFavoriteGames()
 //-----------------------------------------------------------------------------
 void CFavoriteGames::LoadFavoritesList()
 {
-	if ( steamapicontext->SteamMatchmaking() && steamapicontext->SteamMatchmaking()->GetFavoriteGameCount() == 0 )
+	if ( ServerBrowserDialog().GetServerListCount( "favorites" ) == 0 )
 	{
 		// set empty message
 		m_pGameList->SetEmptyListText("#ServerBrowser_NoFavoriteServers");
@@ -76,7 +76,7 @@ bool CFavoriteGames::SupportsItem(InterfaceItem_e item)
 void CFavoriteGames::RefreshComplete( NServerResponse response )
 {
 	SetRefreshing(false);
-	if ( steamapicontext->SteamMatchmaking() && steamapicontext->SteamMatchmaking()->GetFavoriteGameCount() == 0 )
+	if ( ServerBrowserDialog().GetServerListCount( "favorites" ) == 0 )
 	{
 		// set empty message
 		m_pGameList->SetEmptyListText("#ServerBrowser_NoFavoriteServers");
@@ -122,21 +122,17 @@ void CFavoriteGames::OnOpenContextMenu(int itemID)
 //-----------------------------------------------------------------------------
 void CFavoriteGames::OnRemoveFromFavorites()
 {
-	if ( !steamapicontext->SteamMatchmakingServers() || !steamapicontext->SteamMatchmaking() )
-		return;
-
 	// iterate the selection
-	for ( int iGame = 0; iGame < m_pGameList->GetSelectedItemsCount(); iGame++ )
+	for ( int iGame = m_pGameList->GetSelectedItemsCount() - 1; iGame >= 0; iGame-- )
 	{
 		int itemID = m_pGameList->GetSelectedItem( iGame );
 		int serverID = m_pGameList->GetItemData(itemID)->userData;
-		
-		gameserveritem_t *pServer = steamapicontext->SteamMatchmakingServers()->GetServerDetails( m_hRequest, serverID );
-		
+
+		newgameserver_t *pServer = GetServer( serverID );
 		if ( pServer )
-		{
-			steamapicontext->SteamMatchmaking()->RemoveFavoriteGame( pServer->m_nAppID, pServer->m_NetAdr.GetIP(), pServer->m_NetAdr.GetConnectionPort(), pServer->m_NetAdr.GetQueryPort(), k_unFavoriteFlagFavorite );
-		}
+			ServerBrowserDialog().RemoveServerFromList( "favorites", pServer->m_NetAdr );
+
+		m_pGameList->RemoveItem( itemID );
 	}
 
 	UpdateStatus();	
@@ -161,6 +157,13 @@ void CFavoriteGames::OnAddServerByName()
 void CFavoriteGames::OnAddCurrentServer()
 {
 	gameserveritem_t *pConnected = ServerBrowserDialog().GetCurrentConnectedServer();
+
+	if ( pConnected && pConnected->m_NetAdr.GetIP() )
+	{
+		netadr_t adr( pConnected->m_NetAdr.GetIP(), pConnected->m_NetAdr.GetConnectionPort() );
+		ServerBrowserDialog().AddServerToList( "favorites", adr, pConnected->GetName() );
+		StartRefresh();
+	}
 
 	if ( pConnected && steamapicontext->SteamMatchmaking() )
 	{

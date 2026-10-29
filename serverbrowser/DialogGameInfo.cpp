@@ -112,6 +112,9 @@ CDialogGameInfo::CDialogGameInfo( vgui::Panel *parent, int serverIP, int queryPo
 //-----------------------------------------------------------------------------
 CDialogGameInfo::~CDialogGameInfo()
 {
+	if ( g_pServersInfo )
+		g_pServersInfo->CancelRequest( this );
+
 	if ( !steamapicontext->SteamMatchmakingServers() )
 		return;
 
@@ -493,7 +496,18 @@ void CDialogGameInfo::ShowAutoRetryOptions(bool state)
 void CDialogGameInfo::RequestInfo()
 {
 	if ( !steamapicontext->SteamMatchmakingServers() )
+	{
+		// GammaSource: ask the engine instead
+		if ( m_iRequestRetry == 0 && g_pServersInfo && m_Server.m_NetAdr.GetIP() )
+		{
+			m_iRequestRetry = system()->GetTimeMillis() + RETRY_TIME;
+
+			uint16 port = m_Server.m_NetAdr.GetQueryPort() ? m_Server.m_NetAdr.GetQueryPort() : m_Server.m_NetAdr.GetConnectionPort();
+			netadr_t adr( m_Server.m_NetAdr.GetIP(), port );
+			g_pServersInfo->RequestServersInfo( &adr, 1, this );
+		}
 		return;
+	}
 
 	if ( m_iRequestRetry == 0 )
 	{
@@ -717,6 +731,44 @@ void CDialogGameInfo::ConnectToServer()
 //-----------------------------------------------------------------------------
 void CDialogGameInfo::RefreshComplete( EMatchMakingServerResponse response )
 {
+}
+
+//-----------------------------------------------------------------------------
+// Purpose: GammaSource: copies what the engine query found into the dialog
+//-----------------------------------------------------------------------------
+void CDialogGameInfo::SetServerInfo( const newgameserver_t &server )
+{
+	m_Server.SetName( server.m_szServerName );
+	Q_strncpy( m_Server.m_szMap, server.m_szMap, sizeof( m_Server.m_szMap ) );
+	Q_strncpy( m_Server.m_szGameDir, server.m_szGameDir, sizeof( m_Server.m_szGameDir ) );
+	Q_strncpy( m_Server.m_szGameDescription, server.m_szGameDescription, sizeof( m_Server.m_szGameDescription ) );
+	Q_strncpy( m_Server.m_szGameTags, server.m_szGameTags, sizeof( m_Server.m_szGameTags ) );
+	m_Server.m_nPlayers = server.m_nPlayers;
+	m_Server.m_nMaxPlayers = server.m_nMaxPlayers;
+	m_Server.m_nBotPlayers = server.m_nBotPlayers;
+	m_Server.m_bPassword = server.m_bPassword;
+	m_Server.m_nPing = server.m_nPing;
+	m_Server.m_bHadSuccessfulResponse = server.m_bHadSuccessfulResponse;
+
+	SetDialogVariable( "game", server.m_szServerName );
+
+	InvalidateLayout();
+	Repaint();
+}
+
+void CDialogGameInfo::ServerResponded( newgameserver_t &server )
+{
+	SetServerInfo( server );
+	m_bServerNotResponding = false;
+
+	if ( m_bConnecting )
+		ConnectToServer();
+}
+
+void CDialogGameInfo::RefreshComplete( NServerResponse response )
+{
+	if ( response == nServerFailedToRespond )
+		ServerFailedToRespond();
 }
 
 //-----------------------------------------------------------------------------

@@ -51,6 +51,13 @@ public:
 	// Adds a server to the list of favorites
 	void AddServerToFavorites(newgameserver_t &server);
 
+	// GammaSource: favorites and history are kept in ServerBrowserLists.vdf instead of Steam
+	void AddServerToList( const char *pszList, const netadr_t &adr, const char *pszName );
+	void RemoveServerFromList( const char *pszList, const netadr_t &adr );
+	void GetServerListAddresses( const char *pszList, CUtlVector<netadr_t> &addresses );
+	int GetServerListCount( const char *pszList );
+	int GetServerListTime( const char *pszList, const netadr_t &adr );
+
 	// begins the process of joining a server from a game list
 	// the game info dialog it opens will also update the game list
 	CDialogGameInfo *JoinGame(IGameList *gameList, newgameserver_t *pServer);
@@ -127,6 +134,9 @@ private:
 
 	KeyValues *m_pSavedData;
 	KeyValues *m_pFilterData;
+	KeyValues *m_pServerLists;
+
+	void SaveServerLists();
 
 	// context menu
 	CServerContextMenu *m_pContextMenu;

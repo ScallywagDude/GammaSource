@@ -108,6 +108,9 @@ CDialogAddServer::CDialogAddServer(vgui::Panel *parent, IGameList *gameList) : F
 //-----------------------------------------------------------------------------
 CDialogAddServer::~CDialogAddServer()
 {
+	if ( g_pServersInfo )
+		g_pServersInfo->CancelRequest( this );
+
 	FOR_EACH_VEC( m_Queries, i )
 	{
 		if ( steamapicontext->SteamMatchmakingServers() )
@@ -203,7 +206,7 @@ void CDialogAddServer::OnOK()
 //-----------------------------------------------------------------------------
 void CDialogAddServer::TestServers()
 {
-	if ( !steamapicontext->SteamMatchmakingServers() )
+	if ( !g_pServersInfo )
 		return;
 
 	m_pDiscoveredGames->SetEmptyListText( "" );
@@ -255,10 +258,8 @@ void CDialogAddServer::TestServers()
 	m_pTabPanel->AddPage( m_pDiscoveredGames, str );
 	m_pTabPanel->InvalidateLayout();
 	
-/*	FOR_EACH_VEC( vecAdress, iAddress )
-	{
-		m_Queries.AddToTail( steamapicontext->SteamMatchmakingServers()->PingServer( vecAdress[ iAddress ].GetIPHostByteOrder(), vecAdress[ iAddress ].GetPort(), this ) );
-	}*/
+	// GammaSource: the engine pings every candidate address for us
+	g_pServersInfo->RequestServersInfo( vecAdress.Base(), vecAdress.Count(), this );
 }
 
 
@@ -302,6 +303,12 @@ void CDialogAddServer::ServerResponded( newgameserver_t &server )
 void CDialogAddServer::ServerFailedToRespond()
 {
 	m_pDiscoveredGames->SetEmptyListText( "#ServerBrowser_ServerNotResponding" );
+}
+
+void CDialogAddServer::RefreshComplete( NServerResponse response )
+{
+	if ( m_pDiscoveredGames->GetItemCount() == 0 )
+		ServerFailedToRespond();
 }
 
 void CDialogAddServer::ApplySchemeSettings( IScheme *pScheme )
