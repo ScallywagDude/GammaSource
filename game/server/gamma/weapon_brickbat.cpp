@@ -47,7 +47,9 @@ struct BrickbatAmmo_s
 
 BrickbatAmmo_s	BrickBatAmmoArray[NUM_BRICKBAT_AMMO_TYPES] =
 {
-	{ "grenade_rockbb",			BRICKBAT_ROCK,			5,	"models/weapons/v_bb_bottle.mdl",		"models/props_junk/Rock001a.mdl" },
+	// GammaSource: the rock has no hand bone or bottle-shaped view model of its own, so the
+	// player held nothing in third person; it shares the bottle's models like its view model.
+	{ "grenade_rockbb",			BRICKBAT_ROCK,			5,	"models/weapons/v_bb_bottle.mdl",		"models/weapons/w_bb_bottle.mdl" },
 	{ "grenade_beerbottle",		BRICKBAT_BOTTLE,		3,	"models/weapons/v_bb_bottle.mdl",		"models/weapons/w_bb_bottle.mdl" },
 	{ "grenade_crematorhead",	BRICKBAT_CREMATORHEAD,	1,	"models/weapons/v_bb_crematorhead.mdl",	"models/cremator_head.mdl" },
 };

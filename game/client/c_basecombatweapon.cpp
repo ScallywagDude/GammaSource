@@ -42,6 +42,7 @@ C_BaseCombatWeapon *GetActiveWeapon( void )
 static ConVar gamma_physgun_grip_x( "gamma_physgun_grip_x", "0", FCVAR_CHEAT, "Early gravity gun hand-local grip X" );
 static ConVar gamma_physgun_grip_y( "gamma_physgun_grip_y", "0", FCVAR_CHEAT, "Early gravity gun hand-local grip Y" );
 static ConVar gamma_physgun_grip_z( "gamma_physgun_grip_z", "0", FCVAR_CHEAT, "Early gravity gun hand-local grip Z" );
+static ConVar gamma_wm_handfix( "gamma_wm_handfix", "0 0 0", FCVAR_NONE, "Extra rotation (pitch yaw roll) for one-bone weapon world models held by the gamma player, for tuning" );
 
 static void GammaWeaponGripStatus( const CCommand &args )
 {
@@ -614,6 +615,23 @@ void C_BaseCombatWeapon::BuildTransformations( CStudioHdr *header, Vector *pos, 
 			-0.98462955f, 0.14565292f, -0.09638390f, gamma_physgun_grip_y.GetFloat(),
 			0.08254258f, -0.09826792f, -0.99173086f, gamma_physgun_grip_z.GetFloat() );
 		MatrixCopy( earlyPhysgunGrip, grip );
+	}
+	// One-bone world models whose root axes don't line up with the hand
+	// (checked in third person against the player's hold pose).
+	QAngle extra( 0, 0, 0 );
+	if ( !Q_stricmp( GetWorldModel(), "models/weapons/w_crossbow.mdl" ) )
+		extra.Init( -90, 0, 0 );
+	else if ( !Q_stricmp( GetWorldModel(), "models/weapons/w_guardgun.mdl" ) )
+		extra.Init( 0, 90, 0 );
+	QAngle tweak;
+	if ( sscanf( gamma_wm_handfix.GetString(), "%f %f %f", &tweak.x, &tweak.y, &tweak.z ) == 3 )
+		extra += tweak;
+	if ( extra != vec3_angle )
+	{
+		matrix3x4_t rot, tuned;
+		AngleMatrix( extra, rot );
+		ConcatTransforms( grip, rot, tuned );
+		grip = tuned;
 	}
 	ConcatTransforms( owner->GetBone( hand ), grip, root );
 	MatrixInvert( GetBone( 0 ), inverseRoot );
