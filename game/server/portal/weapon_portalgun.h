@@ -65,7 +65,7 @@ public:
 	virtual void UpdateOnRemove( void );
 	void Spawn( void );
 	virtual void Activate();
-	void DoEffectBlast( bool bPortal2, int iPlacedBy, const Vector &ptStart, const Vector &ptFinalPos, const QAngle &qStartAngles, float fDelay );
+	void DoEffectBlast( bool bPortal2, int iPlacedBy, const Vector &ptStart, const Vector &ptFinalPos, const QAngle &qStartAngles, float fDelay, float fStartDelay = 0.0f );
 	virtual void OnPickedUp( CBaseCombatCharacter *pNewOwner );
 	virtual bool IsPortalGun() { return true; }
 
@@ -106,7 +106,7 @@ public:
 	void FirePortalDirection1( inputdata_t &inputdata );
 	void FirePortalDirection2( inputdata_t &inputdata );
 
-	float TraceFirePortal( bool bPortal2, const Vector &vTraceStart, const Vector &vDirection, trace_t &tr, Vector &vFinalPosition, QAngle &qFinalAngles, int iPlacedBy, bool bTest = false );
+	float TraceFirePortal( bool bPortal2, const Vector &vTraceStart, const Vector &vDirection, trace_t &tr, Vector &vFinalPosition, QAngle &qFinalAngles, int iPlacedBy, bool bTest = false, struct PortalTraceHops_t *pHops = NULL );
 	float FirePortal( bool bPortal2, Vector *pVector = 0, bool bTest = false );
 
 	CSoundPatch		*m_pMiniGravHoldSound;

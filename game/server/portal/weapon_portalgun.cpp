@@ -178,9 +178,10 @@ void CWeaponPortalgun::StopLoopingSounds()
 	BaseClass::StopLoopingSounds();
 }
 
-void CWeaponPortalgun::DoEffectBlast( bool bPortal2, int iPlacedBy, const Vector &ptStart, const Vector &ptFinalPos, const QAngle &qStartAngles, float fDelay )
+void CWeaponPortalgun::DoEffectBlast( bool bPortal2, int iPlacedBy, const Vector &ptStart, const Vector &ptFinalPos, const QAngle &qStartAngles, float fDelay, float fStartDelay /*= 0.0f*/ )
 {
 	CEffectData	fxData;
+	fxData.m_flMagnitude = clamp( fStartDelay * 1000.0f, 0.0f, 1023.0f ); // GammaSource: ms until this leg of the blast appears
 	fxData.m_vOrigin = ptStart;
 	fxData.m_vStart = ptFinalPos;
 	fxData.m_flScale = gpGlobals->curtime + fDelay;
@@ -478,8 +479,17 @@ void CWeaponPortalgun::FirePortalDirection2( inputdata_t &inputdata )
 	}
 }
 
-float CWeaponPortalgun::TraceFirePortal( bool bPortal2, const Vector &vTraceStart, const Vector &vDirection, trace_t &tr, Vector &vFinalPosition, QAngle &qFinalAngles, int iPlacedBy, bool bTest /*= false*/ )
+float CWeaponPortalgun::TraceFirePortal( bool bPortal2, const Vector &vTraceStartIn, const Vector &vDirectionIn, trace_t &tr, Vector &vFinalPosition, QAngle &qFinalAngles, int iPlacedBy, bool bTest /*= false*/, PortalTraceHops_t *pHops /*= NULL*/ )
 {
+	// GammaSource: the shot's start and direction change each time it goes through a portal
+	Vector vTraceStart = vTraceStartIn;
+	Vector vDirection = vDirectionIn;
+
+	if ( pHops )
+	{
+		pHops->iCount = 0;
+	}
+
 	CTraceFilterSimpleClassnameList baseFilter( this, COLLISION_GROUP_NONE );
 	UTIL_Portal_Trace_Filter( &baseFilter );
 	CTraceFilterTranslateClones traceFilterPortalShot( &baseFilter );
@@ -536,6 +546,39 @@ float CWeaponPortalgun::TraceFirePortal( bool bPortal2, const Vector &vTraceStar
 	// Trace to see where the portal hit
 	UTIL_TraceLine( vTraceStart, vTraceStart + (vDirection * m_fMaxRange1), MASK_SHOT_PORTAL, &traceFilterPortalShot, &tr );
 
+	// GammaSource: if the shot reaches a portal before it hits anything, carry on out of the linked
+	// portal with the range that's left, as many times as it takes, so it can chain through portals.
+	float fRangeLeft = m_fMaxRange1;
+	for ( int iHop = 0; iHop < PORTAL_TRACE_MAX_HOPS && !tr.startsolid; ++iHop )
+	{
+		Ray_t rayShot;
+		rayShot.Init( vTraceStart, vTraceStart + (vDirection * fRangeLeft) );
+
+		float fPortalFraction = tr.fraction + 0.0001f;
+		CProp_Portal *pThroughPortal = UTIL_Portal_FirstAlongRay( rayShot, fPortalFraction );
+		if ( !pThroughPortal )
+			break;
+
+		VMatrix matThisToLinked = pThroughPortal->MatrixThisToLinked();
+
+		Vector vEntry = vTraceStart + vDirection * ( fRangeLeft * fPortalFraction );
+		Vector vExit;
+		UTIL_Portal_PointTransform( matThisToLinked, vEntry, vExit );
+		UTIL_Portal_VectorTransform( matThisToLinked, vDirection, vDirection );
+
+		if ( pHops )
+		{
+			pHops->vEntry[ iHop ] = vEntry;
+			pHops->vExit[ iHop ] = vExit;
+			pHops->iCount = iHop + 1;
+		}
+
+		fRangeLeft *= ( 1.0f - fPortalFraction );
+		vTraceStart = vExit;
+
+		UTIL_TraceLine( vTraceStart, vTraceStart + (vDirection * fRangeLeft), MASK_SHOT_PORTAL, &traceFilterPortalShot, &tr );
+	}
+
 	if ( !tr.DidHit() || tr.startsolid )
 	{
 		// If it didn't hit anything, fizzle
@@ -572,7 +615,7 @@ float CWeaponPortalgun::TraceFirePortal( bool bPortal2, const Vector &vTraceStar
 			CBasePropDoor *pRotatingDoor = static_cast<CBasePropDoor *>( list[i] );
 
 			Ray_t rayDoor;
-			rayDoor.Init( vTraceStart, vTraceStart + (vDirection * m_fMaxRange1) );
+			rayDoor.Init( vTraceStart, vTraceStart + (vDirection * fRangeLeft) );
 
 			trace_t trDoor;
 			pRotatingDoor->TestCollision( rayDoor, 0, trDoor );
@@ -753,7 +796,8 @@ float CWeaponPortalgun::FirePortal( bool bPortal2, Vector *pVector /*= 0*/, bool
 	PortalPlacedByType ePlacedBy = ( bPlayer ) ? ( PORTAL_PLACED_BY_PLAYER ) : ( PORTAL_PLACED_BY_PEDESTAL );
 
 	trace_t tr;
-	float fPlacementSuccess = TraceFirePortal( bPortal2, vTraceStart, vDirection, tr, vFinalPosition, qFinalAngles, ePlacedBy, bTest );
+	PortalTraceHops_t portalHops;
+	float fPlacementSuccess = TraceFirePortal( bPortal2, vTraceStart, vDirection, tr, vFinalPosition, qFinalAngles, ePlacedBy, bTest, &portalHops );
 
 	if ( sv_portal_placement_never_fail.GetBool() )
 	{
@@ -782,12 +826,67 @@ float CWeaponPortalgun::FirePortal( bool bPortal2, Vector *pVector /*= 0*/, bool
 		}
 		else
 		{
-			fDelay = clamp(vTracerOrigin.DistTo(tr.endpos) / ((bPlayer) ? (BLAST_SPEED) : (BLAST_SPEED_NON_PLAYER)), 0.0f, sv_portal_projectile_delay.GetFloat());
+			// GammaSource: the blast travels the whole path, through every portal it passed
+			Vector vLegStart = vTracerOrigin;
+			float fPathLength = 0.0f;
+			for ( int iHop = 0; iHop < portalHops.iCount; ++iHop )
+			{
+				fPathLength += vLegStart.DistTo( portalHops.vEntry[ iHop ] );
+				vLegStart = portalHops.vExit[ iHop ];
+			}
+			fPathLength += vLegStart.DistTo( tr.endpos );
+
+			fDelay = clamp(fPathLength / ((bPlayer) ? (BLAST_SPEED) : (BLAST_SPEED_NON_PLAYER)), 0.0f, sv_portal_projectile_delay.GetFloat());
 		}
 		
 		QAngle qFireAngles;
 		VectorAngles( vDirection, qFireAngles );
-		DoEffectBlast( pPortal->m_bIsPortal2, ePlacedBy, vTracerOrigin, vFinalPosition, qFireAngles, fDelay );
+		if ( portalHops.iCount == 0 )
+		{
+			DoEffectBlast( pPortal->m_bIsPortal2, ePlacedBy, vTracerOrigin, vFinalPosition, qFireAngles, fDelay );
+		}
+		else
+		{
+			// GammaSource: one blast per leg between portals, each starting when the previous one
+			// reaches its portal, sharing the delay by leg length
+			Vector vLegStarts[ PORTAL_TRACE_MAX_HOPS + 1 ];
+			Vector vLegEnds[ PORTAL_TRACE_MAX_HOPS + 1 ];
+			int iLegs = 0;
+			Vector vLegStart = vTracerOrigin;
+			for ( int iHop = 0; iHop < portalHops.iCount; ++iHop )
+			{
+				vLegStarts[ iLegs ] = vLegStart;
+				vLegEnds[ iLegs ] = portalHops.vEntry[ iHop ];
+				++iLegs;
+				vLegStart = portalHops.vExit[ iHop ];
+			}
+			vLegStarts[ iLegs ] = vLegStart;
+			vLegEnds[ iLegs ] = vFinalPosition;
+			++iLegs;
+
+			float fPathLength = 0.0f;
+			for ( int iLeg = 0; iLeg < iLegs; ++iLeg )
+			{
+				fPathLength += vLegStarts[ iLeg ].DistTo( vLegEnds[ iLeg ] );
+			}
+
+			float fTravelled = 0.0f;
+			for ( int iLeg = 0; iLeg < iLegs; ++iLeg )
+			{
+				float fLegLength = vLegStarts[ iLeg ].DistTo( vLegEnds[ iLeg ] );
+				float fStartDelay = ( fPathLength > 0.0f ) ? ( fDelay * fTravelled / fPathLength ) : ( 0.0f );
+				fTravelled += fLegLength;
+				float fEndDelay = ( fPathLength > 0.0f ) ? ( fDelay * fTravelled / fPathLength ) : ( fDelay );
+
+				QAngle qLegAngles = qFireAngles;
+				if ( iLeg > 0 )
+				{
+					VectorAngles( vLegEnds[ iLeg ] - vLegStarts[ iLeg ], qLegAngles );
+				}
+
+				DoEffectBlast( pPortal->m_bIsPortal2, ePlacedBy, vLegStarts[ iLeg ], vLegEnds[ iLeg ], qLegAngles, fEndDelay, fStartDelay );
+			}
+		}
 
 		pPortal->SetContextThink( &CProp_Portal::DelayedPlacementThink, gpGlobals->curtime + fDelay, s_pDelayedPlacementContext ); 
 		pPortal->m_vDelayedPosition = vFinalPosition;

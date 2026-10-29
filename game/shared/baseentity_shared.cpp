@@ -1731,6 +1731,8 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 #ifdef PORTAL
 		CProp_Portal *pShootThroughPortal = NULL;
 		float fPortalFraction = 2.0f;
+		PortalTraceHops_t portalHops;
+		portalHops.iCount = 0;
 #endif
 
 
@@ -1741,7 +1743,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			Ray_t rayBullet;
 			rayBullet.Init( info.m_vecSrc, vecEnd );
 			pShootThroughPortal = UTIL_Portal_FirstAlongRay( rayBullet, fPortalFraction );
-			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr ) )
+			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr, true, &portalHops ) )
 			{
 				pShootThroughPortal = NULL;
 			}
@@ -1755,7 +1757,7 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			Ray_t rayBullet;
 			rayBullet.Init( info.m_vecSrc, vecEnd );
 			pShootThroughPortal = UTIL_Portal_FirstAlongRay( rayBullet, fPortalFraction );
-			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr ) )
+			if ( !UTIL_Portal_TraceRay_Bullets( pShootThroughPortal, rayBullet, MASK_SHOT, &traceFilter, &tr, true, &portalHops ) )
 			{
 				pShootThroughPortal = NULL;
 			}
@@ -1807,23 +1809,18 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 			Vector vBubbleEnd = tr.endpos;
 
 #ifdef PORTAL
+			// GammaSource: one bubble trail per stretch between portals
 			if ( pShootThroughPortal )
 			{
-				vBubbleEnd = info.m_vecSrc + ( vecEnd - info.m_vecSrc ) * fPortalFraction;
+				for ( int iHop = 0; iHop < portalHops.iCount; ++iHop )
+				{
+					CreateBubbleTrailTracer( vBubbleStart, portalHops.vEntry[ iHop ], vecDir );
+					vBubbleStart = portalHops.vExit[ iHop ];
+				}
 			}
 #endif //#ifdef PORTAL
 
 			CreateBubbleTrailTracer( vBubbleStart, vBubbleEnd, vecDir );
-			
-#ifdef PORTAL
-			if ( pShootThroughPortal )
-			{
-				Vector vTransformedIntersection;
-				UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), vBubbleEnd, vTransformedIntersection );
-
-				CreateBubbleTrailTracer( vTransformedIntersection, tr.endpos, vecDir );
-			}
-#endif //#ifdef PORTAL
 
 #endif //#ifdef GAME_DLL
 			bHitWater = true;
@@ -1972,9 +1969,16 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 				Tracer.endpos = vecTracerDest;
 
 #ifdef PORTAL
+				// GammaSource: one tracer per stretch between portals
 				if ( pShootThroughPortal )
 				{
-					Tracer.endpos = info.m_vecSrc + ( vecEnd - info.m_vecSrc ) * fPortalFraction;
+					for ( int iHop = 0; iHop < portalHops.iCount; ++iHop )
+					{
+						Tracer.endpos = portalHops.vEntry[ iHop ];
+						MakeTracer( vecTracerSrc, Tracer, pAmmoDef->TracerType(info.m_iAmmoType) );
+						ComputeTracerStartPosition( portalHops.vExit[ iHop ], &vecTracerSrc );
+					}
+					Tracer.endpos = vecTracerDest;
 				}
 #endif //#ifdef PORTAL
 
@@ -1983,19 +1987,9 @@ void CBaseEntity::FireBullets( const FireBulletsInfo_t &info )
 #ifdef PORTAL
 				if ( pShootThroughPortal )
 				{
-					Vector vTransformedIntersection;
-					UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), Tracer.endpos, vTransformedIntersection );
-					ComputeTracerStartPosition( vTransformedIntersection, &vecTracerSrc );
-
-					Tracer.endpos = vecTracerDest;
-
-					MakeTracer( vecTracerSrc, Tracer, pAmmoDef->TracerType(info.m_iAmmoType) );
-
-					// Shooting through a portal, the damage direction is translated through the passed-through portal
-					// so the damage indicator hud animation is correct
-					Vector vDmgOriginThroughPortal;
-					UTIL_Portal_PointTransform( pShootThroughPortal->MatrixThisToLinked(), info.m_vecSrc, vDmgOriginThroughPortal );
-					g_MultiDamage.SetDamagePosition ( vDmgOriginThroughPortal );
+					// Shooting through portals, the damage direction is translated through every passed-through portal
+					// so the damage indicator hud animation is correct. The trace's start is the source moved through them all.
+					g_MultiDamage.SetDamagePosition ( tr.startpos );
 				}
 				else
 				{

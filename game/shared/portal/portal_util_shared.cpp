@@ -288,8 +288,13 @@ CProp_Portal* UTIL_Portal_FirstAlongRay( const Ray_t &ray, float &fMustBeCloserT
 }
 
 
-bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace, bool bTraceHolyWall )
+bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace, bool bTraceHolyWall, PortalTraceHops_t *pHops )
 {
+	if ( pHops )
+	{
+		pHops->iCount = 0;
+	}
+
 	if( !pPortal || !pPortal->IsActivedAndLinked() )
 	{
 		//not in a portal environment, use regular traces
@@ -324,16 +329,6 @@ bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray
 		return false;
 	}
 
-	Ray_t rayPostPortal;
-	rayPostPortal = ray;
-	rayPostPortal.m_Start = ray.m_Start + ray.m_Delta * fPortalFraction;
-	rayPostPortal.m_Delta = ray.m_Delta * ( 1.0f - fPortalFraction );
-
-	VMatrix matThisToLinked = pPortal->MatrixThisToLinked();
-
-	Ray_t rayTransformed;
-	UTIL_Portal_RayTransform( matThisToLinked, rayPostPortal, rayTransformed );
-
 	// After a bullet traces through a portal it can hit the player that fired it
 	CTraceFilterSimple *pSimpleFilter = dynamic_cast<CTraceFilterSimple*>(pTraceFilter);
 	const IHandleEntity *pPassEntity = NULL;
@@ -343,17 +338,56 @@ bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray
 		pSimpleFilter->SetPassEntity( 0 );
 	}
 
+	// GammaSource: keep following the shot through every portal it reaches before it hits something.
+	// fFractionStart/fFractionScale map the current ray's fractions back onto the original ray.
+	Ray_t rayCurrent = ray;
+	Vector vVirtualStart = ray.m_Start;
+	float fFractionStart = 0.0f;
+	float fFractionScale = 1.0f;
+	int iHops = 0;
+
 	trace_t trPostPortal;
-	enginetrace->TraceRay( rayTransformed, fMask, pTraceFilter, &trPostPortal );
+
+	while ( pPortal && iHops < PORTAL_TRACE_MAX_HOPS )
+	{
+		Ray_t rayPostPortal;
+		rayPostPortal = rayCurrent;
+		rayPostPortal.m_Start = rayCurrent.m_Start + rayCurrent.m_Delta * fPortalFraction;
+		rayPostPortal.m_Delta = rayCurrent.m_Delta * ( 1.0f - fPortalFraction );
+
+		VMatrix matThisToLinked = pPortal->MatrixThisToLinked();
+
+		Ray_t rayTransformed;
+		UTIL_Portal_RayTransform( matThisToLinked, rayPostPortal, rayTransformed );
+
+		if ( pHops )
+		{
+			pHops->vEntry[ iHops ] = rayPostPortal.m_Start;
+			pHops->vExit[ iHops ] = rayTransformed.m_Start;
+			pHops->iCount = iHops + 1;
+		}
+
+		UTIL_Portal_PointTransform( matThisToLinked, vVirtualStart, vVirtualStart );
+		fFractionStart += fFractionScale * fPortalFraction;
+		fFractionScale *= ( 1.0f - fPortalFraction );
+		++iHops;
+
+		enginetrace->TraceRay( rayTransformed, fMask, pTraceFilter, &trPostPortal );
+
+		// Did the shot reach another portal before it hit anything? The portal it just came
+		// out of faces along the ray, so UTIL_Portal_FirstAlongRay skips it.
+		rayCurrent = rayTransformed;
+		fPortalFraction = trPostPortal.fraction + 0.0001f;
+		pPortal = UTIL_Portal_FirstAlongRay( rayCurrent, fPortalFraction );
+	}
 
 	if ( pSimpleFilter )
 	{
 		pSimpleFilter->SetPassEntity( pPassEntity );
 	}
 
-	//trPostPortal.startpos = ray.m_Start;
-	UTIL_Portal_PointTransform( matThisToLinked, ray.m_Start, trPostPortal.startpos );
-	trPostPortal.fraction = trPostPortal.fraction * ( 1.0f - fPortalFraction ) + fPortalFraction;
+	trPostPortal.startpos = vVirtualStart;
+	trPostPortal.fraction = fFractionStart + fFractionScale * trPostPortal.fraction;
 
 	*pTrace = trPostPortal;
 
@@ -364,74 +398,7 @@ bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray
 bool UTIL_Portal_TraceRay_Bullets(const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, const IHandleEntity *ignore, int collisionGroup, trace_t *pTrace, bool bTraceHolyWall)
 {
 	CTraceFilterSimple traceFilter( ignore, collisionGroup );
-	if (!pPortal || !pPortal->IsActivedAndLinked())
-	{
-		//not in a portal environment, use regular traces
-		enginetrace->TraceRay(ray, fMask, &traceFilter, pTrace);
-		return false;
-	}
-
-	trace_t trReal;
-
-	enginetrace->TraceRay(ray, fMask, &traceFilter, &trReal);
-
-	Vector vRayNormal = ray.m_Delta;
-	VectorNormalize(vRayNormal);
-
-	Vector vPortalForward;
-	pPortal->GetVectors(&vPortalForward, 0, 0);
-
-	// If the ray isn't going into the front of the portal, just use the real trace
-	if (vPortalForward.Dot(vRayNormal) > 0.0f)
-	{
-		*pTrace = trReal;
-		return false;
-	}
-
-	// If the real trace collides before the portal plane, just use the real trace
-	float fPortalFraction = UTIL_IntersectRayWithPortal(ray, pPortal);
-
-	if (fPortalFraction == -1.0f || trReal.fraction + 0.0001f < fPortalFraction)
-	{
-		// Didn't intersect or the real trace intersected closer
-		*pTrace = trReal;
-		return false;
-	}
-
-	Ray_t rayPostPortal;
-	rayPostPortal = ray;
-	rayPostPortal.m_Start = ray.m_Start + ray.m_Delta * fPortalFraction;
-	rayPostPortal.m_Delta = ray.m_Delta * (1.0f - fPortalFraction);
-
-	VMatrix matThisToLinked = pPortal->MatrixThisToLinked();
-
-	Ray_t rayTransformed;
-	UTIL_Portal_RayTransform(matThisToLinked, rayPostPortal, rayTransformed);
-
-	// After a bullet traces through a portal it can hit the player that fired it
-	CTraceFilterSimple *pSimpleFilter = dynamic_cast<CTraceFilterSimple*>(&traceFilter);
-	const IHandleEntity *pPassEntity = NULL;
-	if (pSimpleFilter)
-	{
-		pPassEntity = pSimpleFilter->GetPassEntity();
-		pSimpleFilter->SetPassEntity(0);
-	}
-
-	trace_t trPostPortal;
-	enginetrace->TraceRay(rayTransformed, fMask, &traceFilter, &trPostPortal);
-
-	if (pSimpleFilter)
-	{
-		pSimpleFilter->SetPassEntity(pPassEntity);
-	}
-
-	//trPostPortal.startpos = ray.m_Start;
-	UTIL_Portal_PointTransform(matThisToLinked, ray.m_Start, trPostPortal.startpos);
-	trPostPortal.fraction = trPostPortal.fraction * (1.0f - fPortalFraction) + fPortalFraction;
-
-	*pTrace = trPostPortal;
-
-	return true;
+	return UTIL_Portal_TraceRay_Bullets( pPortal, ray, fMask, &traceFilter, pTrace, bTraceHolyWall );
 }
 
 CProp_Portal* UTIL_Portal_TraceRay_Beam( const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, float *pfFraction )

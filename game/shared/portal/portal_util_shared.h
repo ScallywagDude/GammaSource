@@ -32,7 +32,17 @@ void UTIL_Portal_Trace_Filter( class CTraceFilterSimpleClassnameList *traceFilte
 
 CProp_Portal* UTIL_Portal_FirstAlongRay( const Ray_t &ray, float &fMustBeCloserThan );
 
-bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace, bool bTraceHolyWall = true );
+// GammaSource: shots follow every portal they enter, not just the first. The points where the shot
+// went in and came out of each portal are recorded so tracers can be drawn segment by segment.
+#define PORTAL_TRACE_MAX_HOPS 16
+struct PortalTraceHops_t
+{
+	int		iCount;
+	Vector	vEntry[ PORTAL_TRACE_MAX_HOPS ];
+	Vector	vExit[ PORTAL_TRACE_MAX_HOPS ];
+};
+
+bool UTIL_Portal_TraceRay_Bullets( const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, trace_t *pTrace, bool bTraceHolyWall = true, PortalTraceHops_t *pHops = NULL );
 //added this overload to use in void CBaseHLBludgeonWeapon::Swing( int bIsSecondary )
 bool UTIL_Portal_TraceRay_Bullets(const CProp_Portal *pPortal, const Ray_t &ray, unsigned int fMask, const IHandleEntity *ignore, int collisionGroup, trace_t *pTrace, bool bTraceHolyWall = true);
 CProp_Portal* UTIL_Portal_TraceRay_Beam( const Ray_t &ray, unsigned int fMask, ITraceFilter *pTraceFilter, float *pfFraction );

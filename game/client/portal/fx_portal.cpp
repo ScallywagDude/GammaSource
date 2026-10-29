@@ -29,9 +29,9 @@ class C_PortalBlast : public C_BaseEntity
 
 public:
 
-	static void		Create( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime );
+	static void		Create( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime, float fStartDelay = 0.0f );
 
-	void			Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime );
+	void			Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime, float fStartDelay = 0.0f );
 
 	virtual void	ClientThink( void );
 
@@ -43,17 +43,24 @@ private:
 
 	float	m_fCreationTime;
 	float	m_fDeathTime;
+
+	// GammaSource: a leg of a blast that went through portals waits for the leg before it
+	bool	m_bStarted;
+	bool	m_bIsPortal2;
+	PortalPlacedByType m_ePlacedBy;
+
+	void	StartStream( void );
 };
 
 
-void C_PortalBlast::Create( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime )
+void C_PortalBlast::Create( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime, float fStartDelay )
 {
 	C_PortalBlast *pPortalBlast = new C_PortalBlast;
-	pPortalBlast->Init( bIsPortal2, ePlacedBy, vStart, vEnd, qAngles, fDeathTime );
+	pPortalBlast->Init( bIsPortal2, ePlacedBy, vStart, vEnd, qAngles, fDeathTime, fStartDelay );
 }
 
 
-void C_PortalBlast::Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime )
+void C_PortalBlast::Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const Vector &vStart, const Vector &vEnd, const QAngle &qAngles, float fDeathTime, float fStartDelay )
 {
 	ClientEntityList().AddNonNetworkableEntity( this );
 	ClientThinkList()->SetNextClientThink( GetClientHandle(), CLIENT_THINK_ALWAYS );
@@ -68,7 +75,7 @@ void C_PortalBlast::Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const V
 
 	SetAbsOrigin( m_ptCreationPoint );
 
-	m_fCreationTime = gpGlobals->curtime;
+	m_fCreationTime = gpGlobals->curtime + fStartDelay;
 	m_fDeathTime = fDeathTime;
 
 	if ( m_fDeathTime - 0.1f < m_fCreationTime )
@@ -81,10 +88,24 @@ void C_PortalBlast::Init( bool bIsPortal2, PortalPlacedByType ePlacedBy, const V
 
 	m_ptAimPoint = m_ptCreationPoint + vForward * m_ptCreationPoint.DistTo( m_ptDeathPoint );
 
-	if ( ePlacedBy == PORTAL_PLACED_BY_PLAYER )
-		ParticleProp()->Create( ( ( bIsPortal2 ) ? ( "portal_2_projectile_stream" ) : ( "portal_1_projectile_stream" ) ), PATTACH_ABSORIGIN_FOLLOW );
+	m_bIsPortal2 = bIsPortal2;
+	m_ePlacedBy = ePlacedBy;
+	m_bStarted = false;
+
+	if ( fStartDelay <= 0.0f )
+	{
+		StartStream();
+	}
+}
+
+void C_PortalBlast::StartStream( void )
+{
+	m_bStarted = true;
+
+	if ( m_ePlacedBy == PORTAL_PLACED_BY_PLAYER )
+		ParticleProp()->Create( ( ( m_bIsPortal2 ) ? ( "portal_2_projectile_stream" ) : ( "portal_1_projectile_stream" ) ), PATTACH_ABSORIGIN_FOLLOW );
 	else
-		ParticleProp()->Create( ( ( bIsPortal2 ) ? ( "portal_2_projectile_stream_pedestal" ) : ( "portal_1_projectile_stream_pedestal" ) ), PATTACH_ABSORIGIN_FOLLOW );
+		ParticleProp()->Create( ( ( m_bIsPortal2 ) ? ( "portal_2_projectile_stream_pedestal" ) : ( "portal_1_projectile_stream_pedestal" ) ), PATTACH_ABSORIGIN_FOLLOW );
 }
 
 void C_PortalBlast::ClientThink( void )
@@ -94,6 +115,14 @@ void C_PortalBlast::ClientThink( void )
 		// Die!
 		Remove();
 		return;
+	}
+
+	if ( !m_bStarted )
+	{
+		if ( gpGlobals->curtime < m_fCreationTime )
+			return;
+
+		StartStream();
 	}
 
 	float fT = ( gpGlobals->curtime - m_fCreationTime ) / ( m_fDeathTime - m_fCreationTime );
@@ -117,7 +146,7 @@ void C_PortalBlast::ClientThink( void )
 
 void PortalBlastCallback( const CEffectData & data )
 {
-	C_PortalBlast::Create( ( data.m_nColor == 1 ) ? ( false ) : ( true ), (PortalPlacedByType)data.m_nDamageType, data.m_vOrigin, data.m_vStart, data.m_vAngles, data.m_flScale );
+	C_PortalBlast::Create( ( data.m_nColor == 1 ) ? ( false ) : ( true ), (PortalPlacedByType)data.m_nDamageType, data.m_vOrigin, data.m_vStart, data.m_vAngles, data.m_flScale, data.m_flMagnitude / 1000.0f );
 }
 
 DECLARE_CLIENT_EFFECT( "PortalBlast", PortalBlastCallback );
