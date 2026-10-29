@@ -620,7 +620,7 @@ void C_BaseCombatWeapon::BuildTransformations( CStudioHdr *header, Vector *pos, 
 	// (checked in third person against the player's hold pose).
 	QAngle extra( 0, 0, 0 );
 	if ( !Q_stricmp( GetWorldModel(), "models/weapons/w_crossbow.mdl" ) )
-		extra.Init( -90, 0, 0 );
+		extra.Init( 0, 90, -90 );
 	else if ( !Q_stricmp( GetWorldModel(), "models/weapons/w_guardgun.mdl" ) )
 		extra.Init( 0, 90, 0 );
 	QAngle tweak;
