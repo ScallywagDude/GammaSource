@@ -18,6 +18,7 @@
 #include "vgui_controls/ComboBox.h"
 #include "vgui_controls/Frame.h"
 #include "vgui_controls/QueryBox.h"
+#include "vgui_controls/MessageBox.h"
 #include "CvarToggleCheckButton.h"
 #include "tier1/KeyValues.h"
 #include "vgui/IInput.h"
@@ -71,6 +72,22 @@ struct AAMode_t
 //-----------------------------------------------------------------------------
 // Purpose: list of valid dx levels
 //-----------------------------------------------------------------------------
+// GammaSource: renderer backends offered in the advanced video options
+struct GammaRenderer_t
+{
+	const char *m_pszID;
+	const char *m_pszName;
+	const char *m_pszDLL;
+};
+static const GammaRenderer_t s_GammaRenderers[] =
+{
+	{ "dx9", "DirectX 9", "shaderapidx9" },
+	{ "dx11", "DirectX 11", "shaderapidx11" },
+	{ "dx12", "DirectX 12", "shaderapidx12" },
+	{ "vulkan", "Vulkan", "shaderapivk" },
+	{ "gl", "OpenGL", "shaderapigl" },
+};
+
 int g_DirectXLevels[] =
 {
 	70,
@@ -276,9 +293,36 @@ public:
 		s_GammaVideoAdvanced = this;
 		if ( parent ) AddActionSignalTarget( parent );
 		SetTitle("#GameUI_VideoAdvanced_Title", true);
-		SetSize( 488, 440 );
+		SetSize( 488, 472 );
 
 		m_pDXLevel = new ComboBox(this, "dxlabel", 6, false );
+
+		// GammaSource: native renderer backends (launcher.cpp GammaRendererShaderAPI)
+		m_pRenderer = new ComboBox( this, "RendererCombo", 5, false );
+		m_pRenderer->AddActionSignalTarget( this );
+		{
+			char szCurrent[32] = "dx9";
+			vgui::system()->GetRegistryString( "HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\GammaRenderer", szCurrent, sizeof( szCurrent ) );
+			Q_strncpy( m_szRendererAtOpen, szCurrent, sizeof( m_szRendererAtOpen ) );
+			int nActive = 0;
+			for ( int i = 0; i < ARRAYSIZE( s_GammaRenderers ); ++i )
+			{
+				char szPath[MAX_PATH];
+				bool bBuilt = i == 0;
+				if ( !bBuilt && g_pFullFileSystem )
+				{
+					Q_snprintf( szPath, sizeof( szPath ), "%s" DLL_EXT_STRING, s_GammaRenderers[i].m_pszDLL );
+					bBuilt = g_pFullFileSystem->FileExists( szPath, "EXECUTABLE_PATH" );
+				}
+				char szName[64];
+				Q_snprintf( szName, sizeof( szName ), bBuilt ? "%s" : "%s (not built yet)", s_GammaRenderers[i].m_pszName );
+				int nItem = m_pRenderer->AddItem( szName, new KeyValues( "renderer", "id", s_GammaRenderers[i].m_pszID ) );
+				m_pRenderer->SetItemEnabled( nItem, bBuilt );
+				if ( bBuilt && !Q_stricmp( szCurrent, s_GammaRenderers[i].m_pszID ) )
+					nActive = nItem;
+			}
+			m_pRenderer->ActivateItem( nActive );
+		}
 		const MaterialSystem_Config_t &config = materials->GetCurrentConfigForVideoCard();
 		KeyValues *pKeyValues = new KeyValues( "config" );
 		materials->GetRecommendedConfigurationInfo( 0, pKeyValues );
@@ -732,6 +776,16 @@ public:
 		{
 			ApplyChangesToConVar( "mat_dxlevel", pActiveItem->GetInt( "dxlevel" ) );
 		}
+
+		// GammaSource: the renderer switches on the next start
+		KeyValues *pRenderer = m_pRenderer->GetActiveItemUserData();
+		if ( pRenderer && Q_stricmp( pRenderer->GetString( "id" ), m_szRendererAtOpen ) )
+		{
+			vgui::system()->SetRegistryString( "HKEY_CURRENT_USER\\Software\\Valve\\Half-Life\\Settings\\GammaRenderer", pRenderer->GetString( "id" ) );
+			Q_strncpy( m_szRendererAtOpen, pRenderer->GetString( "id" ), sizeof( m_szRendererAtOpen ) );
+			vgui::MessageBox *pBox = new vgui::MessageBox( "Renderer", "The new renderer is used the next time you start the game.", this );
+			pBox->DoModal();
+		}
 		
 		ApplyChangesToConVar( "r_rootlod", 2 - m_pModelDetail->GetActiveItem());
 		ApplyChangesToConVar( "mat_picmip", 2 - m_pTextureDetail->GetActiveItem());
@@ -1039,6 +1093,8 @@ private:
 	vgui::ComboBox *m_pColorCorrection;
 	vgui::ComboBox *m_pMotionBlur;
 	vgui::ComboBox *m_pDXLevel;
+	vgui::ComboBox *m_pRenderer;
+	char m_szRendererAtOpen[32];
 	CCvarSlider *m_pFOVSlider;
 
 	int m_nNumAAModes;

@@ -55,6 +55,9 @@
 #include "filesystem/IQueuedLoader.h"
 #include "reslistgenerator.h"
 #include "tier1/fmtstr.h"
+#ifdef _WIN32
+#include <io.h>
+#endif
 #include "sourcevr/isourcevirtualreality.h"
 
 #define VERSION_SAFE_STEAM_API_INTERFACES
@@ -258,6 +261,8 @@ bool GetExecutableName( char *out, int outSize )
 // Purpose: Return the base directory
 // Output : char
 //-----------------------------------------------------------------------------
+const char *GammaRendererShaderAPI();	// GammaSource: chosen renderer backend, below
+
 char *GetBaseDirectory( void )
 {
 #ifdef ANDROID
@@ -757,7 +762,7 @@ bool CSourceAppSystemGroup::Create()
 
 	// Load up the appropriate shader DLL
 	// This has to be done before connection.
-	char const* pDLLName = "shaderapidx9" DLL_EXT_STRING;
+	char const* pDLLName = GammaRendererShaderAPI();
 	if ( CommandLine()->FindParm( "-noshaderapi" ) )
 	{
 		pDLLName = "shaderapiempty" DLL_EXT_STRING;
@@ -769,6 +774,57 @@ bool CSourceAppSystemGroup::Create()
 	COM_TimestampedLog( "LoadAppSystems:  Took %.4f secs to load libraries and get factories.", (float)elapsed );
 
 	return true;
+}
+
+//-----------------------------------------------------------------------------
+// GammaSource: the renderer chosen in Options > Video > Advanced (or -renderer on the
+// command line): dx9, dx11, dx12, vulkan or gl. A backend whose shaderapi DLL isn't in bin
+// falls back to DirectX 9.
+//-----------------------------------------------------------------------------
+const char *GammaRendererShaderAPI()
+{
+	static const char *s_Renderers[][2] =
+	{
+		{ "dx9", "shaderapidx9" DLL_EXT_STRING },
+		{ "dx11", "shaderapidx11" DLL_EXT_STRING },
+		{ "dx12", "shaderapidx12" DLL_EXT_STRING },
+		{ "vulkan", "shaderapivk" DLL_EXT_STRING },
+		{ "gl", "shaderapigl" DLL_EXT_STRING },
+	};
+
+	char szRenderer[32] = "dx9";
+	const char *pszParm = CommandLine()->ParmValue( "-renderer" );
+	if ( pszParm )
+	{
+		Q_strncpy( szRenderer, pszParm, sizeof( szRenderer ) );
+	}
+#ifdef _WIN32
+	else
+	{
+		HKEY hKey;
+		if ( RegOpenKeyExA( HKEY_CURRENT_USER, "Software\\Valve\\Half-Life\\Settings", 0, KEY_READ, &hKey ) == ERROR_SUCCESS )
+		{
+			DWORD nType = 0, nSize = sizeof( szRenderer ) - 1;
+			if ( RegQueryValueExA( hKey, "GammaRenderer", NULL, &nType, (LPBYTE)szRenderer, &nSize ) != ERROR_SUCCESS || nType != REG_SZ )
+				Q_strncpy( szRenderer, "dx9", sizeof( szRenderer ) );
+			szRenderer[sizeof( szRenderer ) - 1] = 0;
+			RegCloseKey( hKey );
+		}
+	}
+#endif
+
+	for ( int i = 1; i < ARRAYSIZE( s_Renderers ); ++i )
+	{
+		if ( Q_stricmp( szRenderer, s_Renderers[i][0] ) )
+			continue;
+		char szPath[MAX_PATH];
+		Q_snprintf( szPath, sizeof( szPath ), "%s\\bin\\%s", GetBaseDirectory(), s_Renderers[i][1] );
+		if ( _access( szPath, 0 ) == 0 )
+			return s_Renderers[i][1];
+		Warning( "Renderer '%s' is not available (%s missing); using DirectX 9.\n", szRenderer, s_Renderers[i][1] );
+		break;
+	}
+	return s_Renderers[0][1];
 }
 
 bool CSourceAppSystemGroup::PreInit()
