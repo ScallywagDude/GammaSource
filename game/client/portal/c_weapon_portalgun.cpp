@@ -5,6 +5,9 @@
 //=============================================================================//
 
 #include "cbase.h"
+#ifdef GAMMA_PORTALGUN
+#include "gamma/gamma_weapon_worldmodel.h"
+#endif
 
 #include "portal_player_shared.h"
 #include "c_te_effect_dispatch.h"
@@ -893,18 +896,24 @@ void C_WeaponPortalgun::GetEffectParameters( EffectType_t effectID, color32 &col
 	if ( pOwner != NULL )
 	{
 		C_BaseAnimating *pModel;
+#ifdef GAMMA_PORTALGUN
+		CGammaWeaponWorldModelScope worldModel( b3rdPerson ? this : NULL );
+#else
 		int originalModelIndex = 0;
 		int originalSequence = 0;
+#endif
 
 		if ( b3rdPerson )
 		{
 			pModel = this;
+#ifndef GAMMA_PORTALGUN
 			originalModelIndex = GetModelIndex();
 			originalSequence = GetSequence();
 			// The world portal gun has one sequence; viewmodel draw/fire indices
 			// are invalid while querying its attachment bones.
 			SetSequence( 0 );
 			SetModelIndex( GetWorldModelIndex() );
+#endif
 		}
 		else
 		{
@@ -917,11 +926,13 @@ void C_WeaponPortalgun::GetEffectParameters( EffectType_t effectID, color32 &col
 		{
 			::FormatViewModelAttachment( vecAttachment, true );
 		}
+		#ifndef GAMMA_PORTALGUN
 		else
 		{
 			SetModelIndex( originalModelIndex );
 			SetSequence( originalSequence );
 		}
+		#endif
 	}
 }
 

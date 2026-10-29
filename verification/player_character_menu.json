@@ -1,0 +1,12 @@
+{
+  "source": "C:\\Users\\doge6\\Documents\\GammaSourceTest\\2026-10-27_17-54-49\\GammaSource FULL BUILD\\content\\gammasource_content\\resource\\GameMenu.res",
+  "target": "gammasource_overlay/resource/GameMenu.res",
+  "source_sha256": "db12f657fde723eeed8080bd6a1811659fb2beb3c84851dfa5147565fa792168",
+  "staged_sha256": "57155d368f27dc2d08aff44a84eb1ed63d0707ccfe0a2f689e4e159059bdb38a",
+  "original_bytes_unchanged_after_removing_single_added_block": true,
+  "new_entry": {
+    "label": "Player character",
+    "command": "engine gamma_characters",
+    "visible": "main menu and pause menu"
+  }
+}

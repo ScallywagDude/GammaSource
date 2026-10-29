@@ -1,0 +1,267 @@
+{
+  "legacy_behavior_source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\release_overlay_check_v18\\dlls\\hl2_dll\\weapon_immolator.cpp",
+  "legacy_model_sha256": {
+    "v_cremator": "a0dd57ce8e7d0ba8f676f8cf254a9ace77fcff640a340565b8f199b41724a501",
+    "w_immolator": "69a36b3ef2c10d1cf67adea9d921b68c159891c4aabcddb8b3224b0cc594ff5a"
+  },
+  "models": {
+    "v_cremator": {
+      "version": 48,
+      "bones": 29,
+      "sequences": [
+        {
+          "name": "Idle",
+          "activity": "ACT_VM_IDLE"
+        },
+        {
+          "name": "Draw",
+          "activity": "ACT_VM_DRAW"
+        },
+        {
+          "name": "Fire",
+          "activity": "ACT_VM_PRIMARYATTACK"
+        }
+      ]
+    },
+    "w_immolator": {
+      "version": 48,
+      "bones": 1,
+      "sequences": [
+        {
+          "name": "idle",
+          "activity": "ACT_IDLE"
+        }
+      ]
+    }
+  },
+  "files": [
+    {
+      "path": "models/weapons/v_cremator.mdl",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\v_cremator.mdl",
+      "bytes": 18220,
+      "sha256": "f6c707bcf7e74451ae5f7d1d99aa591dc232cd649cb76d70b59f69dc9d521866"
+    },
+    {
+      "path": "models/weapons/v_cremator.vvd",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\v_cremator.vvd",
+      "bytes": 121408,
+      "sha256": "6c865bec0dcc69a339d980b730f350fa54c528a486d61f8e58c7f660cf5376ee"
+    },
+    {
+      "path": "models/weapons/v_cremator.dx90.vtx",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\v_cremator.dx90.vtx",
+      "bytes": 34148,
+      "sha256": "9209f12155ba00da842f903c028cd3fa0e07d7e13dc1b95aa31fdf1b365c1ce5"
+    },
+    {
+      "path": "models/weapons/w_immolator.mdl",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\w_immolator.mdl",
+      "bytes": 1488,
+      "sha256": "34380c2b0fdfa15233d7be1091598b516b355b9148690cd730d8169c88982da3"
+    },
+    {
+      "path": "models/weapons/w_immolator.vvd",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\w_immolator.vvd",
+      "bytes": 33280,
+      "sha256": "f290aed18e14e5965a7dc30f64802b1bcf1e40c2559f309f9a563d4ca32d6d15"
+    },
+    {
+      "path": "models/weapons/w_immolator.dx90.vtx",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\w_immolator.dx90.vtx",
+      "bytes": 7002,
+      "sha256": "5129e6df2e78aa911125a28f1783bf1d509eabaf66162f9559c4ccae12754c29"
+    },
+    {
+      "path": "models/weapons/w_immolator.phy",
+      "source": "C:\\Users\\doge6\\Downloads\\source2018_assets\\gamma48\\models\\weapons\\w_immolator.phy",
+      "bytes": 2012,
+      "sha256": "1035b820f7751a4fe7b964e49440d1780f1a6a1e24b916a8a025f7fb4c090557"
+    },
+    {
+      "path": "materials/models/weapons/v_immolator/v_immolator_mask.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_immolator\\v_immolator_mask.vtf",
+      "bytes": 699256,
+      "sha256": "8fa330a331879c0773952d0e99194514ef56f2752fbdea7af68b89381627a2f2"
+    },
+    {
+      "path": "materials/models/weapons/v_immolator/v_immolator_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_immolator\\v_immolator_normal.vtf",
+      "bytes": 699256,
+      "sha256": "e8d5bb0a6f1ac49886b331251529a2cd6fdb9e2645c364e124c84b8a0b672324"
+    },
+    {
+      "path": "materials/models/weapons/v_immolator/v_immolator_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_immolator\\V_immolator_sheet.vmt",
+      "bytes": 394,
+      "sha256": "bbb958de5815ee4ac6c738db8cdaf023784e012987dc1a5686c5c9c4a7228252"
+    },
+    {
+      "path": "materials/models/weapons/v_immolator/v_immolator_sheet.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_immolator\\v_immolator_sheet.vtf",
+      "bytes": 699256,
+      "sha256": "52ca14c995b27e566228d1f47bbceacc680ffa5126c9ae2c0bb934813b9490e4"
+    },
+    {
+      "path": "materials/models/weapons/w_immolator/w_immolator.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\w_immolator\\w_immolator.vmt",
+      "bytes": 84,
+      "sha256": "00311a4640db75dbfdf17a1001182afd5c059877a5ae62e0faf2469545f1fe71"
+    },
+    {
+      "path": "materials/models/weapons/w_immolator/w_immolator.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\w_immolator\\w_immolator.vtf",
+      "bytes": 174968,
+      "sha256": "2df277d890f9e2bae30e30bf31ad84557ac79a1aec82c60cb4ccb54161ff1837"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/arm.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\arm.vmt",
+      "bytes": 110,
+      "sha256": "274ed387987a44255691ef7f79acc9b2cf68d7cef8465bdf6f5cc3e7b9d63d1d"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/arm.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\arm.vtf",
+      "bytes": 21992,
+      "sha256": "57f9492282265b3aed02f65e0729a8ae9a7782beee3512a8056490ede278568d"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/bicep.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\bicep.vmt",
+      "bytes": 112,
+      "sha256": "669e3d43e0def1371b46b9fc7cc62b02ab5dd89cd1b9e83c97844c413e14705e"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/bicep.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\bicep.vtf",
+      "bytes": 21992,
+      "sha256": "a2a85594c4aa24e32eacd42ccd29256ab6bafb8ea0a6075d160f1f128643e104"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/finger.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\finger.vmt",
+      "bytes": 113,
+      "sha256": "1c45561eb8031c3ffdc67ced1ca2498981587e8dde537141c8b8ff648a5d9401"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/finger.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\finger.vtf",
+      "bytes": 11128,
+      "sha256": "02156381e228831f82dc658fb361eabbd270fbab347ab5663f174edcb0e3ee47"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/hand.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\hand.vmt",
+      "bytes": 111,
+      "sha256": "4c323281079fb6768cfd3f08010437b06028864c3fae25f1e2141cdeac34938e"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/hand.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\hand.vtf",
+      "bytes": 11128,
+      "sha256": "4679de08753cf0b97029be047ab368cc7282e99af366a99c6bad3240fcaa5d11"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/hand2.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\hand2.vmt",
+      "bytes": 112,
+      "sha256": "0f1e111e8839bd57fbfdf84d2418d591b03b17d6bffdbad4a79452f90cfaf619"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/hand2.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\hand2.vtf",
+      "bytes": 11128,
+      "sha256": "d8581348b3d6a7def941a0fcdf4391471b027414ede27ca8f6fb89b9c105283f"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/handplate.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\handplate.vmt",
+      "bytes": 116,
+      "sha256": "b89dbcca14f777b43819db6d46ba439a3670f49d6c6986882848c4e593b5b90e"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/handplate.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\handplate.vtf",
+      "bytes": 11128,
+      "sha256": "bfc4dabc8c56dbcfb528cf13426b68229a6ed9efcdfae96c270c0200538b124a"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/inner.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\inner.vmt",
+      "bytes": 112,
+      "sha256": "f380c70514e6bc193c36d874d1c499a682b3c3ee6003caed442fa055ab6ddfed"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/inner.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\inner.vtf",
+      "bytes": 2936,
+      "sha256": "341a492e32720b0db5d09f5d10c33a0dc7e720fc32a4b8c1d40746dd272466e2"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/joint.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\joint.vmt",
+      "bytes": 112,
+      "sha256": "f94831d1cb0945a2367a6c08710e08ee484c43c7b7614f50ed7017143c432a9f"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/joint.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\joint.vtf",
+      "bytes": 5608,
+      "sha256": "225b4b94fb68225397df2f797678e08240d2f8da31de30d185233d4d4dc9c4ac"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/thumb.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\thumb.vmt",
+      "bytes": 112,
+      "sha256": "fad86192b91b673d29a7ba90f277853ddd752511e6822d63a88814bfe80c71d2"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/thumb.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\thumb.vtf",
+      "bytes": 11128,
+      "sha256": "8461d250e4d9c1bd7ce50eb71aa04a698f3648642a6ebc875b20cd176ebed67f"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/v_hand_sheet.vmt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\v_hand_sheet.vmt",
+      "bytes": 263,
+      "sha256": "7276c617fc914735f68e22b3fe453cb5d149de5bb1d51027ed48595bc500e758"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/v_hand_sheet.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\v_hand_sheet.vtf",
+      "bytes": 174968,
+      "sha256": "b7578608989369e38ec5654bbc3b8649f9eb883614bfd5e8862c7d93e989fa94"
+    },
+    {
+      "path": "materials/models/weapons/v_hand/v_hand_sheet_normal.vtf",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\materials\\models\\weapons\\v_hand\\v_hand_sheet_normal.vtf",
+      "bytes": 1398320,
+      "sha256": "3a24374c30a756753e39f3f4bb31a266acae4560a179b02849972c45a017d31a"
+    },
+    {
+      "path": "sound/weapons/mtov_flame1.wav",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\sound\\weapons\\mtov_flame1.wav",
+      "bytes": 20816,
+      "sha256": "e7461a7244589532dea2ca2b07f828270a541c141d98bbacb731ddc937073f14"
+    },
+    {
+      "path": "sound/weapons/mtov_flame3.wav",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\sound\\weapons\\mtov_flame3.wav",
+      "bytes": 25771,
+      "sha256": "a4942cb32a7a42a357995b63a3abfc8d4d778fcfbb89369de7bc56db841f9875"
+    },
+    {
+      "path": "sound/ambient/fire_big_loop1.wav",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\hl2\\sound\\ambient\\fire_big_loop1.wav",
+      "bytes": 557600,
+      "sha256": "559a4cc8f48907ae5e2888419625018c8e6713d8bd3a5de197e8863ab61a1147"
+    },
+    {
+      "path": "scripts/weapon_immolator.txt",
+      "source": "C:\\Users\\doge6\\Documents\\HL2BetaMegaCuck\\GammaSource_v28_publish\\gammasource_overlay\\scripts\\weapon_immolator.txt",
+      "bytes": 1656,
+      "sha256": "db84f8a32f07d333772eb548d55336cafbcfecfb46fc438eee35be07c06c5665"
+    }
+  ]
+}

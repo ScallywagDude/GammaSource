@@ -20,6 +20,7 @@ Release_*/
 *.idb
 *.pdb
 *.rc
+!launcher_main/gamma_launcher.rc
 *.bin
 *.vcxproj*
 *.sln

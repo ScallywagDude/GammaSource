@@ -1009,7 +1009,7 @@ void CBaseCombatWeapon::Equip( CBaseCombatCharacter *pOwner )
 void CBaseCombatWeapon::SetActivity( Activity act, float duration ) 
 { 
 	//Adrian: Oh man...
-#if !defined( CLIENT_DLL ) && (defined( HL2MP ) || defined( PORTAL ))
+#if !defined( CLIENT_DLL ) && (defined( HL2MP ) || (defined( PORTAL ) && !defined( GAMMA_PORTALGUN )))
 	SetModel( GetWorldModel() );
 #endif
 

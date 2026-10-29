@@ -43,3 +43,34 @@ def build(bld):
 		idx      = bld.get_taskgen_count()
 	)
 
+	if bld.env.DEST_OS == 'win32':
+		bld.shlib(
+			source = ['gamma_launcher_host.cpp', 'gamma_launcher_ui.cpp', 'gamma_launcher_verify.cpp',
+				'../public/tier0/memoverride.cpp',
+				'../public/bone_setup.cpp', '../public/studio.cpp',
+				'../public/collisionutils.cpp', '../public/interpolatortypes.cpp',
+				'../public/vgui_controls/vgui_controls.cpp'],
+			target = 'gamma_launcher_ui',
+			name = 'gamma_launcher_ui',
+			includes = ['.', '../public', '../public/tier0', '../public/tier1', '../public/tier2', '../public/tier3', '../common'],
+			defines = ['_USRDLL'],
+			use = ['appframework', 'tier0', 'tier1', 'tier2', 'tier3', 'mathlib',
+				'vgui_controls', 'matsys_controls', 'dmxloader', 'vstdlib', 'steam_api',
+				'USER32', 'SHELL32', 'GDI32', 'OLE32', 'COMDLG32', 'COMCTL32', 'ADVAPI32'],
+			install_path = bld.env.LIBDIR,
+			linkflags = ['/OPT:REF', '/OPT:ICF', '/INCREMENTAL:NO'],
+			idx = bld.get_taskgen_count()
+		)
+		bld(
+			source = ['gamma_launcher.cpp', 'gamma_launcher.rc'],
+			target = 'GammaSource Launcher',
+			name = 'gamma_launcher',
+			features = 'cxx cxxprogram',
+			includes = ['.'],
+			use = ['USER32', 'SHELL32', 'gamma_launcher_ui'],
+			linkflags = ['/OPT:REF', '/OPT:ICF', '/INCREMENTAL:NO'],
+			install_path = install_path,
+			subsystem = bld.env.MSVC_SUBSYSTEM,
+			idx = bld.get_taskgen_count()
+		)
+

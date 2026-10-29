@@ -55,7 +55,8 @@ public:
 
 	void	Update( void );
 
-	void	PositionCamera( CBasePlayer *pPlayer, QAngle angles );
+	void	PositionCamera( CBasePlayer *pPlayer, QAngle angles, const Vector *pViewOrigin = NULL );
+	void	ResetCameraCollision();
 
 	void	UseCameraOffsets( bool bUse ) { m_bUseCameraOffsets = bUse; }
 	bool	UsingCameraOffsets( void ) { return m_bUseCameraOffsets; }
@@ -65,6 +66,7 @@ public:
 	Vector	GetDistanceFraction( void );
 
 	bool	WantToUseGameThirdPerson( void );
+	bool	IsGameplayThirdPerson( void ) const;
 
 	void	SetOverridingThirdPerson( bool bOverride ) { m_bOverrideThirdPerson = bOverride; }
 	bool	IsOverridingThirdPerson( void ) { return m_bOverrideThirdPerson; }

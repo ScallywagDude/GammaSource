@@ -154,6 +154,12 @@ void CWeaponPortalBase::OnDataChanged( DataUpdateType_t type )
 
 int CWeaponPortalBase::DrawModel( int flags )
 {
+#ifdef GAMMA_PORTALGUN
+	// The common weapon draw scopes the world model and its animation together.
+	// Changing only the model here would reinterpret a view-model sequence as a
+	// world-model sequence before that scope can save it.
+	return BaseClass::DrawModel( flags );
+#else
 	if ( !m_bReadyToDraw )
 		return 0;
 
@@ -177,10 +183,14 @@ int CWeaponPortalBase::DrawModel( int flags )
 		SetModelIndex( iOriginalIndex );
 
 	return iRetVal;
+#endif
 }
 
 bool CWeaponPortalBase::ShouldDraw( void )
 {
+#ifdef GAMMA_PORTALGUN
+	return BaseClass::ShouldDraw();
+#else
 	if (m_iWorldModelIndex == 0)
 		return false;
 
@@ -232,6 +242,7 @@ bool CWeaponPortalBase::ShouldDraw( void )
 	// FIXME: We may want to only show active weapons on NPCs
 	// These are carried by AIs; always show them
 	return true;
+#endif
 }
 
 bool CWeaponPortalBase::ShouldPredict()
@@ -387,6 +398,9 @@ void CWeaponPortalBase::GetRenderBounds( Vector& theMins, Vector& theMaxs )
 //-----------------------------------------------------------------------------
 int CWeaponPortalBase::CalcOverrideModelIndex()
 { 
+#ifdef GAMMA_PORTALGUN
+	return BaseClass::CalcOverrideModelIndex();
+#else
 	//C_BasePlayer *localplayer = C_BasePlayer::GetLocalPlayer();
 	//if ( localplayer && 
 	//	localplayer == GetOwner() &&
@@ -399,6 +413,7 @@ int CWeaponPortalBase::CalcOverrideModelIndex()
 	//	return GetWorldModelIndex();
 	//}
 	return GetWorldModelIndex();
+#endif
 }
 
 #else

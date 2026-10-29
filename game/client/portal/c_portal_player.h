@@ -45,6 +45,7 @@ public:
 	virtual void AddEntity( void );
 
 	virtual bool			ShouldDraw( void );
+	bool IsHiddenInPortalView() const { return m_iForceNoDrawInPortalSurface != -1; }
 	virtual void			OnPreDataChanged( DataUpdateType_t type );
 	virtual void			OnDataChanged( DataUpdateType_t type );
 	bool					DetectAndHandlePortalTeleportation( void ); //detects if the player has portalled and fixes views

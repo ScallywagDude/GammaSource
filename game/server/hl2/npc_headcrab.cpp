@@ -93,6 +93,28 @@ int AE_HEADCRAB_BURROW_IN_FINISH;
 int AE_HEADCRAB_BURROW_OUT;
 int AE_HEADCRAB_CEILING_DETACH;
 
+//-----------------------------------------------------------------------------
+// GammaSource: the 2002/2003 headcrab models (studio v36) carry the old numbered
+// events (2 = jump attack, 3 = telegraph, ...) instead of named ones. Without this
+// they played the jump animation but never left the ground.
+//-----------------------------------------------------------------------------
+static void RemapLegacyHeadcrabEvent( animevent_t *pEvent )
+{
+	if ( pEvent->type & AE_TYPE_NEWEVENTSYSTEM )
+		return;
+
+	switch ( pEvent->event )
+	{
+	case 2: pEvent->event = AE_HEADCRAB_JUMPATTACK; break;
+	case 3: pEvent->event = AE_HEADCRAB_JUMP_TELEGRAPH; break;
+	case 4: pEvent->event = AE_POISONHEADCRAB_FLINCH_HOP; break;
+	case 5: pEvent->event = AE_POISONHEADCRAB_FOOTSTEP; break;
+	case 6: pEvent->event = AE_POISONHEADCRAB_THREAT_SOUND; break;
+	default: return;
+	}
+	pEvent->type |= AE_TYPE_NEWEVENTSYSTEM;
+}
+
 
 //-----------------------------------------------------------------------------
 // Custom schedules.
@@ -599,6 +621,8 @@ void CBaseHeadcrab::JumpAttack( bool bRandomJump, const Vector &vecPos, bool bTh
 //-----------------------------------------------------------------------------
 void CBaseHeadcrab::HandleAnimEvent( animevent_t *pEvent )
 {
+	RemapLegacyHeadcrabEvent( pEvent );
+
 	if ( pEvent->event == AE_HEADCRAB_JUMPATTACK )
 	{
 		// Ignore if we're in mid air
@@ -3420,6 +3444,8 @@ void CBlackHeadcrab::JumpFlinch( const Vector *pvecDir )
 //-----------------------------------------------------------------------------
 void CBlackHeadcrab::HandleAnimEvent( animevent_t *pEvent )
 {
+	RemapLegacyHeadcrabEvent( pEvent );
+
 	if ( pEvent->event == AE_POISONHEADCRAB_FOOTSTEP )
 	{
 		bool walk = ( GetActivity() == ACT_WALK );   // ? 1.0 : 0.6; !!cgreen! old code had bug

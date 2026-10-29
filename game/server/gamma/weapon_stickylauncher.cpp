@@ -91,6 +91,7 @@ public:
 	unsigned int PhysicsSolidMaskForEntity( void ) const { return BaseClass::PhysicsSolidMaskForEntity() | CONTENTS_HITBOX; }
 
 	static void DetonateByOperator( CBaseEntity *pOperator );
+	static void PrintStatus( CBasePlayer *pPlayer );
 	void SetBombOrigin();
 
 	DECLARE_SERVERCLASS();
@@ -274,6 +275,9 @@ CUtlVector<CStickyBomb *> CStickyBomb::m_stickyList;
 //-----------------------------------------------------------------------------
 CStickyBomb::CStickyBomb()
 {
+	m_boneIndexAttached = -1;
+	m_bonePosition = vec3_origin;
+	m_boneAngles = vec3_angle;
 	m_stickyList.AddToTail(this);
 }
 
@@ -336,17 +340,20 @@ void CStickyBomb::SetBombOrigin()
 {
 	if ( IsFollowingEntity() )
 	{
+		Vector origin = GetAbsOrigin();
 		CBaseAnimating *pOtherAnim = dynamic_cast<CBaseAnimating *>(GetFollowedEntity());
-		if ( pOtherAnim )
+		CStudioHdr *pStudioHdr = pOtherAnim ? pOtherAnim->GetModelPtr() : NULL;
+		if ( pStudioHdr && m_boneIndexAttached >= 0 && m_boneIndexAttached < pStudioHdr->numbones() )
 		{
-			Vector origin;
 			matrix3x4_t boneToWorld;
 			pOtherAnim->GetBoneTransform( m_boneIndexAttached, boneToWorld );
 			VectorTransform( m_bonePosition, boneToWorld, origin );
-			StopFollowingEntity( );
-			SetMoveType(MOVETYPE_NONE);
-			SetAbsOrigin( origin );
 		}
+		// A changed/deleted model may no longer have the attachment bone. Still
+		// detach at the current world position instead of keeping a dead parent.
+		StopFollowingEntity( );
+		SetMoveType(MOVETYPE_NONE);
+		SetAbsOrigin( origin );
 	}
 }
 
@@ -380,6 +387,13 @@ void CStickyBomb::NotifySystemEvent( CBaseEntity *pNotify, notify_system_event_t
 
 void CStickyBomb::Touch( CBaseEntity *pOther )
 {
+	// Portal triggers explicitly call the projectile's Touch method. Treating
+	// that notification as an impact parents the bomb to prop_portal, and the
+	// parent's forwarded StartTouch/EndTouch callbacks recurse into the portal.
+	// Leave non-solid contacts alone so the portal can teleport the flying bomb.
+	if ( !pOther || !pOther->IsSolid() || pOther->IsSolidFlagSet( FSOLID_TRIGGER | FSOLID_VOLUME_CONTENTS ) )
+		return;
+
 	// Don't stick if already stuck
 	if ( GetMoveType() == MOVETYPE_FLYGRAVITY )
 	{
@@ -404,7 +418,13 @@ void CStickyBomb::Touch( CBaseEntity *pOther )
 				if ( (tr.surface.flags & SURF_HITBOX) && modelinfo->GetModelType( pOther->GetModel() ) == mod_studio )
 				{
 					CBaseAnimating *pOtherAnim = dynamic_cast<CBaseAnimating *>(pOther);
-					if ( pOtherAnim )
+					CStudioHdr *pStudioHdr = pOtherAnim ? pOtherAnim->GetModelPtr() : NULL;
+					int hitboxSet = pOtherAnim ? pOtherAnim->GetHitboxSet() : -1;
+					mstudiohitboxset_t *pHitboxSet = pStudioHdr && hitboxSet >= 0 && hitboxSet < pStudioHdr->numhitboxsets()
+						? pStudioHdr->pHitboxSet( hitboxSet ) : NULL;
+					int bone = pHitboxSet && tr.hitbox >= 0 && tr.hitbox < pHitboxSet->numhitboxes
+						? pHitboxSet->pHitbox( tr.hitbox )->bone : -1;
+					if ( pStudioHdr && bone >= 0 && bone < pStudioHdr->numbones() )
 					{
 						matrix3x4_t bombWorldSpace;
 						MatrixCopy( EntityToWorldTransform(), bombWorldSpace );
@@ -412,7 +432,7 @@ void CStickyBomb::Touch( CBaseEntity *pOther )
 						// get the bone info so we can follow the bone
 						FollowEntity( pOther );
 						SetOwnerEntity( pOther );
-						m_boneIndexAttached = pOtherAnim->GetHitboxBone( tr.hitbox );
+						m_boneIndexAttached = bone;
 						matrix3x4_t boneToWorld;
 						pOtherAnim->GetBoneTransform( m_boneIndexAttached, boneToWorld );
 
@@ -431,6 +451,32 @@ void CStickyBomb::Touch( CBaseEntity *pOther )
 			}
 		}
 	}
+}
+
+void CStickyBomb::PrintStatus( CBasePlayer *pPlayer )
+{
+	if ( !pPlayer ) return;
+	int owned = 0;
+	for ( int i = 0; i < m_stickyList.Count(); ++i )
+	{
+		CStickyBomb *pBomb = m_stickyList[i];
+		if ( pBomb->m_hOperator != pPlayer ) continue;
+		++owned;
+		const Vector &origin = pBomb->GetAbsOrigin();
+		const Vector &velocity = pBomb->GetAbsVelocity();
+		CBaseEntity *pParent = pBomb->GetMoveParent();
+		Msg( "GAMMA_STICKY time=%.3f id=%d move=%d parent=%s pos=%.2f,%.2f,%.2f vel=%.2f,%.2f,%.2f\n",
+			gpGlobals->curtime, pBomb->entindex(), pBomb->GetMoveType(), pParent ? pParent->GetClassname() : "none",
+			origin.x, origin.y, origin.z, velocity.x, velocity.y, velocity.z );
+	}
+	Msg( "GAMMA_STICKY_STATUS time=%.3f health=%d armor=%d alive=%d god=%d owned=%d total=%d\n",
+		gpGlobals->curtime, pPlayer->GetHealth(), pPlayer->ArmorValue(), pPlayer->IsAlive() ? 1 : 0,
+		( pPlayer->GetFlags() & FL_GODMODE ) ? 1 : 0, owned, m_stickyList.Count() );
+}
+
+CON_COMMAND( gamma_sticky_status, "Print owned sticky positions, parentage and player damage state" )
+{
+	CStickyBomb::PrintStatus( UTIL_GetLocalPlayer() );
 }
 
 bool LaunchStickyBomb( CBaseCombatCharacter *pOwner, const Vector &origin, const Vector &direction )

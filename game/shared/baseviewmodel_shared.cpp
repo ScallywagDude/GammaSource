@@ -13,6 +13,10 @@
 #include "prediction.h"
 #include "client_virtualreality.h"
 #include "sourcevr/isourcevirtualreality.h"
+#ifdef GAMMA_PORTALGUN
+#include "portal/PortalRender.h"
+#include "gamma/gamma_weapon_worldmodel.h"
+#endif
 #else
 #include "vguiscreen.h"
 #endif
@@ -640,6 +644,33 @@ void RecvProxy_SequenceNum( const CRecvProxyData *pData, void *pStruct, void *pO
 //-----------------------------------------------------------------------------
 // Purpose: 
 //-----------------------------------------------------------------------------
+#ifdef GAMMA_PORTALGUN
+static bool GammaViewModelUsesWorldAttachments( CBaseViewModel *viewModel )
+{
+	return viewModel->GetOwningWeapon() &&
+		( C_BasePlayer::ShouldDrawLocalPlayer() || g_pPortalRender->IsRenderingPortal() );
+}
+
+static bool GammaWorldViewModelAttachment( CBaseViewModel *viewModel, int number, matrix3x4_t &matrix )
+{
+	C_BaseCombatWeapon *weapon = viewModel->GetOwningWeapon();
+	CStudioHdr *viewHeader = viewModel->GetModelPtr();
+	if ( !weapon || !viewHeader ) return false;
+	char name[128] = "core";
+	if ( number > 0 && number <= viewHeader->GetNumAttachments() )
+		Q_strncpy( name, viewHeader->pAttachment( number - 1 ).pszName(), sizeof( name ) );
+	else if ( Q_stricmp( weapon->GetWorldModel(), "models/gamma/weapons/w_early_physgun.mdl" ) )
+		return false;
+	// The prototype has no individual prong base/middle attachments. Its
+	// legacy server sends index zero for them; keep those glows on its coil.
+	// Server sprites and beams remain attached to the view model. In a world
+	// view they need the held gun's attachment, whose numeric index can differ.
+	CGammaWeaponWorldModelScope worldModel( weapon );
+	const int attachment = weapon->LookupAttachment( name );
+	return attachment > 0 && weapon->GetAttachment( attachment, matrix );
+}
+#endif
+
 int	CBaseViewModel::LookupAttachment( const char *pAttachmentName )
 {
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
@@ -653,6 +684,10 @@ int	CBaseViewModel::LookupAttachment( const char *pAttachmentName )
 //-----------------------------------------------------------------------------
 bool CBaseViewModel::GetAttachment( int number, matrix3x4_t &matrix )
 {
+#ifdef GAMMA_PORTALGUN
+	if ( GammaViewModelUsesWorldAttachments( this ) )
+		return GammaWorldViewModelAttachment( this, number, matrix );
+#endif
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, matrix );
 
@@ -664,6 +699,15 @@ bool CBaseViewModel::GetAttachment( int number, matrix3x4_t &matrix )
 //-----------------------------------------------------------------------------
 bool CBaseViewModel::GetAttachment( int number, Vector &origin )
 {
+#ifdef GAMMA_PORTALGUN
+	if ( GammaViewModelUsesWorldAttachments( this ) )
+	{
+		matrix3x4_t matrix;
+		if ( !GammaWorldViewModelAttachment( this, number, matrix ) ) return false;
+		MatrixPosition( matrix, origin );
+		return true;
+	}
+#endif
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, origin );
 
@@ -675,6 +719,15 @@ bool CBaseViewModel::GetAttachment( int number, Vector &origin )
 //-----------------------------------------------------------------------------
 bool CBaseViewModel::GetAttachment( int number, Vector &origin, QAngle &angles )
 {
+#ifdef GAMMA_PORTALGUN
+	if ( GammaViewModelUsesWorldAttachments( this ) )
+	{
+		matrix3x4_t matrix;
+		if ( !GammaWorldViewModelAttachment( this, number, matrix ) ) return false;
+		MatrixAngles( matrix, angles, origin );
+		return true;
+	}
+#endif
 	if ( m_hWeapon.Get() && m_hWeapon.Get()->WantsToOverrideViewmodelAttachments() )
 		return m_hWeapon.Get()->GetAttachment( number, origin, angles );
 

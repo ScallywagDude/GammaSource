@@ -24,6 +24,7 @@ extern const ConVar *sv_cheats;
 extern ConVar cam_idealdist;
 extern ConVar cam_idealdistright;
 extern ConVar cam_idealdistup;
+extern ConVar cam_collision;
 
 void CAM_ToThirdPerson(void);
 void CAM_ToFirstPerson(void);
@@ -47,7 +48,11 @@ void ThirdPersonChange( IConVar *pConVar, const char *pOldValue, float flOldValu
 	ToggleThirdPerson( var.GetBool() );
 }
 
-ConVar cl_thirdperson( "cl_thirdperson", "0", FCVAR_NOT_CONNECTED | FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_DEVELOPMENTONLY, "Enables/Disables third person", ThirdPersonChange  );
+#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+ConVar cl_thirdperson( "cl_thirdperson", "0", FCVAR_USERINFO | FCVAR_ARCHIVE, "Enables/Disables third person", ThirdPersonChange );
+#else
+ConVar cl_thirdperson( "cl_thirdperson", "0", FCVAR_NOT_CONNECTED | FCVAR_USERINFO | FCVAR_ARCHIVE | FCVAR_DEVELOPMENTONLY, "Enables/Disables third person", ThirdPersonChange );
+#endif
 
 #endif
 
@@ -55,11 +60,12 @@ void CThirdPersonManager::Init( void )
 {
 	m_bOverrideThirdPerson = false;
 	m_bForced = false;
-	m_flUpFraction = 0.0f;
-	m_flFraction = 1.0f;
-
-	m_flUpLerpTime = 0.0f;
-	m_flLerpTime = 0.0f;
+	m_bUseCameraOffsets = false;
+	m_vecCameraOffset.Init();
+	m_vecDesiredCameraOffset.Init();
+	m_vecCameraOrigin.Init();
+	m_ViewAngles.Init();
+	ResetCameraCollision();
 
 	m_flUpOffset = CAMERA_UP_OFFSET;
 
@@ -67,6 +73,24 @@ void CThirdPersonManager::Init( void )
 	{
 		input->CAM_SetCameraThirdData( NULL, vec3_angle );
 	}
+}
+
+static bool IsThirdPersonCameraAllowed()
+{
+	if ( !GameRules() ) return false;
+#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+	// Selectable characters are a normal single-player presentation setting.
+	if ( gpGlobals->maxClients == 1 ) return true;
+#endif
+	return GameRules()->AllowThirdPersonCamera();
+}
+
+void CThirdPersonManager::ResetCameraCollision()
+{
+	// All four values are read before the first collision trace on mode changes.
+	m_flFraction = m_flTargetFraction = 1.0f;
+	m_flUpFraction = m_flTargetUpFraction = 1.0f;
+	m_flLerpTime = m_flUpLerpTime = 0.0f;
 }
 
 void CThirdPersonManager::Update( void )
@@ -79,7 +103,7 @@ void CThirdPersonManager::Update( void )
 	}
 
 	// If cheats have been disabled, pull us back out of third-person view.
-	if ( sv_cheats && !sv_cheats->GetBool() && GameRules() && GameRules()->AllowThirdPersonCamera() == false )
+	if ( sv_cheats && !sv_cheats->GetBool() && GameRules() && !IsThirdPersonCameraAllowed() )
 	{
 		if ( (bool)input->CAM_IsThirdPerson() == true )
 		{
@@ -90,7 +114,7 @@ void CThirdPersonManager::Update( void )
 
 	if ( IsOverridingThirdPerson() == false )
 	{
-		if ( (bool)input->CAM_IsThirdPerson() != ( cl_thirdperson.GetBool() || m_bForced ) && GameRules() && GameRules()->AllowThirdPersonCamera() == true )
+		if ( (bool)input->CAM_IsThirdPerson() != ( cl_thirdperson.GetBool() || m_bForced ) && IsThirdPersonCameraAllowed() )
 		{
 			ToggleThirdPerson( m_bForced || cl_thirdperson.GetBool() );
 		}
@@ -112,6 +136,13 @@ Vector CThirdPersonManager::GetDesiredCameraOffset( void )
 Vector CThirdPersonManager::GetFinalCameraOffset( void )
 {
 	Vector vDesired = GetDesiredCameraOffset();
+	if ( IsOverridingThirdPerson() )
+	{
+		// Use the distance CAM_Think actually interpolated, rather than jumping to
+		// the ideal distance while collision is testing a different camera arm.
+		vDesired[DIST_FORWARD] = m_vecCameraOffset[DIST];
+		return vDesired;
+	}
 
 	if ( m_flUpFraction != 1.0f )
 	{
@@ -124,11 +155,6 @@ Vector CThirdPersonManager::GetFinalCameraOffset( void )
 
 Vector CThirdPersonManager::GetDistanceFraction( void )
 {
-	if ( IsOverridingThirdPerson() == true )
-	{
-		return Vector( m_flTargetFraction, m_flTargetFraction, m_flTargetFraction );
-	}
-
 	float flFraction = m_flFraction;
 	float flUpFraction = m_flUpFraction;
 
@@ -140,6 +166,8 @@ Vector CThirdPersonManager::GetDistanceFraction( void )
 	{
 		m_flFraction = m_flTargetFraction;
 	}
+	if ( IsOverridingThirdPerson() )
+		return Vector( flFraction, flFraction, flFraction );
 
 	flFrac = RemapValClamped( gpGlobals->curtime - m_flUpLerpTime, 0, CAMERA_UP_OFFSET_LERP_TIME, 0, 1 );
 
@@ -153,34 +181,42 @@ Vector CThirdPersonManager::GetDistanceFraction( void )
 	return Vector( flFraction, flFraction, flUpFraction );
 }
 
-void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, QAngle angles )
+void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, QAngle angles, const Vector *pViewOrigin )
 {
+	if ( !pPlayer || !cam_collision.GetBool() )
+	{
+		ResetCameraCollision();
+		return;
+	}
 	if ( pPlayer )
 	{
 		trace_t trace;
 
 		Vector camForward, camRight, camUp;
 
-		// find our player's origin, and from there, the eye position
-		Vector origin = pPlayer->GetLocalOrigin();
-		origin += pPlayer->GetViewOffset();
+		// CalcView may transform the eye through a portal or a moving parent.
+		// Use that final world-space origin when the renderer supplies it.
+		Vector origin = pViewOrigin ? *pViewOrigin : pPlayer->EyePosition();
 
 		AngleVectors( angles, &camForward, &camRight, &camUp );
 	
 		Vector endPos = origin;
 
-		Vector vecCamOffset = endPos + (camForward * - GetDesiredCameraOffset()[DIST_FORWARD]) + (camRight * GetDesiredCameraOffset()[ DIST_RIGHT ]) + (camUp * GetDesiredCameraOffset()[ DIST_UP ] );
+		Vector cameraOffset = GetFinalCameraOffset();
+		Vector vecCamOffset = endPos - camForward * cameraOffset[DIST_FORWARD] + camRight * cameraOffset[DIST_RIGHT] + camUp * cameraOffset[DIST_UP];
 
 		// use our previously #defined hull to collision trace
 		CTraceFilterSimple traceFilter( pPlayer, COLLISION_GROUP_NONE );
 		UTIL_TraceHull( endPos, vecCamOffset, CAM_HULL_MIN, CAM_HULL_MAX, MASK_SOLID & ~CONTENTS_MONSTER, &traceFilter, &trace );
 		
-		if ( trace.fraction != m_flTargetFraction )
+		float targetFraction = trace.startsolid ? 0.0f : clamp( trace.fraction, 0.0f, 1.0f );
+		if ( targetFraction != m_flTargetFraction )
 		{
+			m_flFraction = GetDistanceFraction().x;
 			m_flLerpTime = gpGlobals->curtime;
 		}
 
-		m_flTargetFraction = trace.fraction;
+		m_flTargetFraction = targetFraction;
 		m_flTargetUpFraction = 1.0f;
 
 		//If we're getting closer to a wall snap the fraction right away.
@@ -194,9 +230,7 @@ void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, QAngle angles )
 		// move the camera closer if it hit something
 		if( trace.fraction < 1.0  )
 		{
-			m_vecCameraOffset[ DIST ] *= trace.fraction;
-
-			UTIL_TraceHull( endPos, endPos + (camForward * - GetDesiredCameraOffset()[DIST_FORWARD]), CAM_HULL_MIN, CAM_HULL_MAX, MASK_SOLID & ~CONTENTS_MONSTER, &traceFilter, &trace );
+			UTIL_TraceHull( endPos, endPos - camForward * cameraOffset[DIST_FORWARD], CAM_HULL_MIN, CAM_HULL_MAX, MASK_SOLID & ~CONTENTS_MONSTER, &traceFilter, &trace );
 
 			if ( trace.fraction != 1.0f )
 			{
@@ -219,7 +253,16 @@ void CThirdPersonManager::PositionCamera( CBasePlayer *pPlayer, QAngle angles )
 
 bool CThirdPersonManager::WantToUseGameThirdPerson( void )
 {
-	return cl_thirdperson.GetBool() && GameRules() && GameRules()->AllowThirdPersonCamera() && IsOverridingThirdPerson() == false;
+	return cl_thirdperson.GetBool() && IsThirdPersonCameraAllowed() && IsOverridingThirdPerson() == false;
+}
+
+bool CThirdPersonManager::IsGameplayThirdPerson( void ) const
+{
+#if defined( CLIENT_DLL ) && defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+	return cl_thirdperson.GetBool();
+#else
+	return false;
+#endif
 }
 
 

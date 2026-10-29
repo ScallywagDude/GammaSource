@@ -1440,7 +1440,10 @@ bool CFuncVPhysicsClip::EntityPassesFilter( CBaseEntity *pOther )
 	if ( pFilter )
 		return pFilter->PassesFilter( this, pOther );
 
-	if ( pOther->GetMoveType() == MOVETYPE_VPHYSICS && pOther->VPhysicsGetObject()->IsMoveable() )
+	// GammaSource: inside a portal's physics environment the other entity can be
+	// MOVETYPE_VPHYSICS with no main physics object (crashed when firing portals).
+	IPhysicsObject *pOtherPhys = pOther->VPhysicsGetObject();
+	if ( pOther->GetMoveType() == MOVETYPE_VPHYSICS && pOtherPhys && pOtherPhys->IsMoveable() )
 		return true;
 	
 	return false;

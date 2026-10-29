@@ -583,6 +583,32 @@ CON_COMMAND( gamma_viewmodelinfo, "Print the local viewmodel, sequence and beta 
 			valid ? hdr->pSeqdesc( sequence ).pszActivityName() : "invalid", vm->GetCycle(),
 			hands && hands->GetModel() ? modelinfo->GetModelName( hands->GetModel() ) : "none",
 			hands ? hands->MappedBones() : 0 );
+		// Diagnose missing hands in the camera's model space. A valid mapping
+		// can still place a donor hand behind the near plane or outside the FOV.
+		C_BaseAnimating::AutoAllowBoneAccess access( true, true );
+		matrix3x4_t vmToWorld;
+		AngleMatrix( vm->GetAbsAngles(), vm->GetAbsOrigin(), vmToWorld );
+		C_BaseAnimating *models[2] = { vm, hands };
+		const char *labels[2] = { "viewmodel", "donor" };
+		for ( int m = 0; m < 2; ++m )
+		{
+			C_BaseAnimating *model = models[m];
+			if ( !model || !model->SetupBones( NULL, -1, BONE_USED_BY_ANYTHING, gpGlobals->curtime ) ) continue;
+			const char *joints[3] = { "Hand", "Forearm", "UpperArm" };
+			for ( int j = 0; j < 3; ++j )
+			{
+				char name[80];
+				Q_snprintf( name, sizeof( name ), m ? "Bip01 R %s" : "ValveBiped.Bip01_R_%s", joints[j] );
+				int bone = model->LookupBone( name );
+				if ( bone < 0 ) continue;
+				matrix3x4_t transform;
+				model->GetCachedBoneMatrix( bone, transform );
+				Vector world, local;
+				MatrixPosition( transform, world );
+				VectorITransform( world, vmToWorld, local );
+				Msg( "GAMMA_VM_HAND type=%s joint=%s local=%.3f,%.3f,%.3f\n", labels[m], joints[j], local.x, local.y, local.z );
+			}
+		}
 	}
 }
 

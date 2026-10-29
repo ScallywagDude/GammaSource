@@ -224,7 +224,7 @@ void CSinglePlayerAnimState::ComputePoseParam_BodyYaw(void)
 void CSinglePlayerAnimState::ComputePoseParam_BodyPitch(CStudioHdr *pStudioHdr)
 {
 	// Get pitch from v_angle
-	float flPitch = GetBasePlayer()->GetLocalAngles()[PITCH];
+	float flPitch = GetBasePlayer()->EyeAngles()[PITCH];
 
 	if (flPitch > 180.0f)
 	{

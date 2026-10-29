@@ -679,7 +679,7 @@ void CInput::AdjustYaw( float speed, QAngle& viewangles )
 
 	// thirdperson platformer mode
 	// use movement keys to aim the player relative to the thirdperson camera
-	if ( CAM_IsThirdPerson() && thirdperson_platformer.GetInt() )
+	if ( CAM_IsThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() && thirdperson_platformer.GetInt() )
 	{
 		float side = KeyState(&in_moveleft) - KeyState(&in_moveright);
 		float forward = KeyState(&in_forward) - KeyState(&in_back);
@@ -800,15 +800,15 @@ ComputeSideMove
 */
 void CInput::ComputeSideMove( CUserCmd *cmd )
 {
-	// thirdperson platformer movement
-	if ( CAM_IsThirdPerson() && thirdperson_platformer.GetInt() )
+	// Developer platformer/screenspace modes must not change gameplay WASD.
+	if ( CAM_IsThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() && thirdperson_platformer.GetInt() )
 	{
 		// no sideways movement in this mode
 		return;
 	}
 
 	// thirdperson screenspace movement
-	if ( CAM_IsThirdPerson() && thirdperson_screenspace.GetInt() )
+	if ( CAM_IsThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() && thirdperson_screenspace.GetInt() )
 	{
 		float ideal_yaw = cam_idealyaw.GetFloat();
 		float ideal_sin = sin(DEG2RAD(ideal_yaw));
@@ -857,7 +857,7 @@ ComputeForwardMove
 void CInput::ComputeForwardMove( CUserCmd *cmd )
 {
 	// thirdperson platformer movement
-	if ( CAM_IsThirdPerson() && thirdperson_platformer.GetInt() )
+	if ( CAM_IsThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() && thirdperson_platformer.GetInt() )
 	{
 		// movement is always forward in this mode
 		float movement = KeyState(&in_forward)
@@ -871,7 +871,7 @@ void CInput::ComputeForwardMove( CUserCmd *cmd )
 	}
 
 	// thirdperson screenspace movement
-	if ( CAM_IsThirdPerson() && thirdperson_screenspace.GetInt() )
+	if ( CAM_IsThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() && thirdperson_screenspace.GetInt() )
 	{
 		float ideal_yaw = cam_idealyaw.GetFloat();
 		float ideal_sin = sin(DEG2RAD(ideal_yaw));

@@ -486,6 +486,9 @@ public:
 
 	// Returns the aiment render origin + angles
 	virtual int				DrawModel( int flags );
+#ifdef GAMMA_PORTALGUN
+	virtual void BuildTransformations( CStudioHdr *header, Vector *pos, Quaternion q[], const matrix3x4_t &cameraTransform, int boneMask, CBoneBitList &boneComputed );
+#endif
 	virtual bool			ShouldDraw( void );
 	virtual bool			ShouldDrawPickup( void );
 	virtual void			HandleInput( void ) { return; };

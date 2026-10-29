@@ -1349,8 +1349,9 @@ static void InitMaterialSystemConfig(MaterialSystem_Config_t *pConfig)
 	pConfig->bEditMode = true;
 	pConfig->m_nAASamples = 0;
 	pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_DISABLE_BUMPMAP, true);
-	// When I do this the model browser layout is horked...
-	// pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS, true );
+	// Each map viewport presents a subrectangle to its own child HWND.
+	// D3D9 requires the COPY swap effect selected by this flag for that path.
+	pConfig->SetFlag( MATSYS_VIDCFG_FLAGS_USING_MULTIPLE_WINDOWS, true );
 }
 
 

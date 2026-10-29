@@ -908,6 +908,7 @@ void CHL2_Player::PreThink(void)
 void CHL2_Player::PostThink( void )
 {
 	BaseClass::PostThink();
+	UpdateGammaPlayerModel();
 
 #ifdef PORTAL
 	m_angEyeAngles = EyeAngles();
@@ -1414,6 +1415,7 @@ void CHL2_Player::SetPlayerModel( void )
 {
 	PrecacheModel( "models/player.mdl" );
 	SetModel( "models/player.mdl" );
+	UpdateGammaPlayerModel();
 }
 #endif
 

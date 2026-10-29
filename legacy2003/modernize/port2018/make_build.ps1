@@ -65,7 +65,22 @@ Write-Host "staging $out"
 
 # engine and launcher (real copies)
 Put-File "$Install\hl2_launcher.exe" "$buildRoot\hl2_launcher.exe" -Copy
+$profileLauncher = @(
+    (Join-Path $Repo 'build\launcher_main\GammaSource Launcher.exe'),
+    (Join-Path $Install 'GammaSource Launcher.exe')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+$profileLauncherUI = @(
+    (Join-Path $Repo 'build\launcher_main\gamma_launcher_ui.dll'),
+    (Join-Path $Install 'bin\gamma_launcher_ui.dll')
+) | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } | Select-Object -First 1
+if ($profileLauncher -and $profileLauncherUI) {
+    Put-File $profileLauncher "$buildRoot\GammaSource Launcher.exe" -Copy
+} else {
+    $profileLauncher = $null
+    Write-Warning 'Standalone launcher is not built; run py -3 waf build --targets=gamma_launcher to include it.'
+}
 Put-Tree "$Install\bin" "$buildRoot\bin" -Exclude @('*.lib', '*.exp') -Copy
+if ($profileLauncher) { Put-File $profileLauncherUI "$buildRoot\bin\gamma_launcher_ui.dll" -Copy }
 Put-Tree "$Install\platform" "$buildRoot\platform" -Copy
 Put-File "$RetailHL2\platform\platform_misc_dir.vpk" "$buildRoot\platform\platform_misc_dir.vpk"
 Get-ChildItem "$RetailHL2\platform" -Filter 'platform_misc_0*.vpk' | ForEach-Object { Put-File $_.FullName "$buildRoot\platform\$($_.Name)" }
@@ -131,11 +146,12 @@ Get-ChildItem "$RetailPortal\portal" -Filter 'portal_pak_*.vpk' | ForEach-Object
 }
 "@ | Set-Content -Encoding ascii "$game\gameinfo.txt"
 
+$playEntry = if ($profileLauncher) { '"GammaSource Launcher.exe" -multirun -dxlevel 95' } else { 'hl2_launcher.exe -game gammasource -multirun -dxlevel 95 -novid' }
 @"
 @echo off
 rem GammaSource (64-bit). Needs no Steam.
 cd /d "%~dp0"
-start "" hl2_launcher.exe -game gammasource -multirun -dxlevel 95 -novid %*
+start "" $playEntry %*
 "@ | Set-Content -Encoding ascii "$buildRoot\play.cmd"
 
 if ($Include2003) {

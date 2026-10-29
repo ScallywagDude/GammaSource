@@ -10,6 +10,9 @@
 #include "PortalRender.h"
 #include "c_portal_player.h"
 #include "model_types.h"
+#ifdef GAMMA_PORTALGUN
+#include "gamma/gamma_weapon_worldmodel.h"
+#endif
 
 C_PortalGhostRenderable::C_PortalGhostRenderable( C_Prop_Portal *pOwningPortal, C_BaseEntity *pGhostSource, RenderGroup_t sourceRenderGroup, const VMatrix &matGhostTransform, float *pSharedRenderClipPlane, bool bLocalPlayer )
 : m_pGhostedRenderable( pGhostSource ), 
@@ -37,6 +40,10 @@ void C_PortalGhostRenderable::PerFrameUpdate( void )
 {
 	if( m_pGhostedRenderable )
 	{
+#ifdef GAMMA_PORTALGUN
+		C_BaseCombatWeapon *weapon = dynamic_cast<C_BaseCombatWeapon *>( m_pGhostedRenderable );
+		CGammaWeaponWorldModelScope worldModel( weapon );
+#endif
 		SetModelName( m_pGhostedRenderable->GetModelName() );
 		SetModelIndex( m_pGhostedRenderable->GetModelIndex() );
 		SetEffects( m_pGhostedRenderable->GetEffects() | EF_NOINTERP );		
@@ -92,28 +99,40 @@ bool C_PortalGhostRenderable::SetupBones( matrix3x4_t *pBoneToWorldOut, int nMax
 	
 	int nModelIndex = 0;
 	CBaseCombatWeapon *pParent = dynamic_cast<CBaseCombatWeapon*>( m_pGhostedRenderable );
+#ifdef GAMMA_PORTALGUN
+	CGammaWeaponWorldModelScope worldModel( pParent );
+#else
 	if ( pParent )
 	{
 		nModelIndex = pParent->GetModelIndex();
 		pParent->SetModelIndex( pParent->GetWorldModelIndex() );
 	}
+#endif
 
 	if( m_pGhostedRenderable->SetupBones( pBoneToWorldOut, nMaxBones, boneMask, currentTime ) )
 	{
 		if( pBoneToWorldOut )
 		{
-			for( int i = 0; i != nMaxBones; ++i ) //FIXME: nMaxBones is most definitely greater than the actual number of bone transforms actually used, find the subset somehow
+			C_BaseAnimating *source = dynamic_cast<C_BaseAnimating *>( m_pGhostedRenderable );
+			CStudioHdr *header = source ? source->GetModelPtr() : NULL;
+			const int boneCount = header ? MIN( nMaxBones, header->numbones() ) : 0;
+			for( int i = 0; i < boneCount; ++i )
 			{
 				pBoneToWorldOut[i] = (m_matGhostTransform * pBoneToWorldOut[i]).As3x4();
 			}
 		}
+		#ifndef GAMMA_PORTALGUN
+		if ( pParent ) pParent->SetModelIndex( nModelIndex );
+		#endif
 		return true;
 	}
 	
+#ifndef GAMMA_PORTALGUN
 	if ( pParent )
 	{
 		pParent->SetModelIndex( nModelIndex );
 	}
+#endif
 
 	return false;
 }
@@ -284,6 +303,13 @@ int C_PortalGhostRenderable::DrawModel( int flags )
 
 ModelInstanceHandle_t C_PortalGhostRenderable::GetModelInstance()
 {
+#ifdef GAMMA_PORTALGUN
+	// A player weapon's source entity temporarily changes models while setting
+	// up world-model bones. Sharing its instance would leave the ghost holding
+	// an instance destroyed by that switch. Its own world instance stays valid.
+	if ( dynamic_cast<C_BaseCombatWeapon *>( m_pGhostedRenderable ) )
+		return BaseClass::GetModelInstance();
+#endif
 	if ( m_pGhostedRenderable )
 		return m_pGhostedRenderable->GetModelInstance();
 

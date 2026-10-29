@@ -77,6 +77,22 @@ class CHudVote;
 
 static vgui::HContext s_hVGuiContext = DEFAULT_VGUI_CONTEXT;
 
+#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+static Vector s_gammaCameraEye, s_gammaCameraOrigin, s_gammaCameraFraction;
+static QAngle s_gammaCameraEyeAngles, s_gammaCameraAngles;
+
+CON_COMMAND( gamma_camera_status, "Print the most recent third-person eye and rendered camera state" )
+{
+	Msg( "GAMMA_CAMERA active=%d gameplay=%d eye=%.2f,%.2f,%.2f origin=%.2f,%.2f,%.2f eyeangles=%.2f,%.2f,%.2f angles=%.2f,%.2f,%.2f fraction=%.3f,%.3f,%.3f\n",
+		::input->CAM_IsThirdPerson() ? 1 : 0, g_ThirdPersonManager.IsGameplayThirdPerson() ? 1 : 0,
+		s_gammaCameraEye.x, s_gammaCameraEye.y, s_gammaCameraEye.z,
+		s_gammaCameraOrigin.x, s_gammaCameraOrigin.y, s_gammaCameraOrigin.z,
+		s_gammaCameraEyeAngles.x, s_gammaCameraEyeAngles.y, s_gammaCameraEyeAngles.z,
+		s_gammaCameraAngles.x, s_gammaCameraAngles.y, s_gammaCameraAngles.z,
+		s_gammaCameraFraction.x, s_gammaCameraFraction.y, s_gammaCameraFraction.z );
+}
+#endif
+
 ConVar cl_drawhud( "cl_drawhud", "1", FCVAR_CHEAT, "Enable the rendering of the hud" );
 ConVar hud_takesshots( "hud_takesshots", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Auto-save a scoreboard screenshot at the end of a map." );
 ConVar hud_freezecamhide( "hud_freezecamhide", "0", FCVAR_CLIENTDLL | FCVAR_ARCHIVE, "Hide the HUD during freeze-cam" );
@@ -435,22 +451,34 @@ void ClientModeShared::OverrideView( CViewSetup *pSetup )
 	if( ::input->CAM_IsThirdPerson() )
 	{
 		Vector cam_ofs = g_ThirdPersonManager.GetCameraOffsetAngles();
+		camAngles = pSetup->angles;
+		if ( g_ThirdPersonManager.IsOverridingThirdPerson() && !g_ThirdPersonManager.IsGameplayThirdPerson() )
+		{
+			QAngle viewAngles;
+			engine->GetViewAngles( viewAngles );
+			// Compose the orbit with CalcView's final orientation. Euler angle
+			// addition is incorrect for floor/wall portals that rotate the up axis.
+			matrix3x4_t viewRotation, inverseView, orbitRotation, eyeRotation;
+			matrix3x4_t relativeOrbit, finalRotation;
+			AngleMatrix( viewAngles, viewRotation );
+			MatrixInvert( viewRotation, inverseView );
+			AngleMatrix( QAngle( cam_ofs[PITCH], cam_ofs[YAW], 0 ), orbitRotation );
+			AngleMatrix( pSetup->angles, eyeRotation );
+			ConcatTransforms( inverseView, orbitRotation, relativeOrbit );
+			ConcatTransforms( eyeRotation, relativeOrbit, finalRotation );
+			MatrixAngles( finalRotation, camAngles );
+		}
+		g_ThirdPersonManager.PositionCamera( pPlayer, camAngles, &pSetup->origin );
 		Vector cam_ofs_distance = g_ThirdPersonManager.GetFinalCameraOffset();
-
 		cam_ofs_distance *= g_ThirdPersonManager.GetDistanceFraction();
-
-		camAngles[ PITCH ] = cam_ofs[ PITCH ];
-		camAngles[ YAW ] = cam_ofs[ YAW ];
-		camAngles[ ROLL ] = 0;
+		#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+		s_gammaCameraEye = pSetup->origin;
+		s_gammaCameraEyeAngles = pSetup->angles;
+		#endif
 
 		Vector camForward, camRight, camUp;
 		
 
-		if ( g_ThirdPersonManager.IsOverridingThirdPerson() == false )
-		{
-			engine->GetViewAngles( camAngles );
-		}
-			
 		// get the forward vector
 		AngleVectors( camAngles, &camForward, &camRight, &camUp );
 	
@@ -460,6 +488,11 @@ void ClientModeShared::OverrideView( CViewSetup *pSetup )
 
 		// Override angles from third person camera
 		VectorCopy( camAngles, pSetup->angles );
+		#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+		s_gammaCameraOrigin = pSetup->origin;
+		s_gammaCameraAngles = pSetup->angles;
+		s_gammaCameraFraction = g_ThirdPersonManager.GetDistanceFraction();
+		#endif
 	}
 	else if (::input->CAM_IsOrthographic())
 	{

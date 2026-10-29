@@ -22,8 +22,13 @@
 
 #define MAX_BURN_RADIUS		256
 #define RADIUS_GROW_RATE	50.0	// units/sec 
+#define IMMOLATOR_TICK_INTERVAL 0.05f
+#define IMMOLATOR_FUEL_INTERVAL 0.2f
 
 #define IMMOLATOR_TARGET_INVALID Vector( FLT_MAX, FLT_MAX, FLT_MAX )
+
+static ConVar gamma_immolator_debug( "gamma_immolator_debug", "0", FCVAR_CHEAT,
+	"Report immolator attack, damage, fuel and shutdown state." );
 
 class CWeaponImmolator : public CBaseHLCombatWeapon
 {
@@ -38,6 +43,9 @@ public:
 	void PrimaryAttack( void );
 	void ItemPostFrame( void );
 	bool Holster( CBaseCombatWeapon *pSwitchingTo = NULL );
+	void Drop( const Vector &vecVelocity );
+	void UpdateOnRemove();
+	void OnRestore();
 
 	int CapabilitiesGet( void ) {	return bits_CAP_WEAPON_RANGE_ATTACK1;	}
 
@@ -59,6 +67,9 @@ public:
 
 	float m_flBurnRadius;
 	float m_flTimeLastUpdatedRadius;
+	float m_flNextFuelUse;
+	float m_flNextPlayerGesture;
+	float m_flNextChargeAllowed;
 
 	Vector  m_vecImmolatorTarget;
 };
@@ -75,6 +86,9 @@ BEGIN_DATADESC( CWeaponImmolator )
 	DEFINE_FIELD( m_beamIndex, FIELD_INTEGER ),
 	DEFINE_FIELD( m_flBurnRadius, FIELD_FLOAT ),
 	DEFINE_FIELD( m_flTimeLastUpdatedRadius, FIELD_TIME ),
+	DEFINE_FIELD( m_flNextFuelUse, FIELD_TIME ),
+	DEFINE_FIELD( m_flNextPlayerGesture, FIELD_TIME ),
+	DEFINE_FIELD( m_flNextChargeAllowed, FIELD_TIME ),
 	DEFINE_FIELD( m_vecImmolatorTarget, FIELD_VECTOR ),
 
 	DEFINE_ENTITYFUNC( UpdateThink ),
@@ -98,24 +112,50 @@ CWeaponImmolator::CWeaponImmolator( void )
 {
 	m_fMaxRange1 = 4096;
 	m_vecImmolatorTarget = IMMOLATOR_TARGET_INVALID;
-	StopImmolating();
+	m_flBurnRadius = 0.0f;
+	m_flTimeLastUpdatedRadius = 0.0f;
+	m_flNextFuelUse = m_flNextPlayerGesture = 0.0f;
+	m_flNextChargeAllowed = 0.0f;
 }
 
 void CWeaponImmolator::StartImmolating()
 {
+	if ( IsImmolating() || gpGlobals->curtime < m_flNextChargeAllowed ) return;
+	CBaseCombatCharacter *owner = GetOwner();
+	if ( !owner || !owner->IsAlive() ) return;
+	if ( owner->IsPlayer() && ( m_iPrimaryAmmoType < 0 || owner->GetAmmoCount( m_iPrimaryAmmoType ) <= 0 ) ) return;
 	// Start the radius really tiny because we use radius == 0.0 to 
 	// determine whether the immolator is operating or not.
 	m_flBurnRadius = 0.1;
 	m_flTimeLastUpdatedRadius = gpGlobals->curtime;
+	m_flNextFuelUse = gpGlobals->curtime;
+	m_flNextPlayerGesture = gpGlobals->curtime;
+	SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+	SetWeaponIdleTime( gpGlobals->curtime + 1.0f );
+	EmitSound( "Weapon_Immolator.Start" );
+	EmitSound( "Weapon_Immolator.Run" );
+	m_flNextPrimaryAttack = gpGlobals->curtime + IMMOLATOR_TICK_INTERVAL;
 	SetThink( &CWeaponImmolator::UpdateThink );
 	SetNextThink( gpGlobals->curtime );
+	if ( gamma_immolator_debug.GetBool() ) Msg( "IMMOLATOR start owner=%d\n", owner->entindex() );
 }
 
 void CWeaponImmolator::StopImmolating()
 {
+	const bool wasImmolating = IsImmolating();
 	m_flBurnRadius = 0.0;
 	SetThink( NULL );
-	m_flNextPrimaryAttack = gpGlobals->curtime + 2.0;
+	SetNextThink( TICK_NEVER_THINK );
+	StopSound( "Weapon_Immolator.Run" );
+	StopSound( "Weapon_Immolator.Start" );
+	if ( wasImmolating )
+	{
+		SendWeaponAnim( ACT_VM_IDLE );
+		EmitSound( "Weapon_Immolator.Off" );
+		m_flNextPrimaryAttack = gpGlobals->curtime + 2.0f;
+		m_flNextChargeAllowed = m_flNextPrimaryAttack;
+		if ( gamma_immolator_debug.GetBool() ) Msg( "IMMOLATOR stop owner=%d\n", GetOwner() ? GetOwner()->entindex() : 0 );
+	}
 }
 
 //-----------------------------------------------------------------------------
@@ -124,6 +164,9 @@ void CWeaponImmolator::StopImmolating()
 void CWeaponImmolator::Precache( void )
 {
 	m_beamIndex = engine->PrecacheModel( "sprites/bluelaser1.vmt" );
+	PrecacheScriptSound( "Weapon_Immolator.Start" );
+	PrecacheScriptSound( "Weapon_Immolator.Run" );
+	PrecacheScriptSound( "Weapon_Immolator.Off" );
 
 	BaseClass::Precache();
 }
@@ -133,8 +176,6 @@ void CWeaponImmolator::Precache( void )
 //-----------------------------------------------------------------------------
 void CWeaponImmolator::PrimaryAttack( void )
 {
-	WeaponSound( SINGLE );
-
 	if( !IsImmolating() )
 	{
 		StartImmolating();
@@ -237,20 +278,41 @@ void CWeaponImmolator::UpdateThink( void )
 {
 	CBaseCombatCharacter *pOwner = GetOwner();
 
-	if( !pOwner || !pOwner->IsAlive() )
+	if( !IsImmolating() || !pOwner || !pOwner->IsAlive() ||
+		( pOwner->IsPlayer() && ( pOwner->GetActiveWeapon() != this || pOwner->GetWaterLevel() == 3 ) ) )
 	{
 		StopImmolating();
 		return;
 	}
 
 	Update();
-	SetNextThink( gpGlobals->curtime + 0.05 );
+	// Update can stop the attack. Do not revive its think after that shutdown.
+	if ( IsImmolating() ) SetNextThink( gpGlobals->curtime + IMMOLATOR_TICK_INTERVAL );
 }
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CWeaponImmolator::Update()
 {
+	CBaseCombatCharacter *owner = GetOwner();
+	if ( !owner ) { StopImmolating(); return; }
+	if ( owner->IsPlayer() && gpGlobals->curtime >= m_flNextFuelUse )
+	{
+		if ( m_iPrimaryAmmoType < 0 || owner->GetAmmoCount( m_iPrimaryAmmoType ) <= 0 )
+		{
+			StopImmolating(); return;
+		}
+		owner->RemoveAmmo( 1, m_iPrimaryAmmoType );
+		m_flNextFuelUse = gpGlobals->curtime + IMMOLATOR_FUEL_INTERVAL;
+	}
+	if ( owner->IsPlayer() && gpGlobals->curtime >= m_flNextPlayerGesture )
+	{
+		ToBasePlayer( owner )->SetAnimation( PLAYER_ATTACK1 );
+		m_flNextPlayerGesture = gpGlobals->curtime + 0.35f;
+	}
+	if ( GetActivity() != ACT_VM_PRIMARYATTACK ) SendWeaponAnim( ACT_VM_PRIMARYATTACK );
+	SetWeaponIdleTime( gpGlobals->curtime + 1.0f );
+	m_flNextPrimaryAttack = gpGlobals->curtime + IMMOLATOR_TICK_INTERVAL;
 	float flDuration = gpGlobals->curtime - m_flTimeLastUpdatedRadius;
 	if( flDuration != 0.0 )
 	{
@@ -280,7 +342,7 @@ void CWeaponImmolator::Update()
 	}
 
 	trace_t	tr;
-	UTIL_TraceLine( vecSrc, vecSrc + vecAiming * MAX_TRACE_LENGTH, MASK_SHOT, pOwner, COLLISION_GROUP_NONE, &tr );
+	UTIL_TraceLine( vecSrc, vecSrc + vecAiming * m_fMaxRange1, MASK_SHOT, owner, COLLISION_GROUP_NONE, &tr );
 
 	int brightness;
 	brightness = 255 * (m_flBurnRadius/MAX_BURN_RADIUS);
@@ -342,13 +404,18 @@ void CWeaponImmolator::Update()
 						);
 		}
 
-		ImmolationDamage( CTakeDamageInfo( this, GetOwner(), 1, DMG_BURN ), tr.endpos, m_flBurnRadius, CLASS_NONE );
+		ImmolationDamage( CTakeDamageInfo( this, GetOwner(), 1, DMG_BURN ), tr.endpos + tr.plane.normal * 2.0f, m_flBurnRadius, CLASS_NONE );
 	}
 	else
 	{
 		// HL2MODERN_IMMOLATOR_DIRECT_HIT: use the existing burn tick on direct impacts.
 		if ( tr.m_pEnt && tr.m_pEnt->m_takedamage!=DAMAGE_NO )
-			tr.m_pEnt->TakeDamage(CTakeDamageInfo(this,GetOwner(),1,DMG_BURN));
+		{
+			CTakeDamageInfo damage( this, owner, 1, DMG_BURN );
+			damage.SetDamagePosition( tr.endpos );
+			tr.m_pEnt->TakeDamage( damage );
+			if ( gamma_immolator_debug.GetBool() ) Msg( "IMMOLATOR hit target=%d health=%d radius=%.1f ammo=%d\n", tr.m_pEnt->entindex(), tr.m_pEnt->GetHealth(), m_flBurnRadius, m_iPrimaryAmmoType >= 0 ? owner->GetAmmoCount( m_iPrimaryAmmoType ) : -1 );
+		}
 	}
 
 	m_flTimeLastUpdatedRadius = gpGlobals->curtime;
@@ -366,6 +433,31 @@ bool CWeaponImmolator::Holster( CBaseCombatWeapon *pSwitchingTo )
 {
 	StopImmolating();
 	return BaseClass::Holster(pSwitchingTo);
+}
+
+void CWeaponImmolator::Drop( const Vector &vecVelocity )
+{
+	StopImmolating();
+	BaseClass::Drop( vecVelocity );
+}
+
+void CWeaponImmolator::UpdateOnRemove()
+{
+	StopImmolating();
+	BaseClass::UpdateOnRemove();
+}
+
+void CWeaponImmolator::OnRestore()
+{
+	BaseClass::OnRestore();
+	if ( IsImmolating() && GetOwner() && GetOwner()->IsAlive() )
+	{
+		EmitSound( "Weapon_Immolator.Run" );
+		m_flTimeLastUpdatedRadius = gpGlobals->curtime;
+		m_flNextFuelUse = gpGlobals->curtime;
+		SetThink( &CWeaponImmolator::UpdateThink );
+		SetNextThink( gpGlobals->curtime + IMMOLATOR_TICK_INTERVAL );
+	}
 }
 
 void CWeaponImmolator::ItemPostFrame( void )
@@ -393,8 +485,31 @@ void CWeaponImmolator::ImmolationDamage( const CTakeDamageInfo &info, const Vect
 			{
 				continue;
 			}
-
+			if ( pEntity == GetOwner() || pEntity == this ) continue;
+			// The wall impact can grow a burn field, but solids still shield actors.
+			vecSpot = pEntity->BodyTarget( vecSrc );
+			UTIL_TraceLine( vecSrc, vecSpot, MASK_SOLID_BRUSHONLY, this, COLLISION_GROUP_NONE, &tr );
+			if ( tr.fraction != 1.0f ) continue;
 			pEntity->TakeDamage( info );
 		}
 	}
+}
+
+CON_COMMAND_F( gamma_immolator_status, "Report the owned immolator charge, fuel and think state, including while holstered.", FCVAR_CHEAT )
+{
+	CBasePlayer *player = UTIL_GetLocalPlayer();
+	CWeaponImmolator *weapon = player ? dynamic_cast<CWeaponImmolator *>( player->Weapon_OwnsThisType( "weapon_immolator" ) ) : NULL;
+	if ( !weapon ) { Msg( "IMMOLATOR status no_owned_immolator\n" ); return; }
+	Msg( "IMMOLATOR status active=%d radius=%.3f fuel=%d nextthink=%.3f activity=%d cooldown=%.3f equipped=%d\n",
+		weapon->IsImmolating(), weapon->m_flBurnRadius, weapon->GetPrimaryAmmoType() >= 0 ? player->GetAmmoCount( weapon->GetPrimaryAmmoType() ) : -1,
+		weapon->GetNextThink(), (int)weapon->GetActivity(), MAX(0.0f, weapon->m_flNextChargeAllowed - gpGlobals->curtime), player->GetActiveWeapon() == weapon );
+}
+
+CON_COMMAND_F( gamma_immolator_fuel, "gamma_immolator_fuel <0-1000>: set fuel for an isolated immolator test.", FCVAR_CHEAT )
+{
+	CBasePlayer *player = UTIL_GetLocalPlayer();
+	CWeaponImmolator *weapon = player ? dynamic_cast<CWeaponImmolator *>( player->GetActiveWeapon() ) : NULL;
+	if ( !weapon || args.ArgC() != 2 || weapon->GetPrimaryAmmoType() < 0 ) return;
+	player->SetAmmoCount( clamp( atoi(args[1]), 0, 1000 ), weapon->GetPrimaryAmmoType() );
+	Msg( "IMMOLATOR test_fuel=%d\n", player->GetAmmoCount( weapon->GetPrimaryAmmoType() ) );
 }

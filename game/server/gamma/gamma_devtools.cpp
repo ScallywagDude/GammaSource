@@ -127,7 +127,9 @@ CON_COMMAND( gamma_delay, "gamma_delay <seconds> <command>: run a console comman
 		return;
 	int i = s_GammaMapStartCmd.m_Delayed.AddToTail();
 	s_GammaMapStartCmd.m_Delayed[i].flAt = gpGlobals->curtime + atof( args[1] );
-	s_GammaMapStartCmd.m_Delayed[i].cmd = args.ArgS() + V_strlen( args[1] ) + 1;
+	// ArgS retains quotes around a command containing spaces. Strip that one
+	// argument's quoting so the client executes the command and its arguments.
+	s_GammaMapStartCmd.m_Delayed[i].cmd = args.ArgC() == 3 ? args[2] : args.ArgS() + V_strlen( args[1] ) + 1;
 }
 
 // Keep the roster/ammo check in the game: this catches config and mounted-script

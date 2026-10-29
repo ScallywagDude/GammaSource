@@ -31,7 +31,7 @@ ConVar cam_idealpitch( "cam_idealpitch", "0", FCVAR_ARCHIVE | FCVAR_CHEAT  );	 /
 ConVar cam_idealdist( "cam_idealdist", "150", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
 ConVar cam_idealdistright( "cam_idealdistright", "0", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
 ConVar cam_idealdistup( "cam_idealdistup", "0", FCVAR_ARCHIVE | FCVAR_CHEAT );	 // thirdperson distance
-static ConVar cam_collision( "cam_collision", "1", FCVAR_ARCHIVE | FCVAR_CHEAT, "When in thirdperson and cam_collision is set to 1, an attempt is made to keep the camera from passing though walls." );
+ConVar cam_collision( "cam_collision", "1", FCVAR_ARCHIVE | FCVAR_CHEAT, "When in thirdperson and cam_collision is set to 1, an attempt is made to keep the camera from passing though walls." );
 static ConVar cam_showangles( "cam_showangles", "0", FCVAR_CHEAT, "When in thirdperson, print viewangles/idealangles/cameraoffsets to the console." );
 static ConVar c_maxpitch( "c_maxpitch", "90", FCVAR_ARCHIVE| FCVAR_CHEAT );
 static ConVar c_minpitch( "c_minpitch", "0", FCVAR_ARCHIVE| FCVAR_CHEAT );
@@ -58,10 +58,14 @@ CAM_ToThirdPerson
 */
 void CAM_ToThirdPerson(void)
 {
+#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+	g_ThirdPersonManager.SetOverridingThirdPerson( true );
+#else
 	if ( cl_thirdperson.GetBool() == false )
 	{
 		g_ThirdPersonManager.SetOverridingThirdPerson( true );
 	}
+#endif
 
 	input->CAM_ToThirdPerson();
 
@@ -102,10 +106,21 @@ void CAM_ToFirstPerson(void)
 	if ( localPlayer && !localPlayer->CanUseFirstPersonCommand() )
 		return;
 
+#if defined( HL2_CLIENT_DLL ) && defined( GAMMA_PORTALGUN )
+	if ( cl_thirdperson.GetBool() )
+	{
+		// Keep the picker in sync with the firstperson command. The convar's
+		// callback re-enters this function once with the new value already set.
+		cl_thirdperson.SetValue( 0 );
+		return;
+	}
+	g_ThirdPersonManager.SetOverridingThirdPerson( false );
+#else
 	if ( cl_thirdperson.GetBool() == false )
 	{
 		g_ThirdPersonManager.SetOverridingThirdPerson( false );
 	}
+#endif
 
 	input->CAM_ToFirstPerson();
 
@@ -266,6 +281,16 @@ void CInput::CAM_Think( void )
 
 	if( !m_fCameraInThirdPerson )
 		return;
+
+	if ( g_ThirdPersonManager.IsGameplayThirdPerson() )
+	{
+		// Gameplay follows the same aim as movement and weapon fire. Saved
+		// developer orbit angles (or Maya mode) must not rotate this camera.
+		engine->GetViewAngles( viewangles );
+		g_ThirdPersonManager.SetCameraOffsetAngles( Vector( viewangles[PITCH], viewangles[YAW],
+			clamp( cam_idealdist.GetFloat(), c_mindistance.GetFloat(), c_maxdistance.GetFloat() ) ) );
+		return;
+	}
 
 	// In Maya-mode
 	if ( Is_CAM_ThirdPerson_MayaMode() )
@@ -519,7 +544,7 @@ void CInput::CAM_Think( void )
 	// Note: CameraOffset = viewangle + idealAngle
 	VectorCopy( g_ThirdPersonManager.GetCameraOffsetAngles(), camOffset );
 	
-	if( cam_snapto.GetInt() )
+	if( cam_snapto.GetBool() )
 	{
 		camOffset[ YAW ] = cam_idealyaw.GetFloat() + viewangles[ YAW ];
 		camOffset[ PITCH ] = cam_idealpitch.GetFloat() + viewangles[ PITCH ];
@@ -541,18 +566,8 @@ void CInput::CAM_Think( void )
 			camOffset[ DIST ] += ( cam_idealdist.GetFloat() - camOffset[ DIST ] ) / lag;
 	}
 
-	// move the camera closer to the player if it hit something
-	if ( cam_collision.GetInt() )
-	{
-		QAngle desiredCamAngles = QAngle( camOffset[ PITCH ], camOffset[ YAW ], camOffset[ DIST ] );
-
-		if ( g_ThirdPersonManager.IsOverridingThirdPerson() == false )
-		{
-			desiredCamAngles = viewangles;
-		}
-
-		g_ThirdPersonManager.PositionCamera( C_BasePlayer::GetLocalPlayer(), desiredCamAngles );
-    }
+	// Collision is evaluated in OverrideView, after CalcView has supplied the
+	// final eye position (including portal and parent transforms).
 
 	if ( cam_showangles.GetInt() )
 	{
@@ -636,16 +651,7 @@ void CInput::CAM_CameraThirdThink( void )
 		vecCamOffset[DIST] += ( m_pCameraThirdData->m_flDist - vecCamOffset[DIST] ) / flLag;
 	}
 
-	C_BasePlayer* pLocalPlayer = C_BasePlayer::GetLocalPlayer();
-
-	if ( pLocalPlayer )
-	{
-		QAngle desiredCamAngles = QAngle( vecCamOffset[ PITCH ], vecCamOffset[ YAW ], vecCamOffset[DIST] );
-	
-		g_ThirdPersonManager.PositionCamera( C_BasePlayer::GetLocalPlayer(), desiredCamAngles );
-		
-	//	vecCamOffset = g_ThirdPersonManager.GetCameraOffsetAngles();
-	}
+	// Collision is evaluated from the rendered eye origin in OverrideView.
 
 	ClampRange180( vecCamOffset[PITCH] );
 	ClampRange180( vecCamOffset[YAW] );
@@ -682,7 +688,11 @@ void CInput::CAM_ToThirdPerson(void)
 	{
 		m_fCameraInThirdPerson = true; 
 	
-		g_ThirdPersonManager.SetCameraOffsetAngles( Vector( viewangles[ YAW ], viewangles[ PITCH ], CAM_MIN_DIST ) );
+		g_ThirdPersonManager.ResetCameraCollision();
+		g_ThirdPersonManager.SetCameraOffsetAngles( Vector(
+			viewangles[PITCH] + ( g_ThirdPersonManager.IsGameplayThirdPerson() ? 0.0f : cam_idealpitch.GetFloat() ),
+			viewangles[YAW] + ( g_ThirdPersonManager.IsGameplayThirdPerson() ? 0.0f : cam_idealyaw.GetFloat() ),
+			cam_idealdist.GetFloat() ) );
 	}
 
 	cam_command.SetValue( 0 );
@@ -697,6 +707,7 @@ CAM_ToFirstPerson
 void CInput::CAM_ToFirstPerson(void)
 {
 	g_ThirdPersonManager.SetDesiredCameraOffset( vec3_origin );
+	g_ThirdPersonManager.ResetCameraCollision();
 
 	m_fCameraInThirdPerson = false;
 	cam_command.SetValue( 0 );
