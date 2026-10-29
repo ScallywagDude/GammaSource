@@ -400,7 +400,12 @@ void CFogUIPanel::OnTextKillFocus( KeyValues *data )
 void CFogUIPanel::OnMessage( const KeyValues *params, VPANEL fromPanel )
 {
 	BaseClass::OnMessage( params, fromPanel );
-	
+
+	// GammaSource: the sliders report a move when they are set up at startup, which sent
+	// cheat commands (fog_start, r_farz, ...) before any map; only follow the user's drags.
+	if ( !IsVisible() )
+		return;
+
 	if ( !Q_strcmp( "SliderMoved", params->GetName() ) )
 	{
 		// World

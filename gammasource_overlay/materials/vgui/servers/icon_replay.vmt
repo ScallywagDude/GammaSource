@@ -1,0 +1,10 @@
+// GammaSource: the server browser asks for the replay icon; there are no replay servers.
+"UnlitGeneric"
+{
+	"$basetexture" "vgui/white"
+	"$translucent" 1
+	"$alpha" 0
+	"$vertexcolor" 1
+	"$vertexalpha" 1
+	"$ignorez" 1
+}

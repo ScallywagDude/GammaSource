@@ -673,6 +673,21 @@ bool Voice_Init( const char *pCodecName, int nSampleRate )
 		// in use or using a different codec name (vaudio_celtHD!) for backwards compatibility
 		int quality = ( bCelt || bOpus ) ? 3 : 4;
 
+		// GammaSource: no voice codec DLL ships with this build (Opus needs libopus).
+		// Without one, every map load printed three LoadLibrary failures; say it once.
+		char szCodecFile[MAX_PATH], szFallbackFile[MAX_PATH];
+		Q_snprintf( szCodecFile, sizeof( szCodecFile ), "%s" DLL_EXT_STRING, pCodecName );
+		Q_snprintf( szFallbackFile, sizeof( szFallbackFile ), "%s" DLL_EXT_STRING, VOICE_FALLBACK_CODEC );
+		if ( !g_pFileSystem->FileExists( szCodecFile, "EXECUTABLE_PATH" ) && !g_pFileSystem->FileExists( szFallbackFile, "EXECUTABLE_PATH" ) )
+		{
+			static bool s_bReported = false;
+			if ( !s_bReported )
+				DevMsg( "No voice codec DLL (%s) in bin; voice chat disabled.\n", pCodecName );
+			s_bReported = true;
+			Voice_Deinit();
+			return false;
+		}
+
 		// Get the codec.
 		CreateInterfaceFn createCodecFn = NULL;
 		g_hVoiceCodecDLL = FileSystem_LoadModule(pCodecName);
