@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <vector>
 #include <map>
+#include <math.h>
 #include "vkdevice.h"
 #include "vkrender.h"
 #include "vkshaders.h"
@@ -40,7 +41,7 @@ static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr_;
 	X( vkGetPhysicalDeviceQueueFamilyProperties ) X( vkGetPhysicalDeviceSurfaceSupportKHR ) \
 	X( vkGetPhysicalDeviceSurfaceCapabilitiesKHR ) X( vkGetPhysicalDeviceSurfaceFormatsKHR ) \
 	X( vkCreateWin32SurfaceKHR ) X( vkDestroySurfaceKHR ) X( vkCreateDevice ) X( vkGetDeviceProcAddr ) \
-	X( vkGetPhysicalDeviceMemoryProperties ) X( vkGetPhysicalDeviceFormatProperties )
+	X( vkGetPhysicalDeviceMemoryProperties ) X( vkGetPhysicalDeviceFormatProperties ) X( vkGetPhysicalDeviceFeatures )
 #define VK_DEVICE_FUNCS( X ) \
 	X( vkDestroyDevice ) X( vkGetDeviceQueue ) X( vkDeviceWaitIdle ) X( vkCreateSwapchainKHR ) X( vkDestroySwapchainKHR ) \
 	X( vkGetSwapchainImagesKHR ) X( vkAcquireNextImageKHR ) X( vkQueuePresentKHR ) X( vkCreateCommandPool ) \
@@ -56,7 +57,9 @@ static PFN_vkGetInstanceProcAddr vkGetInstanceProcAddr_;
 	X( vkResetDescriptorPool ) X( vkAllocateDescriptorSets ) X( vkUpdateDescriptorSets ) X( vkCmdBeginRenderPass ) \
 	X( vkCmdEndRenderPass ) X( vkCmdBindPipeline ) X( vkCmdBindDescriptorSets ) X( vkCmdBindVertexBuffers ) \
 	X( vkCmdBindIndexBuffer ) X( vkCmdDraw ) X( vkCmdDrawIndexed ) X( vkCmdPushConstants ) X( vkCmdSetViewport ) \
-	X( vkCmdSetScissor ) X( vkCmdClearAttachments ) X( vkCmdCopyBufferToImage ) X( vkCmdCopyImage ) X( vkCmdBlitImage )
+	X( vkCmdSetScissor ) X( vkCmdClearAttachments ) X( vkCmdCopyBufferToImage ) X( vkCmdCopyImage ) X( vkCmdBlitImage ) \
+	X( vkCreateQueryPool ) X( vkDestroyQueryPool ) X( vkCmdResetQueryPool ) X( vkCmdBeginQuery ) X( vkCmdEndQuery ) \
+	X( vkGetQueryPoolResults )
 #define VK_DECLARE( name ) static PFN_##name name##_;
 VK_DECLARE( vkCreateInstance )
 VK_INSTANCE_FUNCS( VK_DECLARE )
@@ -65,7 +68,7 @@ VK_DEVICE_FUNCS( VK_DECLARE )
 //-----------------------------------------------------------------------------
 // Device state
 //-----------------------------------------------------------------------------
-enum { FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024 };
+enum { FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096 };
 
 static VkInstance s_Instance;
 static VkPhysicalDevice s_PhysicalDevice;
@@ -299,7 +302,8 @@ static unsigned char *StreamAlloc( VkDeviceSize nBytes, VkBuffer &buffer, VkDevi
 	}
 	StreamBuffer_t sb = {};
 	sb.m_nSize = nBytes > STREAM_SIZE ? ( nBytes + 255 ) & ~(VkDeviceSize)255 : STREAM_SIZE;
-	if ( !CreateBuffer( sb.m_nSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+	if ( !CreateBuffer( sb.m_nSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+		VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
 		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, sb.m_Buffer, sb.m_Memory ) || !sb.m_Memory.m_pMapped )
 		return NULL;
 	sb.m_nUsed = nBytes;
@@ -332,6 +336,7 @@ struct Texture_t
 	bool m_bUsed;
 	bool m_bHasData;
 	bool m_bRenderTarget;
+	bool m_bCube;
 	unsigned char *m_pPending[16];	// mip levels given before the device existed
 	unsigned char *m_pShadow;		// see VkR_LockShadow
 	// render targets
@@ -343,9 +348,9 @@ struct Texture_t
 static std::vector< Texture_t > s_Textures;	// handle = index + 1
 static Texture_t s_BackBuffer;			// what the game draws into; copied to the swap chain
 static int s_hWhite;
-static int s_hBound;
-static int s_hLightmap;
+static int s_hWhiteCube;				// bound when a pass has no envmap
 static int s_hRenderTarget;				// 0: the back buffer
+int g_nVkBinds;
 
 static Texture_t *GetTexture( int hTexture )
 {
@@ -361,6 +366,8 @@ static int MipSize( int n, int nLevel )
 }
 
 static VkRenderPass s_RenderPass;
+static VkQueryPool s_QueryPool;
+static int s_nOpenQuery;
 static VkCommandBuffer s_Cmd;			// the open command buffer (s_Commands[s_nFrame])
 static Texture_t *s_pPassTarget;		// target of the open render pass, or NULL
 
@@ -378,19 +385,20 @@ static void ImageBarrier( VkImage image, VkImageAspectFlags aspect, VkImageLayou
 	b.image = image;
 	b.subresourceRange.aspectMask = aspect;
 	b.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	b.subresourceRange.layerCount = 1;
+	b.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 	vkCmdPipelineBarrier_( s_Cmd, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, NULL, 0, NULL, 1, &b );
 }
 
 static bool CreateImage( int nWidth, int nHeight, int nMips, VkFormat format, VkImageUsageFlags usage, VkImageAspectFlags aspect,
-	VkImage &image, VkImageView &view, Allocation_t &memory )
+	VkImage &image, VkImageView &view, Allocation_t &memory, bool bCube = false )
 {
 	VkImageCreateInfo ici = { VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO };
 	ici.imageType = VK_IMAGE_TYPE_2D;
 	ici.format = format;
 	ici.extent.width = nWidth; ici.extent.height = nHeight; ici.extent.depth = 1;
 	ici.mipLevels = nMips;
-	ici.arrayLayers = 1;
+	ici.arrayLayers = bCube ? 6 : 1;
+	ici.flags = bCube ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 	ici.samples = VK_SAMPLE_COUNT_1_BIT;
 	ici.tiling = VK_IMAGE_TILING_OPTIMAL;
 	ici.usage = usage;
@@ -408,15 +416,15 @@ static bool CreateImage( int nWidth, int nHeight, int nMips, VkFormat format, Vk
 	vkBindImageMemory_( s_Device, image, memory.m_Memory, memory.m_nOffset );
 	VkImageViewCreateInfo vci = { VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO };
 	vci.image = image;
-	vci.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	vci.viewType = bCube ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
 	vci.format = format;
 	vci.subresourceRange.aspectMask = aspect;
 	vci.subresourceRange.levelCount = nMips;
-	vci.subresourceRange.layerCount = 1;
+	vci.subresourceRange.layerCount = bCube ? 6 : 1;
 	return vkCreateImageView_( s_Device, &vci, NULL, &view ) == VK_SUCCESS;
 }
 
-static void UploadRegion( Texture_t *pTex, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch );
+static void UploadRegion( Texture_t *pTex, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch, int nLayer = 0 );
 
 // creates the GPU image (and for render targets the depth buffer and framebuffer)
 static bool EnsureResource( Texture_t *pTex )
@@ -429,7 +437,7 @@ static bool EnsureResource( Texture_t *pTex )
 	if ( pTex->m_bRenderTarget )
 		usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	if ( !CreateImage( pTex->m_nWidth, pTex->m_nHeight, pTex->m_nMips, VK_FORMAT_B8G8R8A8_UNORM, usage, VK_IMAGE_ASPECT_COLOR_BIT,
-		pTex->m_Image, pTex->m_View, pTex->m_Memory ) )
+		pTex->m_Image, pTex->m_View, pTex->m_Memory, pTex->m_bCube ) )
 		return false;
 	pTex->m_Layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	if ( pTex->m_bRenderTarget )
@@ -496,15 +504,6 @@ static void DestroyTexture( Texture_t *pTex, bool bDeferred )
 //-----------------------------------------------------------------------------
 // Pipelines
 //-----------------------------------------------------------------------------
-struct PushConstants_t
-{
-	float m_WVP[16];
-	float m_AlphaRef;
-	float m_AlphaTest;
-	float m_Lightmap;
-	float m_Pad;
-};
-
 static VkDescriptorSetLayout s_SetLayout;
 static VkPipelineLayout s_PipelineLayout;
 static VkShaderModule s_VS, s_FS;
@@ -512,11 +511,11 @@ static VkSampler s_Samplers[4];		// bit 0 clamp S, bit 1 clamp T
 static std::map< unsigned int, VkPipeline > s_Pipelines;
 static std::vector< VkDescriptorPool > s_DescriptorPools[FRAMES];
 static size_t s_nDescriptorPool[FRAMES];
-static VkRState_t s_State;
 int g_nVkDraws, g_nVkMeshes, g_nVkPasses, g_nVkEmptyMeshes;
-static float s_WVP[16];
 static VkViewport s_Viewport;
 static bool s_bViewportSet;
+
+#include "rendershared.inl"
 
 static const VkBlendFactor s_BlendMap[] =
 {
@@ -541,7 +540,8 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 	int nDst = ( s_State.m_nDstBlend >= 0 && s_State.m_nDstBlend <= 10 ) ? s_State.m_nDstBlend : 0;
 	int nDepthFunc = ( s_State.m_nDepthFunc >= 0 && s_State.m_nDepthFunc <= 7 ) ? s_State.m_nDepthFunc : 3;
 	unsigned int nKey = ( s_State.m_bBlend ? 1 : 0 ) | ( nSrc << 1 ) | ( nDst << 5 ) | ( s_State.m_bDepthTest ? 1 << 9 : 0 ) |
-		( s_State.m_bDepthWrite ? 1 << 10 : 0 ) | ( nDepthFunc << 11 ) | ( s_State.m_bCull ? 1 << 14 : 0 ) | ( (unsigned)type << 15 );
+		( s_State.m_bDepthWrite ? 1 << 10 : 0 ) | ( nDepthFunc << 11 ) | ( s_State.m_bCull ? 1 << 14 : 0 ) | ( (unsigned)type << 15 ) |
+		( s_State.m_bDecalOffset ? 1 << 18 : 0 ) | ( s_State.m_bNoColorWrites ? 1 << 19 : 0 ) | ( s_State.m_bNoAlphaWrites ? 1 << 20 : 0 );
 	std::map< unsigned int, VkPipeline >::iterator it = s_Pipelines.find( nKey );
 	if ( it != s_Pipelines.end() )
 		return it->second;
@@ -552,16 +552,19 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 	stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module = s_FS; stages[1].pName = "main";
 
 	VkVertexInputBindingDescription binding = { 0, sizeof( VkRVertex_t ), VK_VERTEX_INPUT_RATE_VERTEX };
-	VkVertexInputAttributeDescription attrs[4] =
+	VkVertexInputAttributeDescription attrs[7] =
 	{
-		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 },
-		{ 1, 0, VK_FORMAT_R8G8B8A8_UNORM, 12 },
-		{ 2, 0, VK_FORMAT_R32G32_SFLOAT, 16 },
-		{ 3, 0, VK_FORMAT_R32G32_SFLOAT, 24 },
+		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 },	// position
+		{ 1, 0, VK_FORMAT_R8G8B8A8_UNORM, 12 },		// colour
+		{ 2, 0, VK_FORMAT_R32G32_SFLOAT, 16 },		// uv
+		{ 3, 0, VK_FORMAT_R32G32_SFLOAT, 24 },		// lightmap uv
+		{ 4, 0, VK_FORMAT_R32G32B32_SFLOAT, 32 },	// normal
+		{ 5, 0, VK_FORMAT_R8G8B8A8_UINT, 44 },		// bone indices
+		{ 6, 0, VK_FORMAT_R32G32_SFLOAT, 48 },		// bone weights
 	};
 	VkPipelineVertexInputStateCreateInfo vi = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
 	vi.vertexBindingDescriptionCount = 1; vi.pVertexBindingDescriptions = &binding;
-	vi.vertexAttributeDescriptionCount = 4; vi.pVertexAttributeDescriptions = attrs;
+	vi.vertexAttributeDescriptionCount = 7; vi.pVertexAttributeDescriptions = attrs;
 	VkPipelineInputAssemblyStateCreateInfo ia = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 	ia.topology = s_Topology[type];
 	VkPipelineViewportStateCreateInfo vp = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
@@ -572,6 +575,13 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 	// the viewport is flipped (negative height) to match Direct3D, so D3D's clockwise front faces hold
 	rs.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	rs.lineWidth = 1.0f;
+	if ( s_State.m_bDecalOffset )
+	{
+		// as D3D9's decal bias (mat_depthbias_decal / mat_slopescaledepthbias_decal)
+		rs.depthBiasEnable = VK_TRUE;
+		rs.depthBiasConstantFactor = -84.0f;
+		rs.depthBiasSlopeFactor = -0.5f;
+	}
 	VkPipelineMultisampleStateCreateInfo ms = { VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO };
 	ms.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 	VkPipelineDepthStencilStateCreateInfo ds = { VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO };
@@ -586,7 +596,7 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 	cb.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
 	cb.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
 	cb.alphaBlendOp = VK_BLEND_OP_ADD;
-	cb.colorWriteMask = 0xF;
+	cb.colorWriteMask = ( s_State.m_bNoColorWrites ? 0 : 0x7 ) | ( s_State.m_bNoAlphaWrites ? 0 : 0x8 );
 	VkPipelineColorBlendStateCreateInfo cbs = { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO };
 	cbs.attachmentCount = 1; cbs.pAttachments = &cb;
 	VkDynamicState dyn[2] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
@@ -632,6 +642,9 @@ static void EndPass()
 {
 	if ( !s_pPassTarget )
 		return;
+	extern void VkR_EndQuery( int hQuery );
+	if ( s_nOpenQuery )
+		VkR_EndQuery( s_nOpenQuery );
 	vkCmdEndRenderPass_( s_Cmd );
 	s_pPassTarget = NULL;
 	// what was drawn is read by later draws, copies and the present blit
@@ -691,7 +704,7 @@ static void SubmitAndWait()
 //-----------------------------------------------------------------------------
 // Uploads
 //-----------------------------------------------------------------------------
-static void UploadRegion( Texture_t *pTex, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch )
+static void UploadRegion( Texture_t *pTex, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch, int nLayer )
 {
 	if ( nWidth <= 0 || nHeight <= 0 )
 		return;
@@ -711,6 +724,7 @@ static void UploadRegion( Texture_t *pTex, int nLevel, int x, int y, int nWidth,
 	copy.bufferOffset = nOffset;
 	copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 	copy.imageSubresource.mipLevel = nLevel;
+	copy.imageSubresource.baseArrayLayer = nLayer;
 	copy.imageSubresource.layerCount = 1;
 	copy.imageOffset.x = x; copy.imageOffset.y = y;
 	copy.imageExtent.width = nWidth; copy.imageExtent.height = nHeight; copy.imageExtent.depth = 1;
@@ -905,6 +919,11 @@ bool Vk_Init( void *hWnd, int nWidth, int nHeight )
 	dci.pQueueCreateInfos = &qci;
 	dci.enabledExtensionCount = 1;
 	dci.ppEnabledExtensionNames = deviceExtensions;
+	// SV_ClipDistance (water reflection/refraction views)
+	VkPhysicalDeviceFeatures supported = {}, enabled = {};
+	vkGetPhysicalDeviceFeatures_( s_PhysicalDevice, &supported );
+	enabled.shaderClipDistance = supported.shaderClipDistance;
+	dci.pEnabledFeatures = &enabled;
 	if ( vkCreateDevice_( s_PhysicalDevice, &dci, NULL, &s_Device ) != VK_SUCCESS )
 		return false;
 #define LOAD_DEVICE( name ) name##_ = (PFN_##name)vkGetDeviceProcAddr_( s_Device, #name ); if ( !name##_ ) return false;
@@ -1140,22 +1159,27 @@ bool VkR_Init()
 	if ( vkCreateShaderModule_( s_Device, &smci, NULL, &s_FS ) != VK_SUCCESS )
 		return false;
 
-	VkDescriptorSetLayoutBinding bindings[2] = {};
-	for ( int i = 0; i < 2; ++i )
+	// the shader's [[vk::binding]]s: constants, bones, then texture/sampler pairs t0 t1 t2 (cube)
+	static const VkDescriptorType s_Types[8] =
+	{
+		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER,
+		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER
+	};
+	VkDescriptorSetLayoutBinding bindings[8] = {};
+	for ( int i = 0; i < 8; ++i )
 	{
 		bindings[i].binding = i;
-		bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		bindings[i].descriptorType = s_Types[i];
 		bindings[i].descriptorCount = 1;
-		bindings[i].stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+		bindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	}
 	VkDescriptorSetLayoutCreateInfo dslci = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-	dslci.bindingCount = 2; dslci.pBindings = bindings;
+	dslci.bindingCount = 8; dslci.pBindings = bindings;
 	if ( vkCreateDescriptorSetLayout_( s_Device, &dslci, NULL, &s_SetLayout ) != VK_SUCCESS )
 		return false;
-	VkPushConstantRange range = { VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof( PushConstants_t ) };
 	VkPipelineLayoutCreateInfo plci = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
 	plci.setLayoutCount = 1; plci.pSetLayouts = &s_SetLayout;
-	plci.pushConstantRangeCount = 1; plci.pPushConstantRanges = &range;
 	if ( vkCreatePipelineLayout_( s_Device, &plci, NULL, &s_PipelineLayout ) != VK_SUCCESS )
 		return false;
 
@@ -1174,6 +1198,9 @@ bool VkR_Init()
 	static const unsigned char s_White[4] = { 255, 255, 255, 255 };
 	s_hWhite = VkR_CreateTexture( 1, 1, 1 );
 	VkR_TexImage( s_hWhite, 0, 1, 1, s_White );
+	s_hWhiteCube = VkR_CreateTexture( 1, 1, 1, false, true );
+	for ( int nFace = 0; nFace < 6; ++nFace )
+		VkR_TexImageFace( s_hWhiteCube, nFace, 0, 1, 1, s_White );
 
 	memset( &s_State, 0, sizeof( s_State ) );
 	s_State.m_bDepthTest = true;
@@ -1181,6 +1208,10 @@ bool VkR_Init()
 	s_State.m_nDepthFunc = 3;	// near or equal
 	for ( int i = 0; i < 16; ++i )
 		s_WVP[i] = ( i % 5 ) ? 0.0f : 1.0f;
+	VkQueryPoolCreateInfo qpci = { VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO };
+	qpci.queryType = VK_QUERY_TYPE_OCCLUSION;
+	qpci.queryCount = MAX_QUERIES;
+	vkCreateQueryPool_( s_Device, &qpci, NULL, &s_QueryPool );
 	return true;
 }
 
@@ -1209,17 +1240,20 @@ void VkR_Shutdown()
 	if ( s_SetLayout ) vkDestroyDescriptorSetLayout_( s_Device, s_SetLayout, NULL );
 	if ( s_VS ) vkDestroyShaderModule_( s_Device, s_VS, NULL );
 	if ( s_FS ) vkDestroyShaderModule_( s_Device, s_FS, NULL );
+	if ( s_QueryPool ) vkDestroyQueryPool_( s_Device, s_QueryPool, NULL );
+	s_QueryPool = VK_NULL_HANDLE;
 	s_PipelineLayout = VK_NULL_HANDLE; s_SetLayout = VK_NULL_HANDLE; s_VS = s_FS = VK_NULL_HANDLE;
-	s_hWhite = s_hBound = s_hLightmap = s_hRenderTarget = 0;
+	s_hWhite = s_hWhiteCube = s_hBound = s_hLightmap = s_hRenderTarget = 0;
 }
 
-int VkR_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget )
+int VkR_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget, bool bCube )
 {
 	Texture_t tex = {};
 	tex.m_nWidth = nWidth > 0 ? nWidth : 1;
 	tex.m_nHeight = nHeight > 0 ? nHeight : 1;
 	tex.m_nMips = ( nMips > 0 && !bRenderTarget ) ? nMips : 1;
 	tex.m_bRenderTarget = bRenderTarget;
+	tex.m_bCube = bCube && !bRenderTarget;
 	tex.m_bUsed = true;
 	for ( size_t i = 0; i < s_Textures.size(); ++i )
 	{
@@ -1281,6 +1315,27 @@ void VkR_TexSubImage( int hTexture, int nLevel, int x, int y, int nWidth, int nH
 	UploadRegion( pTex, nLevel, x, y, nWidth, nHeight, pBGRA, nWidth * 4 );
 }
 
+// one face of a cube texture (cubes only get data once the device exists)
+void VkR_TexImageFace( int hTexture, int nFace, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	if ( !pTex || !pBGRA || !pTex->m_bCube || nFace < 0 || nFace >= 6 || nLevel >= pTex->m_nMips || !EnsureResource( pTex ) )
+		return;
+	UploadRegion( pTex, nLevel, 0, 0, nWidth, nHeight, pBGRA, nWidth * 4, nFace );
+}
+
+bool VkR_IsCubeTexture( int hTexture )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	return pTex && pTex->m_bCube;
+}
+
+bool VkR_IsRenderTargetTexture( int hTexture )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	return pTex && pTex->m_bRenderTarget;
+}
+
 unsigned char *VkR_LockShadow( int hTexture, int &nPitch, int &nWidth, int &nHeight )
 {
 	Texture_t *pTex = GetTexture( hTexture );
@@ -1317,38 +1372,6 @@ void VkR_TexWrap( int hTexture, int nCoord, bool bClamp )
 		pTex->m_bClampS = bClamp;
 	else if ( nCoord == 1 )
 		pTex->m_bClampT = bClamp;
-}
-
-void VkR_BindTexture( int nStage, int hTexture )
-{
-	if ( nStage == 0 )
-		s_hBound = hTexture;
-}
-
-void VkR_BindLightmap( int hTexture )
-{
-	s_hLightmap = hTexture;
-}
-
-void VkR_SetState( const VkRState_t &state )
-{
-	s_State = state;
-}
-
-static void Mul( const float *a, const float *b, float *out )
-{
-	float r[16];
-	for ( int i = 0; i < 4; ++i )
-		for ( int j = 0; j < 4; ++j )
-			r[i * 4 + j] = a[i * 4 + 0] * b[0 * 4 + j] + a[i * 4 + 1] * b[1 * 4 + j] + a[i * 4 + 2] * b[2 * 4 + j] + a[i * 4 + 3] * b[3 * 4 + j];
-	memcpy( out, r, sizeof( r ) );
-}
-
-void VkR_SetMatrices( const float *pModel, const float *pView, const float *pProj )
-{
-	float mv[16];
-	Mul( pModel, pView, mv );
-	Mul( mv, pProj, s_WVP );
 }
 
 void VkR_SetViewport( int x, int y, int w, int h, float flMinZ, float flMaxZ )
@@ -1448,6 +1471,68 @@ void VkR_CopyRenderTargetToTexture( int hTexture, int sx, int sy, int sw, int sh
 }
 
 //-----------------------------------------------------------------------------
+// Occlusion queries: one pool, a slot per query object (handle = slot + 1)
+//-----------------------------------------------------------------------------
+static std::vector< bool > s_QueryUsed;
+static std::vector< bool > s_QueryIssued;
+
+int VkR_CreateQuery()
+{
+	if ( !s_QueryPool )
+		return 0;
+	for ( size_t i = 0; i < MAX_QUERIES; ++i )
+	{
+		if ( i >= s_QueryUsed.size() ) { s_QueryUsed.push_back( false ); s_QueryIssued.push_back( false ); }
+		if ( !s_QueryUsed[i] )
+		{
+			s_QueryUsed[i] = true;
+			s_QueryIssued[i] = false;
+			return (int)i + 1;
+		}
+	}
+	return 0;
+}
+
+void VkR_DestroyQuery( int hQuery )
+{
+	if ( hQuery > 0 && hQuery <= (int)s_QueryUsed.size() )
+		s_QueryUsed[hQuery - 1] = false;
+}
+
+void VkR_BeginQuery( int hQuery )
+{
+	if ( hQuery <= 0 || hQuery > (int)s_QueryUsed.size() || !s_QueryPool )
+		return;
+	BeginRecording();
+	EndPass();	// resets are recorded outside render passes
+	vkCmdResetQueryPool_( s_Cmd, s_QueryPool, hQuery - 1, 1 );
+	if ( !BeginPass() )
+		return;
+	vkCmdBeginQuery_( s_Cmd, s_QueryPool, hQuery - 1, 0 );
+	s_QueryIssued[hQuery - 1] = true;
+	s_nOpenQuery = hQuery;
+}
+
+void VkR_EndQuery( int hQuery )
+{
+	if ( hQuery != s_nOpenQuery || !s_pPassTarget )
+		return;
+	vkCmdEndQuery_( s_Cmd, s_QueryPool, hQuery - 1 );
+	s_nOpenQuery = 0;
+}
+
+int VkR_GetQueryResult( int hQuery, bool bFlush )
+{
+	if ( hQuery <= 0 || hQuery > (int)s_QueryUsed.size() || !s_QueryIssued[hQuery - 1] )
+		return -2;	// OCCLUSION_QUERY_RESULT_ERROR
+	uint64_t nPixels = 0;
+	VkResult res = vkGetQueryPoolResults_( s_Device, s_QueryPool, hQuery - 1, 1, sizeof( nPixels ), &nPixels, sizeof( nPixels ), VK_QUERY_RESULT_64_BIT );
+	if ( res != VK_SUCCESS )
+		return -1;	// OCCLUSION_QUERY_RESULT_PENDING
+	return nPixels > 0x7fffffff ? 0x7fffffff : (int)nPixels;
+}
+
+//-----------------------------------------------------------------------------
 // Static mesh vertex cache
 //-----------------------------------------------------------------------------
 struct CachedVertices_t
@@ -1537,11 +1622,14 @@ static VkDescriptorSet AllocateSet()
 	{
 		if ( nPool >= pools.size() )
 		{
-			VkDescriptorPoolSize size = { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 2 * 4096 };
+			VkDescriptorPoolSize sizes[3] =
+			{
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLER, 3 * 4096 }
+			};
 			VkDescriptorPoolCreateInfo dpci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
 			dpci.maxSets = 4096;
-			dpci.poolSizeCount = 1;
-			dpci.pPoolSizes = &size;
+			dpci.poolSizeCount = 3;
+			dpci.pPoolSizes = sizes;
 			VkDescriptorPool pool;
 			if ( vkCreateDescriptorPool_( s_Device, &dpci, NULL, &pool ) != VK_SUCCESS )
 				return VK_NULL_HANDLE;
@@ -1606,45 +1694,62 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	Texture_t *pTex = SampleableTexture( s_hBound );
 	if ( !pTex ) pTex = SampleableTexture( s_hWhite );
 	Texture_t *pLightmap = SampleableTexture( s_hLightmap );
-	if ( !pTex || !BeginPass() )
+	Texture_t *pSecond = SampleableTexture( s_bWaterPass ? s_hWaterReflection : s_hLightmap );
+	if ( !pSecond ) pSecond = SampleableTexture( s_hWhite );
+	Texture_t *pEnvmap = NULL;
+	if ( s_bEnvmap )
+		pEnvmap = SampleableTexture( VkR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2 );
+	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube );
+	if ( !pTex || !pSecond || !pEnvmap || !BeginPass() )
 		return;
+
+	// per-draw constants and the bone matrices, from this frame's streaming memory
+	VkBuffer cbuf, bonebuf;
+	VkDeviceSize nCBOffset, nBoneOffset;
+	Constants_t *pConst = (Constants_t *)StreamAlloc( sizeof( Constants_t ), cbuf, nCBOffset );
+	unsigned char *pBones = (unsigned char *)StreamAlloc( sizeof( s_Bones ), bonebuf, nBoneOffset );
+	if ( !pConst || !pBones )
+		return;
+	memset( pConst, 0, sizeof( Constants_t ) );
+	FillConstants( pConst, pLightmap != NULL, s_pPassTarget->m_nWidth, s_pPassTarget->m_nHeight );
+	memcpy( pBones, s_Bones, sizeof( s_Bones ) );
 
 	VkDescriptorSet set = AllocateSet();
 	if ( !set )
 		return;
-	VkDescriptorImageInfo images[2];
-	images[0].sampler = s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )];
-	images[0].imageView = pTex->m_View;
-	images[0].imageLayout = pTex->m_Layout;
-	Texture_t *pSecond = pLightmap ? pLightmap : pTex;
-	images[1].sampler = s_Samplers[3];
-	images[1].imageView = pSecond->m_View;
-	images[1].imageLayout = pSecond->m_Layout;
-	VkWriteDescriptorSet writes[2] = {};
-	for ( int i = 0; i < 2; ++i )
+	VkDescriptorBufferInfo buffers[2] = { { cbuf, nCBOffset, sizeof( Constants_t ) }, { bonebuf, nBoneOffset, sizeof( s_Bones ) } };
+	VkDescriptorImageInfo images[6] = {};
+	images[0].imageView = pTex->m_View; images[0].imageLayout = pTex->m_Layout;
+	images[1].sampler = s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )];
+	images[2].imageView = pSecond->m_View; images[2].imageLayout = pSecond->m_Layout;
+	images[3].sampler = s_Samplers[3];
+	images[4].imageView = pEnvmap->m_View; images[4].imageLayout = pEnvmap->m_Layout;
+	images[5].sampler = s_Samplers[3];
+	VkWriteDescriptorSet writes[8] = {};
+	for ( int i = 0; i < 8; ++i )
 	{
 		writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writes[i].dstSet = set;
 		writes[i].dstBinding = i;
 		writes[i].descriptorCount = 1;
-		writes[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writes[i].pImageInfo = &images[i];
+		if ( i < 2 )
+		{
+			writes[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			writes[i].pBufferInfo = &buffers[i];
+		}
+		else
+		{
+			writes[i].descriptorType = ( i & 1 ) ? VK_DESCRIPTOR_TYPE_SAMPLER : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[i].pImageInfo = &images[i - 2];
+		}
 	}
-	vkUpdateDescriptorSets_( s_Device, 2, writes, 0, NULL );
+	vkUpdateDescriptorSets_( s_Device, 8, writes, 0, NULL );
 
 	VkPipeline pipeline = GetPipeline( type );
 	if ( !pipeline )
 		return;
 	vkCmdBindPipeline_( s_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
 	vkCmdBindDescriptorSets_( s_Cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, s_PipelineLayout, 0, 1, &set, 0, NULL );
-
-	PushConstants_t pc;
-	memcpy( pc.m_WVP, s_WVP, sizeof( s_WVP ) );
-	pc.m_AlphaRef = s_State.m_flAlphaRef;
-	pc.m_AlphaTest = s_State.m_bAlphaTest ? 1.0f : 0.0f;
-	pc.m_Lightmap = pLightmap ? 1.0f : 0.0f;
-	pc.m_Pad = 0.0f;
-	vkCmdPushConstants_( s_Cmd, s_PipelineLayout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, sizeof( pc ), &pc );
 
 	// Direct3D-style viewport: flip y with a negative height
 	VkViewport vp = s_Viewport;

@@ -55,6 +55,8 @@ enum
 //-----------------------------------------------------------------------------
 // The empty mesh
 //-----------------------------------------------------------------------------
+void MarkLitPass();
+
 class CEmptyMesh : public IMesh
 {
 public:
@@ -114,9 +116,12 @@ public:
 	// gets the associated material
 	IMaterial* GetMaterial();
 
+	// static prop lighting: per-vertex colours from another mesh's specular slot
 	void SetColorMesh( IMesh *pColorMesh, int nVertexOffset )
 	{
+		m_pColorMesh = static_cast< CEmptyMesh * >( pColorMesh );
 	}
+	CEmptyMesh *m_pColorMesh;
 
 
 	virtual int IndexCount() const
@@ -315,6 +320,7 @@ public:
 	bool m_IsAlphaTested;
 	bool m_bIsDepthWriteEnabled;
 	bool m_bUsesVertexAndPixelShaders;
+	VertexFormat_t m_VertexUsage;	// what the pass's shader reads, as the DX9 backend reports it
 	VkRState_t m_State;	// GammaSource DX11: what the snapshot applies
 };
 
@@ -538,6 +544,7 @@ public:
 	void SetVertexShaderStateAmbientLightCube();
 	void SetPixelShaderStateAmbientLightCube( int pshReg, bool bForceToBlack = false )
 	{
+		MarkLitPass();
 	}
 
 	float GetAmbientLightCubeLuminance(void)
@@ -605,7 +612,7 @@ public:
 	void PushMatrix();
 	void PopMatrix();
 	void LoadMatrix( float *m );
-	void LoadBoneMatrix( int boneIndex, const float *m ) {}
+	void LoadBoneMatrix( int boneIndex, const float *m );
 	void MultMatrix( float *m );
 	void MultMatrixLocal( float *m );
 	void GetMatrix( MaterialMatrixMode_t matrixMode, float *dst );
@@ -930,28 +937,34 @@ public:
 	}
 	virtual void CommitPixelShaderLighting( int pshReg )
 	{
+		MarkLitPass();
 	}
 
+	// sprite glows and other proxies ask how much of them was visible last frame
 	ShaderAPIOcclusionQuery_t CreateOcclusionQueryObject( void )
 	{
-		return INVALID_SHADERAPI_OCCLUSION_QUERY_HANDLE;
+		int hQuery = VkR_CreateQuery();
+		return hQuery ? (ShaderAPIOcclusionQuery_t)(intp)hQuery : INVALID_SHADERAPI_OCCLUSION_QUERY_HANDLE;
 	}
 
 	void DestroyOcclusionQueryObject( ShaderAPIOcclusionQuery_t handle )
 	{
+		VkR_DestroyQuery( (int)(intp)handle );
 	}
 
 	void BeginOcclusionQueryDrawing( ShaderAPIOcclusionQuery_t handle )
 	{
+		VkR_BeginQuery( (int)(intp)handle );
 	}
 
 	void EndOcclusionQueryDrawing( ShaderAPIOcclusionQuery_t handle )
 	{
+		VkR_EndQuery( (int)(intp)handle );
 	}
 
 	int OcclusionQuery_GetNumPixelsRendered( ShaderAPIOcclusionQuery_t handle, bool bFlush )
 	{
-		return 0;
+		return VkR_GetQueryResult( (int)(intp)handle, bFlush );
 	}
 
 	virtual void AcquireThreadOwnership() {}
@@ -1185,7 +1198,7 @@ public:
 	}
 	virtual int CompareSnapshots( StateSnapshot_t snapshot0, StateSnapshot_t snapshot1 ) { return 0; }
 
-	virtual void DisableAllLocalLights() {}
+	virtual void DisableAllLocalLights();
 
 	virtual bool SupportsMSAAMode( int nMSAAMode ) { return false; }
 
@@ -1264,7 +1277,8 @@ public:
 
 	// The shaders' dynamic state (texture binds, constants) comes through here
 	virtual void ExecuteCommandBuffer( uint8 *pData );
-	virtual bool GetHDREnabled( void ) const { return true; }
+	// the fixed shaders are LDR: let the engine pick LDR skies and lightmaps
+	virtual bool GetHDREnabled( void ) const { return false; }
 	virtual void SetHDREnabled( bool bEnable ) {}
 
 	virtual void CopyRenderTargetToScratchTexture( ShaderAPITextureHandle_t srcRt, ShaderAPITextureHandle_t dstTex, Rect_t *pSrcRect = NULL, Rect_t *pDstRect = NULL ) 
@@ -1583,6 +1597,7 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_pVertexSource = m_pIndexSource = NULL;
 	m_bCacheable = false;
 	m_nVersion = 0;
+	m_pColorMesh = NULL;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( DX11_MAX_VERTS );
@@ -1686,7 +1701,7 @@ static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc )
 	desc.m_pTangentS = (float*)( pBase + DX11V_TANGENT_S );
 	desc.m_pTangentT = (float*)( pBase + DX11V_TANGENT_T );
 	desc.m_pUserData = (float*)( pBase + DX11V_USERDATA );
-	desc.m_NumBoneWeights = 2;
+	desc.m_NumBoneWeights = 3;
 
 	desc.m_VertexSize_Position = DX11V_STRIDE;
 	desc.m_VertexSize_BoneWeight = DX11V_STRIDE;
@@ -1808,7 +1823,9 @@ void CEmptyMesh::RenderPass()
 	static unsigned short s_Indices[DX11_MAX_INDICES];
 	// 16 bit indices reach 65536 vertices
 	int nVerts = min( nVertexCount, (int)DX11_MAX_VERTS );
-	const void *pCacheKey = pVB->m_bCacheable ? pVB : NULL;
+	// a colour mesh gives each instance its own colours, so those draws aren't cached
+	const CEmptyMesh *pColors = ( m_pColorMesh && m_pColorMesh->m_pVertexMemory ) ? m_pColorMesh : NULL;
+	const void *pCacheKey = ( pVB->m_bCacheable && !pColors ) ? pVB : NULL;
 	int nVersion = pVB->m_nVersion;
 	bool bCached = pCacheKey && VkR_HasCachedVertices( pCacheKey, nVersion );
 	for ( int v = 0; !bCached && v < nVerts; ++v )
@@ -1821,6 +1838,14 @@ void CEmptyMesh::RenderPass()
 		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
 		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
 		memcpy( dst.m_UV2, pSrc + DX11V_TEXCOORD + 16, 8 );
+		memcpy( dst.m_Normal, pSrc + DX11V_NORMAL, 12 );
+		memcpy( dst.m_BoneIndex, pSrc + DX11V_BONEINDEX, 4 );
+		memcpy( dst.m_BoneWeight, pSrc + DX11V_BONEWEIGHT, 8 );
+		if ( pColors && v < pColors->m_nVertexCount )
+		{
+			const unsigned char *s = pColors->m_pVertexMemory + v * DX11V_STRIDE + DX11V_SPECULAR;
+			dst.m_Color = s[2] | ( s[1] << 8 ) | ( s[0] << 16 ) | ( 255u << 24 );
+		}
 	}
 
 	// Draw( -1, 0 ) (the default) means the whole mesh
@@ -1937,6 +1962,7 @@ void CShaderShadowEmpty::SetDefaultState()
 	m_IsAlphaTested = false;
 	m_bIsDepthWriteEnabled = true;
 	m_bUsesVertexAndPixelShaders = false;
+	m_VertexUsage = 0;
 	memset( &m_State, 0, sizeof( m_State ) );
 	m_State.m_nSrcBlend = SHADER_BLEND_ONE;
 	m_State.m_nDstBlend = SHADER_BLEND_ZERO;
@@ -1966,16 +1992,19 @@ void CShaderShadowEmpty::EnableDepthTest( bool bEnable )
 
 void CShaderShadowEmpty::EnablePolyOffset( PolygonOffsetMode_t nOffsetMode )
 {
+	m_State.m_bDecalOffset = nOffsetMode != SHADER_POLYOFFSET_DISABLE;
 }
 
 // Suppresses/activates color writing 
 void CShaderShadowEmpty::EnableColorWrites( bool bEnable )
 {
+	m_State.m_bNoColorWrites = !bEnable;
 }
 
 // Suppresses/activates alpha writing 
 void CShaderShadowEmpty::EnableAlphaWrites( bool bEnable )
 {
+	m_State.m_bNoAlphaWrites = !bEnable;
 }
 
 // Methods related to alpha blending
@@ -2055,6 +2084,20 @@ void CShaderShadowEmpty::VertexShaderVertexFormat( unsigned int nFlags,
 												   int* pTexCoordDimensions,
 												   int nUserDataSize )
 {
+	// shaders that light their vertices ask for normals; unlit ones (UnlitGeneric, sprites) don't
+	m_State.m_bNormals = ( nFlags & VERTEX_NORMAL ) != 0;
+
+	// the vertex format the material reports (built like the DX9 backend's CMeshMgr::ComputeVertexFormat)
+	VertexFormat_t fmt = nFlags & ~( VERTEX_FORMAT_USE_EXACT_FORMAT | VERTEX_FORMAT_COMPRESSED );
+	if ( NumBoneWeights( nFlags ) > 0 )
+		fmt = ( fmt & ~VERTEX_BONE_WEIGHT_MASK ) | VERTEX_BONEWEIGHT( 2 );
+	fmt |= VERTEX_USERDATA_SIZE( nUserDataSize );
+	nTexCoordCount = min( nTexCoordCount, (int)VERTEX_MAX_TEXTURE_COORDINATES );
+	for ( int i = 0; i < nTexCoordCount; ++i )
+		fmt |= VERTEX_TEXCOORD_SIZE( i, pTexCoordDimensions ? pTexCoordDimensions[i] : 2 );
+	m_VertexUsage = fmt;
+	m_State.m_nBoneWeights = ( nFlags & VERTEX_BONE_INDEX ) ? NumBoneWeights( nFlags ) : 0;
+	m_State.m_bVertexColor = ( nFlags & VERTEX_COLOR ) != 0;
 }
 
 // Indicates we're going to light the model
@@ -2432,7 +2475,7 @@ int	 CShaderAPIEmpty::MaxVertexShaderBlendMatrices() const
 
 int	CShaderAPIEmpty::MaxUserClipPlanes() const
 {
-	return 0;
+	return 2;
 }
 
 bool CShaderAPIEmpty::SpecifiesFogColorInLinearSpace() const
@@ -2466,8 +2509,13 @@ const char *CShaderAPIEmpty::GetHWSpecificShaderDLLName() const
 }
 
 // Sets the default *dynamic* state
+void ResetPassLighting();
+
+// a new material draw: nothing carries over from the previous one
 void CShaderAPIEmpty::SetDefaultState()
 {
+	ResetPassLighting();
+	VkR_BindLightmap( 0 );
 }
 
 
@@ -2477,6 +2525,7 @@ struct VkRSnapshot_t
 {
 	int m_nFlags;
 	VkRState_t m_State;
+	VertexFormat_t m_VertexUsage;
 };
 static CUtlVector< VkRSnapshot_t > s_Snapshots;
 
@@ -2498,6 +2547,7 @@ StateSnapshot_t	 CShaderAPIEmpty::TakeSnapshot( )
 	if (g_ShaderShadow.m_bIsDepthWriteEnabled)
 		snap.m_nFlags |= DEPTHWRITE;
 	snap.m_State = g_ShaderShadow.m_State;
+	snap.m_VertexUsage = g_ShaderShadow.m_VertexUsage;
 	for ( int i = 0; i < s_Snapshots.Count(); ++i )
 	{
 		if ( !memcmp( &s_Snapshots[i], &snap, sizeof( snap ) ) )
@@ -2534,19 +2584,42 @@ bool CShaderAPIEmpty::UsesVertexAndPixelShaders( StateSnapshot_t id ) const
 // Gets the vertex format for a set of snapshot ids
 VertexFormat_t CShaderAPIEmpty::ComputeVertexFormat( int numSnapshots, StateSnapshot_t* pIds ) const
 {
-	return 0;
+	return ComputeVertexUsage( numSnapshots, pIds );
 }
 
-// Gets the vertex format for a set of snapshot ids
+// Gets the vertex format for a set of snapshot ids: every pass's needs combined
 VertexFormat_t CShaderAPIEmpty::ComputeVertexUsage( int numSnapshots, StateSnapshot_t* pIds ) const
 {
-	return 0;
+	int nFlags = 0, nUserData = 0, nBones = 0;
+	int texCoordSize[VERTEX_MAX_TEXTURE_COORDINATES] = {};
+	for ( int i = 0; i < numSnapshots; ++i )
+	{
+		const VkRSnapshot_t *pSnap = GetSnapshot( pIds[i] );
+		if ( !pSnap )
+			continue;
+		VertexFormat_t fmt = pSnap->m_VertexUsage;
+		nFlags |= VertexFlags( fmt );
+		nBones = max( nBones, NumBoneWeights( fmt ) );
+		nUserData = max( nUserData, UserDataSize( fmt ) );
+		for ( int t = 0; t < VERTEX_MAX_TEXTURE_COORDINATES; ++t )
+			texCoordSize[t] = max( texCoordSize[t], TexCoordSize( t, fmt ) );
+	}
+	VertexFormat_t fmt = nFlags | VERTEX_USERDATA_SIZE( nUserData );
+	if ( nBones > 0 )
+		fmt |= VERTEX_BONEWEIGHT( nBones );
+	for ( int t = 0; t < VERTEX_MAX_TEXTURE_COORDINATES; ++t )
+		if ( texCoordSize[t] )
+			fmt |= VERTEX_TEXCOORD_SIZE( t, texCoordSize[t] );
+	return fmt;
 }
 
 // Uses a state snapshot
+static const VkRSnapshot_t *s_pCurrentSnapshot;
+
 void CShaderAPIEmpty::UseSnapshot( StateSnapshot_t snapshot )
 {
 	const VkRSnapshot_t *pSnap = GetSnapshot( snapshot );
+	s_pCurrentSnapshot = pSnap;
 	if ( pSnap )
 		VkR_SetState( pSnap->m_State );
 }
@@ -2593,6 +2666,73 @@ void CShaderAPIEmpty::ShadeMode( ShaderShadeMode_t mode )
 // Binds a particular material to render with
 void UpdateMatrices();
 static IMaterialInternal *s_pBoundMaterial;
+static float *CurMatrix( int nMode );
+// kept for the few passes the fixed shader reproduces (the shadow colour)
+static float s_PixelConstants[32][4];
+
+// the generic shaders use vertex colour only with $vertexcolor/$vertexalpha and modulate by
+// $color/$alpha; other shaders (sprites, cables, particles, vgui) take vertex colour as is
+static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
+{
+	const char *pszShader = pMaterial ? pMaterial->GetShaderName() : NULL;
+	bool bGeneric = pszShader && ( Q_stristr( pszShader, "UnlitGeneric" ) || Q_stristr( pszShader, "VertexLitGeneric" ) ||
+		Q_stristr( pszShader, "LightmappedGeneric" ) || Q_stristr( pszShader, "WorldVertexTransition" ) ||
+		Q_stristr( pszShader, "TwoTexture" ) );
+	if ( !bGeneric )
+	{
+		// sprites take their colour from pixel constant 0 ($color/rendercolor * alpha) and use
+		// vertex colour only when their format has it ($ignorevertexcolors 0)
+		if ( pszShader && Q_stristr( pszShader, "Sprite" ) && !Q_stristr( pszShader, "SpriteCard" ) )
+		{
+			bool bVertexColor = s_pCurrentSnapshot && s_pCurrentSnapshot->m_State.m_bVertexColor;
+			VkR_SetVertexColorUse( bVertexColor, bVertexColor, s_PixelConstants[0] );
+			return;
+		}
+		VkR_SetVertexColorUse( true, true, NULL );
+		return;
+	}
+	float color[4];
+	pMaterial->GetColorModulation( &color[0], &color[1], &color[2] );
+	color[3] = pMaterial->GetAlphaModulation();
+	// a static prop's colour mesh is its lighting, not a vertex colour
+	bool bColor = bColorMesh || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR );
+	VkR_SetVertexColorUse( bColor, pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ), color );
+}
+
+// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric) or
+// 2 (LightmappedGeneric); the tint and mask come from the material
+static void ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
+{
+	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) ||
+		Q_stristr( pszShader, "WorldVertexTransition" ) );
+	if ( !bGeneric || !( VkR_IsCubeTexture( VkR_GetBoundTexture( 1 ) ) || VkR_IsCubeTexture( VkR_GetBoundTexture( 2 ) ) ) )
+	{
+		VkR_SetEnvmap( false, NULL, 0, NULL );
+		return;
+	}
+	float tint[3] = { 1.0f, 1.0f, 1.0f };
+	bool bFound = false;
+	IMaterialVar *pTint = pMaterial->FindVar( "$envmaptint", &bFound, false );
+	if ( bFound && pTint )
+		pTint->GetVecValue( tint, 3 );
+	int nMask = pMaterial->GetMaterialVarFlag( MATERIAL_VAR_BASEALPHAENVMAPMASK ) ? 1 : 0;
+
+	// the eye: the inverse of the view matrix's translation (row vectors)
+	float *v = CurMatrix( MATERIAL_VIEW );
+	float eye[3];
+	for ( int i = 0; i < 3; ++i )
+		eye[i] = -( v[12] * v[i * 4 + 0] + v[13] * v[i * 4 + 1] + v[14] * v[i * 4 + 2] );
+	VkR_SetEnvmap( true, tint, nMask, eye );
+}
+
+static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
+{
+	if ( !pMaterial || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_SELFILLUM ) )
+		return false;
+	const char *pszShader = pMaterial->GetShaderName();
+	return pszShader && ( Q_stristr( pszShader, "VertexLit" ) || Q_stristr( pszShader, "Eye" ) ||
+		Q_stristr( pszShader, "Teeth" ) || Q_stristr( pszShader, "Skin" ) );
+}
 static CEmptyMesh *s_pRenderMesh;
 
 void CShaderAPIEmpty::Bind( IMaterial* pMaterial )
@@ -2644,9 +2784,15 @@ void CShaderAPIEmpty::SetHeightClipMode( enum MaterialHeightClipMode_t heightCli
 {
 }
 
-// Sets the lights
+// GammaSource: lighting for vertex lit passes, handed to the device when such a pass draws
+static LightDesc_t s_LightDescs[4];
+static float s_AmbientCube[6][3];
+static bool s_bLitPass;
+
 void CShaderAPIEmpty::SetLight( int lightNum, const LightDesc_t& desc )
 {
+	if ( lightNum >= 0 && lightNum < 4 )
+		memcpy( &s_LightDescs[lightNum], &desc, sizeof( desc ) );
 }
 
 // Sets lighting origin for the current model
@@ -2654,29 +2800,77 @@ void CShaderAPIEmpty::SetLightingOrigin( Vector vLightingOrigin )
 {
 }
 
+void CShaderAPIEmpty::DisableAllLocalLights()
+{
+	for ( int i = 0; i < 4; ++i )
+		s_LightDescs[i].m_Type = MATERIAL_LIGHT_DISABLE;
+}
+
+// the fixed-function ambient term; vertex lit shaders use the cube
 void CShaderAPIEmpty::SetAmbientLight( float r, float g, float b )
 {
 }
 
 void CShaderAPIEmpty::SetAmbientLightCube( Vector4D cube[6] )
 {
+	for ( int i = 0; i < 6; ++i )
+	{
+		s_AmbientCube[i][0] = cube[i].x; s_AmbientCube[i][1] = cube[i].y; s_AmbientCube[i][2] = cube[i].z;
+	}
 }
 
 // Get lights
 int CShaderAPIEmpty::GetMaxLights( void ) const
 {
-	return 0;
+	return 4;
 }
 
 const LightDesc_t& CShaderAPIEmpty::GetLight( int lightNum ) const
 {
-	static LightDesc_t blah;
-	return blah;
+	return s_LightDescs[( lightNum >= 0 && lightNum < 4 ) ? lightNum : 0];
+}
+
+// the pass lights its vertices (the shader asked for the ambient cube / lights)
+void MarkLitPass()
+{
+	s_bLitPass = true;
+}
+
+void ResetPassLighting()
+{
+	s_bLitPass = false;
+}
+
+static void ApplyLighting()
+{
+	if ( !s_bLitPass )
+	{
+		VkR_SetLighting( false, NULL, 0, NULL );
+		return;
+	}
+	VkRLight_t lights[4];
+	int nLights = 0;
+	for ( int i = 0; i < 4; ++i )
+	{
+		const LightDesc_t &d = s_LightDescs[i];
+		if ( d.m_Type == MATERIAL_LIGHT_DISABLE )
+			continue;
+		VkRLight_t &l = lights[nLights++];
+		l.m_nType = d.m_Type;
+		l.m_Color[0] = d.m_Color.x; l.m_Color[1] = d.m_Color.y; l.m_Color[2] = d.m_Color.z;
+		l.m_Pos[0] = d.m_Position.x; l.m_Pos[1] = d.m_Position.y; l.m_Pos[2] = d.m_Position.z;
+		l.m_Dir[0] = d.m_Direction.x; l.m_Dir[1] = d.m_Direction.y; l.m_Dir[2] = d.m_Direction.z;
+		l.m_flRange = d.m_Range;
+		l.m_flAtten[0] = d.m_Attenuation0; l.m_flAtten[1] = d.m_Attenuation1; l.m_flAtten[2] = d.m_Attenuation2;
+		l.m_flThetaDot = d.m_ThetaDot; l.m_flPhiDot = d.m_PhiDot; l.m_flFalloff = d.m_Falloff;
+	}
+	VkR_SetLighting( true, s_AmbientCube, nLights, lights );
 }
 
 // Render state for the ambient light cube (vertex shaders)
 void CShaderAPIEmpty::SetVertexShaderStateAmbientLightCube()
 {
+	MarkLitPass();
 }
 
 void CShaderAPIEmpty::SetSkinningMatrices()
@@ -2773,9 +2967,23 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 	if ( s_pRenderMesh )
 	{
 		UpdateMatrices();
+		// only vertex lit shaders light per vertex (world shaders use lightmaps, unlit ones
+		// nothing); static props carry baked lighting in a colour mesh instead
+		if ( s_pRenderMesh->m_pColorMesh || !IsVertexLitMaterial( s_pBoundMaterial ) )
+			ResetPassLighting();
+		ApplyLighting();
+		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
+		VkR_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
+		ApplyEnvmap( s_pBoundMaterial, pszShader );
+		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
+		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
+		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && VkR_IsRenderTargetTexture( VkR_GetBoundTexture( 0 ) );
+		VkR_SetWaterPass( bWater, VkR_GetBoundTexture( 2 ), s_PixelConstants[1], s_PixelConstants[4] );
+		ApplyVertexColorUse( s_pBoundMaterial, s_pRenderMesh->m_pColorMesh != NULL );
 		s_pRenderMesh->RenderPass();
-		// the next pass binds its own lightmap if it has one
+		// the next pass binds its own lightmap / lighting if it has them
 		VkR_BindLightmap( 0 );
+		s_bLitPass = false;
 	}
 }
 
@@ -2818,6 +3026,28 @@ void UpdateMatrices()
 {
 	InitMatrices();
 	VkR_SetMatrices( CurMatrix( MATERIAL_MODEL ), CurMatrix( MATERIAL_VIEW ), CurMatrix( MATERIAL_PROJECTION ) );
+}
+
+// bone 0 is also the model matrix (as in the DX9 backend); skinned passes blend them all
+static float s_BoneMatrices[VKR_MAX_BONES][12];
+static int s_nBones;
+
+void CShaderAPIEmpty::LoadBoneMatrix( int boneIndex, const float *m )
+{
+	if ( boneIndex < 0 || boneIndex >= VKR_MAX_BONES )
+		return;
+	memcpy( s_BoneMatrices[boneIndex], m, sizeof( s_BoneMatrices[0] ) );
+	if ( boneIndex >= s_nBones )
+		s_nBones = boneIndex + 1;
+	if ( boneIndex == 0 )
+	{
+		MatrixMode( MATERIAL_MODEL );
+		VMatrix transposeMatrix;
+		transposeMatrix.Init( *(matrix3x4_t *)m );
+		MatrixTranspose( transposeMatrix, transposeMatrix );
+		LoadMatrix( (float *)transposeMatrix.m );
+	}
+	VkR_SetBoneMatrices( s_BoneMatrices, s_nBones );
 }
 
 void CShaderAPIEmpty::MatrixMode( MaterialMatrixMode_t matrixMode )
@@ -3015,8 +3245,12 @@ void CShaderAPIEmpty::SetIntegerVertexShaderConstant( int var, int const* pVec, 
 {
 }
 
+
 void CShaderAPIEmpty::SetPixelShaderConstant( int var, float const* pVec, int numConst, bool bForce )
 {
+	for ( int i = 0; i < numConst && var + i < 32; ++i )
+		if ( var + i >= 0 )
+			memcpy( s_PixelConstants[var + i], pVec + i * 4, sizeof( s_PixelConstants[0] ) );
 }
 
 void CShaderAPIEmpty::SetBooleanPixelShaderConstant( int var, BOOL const* pVec, int numBools, bool bForce )
@@ -3131,6 +3365,23 @@ void CShaderAPIEmpty::TexImageFromVTF( IVTFTexture *pVTF, int iVTFFrame )
 		return;
 	ImageFormat fmt = pVTF->Format();
 	bool bCompressed = ImageLoader::IsCompressed( fmt );
+	if ( pVTF->IsCubeMap() && VkR_IsCubeTexture( s_hModifyTexture ) )
+	{
+		// all six faces; mips under a compressed block are skipped (rarely sampled on envmaps)
+		for ( int nFace = 0; nFace < 6; ++nFace )
+			for ( int nMip = 0; nMip < pVTF->MipCount(); ++nMip )
+			{
+				int w, h, d;
+				pVTF->ComputeMipLevelDimensions( nMip, &w, &h, &d );
+				if ( bCompressed && ( w < 4 || h < 4 ) )
+					continue;
+				unsigned char *pSrc = pVTF->ImageData( iVTFFrame, nFace, nMip );
+				unsigned char *pBGRA = pSrc ? ToBGRA( pSrc, fmt, w, h ) : NULL;
+				if ( pBGRA )
+					VkR_TexImageFace( s_hModifyTexture, nFace, nMip, w, h, pBGRA );
+			}
+		return;
+	}
 	static CUtlMemory< unsigned char > s_Padded;
 	for ( int nMip = 0; nMip < pVTF->MipCount(); ++nMip )
 	{
@@ -3239,7 +3490,7 @@ ShaderAPITextureHandle_t CShaderAPIEmpty::CreateTexture(
 	const char *pDebugName,
 	const char *pTextureGroupName )
 {
-	return VkR_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
+	return VkR_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0, ( flags & TEXTURE_CREATE_CUBEMAP ) != 0 );
 }
 
 // Create a multi-frame texture (equivalent to calling "CreateTexture" multiple times, but more efficient)
@@ -3257,7 +3508,7 @@ void CShaderAPIEmpty::CreateTextures(
 							const char *pTextureGroupName )
 {
 	for ( int k = 0; k < count; ++ k )
-		pHandles[ k ] = VkR_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
+		pHandles[ k ] = VkR_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0, ( flags & TEXTURE_CREATE_CUBEMAP ) != 0 );
 }
 
 
@@ -3388,12 +3639,24 @@ void CShaderAPIEmpty::ForceHardwareSync( void )
 {
 }
 
+// user clip planes are world space ( nx, ny, nz, dist ), as in the DX9 backend
+static float s_UserClipPlanes[2][4];
+static bool s_bUserClipEnabled[2];
+
 void CShaderAPIEmpty::SetClipPlane( int index, const float *pPlane )
 {
+	if ( index < 0 || index >= 2 || !pPlane )
+		return;
+	memcpy( s_UserClipPlanes[index], pPlane, sizeof( s_UserClipPlanes[index] ) );
+	VkR_SetClipPlane( index, s_UserClipPlanes[index], s_bUserClipEnabled[index] );
 }
 
 void CShaderAPIEmpty::EnableClipPlane( int index, bool bEnable )
 {
+	if ( index < 0 || index >= 2 )
+		return;
+	s_bUserClipEnabled[index] = bEnable;
+	VkR_SetClipPlane( index, s_UserClipPlanes[index], bEnable );
 }
 
 void CShaderAPIEmpty::SetFastClipPlane( const float *pPlane )
@@ -3505,6 +3768,10 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 			pCmdBuf += sizeof( int ) + sizeof( uint8 * );
 			break;
 		case CBCMD_SET_PIXEL_SHADER_FLOAT_CONST:
+			SetPixelShaderConstant( CmdData< int >( pCmdBuf + sizeof( int ) ), (const float *)( pCmdBuf + 3 * sizeof( int ) ),
+				CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) );
+			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
+			break;
 		case CBCMD_SET_VERTEX_SHADER_FLOAT_CONST:
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;
@@ -3512,11 +3779,15 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 		case CBCMD_STORE_EYE_POS_IN_PSCONST:
 		case CBCMD_COMMITPIXELSHADERLIGHTING:
 		case CBCMD_SETPIXELSHADERSTATEAMBIENTLIGHTCUBE:
+			MarkLitPass();
+			pCmdBuf += 2 * sizeof( int );
+			break;
 		case CBCMD_SET_PSHINDEX:
 		case CBCMD_SET_VSHINDEX:
 			pCmdBuf += 2 * sizeof( int );
 			break;
 		case CBCMD_SETAMBIENTCUBEDYNAMICSTATEVERTEXSHADER:
+			MarkLitPass();
 			pCmdBuf += sizeof( int );
 			break;
 		case CBCMD_SET_DEPTH_FEATHERING_CONST:
