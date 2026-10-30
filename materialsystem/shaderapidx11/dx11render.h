@@ -44,6 +44,10 @@ bool Dx11R_IsTexture( int hTexture );
 void Dx11R_TexImage( int hTexture, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA );
 void Dx11R_TexSubImage( int hTexture, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA );
 void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp );
+// CPU copy of mip 0 for textures that get locked (lightmap pages): a lock must
+// see what is already there, since the engine rewrites only part of a page
+unsigned char *Dx11R_LockShadow( int hTexture, int &nPitch, int &nWidth, int &nHeight );
+void Dx11R_UploadRect( int hTexture, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch );
 void Dx11R_BindTexture( int nStage, int hTexture );
 void Dx11R_BindLightmap( int hTexture );	// 0: no lightmap for this pass
 

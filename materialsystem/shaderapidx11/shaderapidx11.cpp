@@ -3142,6 +3142,8 @@ void CShaderAPIEmpty::TexImageFromVTF( IVTFTexture *pVTF, int iVTFFrame )
 static CUtlMemory< unsigned char > s_LockBits;
 static int s_nLockLevel, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_hLockTexture;
 static bool s_bLocked;
+static unsigned char *s_pLockShadow;
+static int s_nLockPitch;
 
 bool CShaderAPIEmpty::TexLock( int level, int cubeFaceID, int xOffset, int yOffset, 
 								int width, int height, CPixelWriter& writer )
@@ -3153,13 +3155,26 @@ bool CShaderAPIEmpty::TexLock( int level, int cubeFaceID, int xOffset, int yOffs
 		Dx11_DebugLog( "texlock refused, handle", s_hModifyTexture );
 		return false;
 	}
-	if ( s_LockBits.Count() < width * height * 4 )
-		s_LockBits.Grow( width * height * 4 - s_LockBits.Count() );
-	memset( s_LockBits.Base(), 0, width * height * 4 );
+	// mip 0 locks write into the texture's CPU copy so the rest of the page survives
+	int nPitch, nTexW, nTexH;
+	unsigned char *pShadow = ( level == 0 ) ? Dx11R_LockShadow( s_hModifyTexture, nPitch, nTexW, nTexH ) : NULL;
+	if ( pShadow && xOffset >= 0 && yOffset >= 0 && xOffset + width <= nTexW && yOffset + height <= nTexH )
+	{
+		s_pLockShadow = pShadow + yOffset * nPitch + xOffset * 4;
+		s_nLockPitch = nPitch;
+		writer.SetPixelMemory( IMAGE_FORMAT_BGRA8888, s_pLockShadow, nPitch );
+	}
+	else
+	{
+		if ( s_LockBits.Count() < width * height * 4 )
+			s_LockBits.Grow( width * height * 4 - s_LockBits.Count() );
+		memset( s_LockBits.Base(), 0, width * height * 4 );
+		s_pLockShadow = NULL;
+		writer.SetPixelMemory( IMAGE_FORMAT_BGRA8888, s_LockBits.Base(), width * 4 );
+	}
 	s_nLockLevel = level; s_nLockX = xOffset; s_nLockY = yOffset; s_nLockW = width; s_nLockH = height;
 	s_hLockTexture = s_hModifyTexture;
 	s_bLocked = true;
-	writer.SetPixelMemory( IMAGE_FORMAT_BGRA8888, s_LockBits.Base(), width * 4 );
 	return true;
 }
 
@@ -3168,7 +3183,10 @@ void CShaderAPIEmpty::TexUnlock( )
 	if ( !s_bLocked )
 		return;
 	s_bLocked = false;
-	Dx11R_TexSubImage( s_hLockTexture, s_nLockLevel, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_LockBits.Base() );
+	if ( s_pLockShadow )
+		Dx11R_UploadRect( s_hLockTexture, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_pLockShadow, s_nLockPitch );
+	else
+		Dx11R_TexSubImage( s_hLockTexture, s_nLockLevel, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_LockBits.Base() );
 }
 
 

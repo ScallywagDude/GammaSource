@@ -32,6 +32,7 @@ struct Texture_t
 	bool m_bClampS, m_bClampT;
 	bool m_bUsed;
 	unsigned char *m_pPending[16];	// mip levels given before the device existed
+	unsigned char *m_pShadow;		// see Dx11R_LockShadow
 	bool m_bRenderTarget;
 	ID3D11RenderTargetView *m_pRTV;
 	ID3D11Texture2D *m_pDepth;
@@ -217,6 +218,7 @@ void Dx11R_DeleteTexture( int hTexture )
 	if ( pTex->m_pDSV ) pTex->m_pDSV->Release();
 	if ( pTex->m_pDepth ) pTex->m_pDepth->Release();
 	for ( int i = 0; i < 16; ++i ) free( pTex->m_pPending[i] );
+	free( pTex->m_pShadow );
 	memset( pTex, 0, sizeof( *pTex ) );
 }
 
@@ -312,6 +314,34 @@ void Dx11R_TexSubImage( int hTexture, int nLevel, int x, int y, int nWidth, int 
 	}
 	D3D11_BOX box = { (UINT)x, (UINT)y, 0, (UINT)( x + nWidth ), (UINT)( y + nHeight ), 1 };
 	CONTEXT->UpdateSubresource( pTex->m_pTexture, nLevel, &box, pBGRA, nWidth * 4, 0 );
+}
+
+unsigned char *Dx11R_LockShadow( int hTexture, int &nPitch, int &nWidth, int &nHeight )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	if ( !pTex )
+		return NULL;
+	if ( !pTex->m_pShadow )
+		pTex->m_pShadow = (unsigned char *)calloc( pTex->m_nWidth * pTex->m_nHeight, 4 );
+	nPitch = pTex->m_nWidth * 4;
+	nWidth = pTex->m_nWidth;
+	nHeight = pTex->m_nHeight;
+	return pTex->m_pShadow;
+}
+
+void Dx11R_UploadRect( int hTexture, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	if ( !pTex || !pBGRA || nWidth <= 0 || nHeight <= 0 )
+		return;
+	if ( !EnsureResource( pTex ) )
+	{
+		for ( int row = 0; row < nHeight; ++row )
+			KeepPending( pTex, 0, x, y + row, nWidth, 1, pBGRA + row * nPitch );
+		return;
+	}
+	D3D11_BOX box = { (UINT)x, (UINT)y, 0, (UINT)( x + nWidth ), (UINT)( y + nHeight ), 1 };
+	CONTEXT->UpdateSubresource( pTex->m_pTexture, 0, &box, pBGRA, nPitch, 0 );
 }
 
 void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
@@ -543,7 +573,9 @@ static void ApplyState()
 		Texture_t *pLightmap = GetTexture( s_hLightmap );
 		if ( pLightmap && !pLightmap->m_pSRV )
 			EnsureResource( pLightmap );
-		pConst->m_Lightmap = ( pLightmap && pLightmap->m_pSRV ) ? 1.0f : 0.0f;
+		static int s_nNoLightmaps = -1;
+		if ( s_nNoLightmaps < 0 ) { char b[8]; s_nNoLightmaps = GetEnvironmentVariableA( "GAMMA_DX11_NOLM", b, 8 ) ? 1 : 0; }
+		pConst->m_Lightmap = ( pLightmap && pLightmap->m_pSRV && !s_nNoLightmaps ) ? 1.0f : 0.0f;
 		pContext->Unmap( s_pConstants, 0 );
 	}
 
