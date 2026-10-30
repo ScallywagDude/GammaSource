@@ -60,16 +60,19 @@ struct Constants_t
 	float m_WVP[16];
 	float m_AlphaRef;
 	float m_AlphaTest;
-	float m_Pad[2];
+	float m_Lightmap;
+	float m_Pad;
 };
 
 static const char s_szShader[] =
-	"cbuffer Constants : register( b0 ) { row_major float4x4 g_WVP; float g_AlphaRef; float g_AlphaTest; float2 g_Pad; };\n"
+	"cbuffer Constants : register( b0 ) { row_major float4x4 g_WVP; float g_AlphaRef; float g_AlphaTest; float g_Lightmap; float g_Pad; };\n"
 	"Texture2D g_Texture : register( t0 ); SamplerState g_Sampler : register( s0 );\n"
-	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; };\n"
-	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; };\n"
-	"PSIn VSMain( VSIn v ) { PSIn o; o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); o.color = v.color; o.uv = v.uv; return o; }\n"
+	"Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSampler : register( s1 );\n"
+	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
+	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
+	"PSIn VSMain( VSIn v ) { PSIn o; o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); o.color = v.color; o.uv = v.uv; o.uv2 = v.uv2; return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
+	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
 	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
 
 static ID3DBlob *Compile( const char *pszEntry, const char *pszTarget )
@@ -103,8 +106,9 @@ bool Dx11R_Init()
 		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	pDevice->CreateInputLayout( layout, 3, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
+	pDevice->CreateInputLayout( layout, 4, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
 	pVS->Release(); pPS->Release();
 
 	D3D11_BUFFER_DESC cb = {};
@@ -321,6 +325,13 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
 		pTex->m_bClampT = bClamp;
 }
 
+static int s_hLightmap;
+
+void Dx11R_BindLightmap( int hTexture )
+{
+	s_hLightmap = hTexture;
+}
+
 void Dx11R_BindTexture( int nStage, int hTexture )
 {
 	extern int g_nDx11Binds;
@@ -529,6 +540,10 @@ static void ApplyState()
 		memcpy( pConst->m_WVP, s_WVP, sizeof( s_WVP ) );
 		pConst->m_AlphaRef = s_State.m_flAlphaRef;
 		pConst->m_AlphaTest = s_State.m_bAlphaTest ? 1.0f : 0.0f;
+		Texture_t *pLightmap = GetTexture( s_hLightmap );
+		if ( pLightmap && !pLightmap->m_pSRV )
+			EnsureResource( pLightmap );
+		pConst->m_Lightmap = ( pLightmap && pLightmap->m_pSRV ) ? 1.0f : 0.0f;
 		pContext->Unmap( s_pConstants, 0 );
 	}
 
@@ -543,6 +558,12 @@ static void ApplyState()
 	pContext->PSSetShaderResources( 0, 1, &pSRV );
 	int nSampler = pTex ? ( ( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 ) ) : 0;
 	pContext->PSSetSamplers( 0, 1, &s_pSamplers[nSampler] );
+	{
+		Texture_t *pLightmap = GetTexture( s_hLightmap );
+		ID3D11ShaderResourceView *pLightmapSRV = pLightmap ? pLightmap->m_pSRV : NULL;
+		pContext->PSSetShaderResources( 1, 1, &pLightmapSRV );
+		pContext->PSSetSamplers( 1, 1, &s_pSamplers[3] );
+	}
 
 	pContext->IASetInputLayout( s_pLayout );
 	pContext->VSSetShader( s_pVS, NULL, 0 );

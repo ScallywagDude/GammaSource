@@ -1631,7 +1631,12 @@ void CEmptyMesh::Unlock( int nWrittenIndexCount, IndexDesc_t& desc )
 
 void CEmptyMesh::ModifyBegin( bool bReadOnly, int nFirstIndex, int nIndexCount, IndexDesc_t& desc )
 {
-	Lock( nIndexCount, false, desc );
+	nFirstIndex = max( nFirstIndex, 0 );
+	EnsureIndices( max( nFirstIndex + nIndexCount, 1 ) );
+	desc.m_pIndices = m_pIndexMemory + nFirstIndex;
+	desc.m_nIndexSize = 1;	// in shorts
+	desc.m_nFirstIndex = 0;
+	desc.m_nOffset = 0;
 }
 
 void CEmptyMesh::ModifyEnd( IndexDesc_t& desc )
@@ -1646,35 +1651,26 @@ void CEmptyMesh::ValidateData( int nIndexCount, const IndexDesc_t &desc )
 {
 }
 
-bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
+// Points a vertex description at interleaved vertices starting at pBase
+static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc )
 {
-	EnsureVertices( max( nVertexCount, 1 ) );
-	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
-	// Formats without colour or texture coordinates leave those slots alone; make them neutral
-	for ( int v = 0; v < nVertexCount; ++v )
-	{
-		unsigned char *pVert = m_pVertexMemory + v * DX11V_STRIDE;
-		*(unsigned int *)( pVert + DX11V_COLOR ) = 0xFFFFFFFF;
-		memset( pVert + DX11V_TEXCOORD, 0, 8 );
-	}
-
-	desc.m_pPosition = (float*)( m_pVertexMemory + DX11V_POSITION );
-	desc.m_pNormal = (float*)( m_pVertexMemory + DX11V_NORMAL );
-	desc.m_pColor = m_pVertexMemory + DX11V_COLOR;
-	desc.m_pSpecular = m_pVertexMemory + DX11V_SPECULAR;
+	desc.m_pPosition = (float*)( pBase + DX11V_POSITION );
+	desc.m_pNormal = (float*)( pBase + DX11V_NORMAL );
+	desc.m_pColor = pBase + DX11V_COLOR;
+	desc.m_pSpecular = pBase + DX11V_SPECULAR;
 
 	int i;
 	for ( i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i)
 	{
-		desc.m_pTexCoord[i] = (float*)( m_pVertexMemory + DX11V_TEXCOORD + i * 16 );
+		desc.m_pTexCoord[i] = (float*)( pBase + DX11V_TEXCOORD + i * 16 );
 		desc.m_VertexSize_TexCoord[i] = DX11V_STRIDE;
 	}
 
-	desc.m_pBoneWeight = (float*)( m_pVertexMemory + DX11V_BONEWEIGHT );
-	desc.m_pBoneMatrixIndex = m_pVertexMemory + DX11V_BONEINDEX;
-	desc.m_pTangentS = (float*)( m_pVertexMemory + DX11V_TANGENT_S );
-	desc.m_pTangentT = (float*)( m_pVertexMemory + DX11V_TANGENT_T );
-	desc.m_pUserData = (float*)( m_pVertexMemory + DX11V_USERDATA );
+	desc.m_pBoneWeight = (float*)( pBase + DX11V_BONEWEIGHT );
+	desc.m_pBoneMatrixIndex = pBase + DX11V_BONEINDEX;
+	desc.m_pTangentS = (float*)( pBase + DX11V_TANGENT_S );
+	desc.m_pTangentT = (float*)( pBase + DX11V_TANGENT_T );
+	desc.m_pUserData = (float*)( pBase + DX11V_USERDATA );
 	desc.m_NumBoneWeights = 2;
 
 	desc.m_VertexSize_Position = DX11V_STRIDE;
@@ -1688,6 +1684,21 @@ bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 	desc.m_VertexSize_UserData = DX11V_STRIDE;
 	desc.m_ActualVertexSize = DX11V_STRIDE;
 
+}
+
+bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
+{
+	EnsureVertices( max( nVertexCount, 1 ) );
+	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
+	// Formats without colour or texture coordinates leave those slots alone; make them neutral
+	for ( int v = 0; v < nVertexCount; ++v )
+	{
+		unsigned char *pVert = m_pVertexMemory + v * DX11V_STRIDE;
+		*(unsigned int *)( pVert + DX11V_COLOR ) = 0xFFFFFFFF;
+		memset( pVert + DX11V_TEXCOORD, 0, 8 );
+	}
+
+	SetVertexDesc( m_pVertexMemory, desc );
 	desc.m_nFirstVertex = 0;
 	desc.m_nOffset = 0;
 	return true;
@@ -1718,10 +1729,15 @@ void CEmptyMesh::UnlockMesh( int numVerts, int numIndices, MeshDesc_t& desc )
 	Unlock( numIndices, *static_cast<IndexDesc_t*>( &desc ) );
 }
 
+// Modify edits existing data in place: point at the requested range and keep what is there
 void CEmptyMesh::ModifyBeginEx( bool bReadOnly, int firstVertex, int numVerts, int firstIndex, int numIndices, MeshDesc_t& desc )
 {
-	Lock( numVerts, false, *static_cast<VertexDesc_t*>( &desc ) );
-	Lock( numIndices, false, *static_cast<IndexDesc_t*>( &desc ) );
+	firstVertex = max( firstVertex, 0 );
+	EnsureVertices( max( firstVertex + numVerts, 1 ) );
+	SetVertexDesc( m_pVertexMemory + firstVertex * DX11V_STRIDE, *static_cast<VertexDesc_t*>( &desc ) );
+	desc.m_nFirstVertex = firstVertex;
+	static_cast<VertexDesc_t&>( desc ).m_nOffset = 0;
+	ModifyBegin( bReadOnly, firstIndex, numIndices, *static_cast<IndexDesc_t*>( &desc ) );
 }
 
 void CEmptyMesh::ModifyBegin( int firstVertex, int numVerts, int firstIndex, int numIndices, MeshDesc_t& desc )
@@ -1784,6 +1800,7 @@ void CEmptyMesh::RenderPass()
 		const unsigned char *c = pSrc + DX11V_COLOR;
 		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
 		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
+		memcpy( dst.m_UV2, pSrc + DX11V_TEXCOORD + 16, 8 );
 	}
 
 	// Draw( -1, 0 ) (the default) means the whole mesh
@@ -2725,6 +2742,9 @@ void CShaderAPIEmpty::BeginPass( StateSnapshot_t snapshot  )
 	UseSnapshot( snapshot );
 }
 
+// set while IShaderUtil binds the lightmap page for us
+static bool s_bBindingLightmap;
+
 // Renders a single pass of a material
 void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 {
@@ -2734,6 +2754,8 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 	{
 		UpdateMatrices();
 		s_pRenderMesh->RenderPass();
+		// the next pass binds its own lightmap if it has one
+		Dx11R_BindLightmap( 0 );
 	}
 }
 
@@ -3018,6 +3040,11 @@ ImageFormat CShaderAPIEmpty::GetNearestRenderTargetFormat( ImageFormat fmt ) con
 // Sets the texture state
 void CShaderAPIEmpty::BindTexture( Sampler_t stage, ShaderAPITextureHandle_t textureHandle )
 {
+	if ( s_bBindingLightmap )
+	{
+		Dx11R_BindLightmap( (int)textureHandle );
+		return;
+	}
 	Dx11R_BindTexture( stage, (int)textureHandle );
 }
 
@@ -3482,8 +3509,11 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 
 void CShaderAPIEmpty::BindStandardTexture( Sampler_t stage, StandardTextureId_t id )
 {
+	bool bLightmap = ( id == TEXTURE_LIGHTMAP || id == TEXTURE_LIGHTMAP_BUMPED || id == TEXTURE_LIGHTMAP_FULLBRIGHT || id == TEXTURE_LIGHTMAP_BUMPED_FULLBRIGHT );
+	s_bBindingLightmap = bLightmap;
 	if ( id >= 0 && id < TEXTURE_MAX_STD_TEXTURES && m_StdTextureHandles[id] != INVALID_SHADERAPI_TEXTURE_HANDLE )
 		BindTexture( stage, m_StdTextureHandles[id] );
 	else if ( g_pShaderUtil )
 		g_pShaderUtil->BindStandardTexture( stage, id );
+	s_bBindingLightmap = false;
 }

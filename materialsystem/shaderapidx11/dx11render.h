@@ -14,6 +14,7 @@ struct Dx11Vertex_t
 	float m_Pos[3];
 	unsigned int m_Color;	// RGBA bytes in memory order
 	float m_UV[2];
+	float m_UV2[2];			// lightmap coordinates
 };
 
 struct Dx11State_t
@@ -44,6 +45,7 @@ void Dx11R_TexImage( int hTexture, int nLevel, int nWidth, int nHeight, const un
 void Dx11R_TexSubImage( int hTexture, int nLevel, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA );
 void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp );
 void Dx11R_BindTexture( int nStage, int hTexture );
+void Dx11R_BindLightmap( int hTexture );	// 0: no lightmap for this pass
 
 void Dx11R_SetState( const Dx11State_t &state );
 void Dx11R_SetMatrices( const float *pModel, const float *pView, const float *pProj );	// row-vector 4x4
