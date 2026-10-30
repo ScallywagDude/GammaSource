@@ -40,6 +40,7 @@ struct Texture_t
 };
 static int s_hRenderTarget;	// 0: the back buffer
 static std::vector< Texture_t > s_Textures;
+static std::vector< ID3D11Query * > s_Queries;	// occlusion queries, handle = index + 1
 
 struct CachedVertices_t
 {
@@ -91,6 +92,10 @@ struct Constants_t
 	float m_VColorUse[4];		// same order as the HLSL cbuffer
 	float m_MatColor[4];
 	float m_VP[16];
+	float m_Water[4];			// x on, yz 1 / target size
+	float m_RefractTint[4];
+	float m_ReflectTint[4];
+	float m_Clip[2][4];			// disabled planes are ( 0, 0, 0, -1 ): never clip
 };
 
 static const char s_szShader[] =
@@ -98,7 +103,7 @@ static const char s_szShader[] =
 	"  row_major float4x4 g_Model; float4 g_Ambient[6]; float4 g_LightColor[4]; float4 g_LightPos[4]; float4 g_LightDir[4];\n"
 	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; float4 g_ShadowColor; float g_Shadow; float g_Skin; float2 g_Pad2;\n"
 	"  float4 g_VColorUse; float4 g_MatColor;\n"
-	"  row_major float4x4 g_VP; };\n"
+	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; };\n"
 	"cbuffer Bones : register( b1 ) { float4 g_Bones[53 * 3]; };\n"
 	"Texture2D g_Texture : register( t0 ); SamplerState g_Sampler : register( s0 );\n"
 	"Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSampler : register( s1 );\n"
@@ -106,7 +111,7 @@ static const char s_szShader[] =
 	"  uint4 bones : BLENDINDICES; float2 weights : BLENDWEIGHT; };\n"
 	"float3 SkinPos( int b, float3 p ) { return float3( dot( g_Bones[b * 3], float4( p, 1 ) ), dot( g_Bones[b * 3 + 1], float4( p, 1 ) ), dot( g_Bones[b * 3 + 2], float4( p, 1 ) ) ); }\n"
 	"float3 SkinDir( int b, float3 d ) { return float3( dot( g_Bones[b * 3].xyz, d ), dot( g_Bones[b * 3 + 1].xyz, d ), dot( g_Bones[b * 3 + 2].xyz, d ) ); }\n"
-	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
+	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float2 clip : SV_ClipDistance0; };\n"
 	"float3 AmbientCube( float3 n ) { float3 s = n * n; int3 i = n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 );\n"
 	"  return s.x * g_Ambient[i.x].rgb + s.y * g_Ambient[i.y].rgb + s.z * g_Ambient[i.z].rgb; }\n"
 	"float3 Lighting( float3 p, float3 n ) { float3 l = AmbientCube( n );\n"
@@ -128,11 +133,16 @@ static const char s_szShader[] =
 	"    n = SkinDir( v.bones.x, v.normal ) * w.x + SkinDir( v.bones.y, v.normal ) * w.y + SkinDir( v.bones.z, v.normal ) * w.z;\n"
 	"    o.pos = mul( float4( p, 1.0f ), g_VP ); }\n"
 	"  else { o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; n = mul( v.normal, (float3x3)g_Model ); }\n"
+	"  o.clip = float2( dot( g_Clip[0].xyz, p ) - g_Clip[0].w, dot( g_Clip[1].xyz, p ) - g_Clip[1].w );\n"
 	"  if ( g_Lit > 0.5f ) { n = normalize( n + 1e-6f );\n"
 	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
 	"  return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
+	"  if ( g_Water.x > 0.5f ) { float2 s = i.pos.xy * g_Water.yz;\n"
+	"    float3 refr = g_Texture.Sample( g_Sampler, s ).rgb * g_RefractTint.rgb;\n"
+	"    float3 refl = g_LightmapTex.Sample( g_LightmapSampler, float2( s.x, 1.0f - s.y ) ).rgb * g_ReflectTint.rgb;\n"
+	"    return float4( lerp( refr, refl, 0.5f ), 1.0f ); }\n"
 	"  if ( g_Shadow > 0.5f ) { float cover = saturate( g_Texture.Sample( g_Sampler, i.uv ).a - i.color.a );\n"
 	"    return float4( 1.0f + cover * ( g_ShadowColor.rgb - 1.0f ), 1.0f ); }\n"
 	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
@@ -242,6 +252,9 @@ void Dx11R_Shutdown()
 	for ( int i = 0; i < 128; ++i ) SAFE_RELEASE( s_pBlendStates[i] );
 	for ( int i = 0; i < 32; ++i ) SAFE_RELEASE( s_pDepthStates[i] );
 	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
+	for ( size_t i = 0; i < s_Queries.size(); ++i )
+		SAFE_RELEASE( s_Queries[i] );
+	s_Queries.clear();
 	SAFE_RELEASE( s_pVB ); SAFE_RELEASE( s_pIB ); SAFE_RELEASE( s_pConstants ); SAFE_RELEASE( s_pBoneConstants );
 	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
 		SAFE_RELEASE( s_VertexCache[i].m_pBuffer );
@@ -432,8 +445,92 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
 }
 
 static int s_hLightmap;
+static int s_hStage2;
 static bool s_bLit;
 static bool s_bShadowPass;
+
+int Dx11R_CreateQuery()
+{
+	if ( !DEVICE )
+		return 0;
+	D3D11_QUERY_DESC qd = { D3D11_QUERY_OCCLUSION, 0 };
+	ID3D11Query *pQuery = NULL;
+	if ( FAILED( DEVICE->CreateQuery( &qd, &pQuery ) ) )
+		return 0;
+	for ( size_t i = 0; i < s_Queries.size(); ++i )
+	{
+		if ( !s_Queries[i] )
+		{
+			s_Queries[i] = pQuery;
+			return (int)i + 1;
+		}
+	}
+	s_Queries.push_back( pQuery );
+	return (int)s_Queries.size();
+}
+
+static ID3D11Query *GetQuery( int hQuery )
+{
+	return ( hQuery > 0 && hQuery <= (int)s_Queries.size() ) ? s_Queries[hQuery - 1] : NULL;
+}
+
+void Dx11R_DestroyQuery( int hQuery )
+{
+	ID3D11Query *pQuery = GetQuery( hQuery );
+	if ( pQuery )
+	{
+		pQuery->Release();
+		s_Queries[hQuery - 1] = NULL;
+	}
+}
+
+void Dx11R_BeginQuery( int hQuery )
+{
+	ID3D11Query *pQuery = GetQuery( hQuery );
+	if ( pQuery && CONTEXT ) CONTEXT->Begin( pQuery );
+}
+
+void Dx11R_EndQuery( int hQuery )
+{
+	ID3D11Query *pQuery = GetQuery( hQuery );
+	if ( pQuery && CONTEXT ) CONTEXT->End( pQuery );
+}
+
+int Dx11R_GetQueryResult( int hQuery, bool bFlush )
+{
+	ID3D11Query *pQuery = GetQuery( hQuery );
+	if ( !pQuery || !CONTEXT )
+		return -2;	// OCCLUSION_QUERY_RESULT_ERROR
+	UINT64 nPixels = 0;
+	HRESULT hr = CONTEXT->GetData( pQuery, &nPixels, sizeof( nPixels ), bFlush ? 0 : D3D11_ASYNC_GETDATA_DONOTFLUSH );
+	if ( hr != S_OK )
+		return -1;	// OCCLUSION_QUERY_RESULT_PENDING
+	return nPixels > 0x7fffffff ? 0x7fffffff : (int)nPixels;
+}
+static bool s_bWaterPass;
+static float s_ClipPlanes[2][4] = { { 0, 0, 0, -1 }, { 0, 0, 0, -1 } };
+
+void Dx11R_SetClipPlane( int nIndex, const float *pPlane, bool bEnable )
+{
+	if ( nIndex < 0 || nIndex >= 2 )
+		return;
+	static const float s_Off[4] = { 0, 0, 0, -1 };
+	memcpy( s_ClipPlanes[nIndex], ( bEnable && pPlane ) ? pPlane : s_Off, sizeof( s_Off ) );
+}
+static int s_hWaterReflection;
+static float s_RefractTint[4] = { 1, 1, 1, 1 }, s_ReflectTint[4] = { 1, 1, 1, 1 };
+
+void Dx11R_SetWaterPass( bool bWater, int hReflection, const float *pRefractTint, const float *pReflectTint )
+{
+	s_bWaterPass = bWater;
+	s_hWaterReflection = hReflection;
+	for ( int i = 0; i < 4; ++i )
+	{
+		// the constants are linear; this shader works in gamma space
+		s_RefractTint[i] = pRefractTint ? powf( pRefractTint[i] > 0.0f ? pRefractTint[i] : 0.0f, 1.0f / 2.2f ) : 1.0f;
+		s_ReflectTint[i] = pReflectTint ? powf( pReflectTint[i] > 0.0f ? pReflectTint[i] : 0.0f, 1.0f / 2.2f ) : 1.0f;
+	}
+}
 static float s_VColorUse[4] = { 1, 1, 0, 0 };
 static float s_MatColor[4] = { 1, 1, 1, 1 };
 
@@ -491,6 +588,13 @@ void Dx11R_BindTexture( int nStage, int hTexture )
 	if ( hTexture > 0 ) ++g_nDx11Binds;
 	if ( nStage == 0 )
 		s_hBound = hTexture;
+	else if ( nStage == 2 )
+		s_hStage2 = hTexture;
+}
+
+int Dx11R_GetBoundTexture( int nStage )
+{
+	return nStage == 0 ? s_hBound : nStage == 2 ? s_hStage2 : 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -533,6 +637,12 @@ int g_nDx11Draws, g_nDx11Meshes, g_nDx11Passes, g_nDx11EmptyMeshes, g_nDx11Binds
 void Dx11R_ClearDepth()
 {
 	Dx11R_Clear( false, true );
+}
+
+bool Dx11R_IsRenderTargetTexture( int hTexture )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	return pTex && pTex->m_bRenderTarget;
 }
 
 void Dx11R_GetTextureSize( int hTexture, int &nWidth, int &nHeight )
@@ -704,6 +814,19 @@ static void ApplyState()
 		pConst->m_Shadow = s_bShadowPass ? 1.0f : 0.0f;
 		pConst->m_Skin = (float)s_State.m_nBoneWeights;
 		memcpy( pConst->m_VColorUse, s_VColorUse, sizeof( s_VColorUse ) );
+		pConst->m_Water[0] = s_bWaterPass ? 1.0f : 0.0f;
+		{
+			int nTargetW, nTargetH;
+			Texture_t *pTarget = GetTexture( s_hRenderTarget );
+			if ( pTarget ) { nTargetW = pTarget->m_nWidth; nTargetH = pTarget->m_nHeight; }
+			else Dx11_GetBackBufferSize( nTargetW, nTargetH );
+			pConst->m_Water[1] = 1.0f / ( nTargetW > 0 ? nTargetW : 1 );
+			pConst->m_Water[2] = 1.0f / ( nTargetH > 0 ? nTargetH : 1 );
+			pConst->m_Water[3] = 0.0f;
+		}
+		memcpy( pConst->m_RefractTint, s_RefractTint, sizeof( s_RefractTint ) );
+		memcpy( pConst->m_ReflectTint, s_ReflectTint, sizeof( s_ReflectTint ) );
+		memcpy( pConst->m_Clip, s_ClipPlanes, sizeof( s_ClipPlanes ) );
 		memcpy( pConst->m_MatColor, s_MatColor, sizeof( s_MatColor ) );
 		memcpy( pConst->m_VP, s_VP, sizeof( s_VP ) );
 		for ( int i = 0; i < 3; ++i )	// the constant is linear; this shader works in gamma space
@@ -743,7 +866,8 @@ static void ApplyState()
 	int nSampler = pTex ? ( ( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 ) ) : 0;
 	pContext->PSSetSamplers( 0, 1, &s_pSamplers[nSampler] );
 	{
-		Texture_t *pLightmap = GetTexture( s_hLightmap );
+		Texture_t *pLightmap = GetTexture( s_bWaterPass ? s_hWaterReflection : s_hLightmap );
+		if ( pLightmap && !pLightmap->m_pSRV ) EnsureResource( pLightmap );
 		ID3D11ShaderResourceView *pLightmapSRV = pLightmap ? pLightmap->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 1, 1, &pLightmapSRV );
 		pContext->PSSetSamplers( 1, 1, &s_pSamplers[3] );

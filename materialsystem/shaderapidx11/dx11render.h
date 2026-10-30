@@ -67,6 +67,7 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp );
 unsigned char *Dx11R_LockShadow( int hTexture, int &nPitch, int &nWidth, int &nHeight );
 void Dx11R_UploadRect( int hTexture, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch );
 void Dx11R_BindTexture( int nStage, int hTexture );
+int Dx11R_GetBoundTexture( int nStage );
 void Dx11R_BindLightmap( int hTexture );	// 0: no lightmap for this pass
 // lit passes (vertex lit models): colour = vertex colour * (ambient cube + lights)
 // the Shadow shader's projection pass: colour = lerp( 1, shadowColor, texture alpha - vertex alpha )
@@ -76,6 +77,17 @@ void Dx11R_SetBoneMatrices( const float ( *pBones )[12], int nCount );
 // how a pass uses vertex colour: Source's generic shaders ignore it unless the material
 // has $vertexcolor / $vertexalpha; pColor is the material's $color and $alpha
 void Dx11R_SetVertexColorUse( bool bColor, bool bAlpha, const float *pColor );
+// the Water shader: refraction (stage 0) and reflection (stage 2) render targets looked up
+// in screen space, tinted and mixed; pTints = refract tint, reflect tint (linear rgb + amount)
+void Dx11R_SetWaterPass( bool bWater, int hReflection, const float *pRefractTint, const float *pReflectTint );
+// world-space clip planes ( nx, ny, nz, d ): points with dot( n, p ) < d are clipped
+void Dx11R_SetClipPlane( int nIndex, const float *pPlane, bool bEnable );
+// occlusion queries: handles are 1-based; the result is the visible pixel count, -1 while pending
+int  Dx11R_CreateQuery();
+void Dx11R_DestroyQuery( int hQuery );
+void Dx11R_BeginQuery( int hQuery );
+void Dx11R_EndQuery( int hQuery );
+int  Dx11R_GetQueryResult( int hQuery, bool bFlush );
 void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor );
 void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 
@@ -88,6 +100,7 @@ void Dx11R_SetRenderTarget( int hColor );
 void Dx11R_Clear( bool bColor, bool bDepth );
 void Dx11R_CopyRenderTargetToTexture( int hTexture, int sx, int sy, int sw, int sh, int dx, int dy );
 void Dx11R_GetTextureSize( int hTexture, int &nWidth, int &nHeight );
+bool Dx11R_IsRenderTargetTexture( int hTexture );
 // pCacheKey/nVersion: a static mesh's vertices are kept on the GPU and reused while the
 // version matches (pVerts may then be NULL); pass NULL for data used once
 void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, const unsigned short *pIndices, int nIndices,

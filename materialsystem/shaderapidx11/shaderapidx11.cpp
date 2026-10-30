@@ -934,26 +934,31 @@ public:
 		MarkLitPass();
 	}
 
+	// sprite glows and other proxies ask how much of them was visible last frame
 	ShaderAPIOcclusionQuery_t CreateOcclusionQueryObject( void )
 	{
-		return INVALID_SHADERAPI_OCCLUSION_QUERY_HANDLE;
+		int hQuery = Dx11R_CreateQuery();
+		return hQuery ? (ShaderAPIOcclusionQuery_t)(intp)hQuery : INVALID_SHADERAPI_OCCLUSION_QUERY_HANDLE;
 	}
 
 	void DestroyOcclusionQueryObject( ShaderAPIOcclusionQuery_t handle )
 	{
+		Dx11R_DestroyQuery( (int)(intp)handle );
 	}
 
 	void BeginOcclusionQueryDrawing( ShaderAPIOcclusionQuery_t handle )
 	{
+		Dx11R_BeginQuery( (int)(intp)handle );
 	}
 
 	void EndOcclusionQueryDrawing( ShaderAPIOcclusionQuery_t handle )
 	{
+		Dx11R_EndQuery( (int)(intp)handle );
 	}
 
 	int OcclusionQuery_GetNumPixelsRendered( ShaderAPIOcclusionQuery_t handle, bool bFlush )
 	{
-		return 0;
+		return Dx11R_GetQueryResult( (int)(intp)handle, bFlush );
 	}
 
 	virtual void AcquireThreadOwnership() {}
@@ -2461,7 +2466,7 @@ int	 CShaderAPIEmpty::MaxVertexShaderBlendMatrices() const
 
 int	CShaderAPIEmpty::MaxUserClipPlanes() const
 {
-	return 0;
+	return 2;
 }
 
 bool CShaderAPIEmpty::SpecifiesFogColorInLinearSpace() const
@@ -2922,6 +2927,10 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		ApplyLighting();
 		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
 		Dx11R_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
+		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
+		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
+		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && Dx11R_IsRenderTargetTexture( Dx11R_GetBoundTexture( 0 ) );
+		Dx11R_SetWaterPass( bWater, Dx11R_GetBoundTexture( 2 ), s_PixelConstants[1], s_PixelConstants[4] );
 		ApplyVertexColorUse( s_pBoundMaterial, s_pRenderMesh->m_pColorMesh != NULL );
 		s_pRenderMesh->RenderPass();
 		// the next pass binds its own lightmap / lighting if it has them
@@ -3565,12 +3574,24 @@ void CShaderAPIEmpty::ForceHardwareSync( void )
 {
 }
 
+// user clip planes are world space ( nx, ny, nz, dist ), as in the DX9 backend
+static float s_UserClipPlanes[2][4];
+static bool s_bUserClipEnabled[2];
+
 void CShaderAPIEmpty::SetClipPlane( int index, const float *pPlane )
 {
+	if ( index < 0 || index >= 2 || !pPlane )
+		return;
+	memcpy( s_UserClipPlanes[index], pPlane, sizeof( s_UserClipPlanes[index] ) );
+	Dx11R_SetClipPlane( index, s_UserClipPlanes[index], s_bUserClipEnabled[index] );
 }
 
 void CShaderAPIEmpty::EnableClipPlane( int index, bool bEnable )
 {
+	if ( index < 0 || index >= 2 )
+		return;
+	s_bUserClipEnabled[index] = bEnable;
+	Dx11R_SetClipPlane( index, s_UserClipPlanes[index], bEnable );
 }
 
 void CShaderAPIEmpty::SetFastClipPlane( const float *pPlane )
