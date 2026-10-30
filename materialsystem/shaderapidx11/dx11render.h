@@ -60,6 +60,11 @@ void Dx11R_SetRenderTarget( int hColor );
 void Dx11R_Clear( bool bColor, bool bDepth );
 void Dx11R_CopyRenderTargetToTexture( int hTexture, int sx, int sy, int sw, int sh, int dx, int dy );
 void Dx11R_GetTextureSize( int hTexture, int &nWidth, int &nHeight );
-void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, const unsigned short *pIndices, int nIndices );
+// pCacheKey/nVersion: a static mesh's vertices are kept on the GPU and reused while the
+// version matches (pVerts may then be NULL); pass NULL for data used once
+void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, const unsigned short *pIndices, int nIndices,
+	const void *pCacheKey = 0, int nVersion = 0 );
+bool Dx11R_HasCachedVertices( const void *pCacheKey, int nVersion );
+void Dx11R_ReleaseCachedVertices( const void *pCacheKey );
 
 #endif // DX11RENDER_H

@@ -152,6 +152,10 @@ public:
 
 private:
 	bool m_bIsDynamic;
+public:
+	// static meshes from CreateStaticMesh: vertices stay on the GPU between draws
+	bool m_bCacheable;
+	int m_nVersion;
 };
 
 
@@ -1505,7 +1509,9 @@ void CShaderDeviceEmpty::ReacquireResources()
 // Creates/destroys Mesh
 IMesh* CShaderDeviceEmpty::CreateStaticMesh( VertexFormat_t fmt, const char *pTextureBudgetGroup, IMaterial * pMaterial )
 {
-	return new CEmptyMesh( false );
+	CEmptyMesh *pMesh = new CEmptyMesh( false );
+	pMesh->m_bCacheable = true;
+	return pMesh;
 }
 
 void CShaderDeviceEmpty::DestroyStaticMesh( IMesh* mesh )
@@ -1569,6 +1575,8 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_pIndexMemory = NULL;
 	m_nVertexCapacity = m_nIndexCapacity = 0;
 	m_pVertexSource = m_pIndexSource = NULL;
+	m_bCacheable = false;
+	m_nVersion = 0;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( DX11_MAX_VERTS );
@@ -1582,6 +1590,7 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 
 CEmptyMesh::~CEmptyMesh()
 {
+	Dx11R_ReleaseCachedVertices( this );
 	delete[] m_pVertexMemory;
 	delete[] m_pIndexMemory;
 }
@@ -1707,6 +1716,7 @@ bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 void CEmptyMesh::Unlock( int nVertexCount, VertexDesc_t &desc )
 {
 	m_nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
+	++m_nVersion;
 }
 
 void CEmptyMesh::Spew( int nVertexCount, const VertexDesc_t &desc ) 
@@ -1747,6 +1757,7 @@ void CEmptyMesh::ModifyBegin( int firstVertex, int numVerts, int firstIndex, int
 
 void CEmptyMesh::ModifyEnd( MeshDesc_t& desc )
 {
+	++m_nVersion;
 }
 
 // returns the # of vertices (static meshes only)
@@ -1791,7 +1802,10 @@ void CEmptyMesh::RenderPass()
 	static unsigned short s_Indices[DX11_MAX_INDICES];
 	// 16 bit indices reach 65536 vertices
 	int nVerts = min( nVertexCount, (int)DX11_MAX_VERTS );
-	for ( int v = 0; v < nVerts; ++v )
+	const void *pCacheKey = pVB->m_bCacheable ? pVB : NULL;
+	int nVersion = pVB->m_nVersion;
+	bool bCached = pCacheKey && Dx11R_HasCachedVertices( pCacheKey, nVersion );
+	for ( int v = 0; !bCached && v < nVerts; ++v )
 	{
 		const unsigned char *pSrc = pVertexMemory + v * DX11V_STRIDE;
 		Dx11Vertex_t &dst = s_Verts[v];
@@ -1822,7 +1836,7 @@ void CEmptyMesh::RenderPass()
 				s_Indices[n++] = b; s_Indices[n++] = b + 1; s_Indices[n++] = b + 2;
 				s_Indices[n++] = b; s_Indices[n++] = b + 2; s_Indices[n++] = b + 3;
 			}
-			Dx11R_Draw( DX11_TRIANGLES, s_Verts, nVerts, s_Indices, n );
+			Dx11R_Draw( DX11_TRIANGLES, bCached ? NULL : s_Verts, nVerts, s_Indices, n, pCacheKey, nVersion );
 		}
 		break;
 	case MATERIAL_POLYGON:
@@ -1832,7 +1846,7 @@ void CEmptyMesh::RenderPass()
 			{
 				s_Indices[n++] = 0; s_Indices[n++] = (unsigned short)i; s_Indices[n++] = (unsigned short)( i + 1 );
 			}
-			Dx11R_Draw( DX11_TRIANGLES, s_Verts, nVerts, s_Indices, n );
+			Dx11R_Draw( DX11_TRIANGLES, bCached ? NULL : s_Verts, nVerts, s_Indices, n, pCacheKey, nVersion );
 		}
 		break;
 	case MATERIAL_LINE_LOOP:
@@ -1842,7 +1856,7 @@ void CEmptyMesh::RenderPass()
 			{
 				s_Indices[n++] = (unsigned short)i; s_Indices[n++] = (unsigned short)( ( i + 1 ) % nVerts );
 			}
-			Dx11R_Draw( DX11_LINES, s_Verts, nVerts, s_Indices, n );
+			Dx11R_Draw( DX11_LINES, bCached ? NULL : s_Verts, nVerts, s_Indices, n, pCacheKey, nVersion );
 		}
 		break;
 	default:
@@ -1853,9 +1867,9 @@ void CEmptyMesh::RenderPass()
 			else if ( m_PrimitiveType == MATERIAL_TRIANGLE_STRIP ) type = DX11_TRIANGLE_STRIP;
 			else if ( m_PrimitiveType == MATERIAL_LINE_STRIP ) type = DX11_LINE_STRIP;
 			if ( nCount > 0 )
-				Dx11R_Draw( type, s_Verts, nVerts, pIndexMemory + nFirst, nCount );
+				Dx11R_Draw( type, bCached ? NULL : s_Verts, nVerts, pIndexMemory + nFirst, nCount, pCacheKey, nVersion );
 			else if ( nIndexCount == 0 )
-				Dx11R_Draw( type, s_Verts, nVerts, NULL, 0 );
+				Dx11R_Draw( type, bCached ? NULL : s_Verts, nVerts, NULL, 0, pCacheKey, nVersion );
 		}
 		break;
 	}

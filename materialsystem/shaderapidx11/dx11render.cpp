@@ -39,7 +39,17 @@ struct Texture_t
 	ID3D11DepthStencilView *m_pDSV;
 };
 static int s_hRenderTarget;	// 0: the back buffer
-static std::vector< Texture_t > s_Textures;	// handle = index + 1
+static std::vector< Texture_t > s_Textures;
+
+struct CachedVertices_t
+{
+	const void *m_pKey;
+	int m_nVersion;
+	int m_nVerts;
+	ID3D11Buffer *m_pBuffer;
+};
+static std::vector< CachedVertices_t > s_VertexCache;
+	// handle = index + 1
 
 static ID3D11VertexShader *s_pVS;
 static ID3D11PixelShader *s_pPS;
@@ -170,6 +180,9 @@ void Dx11R_Shutdown()
 	for ( int i = 0; i < 32; ++i ) SAFE_RELEASE( s_pDepthStates[i] );
 	for ( int i = 0; i < 2; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
 	SAFE_RELEASE( s_pVB ); SAFE_RELEASE( s_pIB ); SAFE_RELEASE( s_pConstants );
+	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
+		SAFE_RELEASE( s_VertexCache[i].m_pBuffer );
+	s_VertexCache.clear();
 	SAFE_RELEASE( s_pLayout ); SAFE_RELEASE( s_pVS ); SAFE_RELEASE( s_pPS );
 	s_nVBSize = s_nIBSize = 0;
 	s_hWhite = s_hBound = 0;
@@ -631,11 +644,80 @@ static bool Upload( ID3D11Buffer **ppBuffer, int *pnSize, UINT nBind, const void
 	return true;
 }
 
-void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, const unsigned short *pIndices, int nIndices )
+//-----------------------------------------------------------------------------
+// Static mesh vertex cache
+//-----------------------------------------------------------------------------
+
+static CachedVertices_t *FindCached( const void *pCacheKey )
 {
-	if ( !s_pVS || !pVerts || nVerts <= 0 || !CONTEXT )
+	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
+		if ( s_VertexCache[i].m_pKey == pCacheKey )
+			return &s_VertexCache[i];
+	return NULL;
+}
+
+bool Dx11R_HasCachedVertices( const void *pCacheKey, int nVersion )
+{
+	CachedVertices_t *pCached = pCacheKey ? FindCached( pCacheKey ) : NULL;
+	return pCached && pCached->m_nVersion == nVersion && pCached->m_pBuffer;
+}
+
+void Dx11R_ReleaseCachedVertices( const void *pCacheKey )
+{
+	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
+	{
+		if ( s_VertexCache[i].m_pKey != pCacheKey )
+			continue;
+		if ( s_VertexCache[i].m_pBuffer )
+			s_VertexCache[i].m_pBuffer->Release();
+		s_VertexCache.erase( s_VertexCache.begin() + i );
 		return;
-	if ( !Upload( &s_pVB, &s_nVBSize, D3D11_BIND_VERTEX_BUFFER, pVerts, nVerts * sizeof( Dx11Vertex_t ) ) )
+	}
+}
+
+static ID3D11Buffer *CacheVertices( const void *pCacheKey, int nVersion, const Dx11Vertex_t *pVerts, int nVerts )
+{
+	CachedVertices_t *pCached = FindCached( pCacheKey );
+	if ( pCached && pCached->m_nVersion == nVersion && pCached->m_pBuffer )
+		return pCached->m_pBuffer;
+	if ( !pVerts )
+		return NULL;
+	if ( !pCached )
+	{
+		CachedVertices_t entry = { pCacheKey, 0, 0, NULL };
+		s_VertexCache.push_back( entry );
+		pCached = &s_VertexCache.back();
+	}
+	if ( pCached->m_pBuffer )
+		pCached->m_pBuffer->Release();
+	pCached->m_pBuffer = NULL;
+	D3D11_BUFFER_DESC bd = {};
+	bd.ByteWidth = nVerts * sizeof( Dx11Vertex_t );
+	bd.Usage = D3D11_USAGE_DEFAULT;
+	bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+	D3D11_SUBRESOURCE_DATA init = { pVerts, 0, 0 };
+	if ( FAILED( DEVICE->CreateBuffer( &bd, &init, &pCached->m_pBuffer ) ) )
+		return NULL;
+	pCached->m_nVersion = nVersion;
+	pCached->m_nVerts = nVerts;
+	return pCached->m_pBuffer;
+}
+
+void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, const unsigned short *pIndices, int nIndices,
+	const void *pCacheKey, int nVersion )
+{
+	if ( !s_pVS || nVerts <= 0 || !CONTEXT )
+		return;
+	ID3D11Buffer *pVB = NULL;
+	if ( pCacheKey )
+	{
+		pVB = CacheVertices( pCacheKey, nVersion, pVerts, nVerts );
+	}
+	else if ( pVerts && Upload( &s_pVB, &s_nVBSize, D3D11_BIND_VERTEX_BUFFER, pVerts, nVerts * sizeof( Dx11Vertex_t ) ) )
+	{
+		pVB = s_pVB;
+	}
+	if ( !pVB )
 		return;
 	ApplyState();
 	++g_nDx11Draws;
@@ -647,7 +729,7 @@ void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, c
 	};
 	CONTEXT->IASetPrimitiveTopology( s_Topology[type] );
 	UINT nStride = sizeof( Dx11Vertex_t ), nOffset = 0;
-	CONTEXT->IASetVertexBuffers( 0, 1, &s_pVB, &nStride, &nOffset );
+	CONTEXT->IASetVertexBuffers( 0, 1, &pVB, &nStride, &nOffset );
 	if ( pIndices && nIndices > 0 )
 	{
 		if ( !Upload( &s_pIB, &s_nIBSize, D3D11_BIND_INDEX_BUFFER, pIndices, nIndices * sizeof( unsigned short ) ) )
