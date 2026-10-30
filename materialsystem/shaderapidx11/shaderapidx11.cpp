@@ -49,6 +49,8 @@ enum
 //-----------------------------------------------------------------------------
 // The empty mesh
 //-----------------------------------------------------------------------------
+void MarkLitPass();
+
 class CEmptyMesh : public IMesh
 {
 public:
@@ -108,9 +110,12 @@ public:
 	// gets the associated material
 	IMaterial* GetMaterial();
 
+	// static prop lighting: per-vertex colours from another mesh's specular slot
 	void SetColorMesh( IMesh *pColorMesh, int nVertexOffset )
 	{
+		m_pColorMesh = static_cast< CEmptyMesh * >( pColorMesh );
 	}
+	CEmptyMesh *m_pColorMesh;
 
 
 	virtual int IndexCount() const
@@ -532,6 +537,7 @@ public:
 	void SetVertexShaderStateAmbientLightCube();
 	void SetPixelShaderStateAmbientLightCube( int pshReg, bool bForceToBlack = false )
 	{
+		MarkLitPass();
 	}
 
 	float GetAmbientLightCubeLuminance(void)
@@ -924,6 +930,7 @@ public:
 	}
 	virtual void CommitPixelShaderLighting( int pshReg )
 	{
+		MarkLitPass();
 	}
 
 	ShaderAPIOcclusionQuery_t CreateOcclusionQueryObject( void )
@@ -1179,7 +1186,7 @@ public:
 	}
 	virtual int CompareSnapshots( StateSnapshot_t snapshot0, StateSnapshot_t snapshot1 ) { return 0; }
 
-	virtual void DisableAllLocalLights() {}
+	virtual void DisableAllLocalLights();
 
 	virtual bool SupportsMSAAMode( int nMSAAMode ) { return false; }
 
@@ -1258,7 +1265,8 @@ public:
 
 	// The shaders' dynamic state (texture binds, constants) comes through here
 	virtual void ExecuteCommandBuffer( uint8 *pData );
-	virtual bool GetHDREnabled( void ) const { return true; }
+	// the fixed shaders are LDR: let the engine pick LDR skies and lightmaps
+	virtual bool GetHDREnabled( void ) const { return false; }
 	virtual void SetHDREnabled( bool bEnable ) {}
 
 	virtual void CopyRenderTargetToScratchTexture( ShaderAPITextureHandle_t srcRt, ShaderAPITextureHandle_t dstTex, Rect_t *pSrcRect = NULL, Rect_t *pDstRect = NULL ) 
@@ -1577,6 +1585,7 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_pVertexSource = m_pIndexSource = NULL;
 	m_bCacheable = false;
 	m_nVersion = 0;
+	m_pColorMesh = NULL;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( DX11_MAX_VERTS );
@@ -1802,7 +1811,9 @@ void CEmptyMesh::RenderPass()
 	static unsigned short s_Indices[DX11_MAX_INDICES];
 	// 16 bit indices reach 65536 vertices
 	int nVerts = min( nVertexCount, (int)DX11_MAX_VERTS );
-	const void *pCacheKey = pVB->m_bCacheable ? pVB : NULL;
+	// a colour mesh gives each instance its own colours, so those draws aren't cached
+	const CEmptyMesh *pColors = ( m_pColorMesh && m_pColorMesh->m_pVertexMemory ) ? m_pColorMesh : NULL;
+	const void *pCacheKey = ( pVB->m_bCacheable && !pColors ) ? pVB : NULL;
 	int nVersion = pVB->m_nVersion;
 	bool bCached = pCacheKey && Dx11R_HasCachedVertices( pCacheKey, nVersion );
 	for ( int v = 0; !bCached && v < nVerts; ++v )
@@ -1815,6 +1826,12 @@ void CEmptyMesh::RenderPass()
 		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
 		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
 		memcpy( dst.m_UV2, pSrc + DX11V_TEXCOORD + 16, 8 );
+		memcpy( dst.m_Normal, pSrc + DX11V_NORMAL, 12 );
+		if ( pColors && v < pColors->m_nVertexCount )
+		{
+			const unsigned char *s = pColors->m_pVertexMemory + v * DX11V_STRIDE + DX11V_SPECULAR;
+			dst.m_Color = s[2] | ( s[1] << 8 ) | ( s[0] << 16 ) | ( 255u << 24 );
+		}
 	}
 
 	// Draw( -1, 0 ) (the default) means the whole mesh
@@ -1960,6 +1977,7 @@ void CShaderShadowEmpty::EnableDepthTest( bool bEnable )
 
 void CShaderShadowEmpty::EnablePolyOffset( PolygonOffsetMode_t nOffsetMode )
 {
+	m_State.m_bDecalOffset = nOffsetMode != SHADER_POLYOFFSET_DISABLE;
 }
 
 // Suppresses/activates color writing 
@@ -2049,6 +2067,8 @@ void CShaderShadowEmpty::VertexShaderVertexFormat( unsigned int nFlags,
 												   int* pTexCoordDimensions,
 												   int nUserDataSize )
 {
+	// shaders that light their vertices ask for normals; unlit ones (UnlitGeneric, sprites) don't
+	m_State.m_bNormals = ( nFlags & VERTEX_NORMAL ) != 0;
 }
 
 // Indicates we're going to light the model
@@ -2460,8 +2480,13 @@ const char *CShaderAPIEmpty::GetHWSpecificShaderDLLName() const
 }
 
 // Sets the default *dynamic* state
+void ResetPassLighting();
+
+// a new material draw: nothing carries over from the previous one
 void CShaderAPIEmpty::SetDefaultState()
 {
+	ResetPassLighting();
+	Dx11R_BindLightmap( 0 );
 }
 
 
@@ -2587,6 +2612,15 @@ void CShaderAPIEmpty::ShadeMode( ShaderShadeMode_t mode )
 // Binds a particular material to render with
 void UpdateMatrices();
 static IMaterialInternal *s_pBoundMaterial;
+
+static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
+{
+	if ( !pMaterial || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_SELFILLUM ) )
+		return false;
+	const char *pszShader = pMaterial->GetShaderName();
+	return pszShader && ( Q_stristr( pszShader, "VertexLit" ) || Q_stristr( pszShader, "Eye" ) ||
+		Q_stristr( pszShader, "Teeth" ) || Q_stristr( pszShader, "Skin" ) );
+}
 static CEmptyMesh *s_pRenderMesh;
 
 void CShaderAPIEmpty::Bind( IMaterial* pMaterial )
@@ -2638,9 +2672,17 @@ void CShaderAPIEmpty::SetHeightClipMode( enum MaterialHeightClipMode_t heightCli
 {
 }
 
-// Sets the lights
+// GammaSource: lighting for vertex lit passes, handed to the device when such a pass draws
+static LightDesc_t s_LightDescs[4];
+static float s_AmbientCube[6][3];
+static bool s_bLitPass;
+
 void CShaderAPIEmpty::SetLight( int lightNum, const LightDesc_t& desc )
 {
+	static int s_nLightCalls;
+	if ( ++s_nLightCalls % 2000 == 1 ) Dx11_DebugLog( "setlight calls", s_nLightCalls );
+	if ( lightNum >= 0 && lightNum < 4 )
+		memcpy( &s_LightDescs[lightNum], &desc, sizeof( desc ) );
 }
 
 // Sets lighting origin for the current model
@@ -2648,29 +2690,89 @@ void CShaderAPIEmpty::SetLightingOrigin( Vector vLightingOrigin )
 {
 }
 
+void CShaderAPIEmpty::DisableAllLocalLights()
+{
+	for ( int i = 0; i < 4; ++i )
+		s_LightDescs[i].m_Type = MATERIAL_LIGHT_DISABLE;
+}
+
+// the fixed-function ambient term; vertex lit shaders use the cube
 void CShaderAPIEmpty::SetAmbientLight( float r, float g, float b )
 {
 }
 
 void CShaderAPIEmpty::SetAmbientLightCube( Vector4D cube[6] )
 {
+	static int s_nCalls, s_nNonZero;
+	++s_nCalls;
+	if ( ( cube[0].x != 0 || cube[4].x != 0 ) && s_nNonZero++ < 3 ) { Dx11_DebugLog( "cube call", s_nCalls ); Dx11_DebugLog( "  +z r*1000", (int)( cube[4].x * 1000 ) ); }
+	if ( s_nCalls < 4 || s_nCalls % 500 == 0 ) { Dx11_DebugLog( "cube calls", s_nCalls ); Dx11_DebugLog( "  -x,+y,+z g*1000", (int)( cube[1].y * 1000 ) * 0 + (int)( ( cube[1].y + cube[2].y + cube[4].y ) * 1000 ) ); }
+	for ( int i = 0; i < 6; ++i )
+	{
+		s_AmbientCube[i][0] = cube[i].x; s_AmbientCube[i][1] = cube[i].y; s_AmbientCube[i][2] = cube[i].z;
+	}
 }
 
 // Get lights
 int CShaderAPIEmpty::GetMaxLights( void ) const
 {
-	return 0;
+	return 4;
 }
 
 const LightDesc_t& CShaderAPIEmpty::GetLight( int lightNum ) const
 {
-	static LightDesc_t blah;
-	return blah;
+	return s_LightDescs[( lightNum >= 0 && lightNum < 4 ) ? lightNum : 0];
+}
+
+// the pass lights its vertices (the shader asked for the ambient cube / lights)
+void MarkLitPass()
+{
+	s_bLitPass = true;
+}
+
+void ResetPassLighting()
+{
+	s_bLitPass = false;
+}
+
+static void ApplyLighting()
+{
+	if ( !s_bLitPass )
+	{
+		Dx11R_SetLighting( false, NULL, 0, NULL );
+		return;
+	}
+	Dx11Light_t lights[4];
+	int nLights = 0;
+	for ( int i = 0; i < 4; ++i )
+	{
+		const LightDesc_t &d = s_LightDescs[i];
+		if ( d.m_Type == MATERIAL_LIGHT_DISABLE )
+			continue;
+		Dx11Light_t &l = lights[nLights++];
+		l.m_nType = d.m_Type;
+		l.m_Color[0] = d.m_Color.x; l.m_Color[1] = d.m_Color.y; l.m_Color[2] = d.m_Color.z;
+		l.m_Pos[0] = d.m_Position.x; l.m_Pos[1] = d.m_Position.y; l.m_Pos[2] = d.m_Position.z;
+		l.m_Dir[0] = d.m_Direction.x; l.m_Dir[1] = d.m_Direction.y; l.m_Dir[2] = d.m_Direction.z;
+		l.m_flRange = d.m_Range;
+		l.m_flAtten[0] = d.m_Attenuation0; l.m_flAtten[1] = d.m_Attenuation1; l.m_flAtten[2] = d.m_Attenuation2;
+		l.m_flThetaDot = d.m_ThetaDot; l.m_flPhiDot = d.m_PhiDot; l.m_flFalloff = d.m_Falloff;
+	}
+	Dx11R_SetLighting( true, s_AmbientCube, nLights, lights );
+	static int s_nLogged;
+	if ( s_nLogged < 6 )
+	{
+		++s_nLogged;
+		Dx11_DebugLog( "lit pass lights", nLights );
+		for ( int i = 0; i < 6; ++i ) Dx11_DebugLog( "  cube*1000 r", (int)( s_AmbientCube[i][0] * 1000 ) );
+		if ( nLights ) { Dx11_DebugLog( "  light0 type", lights[0].m_nType ); Dx11_DebugLog( "  light0 r*1000", (int)( lights[0].m_Color[0] * 1000 ) ); }
+	}
 }
 
 // Render state for the ambient light cube (vertex shaders)
 void CShaderAPIEmpty::SetVertexShaderStateAmbientLightCube()
 {
+	MarkLitPass();
 }
 
 void CShaderAPIEmpty::SetSkinningMatrices()
@@ -2767,9 +2869,15 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 	if ( s_pRenderMesh )
 	{
 		UpdateMatrices();
+		// only vertex lit shaders light per vertex (world shaders use lightmaps, unlit ones
+		// nothing); static props carry baked lighting in a colour mesh instead
+		if ( s_pRenderMesh->m_pColorMesh || !IsVertexLitMaterial( s_pBoundMaterial ) )
+			ResetPassLighting();
+		ApplyLighting();
 		s_pRenderMesh->RenderPass();
-		// the next pass binds its own lightmap if it has one
+		// the next pass binds its own lightmap / lighting if it has them
 		Dx11R_BindLightmap( 0 );
+		s_bLitPass = false;
 	}
 }
 
@@ -3506,11 +3614,15 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 		case CBCMD_STORE_EYE_POS_IN_PSCONST:
 		case CBCMD_COMMITPIXELSHADERLIGHTING:
 		case CBCMD_SETPIXELSHADERSTATEAMBIENTLIGHTCUBE:
+			MarkLitPass();
+			pCmdBuf += 2 * sizeof( int );
+			break;
 		case CBCMD_SET_PSHINDEX:
 		case CBCMD_SET_VSHINDEX:
 			pCmdBuf += 2 * sizeof( int );
 			break;
 		case CBCMD_SETAMBIENTCUBEDYNAMICSTATEVERTEXSHADER:
+			MarkLitPass();
 			pCmdBuf += sizeof( int );
 			break;
 		case CBCMD_SET_DEPTH_FEATHERING_CONST:

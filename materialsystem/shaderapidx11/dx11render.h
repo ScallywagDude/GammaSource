@@ -15,6 +15,19 @@ struct Dx11Vertex_t
 	unsigned int m_Color;	// RGBA bytes in memory order
 	float m_UV[2];
 	float m_UV2[2];			// lightmap coordinates
+	float m_Normal[3];		// model space, for lit passes
+};
+
+// a light for lit (model) passes, world space
+struct Dx11Light_t
+{
+	int m_nType;			// 0 off, 1 point, 2 directional, 3 spot (LightType_t)
+	float m_Color[3];		// linear
+	float m_Pos[3];
+	float m_Dir[3];
+	float m_flRange;
+	float m_flAtten[3];		// constant, linear, quadratic
+	float m_flThetaDot, m_flPhiDot, m_flFalloff;
 };
 
 struct Dx11State_t
@@ -28,6 +41,8 @@ struct Dx11State_t
 	bool m_bDepthWrite;
 	int m_nDepthFunc;		// ShaderDepthFunc_t
 	bool m_bCull;
+	bool m_bNormals;		// the pass's vertex format has normals (lit shaders)
+	bool m_bDecalOffset;	// SHADER_POLYOFFSET_DECAL
 };
 
 enum Dx11Primitive_t
@@ -50,6 +65,8 @@ unsigned char *Dx11R_LockShadow( int hTexture, int &nPitch, int &nWidth, int &nH
 void Dx11R_UploadRect( int hTexture, int x, int y, int nWidth, int nHeight, const unsigned char *pBGRA, int nPitch );
 void Dx11R_BindTexture( int nStage, int hTexture );
 void Dx11R_BindLightmap( int hTexture );	// 0: no lightmap for this pass
+// lit passes (vertex lit models): colour = vertex colour * (ambient cube + lights)
+void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 
 void Dx11R_SetState( const Dx11State_t &state );
 void Dx11R_SetMatrices( const float *pModel, const float *pView, const float *pProj );	// row-vector 4x4

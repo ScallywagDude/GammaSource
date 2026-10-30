@@ -60,7 +60,7 @@ static int s_nVBSize, s_nIBSize;
 static ID3D11SamplerState *s_pSamplers[4];	// bit 0 clamp S, bit 1 clamp T
 static ID3D11BlendState *s_pBlendStates[128];
 static ID3D11DepthStencilState *s_pDepthStates[32];
-static ID3D11RasterizerState *s_pRasterStates[2];
+static ID3D11RasterizerState *s_pRasterStates[4];	// bit 0 cull, bit 1 decal depth offset
 static int s_hWhite;
 static int s_hBound;
 static Dx11State_t s_State;
@@ -72,16 +72,41 @@ struct Constants_t
 	float m_AlphaRef;
 	float m_AlphaTest;
 	float m_Lightmap;
-	float m_Pad;
+	float m_Lit;
+	float m_Model[16];
+	float m_Ambient[6][4];
+	float m_LightColor[4][4];	// w = type
+	float m_LightPos[4][4];		// w = range
+	float m_LightDir[4][4];
+	float m_LightAtten[4][4];	// w = spot falloff exponent
+	float m_LightCone[4][4];	// x = cos inner, y = cos outer
 };
 
 static const char s_szShader[] =
-	"cbuffer Constants : register( b0 ) { row_major float4x4 g_WVP; float g_AlphaRef; float g_AlphaTest; float g_Lightmap; float g_Pad; };\n"
+	"cbuffer Constants : register( b0 ) { row_major float4x4 g_WVP; float g_AlphaRef; float g_AlphaTest; float g_Lightmap; float g_Lit;\n"
+	"  row_major float4x4 g_Model; float4 g_Ambient[6]; float4 g_LightColor[4]; float4 g_LightPos[4]; float4 g_LightDir[4];\n"
+	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; };\n"
 	"Texture2D g_Texture : register( t0 ); SamplerState g_Sampler : register( s0 );\n"
 	"Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSampler : register( s1 );\n"
-	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
+	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float3 normal : NORMAL; };\n"
 	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
-	"PSIn VSMain( VSIn v ) { PSIn o; o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); o.color = v.color; o.uv = v.uv; o.uv2 = v.uv2; return o; }\n"
+	"float3 AmbientCube( float3 n ) { float3 s = n * n; int3 i = n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 );\n"
+	"  return s.x * g_Ambient[i.x].rgb + s.y * g_Ambient[i.y].rgb + s.z * g_Ambient[i.z].rgb; }\n"
+	"float3 Lighting( float3 p, float3 n ) { float3 l = AmbientCube( n );\n"
+	"  [unroll] for ( int k = 0; k < 4; ++k ) { float type = g_LightColor[k].w; if ( type < 0.5f ) continue;\n"
+	"    float3 dir = -g_LightDir[k].xyz; float att = 1.0f;\n"
+	"    if ( type < 1.5f || type > 2.5f ) { float3 d = g_LightPos[k].xyz - p; float dist = length( d ); dir = d / max( dist, 0.001f );\n"
+	"      att = 1.0f / max( g_LightAtten[k].x + g_LightAtten[k].y * dist + g_LightAtten[k].z * dist * dist, 0.0001f );\n"
+	"      if ( g_LightPos[k].w > 0.0f && dist > g_LightPos[k].w ) att = 0.0f;\n"
+	"      if ( type > 2.5f ) { float c = dot( -dir, g_LightDir[k].xyz );\n"
+	"        float cone = saturate( ( c - g_LightCone[k].y ) / max( g_LightCone[k].x - g_LightCone[k].y, 0.0001f ) );\n"
+	"        att *= pow( cone, max( g_LightAtten[k].w, 0.0001f ) ); } }\n"
+	"    l += g_LightColor[k].rgb * att * saturate( dot( n, dir ) ); }\n"
+	"  return l; }\n"
+	"PSIn VSMain( VSIn v ) { PSIn o; o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); o.color = v.color; o.uv = v.uv; o.uv2 = v.uv2;\n"
+	"  if ( g_Lit > 0.5f ) { float3 p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; float3 n = normalize( mul( v.normal, (float3x3)g_Model ) + 1e-6f );\n"
+	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
+	"  return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
 	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
@@ -118,8 +143,9 @@ bool Dx11R_Init()
 		{ "COLOR", 0, DXGI_FORMAT_R8G8B8A8_UNORM, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	pDevice->CreateInputLayout( layout, 4, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
+	pDevice->CreateInputLayout( layout, 5, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
 	pVS->Release(); pPS->Release();
 
 	D3D11_BUFFER_DESC cb = {};
@@ -139,11 +165,18 @@ bool Dx11R_Init()
 		sd.MaxLOD = D3D11_FLOAT32_MAX;
 		pDevice->CreateSamplerState( &sd, &s_pSamplers[i] );
 	}
-	for ( int i = 0; i < 2; ++i )
+	for ( int i = 0; i < 4; ++i )
 	{
 		D3D11_RASTERIZER_DESC rd = {};
 		rd.FillMode = D3D11_FILL_SOLID;
-		rd.CullMode = i ? D3D11_CULL_BACK : D3D11_CULL_NONE;
+		rd.CullMode = ( i & 1 ) ? D3D11_CULL_BACK : D3D11_CULL_NONE;
+		if ( i & 2 )
+		{
+			// decals and overlays sit on their surface: pull them forward like D3D9's decal bias
+			// (mat_depthbias_decal -0.000005 on a 24 bit buffer, mat_slopescaledepthbias_decal -0.5)
+			rd.DepthBias = -84;
+			rd.SlopeScaledDepthBias = -0.5f;
+		}
 		rd.FrontCounterClockwise = FALSE;	// as D3D9: front faces are clockwise
 		rd.DepthClipEnable = TRUE;
 		rd.ScissorEnable = FALSE;
@@ -178,7 +211,7 @@ void Dx11R_Shutdown()
 	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pSamplers[i] );
 	for ( int i = 0; i < 128; ++i ) SAFE_RELEASE( s_pBlendStates[i] );
 	for ( int i = 0; i < 32; ++i ) SAFE_RELEASE( s_pDepthStates[i] );
-	for ( int i = 0; i < 2; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
+	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
 	SAFE_RELEASE( s_pVB ); SAFE_RELEASE( s_pIB ); SAFE_RELEASE( s_pConstants );
 	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
 		SAFE_RELEASE( s_VertexCache[i].m_pBuffer );
@@ -369,6 +402,24 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
 }
 
 static int s_hLightmap;
+static bool s_bLit;
+static float s_Model[16];
+static float s_Ambient[6][3];
+static int s_nLights;
+static Dx11Light_t s_Lights[4];
+
+void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights )
+{
+	static int s_nNoLit = -1;
+	if ( s_nNoLit < 0 ) { char b[8]; s_nNoLit = GetEnvironmentVariableA( "GAMMA_DX11_NOLIT", b, 8 ) ? 1 : 0; }
+	s_bLit = bLit && !s_nNoLit;
+	if ( !s_bLit )
+		return;
+	memcpy( s_Ambient, ambientCube, sizeof( s_Ambient ) );
+	s_nLights = nLights < 4 ? nLights : 4;
+	for ( int i = 0; i < s_nLights; ++i )
+		s_Lights[i] = pLights[i];
+}
 
 void Dx11R_BindLightmap( int hTexture )
 {
@@ -403,6 +454,7 @@ static void Mul( const float *a, const float *b, float *out )
 void Dx11R_SetMatrices( const float *pModel, const float *pView, const float *pProj )
 {
 	float mv[16];
+	memcpy( s_Model, pModel, sizeof( s_Model ) );
 	Mul( pModel, pView, mv );
 	Mul( mv, pProj, s_WVP );
 }
@@ -566,7 +618,7 @@ static void ApplyState()
 		pDevice->CreateDepthStencilState( &dd, &s_pDepthStates[nDepthKey] );
 	}
 	pContext->OMSetDepthStencilState( s_pDepthStates[nDepthKey], 0 );
-	pContext->RSSetState( s_pRasterStates[s_State.m_bCull ? 1 : 0] );
+	pContext->RSSetState( s_pRasterStates[( s_State.m_bCull ? 1 : 0 ) | ( s_State.m_bDecalOffset ? 2 : 0 )] );
 	D3D11_VIEWPORT vp = s_Viewport;
 	if ( vp.Width <= 0 || vp.Height <= 0 )
 	{
@@ -589,6 +641,25 @@ static void ApplyState()
 		static int s_nNoLightmaps = -1;
 		if ( s_nNoLightmaps < 0 ) { char b[8]; s_nNoLightmaps = GetEnvironmentVariableA( "GAMMA_DX11_NOLM", b, 8 ) ? 1 : 0; }
 		pConst->m_Lightmap = ( pLightmap && pLightmap->m_pSRV && !s_nNoLightmaps ) ? 1.0f : 0.0f;
+		bool bLit = s_bLit && s_State.m_bNormals;
+		pConst->m_Lit = bLit ? 1.0f : 0.0f;
+		memcpy( pConst->m_Model, s_Model, sizeof( s_Model ) );
+		memset( pConst->m_Ambient, 0, sizeof( pConst->m_Ambient ) + sizeof( pConst->m_LightColor ) + sizeof( pConst->m_LightPos ) +
+			sizeof( pConst->m_LightDir ) + sizeof( pConst->m_LightAtten ) + sizeof( pConst->m_LightCone ) );
+		if ( bLit )
+		{
+			for ( int i = 0; i < 6; ++i )
+				memcpy( pConst->m_Ambient[i], s_Ambient[i], sizeof( s_Ambient[i] ) );
+			for ( int i = 0; i < s_nLights; ++i )
+			{
+				const Dx11Light_t &l = s_Lights[i];
+				memcpy( pConst->m_LightColor[i], l.m_Color, 12 ); pConst->m_LightColor[i][3] = (float)l.m_nType;
+				memcpy( pConst->m_LightPos[i], l.m_Pos, 12 ); pConst->m_LightPos[i][3] = l.m_flRange;
+				memcpy( pConst->m_LightDir[i], l.m_Dir, 12 );
+				memcpy( pConst->m_LightAtten[i], l.m_flAtten, 12 ); pConst->m_LightAtten[i][3] = l.m_flFalloff;
+				pConst->m_LightCone[i][0] = l.m_flThetaDot; pConst->m_LightCone[i][1] = l.m_flPhiDot;
+			}
+		}
 		pContext->Unmap( s_pConstants, 0 );
 	}
 
@@ -721,6 +792,19 @@ void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, c
 		return;
 	ApplyState();
 	++g_nDx11Draws;
+	static int s_nLitLogged, s_nLitSeen;
+	if ( s_bLit && ++s_nLitSeen > 20000 && s_nLitLogged < 30 )
+	{
+		++s_nLitLogged;
+		Dx11_DebugLog( "LIT draw nverts", nVerts );
+		if ( pVerts ) { Dx11_DebugLog( "  n*1000 x", (int)( pVerts[0].m_Normal[0] * 1000 ) ); Dx11_DebugLog( "  n*1000 y", (int)( pVerts[0].m_Normal[1] * 1000 ) ); Dx11_DebugLog( "  n*1000 z", (int)( pVerts[0].m_Normal[2] * 1000 ) ); }
+		Dx11_DebugLog( "  cached", pCacheKey ? 1 : 0 );
+		Dx11_DebugLog( "  amb+z g*1000", (int)( s_Ambient[4][1] * 1000 ) );
+		Dx11_DebugLog( "  lights", s_nLights );
+		if ( pVerts ) Dx11_DebugLog( "  color", (int)pVerts[0].m_Color );
+		Dx11_DebugLog( "  model[0]*1000", (int)( s_Model[0] * 1000 ) );
+		Dx11_DebugLog( "  tex", s_hBound );
+	}
 
 	static const D3D11_PRIMITIVE_TOPOLOGY s_Topology[] =
 	{
