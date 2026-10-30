@@ -682,7 +682,17 @@ void CMatSystemSurface::StartDrawing( void )
 	if ( !g_bCheckedCommandLine )
 	{
 		g_bCheckedCommandLine = true;
-		
+
+#ifdef _WIN32
+		// GammaSource: the offset is for Direct3D 9's pixel centres; the native DX11 / Vulkan /
+		// DX12 / GL backends already sample texel centres, and the offset blurs every glyph
+		if ( GetModuleHandleA( "shaderapidx9.dll" ) == NULL )
+		{
+			g_flPixelOffsetX = 0.0f;
+			g_flPixelOffsetY = 0.0f;
+		}
+#endif
+
 		const char *pX = CommandLine()->ParmValue( "-pixel_offset_x", (const char*)NULL );
 		if ( pX )
 			g_flPixelOffsetX = atof( pX );
