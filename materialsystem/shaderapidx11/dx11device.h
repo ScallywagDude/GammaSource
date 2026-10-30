@@ -18,5 +18,15 @@ void Dx11_GetBackBufferSize( int &nWidth, int &nHeight );
 void Dx11_GetWindowSize( int &nWidth, int &nHeight );
 const char *Dx11_AdapterName();
 void Dx11_GetDesktopSize( int &nWidth, int &nHeight );
+void *Dx11_Device();		// ID3D11Device *
+void *Dx11_Context();	// ID3D11DeviceContext *
+void Dx11_BindBackBuffer();
+void Dx11_ClearDepth();
+void Dx11_DebugLog( const char *pszMsg, int n );
+void *Dx11_BackBufferRTV();		// ID3D11RenderTargetView *
+void *Dx11_BackBufferDSV();		// ID3D11DepthStencilView *
+void *Dx11_AcquireBackBuffer();	// ID3D11Texture2D *, AddRef'd: Release it
+const float *Dx11_GetClearColor();
+void Dx11_DumpTexture( void *pTexture, const char *pszFile );
 
 #endif // DX11DEVICE_H

@@ -2210,12 +2210,25 @@ static ConVar r_queued_post_processing( "r_queued_post_processing", "0" );
 
 // How much to dice up the screen during post-processing on 360
 // This has really marginal effects, but 4x1 does seem vaguely better for post-processing
+#ifdef _WIN32
+extern "C" __declspec( dllimport ) void * __stdcall GetModuleHandleA( const char *pszModuleName );
+#endif
 static ConVar mat_postprocess_x( "mat_postprocess_x", "4" );
 static ConVar mat_postprocess_y( "mat_postprocess_y", "1" );
 
 void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, bool bPostVGui )
 {
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
+
+#ifdef _WIN32
+	// GammaSource: the native DX11 / Vulkan / DX12 / GL backends don't run Source's DX9
+	// post-process shaders yet; bloom/tonemap passes would cover the frame
+	static int s_nNativeRenderer = -1;
+	if ( s_nNativeRenderer < 0 )
+		s_nNativeRenderer = ( GetModuleHandleA( "shaderapidx9.dll" ) == NULL ) ? 1 : 0;
+	if ( s_nNativeRenderer )
+		return;
+#endif
 
 	CMatRenderContextPtr pRenderContext( materials );
 

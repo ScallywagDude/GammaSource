@@ -21,6 +21,7 @@ def build(bld):
 	source = [
 		'shaderapidx11.cpp',
 		'dx11device.cpp',
+		'dx11render.cpp',
 		'../../public/tier0/memoverride.cpp'
 	]
 
@@ -35,7 +36,7 @@ def build(bld):
 
 	defines = []
 
-	libs = ['tier0','tier1']
+	libs = ['tier0','tier1','tier2','bitmap','mathlib']
 
 	install_path = bld.env.LIBDIR
 

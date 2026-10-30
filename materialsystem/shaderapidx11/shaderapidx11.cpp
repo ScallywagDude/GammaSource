@@ -18,6 +18,32 @@
 #include "materialsystem/idebugtextureinfo.h"
 #include "materialsystem/deformations.h"
 #include "dx11device.h"
+#include "dx11render.h"
+#include "bitmap/imageformat.h"
+#include "vtf/vtf.h"
+#include "pixelwriter.h"
+#include "shaderapi/commandbuffer.h"
+#include "imaterialinternal.h"
+#include "materialsystem/imesh.h"
+
+// GammaSource DX11: the vertex layout every mesh is written in (each attribute in its own
+// slot of one interleaved vertex, so any vertex format the mesh builder asks for fits)
+enum
+{
+	DX11V_POSITION = 0,
+	DX11V_NORMAL = 12,
+	DX11V_COLOR = 24,
+	DX11V_SPECULAR = 28,
+	DX11V_TEXCOORD = 32,	// 8 x float4
+	DX11V_TANGENT_S = 160,
+	DX11V_TANGENT_T = 172,
+	DX11V_BONEWEIGHT = 184,	// float4
+	DX11V_BONEINDEX = 200,	// 4 bytes
+	DX11V_USERDATA = 204,	// float4
+	DX11V_STRIDE = 220,
+	DX11_MAX_VERTS = 65536,
+	DX11_MAX_INDICES = 196608,
+};
 
 
 //-----------------------------------------------------------------------------
@@ -89,7 +115,7 @@ public:
 
 	virtual int IndexCount() const
 	{
-		return 0;
+		return m_nIndexCount;
 	}
 
 	virtual void SetFlexMesh( IMesh *pMesh, int nVertexOffset ) {}
@@ -107,13 +133,24 @@ public:
 		return this;
 	}
 
-private:
-	enum
-	{
-		VERTEX_BUFFER_SIZE = 1024 * 1024
-	};
+	// GammaSource DX11: the mesh's data, kept in memory and handed to the device per pass
+	unsigned char *m_pVertexMemory;
+	unsigned short *m_pIndexMemory;
+	int m_nVertexCapacity;
+	int m_nIndexCapacity;
+	// GetDynamicMesh( ..., pVertexOverride, pIndexOverride ): draw with another mesh's data
+	CEmptyMesh *m_pVertexSource;
+	CEmptyMesh *m_pIndexSource;
+	void EnsureVertices( int nCount );
+	void EnsureIndices( int nCount );
+	int m_nVertexCount;
+	int m_nIndexCount;
+	int m_nDrawFirstIndex;
+	int m_nDrawIndexCount;
+	MaterialPrimitiveType_t m_PrimitiveType;
+	void RenderPass();
 
-	unsigned char* m_pVertexMemory;
+private:
 	bool m_bIsDynamic;
 };
 
@@ -268,6 +305,7 @@ public:
 	bool m_IsAlphaTested;
 	bool m_bIsDepthWriteEnabled;
 	bool m_bUsesVertexAndPixelShaders;
+	Dx11State_t m_State;	// GammaSource DX11: what the snapshot applies
 };
 
 
@@ -417,14 +455,18 @@ public:
 	// Used to clear the transition table when we know it's become invalid.
 	void ClearSnapshots();
 
+	ShaderAPITextureHandle_t m_StdTextureHandles[TEXTURE_MAX_STD_TEXTURES];
+
 	// Sets the mode...
+	// the material system creates the device through here
 	bool SetMode( void* hwnd, int nAdapter, const ShaderDeviceInfo_t &info )
 	{
-		return true;
+		return Dx11_Init( hwnd, info.m_DisplayMode.m_nWidth, info.m_DisplayMode.m_nHeight ) && Dx11R_Init();
 	}
 
 	void ChangeVideoMode( const ShaderDeviceInfo_t &info )
 	{
+		Dx11_Resize( info.m_DisplayMode.m_nWidth, info.m_DisplayMode.m_nHeight );
 	}
 
 	// Called when the dx support level has changed
@@ -508,10 +550,17 @@ public:
 	void BindFBTexture( TextureStage_t stage, int textureIdex );
 	void CopyRenderTargetToTexture( ShaderAPITextureHandle_t texID )
 	{
+		CopyRenderTargetToTextureEx( texID, 0, NULL, NULL );
 	}
 
 	void CopyRenderTargetToTextureEx( ShaderAPITextureHandle_t texID, int nRenderTargetID, Rect_t *pSrcRect, Rect_t *pDstRect )
 	{
+		int w, h;
+		Dx11R_GetTextureSize( (int)texID, w, h );
+		Rect_t src = { 0, 0, w, h }, dst = { 0, 0, w, h };
+		if ( pSrcRect ) src = *pSrcRect;
+		if ( pDstRect ) dst = *pDstRect;
+		Dx11R_CopyRenderTargetToTexture( (int)texID, src.x, src.y, src.width, src.height, dst.x, dst.y );
 	}
 
 	void CopyTextureToRenderTargetEx( int nRenderTargetID, ShaderAPITextureHandle_t textureHandle, Rect_t *pSrcRect, Rect_t *pDstRect )
@@ -640,10 +689,13 @@ public:
 
 	void SetRenderTarget( ShaderAPITextureHandle_t colorTextureHandle, ShaderAPITextureHandle_t depthTextureHandle )
 	{
+		Dx11R_SetRenderTarget( (int)colorTextureHandle );
 	}
 
 	void SetRenderTargetEx( int nRenderTargetID, ShaderAPITextureHandle_t colorTextureHandle, ShaderAPITextureHandle_t depthTextureHandle )
 	{
+		if ( nRenderTargetID == 0 )
+			Dx11R_SetRenderTarget( (int)colorTextureHandle );
 	}
 
 	// Indicates we're going to be modifying this texture
@@ -931,9 +983,7 @@ public:
 	}
 
 	// Binds a standard texture
-	virtual void BindStandardTexture( Sampler_t stage, StandardTextureId_t id )
-	{
-	}
+	virtual void BindStandardTexture( Sampler_t stage, StandardTextureId_t id );
 
 	virtual void BindStandardVertexTexture( VertexTextureSampler_t stage, StandardTextureId_t id )
 	{
@@ -1196,13 +1246,14 @@ public:
 		return 0;
 	}
 
-	void SetStandardTextureHandle(StandardTextureId_t,ShaderAPITextureHandle_t)
+	void SetStandardTextureHandle( StandardTextureId_t nId, ShaderAPITextureHandle_t hTexture )
 	{
+		if ( nId >= 0 && nId < TEXTURE_MAX_STD_TEXTURES )
+			m_StdTextureHandles[nId] = hTexture;
 	}
 
-	virtual void ExecuteCommandBuffer( uint8 *pData )
-	{
-	}
+	// The shaders' dynamic state (texture binds, constants) comes through here
+	virtual void ExecuteCommandBuffer( uint8 *pData );
 	virtual bool GetHDREnabled( void ) const { return true; }
 	virtual void SetHDREnabled( bool bEnable ) {}
 
@@ -1239,6 +1290,7 @@ private:
 	};
 
 	CEmptyMesh m_Mesh;
+	ShaderViewport_t m_Viewport;
 
 	void EnableAlphaToCoverage() {} ;
 	void DisableAlphaToCoverage() {} ;
@@ -1333,6 +1385,7 @@ InitReturnVal_t CShaderDeviceMgrEmpty::Init()
 
 void CShaderDeviceMgrEmpty::Shutdown()
 {
+	Dx11R_Shutdown();
 	Dx11_Shutdown();
 
 }
@@ -1346,7 +1399,7 @@ bool CShaderDeviceMgrEmpty::SetAdapter( int nAdapter, int nFlags )
 // FIXME: Is this a public interface? Might only need to be private to shaderapi
 CreateInterfaceFn CShaderDeviceMgrEmpty::SetMode( void *hWnd, int nAdapter, const ShaderDeviceInfo_t& mode )
 {
-	if ( !Dx11_Init( hWnd, mode.m_DisplayMode.m_nWidth, mode.m_DisplayMode.m_nHeight ) )
+	if ( !Dx11_Init( hWnd, mode.m_DisplayMode.m_nWidth, mode.m_DisplayMode.m_nHeight ) || !Dx11R_Init() )
 	{
 		Warning( "shaderapidx11: could not create a Direct3D 11 device\n" );
 		return NULL;
@@ -1452,11 +1505,13 @@ void CShaderDeviceEmpty::ReacquireResources()
 // Creates/destroys Mesh
 IMesh* CShaderDeviceEmpty::CreateStaticMesh( VertexFormat_t fmt, const char *pTextureBudgetGroup, IMaterial * pMaterial )
 {
-	return &m_Mesh;
+	return new CEmptyMesh( false );
 }
 
 void CShaderDeviceEmpty::DestroyStaticMesh( IMesh* mesh )
 {
+	if ( mesh && mesh != &m_Mesh && mesh != &m_DynamicMesh )
+		delete static_cast< CEmptyMesh * >( mesh );
 }
 
 // Creates/destroys static vertex + index buffers
@@ -1509,19 +1564,61 @@ IIndexBuffer *CShaderDeviceEmpty::GetDynamicIndexBuffer( MaterialIndexFormat_t f
 //-----------------------------------------------------------------------------
 CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 {
-	m_pVertexMemory = new unsigned char[VERTEX_BUFFER_SIZE];
+	// static meshes get their memory when they are first locked, sized to their data
+	m_pVertexMemory = NULL;
+	m_pIndexMemory = NULL;
+	m_nVertexCapacity = m_nIndexCapacity = 0;
+	m_pVertexSource = m_pIndexSource = NULL;
+	if ( bIsDynamic )
+	{
+		EnsureVertices( DX11_MAX_VERTS );
+		EnsureIndices( DX11_MAX_INDICES );
+	}
+	m_nVertexCount = m_nIndexCount = 0;
+	m_nDrawFirstIndex = 0;
+	m_nDrawIndexCount = -1;
+	m_PrimitiveType = MATERIAL_TRIANGLES;
 }
 
 CEmptyMesh::~CEmptyMesh()
 {
 	delete[] m_pVertexMemory;
+	delete[] m_pIndexMemory;
+}
+
+void CEmptyMesh::EnsureVertices( int nCount )
+{
+	if ( nCount <= m_nVertexCapacity )
+		return;
+	unsigned char *pNew = new unsigned char[DX11V_STRIDE * nCount];
+	if ( m_pVertexMemory )
+	{
+		memcpy( pNew, m_pVertexMemory, DX11V_STRIDE * m_nVertexCapacity );
+		delete[] m_pVertexMemory;
+	}
+	m_pVertexMemory = pNew;
+	m_nVertexCapacity = nCount;
+}
+
+void CEmptyMesh::EnsureIndices( int nCount )
+{
+	if ( nCount <= m_nIndexCapacity )
+		return;
+	unsigned short *pNew = new unsigned short[nCount];
+	if ( m_pIndexMemory )
+	{
+		memcpy( pNew, m_pIndexMemory, sizeof( unsigned short ) * m_nIndexCapacity );
+		delete[] m_pIndexMemory;
+	}
+	m_pIndexMemory = pNew;
+	m_nIndexCapacity = nCount;
 }
 
 bool CEmptyMesh::Lock( int nMaxIndexCount, bool bAppend, IndexDesc_t& desc )
 {
-	static int s_BogusIndex;
-	desc.m_pIndices = (unsigned short*)&s_BogusIndex;
-	desc.m_nIndexSize = 0;
+	EnsureIndices( max( nMaxIndexCount, 1 ) );
+	desc.m_pIndices = m_pIndexMemory;
+	desc.m_nIndexSize = 1;	// in shorts
 	desc.m_nFirstIndex = 0;
 	desc.m_nOffset = 0;
 	return true;
@@ -1529,6 +1626,7 @@ bool CEmptyMesh::Lock( int nMaxIndexCount, bool bAppend, IndexDesc_t& desc )
 
 void CEmptyMesh::Unlock( int nWrittenIndexCount, IndexDesc_t& desc )
 {
+	m_nIndexCount = clamp( nWrittenIndexCount, 0, m_nIndexCapacity );
 }
 
 void CEmptyMesh::ModifyBegin( bool bReadOnly, int nFirstIndex, int nIndexCount, IndexDesc_t& desc )
@@ -1550,37 +1648,45 @@ void CEmptyMesh::ValidateData( int nIndexCount, const IndexDesc_t &desc )
 
 bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 {
-	// Who cares about the data?
-	desc.m_pPosition = (float*)m_pVertexMemory;
-	desc.m_pNormal = (float*)m_pVertexMemory;
-	desc.m_pColor = m_pVertexMemory;
+	EnsureVertices( max( nVertexCount, 1 ) );
+	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
+	// Formats without colour or texture coordinates leave those slots alone; make them neutral
+	for ( int v = 0; v < nVertexCount; ++v )
+	{
+		unsigned char *pVert = m_pVertexMemory + v * DX11V_STRIDE;
+		*(unsigned int *)( pVert + DX11V_COLOR ) = 0xFFFFFFFF;
+		memset( pVert + DX11V_TEXCOORD, 0, 8 );
+	}
+
+	desc.m_pPosition = (float*)( m_pVertexMemory + DX11V_POSITION );
+	desc.m_pNormal = (float*)( m_pVertexMemory + DX11V_NORMAL );
+	desc.m_pColor = m_pVertexMemory + DX11V_COLOR;
+	desc.m_pSpecular = m_pVertexMemory + DX11V_SPECULAR;
 
 	int i;
 	for ( i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i)
 	{
-		desc.m_pTexCoord[i] = (float*)m_pVertexMemory;
+		desc.m_pTexCoord[i] = (float*)( m_pVertexMemory + DX11V_TEXCOORD + i * 16 );
+		desc.m_VertexSize_TexCoord[i] = DX11V_STRIDE;
 	}
 
-	desc.m_pBoneWeight = (float*)m_pVertexMemory;
-	desc.m_pBoneMatrixIndex = (unsigned char*)m_pVertexMemory;
-	desc.m_pTangentS = (float*)m_pVertexMemory;
-	desc.m_pTangentT = (float*)m_pVertexMemory;
-	desc.m_pUserData = (float*)m_pVertexMemory;
+	desc.m_pBoneWeight = (float*)( m_pVertexMemory + DX11V_BONEWEIGHT );
+	desc.m_pBoneMatrixIndex = m_pVertexMemory + DX11V_BONEINDEX;
+	desc.m_pTangentS = (float*)( m_pVertexMemory + DX11V_TANGENT_S );
+	desc.m_pTangentT = (float*)( m_pVertexMemory + DX11V_TANGENT_T );
+	desc.m_pUserData = (float*)( m_pVertexMemory + DX11V_USERDATA );
 	desc.m_NumBoneWeights = 2;
 
-	desc.m_VertexSize_Position = 0;
-	desc.m_VertexSize_BoneWeight = 0;
-	desc.m_VertexSize_BoneMatrixIndex = 0;
-	desc.m_VertexSize_Normal = 0;
-	desc.m_VertexSize_Color = 0;
-	for( i=0; i < VERTEX_MAX_TEXTURE_COORDINATES; i++ )
-	{
-		desc.m_VertexSize_TexCoord[i] = 0;
-	}
-	desc.m_VertexSize_TangentS = 0;
-	desc.m_VertexSize_TangentT = 0;
-	desc.m_VertexSize_UserData = 0;
-	desc.m_ActualVertexSize = 0;	// Size of the vertices.. Some of the m_VertexSize_ elements above
+	desc.m_VertexSize_Position = DX11V_STRIDE;
+	desc.m_VertexSize_BoneWeight = DX11V_STRIDE;
+	desc.m_VertexSize_BoneMatrixIndex = DX11V_STRIDE;
+	desc.m_VertexSize_Normal = DX11V_STRIDE;
+	desc.m_VertexSize_Color = DX11V_STRIDE;
+	desc.m_VertexSize_Specular = DX11V_STRIDE;
+	desc.m_VertexSize_TangentS = DX11V_STRIDE;
+	desc.m_VertexSize_TangentT = DX11V_STRIDE;
+	desc.m_VertexSize_UserData = DX11V_STRIDE;
+	desc.m_ActualVertexSize = DX11V_STRIDE;
 
 	desc.m_nFirstVertex = 0;
 	desc.m_nOffset = 0;
@@ -1589,6 +1695,7 @@ bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 
 void CEmptyMesh::Unlock( int nVertexCount, VertexDesc_t &desc )
 {
+	m_nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
 }
 
 void CEmptyMesh::Spew( int nVertexCount, const VertexDesc_t &desc ) 
@@ -1607,6 +1714,8 @@ void CEmptyMesh::LockMesh( int numVerts, int numIndices, MeshDesc_t& desc )
 
 void CEmptyMesh::UnlockMesh( int numVerts, int numIndices, MeshDesc_t& desc )
 {
+	Unlock( numVerts, *static_cast<VertexDesc_t*>( &desc ) );
+	Unlock( numIndices, *static_cast<IndexDesc_t*>( &desc ) );
 }
 
 void CEmptyMesh::ModifyBeginEx( bool bReadOnly, int firstVertex, int numVerts, int firstIndex, int numIndices, MeshDesc_t& desc )
@@ -1627,21 +1736,118 @@ void CEmptyMesh::ModifyEnd( MeshDesc_t& desc )
 // returns the # of vertices (static meshes only)
 int CEmptyMesh::VertexCount() const
 {
-	return 0;
+	return m_nVertexCount;
 }
 
 // Sets the primitive type
 void CEmptyMesh::SetPrimitiveType( MaterialPrimitiveType_t type )
 {
+	m_PrimitiveType = type;
 }
+
+extern void Dx11_DrawMesh( CEmptyMesh *pMesh );
 
 // Draws the entire mesh
 void CEmptyMesh::Draw( int firstIndex, int numIndices )
 {
+	m_nDrawFirstIndex = firstIndex;
+	m_nDrawIndexCount = numIndices;
+	Dx11_DrawMesh( this );
+}
+
+// One pass of the bound material: convert to the device's vertex and draw
+void CEmptyMesh::RenderPass()
+{
+	extern int g_nDx11EmptyMeshes;
+	const CEmptyMesh *pVB = m_pVertexSource ? m_pVertexSource : this;
+	const CEmptyMesh *pIB = m_pIndexSource ? m_pIndexSource : this;
+	const unsigned char *pVertexMemory = pVB->m_pVertexMemory;
+	const unsigned short *pIndexMemory = pIB->m_pIndexMemory;
+	int nVertexCount = pVB->m_nVertexCount;
+	int nIndexCount = pIB->m_nIndexCount;
+	if ( nVertexCount <= 0 )
+	{
+		++g_nDx11EmptyMeshes;
+		return;
+	}
+
+	static Dx11Vertex_t s_Verts[DX11_MAX_VERTS];
+	static unsigned short s_Indices[DX11_MAX_INDICES];
+	// 16 bit indices reach 65536 vertices
+	int nVerts = min( nVertexCount, (int)DX11_MAX_VERTS );
+	for ( int v = 0; v < nVerts; ++v )
+	{
+		const unsigned char *pSrc = pVertexMemory + v * DX11V_STRIDE;
+		Dx11Vertex_t &dst = s_Verts[v];
+		memcpy( dst.m_Pos, pSrc + DX11V_POSITION, 12 );
+		// the mesh builder stores colours as B G R A; the device reads R G B A
+		const unsigned char *c = pSrc + DX11V_COLOR;
+		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
+		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
+	}
+
+	// Draw( -1, 0 ) (the default) means the whole mesh
+	bool bAll = m_nDrawFirstIndex < 0 || m_nDrawIndexCount <= 0;
+	int nFirst = bAll ? 0 : m_nDrawFirstIndex;
+	int nCount = bAll ? nIndexCount : m_nDrawIndexCount;
+	if ( nFirst + nCount > nIndexCount )
+		nCount = nIndexCount - nFirst;
+
+	switch ( m_PrimitiveType )
+	{
+	case MATERIAL_QUADS:
+	case MATERIAL_INSTANCED_QUADS:
+		{
+			int nQuads = nVerts / 4, n = 0;
+			for ( int q = 0; q < nQuads && n + 6 <= DX11_MAX_INDICES; ++q )
+			{
+				unsigned short b = (unsigned short)( q * 4 );
+				s_Indices[n++] = b; s_Indices[n++] = b + 1; s_Indices[n++] = b + 2;
+				s_Indices[n++] = b; s_Indices[n++] = b + 2; s_Indices[n++] = b + 3;
+			}
+			Dx11R_Draw( DX11_TRIANGLES, s_Verts, nVerts, s_Indices, n );
+		}
+		break;
+	case MATERIAL_POLYGON:
+		{
+			int n = 0;
+			for ( int i = 1; i + 1 < nVerts && n + 3 <= DX11_MAX_INDICES; ++i )
+			{
+				s_Indices[n++] = 0; s_Indices[n++] = (unsigned short)i; s_Indices[n++] = (unsigned short)( i + 1 );
+			}
+			Dx11R_Draw( DX11_TRIANGLES, s_Verts, nVerts, s_Indices, n );
+		}
+		break;
+	case MATERIAL_LINE_LOOP:
+		{
+			int n = 0;
+			for ( int i = 0; i < nVerts && n + 2 <= DX11_MAX_INDICES; ++i )
+			{
+				s_Indices[n++] = (unsigned short)i; s_Indices[n++] = (unsigned short)( ( i + 1 ) % nVerts );
+			}
+			Dx11R_Draw( DX11_LINES, s_Verts, nVerts, s_Indices, n );
+		}
+		break;
+	default:
+		{
+			Dx11Primitive_t type = DX11_TRIANGLES;
+			if ( m_PrimitiveType == MATERIAL_POINTS ) type = DX11_POINTS;
+			else if ( m_PrimitiveType == MATERIAL_LINES ) type = DX11_LINES;
+			else if ( m_PrimitiveType == MATERIAL_TRIANGLE_STRIP ) type = DX11_TRIANGLE_STRIP;
+			else if ( m_PrimitiveType == MATERIAL_LINE_STRIP ) type = DX11_LINE_STRIP;
+			if ( nCount > 0 )
+				Dx11R_Draw( type, s_Verts, nVerts, pIndexMemory + nFirst, nCount );
+			else if ( nIndexCount == 0 )
+				Dx11R_Draw( type, s_Verts, nVerts, NULL, 0 );
+		}
+		break;
+	}
 }
 
 void CEmptyMesh::Draw(CPrimList *pPrims, int nPrims)
 {
+	for ( int i = 0; i < nPrims; ++i )
+		Draw( pPrims[i].m_FirstIndex, pPrims[i].m_NumIndices );
 }
 
 // Copy verts and/or indices to a mesh builder. This only works for temp meshes!
@@ -1694,20 +1900,31 @@ void CShaderShadowEmpty::SetDefaultState()
 	m_IsAlphaTested = false;
 	m_bIsDepthWriteEnabled = true;
 	m_bUsesVertexAndPixelShaders = false;
+	memset( &m_State, 0, sizeof( m_State ) );
+	m_State.m_nSrcBlend = SHADER_BLEND_ONE;
+	m_State.m_nDstBlend = SHADER_BLEND_ZERO;
+	m_State.m_bDepthTest = true;
+	m_State.m_bDepthWrite = true;
+	m_State.m_nDepthFunc = SHADER_DEPTHFUNC_NEAREROREQUAL;
+	m_State.m_bCull = true;
+	m_State.m_flAlphaRef = 0.5f;
 }
 
 // Methods related to depth buffering
 void CShaderShadowEmpty::DepthFunc( ShaderDepthFunc_t depthFunc )
 {
+	m_State.m_nDepthFunc = depthFunc;
 }
 
 void CShaderShadowEmpty::EnableDepthWrites( bool bEnable )
 {
 	m_bIsDepthWriteEnabled = bEnable;
+	m_State.m_bDepthWrite = bEnable;
 }
 
 void CShaderShadowEmpty::EnableDepthTest( bool bEnable )
 {
+	m_State.m_bDepthTest = bEnable;
 }
 
 void CShaderShadowEmpty::EnablePolyOffset( PolygonOffsetMode_t nOffsetMode )
@@ -1728,10 +1945,13 @@ void CShaderShadowEmpty::EnableAlphaWrites( bool bEnable )
 void CShaderShadowEmpty::EnableBlending( bool bEnable )
 {
 	m_IsTranslucent = bEnable;
+	m_State.m_bBlend = bEnable;
 }
 
 void CShaderShadowEmpty::BlendFunc( ShaderBlendFactor_t srcFactor, ShaderBlendFactor_t dstFactor )
 {
+	m_State.m_nSrcBlend = srcFactor;
+	m_State.m_nDstBlend = dstFactor;
 }
 
 // A simpler method of dealing with alpha modulation
@@ -1756,10 +1976,12 @@ void CShaderShadowEmpty::EnableTextureAlpha( TextureStage_t stage, bool bEnable 
 void CShaderShadowEmpty::EnableAlphaTest( bool bEnable )
 {
 	m_IsAlphaTested = bEnable;
+	m_State.m_bAlphaTest = bEnable;
 }
 
 void CShaderShadowEmpty::AlphaFunc( ShaderAlphaFunc_t alphaFunc, float alphaRef /* [0-1] */ )
 {
+	m_State.m_flAlphaRef = alphaRef;
 }
 
 
@@ -1772,6 +1994,7 @@ void CShaderShadowEmpty::PolyMode( ShaderPolyModeFace_t face, ShaderPolyMode_t p
 // Back face culling
 void CShaderShadowEmpty::EnableCulling( bool bEnable )
 {
+	m_State.m_bCull = bEnable;
 }
 
 
@@ -1877,6 +2100,8 @@ void CShaderShadowEmpty::DrawFlags( unsigned int drawFlags )
 
 CShaderAPIEmpty::CShaderAPIEmpty()  : m_Mesh( false )
 {
+	for ( int i = 0; i < TEXTURE_MAX_STD_TEXTURES; ++i )
+		m_StdTextureHandles[i] = INVALID_SHADERAPI_TEXTURE_HANDLE;
 }
 
 CShaderAPIEmpty::~CShaderAPIEmpty()
@@ -1892,7 +2117,7 @@ bool CShaderAPIEmpty::DoRenderTargetsNeedSeparateDepthBuffer() const
 // Can we download textures?
 bool CShaderAPIEmpty::CanDownloadTextures() const
 {
-	return false;
+	return Dx11_IsActive();
 }
 
 // Used to clear the transition table when we know it's become invalid.
@@ -2210,39 +2435,63 @@ void CShaderAPIEmpty::SetDefaultState()
 
 
 // Returns the snapshot id for the shader state
+// GammaSource DX11: snapshots are indices into this table; the low bits keep the old flags
+struct Dx11Snapshot_t
+{
+	int m_nFlags;
+	Dx11State_t m_State;
+};
+static CUtlVector< Dx11Snapshot_t > s_Snapshots;
+
+static const Dx11Snapshot_t *GetSnapshot( StateSnapshot_t id )
+{
+	return ( id >= 0 && id < s_Snapshots.Count() ) ? &s_Snapshots[(int)id] : NULL;
+}
+
 StateSnapshot_t	 CShaderAPIEmpty::TakeSnapshot( )
 {
-	StateSnapshot_t id = 0;
+	Dx11Snapshot_t snap;
+	memset( &snap, 0, sizeof( snap ) );
 	if (g_ShaderShadow.m_IsTranslucent)
-		id |= TRANSLUCENT;
+		snap.m_nFlags |= TRANSLUCENT;
 	if (g_ShaderShadow.m_IsAlphaTested)
-		id |= ALPHATESTED;
+		snap.m_nFlags |= ALPHATESTED;
 	if (g_ShaderShadow.m_bUsesVertexAndPixelShaders)
-		id |= VERTEX_AND_PIXEL_SHADERS;
+		snap.m_nFlags |= VERTEX_AND_PIXEL_SHADERS;
 	if (g_ShaderShadow.m_bIsDepthWriteEnabled)
-		id |= DEPTHWRITE;
-	return id;
+		snap.m_nFlags |= DEPTHWRITE;
+	snap.m_State = g_ShaderShadow.m_State;
+	for ( int i = 0; i < s_Snapshots.Count(); ++i )
+	{
+		if ( !memcmp( &s_Snapshots[i], &snap, sizeof( snap ) ) )
+			return i;
+	}
+	return s_Snapshots.AddToTail( snap );
 }
 
 // Returns true if the state snapshot is transparent
 bool CShaderAPIEmpty::IsTranslucent( StateSnapshot_t id ) const
 {
-	return (id & TRANSLUCENT) != 0; 
+	const Dx11Snapshot_t *pSnap = GetSnapshot( id );
+	return pSnap && ( pSnap->m_nFlags & TRANSLUCENT ) != 0; 
 }
 
 bool CShaderAPIEmpty::IsAlphaTested( StateSnapshot_t id ) const
 {
-	return (id & ALPHATESTED) != 0; 
+	const Dx11Snapshot_t *pSnap = GetSnapshot( id );
+	return pSnap && ( pSnap->m_nFlags & ALPHATESTED ) != 0; 
 }
 
 bool CShaderAPIEmpty::IsDepthWriteEnabled( StateSnapshot_t id ) const
 {
-	return (id & DEPTHWRITE) != 0; 
+	const Dx11Snapshot_t *pSnap = GetSnapshot( id );
+	return pSnap && ( pSnap->m_nFlags & DEPTHWRITE ) != 0; 
 }
 
 bool CShaderAPIEmpty::UsesVertexAndPixelShaders( StateSnapshot_t id ) const
 {
-	return (id & VERTEX_AND_PIXEL_SHADERS) != 0; 
+	const Dx11Snapshot_t *pSnap = GetSnapshot( id );
+	return pSnap && ( pSnap->m_nFlags & VERTEX_AND_PIXEL_SHADERS ) != 0; 
 }
 
 // Gets the vertex format for a set of snapshot ids
@@ -2260,6 +2509,9 @@ VertexFormat_t CShaderAPIEmpty::ComputeVertexUsage( int numSnapshots, StateSnaps
 // Uses a state snapshot
 void CShaderAPIEmpty::UseSnapshot( StateSnapshot_t snapshot )
 {
+	const Dx11Snapshot_t *pSnap = GetSnapshot( snapshot );
+	if ( pSnap )
+		Dx11R_SetState( pSnap->m_State );
 }
 
 // Sets the color to modulate by
@@ -2302,8 +2554,26 @@ void CShaderAPIEmpty::ShadeMode( ShaderShadeMode_t mode )
 }
 
 // Binds a particular material to render with
+void UpdateMatrices();
+static IMaterialInternal *s_pBoundMaterial;
+static CEmptyMesh *s_pRenderMesh;
+
 void CShaderAPIEmpty::Bind( IMaterial* pMaterial )
 {
+	s_pBoundMaterial = static_cast< IMaterialInternal * >( pMaterial );
+}
+
+void Dx11_DrawMesh( CEmptyMesh *pMesh )
+{
+	if ( !s_pBoundMaterial || !Dx11_IsActive() )
+		return;
+	if ( g_pShaderUtil && g_pShaderUtil->GetConfig().m_bSuppressRendering )
+		return;
+	extern int g_nDx11Meshes;
+	++g_nDx11Meshes;
+	s_pRenderMesh = pMesh;
+	s_pBoundMaterial->DrawMesh( VERTEX_COMPRESSION_NONE );
+	s_pRenderMesh = NULL;
 }
 
 // Cull mode
@@ -2434,12 +2704,14 @@ void CShaderAPIEmpty::FlushBufferedPrimitives()
 // call DestroyStaticMesh on the mesh returned by this call.
 IMesh* CShaderAPIEmpty::GetDynamicMesh( IMaterial* pMaterial, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
+	m_Mesh.m_pVertexSource = static_cast< CEmptyMesh * >( pVertexOverride );
+	m_Mesh.m_pIndexSource = static_cast< CEmptyMesh * >( pIndexOverride );
 	return &m_Mesh;
 }
 
 IMesh* CShaderAPIEmpty::GetDynamicMeshEx( IMaterial* pMaterial, VertexFormat_t fmt, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
-	return &m_Mesh;
+	return GetDynamicMesh( pMaterial, nHWSkinBoneCount, buffered, pVertexOverride, pIndexOverride );
 }
 
 IMesh* CShaderAPIEmpty::GetFlexMesh()
@@ -2450,44 +2722,115 @@ IMesh* CShaderAPIEmpty::GetFlexMesh()
 // Begins a rendering pass that uses a state snapshot
 void CShaderAPIEmpty::BeginPass( StateSnapshot_t snapshot  )
 {
+	UseSnapshot( snapshot );
 }
 
 // Renders a single pass of a material
 void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 {
+	extern int g_nDx11Passes;
+	++g_nDx11Passes;
+	if ( s_pRenderMesh )
+	{
+		UpdateMatrices();
+		s_pRenderMesh->RenderPass();
+	}
 }
 
 // stuff related to matrix stacks
+// GammaSource DX11: D3D-style row-vector matrices, one stack per mode
+static float s_Matrices[NUM_MATRIX_MODES][8][16];
+static int s_nMatrixDepth[NUM_MATRIX_MODES];
+static int s_nMatrixMode = MATERIAL_VIEW;
+static bool s_bMatricesInit;
+
+static float *CurMatrix( int nMode = -1 )
+{
+	if ( nMode < 0 ) nMode = s_nMatrixMode;
+	return s_Matrices[nMode][s_nMatrixDepth[nMode]];
+}
+
+static void Identity( float *m )
+{
+	for ( int i = 0; i < 16; ++i ) m[i] = ( i % 5 ) ? 0.0f : 1.0f;
+}
+
+static void MatMul( const float *a, const float *b, float *out )
+{
+	float r[16];
+	for ( int i = 0; i < 4; ++i )
+		for ( int j = 0; j < 4; ++j )
+			r[i * 4 + j] = a[i * 4 + 0] * b[j] + a[i * 4 + 1] * b[4 + j] + a[i * 4 + 2] * b[8 + j] + a[i * 4 + 3] * b[12 + j];
+	memcpy( out, r, sizeof( r ) );
+}
+
+static void InitMatrices()
+{
+	if ( s_bMatricesInit ) return;
+	s_bMatricesInit = true;
+	for ( int m = 0; m < NUM_MATRIX_MODES; ++m )
+		Identity( s_Matrices[m][0] );
+}
+
+void UpdateMatrices()
+{
+	InitMatrices();
+	Dx11R_SetMatrices( CurMatrix( MATERIAL_MODEL ), CurMatrix( MATERIAL_VIEW ), CurMatrix( MATERIAL_PROJECTION ) );
+}
+
 void CShaderAPIEmpty::MatrixMode( MaterialMatrixMode_t matrixMode )
 {
+	InitMatrices();
+	if ( matrixMode >= 0 && matrixMode < NUM_MATRIX_MODES )
+		s_nMatrixMode = matrixMode;
 }
 
 void CShaderAPIEmpty::PushMatrix()
 {
+	InitMatrices();
+	int &nDepth = s_nMatrixDepth[s_nMatrixMode];
+	if ( nDepth < 7 )
+	{
+		memcpy( s_Matrices[s_nMatrixMode][nDepth + 1], s_Matrices[s_nMatrixMode][nDepth], sizeof( float ) * 16 );
+		++nDepth;
+	}
 }
 
 void CShaderAPIEmpty::PopMatrix()
 {
+	if ( s_nMatrixDepth[s_nMatrixMode] > 0 )
+		--s_nMatrixDepth[s_nMatrixMode];
 }
 
 void CShaderAPIEmpty::LoadMatrix( float *m )
 {
+	InitMatrices();
+	memcpy( CurMatrix(), m, sizeof( float ) * 16 );
 }
 
 void CShaderAPIEmpty::MultMatrix( float *m )
 {
+	InitMatrices();
+	MatMul( CurMatrix(), m, CurMatrix() );
 }
 
 void CShaderAPIEmpty::MultMatrixLocal( float *m )
 {
+	InitMatrices();
+	MatMul( m, CurMatrix(), CurMatrix() );
 }
 
 void CShaderAPIEmpty::GetMatrix( MaterialMatrixMode_t matrixMode, float *dst )
 {
+	InitMatrices();
+	if ( matrixMode >= 0 && matrixMode < NUM_MATRIX_MODES )
+		memcpy( dst, CurMatrix( matrixMode ), sizeof( float ) * 16 );
 }
 
 void CShaderAPIEmpty::LoadIdentity( void )
 {
+	InitMatrices();
+	Identity( CurMatrix() );
 }
 
 void CShaderAPIEmpty::LoadCameraToWorld( void )
@@ -2593,10 +2936,18 @@ void CShaderAPIEmpty::FogColor3ubv( unsigned char const* rgb )
 
 void CShaderAPIEmpty::SetViewports( int nCount, const ShaderViewport_t* pViewports )
 {
+	if ( nCount > 0 && pViewports )
+	{
+		m_Viewport = pViewports[0];
+		Dx11R_SetViewport( m_Viewport.m_nTopLeftX, m_Viewport.m_nTopLeftY, m_Viewport.m_nWidth, m_Viewport.m_nHeight,
+			m_Viewport.m_flMinZ, m_Viewport.m_flMaxZ );
+	}
 }
 
 int CShaderAPIEmpty::GetViewports( ShaderViewport_t* pViewports, int nMax ) const
 {
+	if ( pViewports && nMax > 0 )
+		pViewports[0] = m_Viewport;
 	return 1;
 }
 
@@ -2667,6 +3018,7 @@ ImageFormat CShaderAPIEmpty::GetNearestRenderTargetFormat( ImageFormat fmt ) con
 // Sets the texture state
 void CShaderAPIEmpty::BindTexture( Sampler_t stage, ShaderAPITextureHandle_t textureHandle )
 {
+	Dx11R_BindTexture( stage, (int)textureHandle );
 }
 
 void CShaderAPIEmpty::ClearColor3ub( unsigned char r, unsigned char g, unsigned char b )
@@ -2682,33 +3034,114 @@ void CShaderAPIEmpty::ClearColor4ub( unsigned char r, unsigned char g, unsigned 
 // Indicates we're going to be modifying this texture
 // TexImage2D, TexSubImage2D, TexWrap, TexMinFilter, and TexMagFilter
 // all use the texture specified by this function.
+static int s_hModifyTexture;
+
 void CShaderAPIEmpty::ModifyTexture( ShaderAPITextureHandle_t textureHandle )
 {
+	s_hModifyTexture = (int)textureHandle;
+}
+
+// GammaSource DX11: every texture is held as BGRA8888 for now
+static unsigned char *ToBGRA( const void *pData, ImageFormat srcFormat, int nWidth, int nHeight, int nSrcStride = 0 )
+{
+	static CUtlMemory< unsigned char > s_Buffer;
+	int nBytes = nWidth * nHeight * 4;
+	if ( s_Buffer.Count() < nBytes )
+		s_Buffer.Grow( nBytes - s_Buffer.Count() );
+	if ( srcFormat == IMAGE_FORMAT_BGRA8888 && ( nSrcStride == 0 || nSrcStride == nWidth * 4 ) )
+		return (unsigned char *)pData;
+	if ( !ImageLoader::ConvertImageFormat( (const unsigned char *)pData, srcFormat, s_Buffer.Base(), IMAGE_FORMAT_BGRA8888,
+		nWidth, nHeight, nSrcStride, 0 ) )
+		return NULL;
+	return s_Buffer.Base();
 }
 
 // Texture management methods
-void CShaderAPIEmpty::TexImage2D( int level, int cubeFace, ImageFormat dstFormat, int zOffset, int width, int height, 
+void CShaderAPIEmpty::TexImage2D( int level, int cubeFace, ImageFormat dstFormat, int zOffset, int width, int height,
 						 ImageFormat srcFormat, bool bSrcIsTiled, void *imageData )
 {
+	if ( cubeFace != 0 || zOffset != 0 || !imageData )
+		return;
+	unsigned char *pBGRA = ToBGRA( imageData, srcFormat, width, height );
+	if ( pBGRA )
+		Dx11R_TexImage( s_hModifyTexture, level, width, height, pBGRA );
 }
 
 void CShaderAPIEmpty::TexSubImage2D( int level, int cubeFace, int xOffset, int yOffset, int zOffset, int width, int height,
 						 ImageFormat srcFormat, int srcStride, bool bSrcIsTiled, void *imageData )
 {
+	if ( cubeFace != 0 || zOffset != 0 || !imageData )
+		return;
+	unsigned char *pBGRA = ToBGRA( imageData, srcFormat, width, height, srcStride );
+	if ( pBGRA )
+		Dx11R_TexSubImage( s_hModifyTexture, level, xOffset, yOffset, width, height, pBGRA );
 }
 
+// File textures arrive here: upload every mip level of the frame (first face only for now)
 void CShaderAPIEmpty::TexImageFromVTF( IVTFTexture *pVTF, int iVTFFrame )
 {
+	if ( !pVTF || pVTF->Depth() > 1 )
+		return;
+	ImageFormat fmt = pVTF->Format();
+	bool bCompressed = ImageLoader::IsCompressed( fmt );
+	static CUtlMemory< unsigned char > s_Padded;
+	for ( int nMip = 0; nMip < pVTF->MipCount(); ++nMip )
+	{
+		int w, h, d;
+		pVTF->ComputeMipLevelDimensions( nMip, &w, &h, &d );
+		unsigned char *pSrc = pVTF->ImageData( iVTFFrame, 0, nMip );
+		if ( !pSrc )
+			continue;
+		if ( bCompressed && ( w < 4 || h < 4 ) )
+		{
+			// compressed blocks are 4x4: decode a whole block, then keep the corner
+			unsigned char *pBlock = ToBGRA( pSrc, fmt, 4, 4 );
+			if ( !pBlock )
+				continue;
+			if ( s_Padded.Count() < w * h * 4 )
+				s_Padded.Grow( w * h * 4 - s_Padded.Count() );
+			for ( int y = 0; y < h; ++y )
+				memcpy( s_Padded.Base() + y * w * 4, pBlock + y * 16, w * 4 );
+			Dx11R_TexImage( s_hModifyTexture, nMip, w, h, s_Padded.Base() );
+			continue;
+		}
+		unsigned char *pBGRA = ToBGRA( pSrc, fmt, w, h );
+		if ( pBGRA )
+			Dx11R_TexImage( s_hModifyTexture, nMip, w, h, pBGRA );
+	}
 }
+
+// Locks hand out a CPU copy of the rect (lightmaps are written this way); unlock uploads it
+static CUtlMemory< unsigned char > s_LockBits;
+static int s_nLockLevel, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_hLockTexture;
+static bool s_bLocked;
 
 bool CShaderAPIEmpty::TexLock( int level, int cubeFaceID, int xOffset, int yOffset, 
 								int width, int height, CPixelWriter& writer )
 {
-	return false;
+	if ( s_bLocked )
+		TexUnlock();
+	if ( cubeFaceID != 0 || width <= 0 || height <= 0 || !Dx11R_IsTexture( s_hModifyTexture ) )
+	{
+		Dx11_DebugLog( "texlock refused, handle", s_hModifyTexture );
+		return false;
+	}
+	if ( s_LockBits.Count() < width * height * 4 )
+		s_LockBits.Grow( width * height * 4 - s_LockBits.Count() );
+	memset( s_LockBits.Base(), 0, width * height * 4 );
+	s_nLockLevel = level; s_nLockX = xOffset; s_nLockY = yOffset; s_nLockW = width; s_nLockH = height;
+	s_hLockTexture = s_hModifyTexture;
+	s_bLocked = true;
+	writer.SetPixelMemory( IMAGE_FORMAT_BGRA8888, s_LockBits.Base(), width * 4 );
+	return true;
 }
 
 void CShaderAPIEmpty::TexUnlock( )
 {
+	if ( !s_bLocked )
+		return;
+	s_bLocked = false;
+	Dx11R_TexSubImage( s_hLockTexture, s_nLockLevel, s_nLockX, s_nLockY, s_nLockW, s_nLockH, s_LockBits.Base() );
 }
 
 
@@ -2723,6 +3156,7 @@ void CShaderAPIEmpty::TexMagFilter( ShaderTexFilterMode_t texFilterMode )
 
 void CShaderAPIEmpty::TexWrap( ShaderTexCoordComponent_t coord, ShaderTexWrapMode_t wrapMode )
 {
+	Dx11R_TexWrap( s_hModifyTexture, coord, wrapMode != SHADER_TEXWRAPMODE_REPEAT );
 }
 
 void CShaderAPIEmpty::TexSetPriority( int priority )
@@ -2740,7 +3174,7 @@ ShaderAPITextureHandle_t CShaderAPIEmpty::CreateTexture(
 	const char *pDebugName,
 	const char *pTextureGroupName )
 {
-	return 0;
+	return Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
 }
 
 // Create a multi-frame texture (equivalent to calling "CreateTexture" multiple times, but more efficient)
@@ -2758,7 +3192,7 @@ void CShaderAPIEmpty::CreateTextures(
 							const char *pTextureGroupName )
 {
 	for ( int k = 0; k < count; ++ k )
-		pHandles[ k ] = 0;
+		pHandles[ k ] = Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
 }
 
 
@@ -2769,11 +3203,12 @@ ShaderAPITextureHandle_t CShaderAPIEmpty::CreateDepthTexture( ImageFormat render
 
 void CShaderAPIEmpty::DeleteTexture( ShaderAPITextureHandle_t textureHandle )
 {
+	Dx11R_DeleteTexture( (int)textureHandle );
 }
 
 bool CShaderAPIEmpty::IsTexture( ShaderAPITextureHandle_t textureHandle )
 {
-	return true;
+	return Dx11R_IsTexture( (int)textureHandle );
 }
 
 bool CShaderAPIEmpty::IsTextureResident( ShaderAPITextureHandle_t textureHandle )
@@ -2784,7 +3219,7 @@ bool CShaderAPIEmpty::IsTextureResident( ShaderAPITextureHandle_t textureHandle 
 // stuff that isn't to be used from within a shader
 void CShaderAPIEmpty::ClearBuffers( bool bClearColor, bool bClearDepth, bool bClearStencil, int renderTargetWidth, int renderTargetHeight )
 {
-	Dx11_Clear( bClearColor );
+	Dx11R_Clear( bClearColor, bClearDepth || bClearStencil );
 }
 
 void CShaderAPIEmpty::ClearBuffersObeyStencil( bool bClearColor, bool bClearDepth )
@@ -2979,4 +3414,76 @@ void CShaderAPIEmpty::SetBumpEnvMatrix( TextureStage_t textureStage, float m00, 
 
 void CShaderAPIEmpty::SyncToken( const char *pToken )
 {
+}
+
+
+//-----------------------------------------------------------------------------
+// GammaSource DX11: run the shaders' command buffers. Constants are not used by the
+// fixed DX11 shader yet; texture binds are.
+//-----------------------------------------------------------------------------
+template < class T > static inline T CmdData( const uint8 *p ) { return *(const T *)p; }
+
+void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
+{
+	for ( ;; )
+	{
+		int nCmd = CmdData< int >( pCmdBuf );
+		switch ( nCmd )
+		{
+		case CBCMD_END:
+			return;
+		case CBCMD_JUMP:
+			pCmdBuf = CmdData< uint8 * >( pCmdBuf + sizeof( int ) );
+			break;
+		case CBCMD_JSR:
+			ExecuteCommandBuffer( CmdData< uint8 * >( pCmdBuf + sizeof( int ) ) );
+			pCmdBuf += sizeof( int ) + sizeof( uint8 * );
+			break;
+		case CBCMD_SET_PIXEL_SHADER_FLOAT_CONST:
+		case CBCMD_SET_VERTEX_SHADER_FLOAT_CONST:
+			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
+			break;
+		case CBCMD_SETPIXELSHADERFOGPARAMS:
+		case CBCMD_STORE_EYE_POS_IN_PSCONST:
+		case CBCMD_COMMITPIXELSHADERLIGHTING:
+		case CBCMD_SETPIXELSHADERSTATEAMBIENTLIGHTCUBE:
+		case CBCMD_SET_PSHINDEX:
+		case CBCMD_SET_VSHINDEX:
+			pCmdBuf += 2 * sizeof( int );
+			break;
+		case CBCMD_SETAMBIENTCUBEDYNAMICSTATEVERTEXSHADER:
+			pCmdBuf += sizeof( int );
+			break;
+		case CBCMD_SET_DEPTH_FEATHERING_CONST:
+			pCmdBuf += 2 * sizeof( int ) + sizeof( float );
+			break;
+		case CBCMD_BIND_STANDARD_TEXTURE:
+			{
+				int nSampler = CmdData< int >( pCmdBuf + sizeof( int ) );
+				int nTextureID = CmdData< int >( pCmdBuf + 2 * sizeof( int ) );
+				pCmdBuf += 3 * sizeof( int );
+				BindStandardTexture( (Sampler_t)nSampler, (StandardTextureId_t)nTextureID );
+			}
+			break;
+		case CBCMD_BIND_SHADERAPI_TEXTURE_HANDLE:
+			{
+				int nSampler = CmdData< int >( pCmdBuf + sizeof( int ) );
+				ShaderAPITextureHandle_t hTexture = CmdData< ShaderAPITextureHandle_t >( pCmdBuf + 2 * sizeof( int ) );
+				pCmdBuf += 2 * sizeof( int ) + sizeof( ShaderAPITextureHandle_t );
+				BindTexture( (Sampler_t)nSampler, hTexture );
+			}
+			break;
+		default:
+			// a command this backend does not know the size of: stop here
+			return;
+		}
+	}
+}
+
+void CShaderAPIEmpty::BindStandardTexture( Sampler_t stage, StandardTextureId_t id )
+{
+	if ( id >= 0 && id < TEXTURE_MAX_STD_TEXTURES && m_StdTextureHandles[id] != INVALID_SHADERAPI_TEXTURE_HANDLE )
+		BindTexture( stage, m_StdTextureHandles[id] );
+	else if ( g_pShaderUtil )
+		g_pShaderUtil->BindStandardTexture( stage, id );
 }

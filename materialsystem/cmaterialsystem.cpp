@@ -1027,6 +1027,10 @@ bool CMaterialSystem::AllowThreading( bool bAllow, int nServiceThread )
 	if ( CommandLine()->ParmValue( "-threads", 2 ) < 2 ) // if -threads specified on command line to restrict all the pools then obey and not turn on QMS
 		bAllow = false;
 
+	// GammaSource: the native DX11 / Vulkan / DX12 / GL backends draw on one thread for now
+	if ( m_pShaderDLL && !Q_stristr( m_pShaderDLL, "shaderapidx9" ) )
+		bAllow = false;
+
 	bool bOldAllow = m_bAllowQueuedRendering;
 
 	if ( GetCPUInformation()->m_nLogicalProcessors >= 2 )

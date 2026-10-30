@@ -418,13 +418,15 @@ public:
 	void ClearSnapshots();
 
 	// Sets the mode...
+	// the material system creates the device through here
 	bool SetMode( void* hwnd, int nAdapter, const ShaderDeviceInfo_t &info )
 	{
-		return true;
+		return Vk_Init( hwnd, info.m_DisplayMode.m_nWidth, info.m_DisplayMode.m_nHeight );
 	}
 
 	void ChangeVideoMode( const ShaderDeviceInfo_t &info )
 	{
+		// the swap chain follows the window size in Vk_Present
 	}
 
 	// Called when the dx support level has changed
