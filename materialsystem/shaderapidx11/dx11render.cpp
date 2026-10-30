@@ -63,7 +63,7 @@ static float s_VP[16];
 static ID3D11Buffer *s_pVB, *s_pIB;
 static int s_nVBSize, s_nIBSize;
 static ID3D11SamplerState *s_pSamplers[4];	// bit 0 clamp S, bit 1 clamp T
-static ID3D11BlendState *s_pBlendStates[128];
+static ID3D11BlendState *s_pBlendStates[128 * 4];	// blend key * 4 + write mask bits
 static ID3D11DepthStencilState *s_pDepthStates[32];
 static ID3D11RasterizerState *s_pRasterStates[4];	// bit 0 cull, bit 1 decal depth offset
 static int s_hWhite;
@@ -249,7 +249,7 @@ void Dx11R_Shutdown()
 	}
 	s_Textures.clear();
 	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pSamplers[i] );
-	for ( int i = 0; i < 128; ++i ) SAFE_RELEASE( s_pBlendStates[i] );
+	for ( int i = 0; i < 128 * 4; ++i ) SAFE_RELEASE( s_pBlendStates[i] );
 	for ( int i = 0; i < 32; ++i ) SAFE_RELEASE( s_pDepthStates[i] );
 	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
 	for ( size_t i = 0; i < s_Queries.size(); ++i )
@@ -761,7 +761,7 @@ static void ApplyState()
 
 	int nSrc = ( s_State.m_nSrcBlend >= 0 && s_State.m_nSrcBlend <= 10 ) ? s_State.m_nSrcBlend : 1;
 	int nDst = ( s_State.m_nDstBlend >= 0 && s_State.m_nDstBlend <= 10 ) ? s_State.m_nDstBlend : 0;
-	int nBlendKey = s_State.m_bBlend ? ( 1 + nSrc * 11 + nDst ) % 128 : 0;
+	int nBlendKey = ( s_State.m_bBlend ? ( 1 + nSrc * 11 + nDst ) % 128 : 0 ) * 4 + ( s_State.m_bNoColorWrites ? 1 : 0 ) + ( s_State.m_bNoAlphaWrites ? 2 : 0 );
 	if ( !s_pBlendStates[nBlendKey] )
 	{
 		D3D11_BLEND_DESC bd = {};
@@ -772,7 +772,8 @@ static void ApplyState()
 		bd.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
 		bd.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;
 		bd.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
-		bd.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+		bd.RenderTarget[0].RenderTargetWriteMask = ( s_State.m_bNoColorWrites ? 0 : ( D3D11_COLOR_WRITE_ENABLE_RED | D3D11_COLOR_WRITE_ENABLE_GREEN | D3D11_COLOR_WRITE_ENABLE_BLUE ) ) |
+			( s_State.m_bNoAlphaWrites ? 0 : D3D11_COLOR_WRITE_ENABLE_ALPHA );
 		pDevice->CreateBlendState( &bd, &s_pBlendStates[nBlendKey] );
 	}
 	pContext->OMSetBlendState( s_pBlendStates[nBlendKey], NULL, 0xFFFFFFFF );

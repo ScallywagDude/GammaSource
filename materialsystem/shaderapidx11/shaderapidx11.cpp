@@ -1992,11 +1992,13 @@ void CShaderShadowEmpty::EnablePolyOffset( PolygonOffsetMode_t nOffsetMode )
 // Suppresses/activates color writing 
 void CShaderShadowEmpty::EnableColorWrites( bool bEnable )
 {
+	m_State.m_bNoColorWrites = !bEnable;
 }
 
 // Suppresses/activates alpha writing 
 void CShaderShadowEmpty::EnableAlphaWrites( bool bEnable )
 {
+	m_State.m_bNoAlphaWrites = !bEnable;
 }
 
 // Methods related to alpha blending
@@ -2089,6 +2091,7 @@ void CShaderShadowEmpty::VertexShaderVertexFormat( unsigned int nFlags,
 		fmt |= VERTEX_TEXCOORD_SIZE( i, pTexCoordDimensions ? pTexCoordDimensions[i] : 2 );
 	m_VertexUsage = fmt;
 	m_State.m_nBoneWeights = ( nFlags & VERTEX_BONE_INDEX ) ? NumBoneWeights( nFlags ) : 0;
+	m_State.m_bVertexColor = ( nFlags & VERTEX_COLOR ) != 0;
 }
 
 // Indicates we're going to light the model
@@ -2605,9 +2608,12 @@ VertexFormat_t CShaderAPIEmpty::ComputeVertexUsage( int numSnapshots, StateSnaps
 }
 
 // Uses a state snapshot
+static const Dx11Snapshot_t *s_pCurrentSnapshot;
+
 void CShaderAPIEmpty::UseSnapshot( StateSnapshot_t snapshot )
 {
 	const Dx11Snapshot_t *pSnap = GetSnapshot( snapshot );
+	s_pCurrentSnapshot = pSnap;
 	if ( pSnap )
 		Dx11R_SetState( pSnap->m_State );
 }
@@ -2667,6 +2673,14 @@ static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
 		Q_stristr( pszShader, "TwoTexture" ) );
 	if ( !bGeneric )
 	{
+		// sprites take their colour from pixel constant 0 ($color/rendercolor * alpha) and use
+		// vertex colour only when their format has it ($ignorevertexcolors 0)
+		if ( pszShader && Q_stristr( pszShader, "Sprite" ) && !Q_stristr( pszShader, "SpriteCard" ) )
+		{
+			bool bVertexColor = s_pCurrentSnapshot && s_pCurrentSnapshot->m_State.m_bVertexColor;
+			Dx11R_SetVertexColorUse( bVertexColor, bVertexColor, s_PixelConstants[0] );
+			return;
+		}
 		Dx11R_SetVertexColorUse( true, true, NULL );
 		return;
 	}

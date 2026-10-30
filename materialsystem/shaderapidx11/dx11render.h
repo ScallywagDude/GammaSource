@@ -46,6 +46,9 @@ struct Dx11State_t
 	bool m_bNormals;		// the pass's vertex format has normals (lit shaders)
 	bool m_bDecalOffset;	// SHADER_POLYOFFSET_DECAL
 	int m_nBoneWeights;		// skinned: vertices blend this many bone matrices
+	bool m_bVertexColor;	// the pass's vertex format has colours
+	bool m_bNoColorWrites;	// EnableColorWrites( false ): depth-only / occlusion proxy passes
+	bool m_bNoAlphaWrites;
 };
 
 enum Dx11Primitive_t
