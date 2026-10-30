@@ -55,6 +55,10 @@ static ID3D11VertexShader *s_pVS;
 static ID3D11PixelShader *s_pPS;
 static ID3D11InputLayout *s_pLayout;
 static ID3D11Buffer *s_pConstants;
+static ID3D11Buffer *s_pBoneConstants;
+static float s_Bones[DX11_MAX_BONES][12];
+static bool s_bBonesDirty = true;
+static float s_VP[16];
 static ID3D11Buffer *s_pVB, *s_pIB;
 static int s_nVBSize, s_nIBSize;
 static ID3D11SamplerState *s_pSamplers[4];	// bit 0 clamp S, bit 1 clamp T
@@ -80,15 +84,28 @@ struct Constants_t
 	float m_LightDir[4][4];
 	float m_LightAtten[4][4];	// w = spot falloff exponent
 	float m_LightCone[4][4];	// x = cos inner, y = cos outer
+	float m_ShadowColor[4];
+	float m_Shadow;
+	float m_Skin;			// bone weights per vertex, 0 = not skinned
+	float m_Pad2[2];
+	float m_VColorUse[4];		// same order as the HLSL cbuffer
+	float m_MatColor[4];
+	float m_VP[16];
 };
 
 static const char s_szShader[] =
 	"cbuffer Constants : register( b0 ) { row_major float4x4 g_WVP; float g_AlphaRef; float g_AlphaTest; float g_Lightmap; float g_Lit;\n"
 	"  row_major float4x4 g_Model; float4 g_Ambient[6]; float4 g_LightColor[4]; float4 g_LightPos[4]; float4 g_LightDir[4];\n"
-	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; };\n"
+	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; float4 g_ShadowColor; float g_Shadow; float g_Skin; float2 g_Pad2;\n"
+	"  float4 g_VColorUse; float4 g_MatColor;\n"
+	"  row_major float4x4 g_VP; };\n"
+	"cbuffer Bones : register( b1 ) { float4 g_Bones[53 * 3]; };\n"
 	"Texture2D g_Texture : register( t0 ); SamplerState g_Sampler : register( s0 );\n"
 	"Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSampler : register( s1 );\n"
-	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float3 normal : NORMAL; };\n"
+	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float3 normal : NORMAL;\n"
+	"  uint4 bones : BLENDINDICES; float2 weights : BLENDWEIGHT; };\n"
+	"float3 SkinPos( int b, float3 p ) { return float3( dot( g_Bones[b * 3], float4( p, 1 ) ), dot( g_Bones[b * 3 + 1], float4( p, 1 ) ), dot( g_Bones[b * 3 + 2], float4( p, 1 ) ) ); }\n"
+	"float3 SkinDir( int b, float3 d ) { return float3( dot( g_Bones[b * 3].xyz, d ), dot( g_Bones[b * 3 + 1].xyz, d ), dot( g_Bones[b * 3 + 2].xyz, d ) ); }\n"
 	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; };\n"
 	"float3 AmbientCube( float3 n ) { float3 s = n * n; int3 i = n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 );\n"
 	"  return s.x * g_Ambient[i.x].rgb + s.y * g_Ambient[i.y].rgb + s.z * g_Ambient[i.z].rgb; }\n"
@@ -103,12 +120,21 @@ static const char s_szShader[] =
 	"        att *= pow( cone, max( g_LightAtten[k].w, 0.0001f ) ); } }\n"
 	"    l += g_LightColor[k].rgb * att * saturate( dot( n, dir ) ); }\n"
 	"  return l; }\n"
-	"PSIn VSMain( VSIn v ) { PSIn o; o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); o.color = v.color; o.uv = v.uv; o.uv2 = v.uv2;\n"
-	"  if ( g_Lit > 0.5f ) { float3 p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; float3 n = normalize( mul( v.normal, (float3x3)g_Model ) + 1e-6f );\n"
+	"PSIn VSMain( VSIn v ) { PSIn o; o.color = lerp( 1.0f, v.color, g_VColorUse.xxxy ) * g_MatColor; o.uv = v.uv; o.uv2 = v.uv2;\n"
+	"  float3 p, n;\n"
+	"  if ( g_Skin > 0.5f ) { float3 w = float3( v.weights.x, g_Skin > 1.5f ? v.weights.y : 0.0f, 0.0f ); w.z = g_Skin > 2.5f ? 1.0f - w.x - w.y : 0.0f;\n"
+	"    if ( g_Skin < 1.5f ) w.x = 1.0f; else if ( g_Skin < 2.5f ) w.y = 1.0f - w.x;\n"
+	"    p = SkinPos( v.bones.x, v.pos ) * w.x + SkinPos( v.bones.y, v.pos ) * w.y + SkinPos( v.bones.z, v.pos ) * w.z;\n"
+	"    n = SkinDir( v.bones.x, v.normal ) * w.x + SkinDir( v.bones.y, v.normal ) * w.y + SkinDir( v.bones.z, v.normal ) * w.z;\n"
+	"    o.pos = mul( float4( p, 1.0f ), g_VP ); }\n"
+	"  else { o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; n = mul( v.normal, (float3x3)g_Model ); }\n"
+	"  if ( g_Lit > 0.5f ) { n = normalize( n + 1e-6f );\n"
 	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
 	"  return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
+	"  if ( g_Shadow > 0.5f ) { float cover = saturate( g_Texture.Sample( g_Sampler, i.uv ).a - i.color.a );\n"
+	"    return float4( 1.0f + cover * ( g_ShadowColor.rgb - 1.0f ), 1.0f ); }\n"
 	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
 
 static ID3DBlob *Compile( const char *pszEntry, const char *pszTarget )
@@ -144,8 +170,10 @@ bool Dx11R_Init()
 		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "TEXCOORD", 1, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	pDevice->CreateInputLayout( layout, 5, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
+	pDevice->CreateInputLayout( layout, 7, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
 	pVS->Release(); pPS->Release();
 
 	D3D11_BUFFER_DESC cb = {};
@@ -154,6 +182,8 @@ bool Dx11R_Init()
 	cb.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
 	cb.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 	pDevice->CreateBuffer( &cb, NULL, &s_pConstants );
+	cb.ByteWidth = sizeof( s_Bones );
+	pDevice->CreateBuffer( &cb, NULL, &s_pBoneConstants );
 
 	for ( int i = 0; i < 4; ++i )
 	{
@@ -212,7 +242,7 @@ void Dx11R_Shutdown()
 	for ( int i = 0; i < 128; ++i ) SAFE_RELEASE( s_pBlendStates[i] );
 	for ( int i = 0; i < 32; ++i ) SAFE_RELEASE( s_pDepthStates[i] );
 	for ( int i = 0; i < 4; ++i ) SAFE_RELEASE( s_pRasterStates[i] );
-	SAFE_RELEASE( s_pVB ); SAFE_RELEASE( s_pIB ); SAFE_RELEASE( s_pConstants );
+	SAFE_RELEASE( s_pVB ); SAFE_RELEASE( s_pIB ); SAFE_RELEASE( s_pConstants ); SAFE_RELEASE( s_pBoneConstants );
 	for ( size_t i = 0; i < s_VertexCache.size(); ++i )
 		SAFE_RELEASE( s_VertexCache[i].m_pBuffer );
 	s_VertexCache.clear();
@@ -403,6 +433,35 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
 
 static int s_hLightmap;
 static bool s_bLit;
+static bool s_bShadowPass;
+static float s_VColorUse[4] = { 1, 1, 0, 0 };
+static float s_MatColor[4] = { 1, 1, 1, 1 };
+
+void Dx11R_SetVertexColorUse( bool bColor, bool bAlpha, const float *pColor )
+{
+	s_VColorUse[0] = bColor ? 1.0f : 0.0f;
+	s_VColorUse[1] = bAlpha ? 1.0f : 0.0f;
+	for ( int i = 0; i < 4; ++i )
+		s_MatColor[i] = pColor ? pColor[i] : 1.0f;
+}
+
+void Dx11R_SetBoneMatrices( const float ( *pBones )[12], int nCount )
+{
+	if ( nCount > DX11_MAX_BONES ) nCount = DX11_MAX_BONES;
+	if ( nCount > 0 && memcmp( s_Bones, pBones, nCount * sizeof( s_Bones[0] ) ) )
+	{
+		memcpy( s_Bones, pBones, nCount * sizeof( s_Bones[0] ) );
+		s_bBonesDirty = true;
+	}
+}
+static float s_ShadowColor[4];
+
+void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor )
+{
+	s_bShadowPass = bShadow;
+	if ( bShadow && pShadowColor )
+		memcpy( s_ShadowColor, pShadowColor, sizeof( s_ShadowColor ) );
+}
 static float s_Model[16];
 static float s_Ambient[6][3];
 static int s_nLights;
@@ -457,6 +516,7 @@ void Dx11R_SetMatrices( const float *pModel, const float *pView, const float *pP
 	memcpy( s_Model, pModel, sizeof( s_Model ) );
 	Mul( pModel, pView, mv );
 	Mul( mv, pProj, s_WVP );
+	Mul( pView, pProj, s_VP );
 }
 
 // kept here and applied per draw: the engine can set it before the device exists
@@ -641,6 +701,14 @@ static void ApplyState()
 		static int s_nNoLightmaps = -1;
 		if ( s_nNoLightmaps < 0 ) { char b[8]; s_nNoLightmaps = GetEnvironmentVariableA( "GAMMA_DX11_NOLM", b, 8 ) ? 1 : 0; }
 		pConst->m_Lightmap = ( pLightmap && pLightmap->m_pSRV && !s_nNoLightmaps ) ? 1.0f : 0.0f;
+		pConst->m_Shadow = s_bShadowPass ? 1.0f : 0.0f;
+		pConst->m_Skin = (float)s_State.m_nBoneWeights;
+		memcpy( pConst->m_VColorUse, s_VColorUse, sizeof( s_VColorUse ) );
+		memcpy( pConst->m_MatColor, s_MatColor, sizeof( s_MatColor ) );
+		memcpy( pConst->m_VP, s_VP, sizeof( s_VP ) );
+		for ( int i = 0; i < 3; ++i )	// the constant is linear; this shader works in gamma space
+			pConst->m_ShadowColor[i] = powf( s_ShadowColor[i] > 0.0f ? s_ShadowColor[i] : 0.0f, 1.0f / 2.2f );
+		pConst->m_ShadowColor[3] = 1.0f;
 		bool bLit = s_bLit && s_State.m_bNormals;
 		pConst->m_Lit = bLit ? 1.0f : 0.0f;
 		memcpy( pConst->m_Model, s_Model, sizeof( s_Model ) );
@@ -684,6 +752,17 @@ static void ApplyState()
 	pContext->IASetInputLayout( s_pLayout );
 	pContext->VSSetShader( s_pVS, NULL, 0 );
 	pContext->VSSetConstantBuffers( 0, 1, &s_pConstants );
+	if ( s_State.m_nBoneWeights > 0 && s_bBonesDirty && s_pBoneConstants )
+	{
+		D3D11_MAPPED_SUBRESOURCE bones;
+		if ( SUCCEEDED( pContext->Map( s_pBoneConstants, 0, D3D11_MAP_WRITE_DISCARD, 0, &bones ) ) )
+		{
+			memcpy( bones.pData, s_Bones, sizeof( s_Bones ) );
+			pContext->Unmap( s_pBoneConstants, 0 );
+			s_bBonesDirty = false;
+		}
+	}
+	pContext->VSSetConstantBuffers( 1, 1, &s_pBoneConstants );
 	pContext->PSSetShader( s_pPS, NULL, 0 );
 	pContext->PSSetConstantBuffers( 0, 1, &s_pConstants );
 }
@@ -792,19 +871,6 @@ void Dx11R_Draw( Dx11Primitive_t type, const Dx11Vertex_t *pVerts, int nVerts, c
 		return;
 	ApplyState();
 	++g_nDx11Draws;
-	static int s_nLitLogged, s_nLitSeen;
-	if ( s_bLit && ++s_nLitSeen > 20000 && s_nLitLogged < 30 )
-	{
-		++s_nLitLogged;
-		Dx11_DebugLog( "LIT draw nverts", nVerts );
-		if ( pVerts ) { Dx11_DebugLog( "  n*1000 x", (int)( pVerts[0].m_Normal[0] * 1000 ) ); Dx11_DebugLog( "  n*1000 y", (int)( pVerts[0].m_Normal[1] * 1000 ) ); Dx11_DebugLog( "  n*1000 z", (int)( pVerts[0].m_Normal[2] * 1000 ) ); }
-		Dx11_DebugLog( "  cached", pCacheKey ? 1 : 0 );
-		Dx11_DebugLog( "  amb+z g*1000", (int)( s_Ambient[4][1] * 1000 ) );
-		Dx11_DebugLog( "  lights", s_nLights );
-		if ( pVerts ) Dx11_DebugLog( "  color", (int)pVerts[0].m_Color );
-		Dx11_DebugLog( "  model[0]*1000", (int)( s_Model[0] * 1000 ) );
-		Dx11_DebugLog( "  tex", s_hBound );
-	}
 
 	static const D3D11_PRIMITIVE_TOPOLOGY s_Topology[] =
 	{

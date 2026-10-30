@@ -605,7 +605,7 @@ public:
 	void PushMatrix();
 	void PopMatrix();
 	void LoadMatrix( float *m );
-	void LoadBoneMatrix( int boneIndex, const float *m ) {}
+	void LoadBoneMatrix( int boneIndex, const float *m );
 	void MultMatrix( float *m );
 	void MultMatrixLocal( float *m );
 	void GetMatrix( MaterialMatrixMode_t matrixMode, float *dst );
@@ -1689,7 +1689,7 @@ static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc )
 	desc.m_pTangentS = (float*)( pBase + DX11V_TANGENT_S );
 	desc.m_pTangentT = (float*)( pBase + DX11V_TANGENT_T );
 	desc.m_pUserData = (float*)( pBase + DX11V_USERDATA );
-	desc.m_NumBoneWeights = 2;
+	desc.m_NumBoneWeights = 3;
 
 	desc.m_VertexSize_Position = DX11V_STRIDE;
 	desc.m_VertexSize_BoneWeight = DX11V_STRIDE;
@@ -1827,6 +1827,8 @@ void CEmptyMesh::RenderPass()
 		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
 		memcpy( dst.m_UV2, pSrc + DX11V_TEXCOORD + 16, 8 );
 		memcpy( dst.m_Normal, pSrc + DX11V_NORMAL, 12 );
+		memcpy( dst.m_BoneIndex, pSrc + DX11V_BONEINDEX, 4 );
+		memcpy( dst.m_BoneWeight, pSrc + DX11V_BONEWEIGHT, 8 );
 		if ( pColors && v < pColors->m_nVertexCount )
 		{
 			const unsigned char *s = pColors->m_pVertexMemory + v * DX11V_STRIDE + DX11V_SPECULAR;
@@ -2069,6 +2071,7 @@ void CShaderShadowEmpty::VertexShaderVertexFormat( unsigned int nFlags,
 {
 	// shaders that light their vertices ask for normals; unlit ones (UnlitGeneric, sprites) don't
 	m_State.m_bNormals = ( nFlags & VERTEX_NORMAL ) != 0;
+	m_State.m_nBoneWeights = ( nFlags & VERTEX_BONE_INDEX ) ? NumBoneWeights( nFlags ) : 0;
 }
 
 // Indicates we're going to light the model
@@ -2612,6 +2615,29 @@ void CShaderAPIEmpty::ShadeMode( ShaderShadeMode_t mode )
 // Binds a particular material to render with
 void UpdateMatrices();
 static IMaterialInternal *s_pBoundMaterial;
+// kept for the few passes the fixed shader reproduces (the shadow colour)
+static float s_PixelConstants[32][4];
+
+// the generic shaders use vertex colour only with $vertexcolor/$vertexalpha and modulate by
+// $color/$alpha; other shaders (sprites, cables, particles, vgui) take vertex colour as is
+static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
+{
+	const char *pszShader = pMaterial ? pMaterial->GetShaderName() : NULL;
+	bool bGeneric = pszShader && ( Q_stristr( pszShader, "UnlitGeneric" ) || Q_stristr( pszShader, "VertexLitGeneric" ) ||
+		Q_stristr( pszShader, "LightmappedGeneric" ) || Q_stristr( pszShader, "WorldVertexTransition" ) ||
+		Q_stristr( pszShader, "TwoTexture" ) );
+	if ( !bGeneric )
+	{
+		Dx11R_SetVertexColorUse( true, true, NULL );
+		return;
+	}
+	float color[4];
+	pMaterial->GetColorModulation( &color[0], &color[1], &color[2] );
+	color[3] = pMaterial->GetAlphaModulation();
+	// a static prop's colour mesh is its lighting, not a vertex colour
+	bool bColor = bColorMesh || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR );
+	Dx11R_SetVertexColorUse( bColor, pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ), color );
+}
 
 static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
 {
@@ -2679,8 +2705,6 @@ static bool s_bLitPass;
 
 void CShaderAPIEmpty::SetLight( int lightNum, const LightDesc_t& desc )
 {
-	static int s_nLightCalls;
-	if ( ++s_nLightCalls % 2000 == 1 ) Dx11_DebugLog( "setlight calls", s_nLightCalls );
 	if ( lightNum >= 0 && lightNum < 4 )
 		memcpy( &s_LightDescs[lightNum], &desc, sizeof( desc ) );
 }
@@ -2703,10 +2727,6 @@ void CShaderAPIEmpty::SetAmbientLight( float r, float g, float b )
 
 void CShaderAPIEmpty::SetAmbientLightCube( Vector4D cube[6] )
 {
-	static int s_nCalls, s_nNonZero;
-	++s_nCalls;
-	if ( ( cube[0].x != 0 || cube[4].x != 0 ) && s_nNonZero++ < 3 ) { Dx11_DebugLog( "cube call", s_nCalls ); Dx11_DebugLog( "  +z r*1000", (int)( cube[4].x * 1000 ) ); }
-	if ( s_nCalls < 4 || s_nCalls % 500 == 0 ) { Dx11_DebugLog( "cube calls", s_nCalls ); Dx11_DebugLog( "  -x,+y,+z g*1000", (int)( cube[1].y * 1000 ) * 0 + (int)( ( cube[1].y + cube[2].y + cube[4].y ) * 1000 ) ); }
 	for ( int i = 0; i < 6; ++i )
 	{
 		s_AmbientCube[i][0] = cube[i].x; s_AmbientCube[i][1] = cube[i].y; s_AmbientCube[i][2] = cube[i].z;
@@ -2759,14 +2779,6 @@ static void ApplyLighting()
 		l.m_flThetaDot = d.m_ThetaDot; l.m_flPhiDot = d.m_PhiDot; l.m_flFalloff = d.m_Falloff;
 	}
 	Dx11R_SetLighting( true, s_AmbientCube, nLights, lights );
-	static int s_nLogged;
-	if ( s_nLogged < 6 )
-	{
-		++s_nLogged;
-		Dx11_DebugLog( "lit pass lights", nLights );
-		for ( int i = 0; i < 6; ++i ) Dx11_DebugLog( "  cube*1000 r", (int)( s_AmbientCube[i][0] * 1000 ) );
-		if ( nLights ) { Dx11_DebugLog( "  light0 type", lights[0].m_nType ); Dx11_DebugLog( "  light0 r*1000", (int)( lights[0].m_Color[0] * 1000 ) ); }
-	}
 }
 
 // Render state for the ambient light cube (vertex shaders)
@@ -2874,6 +2886,9 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		if ( s_pRenderMesh->m_pColorMesh || !IsVertexLitMaterial( s_pBoundMaterial ) )
 			ResetPassLighting();
 		ApplyLighting();
+		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
+		Dx11R_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
+		ApplyVertexColorUse( s_pBoundMaterial, s_pRenderMesh->m_pColorMesh != NULL );
 		s_pRenderMesh->RenderPass();
 		// the next pass binds its own lightmap / lighting if it has them
 		Dx11R_BindLightmap( 0 );
@@ -2920,6 +2935,28 @@ void UpdateMatrices()
 {
 	InitMatrices();
 	Dx11R_SetMatrices( CurMatrix( MATERIAL_MODEL ), CurMatrix( MATERIAL_VIEW ), CurMatrix( MATERIAL_PROJECTION ) );
+}
+
+// bone 0 is also the model matrix (as in the DX9 backend); skinned passes blend them all
+static float s_BoneMatrices[DX11_MAX_BONES][12];
+static int s_nBones;
+
+void CShaderAPIEmpty::LoadBoneMatrix( int boneIndex, const float *m )
+{
+	if ( boneIndex < 0 || boneIndex >= DX11_MAX_BONES )
+		return;
+	memcpy( s_BoneMatrices[boneIndex], m, sizeof( s_BoneMatrices[0] ) );
+	if ( boneIndex >= s_nBones )
+		s_nBones = boneIndex + 1;
+	if ( boneIndex == 0 )
+	{
+		MatrixMode( MATERIAL_MODEL );
+		VMatrix transposeMatrix;
+		transposeMatrix.Init( *(matrix3x4_t *)m );
+		MatrixTranspose( transposeMatrix, transposeMatrix );
+		LoadMatrix( (float *)transposeMatrix.m );
+	}
+	Dx11R_SetBoneMatrices( s_BoneMatrices, s_nBones );
 }
 
 void CShaderAPIEmpty::MatrixMode( MaterialMatrixMode_t matrixMode )
@@ -3117,8 +3154,12 @@ void CShaderAPIEmpty::SetIntegerVertexShaderConstant( int var, int const* pVec, 
 {
 }
 
+
 void CShaderAPIEmpty::SetPixelShaderConstant( int var, float const* pVec, int numConst, bool bForce )
 {
+	for ( int i = 0; i < numConst && var + i < 32; ++i )
+		if ( var + i >= 0 )
+			memcpy( s_PixelConstants[var + i], pVec + i * 4, sizeof( s_PixelConstants[0] ) );
 }
 
 void CShaderAPIEmpty::SetBooleanPixelShaderConstant( int var, BOOL const* pVec, int numBools, bool bForce )
@@ -3607,6 +3648,10 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 			pCmdBuf += sizeof( int ) + sizeof( uint8 * );
 			break;
 		case CBCMD_SET_PIXEL_SHADER_FLOAT_CONST:
+			SetPixelShaderConstant( CmdData< int >( pCmdBuf + sizeof( int ) ), (const float *)( pCmdBuf + 3 * sizeof( int ) ),
+				CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) );
+			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
+			break;
 		case CBCMD_SET_VERTEX_SHADER_FLOAT_CONST:
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;

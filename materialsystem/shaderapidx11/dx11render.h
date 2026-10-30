@@ -16,6 +16,8 @@ struct Dx11Vertex_t
 	float m_UV[2];
 	float m_UV2[2];			// lightmap coordinates
 	float m_Normal[3];		// model space, for lit passes
+	unsigned char m_BoneIndex[4];
+	float m_BoneWeight[2];	// the third weight is 1 - the others
 };
 
 // a light for lit (model) passes, world space
@@ -43,6 +45,7 @@ struct Dx11State_t
 	bool m_bCull;
 	bool m_bNormals;		// the pass's vertex format has normals (lit shaders)
 	bool m_bDecalOffset;	// SHADER_POLYOFFSET_DECAL
+	int m_nBoneWeights;		// skinned: vertices blend this many bone matrices
 };
 
 enum Dx11Primitive_t
@@ -66,6 +69,14 @@ void Dx11R_UploadRect( int hTexture, int x, int y, int nWidth, int nHeight, cons
 void Dx11R_BindTexture( int nStage, int hTexture );
 void Dx11R_BindLightmap( int hTexture );	// 0: no lightmap for this pass
 // lit passes (vertex lit models): colour = vertex colour * (ambient cube + lights)
+// the Shadow shader's projection pass: colour = lerp( 1, shadowColor, texture alpha - vertex alpha )
+// skinning: up to 53 bone-to-world 3x4 matrices (rows); bone 0 also sets the model matrix
+enum { DX11_MAX_BONES = 53 };
+void Dx11R_SetBoneMatrices( const float ( *pBones )[12], int nCount );
+// how a pass uses vertex colour: Source's generic shaders ignore it unless the material
+// has $vertexcolor / $vertexalpha; pColor is the material's $color and $alpha
+void Dx11R_SetVertexColorUse( bool bColor, bool bAlpha, const float *pColor );
+void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor );
 void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 
 void Dx11R_SetState( const Dx11State_t &state );
