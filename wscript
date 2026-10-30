@@ -71,6 +71,7 @@ projects={
 		'materialsystem/shaderapidx11',	# GammaSource: native Direct3D 11 renderer
 		'materialsystem/shaderapidx12',	# GammaSource: native Direct3D 12 renderer
 		'materialsystem/shaderapivk',	# GammaSource: native Vulkan renderer
+		'materialsystem/shaderapigl',	# GammaSource: native OpenGL renderer
 		'materialsystem/shaderlib',
 		'materialsystem/stdshaders',
 		'mathlib',
