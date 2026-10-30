@@ -314,6 +314,7 @@ public:
 	bool m_IsAlphaTested;
 	bool m_bIsDepthWriteEnabled;
 	bool m_bUsesVertexAndPixelShaders;
+	VertexFormat_t m_VertexUsage;	// what the pass's shader reads, as the DX9 backend reports it
 	Dx11State_t m_State;	// GammaSource DX11: what the snapshot applies
 };
 
@@ -1950,6 +1951,7 @@ void CShaderShadowEmpty::SetDefaultState()
 	m_IsAlphaTested = false;
 	m_bIsDepthWriteEnabled = true;
 	m_bUsesVertexAndPixelShaders = false;
+	m_VertexUsage = 0;
 	memset( &m_State, 0, sizeof( m_State ) );
 	m_State.m_nSrcBlend = SHADER_BLEND_ONE;
 	m_State.m_nDstBlend = SHADER_BLEND_ZERO;
@@ -2071,6 +2073,16 @@ void CShaderShadowEmpty::VertexShaderVertexFormat( unsigned int nFlags,
 {
 	// shaders that light their vertices ask for normals; unlit ones (UnlitGeneric, sprites) don't
 	m_State.m_bNormals = ( nFlags & VERTEX_NORMAL ) != 0;
+
+	// the vertex format the material reports (built like the DX9 backend's CMeshMgr::ComputeVertexFormat)
+	VertexFormat_t fmt = nFlags & ~( VERTEX_FORMAT_USE_EXACT_FORMAT | VERTEX_FORMAT_COMPRESSED );
+	if ( NumBoneWeights( nFlags ) > 0 )
+		fmt = ( fmt & ~VERTEX_BONE_WEIGHT_MASK ) | VERTEX_BONEWEIGHT( 2 );
+	fmt |= VERTEX_USERDATA_SIZE( nUserDataSize );
+	nTexCoordCount = min( nTexCoordCount, (int)VERTEX_MAX_TEXTURE_COORDINATES );
+	for ( int i = 0; i < nTexCoordCount; ++i )
+		fmt |= VERTEX_TEXCOORD_SIZE( i, pTexCoordDimensions ? pTexCoordDimensions[i] : 2 );
+	m_VertexUsage = fmt;
 	m_State.m_nBoneWeights = ( nFlags & VERTEX_BONE_INDEX ) ? NumBoneWeights( nFlags ) : 0;
 }
 
@@ -2499,6 +2511,7 @@ struct Dx11Snapshot_t
 {
 	int m_nFlags;
 	Dx11State_t m_State;
+	VertexFormat_t m_VertexUsage;
 };
 static CUtlVector< Dx11Snapshot_t > s_Snapshots;
 
@@ -2520,6 +2533,7 @@ StateSnapshot_t	 CShaderAPIEmpty::TakeSnapshot( )
 	if (g_ShaderShadow.m_bIsDepthWriteEnabled)
 		snap.m_nFlags |= DEPTHWRITE;
 	snap.m_State = g_ShaderShadow.m_State;
+	snap.m_VertexUsage = g_ShaderShadow.m_VertexUsage;
 	for ( int i = 0; i < s_Snapshots.Count(); ++i )
 	{
 		if ( !memcmp( &s_Snapshots[i], &snap, sizeof( snap ) ) )
@@ -2556,13 +2570,33 @@ bool CShaderAPIEmpty::UsesVertexAndPixelShaders( StateSnapshot_t id ) const
 // Gets the vertex format for a set of snapshot ids
 VertexFormat_t CShaderAPIEmpty::ComputeVertexFormat( int numSnapshots, StateSnapshot_t* pIds ) const
 {
-	return 0;
+	return ComputeVertexUsage( numSnapshots, pIds );
 }
 
-// Gets the vertex format for a set of snapshot ids
+// Gets the vertex format for a set of snapshot ids: every pass's needs combined
 VertexFormat_t CShaderAPIEmpty::ComputeVertexUsage( int numSnapshots, StateSnapshot_t* pIds ) const
 {
-	return 0;
+	int nFlags = 0, nUserData = 0, nBones = 0;
+	int texCoordSize[VERTEX_MAX_TEXTURE_COORDINATES] = {};
+	for ( int i = 0; i < numSnapshots; ++i )
+	{
+		const Dx11Snapshot_t *pSnap = GetSnapshot( pIds[i] );
+		if ( !pSnap )
+			continue;
+		VertexFormat_t fmt = pSnap->m_VertexUsage;
+		nFlags |= VertexFlags( fmt );
+		nBones = max( nBones, NumBoneWeights( fmt ) );
+		nUserData = max( nUserData, UserDataSize( fmt ) );
+		for ( int t = 0; t < VERTEX_MAX_TEXTURE_COORDINATES; ++t )
+			texCoordSize[t] = max( texCoordSize[t], TexCoordSize( t, fmt ) );
+	}
+	VertexFormat_t fmt = nFlags | VERTEX_USERDATA_SIZE( nUserData );
+	if ( nBones > 0 )
+		fmt |= VERTEX_BONEWEIGHT( nBones );
+	for ( int t = 0; t < VERTEX_MAX_TEXTURE_COORDINATES; ++t )
+		if ( texCoordSize[t] )
+			fmt |= VERTEX_TEXCOORD_SIZE( t, texCoordSize[t] );
+	return fmt;
 }
 
 // Uses a state snapshot
