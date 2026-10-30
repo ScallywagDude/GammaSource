@@ -95,6 +95,9 @@ void Dx11R_DestroyQuery( int hQuery );
 void Dx11R_BeginQuery( int hQuery );
 void Dx11R_EndQuery( int hQuery );
 int  Dx11R_GetQueryResult( int hQuery, bool bFlush );
+// Source's LDR bloom: nMode 1 Downsample_nohdr (pParams = its c0: luminance weights, exponent),
+// 2 BlurFilterX, 3 BlurFilterY (pParams[0] = bloom amount); 0 off. The size is the source texture's.
+void Dx11R_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight );
 void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor );
 void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 

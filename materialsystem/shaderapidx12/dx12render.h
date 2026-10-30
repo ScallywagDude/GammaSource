@@ -101,6 +101,9 @@ void Dx12R_DestroyQuery( int hQuery );
 void Dx12R_BeginQuery( int hQuery );
 void Dx12R_EndQuery( int hQuery );
 int  Dx12R_GetQueryResult( int hQuery, bool bFlush );
+// Source's LDR bloom: nMode 1 Downsample_nohdr (pParams = its c0: luminance weights, exponent),
+// 2 BlurFilterX, 3 BlurFilterY (pParams[0] = bloom amount); 0 off. The size is the source texture's.
+void Dx12R_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight );
 void Dx12R_SetShadowPass( bool bShadow, const float *pShadowColor );
 void Dx12R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx12Light_t *pLights );
 

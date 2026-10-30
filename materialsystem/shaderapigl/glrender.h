@@ -101,6 +101,9 @@ void GlR_DestroyQuery( int hQuery );
 void GlR_BeginQuery( int hQuery );
 void GlR_EndQuery( int hQuery );
 int  GlR_GetQueryResult( int hQuery, bool bFlush );
+// Source's LDR bloom: nMode 1 Downsample_nohdr (pParams = its c0: luminance weights, exponent),
+// 2 BlurFilterX, 3 BlurFilterY (pParams[0] = bloom amount); 0 off. The size is the source texture's.
+void GlR_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight );
 void GlR_SetShadowPass( bool bShadow, const float *pShadowColor );
 void GlR_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const GlRLight_t *pLights );
 

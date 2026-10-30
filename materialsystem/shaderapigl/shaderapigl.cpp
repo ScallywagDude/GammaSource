@@ -2979,6 +2979,27 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && GlR_IsRenderTargetTexture( GlR_GetBoundTexture( 0 ) );
 		GlR_SetWaterPass( bWater, GlR_GetBoundTexture( 2 ), s_PixelConstants[1], s_PixelConstants[4] );
+		// bloom: the downsample and blur shaders' taps, from their pixel constants
+		int nPost = 0;
+		float postParams[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+		if ( pszShader && !Q_stricmp( pszShader, "Downsample_nohdr" ) )
+		{
+			nPost = 1;
+			memcpy( postParams, s_PixelConstants[0], sizeof( postParams ) );
+		}
+		else if ( pszShader && !Q_stricmp( pszShader, "BlurFilterX" ) )
+		{
+			nPost = 2;
+		}
+		else if ( pszShader && !Q_stricmp( pszShader, "BlurFilterY" ) )
+		{
+			nPost = 3;
+			postParams[0] = s_PixelConstants[3][0];
+		}
+		int nPostW = 0, nPostH = 0;
+		if ( nPost )
+			GlR_GetTextureSize( GlR_GetBoundTexture( 0 ), nPostW, nPostH );
+		GlR_SetPostPass( nPost, postParams, nPostW, nPostH );
 		ApplyVertexColorUse( s_pBoundMaterial, s_pRenderMesh->m_pColorMesh != NULL );
 		s_pRenderMesh->RenderPass();
 		// the next pass binds its own lightmap / lighting if it has them

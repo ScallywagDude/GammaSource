@@ -1419,6 +1419,23 @@ static void DrawBloomDebugBoxes( IMatRenderContext *pRenderContext )
 	pRenderContext->Viewport( 0, 0, dest_width, dest_height );
 }
 
+#ifdef _WIN32
+extern "C" __declspec( dllimport ) void * __stdcall GetModuleHandleA( const char *pszModuleName );
+#endif
+
+// GammaSource: true on the native DX11 / Vulkan / DX12 / GL renderers (no shaderapidx9)
+static bool IsGammaNativeRenderer()
+{
+#ifdef _WIN32
+	static int s_nNative = -1;
+	if ( s_nNative < 0 )
+		s_nNative = ( GetModuleHandleA( "shaderapidx9.dll" ) == NULL ) ? 1 : 0;
+	return s_nNative != 0;
+#else
+	return false;
+#endif
+}
+
 static float GetBloomAmount( void )
 {
 	// return bloom amount ( 0.0 if disabled or otherwise turned off )
@@ -1427,7 +1444,8 @@ static float GetBloomAmount( void )
 
 	HDRType_t hdrType = g_pMaterialSystemHardwareConfig->GetHDRType();
 
-	bool bBloomEnabled = (mat_hdr_level.GetInt() >= 1);
+	// the native renderers have no HDR mode: they bloom HDR maps with the LDR passes
+	bool bBloomEnabled = (mat_hdr_level.GetInt() >= 1) || IsGammaNativeRenderer();
 	
 	if ( !engine->MapHasHDRLighting() )
 		bBloomEnabled = false;
@@ -2210,9 +2228,6 @@ static ConVar r_queued_post_processing( "r_queued_post_processing", "0" );
 
 // How much to dice up the screen during post-processing on 360
 // This has really marginal effects, but 4x1 does seem vaguely better for post-processing
-#ifdef _WIN32
-extern "C" __declspec( dllimport ) void * __stdcall GetModuleHandleA( const char *pszModuleName );
-#endif
 static ConVar mat_postprocess_x( "mat_postprocess_x", "4" );
 static ConVar mat_postprocess_y( "mat_postprocess_y", "1" );
 
@@ -2220,15 +2235,9 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 {
 	tmZone( TELEMETRY_LEVEL0, TMZF_NONE, "%s", __FUNCTION__ );
 
-#ifdef _WIN32
-	// GammaSource: the native DX11 / Vulkan / DX12 / GL backends don't run Source's DX9
-	// post-process shaders yet; bloom/tonemap passes would cover the frame
-	static int s_nNativeRenderer = -1;
-	if ( s_nNativeRenderer < 0 )
-		s_nNativeRenderer = ( GetModuleHandleA( "shaderapidx9.dll" ) == NULL ) ? 1 : 0;
-	if ( s_nNativeRenderer )
-		return;
-#endif
+	// GammaSource: the native DX11 / Vulkan / DX12 / GL backends run the LDR bloom passes
+	// (downsample, blur, bloomadd) but not engine_post's colour correction
+	const bool bNativeRenderer = IsGammaNativeRenderer();
 
 	CMatRenderContextPtr pRenderContext( materials );
 
@@ -2343,7 +2352,7 @@ void DoEnginePostProcessing( int x, int y, int w, int h, bool bFlashlightIsOn, b
 										  ( g_pMaterialSystemHardwareConfig->GetDXSupportLevel() >= 90) &&
 										  ( g_pMaterialSystemHardwareConfig->GetHDRType() != HDR_TYPE_FLOAT ) &&
 										  g_pColorCorrectionMgr->HasNonZeroColorCorrectionWeights() &&
-										  mat_colorcorrection.GetInt();
+										  mat_colorcorrection.GetInt() && !bNativeRenderer;
 			bool  bSplitScreenHDR		= mat_show_ab_hdr.GetInt();
 			pRenderContext->EnableColorCorrection( bPerformColCorrect );
 			if ( bPerformBloom || bPerformSoftwareAA || bPerformColCorrect )

@@ -51,6 +51,8 @@ struct Constants_t
 	float m_Clip[2][4];			// disabled planes are ( 0, 0, 0, -1 ): never clip
 	float m_EnvTint[4];			// w = 1: base alpha masks the envmap
 	float m_EyePos[4];			// w = 1: envmap on
+	float m_Post[4];			// x: 1 bloom downsample, 2 blur x, 3 blur y; zw source texel size
+	float m_PostParams[4];		// downsample: luminance weights + exponent; blur: x bloom amount
 };
 
 static const char s_szShader[] =
@@ -59,7 +61,8 @@ static const char s_szShader[] =
 	"  row_major float4x4 g_Model; float4 g_Ambient[6]; float4 g_LightColor[4]; float4 g_LightPos[4]; float4 g_LightDir[4];\n"
 	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; float4 g_ShadowColor; float g_Shadow; float g_Skin; float2 g_Pad2;\n"
 	"  float4 g_VColorUse; float4 g_MatColor;\n"
-	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; float4 g_EnvTint; float4 g_EyePos; };\n"
+	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; float4 g_EnvTint; float4 g_EyePos;\n"
+	"  float4 g_Post; float4 g_PostParams; };\n"
 	"VKB( 6 ) TextureCube g_Envmap : register( t2 ); VKB( 7 ) SamplerState g_EnvSampler : register( s2 );\n"
 	"VKB( 1 ) cbuffer Bones : register( b1 ) { float4 g_Bones[53 * 3]; };\n"
 	"VKB( 2 ) Texture2D g_Texture : register( t0 ); VKB( 3 ) SamplerState g_Sampler : register( s0 );\n"
@@ -96,7 +99,21 @@ static const char s_szShader[] =
 	"  if ( g_Lit > 0.5f ) { n = normalize( n + 1e-6f );\n"
 	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
 	"  return o; }\n"
-	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
+	"float4 PSMain( PSIn i ) : SV_Target {\n"
+	"  if ( g_Post.x > 0.5f ) { float2 t = g_Post.zw; float4 r = float4( 0.0f, 0.0f, 0.0f, 0.0f );\n"
+	"    if ( g_Post.x < 1.5f ) { for ( int k = 0; k < 4; ++k ) {\n"
+	"      float4 p = g_Texture.Sample( g_Sampler, i.uv + float2( ( k == 1 || k == 3 ) ? 2.5f : 0.5f, k >= 2 ? 2.5f : 0.5f ) * t );\n"
+	"      p.rgb = pow( p.rgb, g_PostParams.www ) * dot( p.rgb, g_PostParams.rgb ); r += p * 0.25f; } return r; }\n"
+	"    float2 d = g_Post.x < 2.5f ? float2( t.x, 0.0f ) : float2( 0.0f, t.y );\n"
+	"    r = g_Texture.Sample( g_Sampler, i.uv ) * 0.2013f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 1.3366f ) + g_Texture.Sample( g_Sampler, i.uv - d * 1.3366f ) ) * 0.2185f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 3.4295f ) + g_Texture.Sample( g_Sampler, i.uv - d * 3.4295f ) ) * 0.0821f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 5.4264f ) + g_Texture.Sample( g_Sampler, i.uv - d * 5.4264f ) ) * 0.0461f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 7.4359f ) + g_Texture.Sample( g_Sampler, i.uv - d * 7.4359f ) ) * 0.0262f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 9.4436f ) + g_Texture.Sample( g_Sampler, i.uv - d * 9.4436f ) ) * 0.0162f;\n"
+	"    r += ( g_Texture.Sample( g_Sampler, i.uv + d * 11.4401f ) + g_Texture.Sample( g_Sampler, i.uv - d * 11.4401f ) ) * 0.0102f;\n"
+	"    r.rgb *= g_PostParams.x; return r; }\n"
+	"  float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
 	"  if ( g_EyePos.w > 0.5f ) { float3 v = normalize( i.wpos - g_EyePos.xyz ); float3 rv = reflect( v, normalize( i.wnorm + 1e-6f ) );\n"
 	"    float mask = g_EnvTint.w > 0.5f ? g_Texture.Sample( g_Sampler, i.uv ).a : 1.0f;\n"
@@ -104,7 +121,8 @@ static const char s_szShader[] =
 	"  if ( g_Water.x > 0.5f ) { float2 s = i.pos.xy * g_Water.yz;\n"
 	"    float3 refr = g_Texture.Sample( g_Sampler, s ).rgb * g_RefractTint.rgb;\n"
 	"    float3 refl = g_LightmapTex.Sample( g_LightmapSampler, float2( s.x, 1.0f - s.y ) ).rgb * g_ReflectTint.rgb;\n"
-	"    return float4( lerp( refr, refl, 0.5f ), 1.0f ); }\n"
+	"    float3 eye = normalize( g_EyePos.xyz - i.wpos ); float fresnel = pow( 1.0f - saturate( abs( eye.z ) ), 5.0f );\n"
+	"    return float4( lerp( refr, refl, saturate( 0.2f + 0.8f * fresnel ) ), 1.0f ); }\n"
 	"  if ( g_Shadow > 0.5f ) { float cover = saturate( g_Texture.Sample( g_Sampler, i.uv ).a - i.color.a );\n"
 	"    return float4( 1.0f + cover * ( g_ShadowColor.rgb - 1.0f ), 1.0f ); }\n"
 	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
@@ -178,6 +196,17 @@ void Dx12R_SetBoneMatrices( const float ( *pBones )[12], int nCount )
 	}
 }
 static float s_ShadowColor[4];
+static float s_Post[4], s_PostParams[4];
+
+// Source's LDR bloom passes (see SetPostPass in dx12render.h)
+void Dx12R_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight )
+{
+	s_Post[0] = (float)nMode;
+	s_Post[2] = nTexWidth > 0 ? 1.0f / nTexWidth : 0.0f;
+	s_Post[3] = nTexHeight > 0 ? 1.0f / nTexHeight : 0.0f;
+	for ( int i = 0; i < 4; ++i )
+		s_PostParams[i] = pParams ? pParams[i] : 1.0f;
+}
 
 void Dx12R_SetShadowPass( bool bShadow, const float *pShadowColor )
 {
@@ -186,6 +215,7 @@ void Dx12R_SetShadowPass( bool bShadow, const float *pShadowColor )
 		memcpy( s_ShadowColor, pShadowColor, sizeof( s_ShadowColor ) );
 }
 static float s_Model[16];
+static float s_ViewEye[3];
 static float s_Ambient[6][3];
 static int s_nLights;
 static Dx12Light_t s_Lights[4];
@@ -249,6 +279,9 @@ void Dx12R_SetMatrices( const float *pModel, const float *pView, const float *pP
 	Mul( pModel, pView, mv );
 	Mul( mv, pProj, s_WVP );
 	Mul( pView, pProj, s_VP );
+	// the eye: the inverse of the view matrix's translation (row vectors)
+	for ( int i = 0; i < 3; ++i )
+		s_ViewEye[i] = -( pView[12] * pView[i * 4 + 0] + pView[13] * pView[i * 4 + 1] + pView[14] * pView[i * 4 + 2] );
 }
 
 
@@ -277,7 +310,11 @@ static void FillConstants( Constants_t *pConst, bool bHaveLightmap, int nTargetW
 	memcpy( pConst->m_EyePos, s_EyePos, sizeof( s_EyePos ) );
 	if ( !s_bEnvmap )
 		pConst->m_EyePos[3] = 0.0f;
+	if ( s_bWaterPass )	// water fresnel: the reflection grows toward grazing angles
+		memcpy( pConst->m_EyePos, s_ViewEye, sizeof( s_ViewEye ) );
 	memcpy( pConst->m_MatColor, s_MatColor, sizeof( s_MatColor ) );
+	memcpy( pConst->m_Post, s_Post, sizeof( s_Post ) );
+	memcpy( pConst->m_PostParams, s_PostParams, sizeof( s_PostParams ) );
 	memcpy( pConst->m_VP, s_VP, sizeof( s_VP ) );
 	for ( int i = 0; i < 3; ++i )	// the constant is linear; this shader works in gamma space
 		pConst->m_ShadowColor[i] = powf( s_ShadowColor[i] > 0.0f ? s_ShadowColor[i] : 0.0f, 1.0f / 2.2f );
