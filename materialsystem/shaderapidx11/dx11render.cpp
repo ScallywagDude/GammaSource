@@ -670,6 +670,12 @@ static void ApplyState()
 		ID3D11ShaderResourceView *pEnvSRV = ( pEnvmap && pEnvmap->m_bCube ) ? pEnvmap->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 2, 1, &pEnvSRV );
 		pContext->PSSetSamplers( 2, 1, &s_pSamplers[3] );
+		// t3: the envmap mask (sampled with the base texture's sampler)
+		Texture_t *pMask = GetTexture( s_hEnvMask );
+		if ( pMask && !pMask->m_pSRV ) EnsureResource( pMask );
+		if ( !pMask || !pMask->m_pSRV || pMask->m_bCube ) pMask = GetTexture( s_hWhite );
+		ID3D11ShaderResourceView *pMaskSRV = pMask ? pMask->m_pSRV : NULL;
+		pContext->PSSetShaderResources( 3, 1, &pMaskSRV );
 	}
 
 	pContext->IASetInputLayout( s_pLayout );

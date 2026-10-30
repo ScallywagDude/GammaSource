@@ -117,11 +117,15 @@ public:
 	IMaterial* GetMaterial();
 
 	// static prop lighting: per-vertex colours from another mesh's specular slot
+	// (nVertexOffset is in bytes: pooled colour meshes share one buffer)
 	void SetColorMesh( IMesh *pColorMesh, int nVertexOffset )
 	{
 		m_pColorMesh = static_cast< CEmptyMesh * >( pColorMesh );
+		m_nColorMeshOffset = pColorMesh ? nVertexOffset : 0;
 	}
 	CEmptyMesh *m_pColorMesh;
+	int m_nColorMeshOffset;
+	int m_nStride;		// GLRV_STRIDE, or 4 for colour meshes (specular only, packed)
 
 
 	virtual int IndexCount() const
@@ -264,6 +268,7 @@ public:
 
 	virtual void FogMode( ShaderFogMode_t fogMode )
 	{
+		m_State.m_nFogMode = fogMode;
 	}
 
 	virtual void DisableFogGammaCorrection( bool bDisable )
@@ -920,13 +925,14 @@ public:
 	{
 		return false;
 	}
+	// static props draw with vrad's per-vertex lighting from a colour mesh, plus dynamic lights
 	virtual bool SupportsColorOnSecondStream() const
 	{
-		return false;
+		return true;
 	}
 	virtual bool SupportsStaticPlusDynamicLighting() const
 	{
-		return false;
+		return true;
 	}
 	virtual bool SupportsStreamOffset() const
 	{
@@ -1531,6 +1537,9 @@ IMesh* CShaderDeviceEmpty::CreateStaticMesh( VertexFormat_t fmt, const char *pTe
 {
 	CEmptyMesh *pMesh = new CEmptyMesh( false );
 	pMesh->m_bCacheable = true;
+	// static prop colour meshes: the engine writes 4 byte colours back to back
+	if ( fmt == VERTEX_SPECULAR )
+		pMesh->m_nStride = 4;
 	return pMesh;
 }
 
@@ -1598,6 +1607,8 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_bCacheable = false;
 	m_nVersion = 0;
 	m_pColorMesh = NULL;
+	m_nColorMeshOffset = 0;
+	m_nStride = GLRV_STRIDE;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( GLR_MAX_VERTS );
@@ -1620,10 +1631,10 @@ void CEmptyMesh::EnsureVertices( int nCount )
 {
 	if ( nCount <= m_nVertexCapacity )
 		return;
-	unsigned char *pNew = new unsigned char[GLRV_STRIDE * nCount];
+	unsigned char *pNew = new unsigned char[m_nStride * nCount];
 	if ( m_pVertexMemory )
 	{
-		memcpy( pNew, m_pVertexMemory, GLRV_STRIDE * m_nVertexCapacity );
+		memcpy( pNew, m_pVertexMemory, m_nStride * m_nVertexCapacity );
 		delete[] m_pVertexMemory;
 	}
 	m_pVertexMemory = pNew;
@@ -1682,8 +1693,23 @@ void CEmptyMesh::ValidateData( int nIndexCount, const IndexDesc_t &desc )
 }
 
 // Points a vertex description at interleaved vertices starting at pBase
-static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc )
+static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc, int nStride = GLRV_STRIDE )
 {
+	if ( nStride == 4 )
+	{
+		// a colour mesh: only the specular colour is real; the rest write to scratch
+		static unsigned char s_Scratch[GLRV_STRIDE];
+		SetVertexDesc( s_Scratch, desc );
+		desc.m_VertexSize_Position = desc.m_VertexSize_BoneWeight = desc.m_VertexSize_BoneMatrixIndex = 0;
+		desc.m_VertexSize_Normal = desc.m_VertexSize_Color = desc.m_VertexSize_TangentS = 0;
+		desc.m_VertexSize_TangentT = desc.m_VertexSize_UserData = 0;
+		for ( int i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i )
+			desc.m_VertexSize_TexCoord[i] = 0;
+		desc.m_pSpecular = pBase;
+		desc.m_VertexSize_Specular = 4;
+		desc.m_ActualVertexSize = 4;
+		return;
+	}
 	desc.m_pPosition = (float*)( pBase + GLRV_POSITION );
 	desc.m_pNormal = (float*)( pBase + GLRV_NORMAL );
 	desc.m_pColor = pBase + GLRV_COLOR;
@@ -1721,14 +1747,14 @@ bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 	EnsureVertices( max( nVertexCount, 1 ) );
 	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
 	// Formats without colour or texture coordinates leave those slots alone; make them neutral
-	for ( int v = 0; v < nVertexCount; ++v )
+	for ( int v = 0; m_nStride == GLRV_STRIDE && v < nVertexCount; ++v )
 	{
 		unsigned char *pVert = m_pVertexMemory + v * GLRV_STRIDE;
 		*(unsigned int *)( pVert + GLRV_COLOR ) = 0xFFFFFFFF;
 		memset( pVert + GLRV_TEXCOORD, 0, 8 );
 	}
 
-	SetVertexDesc( m_pVertexMemory, desc );
+	SetVertexDesc( m_pVertexMemory, desc, m_nStride );
 	desc.m_nFirstVertex = 0;
 	desc.m_nOffset = 0;
 	return true;
@@ -1765,7 +1791,7 @@ void CEmptyMesh::ModifyBeginEx( bool bReadOnly, int firstVertex, int numVerts, i
 {
 	firstVertex = max( firstVertex, 0 );
 	EnsureVertices( max( firstVertex + numVerts, 1 ) );
-	SetVertexDesc( m_pVertexMemory + firstVertex * GLRV_STRIDE, *static_cast<VertexDesc_t*>( &desc ) );
+	SetVertexDesc( m_pVertexMemory + firstVertex * m_nStride, *static_cast<VertexDesc_t*>( &desc ), m_nStride );
 	desc.m_nFirstVertex = firstVertex;
 	static_cast<VertexDesc_t&>( desc ).m_nOffset = 0;
 	ModifyBegin( bReadOnly, firstIndex, numIndices, *static_cast<IndexDesc_t*>( &desc ) );
@@ -1841,9 +1867,10 @@ void CEmptyMesh::RenderPass()
 		memcpy( dst.m_Normal, pSrc + GLRV_NORMAL, 12 );
 		memcpy( dst.m_BoneIndex, pSrc + GLRV_BONEINDEX, 4 );
 		memcpy( dst.m_BoneWeight, pSrc + GLRV_BONEWEIGHT, 8 );
-		if ( pColors && v < pColors->m_nVertexCount )
+		int nColorByte = pColors ? m_nColorMeshOffset + v * pColors->m_nStride : 0;
+		if ( pColors && nColorByte + pColors->m_nStride <= pColors->m_nVertexCapacity * pColors->m_nStride )
 		{
-			const unsigned char *s = pColors->m_pVertexMemory + v * GLRV_STRIDE + GLRV_SPECULAR;
+			const unsigned char *s = pColors->m_pVertexMemory + nColorByte + ( pColors->m_nStride == 4 ? 0 : GLRV_SPECULAR );
 			dst.m_Color = s[2] | ( s[1] << 8 ) | ( s[0] << 16 ) | ( 255u << 24 );
 		}
 	}
@@ -2701,14 +2728,21 @@ static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
 
 // $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric) or
 // 2 (LightmappedGeneric); the tint and mask come from the material
-static void ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
+static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 {
 	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) ||
 		Q_stristr( pszShader, "WorldVertexTransition" ) );
-	if ( !bGeneric || !( GlR_IsCubeTexture( GlR_GetBoundTexture( 1 ) ) || GlR_IsCubeTexture( GlR_GetBoundTexture( 2 ) ) ) )
+	// the material must have an envmap: stages keep whatever an earlier material bound there
+	bool bHasEnvmap = false;
+	if ( bGeneric )
+	{
+		IMaterialVar *pEnvmap = pMaterial->FindVar( "$envmap", &bHasEnvmap, false );
+		bHasEnvmap = bHasEnvmap && pEnvmap && pEnvmap->IsDefined() && pEnvmap->IsTexture();
+	}
+	if ( !bHasEnvmap || !( GlR_IsCubeTexture( GlR_GetBoundTexture( 1 ) ) || GlR_IsCubeTexture( GlR_GetBoundTexture( 2 ) ) ) )
 	{
 		GlR_SetEnvmap( false, NULL, 0, NULL );
-		return;
+		return false;
 	}
 	float tint[3] = { 1.0f, 1.0f, 1.0f };
 	bool bFound = false;
@@ -2716,18 +2750,68 @@ static void ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 	if ( bFound && pTint )
 		pTint->GetVecValue( tint, 3 );
 	int nMask = pMaterial->GetMaterialVarFlag( MATERIAL_VAR_BASEALPHAENVMAPMASK ) ? 1 : 0;
+	// the mask's stage: VertexLitGeneric binds $envmapmask on 4 and $bumpmap on 3,
+	// LightmappedGeneric / WorldVertexTransition $envmapmask on 5 and $bumpmap on 4
+	bool bVertexLit = Q_stristr( pszShader, "VertexLitGeneric" ) != NULL;
+	int hMask = 0;
+	IMaterialVar *pEnvMask = pMaterial->FindVar( "$envmapmask", &bFound, false );
+	if ( bFound && pEnvMask && pEnvMask->IsTexture() && pEnvMask->GetTextureValue() && !nMask )
+	{
+		hMask = GlR_GetBoundTexture( bVertexLit ? 4 : 5 );
+		nMask = hMask ? 2 : 0;
+	}
+	if ( !nMask && pMaterial->GetMaterialVarFlag( MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK ) )
+	{
+		hMask = GlR_GetBoundTexture( bVertexLit ? 3 : 4 );
+		nMask = hMask ? 3 : 0;
+	}
 
 	// the eye: the inverse of the view matrix's translation (row vectors)
 	float *v = CurMatrix( MATERIAL_VIEW );
 	float eye[3];
 	for ( int i = 0; i < 3; ++i )
 		eye[i] = -( v[12] * v[i * 4 + 0] + v[13] * v[i * 4 + 1] + v[14] * v[i * 4 + 2] );
-	GlR_SetEnvmap( true, tint, nMask, eye );
+	GlR_SetEnvmap( true, tint, nMask, eye, hMask );
+	float flContrast = 0.0f, flSaturation = 1.0f;
+	IMaterialVar *pVar = pMaterial->FindVar( "$envmapcontrast", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() )
+		flContrast = pVar->GetFloatValue();
+	pVar = pMaterial->FindVar( "$envmapsaturation", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() )
+		flSaturation = pVar->GetFloatValue();
+	GlR_SetEnvmapParams( flContrast, flSaturation );
+	return nMask >= 2;
+}
+
+// $selfillum on the generic shaders (after ApplyEnvmap, which may claim t3 for its mask)
+static void ApplySelfIllum( IMaterialInternal *pMaterial, const char *pszShader, bool bEnvmapMask )
+{
+	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) );
+	if ( !bGeneric || !pMaterial->GetMaterialVarFlag( MATERIAL_VAR_SELFILLUM ) )
+	{
+		GlR_SetSelfIllum( 0, NULL, 0 );
+		return;
+	}
+	float tint[3] = { 1.0f, 1.0f, 1.0f };
+	bool bFound = false;
+	IMaterialVar *pTint = pMaterial->FindVar( "$selfillumtint", &bFound, false );
+	if ( bFound && pTint && pTint->IsDefined() )
+		pTint->GetVecValue( tint, 3 );
+	// VertexLitGeneric binds $selfillummask on stage 11
+	int nMask = 1, hMask = 0;
+	IMaterialVar *pMaskVar = pMaterial->FindVar( "$selfillummask", &bFound, false );
+	if ( bFound && pMaskVar && pMaskVar->IsDefined() && pMaskVar->IsTexture() && !bEnvmapMask && Q_stristr( pszShader, "VertexLitGeneric" ) )
+	{
+		hMask = GlR_GetBoundTexture( 11 );
+		if ( hMask )
+			nMask = 2;
+	}
+	GlR_SetSelfIllum( nMask, tint, hMask );
 }
 
 static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
 {
-	if ( !pMaterial || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_SELFILLUM ) )
+	if ( !pMaterial )
 		return false;
 	const char *pszShader = pMaterial->GetShaderName();
 	return pszShader && ( Q_stristr( pszShader, "VertexLit" ) || Q_stristr( pszShader, "Eye" ) ||
@@ -2968,13 +3052,15 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 	{
 		UpdateMatrices();
 		// only vertex lit shaders light per vertex (world shaders use lightmaps, unlit ones
-		// nothing); static props carry baked lighting in a colour mesh instead
-		if ( s_pRenderMesh->m_pColorMesh || !IsVertexLitMaterial( s_pBoundMaterial ) )
+		// nothing); static props add vrad's baked lighting from their colour mesh
+		bool bVertexLit = IsVertexLitMaterial( s_pBoundMaterial );
+		if ( !bVertexLit )
 			ResetPassLighting();
 		ApplyLighting();
+		GlR_SetStaticLight( bVertexLit && s_pRenderMesh->m_pColorMesh != NULL );
 		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
 		GlR_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
-		ApplyEnvmap( s_pBoundMaterial, pszShader );
+		ApplySelfIllum( s_pBoundMaterial, pszShader, ApplyEnvmap( s_pBoundMaterial, pszShader ) );
 		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && GlR_IsRenderTargetTexture( GlR_GetBoundTexture( 0 ) );
@@ -3000,7 +3086,7 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		if ( nPost )
 			GlR_GetTextureSize( GlR_GetBoundTexture( 0 ), nPostW, nPostH );
 		GlR_SetPostPass( nPost, postParams, nPostW, nPostH );
-		ApplyVertexColorUse( s_pBoundMaterial, s_pRenderMesh->m_pColorMesh != NULL );
+		ApplyVertexColorUse( s_pBoundMaterial, false );
 		s_pRenderMesh->RenderPass();
 		// the next pass binds its own lightmap / lighting if it has them
 		GlR_BindLightmap( 0 );
@@ -3162,48 +3248,75 @@ void CShaderAPIEmpty::ScaleXY( float x, float y )
 {
 }
 
-// Fog methods...
+// Fog methods... GammaSource: the scene fog, handed to the renderer (linear; height fog
+// below fog Z is drawn as linear fog)
+static MaterialFogMode_t s_FogMode = MATERIAL_FOG_NONE;
+static float s_flFogStart, s_flFogEnd, s_flFogZ, s_flFogMaxDensity = 1.0f;
+static unsigned char s_FogColor[3];
+
+static void UpdateSceneFog()
+{
+	GlR_SetSceneFog( s_FogMode != MATERIAL_FOG_NONE, s_flFogStart, s_flFogEnd, s_flFogMaxDensity, s_FogColor );
+}
+
 void CShaderAPIEmpty::FogMode( MaterialFogMode_t fogMode )
 {
+	s_FogMode = fogMode;
+	UpdateSceneFog();
 }
 
 void CShaderAPIEmpty::FogStart( float fStart )
 {
+	s_flFogStart = fStart;
+	UpdateSceneFog();
 }
 
 void CShaderAPIEmpty::FogEnd( float fEnd )
 {
+	s_flFogEnd = fEnd;
+	UpdateSceneFog();
 }
 
 void CShaderAPIEmpty::SetFogZ( float fogZ )
 {
+	s_flFogZ = fogZ;
 }
-	
+
 void CShaderAPIEmpty::FogMaxDensity( float flMaxDensity )
 {
+	s_flFogMaxDensity = flMaxDensity;
+	UpdateSceneFog();
 }
 
 void CShaderAPIEmpty::GetFogDistances( float *fStart, float *fEnd, float *fFogZ )
 {
+	if ( fStart ) *fStart = s_flFogStart;
+	if ( fEnd ) *fEnd = s_flFogEnd;
+	if ( fFogZ ) *fFogZ = s_flFogZ;
 }
 
 
 void CShaderAPIEmpty::SceneFogColor3ub( unsigned char r, unsigned char g, unsigned char b )
 {
+	s_FogColor[0] = r; s_FogColor[1] = g; s_FogColor[2] = b;
+	UpdateSceneFog();
 }
 
 
 void CShaderAPIEmpty::SceneFogMode( MaterialFogMode_t fogMode )
 {
+	s_FogMode = fogMode;
+	UpdateSceneFog();
 }
 
 void CShaderAPIEmpty::GetSceneFogColor( unsigned char *rgb )
 {
+	if ( rgb ) { rgb[0] = s_FogColor[0]; rgb[1] = s_FogColor[1]; rgb[2] = s_FogColor[2]; }
 }
 
 MaterialFogMode_t CShaderAPIEmpty::GetSceneFogMode( )
 {
-	return MATERIAL_FOG_NONE;
+	return s_FogMode;
 }
 
 int CShaderAPIEmpty::GetPixelFogCombo( )
@@ -3213,18 +3326,22 @@ int CShaderAPIEmpty::GetPixelFogCombo( )
 
 void CShaderAPIEmpty::FogColor3f( float r, float g, float b )
 {
+	FogColor3ub( (unsigned char)clamp( r * 255.0f, 0.0f, 255.0f ), (unsigned char)clamp( g * 255.0f, 0.0f, 255.0f ), (unsigned char)clamp( b * 255.0f, 0.0f, 255.0f ) );
 }
 
 void CShaderAPIEmpty::FogColor3fv( float const* rgb )
 {
+	FogColor3f( rgb[0], rgb[1], rgb[2] );
 }
 
 void CShaderAPIEmpty::FogColor3ub( unsigned char r, unsigned char g, unsigned char b )
 {
+	SceneFogColor3ub( r, g, b );
 }
 
 void CShaderAPIEmpty::FogColor3ubv( unsigned char const* rgb )
 {
+	FogColor3ub( rgb[0], rgb[1], rgb[2] );
 }
 
 void CShaderAPIEmpty::SetViewports( int nCount, const ShaderViewport_t* pViewports )
@@ -3713,7 +3830,7 @@ void CShaderAPIEmpty::GetDX9LightState( LightState_t *state ) const
 
 MaterialFogMode_t CShaderAPIEmpty::GetCurrentFogType( void ) const
 {
-	return MATERIAL_FOG_NONE;
+	return s_FogMode;
 }
 
 void CShaderAPIEmpty::RecordString( const char *pStr )

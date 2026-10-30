@@ -1210,6 +1210,11 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube, pTarget );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;
+	// t3: the envmap mask, else white
+	Texture_t *pMask = SampleableTexture( s_hEnvMask, pTarget );
+	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite, pTarget );
+	if ( !pMask )
+		return;
 
 	// vertex data: cached for static meshes, streamed otherwise
 	GLuint nVB = 0;
@@ -1266,6 +1271,9 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	glBindTexture( GL_TEXTURE_2D, pSecond->m_nTexture );
 	glActiveTexture_( GL_TEXTURE0 + 2 );
 	glBindTexture( GL_TEXTURE_CUBE_MAP, pEnvmap->m_nTexture );
+	glActiveTexture_( GL_TEXTURE0 + 3 );
+	glBindTexture( GL_TEXTURE_2D, pMask->m_nTexture );
+	glBindSampler_( 3, s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )] );	// as the HLSL: the base's sampler
 	glBindBufferRange_( GL_UNIFORM_BUFFER, 0, nCB, nCBOffset, sizeof( Constants_t ) );
 	glBindBufferRange_( GL_UNIFORM_BUFFER, 1, s_nBoneBuffer, s_nBoneOffset, sizeof( s_Bones ) );
 

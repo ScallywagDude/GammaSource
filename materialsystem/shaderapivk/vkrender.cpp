@@ -68,7 +68,7 @@ VK_DEVICE_FUNCS( VK_DECLARE )
 //-----------------------------------------------------------------------------
 // Device state
 //-----------------------------------------------------------------------------
-enum { FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096 };
+enum { DESCRIPTORS = 9, FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096 };
 
 static VkInstance s_Instance;
 static VkPhysicalDevice s_PhysicalDevice;
@@ -1159,15 +1159,16 @@ bool VkR_Init()
 	if ( vkCreateShaderModule_( s_Device, &smci, NULL, &s_FS ) != VK_SUCCESS )
 		return false;
 
-	// the shader's [[vk::binding]]s: constants, bones, then texture/sampler pairs t0 t1 t2 (cube)
-	static const VkDescriptorType s_Types[8] =
+	// the shader's [[vk::binding]]s: constants, bones, then texture/sampler pairs t0 t1 t2 (cube),
+	// then t3 (the envmap mask, sampled with s0)
+	static const VkDescriptorType s_Types[DESCRIPTORS] =
 	{
 		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER,
-		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER
+		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
 	};
-	VkDescriptorSetLayoutBinding bindings[8] = {};
-	for ( int i = 0; i < 8; ++i )
+	VkDescriptorSetLayoutBinding bindings[DESCRIPTORS] = {};
+	for ( int i = 0; i < DESCRIPTORS; ++i )
 	{
 		bindings[i].binding = i;
 		bindings[i].descriptorType = s_Types[i];
@@ -1175,7 +1176,7 @@ bool VkR_Init()
 		bindings[i].stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 	}
 	VkDescriptorSetLayoutCreateInfo dslci = { VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO };
-	dslci.bindingCount = 8; dslci.pBindings = bindings;
+	dslci.bindingCount = DESCRIPTORS; dslci.pBindings = bindings;
 	if ( vkCreateDescriptorSetLayout_( s_Device, &dslci, NULL, &s_SetLayout ) != VK_SUCCESS )
 		return false;
 	VkPipelineLayoutCreateInfo plci = { VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
@@ -1624,7 +1625,7 @@ static VkDescriptorSet AllocateSet()
 		{
 			VkDescriptorPoolSize sizes[3] =
 			{
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 3 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLER, 3 * 4096 }
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLER, 3 * 4096 }
 			};
 			VkDescriptorPoolCreateInfo dpci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
 			dpci.maxSets = 4096;
@@ -1700,7 +1701,14 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( s_bEnvmap )
 		pEnvmap = SampleableTexture( VkR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2 );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube );
-	if ( !pTex || !pSecond || !pEnvmap || !BeginPass() )
+	if ( !pTex || !pSecond || !pEnvmap )
+		return;
+	// t3: the envmap mask, else white
+	Texture_t *pMask = SampleableTexture( s_hEnvMask );
+	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite );
+	if ( !pMask )
+		return;
+	if ( !BeginPass() )
 		return;
 
 	// per-draw constants and the bone matrices, from this frame's streaming memory
@@ -1718,15 +1726,16 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( !set )
 		return;
 	VkDescriptorBufferInfo buffers[2] = { { cbuf, nCBOffset, sizeof( Constants_t ) }, { bonebuf, nBoneOffset, sizeof( s_Bones ) } };
-	VkDescriptorImageInfo images[6] = {};
+	VkDescriptorImageInfo images[7] = {};
 	images[0].imageView = pTex->m_View; images[0].imageLayout = pTex->m_Layout;
 	images[1].sampler = s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )];
 	images[2].imageView = pSecond->m_View; images[2].imageLayout = pSecond->m_Layout;
 	images[3].sampler = s_Samplers[3];
 	images[4].imageView = pEnvmap->m_View; images[4].imageLayout = pEnvmap->m_Layout;
 	images[5].sampler = s_Samplers[3];
-	VkWriteDescriptorSet writes[8] = {};
-	for ( int i = 0; i < 8; ++i )
+	images[6].imageView = pMask->m_View; images[6].imageLayout = pMask->m_Layout;
+	VkWriteDescriptorSet writes[DESCRIPTORS] = {};
+	for ( int i = 0; i < DESCRIPTORS; ++i )
 	{
 		writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writes[i].dstSet = set;
@@ -1739,11 +1748,11 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 		}
 		else
 		{
-			writes[i].descriptorType = ( i & 1 ) ? VK_DESCRIPTOR_TYPE_SAMPLER : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			writes[i].descriptorType = ( i & 1 ) ? VK_DESCRIPTOR_TYPE_SAMPLER : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;	// 8: t3
 			writes[i].pImageInfo = &images[i - 2];
 		}
 	}
-	vkUpdateDescriptorSets_( s_Device, 8, writes, 0, NULL );
+	vkUpdateDescriptorSets_( s_Device, DESCRIPTORS, writes, 0, NULL );
 
 	VkPipeline pipeline = GetPipeline( type );
 	if ( !pipeline )

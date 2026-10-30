@@ -55,6 +55,7 @@ struct GlRState_t
 	bool m_bVertexColor;	// the pass's vertex format has colours
 	bool m_bNoColorWrites;	// EnableColorWrites( false ): depth-only / occlusion proxy passes
 	bool m_bNoAlphaWrites;
+	int m_nFogMode;			// ShaderFogMode_t
 };
 
 enum GlRPrimitive_t
@@ -68,8 +69,9 @@ void GlR_Shutdown();
 int  GlR_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget = false, bool bCube = false );
 void GlR_TexImageFace( int hTexture, int nFace, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA );
 bool GlR_IsCubeTexture( int hTexture );
-// envmap reflection for this pass (the cube bound on stage 1 or 2): tint rgb, nMask 1 = base alpha masks it
-void GlR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos );
+// envmap reflection for this pass (the cube bound on stage 1 or 2): tint rgb; nMask 0 none, 1 base alpha,
+// 2 hMask's rgb ($envmapmask), 3 hMask's alpha (the normal map's: $normalmapalphaenvmapmask)
+void GlR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos, int hMask = 0 );
 void GlR_DeleteTexture( int hTexture );
 bool GlR_IsTexture( int hTexture );
 void GlR_TexImage( int hTexture, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA );
@@ -104,6 +106,13 @@ int  GlR_GetQueryResult( int hQuery, bool bFlush );
 // Source's LDR bloom: nMode 1 Downsample_nohdr (pParams = its c0: luminance weights, exponent),
 // 2 BlurFilterX, 3 BlurFilterY (pParams[0] = bloom amount); 0 off. The size is the source texture's.
 void GlR_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight );
+// the scene's fog (linear in view depth); each pass's m_nFogMode picks what it fades to
+void GlR_SetSceneFog( bool bEnable, float flStart, float flEnd, float flMaxDensity, const unsigned char *pColor );
+// $selfillum: nMask 0 off, 1 base alpha, 2 hMask's red ($selfillummask); pTint = $selfillumtint
+void GlR_SetSelfIllum( int nMask, const float *pTint, int hMask );
+// static props: the vertex colour (from the colour mesh) is baked light, added to the dynamic lights
+void GlR_SetStaticLight( bool bStatic );
+void GlR_SetEnvmapParams( float flContrast, float flSaturation );
 void GlR_SetShadowPass( bool bShadow, const float *pShadowColor );
 void GlR_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const GlRLight_t *pLights );
 

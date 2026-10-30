@@ -36,7 +36,7 @@
 // Device state
 //-----------------------------------------------------------------------------
 enum { FRAMES = 2, SWAP_BUFFERS = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096,
-	VIEW_RING = 3 * 32768, HEAP_CHUNK = 1024 };
+	DRAW_VIEWS = 4, VIEW_RING = DRAW_VIEWS * 32768, HEAP_CHUNK = 1024 };
 
 static HMODULE s_hD3D12;
 static PFN_D3D12_SERIALIZE_ROOT_SIGNATURE s_pfnSerializeRootSignature;
@@ -1094,8 +1094,8 @@ bool Dx12R_Init()
 	if ( !s_pVS || !s_pPS )
 		return false;
 
-	// constants b0, bones b1, textures t0-t2; s0 follows the texture's wrap mode, s1 s2 clamp
-	D3D12_DESCRIPTOR_RANGE srvRange = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0, 0, 0 };
+	// constants b0, bones b1, textures t0-t3 (t3 uses s0); s0 follows the texture's wrap mode, s1 s2 clamp
+	D3D12_DESCRIPTOR_RANGE srvRange = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, DRAW_VIEWS, 0, 0, 0 };
 	D3D12_DESCRIPTOR_RANGE samplerRange = { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0, 0, 0 };
 	D3D12_ROOT_PARAMETER params[4] = {};
 	params[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_CBV;
@@ -1574,7 +1574,7 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 	if ( !s_pRootSignature || nVerts <= 0 )
 		return;
 	BeginRecording();
-	if ( StreamUsed() > 256 * 1024 * 1024 || s_nViewUsed[s_nFrame] + 3 > VIEW_RING )
+	if ( StreamUsed() > 256 * 1024 * 1024 || s_nViewUsed[s_nFrame] + DRAW_VIEWS > VIEW_RING )
 		SubmitAndWait();
 	Texture_t *pTarget = CurrentTarget();
 	if ( !pTarget->m_pResource )
@@ -1592,6 +1592,11 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 		pEnvmap = SampleableTexture( Dx12R_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2, pTarget );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube, pTarget );
 	if ( !pTex || !pSecond || !pEnvmap )
+		return;
+	// t3: the envmap mask, else white
+	Texture_t *pMask = SampleableTexture( s_hEnvMask, pTarget );
+	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite, pTarget );
+	if ( !pMask )
 		return;
 
 	// vertex data: cached for static meshes, streamed otherwise
@@ -1628,8 +1633,8 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 		ibv.Format = DXGI_FORMAT_R16_UINT;
 	}
 
-	Texture_t *pTextures[3] = { pTex, pSecond, pEnvmap };
-	for ( int i = 0; i < 3; ++i )
+	Texture_t *pTextures[DRAW_VIEWS] = { pTex, pSecond, pEnvmap, pMask };
+	for ( int i = 0; i < DRAW_VIEWS; ++i )
 		Transition( pTextures[i]->m_pResource, pTextures[i]->m_State, s_SampleState );
 	if ( !BindTarget() )
 		return;
@@ -1653,12 +1658,12 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 
 	// the textures' views go into this frame's shader-visible ring
 	UINT nView = s_nViewUsed[s_nFrame];
-	s_nViewUsed[s_nFrame] += 3;
+	s_nViewUsed[s_nFrame] += DRAW_VIEWS;
 	D3D12_CPU_DESCRIPTOR_HANDLE viewCPU = s_pViewHeaps[s_nFrame]->GetCPUDescriptorHandleForHeapStart();
 	D3D12_GPU_DESCRIPTOR_HANDLE viewGPU = s_pViewHeaps[s_nFrame]->GetGPUDescriptorHandleForHeapStart();
 	viewCPU.ptr += (SIZE_T)nView * s_nViewIncrement;
 	viewGPU.ptr += (UINT64)nView * s_nViewIncrement;
-	for ( int i = 0; i < 3; ++i )
+	for ( int i = 0; i < DRAW_VIEWS; ++i )
 	{
 		D3D12_CPU_DESCRIPTOR_HANDLE dst = viewCPU;
 		dst.ptr += (SIZE_T)i * s_nViewIncrement;

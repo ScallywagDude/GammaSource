@@ -55,6 +55,7 @@ g = sub('Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSample
         'layout( binding = 1 ) uniform sampler2D g_LightmapTex;', g)
 g = sub('TextureCube g_Envmap : register( t2 ); SamplerState g_EnvSampler : register( s2 );',
         'layout( binding = 2 ) uniform samplerCube g_Envmap;', g)
+g = sub('Texture2D g_MaskTex : register( t3 );', 'layout( binding = 3 ) uniform sampler2D g_MaskTex;', g)
 g = re.sub(r'(\w+)\.Sample\( \w+, ', r'texture( \1, ', g)
 # semantics go; the entry points become plain functions called from main()
 g = re.sub(r'\s*:\s*(SV_\w+|POSITION|COLOR|TEXCOORD\d|NORMAL|BLENDINDICES|BLENDWEIGHT)\b', '', g)
@@ -63,7 +64,6 @@ g = sub('[unroll] ', '', g)
 # what GLSL types or overloads differently
 g = sub('n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 )', 'mix( int3( 0, 2, 4 ), int3( 1, 3, 5 ), lessThan( n, float3( 0.0f ) ) )', g)
 g = sub('lerp( 1.0f, v.color, g_VColorUse.xxxy )', 'lerp( float4( 1.0f ), v.color, g_VColorUse.xxxy )', g)
-g = sub('pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f )', 'pow( saturate( Lighting( p, n ) ), float3( 1.0f / 2.2f ) )', g)
 g = sub('(float3x3)g_Model', 'float3x3( g_Model )', g)
 # the vertex and pixel halves
 vs_at = g.index('PSIn VSMain(')
@@ -94,17 +94,17 @@ layout( location = 3 ) in vec2 a_uv2;
 layout( location = 4 ) in vec3 a_normal;
 layout( location = 5 ) in ivec4 a_bones;
 layout( location = 6 ) in vec2 a_weights;
-out vec4 v_color; out vec2 v_uv; out vec2 v_uv2; out vec3 v_wpos; out vec3 v_wnorm;
+out vec4 v_color; out vec2 v_uv; out vec2 v_uv2; out vec3 v_wpos; out vec3 v_wnorm; out float v_fogz;
 void main() { VSIn v; v.pos = a_pos; v.color = a_color; v.uv = a_uv; v.uv2 = a_uv2; v.normal = a_normal; v.bones = a_bones; v.weights = a_weights;
   PSIn o = VSMain( v );
   gl_Position = vec4( o.pos.x, -o.pos.y, o.pos.z, o.pos.w );
   gl_ClipDistance[0] = o.clip.x; gl_ClipDistance[1] = o.clip.y;
-  v_color = o.color; v_uv = o.uv; v_uv2 = o.uv2; v_wpos = o.wpos; v_wnorm = o.wnorm; }
+  v_color = o.color; v_uv = o.uv; v_uv2 = o.uv2; v_wpos = o.wpos; v_wnorm = o.wnorm; v_fogz = o.fogz; }
 #endif
 #ifdef GAMMA_PS
-in vec4 v_color; in vec2 v_uv; in vec2 v_uv2; in vec3 v_wpos; in vec3 v_wnorm;
+in vec4 v_color; in vec2 v_uv; in vec2 v_uv2; in vec3 v_wpos; in vec3 v_wnorm; in float v_fogz;
 layout( location = 0 ) out vec4 o_target;
-void main() { PSIn i; i.pos = gl_FragCoord; i.color = v_color; i.uv = v_uv; i.uv2 = v_uv2; i.clip = vec2( 0.0f ); i.wpos = v_wpos; i.wnorm = v_wnorm;
+void main() { PSIn i; i.pos = gl_FragCoord; i.color = v_color; i.uv = v_uv; i.uv2 = v_uv2; i.clip = vec2( 0.0f ); i.wpos = v_wpos; i.wnorm = v_wnorm; i.fogz = v_fogz;
   o_target = PSMain( i ); }
 #endif
 """

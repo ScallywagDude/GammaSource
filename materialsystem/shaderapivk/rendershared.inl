@@ -53,6 +53,10 @@ struct Constants_t
 	float m_EyePos[4];			// w = 1: envmap on
 	float m_Post[4];			// x: 1 bloom downsample, 2 blur x, 3 blur y; zw source texel size
 	float m_PostParams[4];		// downsample: luminance weights + exponent; blur: x bloom amount
+	float m_Fog[4];				// start, 1 / ( end - start ), max density, on
+	float m_FogColor[4];
+	float m_SelfIllum[4];		// rgb tint; w 1: base alpha masks it, 2: t3's red does
+	float m_EnvParams[4];		// $envmapcontrast, $envmapsaturation
 };
 
 static const char s_szShader[] =
@@ -62,17 +66,18 @@ static const char s_szShader[] =
 	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; float4 g_ShadowColor; float g_Shadow; float g_Skin; float2 g_Pad2;\n"
 	"  float4 g_VColorUse; float4 g_MatColor;\n"
 	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; float4 g_EnvTint; float4 g_EyePos;\n"
-	"  float4 g_Post; float4 g_PostParams; };\n"
+	"  float4 g_Post; float4 g_PostParams; float4 g_Fog; float4 g_FogColor; float4 g_SelfIllum; float4 g_EnvParams; };\n"
 	"VKB( 6 ) TextureCube g_Envmap : register( t2 ); VKB( 7 ) SamplerState g_EnvSampler : register( s2 );\n"
 	"VKB( 1 ) cbuffer Bones : register( b1 ) { float4 g_Bones[53 * 3]; };\n"
 	"VKB( 2 ) Texture2D g_Texture : register( t0 ); VKB( 3 ) SamplerState g_Sampler : register( s0 );\n"
+	"VKB( 8 ) Texture2D g_MaskTex : register( t3 );\n"
 	"VKB( 4 ) Texture2D g_LightmapTex : register( t1 ); VKB( 5 ) SamplerState g_LightmapSampler : register( s1 );\n"
 	"struct VSIn { float3 pos : POSITION; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float3 normal : NORMAL;\n"
 	"  uint4 bones : BLENDINDICES; float2 weights : BLENDWEIGHT; };\n"
 	"float3 SkinPos( int b, float3 p ) { return float3( dot( g_Bones[b * 3], float4( p, 1 ) ), dot( g_Bones[b * 3 + 1], float4( p, 1 ) ), dot( g_Bones[b * 3 + 2], float4( p, 1 ) ) ); }\n"
 	"float3 SkinDir( int b, float3 d ) { return float3( dot( g_Bones[b * 3].xyz, d ), dot( g_Bones[b * 3 + 1].xyz, d ), dot( g_Bones[b * 3 + 2].xyz, d ) ); }\n"
 	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float2 clip : SV_ClipDistance0;\n"
-	"  float3 wpos : TEXCOORD2; float3 wnorm : TEXCOORD3; };\n"
+	"  float3 wpos : TEXCOORD2; float3 wnorm : TEXCOORD3; float fogz : TEXCOORD4; };\n"
 	"float3 AmbientCube( float3 n ) { float3 s = n * n; int3 i = n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 );\n"
 	"  return s.x * g_Ambient[i.x].rgb + s.y * g_Ambient[i.y].rgb + s.z * g_Ambient[i.z].rgb; }\n"
 	"float3 Lighting( float3 p, float3 n ) { float3 l = AmbientCube( n );\n"
@@ -94,10 +99,11 @@ static const char s_szShader[] =
 	"    n = SkinDir( v.bones.x, v.normal ) * w.x + SkinDir( v.bones.y, v.normal ) * w.y + SkinDir( v.bones.z, v.normal ) * w.z;\n"
 	"    o.pos = mul( float4( p, 1.0f ), g_VP ); }\n"
 	"  else { o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; n = mul( v.normal, (float3x3)g_Model ); }\n"
-	"  o.wpos = p; o.wnorm = n;\n"
+	"  o.wpos = p; o.wnorm = n; o.fogz = o.pos.w;\n"
 	"  o.clip = float2( dot( g_Clip[0].xyz, p ) - g_Clip[0].w, dot( g_Clip[1].xyz, p ) - g_Clip[1].w );\n"
 	"  if ( g_Lit > 0.5f ) { n = normalize( n + 1e-6f );\n"
-	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
+	"    float3 L = Lighting( p, n ); if ( g_Lit > 1.5f ) L += pow( v.color.rgb * 2.0f, float3( 2.2f, 2.2f, 2.2f ) );\n"
+	"    o.color.rgb *= pow( saturate( L ), float3( 1.0f / 2.2f, 1.0f / 2.2f, 1.0f / 2.2f ) ); }\n"
 	"  return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target {\n"
 	"  if ( g_Post.x > 0.5f ) { float2 t = g_Post.zw; float4 r = float4( 0.0f, 0.0f, 0.0f, 0.0f );\n"
@@ -115,28 +121,45 @@ static const char s_szShader[] =
 	"    r.rgb *= g_PostParams.x; return r; }\n"
 	"  float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
+	"  if ( g_SelfIllum.w > 0.5f ) { float4 sb = g_Texture.Sample( g_Sampler, i.uv );\n"
+	"    float sm = g_SelfIllum.w > 1.5f ? g_MaskTex.Sample( g_Sampler, i.uv ).r : sb.a;\n"
+	"    c.rgb = lerp( c.rgb, sb.rgb * g_SelfIllum.rgb, sm ); c.a = i.color.a; }\n"
 	"  if ( g_EyePos.w > 0.5f ) { float3 v = normalize( i.wpos - g_EyePos.xyz ); float3 rv = reflect( v, normalize( i.wnorm + 1e-6f ) );\n"
-	"    float mask = g_EnvTint.w > 0.5f ? g_Texture.Sample( g_Sampler, i.uv ).a : 1.0f;\n"
-	"    c.rgb += g_Envmap.Sample( g_EnvSampler, rv ).rgb * g_EnvTint.rgb * mask; }\n"
+	"    float4 m = g_MaskTex.Sample( g_Sampler, i.uv ); float4 b = g_Texture.Sample( g_Sampler, i.uv );\n"
+	"    float3 mask = g_EnvTint.w > 2.5f ? m.aaa : ( g_EnvTint.w > 1.5f ? m.rgb : ( g_EnvTint.w > 0.5f ? 1.0f - b.aaa : float3( 1.0f, 1.0f, 1.0f ) ) );\n"
+	"    float3 spec = g_Envmap.Sample( g_EnvSampler, rv ).rgb * g_EnvTint.rgb * mask; spec = lerp( spec, spec * spec, g_EnvParams.x );\n"
+	"    float grey = dot( spec, float3( 0.299f, 0.587f, 0.114f ) ); c.rgb += lerp( float3( grey, grey, grey ), spec, g_EnvParams.y ); }\n"
 	"  if ( g_Water.x > 0.5f ) { float2 s = i.pos.xy * g_Water.yz;\n"
 	"    float3 refr = g_Texture.Sample( g_Sampler, s ).rgb * g_RefractTint.rgb;\n"
 	"    float3 refl = g_LightmapTex.Sample( g_LightmapSampler, float2( s.x, 1.0f - s.y ) ).rgb * g_ReflectTint.rgb;\n"
 	"    float3 eye = normalize( g_EyePos.xyz - i.wpos ); float fresnel = pow( 1.0f - saturate( abs( eye.z ) ), 5.0f );\n"
-	"    return float4( lerp( refr, refl, saturate( 0.2f + 0.8f * fresnel ) ), 1.0f ); }\n"
+	"    return float4( lerp( lerp( refr, refl, saturate( 0.2f + 0.8f * fresnel ) ), g_FogColor.rgb, ( g_Fog.w > 0.5f ? saturate( ( i.fogz - g_Fog.x ) * g_Fog.y ) * g_Fog.z : 0.0f ) ), 1.0f ); }\n"
 	"  if ( g_Shadow > 0.5f ) { float cover = saturate( g_Texture.Sample( g_Sampler, i.uv ).a - i.color.a );\n"
 	"    return float4( 1.0f + cover * ( g_ShadowColor.rgb - 1.0f ), 1.0f ); }\n"
-	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef ); return c; }\n";
+	"  if ( g_AlphaTest > 0.5f ) clip( c.a - g_AlphaRef );\n"
+	"  c.rgb = lerp( c.rgb, g_FogColor.rgb, ( g_Fog.w > 0.5f ? saturate( ( i.fogz - g_Fog.x ) * g_Fog.y ) * g_Fog.z : 0.0f ) ); return c; }\n";
 
 
 static int s_hLightmap;
-static int s_hStage2;
-static int s_hStage1;
+static int s_hStages[16];		// what each sampler stage has bound (0 is s_hBound)
+#define s_hStage1 s_hStages[1]
+#define s_hStage2 s_hStages[2]
 static bool s_bEnvmap;
+static int s_hEnvMask;			// t3: the envmap mask texture
 static float s_EnvTint[4], s_EyePos[4];
+static float s_EnvParams[4] = { 0.0f, 1.0f, 0.0f, 0.0f };
 
-void VkR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos )
+// after SetEnvmap: $envmapcontrast (0 as is, 1 squared) and $envmapsaturation (0 grey, 1 as is)
+void VkR_SetEnvmapParams( float flContrast, float flSaturation )
+{
+	s_EnvParams[0] = flContrast;
+	s_EnvParams[1] = flSaturation;
+}
+
+void VkR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos, int hMask )
 {
 	s_bEnvmap = bEnable;
+	s_hEnvMask = bEnable ? hMask : 0;
 	if ( !bEnable )
 		return;
 	for ( int i = 0; i < 3; ++i )
@@ -145,9 +168,17 @@ void VkR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pE
 		s_EyePos[i] = pEyePos ? pEyePos[i] : 0.0f;
 	}
 	s_EnvTint[3] = (float)nMask;
+	s_EnvParams[0] = 0.0f;
+	s_EnvParams[1] = 1.0f;
 	s_EyePos[3] = 1.0f;
 }
 static bool s_bLit;
+static bool s_bStaticLight;		// the vertex colour is vrad's light (a static prop's colour mesh)
+
+void VkR_SetStaticLight( bool bStatic )
+{
+	s_bStaticLight = bStatic;
+}
 static bool s_bShadowPass;
 
 
@@ -197,6 +228,28 @@ void VkR_SetBoneMatrices( const float ( *pBones )[12], int nCount )
 }
 static float s_ShadowColor[4];
 static float s_Post[4], s_PostParams[4];
+static float s_SelfIllum[4];
+
+// $selfillum: nMask 1 base alpha, 2 hMask (bound on t3, so only without an envmap mask)
+void VkR_SetSelfIllum( int nMask, const float *pTint, int hMask )
+{
+	for ( int i = 0; i < 3; ++i )
+		s_SelfIllum[i] = pTint ? pTint[i] : 1.0f;
+	s_SelfIllum[3] = (float)nMask;
+	if ( nMask == 2 )
+		s_hEnvMask = hMask;
+}
+static float s_SceneFog[4], s_SceneFogColor[3];	// see VkR_SetSceneFog
+
+void VkR_SetSceneFog( bool bEnable, float flStart, float flEnd, float flMaxDensity, const unsigned char *pColor )
+{
+	s_SceneFog[0] = flStart;
+	s_SceneFog[1] = flEnd > flStart ? 1.0f / ( flEnd - flStart ) : 0.0f;
+	s_SceneFog[2] = flMaxDensity;
+	s_SceneFog[3] = ( bEnable && flEnd > flStart ) ? 1.0f : 0.0f;
+	for ( int i = 0; i < 3; ++i )
+		s_SceneFogColor[i] = pColor ? pColor[i] / 255.0f : 0.0f;
+}
 
 // Source's LDR bloom passes (see SetPostPass in dx11render.h)
 void VkR_SetPostPass( int nMode, const float *pParams, int nTexWidth, int nTexHeight )
@@ -244,15 +297,13 @@ void VkR_BindTexture( int nStage, int hTexture )
 	if ( hTexture > 0 ) ++g_nVkBinds;
 	if ( nStage == 0 )
 		s_hBound = hTexture;
-	else if ( nStage == 1 )
-		s_hStage1 = hTexture;
-	else if ( nStage == 2 )
-		s_hStage2 = hTexture;
+	if ( nStage >= 0 && nStage < 16 )
+		s_hStages[nStage] = hTexture;
 }
 
 int VkR_GetBoundTexture( int nStage )
 {
-	return nStage == 0 ? s_hBound : nStage == 2 ? s_hStage2 : 0;
+	return nStage == 0 ? s_hBound : ( nStage > 0 && nStage < 16 ) ? s_hStages[nStage] : 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -314,17 +365,35 @@ static void FillConstants( Constants_t *pConst, bool bHaveLightmap, int nTargetW
 		memcpy( pConst->m_EyePos, s_ViewEye, sizeof( s_ViewEye ) );
 	memcpy( pConst->m_MatColor, s_MatColor, sizeof( s_MatColor ) );
 	memcpy( pConst->m_Post, s_Post, sizeof( s_Post ) );
+	memcpy( pConst->m_SelfIllum, s_SelfIllum, sizeof( s_SelfIllum ) );
+	memcpy( pConst->m_EnvParams, s_EnvParams, sizeof( s_EnvParams ) );
+	// fog: the pass's mode picks the colour it fades to (additive passes fade to black)
+	memcpy( pConst->m_Fog, s_SceneFog, sizeof( s_SceneFog ) );
+	pConst->m_FogColor[3] = 1.0f;
+	switch ( s_State.m_nFogMode )
+	{
+	case 0: pConst->m_Fog[3] = 0.0f; break;					// SHADER_FOGMODE_DISABLED
+	case 1: for ( int i = 0; i < 3; ++i ) pConst->m_FogColor[i] = s_SceneFogColor[i] * 0.5f; break;	// OO_OVERBRIGHT
+	case 2: break;												// BLACK
+	case 3: pConst->m_FogColor[0] = pConst->m_FogColor[1] = pConst->m_FogColor[2] = 0.5f; break;		// GREY
+	case 5: pConst->m_FogColor[0] = pConst->m_FogColor[1] = pConst->m_FogColor[2] = 1.0f; break;		// WHITE
+	default: memcpy( pConst->m_FogColor, s_SceneFogColor, sizeof( s_SceneFogColor ) ); break;	// FOGCOLOR
+	}
+	if ( s_Post[0] > 0.5f || s_bShadowPass )
+		pConst->m_Fog[3] = 0.0f;
 	memcpy( pConst->m_PostParams, s_PostParams, sizeof( s_PostParams ) );
 	memcpy( pConst->m_VP, s_VP, sizeof( s_VP ) );
 	for ( int i = 0; i < 3; ++i )	// the constant is linear; this shader works in gamma space
 		pConst->m_ShadowColor[i] = powf( s_ShadowColor[i] > 0.0f ? s_ShadowColor[i] : 0.0f, 1.0f / 2.2f );
 	pConst->m_ShadowColor[3] = 1.0f;
-	bool bLit = s_bLit && s_State.m_bNormals;
-	pConst->m_Lit = bLit ? 1.0f : 0.0f;
+	// baked static prop light needs no normals; dynamic lights and the ambient cube do
+	bool bDynamicLit = s_bLit && s_State.m_bNormals;
+	bool bLit = bDynamicLit || s_bStaticLight;
+	pConst->m_Lit = bLit ? ( s_bStaticLight ? 2.0f : 1.0f ) : 0.0f;
 	memcpy( pConst->m_Model, s_Model, sizeof( s_Model ) );
 	memset( pConst->m_Ambient, 0, sizeof( pConst->m_Ambient ) + sizeof( pConst->m_LightColor ) + sizeof( pConst->m_LightPos ) +
 		sizeof( pConst->m_LightDir ) + sizeof( pConst->m_LightAtten ) + sizeof( pConst->m_LightCone ) );
-	if ( bLit )
+	if ( bDynamicLit )
 	{
 		for ( int i = 0; i < 6; ++i )
 			memcpy( pConst->m_Ambient[i], s_Ambient[i], sizeof( s_Ambient[i] ) );
