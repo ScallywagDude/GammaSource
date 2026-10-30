@@ -34,6 +34,7 @@ struct Texture_t
 	unsigned char *m_pPending[16];	// mip levels given before the device existed
 	unsigned char *m_pShadow;		// see Dx11R_LockShadow
 	bool m_bRenderTarget;
+	bool m_bCube;
 	ID3D11RenderTargetView *m_pRTV;
 	ID3D11Texture2D *m_pDepth;
 	ID3D11DepthStencilView *m_pDSV;
@@ -96,6 +97,8 @@ struct Constants_t
 	float m_RefractTint[4];
 	float m_ReflectTint[4];
 	float m_Clip[2][4];			// disabled planes are ( 0, 0, 0, -1 ): never clip
+	float m_EnvTint[4];			// w = 1: base alpha masks the envmap
+	float m_EyePos[4];			// w = 1: envmap on
 };
 
 static const char s_szShader[] =
@@ -103,7 +106,8 @@ static const char s_szShader[] =
 	"  row_major float4x4 g_Model; float4 g_Ambient[6]; float4 g_LightColor[4]; float4 g_LightPos[4]; float4 g_LightDir[4];\n"
 	"  float4 g_LightAtten[4]; float4 g_LightCone[4]; float4 g_ShadowColor; float g_Shadow; float g_Skin; float2 g_Pad2;\n"
 	"  float4 g_VColorUse; float4 g_MatColor;\n"
-	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; };\n"
+	"  row_major float4x4 g_VP; float4 g_Water; float4 g_RefractTint; float4 g_ReflectTint; float4 g_Clip[2]; float4 g_EnvTint; float4 g_EyePos; };\n"
+	"TextureCube g_Envmap : register( t2 ); SamplerState g_EnvSampler : register( s2 );\n"
 	"cbuffer Bones : register( b1 ) { float4 g_Bones[53 * 3]; };\n"
 	"Texture2D g_Texture : register( t0 ); SamplerState g_Sampler : register( s0 );\n"
 	"Texture2D g_LightmapTex : register( t1 ); SamplerState g_LightmapSampler : register( s1 );\n"
@@ -111,7 +115,8 @@ static const char s_szShader[] =
 	"  uint4 bones : BLENDINDICES; float2 weights : BLENDWEIGHT; };\n"
 	"float3 SkinPos( int b, float3 p ) { return float3( dot( g_Bones[b * 3], float4( p, 1 ) ), dot( g_Bones[b * 3 + 1], float4( p, 1 ) ), dot( g_Bones[b * 3 + 2], float4( p, 1 ) ) ); }\n"
 	"float3 SkinDir( int b, float3 d ) { return float3( dot( g_Bones[b * 3].xyz, d ), dot( g_Bones[b * 3 + 1].xyz, d ), dot( g_Bones[b * 3 + 2].xyz, d ) ); }\n"
-	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float2 clip : SV_ClipDistance0; };\n"
+	"struct PSIn { float4 pos : SV_Position; float4 color : COLOR; float2 uv : TEXCOORD0; float2 uv2 : TEXCOORD1; float2 clip : SV_ClipDistance0;\n"
+	"  float3 wpos : TEXCOORD2; float3 wnorm : TEXCOORD3; };\n"
 	"float3 AmbientCube( float3 n ) { float3 s = n * n; int3 i = n < 0.0f ? int3( 1, 3, 5 ) : int3( 0, 2, 4 );\n"
 	"  return s.x * g_Ambient[i.x].rgb + s.y * g_Ambient[i.y].rgb + s.z * g_Ambient[i.z].rgb; }\n"
 	"float3 Lighting( float3 p, float3 n ) { float3 l = AmbientCube( n );\n"
@@ -133,12 +138,16 @@ static const char s_szShader[] =
 	"    n = SkinDir( v.bones.x, v.normal ) * w.x + SkinDir( v.bones.y, v.normal ) * w.y + SkinDir( v.bones.z, v.normal ) * w.z;\n"
 	"    o.pos = mul( float4( p, 1.0f ), g_VP ); }\n"
 	"  else { o.pos = mul( float4( v.pos, 1.0f ), g_WVP ); p = mul( float4( v.pos, 1.0f ), g_Model ).xyz; n = mul( v.normal, (float3x3)g_Model ); }\n"
+	"  o.wpos = p; o.wnorm = n;\n"
 	"  o.clip = float2( dot( g_Clip[0].xyz, p ) - g_Clip[0].w, dot( g_Clip[1].xyz, p ) - g_Clip[1].w );\n"
 	"  if ( g_Lit > 0.5f ) { n = normalize( n + 1e-6f );\n"
 	"    o.color.rgb *= pow( saturate( Lighting( p, n ) ), 1.0f / 2.2f ); }\n"
 	"  return o; }\n"
 	"float4 PSMain( PSIn i ) : SV_Target { float4 c = g_Texture.Sample( g_Sampler, i.uv ) * i.color;\n"
 	"  if ( g_Lightmap > 0.5f ) c.rgb *= g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb * 2.0f;\n"
+	"  if ( g_EyePos.w > 0.5f ) { float3 v = normalize( i.wpos - g_EyePos.xyz ); float3 rv = reflect( v, normalize( i.wnorm + 1e-6f ) );\n"
+	"    float mask = g_EnvTint.w > 0.5f ? g_Texture.Sample( g_Sampler, i.uv ).a : 1.0f;\n"
+	"    c.rgb += g_Envmap.Sample( g_EnvSampler, rv ).rgb * g_EnvTint.rgb * mask; }\n"
 	"  if ( g_Water.x > 0.5f ) { float2 s = i.pos.xy * g_Water.yz;\n"
 	"    float3 refr = g_Texture.Sample( g_Sampler, s ).rgb * g_RefractTint.rgb;\n"
 	"    float3 refl = g_LightmapTex.Sample( g_LightmapSampler, float2( s.x, 1.0f - s.y ) ).rgb * g_ReflectTint.rgb;\n"
@@ -274,13 +283,14 @@ static Texture_t *GetTexture( int hTexture )
 	return &s_Textures[hTexture - 1];
 }
 
-int Dx11R_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget )
+int Dx11R_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget, bool bCube )
 {
 	Texture_t tex = {};
 	tex.m_nWidth = nWidth > 0 ? nWidth : 1;
 	tex.m_nHeight = nHeight > 0 ? nHeight : 1;
 	tex.m_nMips = ( nMips > 0 && !bRenderTarget ) ? nMips : 1;
 	tex.m_bRenderTarget = bRenderTarget;
+	tex.m_bCube = bCube && !bRenderTarget;
 	tex.m_bUsed = true;
 	for ( size_t i = 0; i < s_Textures.size(); ++i )
 	{
@@ -332,7 +342,8 @@ static bool EnsureResource( Texture_t *pTex )
 	td.Width = pTex->m_nWidth;
 	td.Height = pTex->m_nHeight;
 	td.MipLevels = pTex->m_nMips;
-	td.ArraySize = 1;
+	td.ArraySize = pTex->m_bCube ? 6 : 1;
+	td.MiscFlags = pTex->m_bCube ? D3D11_RESOURCE_MISC_TEXTURECUBE : 0;
 	td.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	td.SampleDesc.Count = 1;
 	td.Usage = D3D11_USAGE_DEFAULT;
@@ -341,7 +352,19 @@ static bool EnsureResource( Texture_t *pTex )
 		return false;
 	if ( pTex->m_bRenderTarget && FAILED( DEVICE->CreateRenderTargetView( pTex->m_pTexture, NULL, &pTex->m_pRTV ) ) )
 		return false;
-	if ( FAILED( DEVICE->CreateShaderResourceView( pTex->m_pTexture, NULL, &pTex->m_pSRV ) ) )
+	D3D11_SHADER_RESOURCE_VIEW_DESC svd = {};
+	svd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	if ( pTex->m_bCube )
+	{
+		svd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURECUBE;
+		svd.TextureCube.MipLevels = pTex->m_nMips;
+	}
+	else
+	{
+		svd.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+		svd.Texture2D.MipLevels = pTex->m_nMips;
+	}
+	if ( FAILED( DEVICE->CreateShaderResourceView( pTex->m_pTexture, &svd, &pTex->m_pSRV ) ) )
 		return false;
 	// data that arrived before the device existed
 	for ( int i = 0; i < 16 && i < pTex->m_nMips; ++i )
@@ -369,6 +392,21 @@ static void KeepPending( Texture_t *pTex, int nLevel, int x, int y, int nWidth, 
 		if ( nCopy > 0 )
 			memcpy( pTex->m_pPending[nLevel] + ( ( y + row ) * nLevelW + x ) * 4, pBGRA + row * nWidth * 4, nCopy * 4 );
 	}
+}
+
+// one face of a cube texture (cubes only get data once the device exists)
+void Dx11R_TexImageFace( int hTexture, int nFace, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	if ( !pTex || !pBGRA || !pTex->m_bCube || nFace < 0 || nFace >= 6 || nLevel >= pTex->m_nMips || !EnsureResource( pTex ) )
+		return;
+	CONTEXT->UpdateSubresource( pTex->m_pTexture, D3D11CalcSubresource( nLevel, nFace, pTex->m_nMips ), NULL, pBGRA, nWidth * 4, 0 );
+}
+
+bool Dx11R_IsCubeTexture( int hTexture )
+{
+	Texture_t *pTex = GetTexture( hTexture );
+	return pTex && pTex->m_bCube;
 }
 
 void Dx11R_TexImage( int hTexture, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA )
@@ -446,6 +484,23 @@ void Dx11R_TexWrap( int hTexture, int nCoord, bool bClamp )
 
 static int s_hLightmap;
 static int s_hStage2;
+static int s_hStage1;
+static bool s_bEnvmap;
+static float s_EnvTint[4], s_EyePos[4];
+
+void Dx11R_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos )
+{
+	s_bEnvmap = bEnable;
+	if ( !bEnable )
+		return;
+	for ( int i = 0; i < 3; ++i )
+	{
+		s_EnvTint[i] = pTint ? pTint[i] : 1.0f;
+		s_EyePos[i] = pEyePos ? pEyePos[i] : 0.0f;
+	}
+	s_EnvTint[3] = (float)nMask;
+	s_EyePos[3] = 1.0f;
+}
 static bool s_bLit;
 static bool s_bShadowPass;
 
@@ -588,6 +643,8 @@ void Dx11R_BindTexture( int nStage, int hTexture )
 	if ( hTexture > 0 ) ++g_nDx11Binds;
 	if ( nStage == 0 )
 		s_hBound = hTexture;
+	else if ( nStage == 1 )
+		s_hStage1 = hTexture;
 	else if ( nStage == 2 )
 		s_hStage2 = hTexture;
 }
@@ -828,6 +885,10 @@ static void ApplyState()
 		memcpy( pConst->m_RefractTint, s_RefractTint, sizeof( s_RefractTint ) );
 		memcpy( pConst->m_ReflectTint, s_ReflectTint, sizeof( s_ReflectTint ) );
 		memcpy( pConst->m_Clip, s_ClipPlanes, sizeof( s_ClipPlanes ) );
+		memcpy( pConst->m_EnvTint, s_EnvTint, sizeof( s_EnvTint ) );
+		memcpy( pConst->m_EyePos, s_EyePos, sizeof( s_EyePos ) );
+		if ( !s_bEnvmap )
+			pConst->m_EyePos[3] = 0.0f;
 		memcpy( pConst->m_MatColor, s_MatColor, sizeof( s_MatColor ) );
 		memcpy( pConst->m_VP, s_VP, sizeof( s_VP ) );
 		for ( int i = 0; i < 3; ++i )	// the constant is linear; this shader works in gamma space
@@ -872,6 +933,13 @@ static void ApplyState()
 		ID3D11ShaderResourceView *pLightmapSRV = pLightmap ? pLightmap->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 1, 1, &pLightmapSRV );
 		pContext->PSSetSamplers( 1, 1, &s_pSamplers[3] );
+		Texture_t *pEnvmap = NULL;
+		if ( s_bEnvmap )
+			pEnvmap = Dx11R_IsCubeTexture( s_hStage1 ) ? GetTexture( s_hStage1 ) : GetTexture( s_hStage2 );
+		if ( pEnvmap && !pEnvmap->m_pSRV ) EnsureResource( pEnvmap );
+		ID3D11ShaderResourceView *pEnvSRV = ( pEnvmap && pEnvmap->m_bCube ) ? pEnvmap->m_pSRV : NULL;
+		pContext->PSSetShaderResources( 2, 1, &pEnvSRV );
+		pContext->PSSetSamplers( 2, 1, &s_pSamplers[3] );
 	}
 
 	pContext->IASetInputLayout( s_pLayout );

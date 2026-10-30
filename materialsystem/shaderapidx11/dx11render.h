@@ -59,7 +59,11 @@ enum Dx11Primitive_t
 bool Dx11R_Init();
 void Dx11R_Shutdown();
 
-int  Dx11R_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget = false );
+int  Dx11R_CreateTexture( int nWidth, int nHeight, int nMips, bool bRenderTarget = false, bool bCube = false );
+void Dx11R_TexImageFace( int hTexture, int nFace, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA );
+bool Dx11R_IsCubeTexture( int hTexture );
+// envmap reflection for this pass (the cube bound on stage 1 or 2): tint rgb, nMask 1 = base alpha masks it
+void Dx11R_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos );
 void Dx11R_DeleteTexture( int hTexture );
 bool Dx11R_IsTexture( int hTexture );
 void Dx11R_TexImage( int hTexture, int nLevel, int nWidth, int nHeight, const unsigned char *pBGRA );

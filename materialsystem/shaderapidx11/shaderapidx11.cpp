@@ -2660,6 +2660,7 @@ void CShaderAPIEmpty::ShadeMode( ShaderShadeMode_t mode )
 // Binds a particular material to render with
 void UpdateMatrices();
 static IMaterialInternal *s_pBoundMaterial;
+static float *CurMatrix( int nMode );
 // kept for the few passes the fixed shader reproduces (the shadow colour)
 static float s_PixelConstants[32][4];
 
@@ -2690,6 +2691,32 @@ static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
 	// a static prop's colour mesh is its lighting, not a vertex colour
 	bool bColor = bColorMesh || pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXCOLOR );
 	Dx11R_SetVertexColorUse( bColor, pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ), color );
+}
+
+// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric) or
+// 2 (LightmappedGeneric); the tint and mask come from the material
+static void ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
+{
+	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) ||
+		Q_stristr( pszShader, "WorldVertexTransition" ) );
+	if ( !bGeneric || !( Dx11R_IsCubeTexture( Dx11R_GetBoundTexture( 1 ) ) || Dx11R_IsCubeTexture( Dx11R_GetBoundTexture( 2 ) ) ) )
+	{
+		Dx11R_SetEnvmap( false, NULL, 0, NULL );
+		return;
+	}
+	float tint[3] = { 1.0f, 1.0f, 1.0f };
+	bool bFound = false;
+	IMaterialVar *pTint = pMaterial->FindVar( "$envmaptint", &bFound, false );
+	if ( bFound && pTint )
+		pTint->GetVecValue( tint, 3 );
+	int nMask = pMaterial->GetMaterialVarFlag( MATERIAL_VAR_BASEALPHAENVMAPMASK ) ? 1 : 0;
+
+	// the eye: the inverse of the view matrix's translation (row vectors)
+	float *v = CurMatrix( MATERIAL_VIEW );
+	float eye[3];
+	for ( int i = 0; i < 3; ++i )
+		eye[i] = -( v[12] * v[i * 4 + 0] + v[13] * v[i * 4 + 1] + v[14] * v[i * 4 + 2] );
+	Dx11R_SetEnvmap( true, tint, nMask, eye );
 }
 
 static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
@@ -2941,6 +2968,7 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		ApplyLighting();
 		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
 		Dx11R_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
+		ApplyEnvmap( s_pBoundMaterial, pszShader );
 		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && Dx11R_IsRenderTargetTexture( Dx11R_GetBoundTexture( 0 ) );
@@ -3331,6 +3359,23 @@ void CShaderAPIEmpty::TexImageFromVTF( IVTFTexture *pVTF, int iVTFFrame )
 		return;
 	ImageFormat fmt = pVTF->Format();
 	bool bCompressed = ImageLoader::IsCompressed( fmt );
+	if ( pVTF->IsCubeMap() && Dx11R_IsCubeTexture( s_hModifyTexture ) )
+	{
+		// all six faces; mips under a compressed block are skipped (rarely sampled on envmaps)
+		for ( int nFace = 0; nFace < 6; ++nFace )
+			for ( int nMip = 0; nMip < pVTF->MipCount(); ++nMip )
+			{
+				int w, h, d;
+				pVTF->ComputeMipLevelDimensions( nMip, &w, &h, &d );
+				if ( bCompressed && ( w < 4 || h < 4 ) )
+					continue;
+				unsigned char *pSrc = pVTF->ImageData( iVTFFrame, nFace, nMip );
+				unsigned char *pBGRA = pSrc ? ToBGRA( pSrc, fmt, w, h ) : NULL;
+				if ( pBGRA )
+					Dx11R_TexImageFace( s_hModifyTexture, nFace, nMip, w, h, pBGRA );
+			}
+		return;
+	}
 	static CUtlMemory< unsigned char > s_Padded;
 	for ( int nMip = 0; nMip < pVTF->MipCount(); ++nMip )
 	{
@@ -3439,7 +3484,7 @@ ShaderAPITextureHandle_t CShaderAPIEmpty::CreateTexture(
 	const char *pDebugName,
 	const char *pTextureGroupName )
 {
-	return Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
+	return Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0, ( flags & TEXTURE_CREATE_CUBEMAP ) != 0 );
 }
 
 // Create a multi-frame texture (equivalent to calling "CreateTexture" multiple times, but more efficient)
@@ -3457,7 +3502,7 @@ void CShaderAPIEmpty::CreateTextures(
 							const char *pTextureGroupName )
 {
 	for ( int k = 0; k < count; ++ k )
-		pHandles[ k ] = Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0 );
+		pHandles[ k ] = Dx11R_CreateTexture( width, height, numMipLevels, ( flags & TEXTURE_CREATE_RENDERTARGET ) != 0, ( flags & TEXTURE_CREATE_CUBEMAP ) != 0 );
 }
 
 
