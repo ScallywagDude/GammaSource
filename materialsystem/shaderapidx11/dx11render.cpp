@@ -668,7 +668,7 @@ static void ApplyState()
 		pContext->PSSetSamplers( 1, 1, &s_pSamplers[3] );
 		Texture_t *pEnvmap = NULL;
 		if ( s_bEnvmap )
-			pEnvmap = Dx11R_IsCubeTexture( s_hStage1 ) ? GetTexture( s_hStage1 ) : GetTexture( s_hStage2 );
+			pEnvmap = GetTexture( s_hEnvCube );
 		if ( pEnvmap && !pEnvmap->m_pSRV ) EnsureResource( pEnvmap );
 		ID3D11ShaderResourceView *pEnvSRV = ( pEnvmap && pEnvmap->m_bCube ) ? pEnvmap->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 2, 1, &pEnvSRV );

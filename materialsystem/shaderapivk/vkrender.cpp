@@ -1704,7 +1704,7 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( !pSecond ) pSecond = SampleableTexture( s_hWhite );
 	Texture_t *pEnvmap = NULL;
 	if ( s_bEnvmap )
-		pEnvmap = SampleableTexture( VkR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2 );
+		pEnvmap = SampleableTexture( s_hEnvCube );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;

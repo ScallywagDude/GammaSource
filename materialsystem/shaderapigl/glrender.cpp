@@ -1209,7 +1209,7 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	if ( !pSecond || pSecond->m_bCube ) pSecond = SampleableTexture( s_hWhite, pTarget );
 	Texture_t *pEnvmap = NULL;
 	if ( s_bEnvmap )
-		pEnvmap = SampleableTexture( GlR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2, pTarget );
+		pEnvmap = SampleableTexture( s_hEnvCube, pTarget );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube, pTarget );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;

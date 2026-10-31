@@ -56,7 +56,7 @@ struct Constants_t
 	float m_Fog[4];				// start, 1 / ( end - start ), max density, on
 	float m_FogColor[4];
 	float m_SelfIllum[4];		// rgb tint; w 1: base alpha masks it, 2: t3's red does
-	float m_EnvParams[4];		// $envmapcontrast, $envmapsaturation
+	float m_EnvParams[4];		// $envmapcontrast, $envmapsaturation, $envmapfresnel, skin shader
 	float m_Char[4];			// x: 1 Eyes, 2 EyeRefract, 3 Teeth; y: eye glint damping
 	float m_CharConst[6][4];	// the shader's vertex constants (see GlR_SetCharacterPass)
 	float m_Bump[4];			// x: 1 world (bumped lightmaps), 2 model (per pixel lights), 3 water; y: ssbump;
@@ -160,6 +160,7 @@ static const char s_szShader[] =
 	"  float4 c = base * i.color; float3 bn = normalize( i.wnorm + 1e-6f ); float4 nm = float4( 0.5f, 0.5f, 1.0f, 1.0f );\n"
 	"  if ( g_Bump.x > 0.5f && g_Bump.x < 2.5f ) { nm = g_BumpTex.Sample( g_WrapSampler, i.uv );\n"
 	"    if ( g_Bump.y < 0.5f ) { float3 tn = nm.xyz * 2.0f - 1.0f; bn = normalize( tn.x * i.tan + tn.y * i.bin.xyz + tn.z * i.wnorm + 1e-6f ); } }\n"
+	"  float pm = g_Phong.z > 0.5f ? base.a : nm.a;\n"
 	"  if ( g_Lightmap > 0.5f && g_Char.x < 0.5f ) { float3 lm = g_LightmapTex.Sample( g_LightmapSampler, i.uv2 ).rgb;\n"
 	"    if ( g_Bump.x > 0.5f && g_Bump.x < 1.5f && i.bin.w > 0.0f ) { float3 w = nm.xyz;\n"
 	"      if ( g_Bump.y < 0.5f ) { float3 tn = normalize( nm.xyz * 2.0f - 1.0f );\n"
@@ -172,7 +173,7 @@ static const char s_szShader[] =
 	"  if ( g_Bump.x > 1.5f && g_Bump.x < 2.5f && g_Lit > 0.5f && g_Lit < 1.5f ) { float3 ev = normalize( g_ViewEye.xyz - i.wpos ); float3 spec;\n"
 	"    float3 L = LightingSpec( i.wpos, bn, reflect( -ev, bn ), g_Phong.x, spec );\n"
 	"    c.rgb *= pow( saturate( L ), float3( 1.0f / 2.2f, 1.0f / 2.2f, 1.0f / 2.2f ) );\n"
-	"    if ( g_Phong.x > 0.0f ) { float pm = g_Phong.z > 0.5f ? base.a : nm.a; float f = 1.0f - saturate( dot( bn, ev ) ); f *= f;\n"
+	"    if ( g_Phong.x > 0.0f ) { float f = 1.0f - saturate( dot( bn, ev ) ); f *= f;\n"
 	"      float fr = f > 0.5f ? lerp( g_PhongFresnel.y, g_PhongFresnel.z, 2.0f * f - 1.0f ) : lerp( g_PhongFresnel.x, g_PhongFresnel.y, 2.0f * f );\n"
 	"      c.rgb = pow( pow( c.rgb, float3( 2.2f, 2.2f, 2.2f ) ) + spec * g_PhongTint.rgb * ( pm * fr * g_Phong.y ), float3( 1.0f / 2.2f, 1.0f / 2.2f, 1.0f / 2.2f ) ); } }\n"
 	"  if ( g_Detail.x > 5.5f && g_Detail.x < 7.5f ) c.rgb += g_Detail.w * g_DetailTex.Sample( g_WrapSampler, i.uv3.xy ).rgb;\n"
@@ -185,7 +186,9 @@ static const char s_szShader[] =
 	"    c.rgb = lerp( c.rgb, sb.rgb * g_SelfIllum.rgb, sm ); c.a = i.color.a; }\n"
 	"  if ( g_EyePos.w > 0.5f ) { float3 v = normalize( i.wpos - g_EyePos.xyz ); float3 rv = reflect( v, bn );\n"
 	"    float4 m = g_MaskTex.Sample( g_Sampler, i.uv ); float4 b = g_Texture.Sample( g_Sampler, i.uv );\n"
-	"    float3 mask = g_EnvTint.w > 2.5f ? m.aaa : ( g_EnvTint.w > 1.5f ? m.rgb : ( g_EnvTint.w > 0.5f ? 1.0f - b.aaa : float3( 1.0f, 1.0f, 1.0f ) ) );\n"
+	"    float3 mask = g_EnvTint.w > 4.5f ? float3( pm, pm, pm ) : ( g_EnvTint.w > 3.5f ? b.aaa : ( g_EnvTint.w > 2.5f ? m.aaa : ( g_EnvTint.w > 1.5f ? m.rgb : ( g_EnvTint.w > 0.5f ? 1.0f - b.aaa : float3( 1.0f, 1.0f, 1.0f ) ) ) ) );\n"
+	"    if ( g_EnvParams.w > 0.5f ) { float f = 1.0f - saturate( dot( bn, -v ) ); f *= f;\n"
+	"      mask *= lerp( 1.0f, f > 0.5f ? lerp( g_PhongFresnel.y, g_PhongFresnel.z, 2.0f * f - 1.0f ) : lerp( g_PhongFresnel.x, g_PhongFresnel.y, 2.0f * f ), g_EnvParams.z ); }\n"
 	"    float3 spec = g_Envmap.Sample( g_EnvSampler, rv ).rgb * g_EnvTint.rgb * mask; spec = lerp( spec, spec * spec, g_EnvParams.x );\n"
 	"    float grey = dot( spec, float3( 0.299f, 0.587f, 0.114f ) ); c.rgb += lerp( float3( grey, grey, grey ), spec, g_EnvParams.y ); }\n"
 	"  if ( g_Water.x > 0.5f ) { float2 s = i.pos.xy * g_Water.yz; float2 wn = float2( 0.0f, 0.0f );\n"
@@ -206,6 +209,7 @@ static int s_hStages[16];		// what each sampler stage has bound (0 is s_hBound)
 #define s_hStage2 s_hStages[2]
 static bool s_bEnvmap;
 static int s_hEnvMask;			// t3: the envmap mask texture
+static int s_hEnvCube;			// t2: the cube map
 static float s_EnvTint[4], s_EyePos[4];
 static float s_EnvParams[4] = { 0.0f, 1.0f, 0.0f, 0.0f };
 
@@ -216,10 +220,20 @@ void GlR_SetEnvmapParams( float flContrast, float flSaturation )
 	s_EnvParams[1] = flSaturation;
 }
 
+// after SetEnvmap: the cube's texture, and the skin shader's envmap fresnel ($envmapfresnel through $phongfresnelranges)
+void GlR_SetEnvmapCube( int hCube, bool bSkin, float flFresnel )
+{
+	s_hEnvCube = hCube;
+	s_EnvParams[2] = flFresnel;
+	s_EnvParams[3] = bSkin ? 1.0f : 0.0f;
+}
+
 void GlR_SetEnvmap( bool bEnable, const float *pTint, int nMask, const float *pEyePos, int hMask )
 {
 	s_bEnvmap = bEnable;
 	s_hEnvMask = bEnable ? hMask : 0;
+	s_hEnvCube = 0;
+	s_EnvParams[2] = s_EnvParams[3] = 0.0f;
 	if ( !bEnable )
 		return;
 	for ( int i = 0; i < 3; ++i )

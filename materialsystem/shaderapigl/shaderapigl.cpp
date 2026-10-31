@@ -2769,8 +2769,30 @@ static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
 	GlR_SetVertexColorUse( bColor, pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ), color );
 }
 
-// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric) or
-// 2 (LightmappedGeneric); the tint and mask come from the material
+static float VarFloat( IMaterialInternal *pMaterial, const char *pszName, float flDefault );
+
+// VertexLitGeneric draws with the skin shader when $phong is on and there is a bump map or
+// $basemapalphaphongmask (vertexlitgeneric_dx9_helper.cpp WantsSkinShader)
+static bool IsSkinPass( IMaterialInternal *pMaterial, const char *pszShader )
+{
+	if ( !pMaterial || !pszShader || !Q_stristr( pszShader, "VertexLitGeneric" ) )
+		return false;
+	bool bFound = false;
+	IMaterialVar *pVar = pMaterial->FindVar( "$phong", &bFound, false );
+	if ( !bFound || !pVar || !pVar->IsDefined() || !pVar->GetIntValue() )
+		return false;
+	pVar = pMaterial->FindVar( "$diffusewarp", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() && pVar->IsTexture() )
+		return true;
+	pVar = pMaterial->FindVar( "$basemapalphaphongmask", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() && pVar->GetIntValue() == 1 )
+		return true;
+	pVar = pMaterial->FindVar( "$bumpmap", &bFound, false );
+	return bFound && pVar && pVar->IsDefined() && pVar->IsTexture();
+}
+
+// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric), 2
+// (LightmappedGeneric) or 8 (the skin shader); the tint and mask come from the material
 static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 {
 	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) ||
@@ -2782,7 +2804,13 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 		IMaterialVar *pEnvmap = pMaterial->FindVar( "$envmap", &bHasEnvmap, false );
 		bHasEnvmap = bHasEnvmap && pEnvmap && pEnvmap->IsDefined() && pEnvmap->IsTexture();
 	}
-	if ( !bHasEnvmap || !( GlR_IsCubeTexture( GlR_GetBoundTexture( 1 ) ) || GlR_IsCubeTexture( GlR_GetBoundTexture( 2 ) ) ) )
+	bool bSkin = bHasEnvmap && IsSkinPass( pMaterial, pszShader );
+	int hCube = 0;
+	if ( bSkin )
+		hCube = GlR_GetBoundTexture( 8 );
+	else if ( bHasEnvmap )
+		hCube = GlR_IsCubeTexture( GlR_GetBoundTexture( 1 ) ) ? GlR_GetBoundTexture( 1 ) : GlR_GetBoundTexture( 2 );
+	if ( !bHasEnvmap || !GlR_IsCubeTexture( hCube ) )
 	{
 		GlR_SetEnvmap( false, NULL, 0, NULL );
 		return false;
@@ -2808,6 +2836,12 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 		hMask = GlR_GetBoundTexture( bVertexLit ? 3 : 4 );
 		nMask = hMask ? 3 : 0;
 	}
+	// the skin shader masks by base alpha (not inverted), or with $normalmapalphaenvmapmask by the phong mask
+	if ( bSkin )
+	{
+		hMask = 0;
+		nMask = pMaterial->GetMaterialVarFlag( MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK ) ? 5 : 4;
+	}
 
 	// the eye: the inverse of the view matrix's translation (row vectors)
 	float *v = CurMatrix( MATERIAL_VIEW );
@@ -2823,7 +2857,8 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 	if ( bFound && pVar && pVar->IsDefined() )
 		flSaturation = pVar->GetFloatValue();
 	GlR_SetEnvmapParams( flContrast, flSaturation );
-	return nMask >= 2;
+	GlR_SetEnvmapCube( hCube, bSkin, bSkin ? VarFloat( pMaterial, "$envmapfresnel", 0.0f ) : 0.0f );
+	return nMask == 2 || nMask == 3;
 }
 
 // $selfillum on the generic shaders (after ApplyEnvmap, which may claim t3 for its mask)
@@ -2840,12 +2875,12 @@ static void ApplySelfIllum( IMaterialInternal *pMaterial, const char *pszShader,
 	IMaterialVar *pTint = pMaterial->FindVar( "$selfillumtint", &bFound, false );
 	if ( bFound && pTint && pTint->IsDefined() )
 		pTint->GetVecValue( tint, 3 );
-	// VertexLitGeneric binds $selfillummask on stage 11
+	// VertexLitGeneric binds $selfillummask on stage 11, the skin shader on 14
 	int nMask = 1, hMask = 0;
 	IMaterialVar *pMaskVar = pMaterial->FindVar( "$selfillummask", &bFound, false );
 	if ( bFound && pMaskVar && pMaskVar->IsDefined() && pMaskVar->IsTexture() && !bEnvmapMask && Q_stristr( pszShader, "VertexLitGeneric" ) )
 	{
-		hMask = GlR_GetBoundTexture( 11 );
+		hMask = GlR_GetBoundTexture( IsSkinPass( pMaterial, pszShader ) ? 14 : 11 );
 		if ( hMask )
 			nMask = 2;
 	}
@@ -2920,8 +2955,8 @@ static void ApplySurface( IMaterialInternal *pMaterial, const char *pszShader, b
 				}
 			}
 			// VertexLitGeneric binds $bumpmap on stage 3, the world shaders on 4
-			bool bPhong = bVertexLit && VarFloat( pMaterial, "$phong", 0.0f ) != 0.0f;
-			if ( ( bVertexLit || bWorld ) && VarTexture( pMaterial, "$bumpmap" ) )
+			bool bPhong = IsSkinPass( pMaterial, pszShader );
+			if ( ( ( bVertexLit || bWorld ) && VarTexture( pMaterial, "$bumpmap" ) ) || bPhong )
 			{
 				surf.m_nBump = bVertexLit ? 2 : 1;
 				surf.m_hBump = GlR_GetBoundTexture( bVertexLit ? 3 : 4 );

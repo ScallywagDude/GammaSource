@@ -1593,7 +1593,7 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 	if ( !pSecond ) pSecond = SampleableTexture( s_hWhite, pTarget );
 	Texture_t *pEnvmap = NULL;
 	if ( s_bEnvmap )
-		pEnvmap = SampleableTexture( Dx12R_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2, pTarget );
+		pEnvmap = SampleableTexture( s_hEnvCube, pTarget );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube, pTarget );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;
