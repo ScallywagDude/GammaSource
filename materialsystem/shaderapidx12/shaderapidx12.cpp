@@ -49,6 +49,16 @@ enum
 	DX12V_BONEINDEX = 200,	// 4 bytes
 	DX12V_USERDATA = 204,	// float4
 	DX12V_STRIDE = 220,
+	// studiorender's software skinning writes whole ModelVertexDX7_t / ModelVertexDX8_t with
+	// CVertexBuilder::FastVertex (aligned SSE stores), so its meshes get that packed layout instead
+	DX12V_PACKED_BONEWEIGHT = 12,
+	DX12V_PACKED_BONEINDEX = 20,
+	DX12V_PACKED_NORMAL = 24,
+	DX12V_PACKED_COLOR = 36,
+	DX12V_PACKED_TEXCOORD = 40,
+	DX12V_PACKED_USERDATA = 48,
+	DX12V_PACKED_DX7 = 48,		// sizeof( ModelVertexDX7_t )
+	DX12V_PACKED_DX8 = 64,		// sizeof( ModelVertexDX8_t )
 	DX12_MAX_VERTS = 65536,
 	DX12_MAX_INDICES = 196608,
 };
@@ -128,6 +138,8 @@ public:
 	CEmptyMesh *m_pColorMesh;
 	int m_nColorMeshOffset;
 	int m_nStride;		// DX12V_STRIDE, or 4 for colour meshes (specular only, packed)
+	int m_nPacked;		// DX12V_PACKED_DX7 / DX8 while locked for software skinning (see GetDynamicMeshEx), else 0
+	int m_nPackedRequest;
 
 
 	virtual int IndexCount() const
@@ -1611,6 +1623,7 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_pColorMesh = NULL;
 	m_nColorMeshOffset = 0;
 	m_nStride = DX12V_STRIDE;
+	m_nPacked = m_nPackedRequest = 0;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( DX12_MAX_VERTS );
@@ -1744,10 +1757,45 @@ static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc, int nStride
 
 }
 
+// Points a vertex description at packed ModelVertexDX7_t / ModelVertexDX8_t (nPacked bytes each)
+static void SetPackedVertexDesc( unsigned char *pBase, VertexDesc_t &desc, int nPacked )
+{
+	// what the layout has no room for writes to scratch
+	static unsigned char s_Scratch[DX12V_STRIDE];
+	SetVertexDesc( s_Scratch, desc );
+	desc.m_VertexSize_Specular = desc.m_VertexSize_TangentS = desc.m_VertexSize_TangentT = desc.m_VertexSize_UserData = 0;
+	for ( int i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i )
+		desc.m_VertexSize_TexCoord[i] = 0;
+	desc.m_pPosition = (float*)pBase;
+	desc.m_pBoneWeight = (float*)( pBase + DX12V_PACKED_BONEWEIGHT );
+	desc.m_pBoneMatrixIndex = pBase + DX12V_PACKED_BONEINDEX;
+	desc.m_pNormal = (float*)( pBase + DX12V_PACKED_NORMAL );
+	desc.m_pColor = pBase + DX12V_PACKED_COLOR;
+	desc.m_pTexCoord[0] = (float*)( pBase + DX12V_PACKED_TEXCOORD );
+	desc.m_VertexSize_TexCoord[0] = nPacked;
+	if ( nPacked == DX12V_PACKED_DX8 )
+	{
+		desc.m_pUserData = (float*)( pBase + DX12V_PACKED_USERDATA );
+		desc.m_VertexSize_UserData = nPacked;
+	}
+	desc.m_NumBoneWeights = 2;
+	desc.m_VertexSize_Position = desc.m_VertexSize_BoneWeight = desc.m_VertexSize_BoneMatrixIndex = nPacked;
+	desc.m_VertexSize_Normal = desc.m_VertexSize_Color = nPacked;
+	desc.m_ActualVertexSize = nPacked;
+}
+
 bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 {
 	EnsureVertices( max( nVertexCount, 1 ) );
 	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
+	m_nPacked = m_nStride == DX12V_STRIDE ? m_nPackedRequest : 0;
+	if ( m_nPacked )
+	{
+		SetPackedVertexDesc( m_pVertexMemory, desc, m_nPacked );
+		desc.m_nFirstVertex = 0;
+		desc.m_nOffset = 0;
+		return true;
+	}
 	// Formats without colour or texture coordinates leave those slots alone; make them neutral
 	for ( int v = 0; m_nStride == DX12V_STRIDE && v < nVertexCount; ++v )
 	{
@@ -1796,7 +1844,10 @@ void CEmptyMesh::ModifyBeginEx( bool bReadOnly, int firstVertex, int numVerts, i
 {
 	firstVertex = max( firstVertex, 0 );
 	EnsureVertices( max( firstVertex + numVerts, 1 ) );
-	SetVertexDesc( m_pVertexMemory + firstVertex * m_nStride, *static_cast<VertexDesc_t*>( &desc ), m_nStride );
+	if ( m_nPacked )
+		SetPackedVertexDesc( m_pVertexMemory + firstVertex * m_nPacked, *static_cast<VertexDesc_t*>( &desc ), m_nPacked );
+	else
+		SetVertexDesc( m_pVertexMemory + firstVertex * m_nStride, *static_cast<VertexDesc_t*>( &desc ), m_nStride );
 	desc.m_nFirstVertex = firstVertex;
 	static_cast<VertexDesc_t&>( desc ).m_nOffset = 0;
 	ModifyBegin( bReadOnly, firstIndex, numIndices, *static_cast<IndexDesc_t*>( &desc ) );
@@ -1859,21 +1910,24 @@ void CEmptyMesh::RenderPass()
 	const void *pCacheKey = ( pVB->m_bCacheable && !pColors ) ? pVB : NULL;
 	int nVersion = pVB->m_nVersion;
 	bool bCached = pCacheKey && Dx12R_HasCachedVertices( pCacheKey, nVersion );
+	// software skinned models come packed (see SetPackedVertexDesc): no second texcoord or tangents
+	static const unsigned char s_Zero[16] = { 0 };
+	int nPacked = pVB->m_nPacked;
 	for ( int v = 0; !bCached && v < nVerts; ++v )
 	{
-		const unsigned char *pSrc = pVertexMemory + v * DX12V_STRIDE;
+		const unsigned char *pSrc = pVertexMemory + v * ( nPacked ? nPacked : DX12V_STRIDE );
 		Dx12Vertex_t &dst = s_Verts[v];
 		memcpy( dst.m_Pos, pSrc + DX12V_POSITION, 12 );
 		// the mesh builder stores colours as B G R A; the device reads R G B A
-		const unsigned char *c = pSrc + DX12V_COLOR;
+		const unsigned char *c = pSrc + ( nPacked ? DX12V_PACKED_COLOR : DX12V_COLOR );
 		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
-		memcpy( dst.m_UV, pSrc + DX12V_TEXCOORD, 8 );
-		memcpy( dst.m_UV2, pSrc + DX12V_TEXCOORD + 16, 8 );
-		memcpy( dst.m_Normal, pSrc + DX12V_NORMAL, 12 );
-		memcpy( dst.m_BoneIndex, pSrc + DX12V_BONEINDEX, 4 );
-		memcpy( dst.m_BoneWeight, pSrc + DX12V_BONEWEIGHT, 8 );
+		memcpy( dst.m_UV, pSrc + ( nPacked ? DX12V_PACKED_TEXCOORD : DX12V_TEXCOORD ), 8 );
+		memcpy( dst.m_UV2, nPacked ? s_Zero : pSrc + DX12V_TEXCOORD + 16, 8 );
+		memcpy( dst.m_Normal, pSrc + ( nPacked ? DX12V_PACKED_NORMAL : DX12V_NORMAL ), 12 );
+		memcpy( dst.m_BoneIndex, pSrc + ( nPacked ? DX12V_PACKED_BONEINDEX : DX12V_BONEINDEX ), 4 );
+		memcpy( dst.m_BoneWeight, pSrc + ( nPacked ? DX12V_PACKED_BONEWEIGHT : DX12V_BONEWEIGHT ), 8 );
 		// the tangent frame: brushes and displacements write S and T, models S and T's sign in userdata
-		const float *pUser = (const float *)( pSrc + DX12V_USERDATA );
+		const float *pUser = (const float *)( nPacked == DX12V_PACKED_DX8 ? pSrc + DX12V_PACKED_USERDATA : ( nPacked ? s_Zero : pSrc + DX12V_USERDATA ) );
 		if ( pUser[3] != 0.0f )
 		{
 			const float *n = dst.m_Normal;
@@ -1884,10 +1938,10 @@ void CEmptyMesh::RenderPass()
 		}
 		else
 		{
-			memcpy( dst.m_TangentS, pSrc + DX12V_TANGENT_S, 12 );
-			memcpy( dst.m_TangentT, pSrc + DX12V_TANGENT_T, 12 );
+			memcpy( dst.m_TangentS, nPacked ? s_Zero : pSrc + DX12V_TANGENT_S, 12 );
+			memcpy( dst.m_TangentT, nPacked ? s_Zero : pSrc + DX12V_TANGENT_T, 12 );
 		}
-		memcpy( &dst.m_LightmapOffset, pSrc + DX12V_TEXCOORD + 32, 4 );
+		memcpy( &dst.m_LightmapOffset, nPacked ? s_Zero : pSrc + DX12V_TEXCOORD + 32, 4 );
 		int nColorByte = pColors ? m_nColorMeshOffset + v * pColors->m_nStride : 0;
 		if ( pColors && nColorByte + pColors->m_nStride <= pColors->m_nVertexCapacity * pColors->m_nStride )
 		{
@@ -3197,6 +3251,7 @@ void CShaderAPIEmpty::FlushBufferedPrimitives()
 // call DestroyStaticMesh on the mesh returned by this call.
 IMesh* CShaderAPIEmpty::GetDynamicMesh( IMaterial* pMaterial, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
+	m_Mesh.m_nPackedRequest = 0;
 	m_Mesh.m_pVertexSource = static_cast< CEmptyMesh * >( pVertexOverride );
 	m_Mesh.m_pIndexSource = static_cast< CEmptyMesh * >( pIndexOverride );
 	return &m_Mesh;
@@ -3204,7 +3259,17 @@ IMesh* CShaderAPIEmpty::GetDynamicMesh( IMaterial* pMaterial, int nHWSkinBoneCou
 
 IMesh* CShaderAPIEmpty::GetDynamicMeshEx( IMaterial* pMaterial, VertexFormat_t fmt, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
-	return GetDynamicMesh( pMaterial, nHWSkinBoneCount, buffered, pVertexOverride, pIndexOverride );
+	IMesh *pMesh = GetDynamicMesh( pMaterial, nHWSkinBoneCount, buffered, pVertexOverride, pIndexOverride );
+	// studiorender's software skinning format (CStudioRender::ComputeSWSkinVertexFormat) is written
+	// a whole ModelVertexDX7_t / DX8_t at a time, so it gets that layout
+	const VertexFormat_t swSkin = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_COLOR | VERTEX_BONE_INDEX |
+		VERTEX_BONEWEIGHT( 2 ) | VERTEX_TEXCOORD_SIZE( 0, 2 );
+	fmt &= ~( VERTEX_FORMAT_USE_EXACT_FORMAT | VERTEX_FORMAT_COMPRESSED );
+	if ( !pVertexOverride && fmt == swSkin )
+		m_Mesh.m_nPackedRequest = DX12V_PACKED_DX7;
+	else if ( !pVertexOverride && fmt == ( swSkin | VERTEX_USERDATA_SIZE( 4 ) ) )
+		m_Mesh.m_nPackedRequest = DX12V_PACKED_DX8;
+	return pMesh;
 }
 
 IMesh* CShaderAPIEmpty::GetFlexMesh()
