@@ -20,6 +20,8 @@
 #include "shaderapi/ishaderutil.h"
 #include "shaderapi/ishaderapi.h"
 #include "materialsystem/imesh.h"
+#include "materialsystem/imaterialvar.h"
+#include "mathlib/vmatrix.h"
 #include "tier0/dbg.h"
 #include "materialsystem/idebugtextureinfo.h"
 #include "materialsystem/deformations.h"
@@ -1752,6 +1754,9 @@ bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 		unsigned char *pVert = m_pVertexMemory + v * DX11V_STRIDE;
 		*(unsigned int *)( pVert + DX11V_COLOR ) = 0xFFFFFFFF;
 		memset( pVert + DX11V_TEXCOORD, 0, 8 );
+		memset( pVert + DX11V_TEXCOORD + 32, 0, 8 );		// texcoord 2: the bumped lightmap offset
+		memset( pVert + DX11V_TANGENT_S, 0, 24 );
+		memset( pVert + DX11V_USERDATA, 0, 16 );
 	}
 
 	SetVertexDesc( m_pVertexMemory, desc, m_nStride );
@@ -1867,6 +1872,22 @@ void CEmptyMesh::RenderPass()
 		memcpy( dst.m_Normal, pSrc + DX11V_NORMAL, 12 );
 		memcpy( dst.m_BoneIndex, pSrc + DX11V_BONEINDEX, 4 );
 		memcpy( dst.m_BoneWeight, pSrc + DX11V_BONEWEIGHT, 8 );
+		// the tangent frame: brushes and displacements write S and T, models S and T's sign in userdata
+		const float *pUser = (const float *)( pSrc + DX11V_USERDATA );
+		if ( pUser[3] != 0.0f )
+		{
+			const float *n = dst.m_Normal;
+			memcpy( dst.m_TangentS, pUser, 12 );
+			dst.m_TangentT[0] = ( n[1] * pUser[2] - n[2] * pUser[1] ) * pUser[3];
+			dst.m_TangentT[1] = ( n[2] * pUser[0] - n[0] * pUser[2] ) * pUser[3];
+			dst.m_TangentT[2] = ( n[0] * pUser[1] - n[1] * pUser[0] ) * pUser[3];
+		}
+		else
+		{
+			memcpy( dst.m_TangentS, pSrc + DX11V_TANGENT_S, 12 );
+			memcpy( dst.m_TangentT, pSrc + DX11V_TANGENT_T, 12 );
+		}
+		memcpy( &dst.m_LightmapOffset, pSrc + DX11V_TEXCOORD + 32, 4 );
 		int nColorByte = pColors ? m_nColorMeshOffset + v * pColors->m_nStride : 0;
 		if ( pColors && nColorByte + pColors->m_nStride <= pColors->m_nVertexCapacity * pColors->m_nStride )
 		{
@@ -2831,6 +2852,106 @@ static void ApplySelfIllum( IMaterialInternal *pMaterial, const char *pszShader,
 	VkR_SetSelfIllum( nMask, tint, hMask );
 }
 
+// material variables, with defaults for the ones a material leaves out
+static IMaterialVar *DefinedVar( IMaterialInternal *pMaterial, const char *pszName )
+{
+	bool bFound = false;
+	IMaterialVar *pVar = pMaterial->FindVar( pszName, &bFound, false );
+	return ( bFound && pVar && pVar->IsDefined() ) ? pVar : NULL;
+}
+
+static float VarFloat( IMaterialInternal *pMaterial, const char *pszName, float flDefault )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	return pVar ? pVar->GetFloatValue() : flDefault;
+}
+
+static void VarVec( IMaterialInternal *pMaterial, const char *pszName, float *pOut, int nComps )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	if ( !pVar )
+		return;
+	if ( pVar->GetType() == MATERIAL_VAR_TYPE_VECTOR )
+		pVar->GetVecValue( pOut, nComps );
+	else
+		for ( int i = 0; i < nComps; ++i )
+			pOut[i] = pVar->GetFloatValue();
+}
+
+static bool VarTexture( IMaterialInternal *pMaterial, const char *pszName )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	return pVar && pVar->IsTexture() && pVar->GetTextureValue();
+}
+
+// the generic shaders' bump map, detail texture, $basetexture2, texture transform and phong, and
+// expensive water's normal map; every other pass gets the default surface (all off)
+static void ApplySurface( IMaterialInternal *pMaterial, const char *pszShader, bool bWater )
+{
+	VkR_Surface_t surf;
+	memset( &surf, 0, sizeof( surf ) );
+	surf.m_BaseTransform[0][0] = surf.m_BaseTransform[1][1] = 1.0f;
+	surf.m_flDetailScale[0] = surf.m_flDetailScale[1] = 4.0f;
+	surf.m_flDetailFactor = 1.0f;
+	if ( pMaterial && pszShader && bWater )
+	{
+		// the water shader binds its normal map on stage 4 and its $bumptransform as vertex constants 1-2
+		surf.m_nBump = 3;
+		surf.m_hBump = VkR_GetBoundTexture( 4 );
+		memcpy( surf.m_BaseTransform, s_VertexConstants[1], sizeof( surf.m_BaseTransform ) );
+		surf.m_flWater[0] = VarFloat( pMaterial, "$refractamount", 0.0f );
+		surf.m_flWater[1] = VarFloat( pMaterial, "$reflectamount", 0.8f );
+	}
+	else if ( pMaterial && pszShader )
+	{
+		bool bVertexLit = Q_stristr( pszShader, "VertexLitGeneric" ) != NULL;
+		bool bUnlit = Q_stristr( pszShader, "UnlitGeneric" ) != NULL;
+		bool bWorld = Q_stristr( pszShader, "LightmappedGeneric" ) || Q_stristr( pszShader, "WorldVertexTransition" );
+		if ( bVertexLit || bUnlit || bWorld )
+		{
+			IMaterialVar *pTransform = DefinedVar( pMaterial, "$basetexturetransform" );
+			if ( pTransform && pTransform->GetType() == MATERIAL_VAR_TYPE_MATRIX )
+			{
+				const VMatrix &m = pTransform->GetMatrixValue();
+				for ( int j = 0; j < 4; ++j )
+				{
+					surf.m_BaseTransform[0][j] = m[0][j];
+					surf.m_BaseTransform[1][j] = m[1][j];
+				}
+			}
+			// VertexLitGeneric binds $bumpmap on stage 3, the world shaders on 4
+			bool bPhong = bVertexLit && VarFloat( pMaterial, "$phong", 0.0f ) != 0.0f;
+			if ( ( bVertexLit || bWorld ) && VarTexture( pMaterial, "$bumpmap" ) )
+			{
+				surf.m_nBump = bVertexLit ? 2 : 1;
+				surf.m_hBump = VkR_GetBoundTexture( bVertexLit ? 3 : 4 );
+				surf.m_bSSBump = bWorld && VarFloat( pMaterial, "$ssbump", 0.0f ) != 0.0f;
+			}
+			// $detail: stage 12 on the world shaders, 13 with phong (the skin shader), else 2
+			if ( VarTexture( pMaterial, "$detail" ) )
+			{
+				surf.m_nDetail = (int)VarFloat( pMaterial, "$detailblendmode", 0.0f ) + 1;
+				surf.m_hDetail = VkR_GetBoundTexture( bWorld ? 12 : ( bPhong ? 13 : 2 ) );
+				VarVec( pMaterial, "$detailscale", surf.m_flDetailScale, 2 );
+				surf.m_flDetailFactor = VarFloat( pMaterial, "$detailblendfactor", 1.0f );
+			}
+			if ( Q_stristr( pszShader, "WorldVertexTransition" ) && VarTexture( pMaterial, "$basetexture2" ) )
+				surf.m_hBase2 = VkR_GetBoundTexture( 7 );
+			if ( bPhong && surf.m_nBump == 2 )
+			{
+				surf.m_Phong[0] = VarFloat( pMaterial, "$phongexponent", VarTexture( pMaterial, "$phongexponenttexture" ) ? 20.0f : 5.0f );
+				surf.m_Phong[1] = VarFloat( pMaterial, "$phongboost", 1.0f );
+				surf.m_Phong[2] = VarFloat( pMaterial, "$basemapalphaphongmask", 0.0f ) != 0.0f ? 1.0f : 0.0f;
+				surf.m_PhongFresnel[0] = 0.0f; surf.m_PhongFresnel[1] = 0.5f; surf.m_PhongFresnel[2] = 1.0f;
+				VarVec( pMaterial, "$phongfresnelranges", surf.m_PhongFresnel, 3 );
+				surf.m_PhongTint[0] = surf.m_PhongTint[1] = surf.m_PhongTint[2] = 1.0f;
+				VarVec( pMaterial, "$phongtint", surf.m_PhongTint, 3 );
+			}
+		}
+	}
+	VkR_SetSurface( surf );
+}
+
 static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
 {
 	if ( !pMaterial )
@@ -3088,6 +3209,7 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && VkR_IsRenderTargetTexture( VkR_GetBoundTexture( 0 ) );
 		VkR_SetWaterPass( bWater, VkR_GetBoundTexture( 2 ), s_PixelConstants[1], s_PixelConstants[4] );
+		ApplySurface( s_pBoundMaterial, pszShader, bWater );
 		// bloom: the downsample and blur shaders' taps, from their pixel constants
 		int nPost = 0;
 		float postParams[4] = { 1.0f, 1.0f, 1.0f, 1.0f };

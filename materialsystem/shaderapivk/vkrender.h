@@ -24,6 +24,28 @@ struct VkRVertex_t
 	float m_Normal[3];		// model space, for lit passes
 	unsigned char m_BoneIndex[4];
 	float m_BoneWeight[2];	// the third weight is 1 - the others
+	float m_TangentS[3];	// model space tangent frame (bump maps)
+	float m_TangentT[3];
+	float m_LightmapOffset;	// bumped lightmaps: u offset between the lightmap pages, 0 if not bumped
+};
+
+// a pass's surface: the generic shaders' bump map, detail texture, blend texture, texture
+// transform and phong, and water's normal map (see VkR_SetSurface)
+struct VkR_Surface_t
+{
+	int m_nBump;				// 0 off, 1 world (bumped lightmaps), 2 model (per pixel lights), 3 water
+	bool m_bSSBump;				// $ssbump: the normal map holds the three lightmaps' weights
+	int m_hBump;				// t4
+	int m_nDetail;				// $detailblendmode + 1, 0 off
+	int m_hDetail;				// t5
+	float m_flDetailScale[2];
+	float m_flDetailFactor;
+	int m_hBase2;				// t6: WorldVertexTransition's $basetexture2, blended by vertex alpha
+	float m_BaseTransform[2][4];	// u and v rows applied to ( u, v, 0, 1 )
+	float m_flWater[2];			// water: $refractamount, $reflectamount
+	float m_Phong[4];			// $phongexponent (0 off), $phongboost, 1: base alpha masks it (else normal alpha)
+	float m_PhongFresnel[4];	// $phongfresnelranges
+	float m_PhongTint[4];
 };
 
 // a light for lit (model) passes, world space
@@ -119,6 +141,8 @@ void VkR_SetEnvmapParams( float flContrast, float flSaturation );
 // 0 off. Call after SetEnvmap / SetSelfIllum: the eyes reuse their texture slots.
 void VkR_SetCharacterPass( int nMode, const float ( *pConsts )[4], float flGlintDamping, int hIris, int hGlint );
 void VkR_SetShadowPass( bool bShadow, const float *pShadowColor );
+// every pass: the surface's extra textures and parameters (a default surface turns them off)
+void VkR_SetSurface( const VkR_Surface_t &surface );
 void VkR_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const VkRLight_t *pLights );
 
 void VkR_SetState( const VkRState_t &state );

@@ -36,7 +36,7 @@
 // Device state
 //-----------------------------------------------------------------------------
 enum { FRAMES = 2, SWAP_BUFFERS = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096,
-	DRAW_VIEWS = 4, VIEW_RING = DRAW_VIEWS * 32768, HEAP_CHUNK = 1024 };
+	DRAW_VIEWS = 7, VIEW_RING = DRAW_VIEWS * 32768, HEAP_CHUNK = 1024 };
 
 static HMODULE s_hD3D12;
 static PFN_D3D12_SERIALIZE_ROOT_SIGNATURE s_pfnSerializeRootSignature;
@@ -578,6 +578,9 @@ static ID3D12PipelineState *GetPipeline( Dx12Primitive_t type )
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 44, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 56, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 68, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 2, DXGI_FORMAT_R32_FLOAT, 0, 80, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 	};
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC pd = {};
 	pd.pRootSignature = s_pRootSignature;
@@ -1094,7 +1097,8 @@ bool Dx12R_Init()
 	if ( !s_pVS || !s_pPS )
 		return false;
 
-	// constants b0, bones b1, textures t0-t3 (t3 uses s0); s0 follows the texture's wrap mode, s1 s2 clamp
+	// constants b0, bones b1, textures t0-t6 (t3 uses s0, t4-t6 s3); s0 follows the texture's wrap mode,
+	// s1 s2 clamp, s3 wraps
 	D3D12_DESCRIPTOR_RANGE srvRange = { D3D12_DESCRIPTOR_RANGE_TYPE_SRV, DRAW_VIEWS, 0, 0, 0 };
 	D3D12_DESCRIPTOR_RANGE samplerRange = { D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0, 0, 0 };
 	D3D12_ROOT_PARAMETER params[4] = {};
@@ -1110,11 +1114,11 @@ bool Dx12R_Init()
 	params[3].DescriptorTable.pDescriptorRanges = &samplerRange;
 	for ( int i = 0; i < 4; ++i )
 		params[i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-	D3D12_STATIC_SAMPLER_DESC clamp[2] = {};
-	for ( int i = 0; i < 2; ++i )
+	D3D12_STATIC_SAMPLER_DESC clamp[3] = {};
+	for ( int i = 0; i < 3; ++i )
 	{
 		clamp[i].Filter = D3D12_FILTER_MIN_MAG_MIP_LINEAR;
-		clamp[i].AddressU = clamp[i].AddressV = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+		clamp[i].AddressU = clamp[i].AddressV = i < 2 ? D3D12_TEXTURE_ADDRESS_MODE_CLAMP : D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		clamp[i].AddressW = D3D12_TEXTURE_ADDRESS_MODE_WRAP;
 		clamp[i].ComparisonFunc = D3D12_COMPARISON_FUNC_ALWAYS;
 		clamp[i].BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
@@ -1125,7 +1129,7 @@ bool Dx12R_Init()
 	D3D12_ROOT_SIGNATURE_DESC rsd = {};
 	rsd.NumParameters = 4;
 	rsd.pParameters = params;
-	rsd.NumStaticSamplers = 2;
+	rsd.NumStaticSamplers = 3;
 	rsd.pStaticSamplers = clamp;
 	rsd.Flags = D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT;
 	ID3DBlob *pSignature = NULL, *pErrors = NULL;
@@ -1598,6 +1602,16 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite, pTarget );
 	if ( !pMask )
 		return;
+	// t4 - t6: the surface's normal map, detail texture and blend texture, else white
+	int hExtra[3] = { s_PassSurface.m_nBump ? s_PassSurface.m_hBump : 0, s_PassSurface.m_nDetail ? s_PassSurface.m_hDetail : 0, s_PassSurface.m_hBase2 };
+	Texture_t *pExtra[3];
+	for ( int i = 0; i < 3; ++i )
+	{
+		pExtra[i] = SampleableTexture( hExtra[i], pTarget );
+		if ( !pExtra[i] || pExtra[i]->m_bCube ) pExtra[i] = SampleableTexture( s_hWhite, pTarget );
+		if ( !pExtra[i] )
+			return;
+	}
 
 	// vertex data: cached for static meshes, streamed otherwise
 	D3D12_VERTEX_BUFFER_VIEW vbv = {};
@@ -1633,7 +1647,7 @@ void Dx12R_Draw( Dx12Primitive_t type, const Dx12Vertex_t *pVerts, int nVerts, c
 		ibv.Format = DXGI_FORMAT_R16_UINT;
 	}
 
-	Texture_t *pTextures[DRAW_VIEWS] = { pTex, pSecond, pEnvmap, pMask };
+	Texture_t *pTextures[DRAW_VIEWS] = { pTex, pSecond, pEnvmap, pMask, pExtra[0], pExtra[1], pExtra[2] };
 	for ( int i = 0; i < DRAW_VIEWS; ++i )
 		Transition( pTextures[i]->m_pResource, pTextures[i]->m_State, s_SampleState );
 	if ( !BindTarget() )
