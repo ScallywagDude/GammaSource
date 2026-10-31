@@ -65,6 +65,9 @@ ConVar mat_hdr_manual_tonemap_rate( "mat_hdr_manual_tonemap_rate", "1.0" );
 // bloomscales don't blow out as much in hdr. this factor was derived by comparing images in a
 // reference scene.
 ConVar mat_non_hdr_bloom_scalefactor("mat_non_hdr_bloom_scalefactor",".3");
+// GammaSource: the native renderers bloom HDR maps with the LDR passes; DX9 blooms those at full
+// strength through its HDR path, so they use this in place of mat_non_hdr_bloom_scalefactor
+ConVar mat_native_bloom_scalefactor( "mat_native_bloom_scalefactor", "1.0", FCVAR_ARCHIVE, "Bloom strength on the DX11 / Vulkan / DX12 / OpenGL renderers (DX9 HDR is about 1)" );
 
 // Apply addition scale to the final bloom scale
 static ConVar mat_bloom_scalefactor_scalar( "mat_bloom_scalefactor_scalar", "1.0" );
@@ -1478,7 +1481,7 @@ static float GetBloomAmount( void )
 
 	if ( hdrType == HDR_TYPE_NONE )
 	{
-		flBloomAmount *= mat_non_hdr_bloom_scalefactor.GetFloat()/2.f;
+		flBloomAmount *= ( IsGammaNativeRenderer() ? mat_native_bloom_scalefactor.GetFloat() : mat_non_hdr_bloom_scalefactor.GetFloat() ) / 2.f;
 	}
 
 	flBloomAmount *= mat_bloom_scalefactor_scalar.GetFloat();
