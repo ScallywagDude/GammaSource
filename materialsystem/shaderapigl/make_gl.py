@@ -94,17 +94,17 @@ layout( location = 3 ) in vec2 a_uv2;
 layout( location = 4 ) in vec3 a_normal;
 layout( location = 5 ) in ivec4 a_bones;
 layout( location = 6 ) in vec2 a_weights;
-out vec4 v_color; out vec2 v_uv; out vec2 v_uv2; out vec3 v_wpos; out vec3 v_wnorm; out float v_fogz;
+out vec4 v_color; out vec2 v_uv; out vec2 v_uv2; out vec3 v_wpos; out vec3 v_wnorm; out float v_fogz; out vec4 v_eye;
 void main() { VSIn v; v.pos = a_pos; v.color = a_color; v.uv = a_uv; v.uv2 = a_uv2; v.normal = a_normal; v.bones = a_bones; v.weights = a_weights;
   PSIn o = VSMain( v );
   gl_Position = vec4( o.pos.x, -o.pos.y, o.pos.z, o.pos.w );
   gl_ClipDistance[0] = o.clip.x; gl_ClipDistance[1] = o.clip.y;
-  v_color = o.color; v_uv = o.uv; v_uv2 = o.uv2; v_wpos = o.wpos; v_wnorm = o.wnorm; v_fogz = o.fogz; }
+  v_color = o.color; v_uv = o.uv; v_uv2 = o.uv2; v_wpos = o.wpos; v_wnorm = o.wnorm; v_fogz = o.fogz; v_eye = o.eye; }
 #endif
 #ifdef GAMMA_PS
-in vec4 v_color; in vec2 v_uv; in vec2 v_uv2; in vec3 v_wpos; in vec3 v_wnorm; in float v_fogz;
+in vec4 v_color; in vec2 v_uv; in vec2 v_uv2; in vec3 v_wpos; in vec3 v_wnorm; in float v_fogz; in vec4 v_eye;
 layout( location = 0 ) out vec4 o_target;
-void main() { PSIn i; i.pos = gl_FragCoord; i.color = v_color; i.uv = v_uv; i.uv2 = v_uv2; i.clip = vec2( 0.0f ); i.wpos = v_wpos; i.wnorm = v_wnorm; i.fogz = v_fogz;
+void main() { PSIn i; i.pos = gl_FragCoord; i.color = v_color; i.uv = v_uv; i.uv2 = v_uv2; i.clip = vec2( 0.0f ); i.wpos = v_wpos; i.wnorm = v_wnorm; i.fogz = v_fogz; i.eye = v_eye;
   o_target = PSMain( i ); }
 #endif
 """

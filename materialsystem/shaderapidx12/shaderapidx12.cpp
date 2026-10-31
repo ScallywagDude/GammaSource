@@ -2696,6 +2696,28 @@ static IMaterialInternal *s_pBoundMaterial;
 static float *CurMatrix( int nMode );
 // kept for the few passes the fixed shader reproduces (the shadow colour)
 static float s_PixelConstants[32][4];
+// the shader specific vertex constants (VERTEX_SHADER_SHADER_SPECIFIC_CONST_0 onwards)
+static float s_VertexConstants[10][4];
+
+// Eyes, EyeRefract and Teeth: the eye's projection and the teeth's darkening come from
+// their vertex constants; the iris and glint from the stages the shader bound
+static void ApplyCharacterShader( const char *pszShader )
+{
+	int nMode = 0;
+	if ( pszShader && !Q_stricmp( pszShader, "EyeRefract" ) )
+		nMode = 2;
+	else if ( pszShader && !Q_strnicmp( pszShader, "Eyes", 4 ) )
+		nMode = 1;
+	else if ( pszShader && !Q_stricmp( pszShader, "Teeth" ) )
+		nMode = 3;
+	if ( !nMode )
+	{
+		Dx12R_SetCharacterPass( 0, NULL, 0.0f, 0, 0 );
+		return;
+	}
+	Dx12R_SetCharacterPass( nMode, s_VertexConstants, nMode == 1 ? s_PixelConstants[0][1] : 0.0f,
+		nMode != 3 ? Dx12R_GetBoundTexture( 1 ) : 0, nMode == 1 ? Dx12R_GetBoundTexture( 2 ) : 0 );
+}
 
 // the generic shaders use vertex colour only with $vertexcolor/$vertexalpha and modulate by
 // $color/$alpha; other shaders (sprites, cables, particles, vgui) take vertex colour as is
@@ -3061,6 +3083,7 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
 		Dx12R_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
 		ApplySelfIllum( s_pBoundMaterial, pszShader, ApplyEnvmap( s_pBoundMaterial, pszShader ) );
+		ApplyCharacterShader( pszShader );
 		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && Dx12R_IsRenderTargetTexture( Dx12R_GetBoundTexture( 0 ) );
@@ -3373,6 +3396,12 @@ void CShaderAPIEmpty::SetPixelShaderIndex( int pshIndex )
 // Sets the constant registers for vertex and pixel shaders
 void CShaderAPIEmpty::SetVertexShaderConstant( int var, float const* pVec, int numConst, bool bForce )
 {
+	for ( int i = 0; i < numConst; ++i )
+	{
+		int nReg = var + i - VERTEX_SHADER_SHADER_SPECIFIC_CONST_0;
+		if ( nReg >= 0 && nReg < 10 )
+			memcpy( s_VertexConstants[nReg], pVec + i * 4, sizeof( s_VertexConstants[0] ) );
+	}
 }
 
 void CShaderAPIEmpty::SetBooleanVertexShaderConstant( int var, BOOL const* pVec, int numConst, bool bForce )
@@ -3911,6 +3940,8 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;
 		case CBCMD_SET_VERTEX_SHADER_FLOAT_CONST:
+			SetVertexShaderConstant( CmdData< int >( pCmdBuf + sizeof( int ) ), (const float *)( pCmdBuf + 3 * sizeof( int ) ),
+				CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) );
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;
 		case CBCMD_SETPIXELSHADERFOGPARAMS:

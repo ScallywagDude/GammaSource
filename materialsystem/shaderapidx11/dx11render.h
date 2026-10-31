@@ -107,6 +107,11 @@ void Dx11R_SetSelfIllum( int nMask, const float *pTint, int hMask );
 // static props: the vertex colour (from the colour mesh) is baked light, added to the dynamic lights
 void Dx11R_SetStaticLight( bool bStatic );
 void Dx11R_SetEnvmapParams( float flContrast, float flSaturation );
+// the character shaders, from the vertex constants they set (VERTEX_SHADER_SHADER_SPECIFIC_CONST_0..5):
+// nMode 1 Eyes (eye origin, half eyeball up, iris U, iris V, glint U, glint V; hIris and hGlint
+// are its stages 1 and 2), 2 EyeRefract (eye origin, -, iris U, iris V), 3 Teeth (forward, w = $illumfactor);
+// 0 off. Call after SetEnvmap / SetSelfIllum: the eyes reuse their texture slots.
+void Dx11R_SetCharacterPass( int nMode, const float ( *pConsts )[4], float flGlintDamping, int hIris, int hGlint );
 void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor );
 void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 
