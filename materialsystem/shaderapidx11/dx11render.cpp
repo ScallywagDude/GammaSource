@@ -103,8 +103,11 @@ bool Dx11R_Init()
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "BLENDINDICES", 0, DXGI_FORMAT_R8G8B8A8_UINT, 0, 44, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 		{ "BLENDWEIGHT", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 48, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 56, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 68, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 2, DXGI_FORMAT_R32_FLOAT, 0, 80, D3D11_INPUT_PER_VERTEX_DATA, 0 },
 	};
-	pDevice->CreateInputLayout( layout, 7, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
+	pDevice->CreateInputLayout( layout, 10, pVS->GetBufferPointer(), pVS->GetBufferSize(), &s_pLayout );
 	pVS->Release(); pPS->Release();
 
 	D3D11_BUFFER_DESC cb = {};
@@ -665,7 +668,7 @@ static void ApplyState()
 		pContext->PSSetSamplers( 1, 1, &s_pSamplers[3] );
 		Texture_t *pEnvmap = NULL;
 		if ( s_bEnvmap )
-			pEnvmap = Dx11R_IsCubeTexture( s_hStage1 ) ? GetTexture( s_hStage1 ) : GetTexture( s_hStage2 );
+			pEnvmap = GetTexture( s_hEnvCube );
 		if ( pEnvmap && !pEnvmap->m_pSRV ) EnsureResource( pEnvmap );
 		ID3D11ShaderResourceView *pEnvSRV = ( pEnvmap && pEnvmap->m_bCube ) ? pEnvmap->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 2, 1, &pEnvSRV );
@@ -676,6 +679,17 @@ static void ApplyState()
 		if ( !pMask || !pMask->m_pSRV || pMask->m_bCube ) pMask = GetTexture( s_hWhite );
 		ID3D11ShaderResourceView *pMaskSRV = pMask ? pMask->m_pSRV : NULL;
 		pContext->PSSetShaderResources( 3, 1, &pMaskSRV );
+		// t4 - t6: the surface's normal map, detail texture and blend texture (white if absent), with a wrapping s3
+		int hExtra[3] = { s_PassSurface.m_nBump ? s_PassSurface.m_hBump : 0, s_PassSurface.m_nDetail ? s_PassSurface.m_hDetail : 0, s_PassSurface.m_hBase2 };
+		for ( int i = 0; i < 3; ++i )
+		{
+			Texture_t *pExtra = GetTexture( hExtra[i] );
+			if ( pExtra && !pExtra->m_pSRV ) EnsureResource( pExtra );
+			if ( !pExtra || !pExtra->m_pSRV || pExtra->m_bCube ) pExtra = GetTexture( s_hWhite );
+			ID3D11ShaderResourceView *pExtraSRV = pExtra ? pExtra->m_pSRV : NULL;
+			pContext->PSSetShaderResources( 4 + i, 1, &pExtraSRV );
+		}
+		pContext->PSSetSamplers( 3, 1, &s_pSamplers[0] );
 	}
 
 	pContext->IASetInputLayout( s_pLayout );

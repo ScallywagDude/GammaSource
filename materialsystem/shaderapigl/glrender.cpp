@@ -735,7 +735,10 @@ bool GlR_Init()
 	glEnableVertexAttribArray_( 4 ); glVertexAttribFormat_( 4, 3, GL_FLOAT, GL_FALSE, 32 );			// normal
 	glEnableVertexAttribArray_( 5 ); glVertexAttribIFormat_( 5, 4, GL_UNSIGNED_BYTE, 44 );			// bone indices
 	glEnableVertexAttribArray_( 6 ); glVertexAttribFormat_( 6, 2, GL_FLOAT, GL_FALSE, 48 );			// bone weights
-	for ( GLuint i = 0; i < 7; ++i )
+	glEnableVertexAttribArray_( 7 ); glVertexAttribFormat_( 7, 3, GL_FLOAT, GL_FALSE, 56 );			// tangent S
+	glEnableVertexAttribArray_( 8 ); glVertexAttribFormat_( 8, 3, GL_FLOAT, GL_FALSE, 68 );			// tangent T
+	glEnableVertexAttribArray_( 9 ); glVertexAttribFormat_( 9, 1, GL_FLOAT, GL_FALSE, 80 );			// bumped lightmap offset
+	for ( GLuint i = 0; i < 10; ++i )
 		glVertexAttribBinding_( i, 0 );
 
 	glGenSamplers_( 4, s_Samplers );
@@ -1206,7 +1209,7 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	if ( !pSecond || pSecond->m_bCube ) pSecond = SampleableTexture( s_hWhite, pTarget );
 	Texture_t *pEnvmap = NULL;
 	if ( s_bEnvmap )
-		pEnvmap = SampleableTexture( GlR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2, pTarget );
+		pEnvmap = SampleableTexture( s_hEnvCube, pTarget );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube, pTarget );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;
@@ -1215,6 +1218,16 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite, pTarget );
 	if ( !pMask )
 		return;
+	// t4 - t6: the surface's normal map, detail texture and blend texture, else white
+	int hExtra[3] = { s_PassSurface.m_nBump ? s_PassSurface.m_hBump : 0, s_PassSurface.m_nDetail ? s_PassSurface.m_hDetail : 0, s_PassSurface.m_hBase2 };
+	Texture_t *pExtra[3];
+	for ( int i = 0; i < 3; ++i )
+	{
+		pExtra[i] = SampleableTexture( hExtra[i], pTarget );
+		if ( !pExtra[i] || pExtra[i]->m_bCube ) pExtra[i] = SampleableTexture( s_hWhite, pTarget );
+		if ( !pExtra[i] )
+			return;
+	}
 
 	// vertex data: cached for static meshes, streamed otherwise
 	GLuint nVB = 0;
@@ -1274,6 +1287,13 @@ void GlR_Draw( GlRPrimitive_t type, const GlRVertex_t *pVerts, int nVerts, const
 	glActiveTexture_( GL_TEXTURE0 + 3 );
 	glBindTexture( GL_TEXTURE_2D, pMask->m_nTexture );
 	glBindSampler_( 3, s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )] );	// as the HLSL: the base's sampler
+	for ( int i = 0; i < 3; ++i )
+	{
+		glActiveTexture_( GL_TEXTURE0 + 4 + i );
+		glBindTexture( GL_TEXTURE_2D, pExtra[i]->m_nTexture );
+		glBindSampler_( 4 + i, s_Samplers[0] );	// s3 wraps
+	}
+	glActiveTexture_( GL_TEXTURE0 );
 	glBindBufferRange_( GL_UNIFORM_BUFFER, 0, nCB, nCBOffset, sizeof( Constants_t ) );
 	glBindBufferRange_( GL_UNIFORM_BUFFER, 1, s_nBoneBuffer, s_nBoneOffset, sizeof( s_Bones ) );
 

@@ -20,6 +20,8 @@
 #include "shaderapi/ishaderutil.h"
 #include "shaderapi/ishaderapi.h"
 #include "materialsystem/imesh.h"
+#include "materialsystem/imaterialvar.h"
+#include "mathlib/vmatrix.h"
 #include "tier0/dbg.h"
 #include "materialsystem/idebugtextureinfo.h"
 #include "materialsystem/deformations.h"
@@ -47,6 +49,16 @@ enum
 	DX11V_BONEINDEX = 200,	// 4 bytes
 	DX11V_USERDATA = 204,	// float4
 	DX11V_STRIDE = 220,
+	// studiorender's software skinning writes whole ModelVertexDX7_t / ModelVertexDX8_t with
+	// CVertexBuilder::FastVertex (aligned SSE stores), so its meshes get that packed layout instead
+	DX11V_PACKED_BONEWEIGHT = 12,
+	DX11V_PACKED_BONEINDEX = 20,
+	DX11V_PACKED_NORMAL = 24,
+	DX11V_PACKED_COLOR = 36,
+	DX11V_PACKED_TEXCOORD = 40,
+	DX11V_PACKED_USERDATA = 48,
+	DX11V_PACKED_DX7 = 48,		// sizeof( ModelVertexDX7_t )
+	DX11V_PACKED_DX8 = 64,		// sizeof( ModelVertexDX8_t )
 	DX11_MAX_VERTS = 65536,
 	DX11_MAX_INDICES = 196608,
 };
@@ -126,6 +138,8 @@ public:
 	CEmptyMesh *m_pColorMesh;
 	int m_nColorMeshOffset;
 	int m_nStride;		// DX11V_STRIDE, or 4 for colour meshes (specular only, packed)
+	int m_nPacked;		// DX11V_PACKED_DX7 / DX8 while locked for software skinning (see GetDynamicMeshEx), else 0
+	int m_nPackedRequest;
 
 
 	virtual int IndexCount() const
@@ -1609,6 +1623,7 @@ CEmptyMesh::CEmptyMesh( bool bIsDynamic ) : m_bIsDynamic( bIsDynamic )
 	m_pColorMesh = NULL;
 	m_nColorMeshOffset = 0;
 	m_nStride = DX11V_STRIDE;
+	m_nPacked = m_nPackedRequest = 0;
 	if ( bIsDynamic )
 	{
 		EnsureVertices( DX11_MAX_VERTS );
@@ -1742,16 +1757,54 @@ static void SetVertexDesc( unsigned char *pBase, VertexDesc_t &desc, int nStride
 
 }
 
+// Points a vertex description at packed ModelVertexDX7_t / ModelVertexDX8_t (nPacked bytes each)
+static void SetPackedVertexDesc( unsigned char *pBase, VertexDesc_t &desc, int nPacked )
+{
+	// what the layout has no room for writes to scratch
+	static unsigned char s_Scratch[DX11V_STRIDE];
+	SetVertexDesc( s_Scratch, desc );
+	desc.m_VertexSize_Specular = desc.m_VertexSize_TangentS = desc.m_VertexSize_TangentT = desc.m_VertexSize_UserData = 0;
+	for ( int i = 0; i < VERTEX_MAX_TEXTURE_COORDINATES; ++i )
+		desc.m_VertexSize_TexCoord[i] = 0;
+	desc.m_pPosition = (float*)pBase;
+	desc.m_pBoneWeight = (float*)( pBase + DX11V_PACKED_BONEWEIGHT );
+	desc.m_pBoneMatrixIndex = pBase + DX11V_PACKED_BONEINDEX;
+	desc.m_pNormal = (float*)( pBase + DX11V_PACKED_NORMAL );
+	desc.m_pColor = pBase + DX11V_PACKED_COLOR;
+	desc.m_pTexCoord[0] = (float*)( pBase + DX11V_PACKED_TEXCOORD );
+	desc.m_VertexSize_TexCoord[0] = nPacked;
+	if ( nPacked == DX11V_PACKED_DX8 )
+	{
+		desc.m_pUserData = (float*)( pBase + DX11V_PACKED_USERDATA );
+		desc.m_VertexSize_UserData = nPacked;
+	}
+	desc.m_NumBoneWeights = 2;
+	desc.m_VertexSize_Position = desc.m_VertexSize_BoneWeight = desc.m_VertexSize_BoneMatrixIndex = nPacked;
+	desc.m_VertexSize_Normal = desc.m_VertexSize_Color = nPacked;
+	desc.m_ActualVertexSize = nPacked;
+}
+
 bool CEmptyMesh::Lock( int nVertexCount, bool bAppend, VertexDesc_t &desc )
 {
 	EnsureVertices( max( nVertexCount, 1 ) );
 	nVertexCount = clamp( nVertexCount, 0, m_nVertexCapacity );
+	m_nPacked = m_nStride == DX11V_STRIDE ? m_nPackedRequest : 0;
+	if ( m_nPacked )
+	{
+		SetPackedVertexDesc( m_pVertexMemory, desc, m_nPacked );
+		desc.m_nFirstVertex = 0;
+		desc.m_nOffset = 0;
+		return true;
+	}
 	// Formats without colour or texture coordinates leave those slots alone; make them neutral
 	for ( int v = 0; m_nStride == DX11V_STRIDE && v < nVertexCount; ++v )
 	{
 		unsigned char *pVert = m_pVertexMemory + v * DX11V_STRIDE;
 		*(unsigned int *)( pVert + DX11V_COLOR ) = 0xFFFFFFFF;
 		memset( pVert + DX11V_TEXCOORD, 0, 8 );
+		memset( pVert + DX11V_TEXCOORD + 32, 0, 8 );		// texcoord 2: the bumped lightmap offset
+		memset( pVert + DX11V_TANGENT_S, 0, 24 );
+		memset( pVert + DX11V_USERDATA, 0, 16 );
 	}
 
 	SetVertexDesc( m_pVertexMemory, desc, m_nStride );
@@ -1791,7 +1844,10 @@ void CEmptyMesh::ModifyBeginEx( bool bReadOnly, int firstVertex, int numVerts, i
 {
 	firstVertex = max( firstVertex, 0 );
 	EnsureVertices( max( firstVertex + numVerts, 1 ) );
-	SetVertexDesc( m_pVertexMemory + firstVertex * m_nStride, *static_cast<VertexDesc_t*>( &desc ), m_nStride );
+	if ( m_nPacked )
+		SetPackedVertexDesc( m_pVertexMemory + firstVertex * m_nPacked, *static_cast<VertexDesc_t*>( &desc ), m_nPacked );
+	else
+		SetVertexDesc( m_pVertexMemory + firstVertex * m_nStride, *static_cast<VertexDesc_t*>( &desc ), m_nStride );
 	desc.m_nFirstVertex = firstVertex;
 	static_cast<VertexDesc_t&>( desc ).m_nOffset = 0;
 	ModifyBegin( bReadOnly, firstIndex, numIndices, *static_cast<IndexDesc_t*>( &desc ) );
@@ -1854,19 +1910,38 @@ void CEmptyMesh::RenderPass()
 	const void *pCacheKey = ( pVB->m_bCacheable && !pColors ) ? pVB : NULL;
 	int nVersion = pVB->m_nVersion;
 	bool bCached = pCacheKey && VkR_HasCachedVertices( pCacheKey, nVersion );
+	// software skinned models come packed (see SetPackedVertexDesc): no second texcoord or tangents
+	static const unsigned char s_Zero[16] = { 0 };
+	int nPacked = pVB->m_nPacked;
 	for ( int v = 0; !bCached && v < nVerts; ++v )
 	{
-		const unsigned char *pSrc = pVertexMemory + v * DX11V_STRIDE;
+		const unsigned char *pSrc = pVertexMemory + v * ( nPacked ? nPacked : DX11V_STRIDE );
 		VkRVertex_t &dst = s_Verts[v];
 		memcpy( dst.m_Pos, pSrc + DX11V_POSITION, 12 );
 		// the mesh builder stores colours as B G R A; the device reads R G B A
-		const unsigned char *c = pSrc + DX11V_COLOR;
+		const unsigned char *c = pSrc + ( nPacked ? DX11V_PACKED_COLOR : DX11V_COLOR );
 		dst.m_Color = c[2] | ( c[1] << 8 ) | ( c[0] << 16 ) | ( c[3] << 24 );
-		memcpy( dst.m_UV, pSrc + DX11V_TEXCOORD, 8 );
-		memcpy( dst.m_UV2, pSrc + DX11V_TEXCOORD + 16, 8 );
-		memcpy( dst.m_Normal, pSrc + DX11V_NORMAL, 12 );
-		memcpy( dst.m_BoneIndex, pSrc + DX11V_BONEINDEX, 4 );
-		memcpy( dst.m_BoneWeight, pSrc + DX11V_BONEWEIGHT, 8 );
+		memcpy( dst.m_UV, pSrc + ( nPacked ? DX11V_PACKED_TEXCOORD : DX11V_TEXCOORD ), 8 );
+		memcpy( dst.m_UV2, nPacked ? s_Zero : pSrc + DX11V_TEXCOORD + 16, 8 );
+		memcpy( dst.m_Normal, pSrc + ( nPacked ? DX11V_PACKED_NORMAL : DX11V_NORMAL ), 12 );
+		memcpy( dst.m_BoneIndex, pSrc + ( nPacked ? DX11V_PACKED_BONEINDEX : DX11V_BONEINDEX ), 4 );
+		memcpy( dst.m_BoneWeight, pSrc + ( nPacked ? DX11V_PACKED_BONEWEIGHT : DX11V_BONEWEIGHT ), 8 );
+		// the tangent frame: brushes and displacements write S and T, models S and T's sign in userdata
+		const float *pUser = (const float *)( nPacked == DX11V_PACKED_DX8 ? pSrc + DX11V_PACKED_USERDATA : ( nPacked ? s_Zero : pSrc + DX11V_USERDATA ) );
+		if ( pUser[3] != 0.0f )
+		{
+			const float *n = dst.m_Normal;
+			memcpy( dst.m_TangentS, pUser, 12 );
+			dst.m_TangentT[0] = ( n[1] * pUser[2] - n[2] * pUser[1] ) * pUser[3];
+			dst.m_TangentT[1] = ( n[2] * pUser[0] - n[0] * pUser[2] ) * pUser[3];
+			dst.m_TangentT[2] = ( n[0] * pUser[1] - n[1] * pUser[0] ) * pUser[3];
+		}
+		else
+		{
+			memcpy( dst.m_TangentS, nPacked ? s_Zero : pSrc + DX11V_TANGENT_S, 12 );
+			memcpy( dst.m_TangentT, nPacked ? s_Zero : pSrc + DX11V_TANGENT_T, 12 );
+		}
+		memcpy( &dst.m_LightmapOffset, nPacked ? s_Zero : pSrc + DX11V_TEXCOORD + 32, 4 );
 		int nColorByte = pColors ? m_nColorMeshOffset + v * pColors->m_nStride : 0;
 		if ( pColors && nColorByte + pColors->m_nStride <= pColors->m_nVertexCapacity * pColors->m_nStride )
 		{
@@ -2696,6 +2771,28 @@ static IMaterialInternal *s_pBoundMaterial;
 static float *CurMatrix( int nMode );
 // kept for the few passes the fixed shader reproduces (the shadow colour)
 static float s_PixelConstants[32][4];
+// the shader specific vertex constants (VERTEX_SHADER_SHADER_SPECIFIC_CONST_0 onwards)
+static float s_VertexConstants[10][4];
+
+// Eyes, EyeRefract and Teeth: the eye's projection and the teeth's darkening come from
+// their vertex constants; the iris and glint from the stages the shader bound
+static void ApplyCharacterShader( const char *pszShader )
+{
+	int nMode = 0;
+	if ( pszShader && !Q_stricmp( pszShader, "EyeRefract" ) )
+		nMode = 2;
+	else if ( pszShader && !Q_strnicmp( pszShader, "Eyes", 4 ) )
+		nMode = 1;
+	else if ( pszShader && !Q_stricmp( pszShader, "Teeth" ) )
+		nMode = 3;
+	if ( !nMode )
+	{
+		VkR_SetCharacterPass( 0, NULL, 0.0f, 0, 0 );
+		return;
+	}
+	VkR_SetCharacterPass( nMode, s_VertexConstants, nMode == 1 ? s_PixelConstants[0][1] : 0.0f,
+		nMode != 3 ? VkR_GetBoundTexture( 1 ) : 0, nMode == 1 ? VkR_GetBoundTexture( 2 ) : 0 );
+}
 
 // the generic shaders use vertex colour only with $vertexcolor/$vertexalpha and modulate by
 // $color/$alpha; other shaders (sprites, cables, particles, vgui) take vertex colour as is
@@ -2726,8 +2823,30 @@ static void ApplyVertexColorUse( IMaterialInternal *pMaterial, bool bColorMesh )
 	VkR_SetVertexColorUse( bColor, pMaterial->GetMaterialVarFlag( MATERIAL_VAR_VERTEXALPHA ), color );
 }
 
-// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric) or
-// 2 (LightmappedGeneric); the tint and mask come from the material
+static float VarFloat( IMaterialInternal *pMaterial, const char *pszName, float flDefault );
+
+// VertexLitGeneric draws with the skin shader when $phong is on and there is a bump map or
+// $basemapalphaphongmask (vertexlitgeneric_dx9_helper.cpp WantsSkinShader)
+static bool IsSkinPass( IMaterialInternal *pMaterial, const char *pszShader )
+{
+	if ( !pMaterial || !pszShader || !Q_stristr( pszShader, "VertexLitGeneric" ) )
+		return false;
+	bool bFound = false;
+	IMaterialVar *pVar = pMaterial->FindVar( "$phong", &bFound, false );
+	if ( !bFound || !pVar || !pVar->IsDefined() || !pVar->GetIntValue() )
+		return false;
+	pVar = pMaterial->FindVar( "$diffusewarp", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() && pVar->IsTexture() )
+		return true;
+	pVar = pMaterial->FindVar( "$basemapalphaphongmask", &bFound, false );
+	if ( bFound && pVar && pVar->IsDefined() && pVar->GetIntValue() == 1 )
+		return true;
+	pVar = pMaterial->FindVar( "$bumpmap", &bFound, false );
+	return bFound && pVar && pVar->IsDefined() && pVar->IsTexture();
+}
+
+// $envmap on the generic shaders: they bind the cube on stage 1 (VertexLitGeneric), 2
+// (LightmappedGeneric) or 8 (the skin shader); the tint and mask come from the material
 static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 {
 	bool bGeneric = pszShader && ( Q_stristr( pszShader, "VertexLitGeneric" ) || Q_stristr( pszShader, "LightmappedGeneric" ) ||
@@ -2739,7 +2858,13 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 		IMaterialVar *pEnvmap = pMaterial->FindVar( "$envmap", &bHasEnvmap, false );
 		bHasEnvmap = bHasEnvmap && pEnvmap && pEnvmap->IsDefined() && pEnvmap->IsTexture();
 	}
-	if ( !bHasEnvmap || !( VkR_IsCubeTexture( VkR_GetBoundTexture( 1 ) ) || VkR_IsCubeTexture( VkR_GetBoundTexture( 2 ) ) ) )
+	bool bSkin = bHasEnvmap && IsSkinPass( pMaterial, pszShader );
+	int hCube = 0;
+	if ( bSkin )
+		hCube = VkR_GetBoundTexture( 8 );
+	else if ( bHasEnvmap )
+		hCube = VkR_IsCubeTexture( VkR_GetBoundTexture( 1 ) ) ? VkR_GetBoundTexture( 1 ) : VkR_GetBoundTexture( 2 );
+	if ( !bHasEnvmap || !VkR_IsCubeTexture( hCube ) )
 	{
 		VkR_SetEnvmap( false, NULL, 0, NULL );
 		return false;
@@ -2765,6 +2890,12 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 		hMask = VkR_GetBoundTexture( bVertexLit ? 3 : 4 );
 		nMask = hMask ? 3 : 0;
 	}
+	// the skin shader masks by base alpha (not inverted), or with $normalmapalphaenvmapmask by the phong mask
+	if ( bSkin )
+	{
+		hMask = 0;
+		nMask = pMaterial->GetMaterialVarFlag( MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK ) ? 5 : 4;
+	}
 
 	// the eye: the inverse of the view matrix's translation (row vectors)
 	float *v = CurMatrix( MATERIAL_VIEW );
@@ -2780,7 +2911,8 @@ static bool ApplyEnvmap( IMaterialInternal *pMaterial, const char *pszShader )
 	if ( bFound && pVar && pVar->IsDefined() )
 		flSaturation = pVar->GetFloatValue();
 	VkR_SetEnvmapParams( flContrast, flSaturation );
-	return nMask >= 2;
+	VkR_SetEnvmapCube( hCube, bSkin, bSkin ? VarFloat( pMaterial, "$envmapfresnel", 0.0f ) : 0.0f );
+	return nMask == 2 || nMask == 3;
 }
 
 // $selfillum on the generic shaders (after ApplyEnvmap, which may claim t3 for its mask)
@@ -2797,16 +2929,116 @@ static void ApplySelfIllum( IMaterialInternal *pMaterial, const char *pszShader,
 	IMaterialVar *pTint = pMaterial->FindVar( "$selfillumtint", &bFound, false );
 	if ( bFound && pTint && pTint->IsDefined() )
 		pTint->GetVecValue( tint, 3 );
-	// VertexLitGeneric binds $selfillummask on stage 11
+	// VertexLitGeneric binds $selfillummask on stage 11, the skin shader on 14
 	int nMask = 1, hMask = 0;
 	IMaterialVar *pMaskVar = pMaterial->FindVar( "$selfillummask", &bFound, false );
 	if ( bFound && pMaskVar && pMaskVar->IsDefined() && pMaskVar->IsTexture() && !bEnvmapMask && Q_stristr( pszShader, "VertexLitGeneric" ) )
 	{
-		hMask = VkR_GetBoundTexture( 11 );
+		hMask = VkR_GetBoundTexture( IsSkinPass( pMaterial, pszShader ) ? 14 : 11 );
 		if ( hMask )
 			nMask = 2;
 	}
 	VkR_SetSelfIllum( nMask, tint, hMask );
+}
+
+// material variables, with defaults for the ones a material leaves out
+static IMaterialVar *DefinedVar( IMaterialInternal *pMaterial, const char *pszName )
+{
+	bool bFound = false;
+	IMaterialVar *pVar = pMaterial->FindVar( pszName, &bFound, false );
+	return ( bFound && pVar && pVar->IsDefined() ) ? pVar : NULL;
+}
+
+static float VarFloat( IMaterialInternal *pMaterial, const char *pszName, float flDefault )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	return pVar ? pVar->GetFloatValue() : flDefault;
+}
+
+static void VarVec( IMaterialInternal *pMaterial, const char *pszName, float *pOut, int nComps )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	if ( !pVar )
+		return;
+	if ( pVar->GetType() == MATERIAL_VAR_TYPE_VECTOR )
+		pVar->GetVecValue( pOut, nComps );
+	else
+		for ( int i = 0; i < nComps; ++i )
+			pOut[i] = pVar->GetFloatValue();
+}
+
+static bool VarTexture( IMaterialInternal *pMaterial, const char *pszName )
+{
+	IMaterialVar *pVar = DefinedVar( pMaterial, pszName );
+	return pVar && pVar->IsTexture() && pVar->GetTextureValue();
+}
+
+// the generic shaders' bump map, detail texture, $basetexture2, texture transform and phong, and
+// expensive water's normal map; every other pass gets the default surface (all off)
+static void ApplySurface( IMaterialInternal *pMaterial, const char *pszShader, bool bWater )
+{
+	VkR_Surface_t surf;
+	memset( &surf, 0, sizeof( surf ) );
+	surf.m_BaseTransform[0][0] = surf.m_BaseTransform[1][1] = 1.0f;
+	surf.m_flDetailScale[0] = surf.m_flDetailScale[1] = 4.0f;
+	surf.m_flDetailFactor = 1.0f;
+	if ( pMaterial && pszShader && bWater )
+	{
+		// the water shader binds its normal map on stage 4 and its $bumptransform as vertex constants 1-2
+		surf.m_nBump = 3;
+		surf.m_hBump = VkR_GetBoundTexture( 4 );
+		memcpy( surf.m_BaseTransform, s_VertexConstants[1], sizeof( surf.m_BaseTransform ) );
+		surf.m_flWater[0] = VarFloat( pMaterial, "$refractamount", 0.0f );
+		surf.m_flWater[1] = VarFloat( pMaterial, "$reflectamount", 0.8f );
+	}
+	else if ( pMaterial && pszShader )
+	{
+		bool bVertexLit = Q_stristr( pszShader, "VertexLitGeneric" ) != NULL;
+		bool bUnlit = Q_stristr( pszShader, "UnlitGeneric" ) != NULL;
+		bool bWorld = Q_stristr( pszShader, "LightmappedGeneric" ) || Q_stristr( pszShader, "WorldVertexTransition" );
+		if ( bVertexLit || bUnlit || bWorld )
+		{
+			IMaterialVar *pTransform = DefinedVar( pMaterial, "$basetexturetransform" );
+			if ( pTransform && pTransform->GetType() == MATERIAL_VAR_TYPE_MATRIX )
+			{
+				const VMatrix &m = pTransform->GetMatrixValue();
+				for ( int j = 0; j < 4; ++j )
+				{
+					surf.m_BaseTransform[0][j] = m[0][j];
+					surf.m_BaseTransform[1][j] = m[1][j];
+				}
+			}
+			// VertexLitGeneric binds $bumpmap on stage 3, the world shaders on 4
+			bool bPhong = IsSkinPass( pMaterial, pszShader );
+			if ( ( ( bVertexLit || bWorld ) && VarTexture( pMaterial, "$bumpmap" ) ) || bPhong )
+			{
+				surf.m_nBump = bVertexLit ? 2 : 1;
+				surf.m_hBump = VkR_GetBoundTexture( bVertexLit ? 3 : 4 );
+				surf.m_bSSBump = bWorld && VarFloat( pMaterial, "$ssbump", 0.0f ) != 0.0f;
+			}
+			// $detail: stage 12 on the world shaders, 13 with phong (the skin shader), else 2
+			if ( VarTexture( pMaterial, "$detail" ) )
+			{
+				surf.m_nDetail = (int)VarFloat( pMaterial, "$detailblendmode", 0.0f ) + 1;
+				surf.m_hDetail = VkR_GetBoundTexture( bWorld ? 12 : ( bPhong ? 13 : 2 ) );
+				VarVec( pMaterial, "$detailscale", surf.m_flDetailScale, 2 );
+				surf.m_flDetailFactor = VarFloat( pMaterial, "$detailblendfactor", 1.0f );
+			}
+			if ( Q_stristr( pszShader, "WorldVertexTransition" ) && VarTexture( pMaterial, "$basetexture2" ) )
+				surf.m_hBase2 = VkR_GetBoundTexture( 7 );
+			if ( bPhong && surf.m_nBump == 2 )
+			{
+				surf.m_Phong[0] = VarFloat( pMaterial, "$phongexponent", VarTexture( pMaterial, "$phongexponenttexture" ) ? 20.0f : 5.0f );
+				surf.m_Phong[1] = VarFloat( pMaterial, "$phongboost", 1.0f );
+				surf.m_Phong[2] = VarFloat( pMaterial, "$basemapalphaphongmask", 0.0f ) != 0.0f ? 1.0f : 0.0f;
+				surf.m_PhongFresnel[0] = 0.0f; surf.m_PhongFresnel[1] = 0.5f; surf.m_PhongFresnel[2] = 1.0f;
+				VarVec( pMaterial, "$phongfresnelranges", surf.m_PhongFresnel, 3 );
+				surf.m_PhongTint[0] = surf.m_PhongTint[1] = surf.m_PhongTint[2] = 1.0f;
+				VarVec( pMaterial, "$phongtint", surf.m_PhongTint, 3 );
+			}
+		}
+	}
+	VkR_SetSurface( surf );
 }
 
 static bool IsVertexLitMaterial( IMaterialInternal *pMaterial )
@@ -3019,6 +3251,7 @@ void CShaderAPIEmpty::FlushBufferedPrimitives()
 // call DestroyStaticMesh on the mesh returned by this call.
 IMesh* CShaderAPIEmpty::GetDynamicMesh( IMaterial* pMaterial, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
+	m_Mesh.m_nPackedRequest = 0;
 	m_Mesh.m_pVertexSource = static_cast< CEmptyMesh * >( pVertexOverride );
 	m_Mesh.m_pIndexSource = static_cast< CEmptyMesh * >( pIndexOverride );
 	return &m_Mesh;
@@ -3026,7 +3259,17 @@ IMesh* CShaderAPIEmpty::GetDynamicMesh( IMaterial* pMaterial, int nHWSkinBoneCou
 
 IMesh* CShaderAPIEmpty::GetDynamicMeshEx( IMaterial* pMaterial, VertexFormat_t fmt, int nHWSkinBoneCount, bool buffered, IMesh* pVertexOverride, IMesh* pIndexOverride )
 {
-	return GetDynamicMesh( pMaterial, nHWSkinBoneCount, buffered, pVertexOverride, pIndexOverride );
+	IMesh *pMesh = GetDynamicMesh( pMaterial, nHWSkinBoneCount, buffered, pVertexOverride, pIndexOverride );
+	// studiorender's software skinning format (CStudioRender::ComputeSWSkinVertexFormat) is written
+	// a whole ModelVertexDX7_t / DX8_t at a time, so it gets that layout
+	const VertexFormat_t swSkin = VERTEX_POSITION | VERTEX_NORMAL | VERTEX_COLOR | VERTEX_BONE_INDEX |
+		VERTEX_BONEWEIGHT( 2 ) | VERTEX_TEXCOORD_SIZE( 0, 2 );
+	fmt &= ~( VERTEX_FORMAT_USE_EXACT_FORMAT | VERTEX_FORMAT_COMPRESSED );
+	if ( !pVertexOverride && fmt == swSkin )
+		m_Mesh.m_nPackedRequest = DX11V_PACKED_DX7;
+	else if ( !pVertexOverride && fmt == ( swSkin | VERTEX_USERDATA_SIZE( 4 ) ) )
+		m_Mesh.m_nPackedRequest = DX11V_PACKED_DX8;
+	return pMesh;
 }
 
 IMesh* CShaderAPIEmpty::GetFlexMesh()
@@ -3061,10 +3304,12 @@ void CShaderAPIEmpty::RenderPass( int nPass, int nPassCount )
 		const char *pszShader = s_pBoundMaterial ? s_pBoundMaterial->GetShaderName() : NULL;
 		VkR_SetShadowPass( pszShader && !Q_stricmp( pszShader, "Shadow" ), s_PixelConstants[1] );
 		ApplySelfIllum( s_pBoundMaterial, pszShader, ApplyEnvmap( s_pBoundMaterial, pszShader ) );
+		ApplyCharacterShader( pszShader );
 		// expensive water: the shader bound the refraction (0) and reflection (2) targets and set
 		// the refract (c1) and reflect (c4) tints; cheap water (envmap) draws as before
 		bool bWater = pszShader && !Q_strnicmp( pszShader, "Water", 5 ) && VkR_IsRenderTargetTexture( VkR_GetBoundTexture( 0 ) );
 		VkR_SetWaterPass( bWater, VkR_GetBoundTexture( 2 ), s_PixelConstants[1], s_PixelConstants[4] );
+		ApplySurface( s_pBoundMaterial, pszShader, bWater );
 		// bloom: the downsample and blur shaders' taps, from their pixel constants
 		int nPost = 0;
 		float postParams[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
@@ -3373,6 +3618,12 @@ void CShaderAPIEmpty::SetPixelShaderIndex( int pshIndex )
 // Sets the constant registers for vertex and pixel shaders
 void CShaderAPIEmpty::SetVertexShaderConstant( int var, float const* pVec, int numConst, bool bForce )
 {
+	for ( int i = 0; i < numConst; ++i )
+	{
+		int nReg = var + i - VERTEX_SHADER_SHADER_SPECIFIC_CONST_0;
+		if ( nReg >= 0 && nReg < 10 )
+			memcpy( s_VertexConstants[nReg], pVec + i * 4, sizeof( s_VertexConstants[0] ) );
+	}
 }
 
 void CShaderAPIEmpty::SetBooleanVertexShaderConstant( int var, BOOL const* pVec, int numConst, bool bForce )
@@ -3911,6 +4162,8 @@ void CShaderAPIEmpty::ExecuteCommandBuffer( uint8 *pCmdBuf )
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;
 		case CBCMD_SET_VERTEX_SHADER_FLOAT_CONST:
+			SetVertexShaderConstant( CmdData< int >( pCmdBuf + sizeof( int ) ), (const float *)( pCmdBuf + 3 * sizeof( int ) ),
+				CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) );
 			pCmdBuf += CmdData< int >( pCmdBuf + 2 * sizeof( int ) ) * 4 * sizeof( float ) + 3 * sizeof( int );
 			break;
 		case CBCMD_SETPIXELSHADERFOGPARAMS:

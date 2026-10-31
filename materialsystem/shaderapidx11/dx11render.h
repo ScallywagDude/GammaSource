@@ -18,6 +18,28 @@ struct Dx11Vertex_t
 	float m_Normal[3];		// model space, for lit passes
 	unsigned char m_BoneIndex[4];
 	float m_BoneWeight[2];	// the third weight is 1 - the others
+	float m_TangentS[3];	// model space tangent frame (bump maps)
+	float m_TangentT[3];
+	float m_LightmapOffset;	// bumped lightmaps: u offset between the lightmap pages, 0 if not bumped
+};
+
+// a pass's surface: the generic shaders' bump map, detail texture, blend texture, texture
+// transform and phong, and water's normal map (see Dx11R_SetSurface)
+struct Dx11R_Surface_t
+{
+	int m_nBump;				// 0 off, 1 world (bumped lightmaps), 2 model (per pixel lights), 3 water
+	bool m_bSSBump;				// $ssbump: the normal map holds the three lightmaps' weights
+	int m_hBump;				// t4
+	int m_nDetail;				// $detailblendmode + 1, 0 off
+	int m_hDetail;				// t5
+	float m_flDetailScale[2];
+	float m_flDetailFactor;
+	int m_hBase2;				// t6: WorldVertexTransition's $basetexture2, blended by vertex alpha
+	float m_BaseTransform[2][4];	// u and v rows applied to ( u, v, 0, 1 )
+	float m_flWater[2];			// water: $refractamount, $reflectamount
+	float m_Phong[4];			// $phongexponent (0 off), $phongboost, 1: base alpha masks it (else normal alpha)
+	float m_PhongFresnel[4];	// $phongfresnelranges
+	float m_PhongTint[4];
 };
 
 // a light for lit (model) passes, world space
@@ -107,7 +129,16 @@ void Dx11R_SetSelfIllum( int nMask, const float *pTint, int hMask );
 // static props: the vertex colour (from the colour mesh) is baked light, added to the dynamic lights
 void Dx11R_SetStaticLight( bool bStatic );
 void Dx11R_SetEnvmapParams( float flContrast, float flSaturation );
+// after SetEnvmap: the cube map's texture; bSkin = the skin (phong) shader's envmap, masked by fresnel ($envmapfresnel)
+void Dx11R_SetEnvmapCube( int hCube, bool bSkin, float flFresnel );
+// the character shaders, from the vertex constants they set (VERTEX_SHADER_SHADER_SPECIFIC_CONST_0..5):
+// nMode 1 Eyes (eye origin, half eyeball up, iris U, iris V, glint U, glint V; hIris and hGlint
+// are its stages 1 and 2), 2 EyeRefract (eye origin, -, iris U, iris V), 3 Teeth (forward, w = $illumfactor);
+// 0 off. Call after SetEnvmap / SetSelfIllum: the eyes reuse their texture slots.
+void Dx11R_SetCharacterPass( int nMode, const float ( *pConsts )[4], float flGlintDamping, int hIris, int hGlint );
 void Dx11R_SetShadowPass( bool bShadow, const float *pShadowColor );
+// every pass: the surface's extra textures and parameters (a default surface turns them off)
+void Dx11R_SetSurface( const Dx11R_Surface_t &surface );
 void Dx11R_SetLighting( bool bLit, const float ambientCube[6][3], int nLights, const Dx11Light_t *pLights );
 
 void Dx11R_SetState( const Dx11State_t &state );

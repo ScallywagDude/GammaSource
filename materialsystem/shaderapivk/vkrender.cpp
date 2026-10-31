@@ -68,7 +68,7 @@ VK_DEVICE_FUNCS( VK_DECLARE )
 //-----------------------------------------------------------------------------
 // Device state
 //-----------------------------------------------------------------------------
-enum { DESCRIPTORS = 9, FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096 };
+enum { DESCRIPTORS = 13, FRAMES = 2, STREAM_SIZE = 16 * 1024 * 1024, BLOCK_SIZE = 64 * 1024 * 1024, MAX_QUERIES = 4096 };
 
 static VkInstance s_Instance;
 static VkPhysicalDevice s_PhysicalDevice;
@@ -508,6 +508,16 @@ static VkDescriptorSetLayout s_SetLayout;
 static VkPipelineLayout s_PipelineLayout;
 static VkShaderModule s_VS, s_FS;
 static VkSampler s_Samplers[4];		// bit 0 clamp S, bit 1 clamp T
+
+// the shader's [[vk::binding]]s: constants, bones, then texture/sampler pairs t0 t1 t2 (cube),
+// then t3 (the envmap mask, sampled with s0), t4 - t6 (normal map, detail, blend texture) and s3 (wraps)
+static const VkDescriptorType s_Types[DESCRIPTORS] =
+{
+	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER,
+	VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+	VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER
+};
 static std::map< unsigned int, VkPipeline > s_Pipelines;
 static std::vector< VkDescriptorPool > s_DescriptorPools[FRAMES];
 static size_t s_nDescriptorPool[FRAMES];
@@ -552,7 +562,7 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 	stages[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT; stages[1].module = s_FS; stages[1].pName = "main";
 
 	VkVertexInputBindingDescription binding = { 0, sizeof( VkRVertex_t ), VK_VERTEX_INPUT_RATE_VERTEX };
-	VkVertexInputAttributeDescription attrs[7] =
+	VkVertexInputAttributeDescription attrs[10] =
 	{
 		{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0 },	// position
 		{ 1, 0, VK_FORMAT_R8G8B8A8_UNORM, 12 },		// colour
@@ -561,10 +571,13 @@ static VkPipeline GetPipeline( VkRPrimitive_t type )
 		{ 4, 0, VK_FORMAT_R32G32B32_SFLOAT, 32 },	// normal
 		{ 5, 0, VK_FORMAT_R8G8B8A8_UINT, 44 },		// bone indices
 		{ 6, 0, VK_FORMAT_R32G32_SFLOAT, 48 },		// bone weights
+		{ 7, 0, VK_FORMAT_R32G32B32_SFLOAT, 56 },	// tangent S
+		{ 8, 0, VK_FORMAT_R32G32B32_SFLOAT, 68 },	// tangent T
+		{ 9, 0, VK_FORMAT_R32_SFLOAT, 80 },			// bumped lightmap offset
 	};
 	VkPipelineVertexInputStateCreateInfo vi = { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO };
 	vi.vertexBindingDescriptionCount = 1; vi.pVertexBindingDescriptions = &binding;
-	vi.vertexAttributeDescriptionCount = 7; vi.pVertexAttributeDescriptions = attrs;
+	vi.vertexAttributeDescriptionCount = 10; vi.pVertexAttributeDescriptions = attrs;
 	VkPipelineInputAssemblyStateCreateInfo ia = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO };
 	ia.topology = s_Topology[type];
 	VkPipelineViewportStateCreateInfo vp = { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO };
@@ -1159,14 +1172,6 @@ bool VkR_Init()
 	if ( vkCreateShaderModule_( s_Device, &smci, NULL, &s_FS ) != VK_SUCCESS )
 		return false;
 
-	// the shader's [[vk::binding]]s: constants, bones, then texture/sampler pairs t0 t1 t2 (cube),
-	// then t3 (the envmap mask, sampled with s0)
-	static const VkDescriptorType s_Types[DESCRIPTORS] =
-	{
-		VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER,
-		VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, VK_DESCRIPTOR_TYPE_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-	};
 	VkDescriptorSetLayoutBinding bindings[DESCRIPTORS] = {};
 	for ( int i = 0; i < DESCRIPTORS; ++i )
 	{
@@ -1625,7 +1630,7 @@ static VkDescriptorSet AllocateSet()
 		{
 			VkDescriptorPoolSize sizes[3] =
 			{
-				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLER, 3 * 4096 }
+				{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 2 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 7 * 4096 }, { VK_DESCRIPTOR_TYPE_SAMPLER, 4 * 4096 }
 			};
 			VkDescriptorPoolCreateInfo dpci = { VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO };
 			dpci.maxSets = 4096;
@@ -1699,7 +1704,7 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( !pSecond ) pSecond = SampleableTexture( s_hWhite );
 	Texture_t *pEnvmap = NULL;
 	if ( s_bEnvmap )
-		pEnvmap = SampleableTexture( VkR_IsCubeTexture( s_hStage1 ) ? s_hStage1 : s_hStage2 );
+		pEnvmap = SampleableTexture( s_hEnvCube );
 	if ( !pEnvmap || !pEnvmap->m_bCube ) pEnvmap = SampleableTexture( s_hWhiteCube );
 	if ( !pTex || !pSecond || !pEnvmap )
 		return;
@@ -1708,6 +1713,16 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( !pMask || pMask->m_bCube ) pMask = SampleableTexture( s_hWhite );
 	if ( !pMask )
 		return;
+	// t4 - t6: the surface's normal map, detail texture and blend texture, else white
+	int hExtra[3] = { s_PassSurface.m_nBump ? s_PassSurface.m_hBump : 0, s_PassSurface.m_nDetail ? s_PassSurface.m_hDetail : 0, s_PassSurface.m_hBase2 };
+	Texture_t *pExtra[3];
+	for ( int i = 0; i < 3; ++i )
+	{
+		pExtra[i] = SampleableTexture( hExtra[i] );
+		if ( !pExtra[i] || pExtra[i]->m_bCube ) pExtra[i] = SampleableTexture( s_hWhite );
+		if ( !pExtra[i] )
+			return;
+	}
 	if ( !BeginPass() )
 		return;
 
@@ -1726,7 +1741,7 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	if ( !set )
 		return;
 	VkDescriptorBufferInfo buffers[2] = { { cbuf, nCBOffset, sizeof( Constants_t ) }, { bonebuf, nBoneOffset, sizeof( s_Bones ) } };
-	VkDescriptorImageInfo images[7] = {};
+	VkDescriptorImageInfo images[DESCRIPTORS - 2] = {};
 	images[0].imageView = pTex->m_View; images[0].imageLayout = pTex->m_Layout;
 	images[1].sampler = s_Samplers[( pTex->m_bClampS ? 1 : 0 ) | ( pTex->m_bClampT ? 2 : 0 )];
 	images[2].imageView = pSecond->m_View; images[2].imageLayout = pSecond->m_Layout;
@@ -1734,6 +1749,11 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 	images[4].imageView = pEnvmap->m_View; images[4].imageLayout = pEnvmap->m_Layout;
 	images[5].sampler = s_Samplers[3];
 	images[6].imageView = pMask->m_View; images[6].imageLayout = pMask->m_Layout;
+	for ( int i = 0; i < 3; ++i )
+	{
+		images[7 + i].imageView = pExtra[i]->m_View; images[7 + i].imageLayout = pExtra[i]->m_Layout;
+	}
+	images[10].sampler = s_Samplers[0];
 	VkWriteDescriptorSet writes[DESCRIPTORS] = {};
 	for ( int i = 0; i < DESCRIPTORS; ++i )
 	{
@@ -1748,7 +1768,7 @@ void VkR_Draw( VkRPrimitive_t type, const VkRVertex_t *pVerts, int nVerts, const
 		}
 		else
 		{
-			writes[i].descriptorType = ( i & 1 ) ? VK_DESCRIPTOR_TYPE_SAMPLER : VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;	// 8: t3
+			writes[i].descriptorType = s_Types[i];
 			writes[i].pImageInfo = &images[i - 2];
 		}
 	}
